@@ -1,3 +1,4 @@
+import {INCIDENT_OBSTACLES} from './incidentObstacles';
 import {ROOM_STORY_ROUTE,type StoryTemplateId} from './storyRooms';
 import type {Rect,RoomTemplate} from './types';
 import {AUTHORED_ROOM_TOPOLOGIES} from './authoredRoomTopologies';
@@ -34,5 +35,6 @@ export const STORY_ROOM_TEMPLATES:Readonly<Record<StoryTemplateId,RoomTemplate>>
   breaches:Object.freeze([{x:100,y:100},{x:1100,y:100},{x:100,y:780},{x:1100,y:780}].map(p=>Object.freeze(p))),
   ...AUTHORED_ROOM_TOPOLOGIES[room.templateId],
   ...SHIP_ARCHITECTURE_LAYOUTS[room.templateId],
+  incidentObstacles:INCIDENT_OBSTACLES[room.templateId],
  })];
 })) as Record<StoryTemplateId,RoomTemplate>);

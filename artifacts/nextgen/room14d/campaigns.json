@@ -1,0 +1,272 @@
+[
+  {
+    "label": "room14d-edge-native-breacher",
+    "rig": "breacher",
+    "seed": 1729,
+    "outcome": "complete",
+    "rooms": [
+      {
+        "id": "awakening-bay",
+        "result": "clear"
+      },
+      {
+        "id": "passenger-vault",
+        "result": "clear"
+      },
+      {
+        "id": "residential-gallery",
+        "result": "clear"
+      },
+      {
+        "id": "communal-atrium",
+        "result": "clear"
+      },
+      {
+        "id": "crew-checkpoint",
+        "result": "clear"
+      },
+      {
+        "id": "armory",
+        "result": "clear"
+      },
+      {
+        "id": "freight-hold",
+        "result": "clear"
+      },
+      {
+        "id": "breached-loading-bay",
+        "result": "clear"
+      },
+      {
+        "id": "relay-racks",
+        "result": "clear"
+      },
+      {
+        "id": "transmission-chamber",
+        "result": "clear"
+      },
+      {
+        "id": "diagnostic-gallery",
+        "result": "clear"
+      },
+      {
+        "id": "safety-interlock-station",
+        "result": "clear"
+      },
+      {
+        "id": "coolant-plant",
+        "result": "clear"
+      },
+      {
+        "id": "service-shaft-landing",
+        "result": "clear"
+      },
+      {
+        "id": "infested-workshop",
+        "result": "clear"
+      },
+      {
+        "id": "swarm-junction",
+        "result": "clear"
+      },
+      {
+        "id": "shielding-gate",
+        "result": "clear"
+      },
+      {
+        "id": "containment-annulus",
+        "result": "clear"
+      },
+      {
+        "id": "manual-control-chamber",
+        "result": "clear"
+      },
+      {
+        "id": "overload-floor",
+        "result": "complete"
+      }
+    ],
+    "errors": [],
+    "marineSamples": 9931,
+    "penetratingSamples": [],
+    "longestStationaryMovementCommandAtCoverSeconds": {
+      "awakening-bay": 0,
+      "passenger-vault": 0,
+      "residential-gallery": 0,
+      "communal-atrium": 0,
+      "crew-checkpoint": 0.1,
+      "armory": 0,
+      "freight-hold": 0,
+      "breached-loading-bay": 0,
+      "relay-racks": 0,
+      "transmission-chamber": 0,
+      "diagnostic-gallery": 0,
+      "safety-interlock-station": 0,
+      "coolant-plant": 0,
+      "service-shaft-landing": 0,
+      "infested-workshop": 0,
+      "swarm-junction": 0,
+      "shielding-gate": 0.1,
+      "containment-annulus": 0,
+      "manual-control-chamber": 0.1,
+      "overload-floor": 0
+    },
+    "minimumMarineCircleClearance": {
+      "awakening-bay": 141.9517,
+      "passenger-vault": 36.7452,
+      "residential-gallery": 37.072,
+      "communal-atrium": 36.0954,
+      "crew-checkpoint": 0.095,
+      "armory": 24.3757,
+      "freight-hold": 30.2857,
+      "breached-loading-bay": 58.5617,
+      "relay-racks": 13.3496,
+      "transmission-chamber": 5.0765,
+      "diagnostic-gallery": 28.6791,
+      "safety-interlock-station": 0.2475,
+      "coolant-plant": 47.3081,
+      "service-shaft-landing": 53.5711,
+      "infested-workshop": 6.1875,
+      "swarm-junction": 10.9728,
+      "shielding-gate": 2.0657,
+      "containment-annulus": 221.9293,
+      "manual-control-chamber": 0.2551,
+      "overload-floor": 243.2032
+    }
+  },
+  {
+    "label": "room14d-edge-native-arc",
+    "rig": "arc",
+    "seed": 1729,
+    "outcome": "complete",
+    "rooms": [
+      {
+        "id": "awakening-bay",
+        "result": "clear"
+      },
+      {
+        "id": "passenger-vault",
+        "result": "clear"
+      },
+      {
+        "id": "residential-gallery",
+        "result": "clear"
+      },
+      {
+        "id": "communal-atrium",
+        "result": "clear"
+      },
+      {
+        "id": "crew-checkpoint",
+        "result": "clear"
+      },
+      {
+        "id": "armory",
+        "result": "clear"
+      },
+      {
+        "id": "freight-hold",
+        "result": "clear"
+      },
+      {
+        "id": "breached-loading-bay",
+        "result": "clear"
+      },
+      {
+        "id": "relay-racks",
+        "result": "clear"
+      },
+      {
+        "id": "transmission-chamber",
+        "result": "clear"
+      },
+      {
+        "id": "diagnostic-gallery",
+        "result": "clear"
+      },
+      {
+        "id": "safety-interlock-station",
+        "result": "clear"
+      },
+      {
+        "id": "coolant-plant",
+        "result": "clear"
+      },
+      {
+        "id": "service-shaft-landing",
+        "result": "clear"
+      },
+      {
+        "id": "infested-workshop",
+        "result": "clear"
+      },
+      {
+        "id": "swarm-junction",
+        "result": "clear"
+      },
+      {
+        "id": "shielding-gate",
+        "result": "clear"
+      },
+      {
+        "id": "containment-annulus",
+        "result": "clear"
+      },
+      {
+        "id": "manual-control-chamber",
+        "result": "clear"
+      },
+      {
+        "id": "overload-floor",
+        "result": "complete"
+      }
+    ],
+    "errors": [],
+    "marineSamples": 10307,
+    "penetratingSamples": [],
+    "longestStationaryMovementCommandAtCoverSeconds": {
+      "awakening-bay": 0,
+      "passenger-vault": 0,
+      "residential-gallery": 0,
+      "communal-atrium": 0,
+      "crew-checkpoint": 0,
+      "armory": 0,
+      "freight-hold": 0.1,
+      "breached-loading-bay": 0,
+      "relay-racks": 0,
+      "transmission-chamber": 0,
+      "diagnostic-gallery": 0,
+      "safety-interlock-station": 0,
+      "coolant-plant": 0,
+      "service-shaft-landing": 0,
+      "infested-workshop": 0,
+      "swarm-junction": 0,
+      "shielding-gate": 0,
+      "containment-annulus": 0,
+      "manual-control-chamber": 0,
+      "overload-floor": 0
+    },
+    "minimumMarineCircleClearance": {
+      "awakening-bay": 131.3997,
+      "passenger-vault": 31.8822,
+      "residential-gallery": 33.9246,
+      "communal-atrium": 36.0954,
+      "crew-checkpoint": 25.6684,
+      "armory": 17.1783,
+      "freight-hold": 1.9952,
+      "breached-loading-bay": 34.721,
+      "relay-racks": 101.6998,
+      "transmission-chamber": 14.0,
+      "diagnostic-gallery": 14.145,
+      "safety-interlock-station": 19.0174,
+      "coolant-plant": 13.7834,
+      "service-shaft-landing": 40.1454,
+      "infested-workshop": 0.2919,
+      "swarm-junction": 31.2435,
+      "shielding-gate": 17.4885,
+      "containment-annulus": 13.5485,
+      "manual-control-chamber": 0.1245,
+      "overload-floor": 19.8563
+    }
+  }
+]

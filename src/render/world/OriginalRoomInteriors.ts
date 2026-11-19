@@ -1,3 +1,5 @@
+import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
+import {alignIncidentInstance,incidentTransform} from './Room14Mounts';
 import {room14Debris} from './Room14Debris';
 import {addRoom14Fittings} from './Room14Fittings';
 import {addStoryIncident} from './Inc13StoryIncidents';
@@ -97,6 +99,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
     instances.push(...room14Debris(id),...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
+    for(const piece of instances)alignIncidentInstance(id,piece);
     return instances;
 }
 /** Prepare only compressed or raw GLB bytes. Geometry work stays in the hold. */
@@ -165,10 +168,24 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             root = buildOriginalShipKit(sources, instances, t);
             record?.('kitMerge',performance.now()-mergeStarted);
             const dressingStarted=performance.now();
+            const firstDetail=root.children.length;
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
+            const firstIncident=root.children.length;
             addStoryIncident(root,t);
+            for(const object of root.children.slice(firstIncident))object.applyMatrix4(incidentTransform(t.id));
             addRoom14Fittings(root,t.id);
+            const raised=root.children.slice(firstDetail).filter(o=>o.name.startsWith('inc13-')||o.name==='room14-landmark-worklight');
+            registerOriginalInteriorCutaways(root,raised.flatMap((object):InteriorCutaway[]=>{
+                if(object instanceof T.Mesh&&object.geometry.userData.cutawayRanges){
+                    object.updateWorldMatrix(true,false);
+                    const ranges=object.geometry.userData.cutawayRanges as {bounds:T.Box3;start:number;end:number}[];
+                    return ranges.map(({bounds,start,end})=>({bounds:bounds.clone().applyMatrix4(object.matrixWorld),
+                        floorCover:t.id==='swarm-junction',parts:[],indices:{attribute:object.geometry.index!,start,end},hidden:false}));
+                }
+                const bounds=new T.Box3().setFromObject(object);
+                return bounds.max.y>.8?[{object,bounds,floorCover:t.id==='swarm-junction',parts:[],hidden:false}]:[];
+            }));
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
                 if(oldGate){const visible=oldGate.visible;oldGate.visible=false;restores.push(()=>{oldGate.visible=visible;});}

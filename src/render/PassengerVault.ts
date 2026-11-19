@@ -34,11 +34,16 @@ export function buildPassengerVault(sources:Sources,plan?:PassengerPlan){
  const root=new T.Group();root.name='passenger-vault-equipment';
  const bins=new Map<string,{material:T.Material;parts:T.BufferGeometry[];service:boolean}>(),allocated=new Set<T.BufferGeometry>();
  const materials=new Set<T.Material>(),textures=new Set<T.Texture>();let decodedBytes=0;
- let triangles=0;
+ let triangles=0,instances=0;
  try{
   for(const p of placements){const source=sources[p.family];if(!source)throw Error('missing Passenger family');source.updateWorldMatrix(true,true);
    const transform=new T.Matrix4().compose(new T.Vector3(p.x/32,0,p.z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),p.angle),new T.Vector3(1,1,1)).multiply(new T.Matrix4().makeTranslation(p.dx,0,p.dz));
    const role=p.family==='row-carrier'||p.family==='chamber'?placements.indexOf(p)/5|0:p.family==='distribution-north'?4:p.family==='distribution-south'?5:p.family==='monitor-north'?6:p.family==='monitor-south'?7:-1;
+   // The abandoned luggage and open effects locker occupy three emptied
+   // sockets of the south-west berth bank. Keep its fourth sleeper intact.
+   const effectsBank=role===2&&plan?.voids?.length===8;
+   if(effectsBank&&p.family==='chamber'&&p.dx>-2)continue;
+   instances++;
    let fit:T.Matrix4|undefined;
    if(plan?.voids?.length===8&&role>=0){const old=PASSENGER_BLOCKOUT[role].footprint,next=plan.voids[role],xs=next.map(v=>v.x),zs=next.map(v=>v.y),ox=old[0].x,oz=old[0].y,ow=old[1].x-ox,od=old[2].y-oz,nx=Math.min(...xs),nz=Math.min(...zs),nw=Math.max(...xs)-nx,nd=Math.max(...zs)-nz;fit=new T.Matrix4().makeTranslation(nx/32,0,nz/32).multiply(new T.Matrix4().makeScale(nw/ow,1,nd/od)).multiply(new T.Matrix4().makeTranslation(-ox/32,0,-oz/32));}
    let meshes=0;source.traverse(o=>{if(!(o instanceof T.Mesh))return;meshes++;
@@ -49,6 +54,7 @@ export function buildPassengerVault(sources:Sources,plan?:PassengerPlan){
     const g:T.BufferGeometry=o.geometry.clone();allocated.add(g);g.applyMatrix4(new T.Matrix4().multiplyMatrices(transform,o.matrixWorld));g.computeBoundingBox();const b=g.boundingBox!;
     if(![...b.min.toArray(),...b.max.toArray()].every(Number.isFinite)||b.min.x<0||b.max.x>38||b.min.z<0||b.max.z>28||b.min.y< -2||b.max.y>4)throw Error('Passenger room bounds rejected');
     if(fit)g.applyMatrix4(fit);
+    if(effectsBank&&p.family==='row-carrier')g.scale(1,.018,1);
     const service=p.family==='service-finish';
     const key=service+o.material.uuid+JSON.stringify([!!g.index,Object.entries(g.attributes).sort(([a],[b])=>a.localeCompare(b)).map(([n,a])=>[n,a.itemSize,a.normalized,a.array.constructor.name])]);
     const bin=bins.get(key)??{material:o.material,parts:[],service};bin.parts.push(g);bins.set(key,bin);
@@ -64,7 +70,7 @@ export function buildPassengerVault(sources:Sources,plan?:PassengerPlan){
     mesh.onAfterRender=()=>{if(saved){[material.polygonOffset,material.polygonOffsetFactor,material.polygonOffsetUnits]=saved;saved=undefined;}};
    }root.add(mesh);}
   for(const {parts} of bins.values())for(const g of parts){allocated.delete(g);g.dispose();}
-  root.userData.instances=placements.length;root.userData.triangles=triangles;root.userData.materials=materials.size;root.userData.decodedTextureBytes=decodedBytes;return root;
+  root.userData.instances=instances;root.userData.triangles=triangles;root.userData.materials=materials.size;root.userData.decodedTextureBytes=decodedBytes;return root;
  }catch(error){allocated.forEach(g=>g.dispose());root.clear();throw error;}
 }
 /** Stream cap applies before GLTF parsing; only embedded resources are permitted. */

@@ -5,10 +5,10 @@ import {dress13GatePlacements} from './Dress13GatePlacements';
 /** Native machinery solids retain collision ownership; these are presentation replacements. */
 export function p11ControlPlacements(id:string):OriginalKitInstance[]{
  const placements:Record<string,[string,number,number,number,number,number]>={
-  'transmission-chamber':['uplink-tracking-dish',816,380,1,.65,.6],
+  'transmission-chamber':['uplink-tracking-dish',816,348,.97,.65,.22],
   'diagnostic-gallery':['specimen-probe-cradle',790,340,1.1,.85,.8],
   'safety-interlock-station':['key-cylinder-interlock',650,365,1,.85,.8],
-  'overload-floor':['reactor-crown',700,500,1.7,1.4,1.7],
+  'overload-floor':['reactor-crown',700,508,1.67,1.4,1.69],
  };
  const growth=dress13GatePlacements(id);
  if(id==='manual-control-chamber')return [...growth,inc13ManualPlacement()];

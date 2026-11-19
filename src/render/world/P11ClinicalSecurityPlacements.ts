@@ -11,7 +11,9 @@ export function p11ClinicalSecurityPlacements(id:string):OriginalKitInstance[]{
   // The retained manufactured booth rail is 1.202m high. Its hinge shoe
   // begins at .90m in the authoring model, so seat it on that actual cap.
   failed.matrix.elements[13]=.302;
-  return [place('checkpoint-scanner-gate',208,440,Math.PI/2),failed];
+  // The original portal already supplies both scanner shoes. The extra
+  // freestanding reader projected into the lane between them.
+  return [failed];
  }
  if(id==='armory')return [place('armory-weapon-carousel',600,450,0,1.65,1.3,1.65)];
  return [];

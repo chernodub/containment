@@ -1,3 +1,4 @@
+import {placeLooseInstance} from './Room14Mounts';
 import {extractStaticLODs,tagStaticLOD,mergeStaticLOD} from '../StaticGeometryLOD';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
@@ -200,7 +201,7 @@ export function buildOriginalShipKit(
   const ownedGeometry = new Set<T.BufferGeometry>(), ownedMaterials = new Set<T.Material>();
   const placements: {pack: OriginalKitPack; asset: string; purpose: string; matrix: number[]; bounds: number[][]; triangles: number}[] = [];
   const fixtures: Fixture[] = [];
-  const cutaways:{bounds:T.Box3;parts:{finish:string;start:number;end:number}[]}[]=[];
+  const cutaways:{bounds:T.Box3;floorCover:boolean;parts:{finish:string;start:number;end:number}[]}[]=[];
   const mergedColors=new Map<string,T.BufferAttribute>();
   let totalTriangles = 0;
   const ranges:QualityRange[]=[];
@@ -227,6 +228,10 @@ export function buildOriginalShipKit(
       if (!instance.matrix.elements.every(Number.isFinite) || Math.abs(instance.matrix.determinant()) < 1e-12)
         throw Error('Invalid original ship kit instance transform: ' + instance.asset);
       const floorCreep = instance.pack === 'p11-brood' && /^brood-creep-[abc]$/.test(instance.asset);
+      if(template&&(instance.purpose.startsWith('DRESS13 /')||instance.pack==='p11-incidents'||instance.pack==='p11-service')){
+        const footprint=new T.Box3().setFromObject(asset).applyMatrix4(instance.matrix);
+        if(!placeLooseInstance(template,instance,footprint))continue;
+      }
       const bounds = new T.Box3(), lamps: {position: T.Vector3; area: number; color: number}[] = [];
       const parts:{finish:string;start:number;end:number}[]=[];
       let instanceTriangles = 0, meshCount = 0;
@@ -334,7 +339,7 @@ export function buildOriginalShipKit(
       if (meshCount === 0 || bounds.isEmpty()) throw Error('Original ship kit asset has no geometry: ' + instance.asset);
       placements.push({pack: instance.pack, asset: instance.asset, purpose: instance.purpose,
         matrix: instance.matrix.toArray(), bounds: [bounds.min.toArray(), bounds.max.toArray()], triangles: instanceTriangles});
-      if(parts.length)cutaways.push({bounds:bounds.clone(),parts});
+      if(parts.length)cutaways.push({bounds:bounds.clone(),floorCover:instance.asset==='split-plenum',parts});
       const angle = Math.atan2(-instance.matrix.elements[2], instance.matrix.elements[0]);
       for (const lamp of (instance.highDetail?[]:lamps).sort((a, b) => b.area - a.area).slice(0, 2)) fixtures.push({
         x: lamp.position.x, y: lamp.position.y, z: lamp.position.z, color: lamp.color,
@@ -360,7 +365,7 @@ export function buildOriginalShipKit(
     }
     result.userData.instancePlacements = placements; result.userData.placements = placements;
     result.userData.triangles = totalTriangles; result.userData.lightFixtures = fixtures;
-    registerOriginalInteriorCutaways(result,cutaways.map(piece=>({bounds:piece.bounds,hidden:false,
+    registerOriginalInteriorCutaways(result,cutaways.map(piece=>({bounds:piece.bounds,floorCover:piece.floorCover,hidden:false,
       parts:piece.parts.map(part=>({colors:mergedColors.get(part.finish)!,start:part.start,end:part.end})),
     } satisfies InteriorCutaway)));
     qualityRanges.set(result,{ranges});

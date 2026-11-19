@@ -45,6 +45,19 @@ export class IncidentPieces {
   }
   finish(root:T.Group,id:string,x:number,z:number,finish?:T.Material):T.Mesh {
     const geometry=mergeGeometries(this.parts,false)!;
+    // The case, rabbit and shoes share a draw, but must cut away independently.
+    if(id==='passenger-vault'){
+      let start=0;
+      geometry.userData.cutawayRanges=this.parts.map(part=>{
+        part.computeBoundingBox();
+        const bounds=part.boundingBox!.clone();
+        bounds.min.multiplyScalar(1/32);bounds.max.multiplyScalar(1/32);
+        const end=start+part.attributes.position.count,range={start,end,bounds};
+        start=end;return range;
+      });
+      geometry.setIndex(Array.from({length:start},(_,i)=>i));
+      geometry.index!.setUsage(T.DynamicDrawUsage);
+    }
     this.parts.forEach(g=>g.dispose());geometry.scale(1/32,1/32,1/32);
     const material=finish??new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
@@ -158,6 +171,12 @@ const incidents:Record<string,Incident>={
   'breached-loading-bay':{
     source:[511,490],bounds:[-236,-63,366,234],
     paint(c){
+      // A stripped rectangular plate seat remains flush on the loading apron.
+      fill(c,'M-9 15l53 11 -14 39 -24 -6 -6 5 -22 -7Z','#414c51');
+      stroke(c,'M-9 15l53 11 -14 39 -24 -6','rgba(167,178,174,.63)',2.4);
+      for(const [x,z] of [[-5,20],[37,29],[24,57],[-14,49]]){
+        c.fillStyle='#29363b';c.fillRect(x,z,4,3);
+      }
       for(const x of [-14,2,17])stroke(c,'M'+x+' 9l-17 14','rgba(81,87,88,.55)',2);
     },
     pieces(p){
@@ -214,6 +233,13 @@ const incidents:Record<string,Incident>={
   'diagnostic-gallery':{
     source:[362,338],bounds:[-184,-40,311,187],
     paint(c){
+      // Splinters and the two caster stops mark where the pressure pane fell.
+      for(const [x,z,turn,size] of [[-9,56,.3,1],[18,43,1.2,.85],[-28,67,2,.64],[31,58,.8,.45],[-6,79,-.4,.52],[9,65,2.1,.36]]){
+        c.save();c.translate(x,z);c.rotate(turn);c.scale(size,size);
+        fill(c,'M-12 -5l24 2 -14 15Z','rgba(96,136,143,.72)');
+        stroke(c,'M-12 -5l24 2 -14 15','rgba(152,179,178,.76)',1.7);c.restore();
+      }
+      for(const x of [-16,14])stroke(c,'M'+x+' 20l-8 18','rgba(36,50,54,.8)',4);
       const wet=c.createRadialGradient(0,12,2,0,12,23);wet.addColorStop(0,'rgba(59,82,80,.8)');wet.addColorStop(1,'rgba(59,82,80,0)');c.fillStyle=wet;c.fillRect(-24,-12,48,48);
     },
     pieces(p){
@@ -305,6 +331,8 @@ const incidents:Record<string,Incident>={
   'shielding-gate':{
     source:[496,422],bounds:[-190,-46,342,181],
     paint(c){
+      fill(c,'M-95 65l28 -5 32 -24 -9 20 -29 25 -29 -4Z','rgba(95,106,117,.82)');
+      stroke(c,'M-95 65l28 -5 32 -24','rgba(147,162,168,.72)',2);
       // Scraped arcs are the real swept paths of the failed shield leaves.
       // Polished ends stop where the broken carriages jammed.
       for(const side of [-1,1]){
@@ -403,7 +431,8 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
   },.021);
   if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
-  const pieces=new IncidentPieces();incident.pieces(pieces);pieces.finish(root,id,x,z);
+  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z);
+  if(id==='communal-atrium')hero.scale.y=.22; // plate shards lie flat beyond the bench
 }
 
 /** Short plasma vents stay within the torn perimeter plates. Share one

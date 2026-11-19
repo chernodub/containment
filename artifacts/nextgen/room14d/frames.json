@@ -1,0 +1,986 @@
+[
+  {
+    "file": "native/incident-facing-awakening-bay.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-awakening-bay.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 640,
+      "y": 445
+    },
+    "sha256": "1e68b43f487477a6e516d37e4cee3629f57d9ad88b0c64e04ac8b498ab4b39b2"
+  },
+  {
+    "file": "native/incident-facing-passenger-vault.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-passenger-vault.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 277.983,
+      "y": 580.492
+    },
+    "sha256": "ce8f0521f975b10b2a28c1c7684911400a38423a6136526e66499eb61a574d76"
+  },
+  {
+    "file": "native/incident-facing-residential-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-residential-gallery.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 400,
+      "y": 425
+    },
+    "sha256": "8ba7b0ebdb66a12f75bb3d84f93b68718469a3e8fac7990c2a1f6b9f3b038ce7"
+  },
+  {
+    "file": "native/incident-facing-communal-atrium.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-communal-atrium.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 565,
+      "y": 545
+    },
+    "sha256": "4d0adab5a021d2bbeca07a18270343a1d9590999b6df30f73236d25dfb857f5f"
+  },
+  {
+    "file": "native/incident-facing-crew-checkpoint.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-crew-checkpoint.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 668,
+      "y": 468
+    },
+    "sha256": "62d642fd65bdc6cd0e588c5c9f7230f0d8532db55ecf731b0c1f67e82ca2138a"
+  },
+  {
+    "file": "native/incident-facing-armory.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-armory.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 273,
+      "y": 566
+    },
+    "sha256": "237fcae6d9a99a9da8cfcedc2320572a26e767bfa11770b095fc6fed2b293ffd"
+  },
+  {
+    "file": "native/incident-facing-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-freight-hold.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 276.736,
+      "y": 439.118
+    },
+    "sha256": "2c81eca0009c613e6e161e98bfc1207183304f6b0ad9e4c19ac953f2a54e62cd"
+  },
+  {
+    "file": "native/incident-facing-breached-loading-bay.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-facing-breached-loading-bay.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 540,
+      "y": 576
+    },
+    "sha256": "0f25d152324e30d3a101d066ead680d1d047fa7f3d9cdebf3702b0cdec006b16"
+  },
+  {
+    "file": "native/incident-facing-relay-racks.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-facing-relay-racks.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 545,
+      "y": 562
+    },
+    "sha256": "fc2d574223d8e4d2b4394bcd390d40c67cbb1bd244c24ae9cb86c6218c6cc560"
+  },
+  {
+    "file": "native/incident-facing-transmission-chamber.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-transmission-chamber.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 870,
+      "y": 565
+    },
+    "sha256": "7cb9006c8f3e34654e455f0f8806b34af6ec9325d0f2f82d40bc4e57a749f53d"
+  },
+  {
+    "file": "native/incident-facing-diagnostic-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-diagnostic-gallery.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 453,
+      "y": 438
+    },
+    "sha256": "7836f2839f40e49ee63fbbbb4850eb4d9188b7409abde08294c694ab10f3a549"
+  },
+  {
+    "file": "native/incident-facing-safety-interlock-station.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-safety-interlock-station.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 504,
+      "y": 451
+    },
+    "sha256": "57712f8196c648f6c1be897f167a3589870c6c2c6af12e19a471daf8db97b0e1"
+  },
+  {
+    "file": "native/incident-facing-coolant-plant.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-coolant-plant.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 348,
+      "y": 421
+    },
+    "sha256": "38c261b9f3e12ed6170efd41212fe0e821710ecdd753f032d30b3ce39c5ea8a0"
+  },
+  {
+    "file": "native/incident-facing-service-shaft-landing.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-service-shaft-landing.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 307,
+      "y": 618
+    },
+    "sha256": "91d0e5caffad8e7d53dab2569edb0cd77955614c2ff505dbac5498be080af175"
+  },
+  {
+    "file": "native/incident-facing-swarm-junction.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-swarm-junction.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 310,
+      "y": 609
+    },
+    "sha256": "50d52de1fb41958519074edb99e7cbf42f367663f32facf56338edb221ee6706"
+  },
+  {
+    "file": "native/incident-facing-containment-annulus.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-containment-annulus.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 543.3842943919354,
+      "y": 631.9018064403226
+    },
+    "sha256": "b8c41f09bd3a879e75a2df78d8e02a66d842cd57327afe853af1453c71451e56"
+  },
+  {
+    "file": "native/incident-facing-overload-floor.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-facing-overload-floor.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 485,
+      "y": 522
+    },
+    "sha256": "2528b36c0aa5d4aa3d5c417339c07e294b59ce50f59d05c8d3543992d041b0c8"
+  },
+  {
+    "file": "native/incident-kiting-awakening-bay.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-awakening-bay-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 1081.2819244973978,
+      "y": 358.7180755026069
+    },
+    "sha256": "a53b59e3ec0f4b4ab083002b2e3f70bfbec6fe298c3758adce61c5bda0e39a0c"
+  },
+  {
+    "file": "native/incident-kiting-passenger-vault.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-passenger-vault-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 176,
+      "y": 554.9499999999991
+    },
+    "sha256": "1412ba8674d1d60609162dc50cbaa33f1d379e09cf1839570f0391456ac991f2"
+  },
+  {
+    "file": "native/incident-kiting-residential-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-residential-gallery-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 485.05000000000086,
+      "y": 480
+    },
+    "sha256": "53ef212c07aa0f7ebfc11ab0416d16d8cd5ff9f7969ea6d2a362bebfaa9ee8cd"
+  },
+  {
+    "file": "native/incident-kiting-communal-atrium.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-communal-atrium-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 336,
+      "y": 554.9499999999991
+    },
+    "sha256": "f429aad1d402e822cdd4b6dd8a8d3813e9da043017f9b6568153b30832bb83fa"
+  },
+  {
+    "file": "native/incident-kiting-crew-checkpoint.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-crew-checkpoint-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 406.01053944963314,
+      "y": 333.80004773782775
+    },
+    "sha256": "b022e583e346b954adf7f3d7e6f48abc64ac4c8f8feac24a22ed0d3dd6886b72"
+  },
+  {
+    "file": "native/incident-kiting-armory.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-armory-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 493.80004773782775,
+      "y": 743.9894605503669
+    },
+    "sha256": "c3c4deeaf5c07574ecd1a6a37a5330268250369d4fa8622a8ce9c8fe25a3d796"
+  },
+  {
+    "file": "native/incident-kiting-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-freight-hold-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 665.0500000000009,
+      "y": 700
+    },
+    "sha256": "0950d8438afeff0f101b5651dfed55047907f51119f2f3cf4fc0b0972f766f59"
+  },
+  {
+    "file": "native/incident-kiting-breached-loading-bay.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-kiting-breached-loading-bay-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 706.1999522621722,
+      "y": 723.9894605503669
+    },
+    "sha256": "8e29ee328144ec740f7321d132337dfc33833d7e7b2d8aea311ccc859d036819"
+  },
+  {
+    "file": "native/incident-kiting-relay-racks.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-kiting-relay-racks-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 395,
+      "y": 385.05000000000086
+    },
+    "sha256": "2e13f8639495cdd508e2bac89ca41e85c76f6ee6cd18309b6515239db572fd6c"
+  },
+  {
+    "file": "native/incident-kiting-transmission-chamber.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-transmission-chamber-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 806.1999522621722,
+      "y": 516.0105394496331
+    },
+    "sha256": "1370f03eb1f81654a52d4f83f09229c0d4bc32f435b4bf2f723593e4a8b4094d"
+  },
+  {
+    "file": "native/incident-kiting-diagnostic-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-diagnostic-gallery-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 726.1999522621722,
+      "y": 436.01053944963314
+    },
+    "sha256": "75ad4a07cbac595802ddd794d3032c4a7339b474291623171541eb86879ad1b1"
+  },
+  {
+    "file": "native/incident-kiting-safety-interlock-station.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-safety-interlock-station-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 393.98946055036686,
+      "y": 373.80004773782775
+    },
+    "sha256": "98bd29bdd879d3b48f409fc9c0b045ac1afbec1a80d260d0ca53cd31bae1eaf6"
+  },
+  {
+    "file": "native/incident-kiting-coolant-plant.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-coolant-plant-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 430,
+      "y": 365.05000000000086
+    },
+    "sha256": "c8a50a3e47e10251607aede4046ed015a0a93fdad5f6825b9dff7b458eefc365"
+  },
+  {
+    "file": "native/incident-kiting-service-shaft-landing.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-service-shaft-landing-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 170,
+      "y": 55.04999999999977
+    },
+    "sha256": "3ab5b735fb93d68e54d284f8703554729a521ba1cb5294d65ea273900804b646"
+  },
+  {
+    "file": "native/incident-kiting-swarm-junction.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-swarm-junction-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 518.7180755026069,
+      "y": 318.7180755026069
+    },
+    "sha256": "77e5a1b524fe3414d09faf5a60495e0d4971a719cf3dff98f077a606df245278"
+  },
+  {
+    "file": "native/incident-kiting-containment-annulus.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-containment-annulus-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 350,
+      "y": 405.05000000000086
+    },
+    "sha256": "28f64a8e2a0f2cc93ef36f32a8858f37bfe03270a0761b16b92e82170565939f"
+  },
+  {
+    "file": "native/incident-kiting-overload-floor.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-kiting-overload-floor-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 335,
+      "y": 405.05000000000086
+    },
+    "sha256": "78c415c67d6731ec306288cad2768e0f446f6ed5d6825347c9573b5d21249011"
+  },
+  {
+    "file": "native/combat-heavy-awakening-bay.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-awakening-bay-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 920,
+      "y": 520
+    },
+    "sha256": "89496b9849ff77bdd386ddf0e0633ceb9ce0e0d5245864c53c328c83d02d959e"
+  },
+  {
+    "file": "native/combat-heavy-passenger-vault.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-passenger-vault-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 920,
+      "y": 520
+    },
+    "sha256": "3e916917da4f84e79d7252e80057450211855d2cd830d7b32afa368e8dea873a"
+  },
+  {
+    "file": "native/combat-heavy-residential-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-residential-gallery-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 760,
+      "y": 520
+    },
+    "sha256": "62b3f02a58310f585898c56db409c06d25b924ee454c887dbd0ff05d42280b1c"
+  },
+  {
+    "file": "native/combat-heavy-communal-atrium.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-communal-atrium-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 680,
+      "y": 520
+    },
+    "sha256": "3fcf095b78040a7f61b957a2ce69855d80a27adc57c24dcc8e4611e25dede5eb"
+  },
+  {
+    "file": "native/combat-heavy-crew-checkpoint.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-crew-checkpoint-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 520,
+      "y": 440
+    },
+    "sha256": "5ad7d123222f8ea9cce60ee97bf73687968d114f52ce2b1405b713bd86b52537"
+  },
+  {
+    "file": "native/combat-heavy-armory.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-armory-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 760,
+      "y": 680
+    },
+    "sha256": "d5a550bb6fdece2d0e2fc7a43e8f69713f92700114f12da25f4f8bf713a7e8c7"
+  },
+  {
+    "file": "native/combat-heavy-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-freight-hold-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 680,
+      "y": 600
+    },
+    "sha256": "58f64f8b44f8372e068c1c1bf7319da71e9291475ee29cc0ad39372ce261c776"
+  },
+  {
+    "file": "native/combat-heavy-transmission-chamber.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-transmission-chamber-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 600,
+      "y": 520
+    },
+    "sha256": "b4f997466a799552ce82684abef66043df70975141c732eac40428d5be9125a5"
+  },
+  {
+    "file": "native/combat-heavy-diagnostic-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-diagnostic-gallery-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 360,
+      "y": 520
+    },
+    "sha256": "144ce55be32d2a08ec13e20bad8ade2eb86669f9bb71e19c818ed1cfd1c804ca"
+  },
+  {
+    "file": "native/combat-heavy-safety-interlock-station.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-safety-interlock-station-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 360,
+      "y": 520
+    },
+    "sha256": "e67a427565521d7e3006a21a68004c3e0d86b5952bf7e8f6dd7b81eb282dad1c"
+  },
+  {
+    "file": "native/combat-heavy-coolant-plant.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-coolant-plant-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 920,
+      "y": 440
+    },
+    "sha256": "ef6854dc076d321f57a8ffba9c935ffd9ab6ef1fe640e17a64ebad295715b0af"
+  },
+  {
+    "file": "native/combat-heavy-service-shaft-landing.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-service-shaft-landing-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 280,
+      "y": 120
+    },
+    "sha256": "3bd62d46199eea1adde8145297e98d49f47eb16e5cfb969cc56c5252eb71b1bb"
+  },
+  {
+    "file": "native/combat-heavy-swarm-junction.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-swarm-junction-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 680,
+      "y": 600
+    },
+    "sha256": "1feff9c4dc31c10776abd4d67df8b0460040acd48906148b43edc3d1c4c9ee75"
+  },
+  {
+    "file": "native/combat-heavy-containment-annulus.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-containment-annulus-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 280,
+      "y": 520
+    },
+    "sha256": "4f360943eb67d85fb345cadc06b8df35ecd04cae722fd98d6558f2f5b8da5700"
+  },
+  {
+    "file": "native/combat-heavy-overload-floor.png",
+    "capture": "room14d-edge-gallery",
+    "source": "combat-heavy-overload-floor-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 920,
+      "y": 680
+    },
+    "sha256": "8656030697d43d3101b0398dda07b0043dc58648dc04f003c4161a0afcf3d140"
+  },
+  {
+    "file": "colliders/incident-cover-awakening-bay.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-awakening-bay.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 568.5,
+      "y": 445.25
+    },
+    "sha256": "d2ccbbefb7f850615d8dbd7c7e1d6bbc6b0a6657f4532d122de1bfc3eaa55088"
+  },
+  {
+    "file": "colliders/incident-cover-passenger-vault.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-passenger-vault.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 390.75,
+      "y": 721.25
+    },
+    "sha256": "b60cba50c8296d2b9df89d99860d0eda6cc8fbdca35724e27433bc82fb77de5f"
+  },
+  {
+    "file": "colliders/incident-cover-residential-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-residential-gallery.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 381,
+      "y": 427.5
+    },
+    "sha256": "c5919d18b62fd27aaf16582cf6595f23815f250b20662f09e0fc4a200e0f9ea8"
+  },
+  {
+    "file": "colliders/incident-cover-communal-atrium.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-communal-atrium.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 556.5,
+      "y": 543.5
+    },
+    "sha256": "fa836a623ffb10e062d0cbc48421ae0932a0e01c55e870881589071469992d66"
+  },
+  {
+    "file": "colliders/incident-cover-crew-checkpoint.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-crew-checkpoint.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 715.25,
+      "y": 483.75
+    },
+    "sha256": "cf6d8e7f9ffe1df7ef63aa24a2b93ea248a65d04308950e0fcbb4885983008c0"
+  },
+  {
+    "file": "colliders/incident-cover-armory.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-armory.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 374,
+      "y": 738
+    },
+    "sha256": "6c3e8f85ba1e1c3b322d8d43585c660e84c4a08b69a88695e676aeb1841c6e96"
+  },
+  {
+    "file": "colliders/incident-cover-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-freight-hold.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 474,
+      "y": 579.5
+    },
+    "sha256": "19eaf94ea1ad9dd2f2098398ef5bcbd8375fc07d46b4901ade8f24f2dce5f56e"
+  },
+  {
+    "file": "colliders/incident-cover-breached-loading-bay.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-cover-breached-loading-bay.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 595.5,
+      "y": 585
+    },
+    "sha256": "704ca473d398362310d4698127073edc0f733950364b8f00c8a3572aafdd15f2"
+  },
+  {
+    "file": "colliders/incident-cover-relay-racks.png",
+    "capture": "room14d-final-pair",
+    "source": "incident-cover-relay-racks.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 543.3774134767125,
+      "y": 589.3011976974908
+    },
+    "sha256": "5557520ece868be4ff86a49f0b080623ff4a9f0d3e0df5918a98a14e262b183f"
+  },
+  {
+    "file": "colliders/incident-cover-transmission-chamber.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-transmission-chamber.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 861.5,
+      "y": 604.5
+    },
+    "sha256": "2042f5fac64e503a0d9e2190ba14af5ea3f901c058035b74f963b8e02afab030"
+  },
+  {
+    "file": "colliders/incident-cover-diagnostic-gallery.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-diagnostic-gallery.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 475,
+      "y": 468.5
+    },
+    "sha256": "0a5b93c19258c3e345986902c24ad39d78b8a9efe7a3b73a9401c254642f064b"
+  },
+  {
+    "file": "colliders/incident-cover-safety-interlock-station.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-safety-interlock-station.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 490.25,
+      "y": 483.25
+    },
+    "sha256": "1dd7fb0a2197310a1271d06b69d3c8549ebb939cf29d3758a6d37d1f2360943f"
+  },
+  {
+    "file": "colliders/incident-cover-coolant-plant.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-coolant-plant.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 336.75,
+      "y": 439.75
+    },
+    "sha256": "65b83ef2f407ba65d007bf2c5b011e6b9be569037b2d1f1d7660c5e13d224cbc"
+  },
+  {
+    "file": "colliders/incident-cover-service-shaft-landing.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-service-shaft-landing.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 307.682422602411,
+      "y": 631.8161243166516
+    },
+    "sha256": "d6033dc8926db43ec86195f3f9eee9b5bba5e7019bce20ca15ddf9cbe448408f"
+  },
+  {
+    "file": "colliders/incident-cover-swarm-junction.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-swarm-junction.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 332,
+      "y": 693.5
+    },
+    "sha256": "19784ca72e00a17d66ec27a0919601e21a31b073cb098bd9625d4364f16836b0"
+  },
+  {
+    "file": "colliders/incident-cover-containment-annulus.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-containment-annulus.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 523.8088000700001,
+      "y": 641.6173747700005
+    },
+    "sha256": "4773d47fae9cc0c3be5040a06dacd6444dbc945c0f239ccd3142ddbcb3a0a936"
+  },
+  {
+    "file": "colliders/incident-cover-overload-floor.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-cover-overload-floor.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 481.2155903483039,
+      "y": 495.28269237422455
+    },
+    "sha256": "df2d6566c5c0d3824d86efc181a8a98db15967368a37c7786d3dbca8856f3103"
+  },
+  {
+    "file": "native/incident-front-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-front-freight-hold.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 474,
+      "y": 500
+    },
+    "sha256": "af7ab3c5aca96edf162c183fca9b3858d31912696a32e96f1b998d84411cb3da"
+  },
+  {
+    "file": "native/incident-behind-freight-hold.png",
+    "capture": "room14d-edge-gallery",
+    "source": "incident-behind-freight-hold.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 474,
+      "y": 395
+    },
+    "sha256": "7a10bb0504fc6b4e547f7eb9cf3335b2564ca432f046afd9ea9d06f2d8954768"
+  },
+  {
+    "file": "native/incident-facing-manual-control-chamber.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-facing-manual-control-chamber.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 596,
+      "y": 620
+    },
+    "sha256": "93d6da4d45ef479cacf08a8ca7a20bc929636789f63872e1177705ee39e50fa1"
+  },
+  {
+    "file": "native/incident-facing-shielding-gate.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-facing-shielding-gate.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 460,
+      "y": 449
+    },
+    "sha256": "6dfd19b229d51ac33d47b86c62f29d9145f175d5dc3dbb8be0d3ad3ea2525816"
+  },
+  {
+    "file": "native/incident-facing-infested-workshop.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-facing-infested-workshop.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 568,
+      "y": 415
+    },
+    "sha256": "b575723c0d7c55304c01f34c57ec1a196ef133133ccccf33305e984181c3dccc"
+  },
+  {
+    "file": "native/incident-kiting-manual-control-chamber.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-kiting-manual-control-chamber-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 567.4000000000005,
+      "y": 550
+    },
+    "sha256": "72e846a0487e0bcc043efbab8b2a87b10a141d35f08c088536db0e86e520df4a"
+  },
+  {
+    "file": "native/incident-kiting-shielding-gate.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-kiting-shielding-gate-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 747.9894605503669,
+      "y": 373.80004773782775
+    },
+    "sha256": "981339e34c3f9a64b7aa4d5da25697870077a565a400012b48f3741cfa449852"
+  },
+  {
+    "file": "native/incident-kiting-infested-workshop.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-kiting-infested-workshop-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 693.9894605503669,
+      "y": 393.80004773782775
+    },
+    "sha256": "bfdba387143e14c0f989ee837777d40c36276032421f51c8539ec76b28812bf4"
+  },
+  {
+    "file": "native/combat-heavy-manual-control-chamber.png",
+    "capture": "room14d-console-gallery",
+    "source": "combat-heavy-manual-control-chamber-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 840,
+      "y": 600
+    },
+    "sha256": "660ea6c63ffdb257b8b1540a143c45525789c7eed41d99bd5de5e238d2a7abed"
+  },
+  {
+    "file": "native/combat-heavy-shielding-gate.png",
+    "capture": "room14d-console-gallery",
+    "source": "combat-heavy-shielding-gate-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 600,
+      "y": 600
+    },
+    "sha256": "27362f63ff06efef0e0d8aadc7027ff4a44cdf64de3b591f9a282199f960aca2"
+  },
+  {
+    "file": "native/combat-heavy-infested-workshop.png",
+    "capture": "room14d-console-gallery",
+    "source": "combat-heavy-infested-workshop-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 520,
+      "y": 600
+    },
+    "sha256": "cf76cd2ebb5d562b7a91a2c9e9c95d59694b04076f67f4a04153b65f2e4f388d"
+  },
+  {
+    "file": "colliders/incident-cover-manual-control-chamber.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-cover-manual-control-chamber.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 617,
+      "y": 616
+    },
+    "sha256": "42a045f0d4e7cecd60ba6670674bda8a59c9156520b353f941e8bd3662b47b00"
+  },
+  {
+    "file": "colliders/incident-cover-shielding-gate.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-cover-shielding-gate.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 442.75,
+      "y": 475
+    },
+    "sha256": "29a171e65357f5415fca2058869cee8267d4ef92f1b17e630e237925944dbd23"
+  },
+  {
+    "file": "colliders/incident-cover-infested-workshop.png",
+    "capture": "room14d-console-gallery",
+    "source": "incident-cover-infested-workshop.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 594.25,
+      "y": 436.5
+    },
+    "sha256": "634e59a33d179ae703e606e80353716cb6ea34c381ebec8925eead363a03a353"
+  },
+  {
+    "file": "native/combat-heavy-breached-loading-bay.png",
+    "capture": "room14d-final-pair",
+    "source": "combat-heavy-breached-loading-bay-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 360,
+      "y": 520
+    },
+    "sha256": "e8165bb864525f13f2100e933b7c591d7274a5480fe8b97f43b356817a615b32"
+  },
+  {
+    "file": "native/combat-heavy-relay-racks.png",
+    "capture": "room14d-final-pair",
+    "source": "combat-heavy-relay-racks-01.png",
+    "width": 1920,
+    "height": 1080,
+    "cameraMark": {
+      "x": 360,
+      "y": 600
+    },
+    "sha256": "c02b975c12c1460d6ffaf70c39d830f3d428967551426f4f1e921de2d5e01b6e"
+  }
+]
