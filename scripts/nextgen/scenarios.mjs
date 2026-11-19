@@ -941,3 +941,6 @@ SCENARIOS.push({
 
 import {registerValue14Scenarios} from './value14-scenarios.mjs';
 registerValue14Scenarios(SCENARIOS);
+
+import {propScenarios} from '../../tools/assets/props14/scenarios.mjs';
+SCENARIOS.push(...propScenarios);

@@ -20,14 +20,19 @@ void main(){
   float beamEdge=1.0-smoothstep(.06,.5,abs(indicatorUV.x-.5));
   float beamFade=pow(clamp(1.0-indicatorUV.y,0.0,1.0),1.8);
   float alpha=mix(contactAlpha,beamEdge*beamFade*.19,indicatorMode);
-  gl_FragColor=vec4(indicatorColor,alpha);
+  vec3 color=indicatorColor;
+  if(indicatorMode>1.5){
+    color*=1.0-smoothstep(.15,.66,radius);
+    alpha=(1.0-smoothstep(.28,1.0,radius))*.48;
+  }
+  gl_FragColor=vec4(color,alpha);
 }`;
 
 /** Contact pools and supply locators share one program; shape and color are uniform data. */
-export function groundIndicatorMaterial(mode:'contact'|'beam',color:T.ColorRepresentation):T.ShaderMaterial {
+export function groundIndicatorMaterial(mode:'contact'|'beam'|'supply',color:T.ColorRepresentation):T.ShaderMaterial {
   return new T.ShaderMaterial({
     vertexShader,fragmentShader,
-    uniforms:{indicatorMode:{value:mode==='beam'?1:0},indicatorColor:{value:new T.Color(color)}},
+    uniforms:{indicatorMode:{value:mode==='supply'?2:mode==='beam'?1:0},indicatorColor:{value:new T.Color(color)}},
     transparent:true,depthWrite:false,side:T.DoubleSide,forceSinglePass:true,
     toneMapped:false,vertexColors:false,
   });
