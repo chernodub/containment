@@ -257,3 +257,49 @@ def export_motion(arm,output,clip_names=None):
 
 
 export_animation_only=export_motion
+
+
+def replace_motion_clips(output, authored):
+    """Splice selected baked takes by joint name, retaining untouched tracks byte-for-byte."""
+    output, authored = Path(output), Path(authored)
+    original, old_bytes = _read_glb(output)
+    update, new_bytes = _read_glb(authored)
+    names = {a['name'] for a in update['animations']}
+    nodes = {n['name']: i for i, n in enumerate(original['nodes']) if 'name' in n}
+    doc = {**original, 'bufferViews': [], 'accessors': [], 'animations': []}
+    binary = bytearray()
+    for source, data in [(original, old_bytes), (update, new_bytes)]:
+        remap = {}
+        def copy_accessor(index):
+            if index not in remap:
+                accessor = source['accessors'][index].copy()
+                view = source['bufferViews'][accessor['bufferView']].copy()
+                start = view.get('byteOffset', 0)
+                binary.extend(b'\0' * (-len(binary) % 4))
+                view['byteOffset'] = len(binary)
+                binary.extend(data[start:start + view['byteLength']])
+                accessor['bufferView'] = len(doc['bufferViews'])
+                doc['bufferViews'].append(view)
+                remap[index] = len(doc['accessors'])
+                doc['accessors'].append(accessor)
+            return remap[index]
+        for animation in source['animations']:
+            if source is original and animation['name'] in names:
+                continue
+            for sampler in animation['samplers']:
+                for key in ('input', 'output'):
+                    sampler[key] = copy_accessor(sampler[key])
+            for channel in animation['channels']:
+                target = channel['target']
+                target['node'] = nodes[source['nodes'][target['node']]['name']]
+            doc['animations'].append(animation)
+    binary.extend(b'\0' * (-len(binary) % 4))
+    doc['buffers'] = [{'byteLength': len(binary)}]
+    metadata = json.dumps(doc, separators=(',', ':')).encode()
+    metadata += b' ' * (-len(metadata) % 4)
+    result = (struct.pack('<III', 0x46546C67, 2, 28 + len(metadata) + len(binary))
+              + struct.pack('<II', len(metadata), 0x4E4F534A) + metadata
+              + struct.pack('<II', len(binary), 0x004E4942) + binary)
+    pending = output.with_suffix('.pending.glb')
+    pending.write_bytes(result)
+    pending.replace(output)

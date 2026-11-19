@@ -1239,3 +1239,12 @@ viewport and burst settings identical across distributions. The crowd requests
 twenty contacts and reports live counts. The `value14-overlap-<rig>` cases use
 native tactical input during the mixed crowd. Use `g4-danger-napalm-charge` for
 the separate sustained Napalm case and its `-low` counterpart for Low.
+
+
+### MOTION14 editing reel
+
+```sh
+node scripts/nextgen/m9-motion.mjs --collection=motion14 --subjects=marine,crawler,brute,stalker,carrier,spitter --weapon=rifle --steps=3 --lanes=true --overdrives=true --out=artifacts/nextgen/motion14/after/final
+```
+
+The 30-cell crops retain native pixels. The matching `camera/` sheets show the room at 480×270. The paired rifle sequence prescribes three contacts at catalog cadence. The separate `pack/` lane uses ordinary fire input and records accepted contacts with damage numbers hidden. Optional `travel/` lanes sample world-space shoes under native movement, and `overdrives/` records ordinary casts against staged targets. Use `--dist=<saved-build>` to replay a baseline under the same capture driver.

@@ -1,4 +1,5 @@
 import {RoomCutawayTargets} from './world/RoomCutawayTargets';
+import {OverdriveReactions} from './motion/OverdriveReactions';
 import {combatPresentationHoldSeconds} from '../game/observation/combatPresentationClock';
 import {combatPointVisible} from '../game/observation/combatVisibility';
 import {SiegeBoundary} from './markers/SiegeBoundary';
@@ -96,6 +97,7 @@ export class DepthRenderer {
  private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;private gameplayPresentationStarted=false;
  private interimAbilities=new LazyAbilityVisuals(this.scene);private abilityWarmupRoot:T.Object3D|undefined;
  private presentationHold=new PresentationHold();private marineDeathStarted=false; // M10
+ private readonly overdriveReactions=new OverdriveReactions();
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  // M10: conservative pose-only culling; roots, warnings and actor visibility stay native.
@@ -411,7 +413,7 @@ export class DepthRenderer {
   this.ragdolls?.dispose();this.marineDeathStarted=false;this.presentationHold?.reset();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
   const t=ROOM_TEMPLATES[node.templateId],w=t.width/UNIT,h=t.height/UNIT;this.roomWidth=w;this.roomHeight=h;
   const atrium=node.templateId==='communal-atrium';
-  this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
+  this.overdriveReactions.reset();this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
   this.muzzle.intensity=0;this.contacts.begin();this.contacts.end();
   this.aheadRooms?.clearPending();const cached=this.aheadRooms?.take(node);const bespoke=cached!==undefined?cached:this.buildRoomArchitecture(node,t);
   const act=Math.min(2,Math.floor(node.depth/4));this.surfaces.theme(act);if(environment)this.surfaces.shipTheme(environment);
@@ -535,6 +537,7 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
+  this.overdriveReactions.event(effect,this.actors,this.corpses);
   const hold=combatPresentationHoldSeconds(effect);if(hold)this.presentationHold?.request(hold,this.options.screenShake,!!this.motionQuery?.matches);
   if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
@@ -544,8 +547,6 @@ export class DepthRenderer {
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
   }
   if(effect.type==='enemy-attack'){if(effect.id===-1)this.queen?.attack?.();else this.actors.get(effect.id!)?.attack?.();}
-  // M9: existing native damage receipts drive bounded local actor feedback.
-  if((effect.contact==='damage'||effect.contact==='armor')&&effect.targetId!==undefined)actorImpact(effect.targetId===-1?this.queen??undefined:this.actors.get(effect.targetId),effect);
   let motionDeathCue:'none'|'frost'|'burn'|'arc'|'acid'='none';
   if(effect.type==='corpse'){
    if(effect.id===undefined)return;
@@ -555,6 +556,8 @@ export class DepthRenderer {
   // FEEL12: presentation family survives native lethal-event actor retirement.
   let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
   if(!targetModel&&effect.targetId!==undefined)for(const corpse of this.corpses)if(corpse.id===effect.targetId){targetModel=corpse.model;break;}
+  // The killing weapon receipt can follow the corpse receipt within one native tick.
+  if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
   this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}

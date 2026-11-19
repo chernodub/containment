@@ -1,6 +1,7 @@
 import * as T from 'three';
 import type { MarineMotion } from './MarineMotion';
 import type { EnemyAttackPhase } from './EnemyMotion';
+import type {TargetElement} from './OverdriveReactions';
 import type { DeathCue } from '../DeathRagdolls';
 const RUNS = Array.from({ length: 8 }, (_, i) => `m10-run-${i * 45}`);
 const STARTS = Array.from({ length: 8 }, (_, i) => `m10-start-${i * 45}`);
@@ -23,6 +24,20 @@ const FIRES: Record<string, string> = {
 };
 const DEATHS: Record<DeathCue, string> = { none: 'm10-death-none', frost: 'm10-death-frost', burn: 'm10-death-burn', arc: 'm10-death-arc', acid: 'm10-death-acid' };
 const directionIndex = (direction: number, aim: number) => ((Math.round((direction - aim + Math.PI) / (Math.PI / 2)) % 4) + 4) % 4;
+// All pooled copies of a caste bind the same immutable reaction tracks.
+const reactionLayers = new WeakMap<T.AnimationClip,T.AnimationClip>();
+function reactionLayer(clip: T.AnimationClip): T.AnimationClip {
+    let layer = reactionLayers.get(clip);
+    if (!layer) {
+        layer = clip.clone();
+        layer.name += '-reaction';
+        layer.tracks = layer.tracks.filter(track => track.name.endsWith('.quaternion')
+            && !/^(?:ik|eye|antenna|finger|tongue)/i.test(track.name));
+        T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
+        reactionLayers.set(clip, layer);
+    }
+    return layer;
+}
 /** Prepared absolute bone clips, with cached upper layers and an optional reduced-motion base. */
 export class AuthoredMotionPlayer {
     private readonly actions = new Map<string, T.AnimationAction>();
@@ -65,6 +80,12 @@ export class AuthoredMotionPlayer {
                 }).userData;
                 if (extras?.m10ImpactSeconds !== undefined)
                     this.markers.set(clip.name, extras.m10ImpactSeconds / clip.duration);
+                if (localMatrixRoot && (clip.name.startsWith('m10-hit-') || clip.name.startsWith('m10-overdrive-') || clip.name === 'm10-stagger')) {
+                    const layer = mixer.clipAction(reactionLayer(clip));
+                    layer.setLoop(T.LoopOnce, 1);
+                    layer.clampWhenFinished = layer.paused = true;
+                    this.upper.set(clip.name, layer);
+                }
                 if (upperNames.size && (clip.name === 'm10-reload' || clip.name === 'm10-switch' || clip.name.startsWith('m10-fire-'))) {
                     const layer = clip.clone();
                     layer.name = clip.name + '-upper';
@@ -229,7 +250,7 @@ export class AuthoredMotionPlayer {
         action.setEffectiveWeight(1);
         this.evaluate();
     }
-    overlay(name: string, progress: number): void {
+    overlay(name: string, progress: number, amplitude = 1): void {
         const action = this.upper.get(name);
         if (!action)
             return;
@@ -241,7 +262,7 @@ export class AuthoredMotionPlayer {
             this.upperCurrent = action;
         }
         action.time = T.MathUtils.clamp(progress, 0, 1) * action.getClip().duration;
-        action.setEffectiveWeight(1);
+        action.setEffectiveWeight(amplitude);
         this.evaluate();
     }
     reset(): void {
@@ -263,6 +284,8 @@ export class AuthoredMarineMotion {
     private hitAge = 10;
     private hitDirection = 0;
     private fireAge = 10;
+    private burstRise = 0;
+    barrelLift = 0;
     private recoil = 0;
     private switchAge = 10;
     private weapon = '';
@@ -295,6 +318,7 @@ export class AuthoredMarineMotion {
         this.previous = time;
         this.hitAge += dt;
         this.fireAge += dt;
+        this.burstRise *= Math.exp(-dt * 5.5);
         this.switchAge += dt;
         this.transitionAge += dt;
         const speed = Math.hypot(vx, vy), moving = speed > 3 && speed < 700;
@@ -321,10 +345,15 @@ export class AuthoredMarineMotion {
         this.weapon = weapon;
         // An accepted shot interrupts the cosmetic lower/equip beat immediately.
         if (recoil > this.recoil + .08) {
+            if (weapon === 'rifle') this.burstRise = Math.min(.075, this.burstRise + .033);
             this.fireAge = 0;
             this.switchAge = 10;
         }
         this.recoil = recoil;
+        const kick = weapon === 'rifle' ? .13 : weapon === 'shotgun' ? .24 : 0;
+        const rise = Math.min(1, (this.fireAge + 1 / 120) * 56);
+        this.barrelLift = !reload && !this.motion.actionName ?
+            this.feedback * (kick * rise * Math.exp(-this.fireAge * 28) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
         const cast = CASTS[this.motion.actionName];
         if (cast && this.player.has(cast)) {
             const phase = this.motion.actionNormalized;
@@ -386,6 +415,7 @@ export class AuthoredMarineMotion {
         this.gait = 0;
         this.hitAge = this.fireAge = this.switchAge = this.transitionAge = 10;
         this.weapon = this.transition = '';
+        this.burstRise = this.barrelLift = this.recoil = 0;
         this.wasMoving = false;
         this.lastVx = this.lastVy = this.aim = 0;
     }
@@ -396,8 +426,18 @@ export class AuthoredEnemyMotion {
     private age = 0;
     private hitAge = 10;
     private hitDirection = 0;
+    private facing = 0;
     private heavy = false;
+    private repeated = false;
+    private layered = false;
     private attackAge = 10;
+    private element: TargetElement | undefined;
+    private elementAge = 10;
+    reactToElement(element: TargetElement): void {
+        if (this.feedback <= 0 || this.element === element && this.elementAge < .40) return;
+        this.element = element;
+        this.elementAge = 0;
+    }
     private phase: EnemyAttackPhase = 'approach';
     private progress = 0;
     private feedback = 1;
@@ -430,9 +470,11 @@ export class AuthoredEnemyMotion {
     }
     hit(strength: number, direction: number, heavy: boolean): void {
         if (strength > 0 && this.feedback > 0) {
+            // Several pellets delivered in one snapshot belong to one impact.
+            if (this.hitAge > 0) this.repeated = this.hitAge < .20;
             this.hitAge = 0;
             this.hitDirection = direction;
-            this.heavy = heavy;
+            this.heavy = heavy || this.repeated;
         }
     }
     attack(): void {
@@ -443,6 +485,8 @@ export class AuthoredEnemyMotion {
             return false;
         const dt = this.previous === undefined ? 0 : T.MathUtils.clamp(time - this.previous, 0, .05);
         this.previous = time;
+        this.facing = aim;
+        this.elementAge += dt;
         if (frozen)
             return true;
         this.age += dt;
@@ -453,15 +497,35 @@ export class AuthoredEnemyMotion {
         if (!this.visible) return true;
         // A fresh native warning/strike must remain visible after thaw even
         // when an older hit reaction was held by the frozen visual clock.
-        if (this.phase === 'windup' || this.phase === 'strike')
-            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.phase === 'windup' ? .42 + .58 * this.progress : this.progress, dt, this.phase === 'strike' ? 0 : .025, this.phase === 'windup' && this.family === 'carrier' ? .62 : 1);
-        if (this.phase === 'recovery')
-            return this.player.sample('m10-recovery', this.progress, dt, .025);
-        const hit = (this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
-        if (this.hitAge < this.player.duration(hit))
-            return this.player.sample(hit, this.hitAge / this.player.duration(hit), dt, .025, this.feedback);
-        if (winding)
-            return this.player.sample('m10-windup', anticipation, dt, .04);
+        const hit = this.family === 'carrier' && this.repeated && this.heavy ? 'm10-stagger'
+            : (this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
+        const durationHit = this.player.duration(hit);
+        const reacting = this.hitAge < durationHit;
+        const elementClip = this.elementAge >= .42 ? '' : this.element === 'arc' ? 'm10-overdrive-arc'
+            : this.element === 'fire' ? 'm10-overdrive-fire' : this.element === 'kinetic' ? 'm10-overdrive-kinetic' : '';
+        if (this.phase !== 'approach' || winding) {
+            const windup = this.phase === 'windup' || this.phase === 'approach';
+            const base = windup ? 'm10-windup' : this.phase === 'strike' ? 'm10-strike' : 'm10-recovery';
+            const legacyWindup = this.family === 'crawler' || this.family === 'spitter';
+            const progress = this.phase === 'approach' ? anticipation :
+                windup && legacyWindup ? .42 + .58 * this.progress : this.progress;
+            if (reacting || elementClip) {
+                this.player.beginBatch();
+                this.player.clearUpper();
+                this.player.sample(base, progress, dt, .025);
+                this.player.overlay(elementClip || hit, elementClip ? this.elementAge / .42 : this.hitAge / durationHit, this.feedback * .60);
+                this.player.endBatch();
+                this.layered = true;
+                return true;
+            }
+            this.clearReaction();
+            return this.player.sample(base, progress, dt, this.phase === 'strike' ? 0 : .025);
+        }
+        this.clearReaction();
+        if (this.element === 'ice' && this.elementAge < .10) return true;
+        if (elementClip) return this.player.sample(elementClip, this.elementAge / .42, dt, .025, this.feedback);
+        if (reacting)
+            return this.player.sample(hit, this.hitAge / durationHit, dt, .026, this.feedback);
         if (this.attackAge < .16)
             return this.player.sample('m10-strike', this.attackAge / .16, dt, .02);
         if (this.attackAge < .55)
@@ -483,23 +547,54 @@ export class AuthoredEnemyMotion {
         }
         return this.player.sample(name, (time * (moving > .3 ? speed : 1) % duration) / duration, poseDelta, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
     }
+    private clearReaction(): void {
+        if (this.layered) {
+            this.player.clearUpper();
+            this.layered = false;
+        }
+    }
+    terminalCue(cue: DeathCue): DeathCue {
+        if (this.elementAge < .50) {
+            if (this.element === 'ice') cue = 'frost';
+            else if (this.element === 'arc') cue = 'arc';
+            else if (this.element === 'fire') cue = 'burn';
+        }
+        return cue;
+    }
     death(cue: DeathCue, progress: number): number {
+        this.clearReaction();
         this.setVisible(true);
-        const name = DEATHS[cue];
+        cue = this.terminalCue(cue);
+        if (cue === 'frost' && progress < .26) return .24;
+        const name = this.element === 'kinetic' && this.elementAge < .5 ? 'm10-death-kinetic' : DEATHS[cue];
         if (!this.player.has(name))
             return 0;
-        this.player.sample(name, progress, 1 / 60, .025);
+        const carryHit = cue === 'none' && this.hitAge < .20 && name !== 'm10-death-kinetic';
+        // A single fatal shotgun contact has no preceding living impact frame.
+        // Give its shoulder the first beat. Rapid follow-up shots inherit the skid.
+        const contactEnd = this.repeated ? .12 : .21;
+        if (carryHit && progress < contactEnd) {
+            if (!this.repeated && this.heavy) {
+                const hit = HEAVY_HITS[directionIndex(this.hitDirection, this.facing)];
+                this.player.sample(hit, .09 + .25 * progress / contactEnd, 1 / 60, .028, this.feedback);
+            }
+            return .40;
+        }
+        const phase = carryHit ? (progress - contactEnd) / (1 - contactEnd) : progress;
+        this.player.sample(name, phase, 1 / 60, carryHit ? .075 : .025);
         return cue === 'frost' ? .24 : cue === 'burn' ? .65 : cue === 'arc' ? .48 : cue === 'acid' ? .72 : .40;
     }
     reset(): void {
         this.player.reset();
         this.previous = undefined;
         this.age = 0;
+        this.element = undefined; this.elementAge = 10;
         this.hitAge = this.attackAge = 10;
         this.visible = true;
         this.renderManaged = false;
         this.quietLocomotion = false;
         this.idlePoseTime = -Infinity;
+        this.repeated = this.heavy = this.layered = false;
         this.phase = 'approach';
         this.progress = 0;
     }

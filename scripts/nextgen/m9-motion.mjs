@@ -8,6 +8,7 @@ import {resolve, extname, dirname} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
+import {registerFeel12WeaponScenarios} from './feel12-weapon-scenarios.mjs';
 
 // Use the existing TypeScript compiler so the capture tool also works on the
 // project's Node22 floor, before native TS loading became enabled by default.
@@ -20,7 +21,7 @@ const weaponModule=ts.transpileModule(weaponSource,{compilerOptions:{module:ts.M
 const {WEAPONS}=await import('data:text/javascript;base64,'+Buffer.from(weaponModule).toString('base64'));
 
 const args=process.argv.slice(2);
-const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim','travel']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
+const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim','travel','collection','lanes','overdrives']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const out=resolve(option('out','artifacts/nextgen/m9-final/before')),dist=resolve(option('dist','dist'));
 const subjects=option('subjects','marine,crawler,spitter,brute,stalker,carrier,crawler-elite,spitter-elite,brute-elite,stalker-elite,carrier-elite,brute-warden,carrier-matron,crowd').split(',');
@@ -29,9 +30,19 @@ const actionFilter=option('actions','all').split(',');
 const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const studyAim=Number(option('aim',0))*Math.PI/180;assert(Number.isFinite(studyAim),'Invalid aim angle');
 const travelOption=option('travel',null),travelOverrideAngle=travelOption===null?null:Number(travelOption)*Math.PI/180;assert(travelOverrideAngle===null||Number.isFinite(travelOverrideAngle),'Invalid travel angle');
-const frames=Number(option('frames',12)),steps=Number(option('steps',4));
+const motion14=option('collection','')==='motion14';
+const frames=motion14?30:Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=30);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
+// A matched editing reel. Historical M9 rows retain their original cadence.
+const reel={
+ marine:['idle','run-0','run-90','run-180','stop-start','fire-rifle','fire-shotgun'],
+ crawler:['idle','weapon-sequence-rifle','death-high-impulse','death-frost','death-burn','death-arc'],
+ brute:['idle','weapon-hit-shotgun','weapon-kill-shotgun','attack'],
+ stalker:['idle','attack'],
+ carrier:['idle','heavy-hit','stagger','attack'],
+ spitter:['idle','light-hit'],
+};
 const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn',...['pistol','rifle','shotgun','plasma','rocket'].flatMap(w=>[`weapon-hit-${w}`,`weapon-kill-${w}`])];
 const manifest={version:1,meleeProfiles:MELEE_ATTACKS,eliteWindupScale:ELITE_MELEE_WINDUP_SCALE,eliteRecoveryScale:ELITE_MELEE_RECOVERY_SCALE,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
 await mkdir(out,{recursive:true});await stat(resolve(dist,'index.html'));
@@ -49,10 +60,10 @@ try{
  await page.waitForFunction(()=>window.__containmentDebug.renderer.ragdolls.snapshot().staticColliders>0);
  manifest.camera=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return {position:r.camera.position.toArray(),projection:r.camera.projectionMatrix.toArray(),gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unknown'};});
  for(const subject of subjects){
-  for(const action of subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
+  for(const action of motion14?(reel[subject]??[]):subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
-   const actionFrames=/^(attack|death|weapon-)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
-   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale,studyWeapon,studyAim,travelOverrideAngle,weapons})=>{
+   const actionFrames=motion14?frames:/^(attack|death|weapon-)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
+   const result=await page.evaluate(({subject,action,frames,steps,motion14,profiles,windupScale,recoveryScale,studyWeapon,studyAim,travelOverrideAngle,weapons})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
@@ -67,15 +78,16 @@ try{
     }
     // In paired studies the marine remains at the native spawn/camera mark;
     // place the victim ahead rather than moving the shooter out of the viewport.
-    const pairStudy=/^weapon-(hit|kill)-/.test(action);
+    const pairStudy=/^weapon-(hit|kill|sequence)-/.test(action);
     const origin={x:g.player.x/32+(pairStudy?Math.cos(studyAim)*2.4:0),z:g.player.y/32+(pairStudy?Math.sin(studyAim)*2.4:0)};model.root.position.set(origin.x,0,origin.z);
     const models=[model];if(crowd)for(let i=1;i<6;i++){const extra=r.actorPool.take('crawler');extra.reset?.();extra.setMotionSeed?.(1729+i*13);extra.setMotionOptions?.(1,false);extra.setStageLight?.(.65);extra.root.position.set(origin.x+(i%3-1)*1.4,0,origin.z+Math.floor(i/3)*1.4);r.scene.add(extra.root);models.push(extra);}
-    const chain=/^weapon-(hit|kill)-/.test(action),chainKill=action.startsWith('weapon-kill-'),chainWeapon=chain?action.split('-').at(-1):null;
+    const chain=/^weapon-(hit|kill|sequence)-/.test(action),sequence=action.startsWith('weapon-sequence-'),chainKill=sequence||action.startsWith('weapon-kill-'),chainWeapon=chain?action.split('-').at(-1):null;
     const shooter=chain?r.player:null,shooterAnimate=shooter?.animate,shooterEquip=shooter?.equip,shooterPosition=shooter?.root.position.clone();
     const shooterOrigin=chain?{x:g.player.x/32,z:g.player.y/32}:null;
     if(shooter){shooter.reset?.();shooter.setRig?.('breacher');shooter.equip(chainWeapon);shooter.setMotionOptions?.(1,false);shooter.animate=()=>{};shooter.equip=()=>{};models.push(shooter);}
     const modelRoots=new Set(models.map(m=>m.root));
     model.setThreat?.(0,null,champion,1);if(!human)r.scene.add(model.root);
+    if(motion14&&human)equip?.(action.startsWith('fire-')?action.slice(5):studyWeapon);
     if(action!=='spawn')for(let n=1;n<=90;n++){animate(timeBase+n/60,0,studyAim);if(crowd)for(let i=1;i<models.length;i++)models[i].animate(timeBase+n/60+i,0,0);}
     // Stop normal renderer updates from overwriting the controlled production pose.
     model.animate=()=>{};if(human)model.equip=()=>{};if(hasDeathAdapter)model.setDead=()=>{};r.interimAbilities.update=()=>{};
@@ -83,7 +95,8 @@ try{
     const oldSceneHook=r.scene.onBeforeRender,oldVisibility=new Map();
     r.scene.onBeforeRender=function(...p){
      oldSceneHook.apply(this,p);
-     for(const child of r.scene.children)if(!modelRoots.has(child)&&!effectMeshes.has(child)&&!child.isLight&&!child.isCamera){if(!oldVisibility.has(child))oldVisibility.set(child,child.visible);child.visible=false;}
+     for(const child of r.scene.children)if(!roomView&&!modelRoots.has(child)&&!effectMeshes.has(child)&&!child.isLight&&!child.isCamera){if(!oldVisibility.has(child))oldVisibility.set(child,child.visible);child.visible=false;}
+     if(roomView&&!human&&!chain)r.player.root.visible=false;
      if(shooter)shooter.root.position.set(shooterOrigin.x,0,shooterOrigin.z);
      for(const m of models)m.root.visible=true;if(human&&action==='death')model.root.rotation.z=hasDeathAdapter?controlledRoll:deathStarted?1.4:0;model.root.updateWorldMatrix(true,true);
     };
@@ -104,8 +117,13 @@ try{
     const abilitySlot=['ram','frost-trail','afterburn','static-step'].includes(ability)?'dash':['railbreaker','whiteout','meltdown','overclock'].includes(ability)?'overdrive':['bulwark','glacier','napalm-charge','tesla-pylon'].includes(ability)?'power':'tactical';
     const castMs={ram:0,'seismic-slam':220,bulwark:0,railbreaker:250,'frost-trail':0,'cryo-nova':0,glacier:150,whiteout:0,afterburn:0,flashfire:0,'napalm-charge':180,meltdown:0,'static-step':0,overload:0,'tesla-pylon':160,overclock:0}[ability]??0;
     if(isCast){abilitySnapshot.rig=rigs[ability];abilitySnapshot.slots[abilitySlot].id=ability;}
-    let triggered=false,chainShot=false,chainHit=false,chainBullet=null,chainTravel=0;
+    let shotNumber=0,lastShotTick=-100,triggered=false,chainShot=false,chainHit=false,chainBullet=null,chainTravel=0;
     const chainBullets=[];
+    const shotPeriod=motion14?60/weapons[currentWeapon].roundsPerSecond:12;
+    const roomStrip=motion14?document.createElement('canvas'):null;
+    if(roomStrip){roomStrip.width=4*480;roomStrip.height=Math.ceil(frames/4)*270;}
+    let roomView=false;
+
     const chainStart={x:0,y:0,z:0};
     try{
      for(let frame=0;frame<frames;frame++){
@@ -117,7 +135,9 @@ try{
        else if(action==='run'){moving=1;vx=({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150;}
        else if(action==='stop-start'){moving=phase<.3||phase>.67?1:0;vx=moving*220;}
        if(human&&travelOverrideAngle!==null&&(action.startsWith('fire-')||action==='reload'||action.startsWith('idle'))){moving=1;vx=Math.cos(travelOverrideAngle)*220;vy=Math.sin(travelOverrideAngle)*220;}
-       if(action.startsWith('fire-'))recoil=Math.exp(-((tick%12)/60)*22);
+       const fireNow=motion14?shotStudy&&tick===4+Math.round(shotNumber*shotPeriod)&&shotNumber<(currentWeapon==='rifle'?5:1):tick%12===steps-1;
+       if(shotStudy&&fireNow){lastShotTick=tick;shotNumber++;}
+       if(shotStudy)recoil=motion14?Math.exp(-(tick-lastShotTick)/60*22):Math.exp(-((tick%12)/60)*22);
        if(action==='reload')reload=phase;
        if(action==='weapon-switch'&&tick===Math.floor(frames*steps/2))equip?.('rocket');
        if(action==='dash'){moving=phase<.22?1:0;vx=moving*1071;model.setAction?.('ram',phase);}
@@ -135,8 +155,13 @@ try{
         if(!triggered&&time*1000>=duration){model.attack?.();triggered=true;}
        }
        if(['hit','light-hit','heavy-hit','side-hit','stagger'].includes(action)&&tick===Math.floor(frames*steps*.22))model.hit?.(action==='light-hit'?.35:1,action==='side-hit'?0:Math.PI/2,action!=='light-hit');
+       if(motion14&&action==='stagger'&&tick===Math.floor(frames*steps*.22)+7)model.hit?.(1,Math.PI/2,true);
        const status={chilled:action==='frozen'||action==='death-frost',frozen:action==='frozen'||action==='death-frost',burning:action==='burning'||action==='death-burn',poisoned:action==='death-acid',shocked:action==='shocked'||action==='death-arc'};
        model.setAffliction?.(status);model.root.userData.visualStatus=status;
+       if(motion14&&deathStudy&&tick===Math.floor(frames*steps*.2)-6){
+        const element={'death-high-impulse':'kinetic','death-frost':'ice','death-burn':'fire','death-arc':'arc'}[action];
+        if(element)model.reactToElement?.(element,Math.atan2(6,30));
+       }
        if(action.startsWith('death')&&tick===Math.floor(frames*steps*.2)){
         const deathCue=action==='death-frost'?'frost':action==='death-burn'?'burn':action==='death-arc'?'arc':action==='death-acid'?'acid':'none';
         model.root.userData.motionDeathCue=deathCue;model.hit?.(1,Math.PI/2,true);if(!human)model.freeze?.();deathStarted=true;if(human)setDead?.(true);
@@ -146,8 +171,10 @@ try{
        if(chain){
         const cfg=weapons[chainWeapon],shotTick=Math.floor(frames*steps*.18);
         shooter.root.position.set(shooterOrigin.x,0,shooterOrigin.z);
-        shooterAnimate.call(shooter,timeBase+1.5+time,0,studyAim,tick>=shotTick?Math.exp(-(tick-shotTick)/60*22):0,0,{x:0,y:0});
-        if(tick===shotTick){
+        const nextShot=shotNumber<(sequence?3:1)&&tick===shotTick+Math.round(shotNumber*shotPeriod);
+        if(nextShot){lastShotTick=tick;shotNumber++;chainTravel=0;chainHit=false;}
+        shooterAnimate.call(shooter,timeBase+1.5+time,0,studyAim,Math.exp(-(tick-lastShotTick)/60*22),0,{x:0,y:0});
+        if(nextShot){
          const muzzle=shooter.muzzleWorld(project);chainStart.x=muzzle.x;chainStart.y=muzzle.y;chainStart.z=muzzle.z;
          r.effects.shot(muzzle,studyAim,chainWeapon);chainShot=true;
          chainBullet={kind:'player',x:muzzle.x*32,y:muzzle.z*32,life:2,visualMuzzle:{x:muzzle.x,y:muzzle.y,z:muzzle.z,distance:0},request:{weaponId:chainWeapon,speed:cfg.projectileSpeed,angle:studyAim}};chainBullets.push(chainBullet);
@@ -158,10 +185,10 @@ try{
          const travel=Math.min(distance,chainTravel);chainBullet.life-=1/60;
          chainBullet.x=(chainStart.x+Math.cos(studyAim)*travel)*32;chainBullet.y=(chainStart.z+Math.sin(studyAim)*travel)*32;
          if(chainTravel>=distance){
-          chainHit=true;
-          r.effects.event({type:'acid',contact:'damage',x:chainBullet.x,y:chainBullet.y,angle:studyAim,weapon:chainWeapon,targetId:-900001,damage:cfg.damage,lethal:chainKill},'none',family);
-          model.hit?.(chainWeapon==='shotgun'?.68:Math.max(chainWeapon==='rifle'?.4:0,Math.min(1,cfg.damage/42)),studyAim,chainWeapon==='shotgun'||chainWeapon==='rocket'||chainKill);
-          if(chainKill){
+          chainHit=true;const lethal=chainKill&&(!sequence||shotNumber===3);
+          r.effects.event({type:'acid',contact:'damage',x:chainBullet.x,y:chainBullet.y,angle:studyAim,weapon:chainWeapon,targetId:-900001,damage:cfg.damage,lethal},'none',family);
+          model.hit?.(chainWeapon==='shotgun'?.68:Math.max(chainWeapon==='rifle'?.4:0,Math.min(1,cfg.damage/42)),studyAim,chainWeapon==='shotgun'||chainWeapon==='rocket'||lethal);
+          if(lethal){
            model.freeze?.();deathStarted=true;const impulse=cfg.knockback*12;
            r.effects.event({type:'corpse',id:-900001,x:origin.x*32,y:origin.z*32,family,elite,vx:Math.cos(studyAim)*impulse,vy:Math.sin(studyAim)*impulse});
            r.ragdolls.add(-900001,model,family,{x:Math.cos(studyAim)*impulse/32,z:Math.sin(studyAim)*impulse/32},'none',.032);ragdollStarted=r.ragdolls.has(-900001);if(!ragdollStarted)throw Error('Weapon-chain ragdoll unavailable');
@@ -177,7 +204,7 @@ try{
         abilityUpdate(snapshot,1/60,true,presentationGame,model.root,r.camera,model.body);model.syncWeaponPose?.();
        }
        if(shotStudy){
-        if(tick%12===steps-1)r.effects.shot(model.muzzleWorld(project),studyAim,currentWeapon);
+        if(fireNow)r.effects.shot(model.muzzleWorld(project),studyAim,currentWeapon);
         r.effects.update(1/60,r.camera,[]);
        }else if(chain){r.effects.update(1/60,r.camera,chainBullets);if(chainHit)chainBullets.length=0;}else if(deathStudy)r.effects.update(1/60,r.camera,[]);
        if(human&&ragdollStarted)model.syncWeaponPose?.();
@@ -186,6 +213,13 @@ try{
        if(!ragdollStarted)model.root.position.set(origin.x,0,origin.z);model.root.updateWorldMatrix(true,true);
       }
       // All RAF/debug calls remain zero-delta. The explicit clock above alone poses this actor.
+      if(roomStrip){
+       for(const [child,visible] of oldVisibility)child.visible=visible;
+       oldVisibility.clear();roomView=true;
+       d.refresh();
+       roomStrip.getContext('2d').drawImage(r.canvas,(frame%4)*480,Math.floor(frame/4)*270,480,270);
+       roomView=false;
+      }
       d.refresh();if(human&&action==='death'&&!hasDeathAdapter){model.root.rotation.z=frame>=Math.floor(frames*.2)?1.4:0;model.root.updateWorldMatrix(true,true);}
       // Draw once after the pose, with exactly the settled native camera/projection.
       r.renderer.setRenderTarget(null);r.renderer.render(r.scene,r.camera);
@@ -214,7 +248,7 @@ try{
      const mask=document.createElement('canvas');mask.width=canvas.width;mask.height=canvas.height;const mc=mask.getContext('2d');mc.fillStyle='black';mc.fillRect(0,0,mask.width,mask.height);
      for(let i=0;i<frameCanvases.length;i++){const f=frameCanvases[i],fc=f.canvas.getContext('2d'),pixels=fc.getImageData(0,0,f.canvas.width,f.canvas.height),bg=pixels.data.slice(0,3);for(let n=0;n<pixels.data.length;n+=4){const on=Math.max(Math.abs(pixels.data[n]-bg[0]),Math.abs(pixels.data[n+1]-bg[1]),Math.abs(pixels.data[n+2]-bg[2]))>12;pixels.data[n]=pixels.data[n+1]=pixels.data[n+2]=on?255:0;pixels.data[n+3]=255;}const tile=document.createElement('canvas');tile.width=f.canvas.width;tile.height=f.canvas.height;tile.getContext('2d').putImageData(pixels,0,0);mc.drawImage(tile,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY);}
      d.m9Clock=timeBase+1.5+frames*steps/60;
-     return {frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,source:'presentation-only single projectile and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:currentWeapon,aim:studyAim,travelOverrideAngle:human?travelOverrideAngle:null,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
+     return {room:roomStrip?.toDataURL('image/webp',.86).split(',')[1],frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,fired:shotNumber,source:'presentation-only projectile replay and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:currentWeapon,aim:studyAim,travelOverrideAngle:human?travelOverrideAngle:null,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:shotPeriod,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
      Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human){model.equip=oldEquip;model.setRig=oldSetRig;}r.scene.onBeforeRender=oldSceneHook;
@@ -223,12 +257,89 @@ try{
      for(let i=1;i<models.length;i++)if(models[i]!==shooter)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
     }
-   },{subject,action,frames:actionFrames,steps,studyWeapon,studyAim,travelOverrideAngle,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
+   },{subject,action,frames:actionFrames,steps,motion14,studyWeapon,studyAim,travelOverrideAngle,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
    const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
+   if(result.room){await mkdir(resolve(out,'camera'),{recursive:true});await writeFile(resolve(out,'camera',file.replace('.png','.webp')),Buffer.from(result.room,'base64'));delete result.room;}
    await writeFile(resolve(out,file),png);
    manifest.shots.push({subject,action,file,sha256:createHash('sha256').update(png).digest('hex'),...result});
   }
   console.log(`${subject}: ${manifest.shots.filter(s=>s.subject===subject).length} strips`);
+ }
+ // Compare planted shoes against the deck with the live camera and player controller.
+ if(motion14&&option('lanes','false')==='true'){
+  const directory=resolve(out,'travel');await mkdir(directory,{recursive:true});
+  for(const degrees of [0,90,180]){
+   const lane=await page.evaluate(async degrees=>{
+    const d=window.__containmentDebug,g=d.game,r=d.renderer;
+    await d.gotoRoom('crew-checkpoint',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
+    const angle=degrees*Math.PI/180,xDir=Math.cos(angle),yDir=Math.sin(angle);
+    const b=g.geometry.bounds;let start;
+    for(let y=b.y+80;!start&&y<b.y+b.height-80;y+=28)for(let x=b.x+80;!start&&x<b.x+b.width-80;x+=28){
+     let clear=true;
+     for(let range=0;range<=216;range+=12)if(!d.canStand(x+range*xDir,y+range*yDir,20)){clear=false;break;}
+     if(clear)start={x,y};
+    }
+    if(!start)throw Error('No clear native movement lane');
+    Object.assign(g.player,start,{vx:0,vy:0,angle:0});g.switchWeapon('rifle');
+    d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});d.step(650);d.settlePresentation(90);
+    const actor=r.player.root,feet=['footL','footR'].map(name=>actor.getObjectByName(name));
+    const point=actor.position.clone(),samples=[];
+    const sheet=document.createElement('canvas');sheet.width=480*4;sheet.height=270*6;
+    const ctx=sheet.getContext('2d');
+    d.setInput({x:xDir,y:yDir,fire:false,angle:0,autoAim:false});
+    for(let tick=0;tick<72;tick++){
+     if(tick===55)d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
+     d.step(1000/60);d.refresh();actor.updateWorldMatrix(true,true);
+     samples.push({tick,x:g.player.x,y:g.player.y,feet:feet.map(foot=>foot.getWorldPosition(point).toArray())});
+     if(tick%3===2){const i=Math.floor(tick/3);ctx.drawImage(r.canvas,(i%4)*480,Math.floor(i/4)*270,480,270);}
+    }
+    return {samples,image:sheet.toDataURL('image/webp',.90).split(',')[1]};
+   },degrees);
+   await writeFile(resolve(directory,`run-${degrees}.webp`),Buffer.from(lane.image,'base64'));
+   await writeFile(resolve(directory,`run-${degrees}.json`),JSON.stringify(lane.samples));
+  }
+ }
+ if(motion14&&option('overdrives','false')==='true'){
+  const directory=resolve(out,'overdrives');await mkdir(directory,{recursive:true});
+  for(const rig of ['breacher','cryo','pyro','arc']){
+   const result=await page.evaluate(async rig=>{
+    const d=window.__containmentDebug,g=d.game,r=d.renderer;
+    await d.gotoRoom('crew-checkpoint',{rig});d.invulnerable(true);g.enemies.reset();
+    d.uiFixture({preferences:{combatText:false}});
+    const b=g.geometry.bounds;let lane;
+    for(let y=b.y+b.height*.4;!lane&&y<b.y+b.height-80;y+=28)for(let x=b.x+b.width*.35;!lane&&x<b.x+b.width-250;x+=28){
+     if([0,90,122,170].every(offset=>d.canStand(x+offset,y,24)&&d.clearShot(x+offset,y,{x,y})))lane={x,y};
+    }
+    if(!lane)throw Error('No native Overdrive victim lane');
+    Object.assign(g.player,lane,{vx:0,vy:0,angle:0});
+    d.setInput({fire:false,x:0,y:0,angle:0,autoAim:false});g.switchWeapon('rifle');
+    d.step(850);g.enemies.reset();d.settlePresentation(90);
+    const ids=[d.spawn('crawler',lane.x+90,lane.y,false),d.spawn('brute',lane.x+170,lane.y,false)];
+    d.step(100);d.fillOverdrive();
+    const start=g.elapsed,accepted=g.useAbility('overdrive');
+    if(rig==='arc')d.setInput({fire:true,x:0,y:0,angle:0,autoAim:false});
+    const sheet=document.createElement('canvas');sheet.width=480*4;sheet.height=270*6;
+    const ctx=sheet.getContext('2d');
+    for(let i=0;i<24;i++){
+     d.step(rig==='cryo'?100:50);d.refresh();ctx.drawImage(r.canvas,i%4*480,Math.floor(i/4)*270,480,270);
+    }
+    return {accepted,ids,stepMs:rig==='cryo'?100:50,events:d.events.filter(e=>e.at>=start&&(e.ability||e.contact||e.type==='corpse')),image:sheet.toDataURL('image/webp',.92).split(',')[1]};
+   },rig);
+   await writeFile(resolve(directory,`${rig}.webp`),Buffer.from(result.image,'base64'));delete result.image;
+   await writeFile(resolve(directory,`${rig}.json`),JSON.stringify(result,null,2));
+  }
+ }
+ // A native firing lane complements the controlled hit/kill replay.
+ if(motion14&&manifest.shots.some(shot=>shot.action==='weapon-sequence-rifle')){
+  const scenarios=[];registerFeel12WeaponScenarios(scenarios);
+  await page.evaluate(scenarios.find(s=>s.id==='feel12-weapon-rifle-crew-checkpoint').setup);
+  await page.evaluate(()=>window.__containmentDebug.uiFixture({preferences:{combatText:false}}));
+  const directory=resolve(out,'pack');await mkdir(directory,{recursive:true});
+  for(let i=0;i<24;i++){
+   await page.evaluate(()=>{const d=window.__containmentDebug;d.step(50);d.refresh();});
+   await page.screenshot({path:resolve(directory,`frame-${String(i+1).padStart(2,'0')}.png`)});
+  }
+  await writeFile(resolve(directory,'encounter.json'),JSON.stringify(await page.evaluate(()=>window.__containmentDebug.g5Proof.weaponTimeline),null,2));
  }
  assert(manifest.shots.length>0,'No actions matched the motion selection');
  assert.equal(manifest.errors.length,0,JSON.stringify(manifest.errors));

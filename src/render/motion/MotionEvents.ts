@@ -52,7 +52,8 @@ export function actorImpact(model: ActorModel | undefined, effect: GameEffect) {
 /** Read the last living status: the native dead-target query has already cleared it. */
 export function actorDeathCue(model: ActorModel): 'none' | 'frost' | 'burn' | 'arc' | 'acid' {
   const status = model.root.userData.visualStatus;
-  return status?.frozen ? 'frost' : status?.burning ? 'burn' : status?.shocked ? 'arc' : status?.poisoned ? 'acid' : 'none';
+  const cue = status?.frozen ? 'frost' : status?.burning ? 'burn' : status?.shocked ? 'arc' : status?.poisoned ? 'acid' : 'none';
+  return model.terminalCue?.(cue) ?? cue;
 }
 
 /** Locked warnings keep the body's facing on the same native attack vector. */

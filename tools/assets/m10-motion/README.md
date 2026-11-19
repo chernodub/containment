@@ -30,3 +30,11 @@ Generating code uses the repository MIT license. Animation-only GLBs retain the
 existing skeletons and use the adapted models’ CC BY-SA 4.0 terms; see the shipped
 `public/assets/models/motion/CREDITS.md`. Retained model and rig notices apply. Review and refinement use production motion
 strips and native play; this folder contains no automated test suite or gates.
+
+MOTION14 also supports rebuilding selected takes directly into an existing motion pack. The installer preserves unrelated animations and addresses joints by the shipped node names.
+
+```sh
+blender -b -P tools/assets/m10-motion/marine_locomotion.py -- --install
+blender -b -P tools/assets/m10-motion/marine_actions.py -- --clips=m10-fire-rifle,m10-fire-shotgun --install
+blender -b -P tools/assets/m10-motion/enemy_actions.py -- --families=stalker --clips=m10-windup,m10-strike,m10-recovery
+```
