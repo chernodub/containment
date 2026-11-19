@@ -133,7 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
-    landmark:{at:[478,327],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
+    landmark:{at:[478,303],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},
@@ -182,7 +182,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Wet teal plant: warm copper loops stay as tint, the floor stops being a green wash.
   'coolant-plant': profile({
-    landmark:{at:[329,301],color:0xb7eafa,radius:7,body:.8,spill:.012,keyColor:0xefffff,keyGain:.5},
+    landmark:{at:[521,265],color:0xb7eafa,radius:7,body:.8,spill:.012,keyColor:0xefffff,keyGain:.5},
     floor:{lit:.36,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10,value:.25},
     wall:{value:.45,saturation:.55}, floorSaturation:.42, tint:0xc4ddd6,
     fixtures:.2, practicals:.6, ambient:.45, marineGlow:1, exit:.9,
