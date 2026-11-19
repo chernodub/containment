@@ -56,7 +56,7 @@ export type CollisionSteeringContext = Readonly<{
 
 export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
-export type EnemySystemOptions = Readonly<{openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
+export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
@@ -271,12 +271,16 @@ export class EnemySystem {
   get #rest(){const d=this.#difficulty();return d.rest*(this.#lateDifficulty?(d.lateRest??1):1);}
   get #windups(){const d=this.#difficulty();return d.windups*(this.#lateDifficulty?(d.lateWindups??1):1);}
   #openingWindup=1;
+  readonly #spitWindupMs:number;
+  readonly #slick:EnemySystemOptions['slick'];
+  readonly #slide=new Map<number,{x:number;y:number}>();
   #difficulty:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number}=()=>({rest:1,windups:2});
   #smallMeleeActive=0;
   #heavyMeleeActive=0;
   #solids:readonly {x:number;y:number;radius:number;health:number}[]=[];
 
   constructor(options: EnemySystemOptions = {}) {
+    this.#spitWindupMs=options.spitWindupMs??500;this.#slick=options.slick;
     if(options.difficulty)this.#difficulty=options.difficulty;
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
@@ -317,11 +321,11 @@ export class EnemySystem {
   }
 
   /** Swept movement for mutation impulses, using the same collision policy as AI. */
-  moveBy(id:number,dx:number,dy:number):{blocked:boolean} {
+  moveBy(id:number,dx:number,dy:number,cancelAttack=true):{blocked:boolean} {
     this.#cachedSnapshot=null;
     const enemy=this.#enemies.get(id);
     if(!enemy||!Number.isFinite(dx)||!Number.isFinite(dy))return {blocked:true};
-    if(dx!==0||dy!==0)this.#cancelMelee(enemy);
+    if(cancelAttack&&(dx!==0||dy!==0))this.#cancelMelee(enemy);
     const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/8));
     if(steps>128)return {blocked:true};
     for(let i=0;i<steps;i++){
@@ -920,8 +924,15 @@ export class EnemySystem {
     const velocity=Math.hypot(enemy.velocityX,enemy.velocityY);
     const scale = Math.min(deltaMs / 1_000,enemy.chargeMs>0?Infinity:distance/(velocity||1));
     const yielding=(enemy.yieldMs??0)>0&&enemy.chargeMs===0;
-    const movementX = yielding?enemy.yieldX!*enemy.speed*this.#movement*deltaMs/1000:enemy.velocityX * scale;
-    const movementY = yielding?enemy.yieldY!*enemy.speed*this.#movement*deltaMs/1000:enemy.velocityY * scale;
+    let movementX = yielding?enemy.yieldX!*enemy.speed*this.#movement*deltaMs/1000:enemy.velocityX * scale;
+    let movementY = yielding?enemy.yieldY!*enemy.speed*this.#movement*deltaMs/1000:enemy.velocityY * scale;
+    if(this.#slick?.(enemy)&&!enemy.chargeMs){
+      const old=this.#slide.get(enemy.id);
+      const keep=Math.exp(-deltaMs/155);
+      movementX=old?old.x*keep*deltaMs+movementX*(1-keep):movementX;
+      movementY=old?old.y*keep*deltaMs+movementY*(1-keep):movementY;
+      this.#slide.set(enemy.id,{x:movementX/deltaMs,y:movementY/deltaMs});
+    }else this.#slide.delete(enemy.id);
     if (movementX === 0 && movementY === 0) return;
 
     if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.chargeMs=0;enemy.stunRemainingMs=1500;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
@@ -1067,7 +1078,7 @@ export class EnemySystem {
       distance <= SPITTER_ATTACK_MAX_RANGE &&
       enemy.rangedCooldownRemainingMs === 0 && this.#canAttack?.(enemy,player)!==false
     ) {
-      if(this.#balance.specials){enemy.windupMs=500;enemy.pendingAttack='spit';enemy.lockX=player.x;enemy.lockY=player.y;enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+500;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:500}));return;}
+      if(this.#balance.specials){enemy.windupMs=this.#spitWindupMs;enemy.pendingAttack='spit';enemy.lockX=player.x;enemy.lockY=player.y;enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:this.#spitWindupMs}));return;}
       events.push(
         freezeEvent({
           type: 'hazard-attack',

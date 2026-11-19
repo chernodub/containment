@@ -1,6 +1,7 @@
+import {conditionChip} from '../conditionChip';
 import {captureWeaponPointer} from './weaponInput';
 import {MasteryHints} from './MasteryHints';
-import {getAwakeningDrill, getMasteryPreview} from '../gameAdapter';
+import {getAwakeningDrill, getMasteryPreview, getRoomOpening, getShipCondition} from '../gameAdapter';
 import {EncounterCues} from './EncounterCues';
 import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
@@ -53,7 +54,7 @@ function setHudProperty(style:CSSStyleDeclaration,name:string,value:string):void
 const abilityColors: Record<string, string> = { kinetic: '#ffd063', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
-    const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
+    const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'room-condition', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
     let layoutDirty = true;
     const nodes = Object.fromEntries(ids.map(id => [id, el(id)])) as Record<typeof ids[number], HTMLElement>;
     // Font/content/CSS changes can resize a panel without resizing the canvas.
@@ -312,7 +313,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        text('room-objective', [getRoomOpening(game), (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -363,6 +364,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
         text('depth-label', `${(game.storyRoom?.environment ?? ACT_NAMES[Math.min(2, Math.floor(game.node.depth / 4))]).toUpperCase()} · ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)}`);
         text('room-name', ROOM_TEMPLATES[game.node.templateId].name);
+        const condition=getShipCondition(game),state=game.conditionState;
+        const conditionPhase=state?.ventLive?'Vent ':condition?.id==='conduit'?(state?.conduitLive?'Live ':'Live in '):'';
+        const chip=condition?conditionChip(condition,state?.countdown,conditionPhase):'';
+        if(nodes['room-condition'].dataset.chip!==chip){
+            nodes['room-condition'].dataset.chip=chip;
+            nodes['room-condition'].innerHTML=chip;
+        }
+        nodes['room-condition'].hidden=!condition;
         const q = game.boss.snapshot;
         hidden('boss-hud', !q.active);
         const phase = q.vulnerable ? 'exposed' : q.phase === 'nest-spawn' ? 'nests' : 'armored';

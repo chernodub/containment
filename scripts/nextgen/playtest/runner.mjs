@@ -140,7 +140,7 @@ async function snapshot() {
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
     return {
-      drill:g.awakeningDrill,encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
+      variant:g.openingName?.(),condition:g.condition?.name,conditionObservation:g.conditionObservation??null,drill:g.awakeningDrill,encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
       siege:g.siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
       combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
@@ -150,13 +150,13 @@ async function snapshot() {
       onboarding:{visible:!document.querySelector('#contextual-onboarding')?.hidden,copy:document.querySelector('#contextual-onboarding')?.textContent,seen:localStorage.getItem('containment.onboarding.v1')},
       hud:{slots,insets:{...r.hudInsets},framing:r.combatFramingDiagnostics?{...r.combatFramingDiagnostics,selectedIds:[...r.combatFramingDiagnostics.selectedIds]}:null,viewport:{width:innerWidth,height:innerHeight},marine:r.playerScreenBounds(g.player.radius),health:document.querySelector('#health')?.textContent,magazine:document.querySelector('#magazine')?.textContent,opaqueBounds:['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return b.width&&b.height?[{id:selector,obscuresThreat:el.dataset.obscuresThreat==='true',opacity:getComputedStyle(el).opacity,bounds:{left:b.left,top:b.top,right:b.right,bottom:b.bottom}}]:[];})},
       loading:r.roomLoading||d.canStepNative===false||r.roomKey!==g.node.id||document.querySelector('#world')?.getAttribute('aria-busy')==='true',
-      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,text:b.textContent})),
+      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
   });
 }
-async function shot(name,s) {
-  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file)});
+async function shot(name,s,options={}) {
+  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});
   report.screenshots.push(file);
   // Save actual body extents only at evidence frames; policy and native inputs are unchanged.
   if(s.status==='playing'&&!s.loading)s.framingEvidence=await page.evaluate(()=>{
@@ -315,9 +315,16 @@ try {
           const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
           if(s.actions.some(a=>a.detour)){
-            const preferred=chooseDetour(s.combat,s.node.depth);
-            const choice=s.actions.some(a=>a.detour===preferred)?preferred:'direct';
-            await page.locator(`[data-detour="${choice}"]:not(:disabled)`).last().click();
+            if(s.run.runStructure&&[2,6,10].includes(s.node.depth)){
+              const skip=page.locator('#skip-clear-record');
+              if(await skip.isVisible())await skip.click();
+              await page.locator('.route-briefing').waitFor({state:'visible'});
+              await page.locator('.route-briefing img').evaluateAll(async images=>{await Promise.allSettled(images.map(image=>image.decode()));});
+              await shot(`junction-r${s.node.depth+2}`,await snapshot(),{animations:'disabled'});
+            }
+            const preferred=chooseDetour(s.combat,s.node.depth,s.actions,report.profile);
+            const choice=s.actions.some(a=>a.detour===preferred&&!a.disabled)?preferred:'direct';
+            await page.locator(`[data-detour="${choice}"]:not(:disabled):not([aria-disabled="true"])`).last().click();
           }
           else if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
         }
@@ -339,7 +346,7 @@ try {
     if(room?.nodeId!==s.node.id) {
       if(room?.result==='playing')await finishRoom(s,'transition');
       if(report.rooms.filter(r=>r.result==='clear').length>=roomLimit){report.outcome='room-limit';report.final=s;break;}
-      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
+      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,variant:s.variant,condition:s.condition,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
       room.timingReset=await page.evaluate(()=>{const d=window.__containmentDebug;if(!d.resetStepPerformance)return false;d.resetStepPerformance();return true;});
       room.abilityReceipts={};room.denials={};
       report.rooms.push(room);console.log(`${label}: room ${s.node.depth+1} ${s.node.templateId}`);

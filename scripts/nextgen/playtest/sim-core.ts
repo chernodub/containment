@@ -198,7 +198,7 @@ export function runSimulation(options: SimOptions) {
             camera.rig.kick(e.angle ?? 0, e.weapon === 'shotgun' ? .08 : e.weapon === 'rocket' ? .12 : .025);
     };
     game = new DepthGame(onEffect);
-    game.newRun(options.seed, { rigSelect: true, difficulty: options.difficulty });
+    game.newRun(options.seed, { rigSelect: true, difficulty: options.difficulty, shipConditions:!options.conditionsOff });
     game.chooseRig(options.rig);
     if (options.legacy)
         game.newRun(options.seed, { version: 2, rig: options.rig, difficulty: options.difficulty });
@@ -251,7 +251,7 @@ export function runSimulation(options: SimOptions) {
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
-            }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
+            }), abilities: game.abilities.snapshot, conditionObservation:game.conditionObservation??null, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
                 ...game.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
                 ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
                 ...nativeWarningHazards(events.filter(e=>e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2)),game.elapsed,game.enemies.snapshot.enemies).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
@@ -329,7 +329,7 @@ export function runSimulation(options: SimOptions) {
                     if (!choice)
                         throw Error('No earned route');
                     const augment=augmentUpgrades?.(game.expedition.build).at(-1);
-                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth):undefined;
+                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile):undefined;
                     game.route(choice.id,augmentUpgrades&&game.node.depth===10&&(!augment||game.combat.snapshot.credits<180)?'direct':detour,augment);
                 }
                 feel.reset();
@@ -349,7 +349,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
                 startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }

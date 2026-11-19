@@ -520,3 +520,12 @@ export function getMasteryPreview(game: DepthGame) {
   const drill = getAwakeningDrill(game);
   return {walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:step&&arcOrigin?step:overload??null};
 }
+
+
+export function getRoomOpening(game: DepthGame, depth?: number, salvage?: boolean) {
+  return game.openingName(depth, salvage);
+}
+
+export function getShipCondition(game: DepthGame, depth?: number, salvage?: boolean) {
+  return depth === undefined ? game.condition : game.conditionFor(depth, salvage);
+}

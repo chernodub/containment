@@ -1,3 +1,4 @@
+import {conditionChip} from '../conditionChip';
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
@@ -14,9 +15,11 @@ import {expeditionRewardOffers, rerollCost} from '../../game/roguelike/expeditio
 import {progressionFor} from '../../game/roguelike/progression';
 import {generateRun, ROOM_KIND_LABELS, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import {contractFor, CONTRACT_ENDS} from '../../game/roguelike/contracts';
+import {junctionConsequence, runHeader} from '../../game/roguelike/shipConditions';
 import {routeVignette} from './routeVignettes';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats} from '../gameAdapter';
+import {getAbilities, getRunStats, getRoomOpening, getShipCondition} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
@@ -156,13 +159,21 @@ function augmentCombatPreview(mutation: MutationDefinition, rig?: RigId): string
   return `<span class="reward-combat-preview" aria-label="${escapeHtml(boonBenefit(mutation))}"><span><small>BEFORE</small>${before}</span><b aria-hidden="true">→</b><span><small>AFTER</small>${after}</span></span>`;
 }
 
+function contractPayout(game: DepthGame) {
+  const run=game.expedition.run;
+  if(!run.contract||!CONTRACT_ENDS.some(depth=>depth===game.node.depth))return '';
+  const contract=contractFor(run.seed);
+  const detail=run.contract.lastPayout?contract.reward:'Objective missed this act';
+  return `<p class="panel-intro">${escapeHtml(contract.name)} · ${escapeHtml(detail)}</p>`;
+}
+
 export function draftScreen(game: DepthGame): string {
   const offers = expeditionRewardOffers(game.expedition);
   const rig = getAbilities(game)?.rig;
   const starting = game.expedition.run.phase==='starting-boon';
   const cost = rerollCost(game.expedition);
   const exhausted = (game.expedition.run.draftRoll??0)>=2;
-  return `<section class="panel choice-panel draft-panel screen-enter">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p></div><span class="draft-signal" data-draft-rig="${rig??''}">${icon(rig??'boon-reactor')} ${rig?`${RIG_CATALOG[rig].name.toUpperCase()} RIG · `:''}SUIT REWRITE AVAILABLE</span></div>
+  return `<section class="panel choice-panel draft-panel screen-enter">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p>${contractPayout(game)}</div><span class="draft-signal" data-draft-rig="${rig??''}">${icon(rig??'boon-reactor')} ${rig?`${RIG_CATALOG[rig].name.toUpperCase()} RIG · `:''}SUIT REWRITE AVAILABLE</span></div>
     <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-element="${boonElement(mutation)}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}" data-augment="${mutation.abilityOnly===true}" data-augment-rig="${mutation.rig??'universal'}" aria-describedby="benefit-${mutation.id} numbers-${mutation.id}" style="--reveal-order:${index}">${rewardArt(mutation)}<span class="boon-card-top">${icon(boonIcon(mutation),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${mutation.rig?icon(mutation.rig):mutation.abilityOnly?icon('loadout'):''}${boonPath(mutation)}</span><span class="reward-taxonomy">${mutation.abilityOnly?'ABILITY AUGMENT':'WEAPON BOON'} · ${mutation.family.toUpperCase()} SET</span><h3>${mutation.name}</h3><p class="boon-benefit" id="benefit-${mutation.id}">${boonBenefit(mutation)}</p><p class="boon-numbers" id="numbers-${mutation.id}">${boonNumbers(mutation)}</p>${augmentCombatPreview(mutation,rig??undefined)}<span class="boon-inspect-hint">Focus + <kbd>I</kbd> for rules</span><span class="boon-inspect-detail" role="tooltip"><span class="eyebrow">EXACT VALUES / ${mutation.name}</span>${mutation.abilityOnly?augmentTarget(mutation,rig??undefined):''}${augmentDiagram(mutation,rig??undefined)}<p>${playerFacingText(mutation.description)}</p>${boonChips(mutation,familyCount(game.expedition.build,mutation.family))}<span class="boon-condition"><span>${boonRuleLabel(mutation)}</span>${playerFacingText(mutation.tradeoff)}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><small>Release inspection key or press I / Esc to close.</small></span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
     <div class="reward-footer"><span class="credit-balance">${icon('credits')} <b>${game.combat.snapshot.credits}</b> CREDITS <small><kbd>1–3</kbd> install · <kbd>R</kbd> reroll</small></span><button id="reroll" class="secondary" ${game.expedition.run.version===1||exhausted||game.combat.snapshot.credits<cost?'disabled':''}>${exhausted?'No rerolls left':`Reroll · ${cost} credits`}</button></div></section>`;
 }
@@ -205,7 +216,7 @@ export function shopScreen(game: DepthGame): string {
   }).join('');
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
     <header class="requisition-header">
-      <div>${tag(`SECTOR ${serial(game.node.depth+1)}`)}<h2 id="requisition-title">Supply stop</h2></div>
+      <div>${tag(`SECTOR ${serial(game.node.depth+1)}`)}<h2 id="requisition-title">Supply stop</h2>${contractPayout(game)}</div>
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
@@ -239,10 +250,11 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const graph=generateRun(run.seed,run.version);
   const destinations=game.node.next.map(id=>graph.nodes.find(node=>node.id===id)!);
   const offers=detourOffers(run);
+  const contract=game.contractOffer;
   const next=destinations[0];
   const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
-  if (!offers.length && destinations.length===1) {
-    return `<section class="panel screen-enter"><h2>${nextName}</h2><button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
+  if (!offers.length && destinations.length===1 && !getShipCondition(game,next.depth)) {
+    return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p><button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }
   const workshop=game.node.depth===fieldWorkshopDepth;
   const options=offers.length
@@ -257,21 +269,31 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
       detour:undefined, risk:undefined, reward:undefined,vignette:undefined,augment:undefined,disabled:false,cost:undefined}));
   return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
     ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
+    ${runHeader(run)?`<p>${escapeHtml(runHeader(run)!)}</p>`:''}
     <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
-    ${offers.length?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
+    ${offers.length&&!run.runStructure?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
+    ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
     <div class="route-briefing-grid">
       ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled,cost},index)=>{
         const room=ROOM_TEMPLATES[destination.templateId];
+        const condition=getShipCondition(game,destination.depth,detour==='salvage');
+        const variant=getRoomOpening(game,destination.depth,detour==='salvage');
+        const consequence=run.runStructure?junctionConsequence(destination.depth,detour==='salvage'):undefined;
+        const visibleRisk=variant&&['Standard encounter','No extra enemies','Free'].includes(risk??'')?undefined:risk;
         const encounter=destination.id.endsWith('r3-safe')?'Safer encounter':ROOM_KIND_LABELS[destination.kind];
         const roomReward=destination.reward==='upgrade'?'Boon':destination.reward==='rare-upgrade'?'Rare boon':ROOM_REWARD_LABELS[destination.reward];
+        const visibleReward=variant&&deal==='Keep your current supplies'?undefined:(deal??roomReward);
         const shortfall=Math.max(0,(cost??0)-game.combat.snapshot.credits);
         const unavailable=disabled?(shortfall?`Need ${shortfall} more credits`:'Requires an eligible installed augment'):undefined;
         return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
-            <span class="route-option-terms">${icon(destination.kind)} ${escapeHtml(risk??encounter)}</span>
-            <span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(deal??roomReward)}</span>
+            ${variant?`<span class="route-option-subtitle">${escapeHtml(variant)}</span>`:''}
+            ${visibleRisk||!variant?`<span class="route-option-terms">${icon(destination.kind)} ${escapeHtml(visibleRisk??encounter)}</span>`:''}
+            ${condition?`<span class="route-condition">${conditionChip(condition)}<span>+ ${condition.upside}</span><span>− ${condition.downside}</span></span>`:''}
+            ${consequence?`<span class="route-option-terms">${escapeHtml(consequence)}</span>`:''}
+            ${visibleReward?`<span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(visibleReward)}</span>`:''}
           </span>
           <span class="route-option-action">${unavailable??`Enter sector ${arrow()}`}</span>
         </button>`;
@@ -310,6 +332,22 @@ export function destroyScreen(): string {
   return `<section class="panel result-panel destroy-panel screen-enter">${icon('warning','destroy-emblem')}${tag('MANUAL CONTROL / OVERLOAD NOT ARMED')}<h2>Destroy the ship?</h2><p class="panel-intro">The passengers are alive. Overload will kill them and you. New Earth has received the warning.</p><div class="destroy-divider"></div><button id="destroy-ship" class="primary">Destroy ship</button><button id="menu" class="secondary destroy-alternative">Not yet · return to title</button></section>`;
 }
 
+function resultsRunRecord(game: DepthGame) {
+  const run=game.expedition.run, header=runHeader(run);
+  if(!header)return '';
+  const decisions=Object.entries(run.junctions??{}).map(([key,choice])=>{
+    const depth=Number(key);
+    const names:Readonly<Record<number,string>>={3:'Early salvage',7:'Field requisition',11:'Field workshop'};
+    const name=choice==='salvage'?names[depth]:depth===fieldWorkshopDepth+1?'Field medicine':'Stay on mission';
+    return `<li>Sector ${depth+1} · ${escapeHtml(name)} · ${escapeHtml(getRoomOpening(game,depth,choice==='salvage')??'')}</li>`;
+  });
+  const contract=run.contract;
+  return `<section class="run-record" aria-label="Expedition record"><h3>${escapeHtml(header)}</h3>
+    ${decisions.length?`<ul>${decisions.join('')}</ul>`:''}
+    ${contract?`<p>${escapeHtml(contractFor(run.seed).name)} · ${contract.earned}/3 payouts earned</p>`:''}
+  </section>`;
+}
+
 export function resultsScreen(game: DepthGame): string {
   const complete=game.status==='complete', stats=getRunStats(game), rig=getAbilities(game)?.rig;
   const format = (value: number) => value.toLocaleString('en-US',{maximumFractionDigits:0});
@@ -318,7 +356,7 @@ export function resultsScreen(game: DepthGame): string {
   const uses=ABILITY_SLOTS.reduce((sum,slot)=>sum+stats.abilityUses[slot],0);
   const damage=Object.values(stats.damageDealt).reduce((sum,value)=>sum+value,0);
   const cell=(id:string,value:string,label:string,detail='')=>`<div data-stat="${id}"><b>${value}</b><span>${label}</span>${detail?`<small class="stat-detail">${detail}</small>`:''}</div>`;
-  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}">${complete?completionEnding(game):`<header class="debrief-heading"><div>${tag('EXPEDITION LOST')}<h2>Mission lost.</h2></div><div class="debrief-rig" data-element="${rig?RIG_CATALOG[rig].element:'kinetic'}">${marinePortrait(rig??'breacher')}<span>${rig?RIG_CATALOG[rig].name:'MARINE'}<small>COMBAT RECORD</small></span></div></header>${incomingDamageReport(game,stats)}${retryLesson(game)}`}<details class="result-details"><summary>${complete?'View expedition statistics':'Damage dealt & expedition build'}</summary><div class="result-stats hero-stats">${cell('rooms',`${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small>`,'SECTORS CLEARED')}${cell('kills',format(stats.kills.total),'HOSTILES ELIMINATED')}${cell('time',time,'COMBAT TIME')}${cell('damage',format(damage),'DAMAGE DEALT')}</div><div class="debrief-body"><div class="debrief-telemetry"><section class="damage-summary"><div class="telemetry-heading">${tag('DAMAGE COMPOSITION')}<span>${format(damage)} TOTAL</span></div><p class="damage-source-note">Totals by source · statuses and boons may mix elements.</p><div class="damage-source-bar" role="img" aria-label="${Object.entries(stats.damageDealt).map(([source,value])=>`${source} ${format(value)}`).join(', ')}">${Object.entries(stats.damageDealt).filter(([,value])=>value>0).map(([source,value])=>`<i data-damage-source="${source}" style="flex:${value/damage};min-width:3%"></i>`).join('')}</div><div class="damage-source-legend">${Object.entries(stats.damageDealt).map(([source,value])=>cell(source,format(value),source.toUpperCase())).join('')}</div></section><details class="combat-ledger"><summary>Combat and economy details</summary><div class="secondary-stat-groups"><section><h3>Combat</h3><div class="result-secondary">${cell('accuracy',stats.shotsFired?`${Math.round(stats.shotsHit/stats.shotsFired*100)}%`:'—','ACCURACY')}${cell('shots',format(stats.shotsFired),'SHOTS FIRED',`${format(stats.shotsHit)} confirmed hits`)}${cell('taken',format(stats.damageTaken),'DAMAGE TAKEN')}${cell('multi-kill',format(stats.highestMultiKill),'BEST MULTI-KILL')}</div></section><section><h3>Rig & economy</h3><div class="result-secondary">${cell('uses',format(uses),'ABILITY USES',ABILITY_SLOTS.map(slot=>`${ABILITY_KEYS[slot]} ${stats.abilityUses[slot]}`).join(' · '))}${cell('overdrives',format(stats.overdrivesUsed),'OVERDRIVES')}${cell('credits',format(stats.creditsEarned),'CREDITS EARNED')}${cell('boons',String(game.expedition.build.mutations.length),'BOONS')}</div></section></div></details></div><aside class="debrief-build">${marinePortrait(rig??'breacher','record-marine')}<div class="telemetry-heading">${tag('EXPEDITION BUILD')}<span>${game.expedition.build.mutations.length} INSTALLED</span></div>${rig?`<div class="result-ability-icons" aria-label="Equipped abilities">${ABILITY_SLOTS.map(slot=>{const a=ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];return `<span tabindex="0" title="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}" aria-label="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}">${icon(a.id)}<kbd>${ABILITY_KEYS[slot]}</kbd></span>`;}).join('')}</div>`:''}${buildIcons(game)}</aside></div></details><div class="result-actions">${complete?'':'<button id="retry-rig" class="primary">Retry — same rig</button>'}<button id="start" class="${complete?'primary':'secondary'}">${complete?'Play again':'Choose new loadout'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
+  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}">${complete?completionEnding(game):`<header class="debrief-heading"><div>${tag('EXPEDITION LOST')}<h2>Mission lost.</h2></div><div class="debrief-rig" data-element="${rig?RIG_CATALOG[rig].element:'kinetic'}">${marinePortrait(rig??'breacher')}<span>${rig?RIG_CATALOG[rig].name:'MARINE'}<small>COMBAT RECORD</small></span></div></header>${incomingDamageReport(game,stats)}${retryLesson(game)}`}${resultsRunRecord(game)}<details class="result-details"><summary>${complete?'View expedition statistics':'Damage dealt & expedition build'}</summary><div class="result-stats hero-stats">${cell('rooms',`${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small>`,'SECTORS CLEARED')}${cell('kills',format(stats.kills.total),'HOSTILES ELIMINATED')}${cell('time',time,'COMBAT TIME')}${cell('damage',format(damage),'DAMAGE DEALT')}</div><div class="debrief-body"><div class="debrief-telemetry"><section class="damage-summary"><div class="telemetry-heading">${tag('DAMAGE COMPOSITION')}<span>${format(damage)} TOTAL</span></div><p class="damage-source-note">Totals by source · statuses and boons may mix elements.</p><div class="damage-source-bar" role="img" aria-label="${Object.entries(stats.damageDealt).map(([source,value])=>`${source} ${format(value)}`).join(', ')}">${Object.entries(stats.damageDealt).filter(([,value])=>value>0).map(([source,value])=>`<i data-damage-source="${source}" style="flex:${value/damage};min-width:3%"></i>`).join('')}</div><div class="damage-source-legend">${Object.entries(stats.damageDealt).map(([source,value])=>cell(source,format(value),source.toUpperCase())).join('')}</div></section><details class="combat-ledger"><summary>Combat and economy details</summary><div class="secondary-stat-groups"><section><h3>Combat</h3><div class="result-secondary">${cell('accuracy',stats.shotsFired?`${Math.round(stats.shotsHit/stats.shotsFired*100)}%`:'—','ACCURACY')}${cell('shots',format(stats.shotsFired),'SHOTS FIRED',`${format(stats.shotsHit)} confirmed hits`)}${cell('taken',format(stats.damageTaken),'DAMAGE TAKEN')}${cell('multi-kill',format(stats.highestMultiKill),'BEST MULTI-KILL')}</div></section><section><h3>Rig & economy</h3><div class="result-secondary">${cell('uses',format(uses),'ABILITY USES',ABILITY_SLOTS.map(slot=>`${ABILITY_KEYS[slot]} ${stats.abilityUses[slot]}`).join(' · '))}${cell('overdrives',format(stats.overdrivesUsed),'OVERDRIVES')}${cell('credits',format(stats.creditsEarned),'CREDITS EARNED')}${cell('boons',String(game.expedition.build.mutations.length),'BOONS')}</div></section></div></details></div><aside class="debrief-build">${marinePortrait(rig??'breacher','record-marine')}<div class="telemetry-heading">${tag('EXPEDITION BUILD')}<span>${game.expedition.build.mutations.length} INSTALLED</span></div>${rig?`<div class="result-ability-icons" aria-label="Equipped abilities">${ABILITY_SLOTS.map(slot=>{const a=ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];return `<span tabindex="0" title="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}" aria-label="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}">${icon(a.id)}<kbd>${ABILITY_KEYS[slot]}</kbd></span>`;}).join('')}</div>`:''}${buildIcons(game)}</aside></div></details><div class="result-actions">${complete?'':'<button id="retry-rig" class="primary">Retry — same rig</button>'}<button id="start" class="${complete?'primary':'secondary'}">${complete?'Play again':'Choose new loadout'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
 }
 
 /** Recovery templates keep system messaging consistent when the bootstrap needs them. */

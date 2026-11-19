@@ -164,6 +164,7 @@ export function createScreens(context: ScreenContext) {
       if(!hasAudioDirector(audio as object)) audio.pauseAll(); syncScreen(true);
     });
     listen('reroll',()=>{if(game.reroll()) {playUiCue(audio,'reroll'); syncScreen(true);} else playUiCue(audio,'denied');});
+    listen('accept-contract',()=>{if(game.acceptContract()){syncScreen(true);el('overlay').querySelector<HTMLElement>('[data-route]')?.focus();}});
     listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
     listen('retry-rig',()=>{playUiCue(audio,'confirm');start(false,true);});
     listen('recommended-loadout',()=>{

@@ -44,6 +44,8 @@ export interface AbilityHost {
   targets: () => readonly MutationTarget[];
   visible: (from: AbilityPoint, to: AbilityPoint) => boolean;
   traverse: (from: AbilityPoint, to: AbilityPoint, radius: number) => boolean;
+  dashDistanceScale?: (point:AbilityPoint)=>number;
+  chainThrough?: (from:AbilityPoint,to:AbilityPoint)=>boolean;
   movePlayer: (dx: number, dy: number) => void;
   damage: (target: MutationTarget, amount: number) => boolean;
   statuses: (id: number) => { chilled: boolean; frozen: boolean; burning?: boolean; shocked?: boolean };
@@ -320,7 +322,7 @@ export class AbilitySystem {
     const d = ABILITY_CATALOG[cast.id];
     let ids: number[] = [];
     if (d.slot === 'dash') {
-      const distance = d.shape.kind==='dash'?d.shape.distance:150;
+      const distance = (d.shape.kind==='dash'?d.shape.distance:150)*(this.host.dashDistanceScale?.(cast)??1);
       this.dash = { x: Math.cos(cast.angle) * distance, y: Math.sin(cast.angle) * distance, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
       this.immune = Math.max(this.immune,cast.id==='afterburn'?PYRO_DASH_INVULNERABLE_MS:DASH_INVULNERABLE_MS);
       if (this.host.has('slide-loader' as MutationId)) this.host.reload();
@@ -406,12 +408,16 @@ export class AbilitySystem {
     const cursor = this.aimPoint ?? aim;
     targets.sort((a, b) => Math.hypot(a.x - cursor.x, a.y - cursor.y) - Math.hypot(b.x - cursor.x, b.y - cursor.y) || a.id - b.id);
     const ids: number[] = []; let origin: AbilityPoint = cast, target = targets[0];
-    while (target && ids.length < cap) {
+    let extra=0;
+    while (target && ids.length < cap+extra) {
       const n = damage * .85 ** ids.length;
       const before = this.host.statuses(target.id);
       ids.push(target.id);
-      const next = this.nearby(target, 200).find(t => !ids.includes(t.id));
-      if (next && ids.length < cap) this.host.arc(target, [next]);
+      const candidates=this.nearby(target,this.host.chainThrough?.(target,target)?320:200).filter(t=>!ids.includes(t.id));
+      const link=candidates.find(t=>this.host.chainThrough?.(target,t));
+      if(link)extra=2;
+      const next=link??candidates.find(t=>Math.hypot(t.x-target.x,t.y-target.y)<=200);
+      if (next && ids.length < cap+extra) this.host.arc(target, [next]);
       this.hit(target, n, 'shock', before.chilled ? 550 : 350);
       this.event(cast.id, 'link', origin, { targetX: target.x, targetY: target.y, targetIds: [target.id] });
       origin = target; target = next!;

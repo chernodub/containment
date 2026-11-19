@@ -162,12 +162,43 @@ export function chooseServicePurchase(available,combat,build={},run={}) {
   if(combat.reserve<12)priorities.push('ammo');
   return priorities.find(id=>available.includes(id))??null;
 }
-export function chooseDetour(combat,depth) {
+// RUN15 run structure. Only score terms published on the route cards.
+export function chooseDetour(combat,depth,offers=[],profile='competent') {
+  const salvage=offers.find(offer=>offer.detour==='salvage'&&!offer.disabled);
+  const direct=offers.find(offer=>offer.detour==='direct');
+  const risk=offer=>Number(['dark','vent','conduit','brood'].includes(offer?.condition?.id))*2 + Number(/pincer|crossfire/i.test(offer?.variant??''));
+  if(salvage?.variant&&direct?.variant){
+    const hurt=combat.health<(profile==='novice'?80:65);
+    if(hurt&&depth!==10&&risk(salvage)<risk(direct))return 'salvage';
+    if(hurt&&risk(salvage)>risk(direct))return 'direct';
+    if(!hurt&&profile==='competent'&&[2,6,10].includes(depth))return 'salvage';
+  }
   if(depth===2)return 'salvage';
   if(depth===6)return combat.credits>=70&&(combat.armor<30||combat.grenades<2)?'salvage':'direct';
   if(depth===10)return combat.health<70?'direct':'salvage';
   return combat.health>=85&&combat.armor>=25&&combat.medkits>0?'salvage':'direct';
 }
+function conditionDecision(s,perceived,movement,target,keys){
+  const condition=s.conditionObservation;
+  if(!condition)return {movement,target};
+  const onZone=(point,z)=>z.end?segmentDistanceSquared(point.x,point.y,z.x,z.y,z.end.x,z.end.y)<=z.radius*z.radius:distance(point,z)<=z.radius;
+  const legal=s.candidates.filter(c=>c.legal);
+  if(condition.id==='brood')target=perceived.enemies.find(e=>e.clear&&condition.eggIds.includes(e.id))??target;
+  if(condition.id==='conduit'&&condition.conduitLive){
+    const selected=legal.find(c=>c.dx===movement.dx&&c.dy===movement.dy);
+    if(condition.zones.some(z=>onZone(s.player,z)||selected&&onZone(selected,z))){
+      movement=legal.find(c=>(c.dx||c.dy)&&condition.zones.every(z=>!onZone(c,z)))??movement;
+    }
+  }
+  if(condition.id==='vent'&&condition.ventLive&&condition.zones[0]&&distance(s.player,condition.zones[0])<450){
+    const breach=condition.zones[0];
+    movement=legal.toSorted((a,b)=>distance(b,breach)-distance(a,breach))[0]??movement;
+    if(s.abilities.slots?.dash?.ready&&!keys.includes('Shift'))keys.unshift('Shift');
+  }
+  if(condition.id==='coolant'&&['breacher','cryo'].includes(s.abilities.rig)&&target&&condition.zones.some(z=>onZone(target,z))&&Math.hypot(s.player.x-target.x,s.player.y-target.y)<190&&s.abilities.slots?.tactical?.ready&&!keys.includes('q'))keys.push('q');
+  return {movement,target};
+}
+// End RUN15 run structure.
 /** Focus a visible marked priority threat, then ranged pressure; never use hidden state. */
 export function chooseTarget(enemies, player) {
   return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
@@ -373,7 +404,9 @@ export function createHumanPolicy(seed, profile = 'competent') {
       // Collision feedback is immediate; a committed direction never walks through
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
-      let target = chooseTarget(perceived.enemies,s.player);
+      const keys = chooseActions(perceived);
+      let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player),keys);
+      movement=conditionMovement;
       if (target) {
         const dx=target.x-s.player.x,dy=target.y-s.player.y;
         const screen=target.screen&&s.player.screen?{
@@ -382,7 +415,6 @@ export function createHumanPolicy(seed, profile = 'competent') {
         }:target.screen;
         target={...target,x:s.player.x+dx*Math.cos(aimAngle)-dy*Math.sin(aimAngle),y:s.player.y+dx*Math.sin(aimAngle)+dy*Math.cos(aimAngle),screen};
       }
-      const keys = chooseActions(perceived);
       if(profile==='novice') {
         const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
         for(const key of consumableNotices.keys())if(!eligible.has(key))consumableNotices.delete(key);

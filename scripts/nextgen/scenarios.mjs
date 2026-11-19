@@ -171,6 +171,60 @@ export const SCENARIOS=[
  {id:'boss-radar',state:'playing',room:'reactor-vault',required:['#radar-hud','.radar-objective'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.uiFixture({preferences:{radar:true,combatText:true}});}},
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
  {id:'route',state:'route',required:['[data-detour="direct"]','[data-detour="salvage"]','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('residential-gallery',{phase:'route'});}},
+ ...['residential-gallery','freight-hold','diagnostic-gallery'].map((room,index)=>({
+  id:`run15-junction-${index+1}`,room,state:'route',diagnosticOnly:true,
+  setup:async room=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom(room,{phase:'route',rig:'cryo',runStructure:true});
+   if(room==='diagnostic-gallery')d.grantBoons(['ice-road']);
+   d.game.combat.setCredits(300);
+   d.refresh();
+  },
+ })),
+ ...['communal-atrium','breached-loading-bay','safety-interlock-station'].map((room,index)=>({
+  id:`run15-condition-${index+1}`,room,state:'playing',diagnosticOnly:true,
+  setup:async room=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom(room,{rig:'arc',runStructure:true});
+   d.step(3200);
+  },
+ })),
+ ...[
+  ['dark',6,1800],['coolant',5,1400],['vent',10,13100],
+  ['conduit',2,3360],['brood',1,10400],['sealed',4,3600],
+ ].flatMap(([condition,seed,clock])=>['entry','active'].map(stage=>({
+  id:`run15-${condition}-${stage}`,room:'communal-atrium',state:'playing',diagnosticOnly:true,
+  setup:new Function('room',`return (async()=>{
+   const d=window.__containmentDebug,g=d.game;
+   await d.gotoRoom(room,{rig:'breacher',seed:${seed},runStructure:true});
+   d.invulnerable(true);
+   const gl=d.renderer.renderer.getContext(),create=gl.createProgram;
+   let programs=0;
+   gl.createProgram=function(){programs++;return create.call(gl);};
+   try{
+    const state=g.conditionState;
+    if('${condition}'==='coolant'&&'${stage}'==='active'){
+     const target=state.zones[0],dx=target.x-g.player.x,dy=target.y-g.player.y,range=Math.hypot(dx,dy)||1;
+     d.setInput({x:dx/range,y:dy/range,angle:Math.atan2(dy,dx)});
+     d.step(500);g.useAbility('dash');d.step(330);
+     d.setInput({x:0,y:0});d.step(180);
+    }else d.step(${stage==='entry'?100:clock});
+   }finally{gl.createProgram=create;}
+   const state=g.conditionState;
+   d.g5Proof={condition:state.condition.id,clock:state.elapsed,ventLive:state.ventLive,conduitLive:state.conduitLive,eggs:[...state.eggs],closedBreaches:state.closedBreaches,programsAfterReady:programs,fixture:'Stationary invulnerable marine except scripted coolant dash'};
+   d.refresh();
+  })();`),
+ }))),
+ {id:'run15-condition-route',state:'route',diagnosticOnly:true,setup:async()=>{
+  await window.__containmentDebug.gotoRoom('residential-gallery',{phase:'route',seed:5,runStructure:true});
+ }},
+ {id:'run15-results',state:'complete',diagnosticOnly:true,setup:async()=>{
+  const d=window.__containmentDebug, g=d.game;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  g.expedition={...g.expedition,run:{...g.expedition.run,junctions:{3:'salvage',7:'salvage',11:'salvage'}}};
+  g.status='complete';
+  d.refresh();
+ }},
  {id:'route-legacy-branch',state:'route',map:true,legacyBranch:true,required:['.deck-map','.route-destination','[data-route]','[data-inspect-route]'],setup:async()=>{const d=window.__containmentDebug;for(const room of ['receiving','forklift-loop','freight-crossing','rail-depot']){await d.gotoRoom(room,{version:2,phase:'route'});if(d.game.node.next.length>1)return;}throw Error('Legacy branch route unavailable');}},
  {id:'f2-fallback-corpse',state:'playing',burst:true,setup:async()=>{
   const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(true);d.renderer.ragdolls.dispose();
