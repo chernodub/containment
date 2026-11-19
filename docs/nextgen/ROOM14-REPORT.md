@@ -97,3 +97,52 @@ The recorded one-minute host load ranged from 11.9 to 963.8 on 10 logical cores.
 The production build passed TypeScript and Vite. The native, unassisted Breacher campaign on seed 1729 cleared eight rooms and exited successfully with zero errors. Its longest wall-clock loading hold was 3.050 seconds in passenger-vault. This exceeded three seconds even though that room's renderer preparation in the separate benchmark trial was below target. The campaign receipt is in `artifacts/nextgen/playtest/breacher-1729/report.json`.
 
 The local comparison gallery opens at `artifacts/nextgen/room14/index.html`. It links 40 baseline and 45 revised native frames from their 480×270 counterparts. The five heavy encounters are after-only. Original capture manifests remain in the sibling `room14-before*`, `room14-after`, `room14-corrections` and `room14-berth` directories.
+
+## Second pass on the merged ROOM14, HERO14 and ONB14 build
+
+The revised scenes use the same incident-facing standing marks as the first pass. The gallery includes the native centre-kiting encounter, a separate heavy encounter and the Manual entrance at the actual spawn. Each thumbnail is a 480×270 reduction of its 1920×1080 frame. Manual uses the centre-start DRESS13 kiting fixture. [Second-pass gallery](../../artifacts/nextgen/room14b/index.html)
+
+| Room | What happened | What the camera shows |
+|---|---|---|
+| Swarm Junction | A living root split the ventilation casing, forced the metal apart and ran under three neighboring plates. | The wet branches reuse the Workshop membrane painter. Where the plenum opens, raised magenta muscle and pulsing vein ridges cross the steel. Only the normal-mapped membrane extends toward the arena. |
+| Manual Control Chamber | An operator opened a dead switch bay and cabled the surviving desk into a portable bypass. | Two blue-green monitors, a dead monitor and an open bus bay share one switch shelf. The floor loom terminates at the portable unit. The warning gantry includes the console in its projected cutaway bounds. |
+| Passenger Vault | Someone left an open case, a sleeve and a toy rabbit beside the last sealed sleeper, knocking over a queue barrier on the way. | The open case and the rabbit's ears have different silhouettes at thumbnail size. The sleeper stands at the exposed end of the bank. |
+| Armory | A weapons tray slipped off the carousel counter with the weapons still clipped into it. | The lit tray leans at the foot of the curved counter. |
+| Breached Loading Bay | The impact peeled the loading deck back over its transverse ribs. | Bent silver leaves sit between the wedged hull and the open landing floor. |
+| Transmission Chamber | A recording was interrupted hard enough to throw the operator's chair and tear the take-up reel off the deck. | One reel remains on the recorder. The other lies beside the chair, connected by its loose tape. |
+| Service Shaft Landing | The lift tore out the landing comb, leaving the hoist cable attached at the far end. | The lit brackets tip down at the southern lip. The northern attachment and winch are visible from the arena. |
+| Shielding Gate | One shield leaf broke away from the iris and landed across its swept carriage path. | The two standing fans and the fallen leaf sit in front of the damaged emitter. |
+
+**Visual corrections.** The first Swarm capture recovered the infestation but clipped the housing and gave flesh and metal much the same pink value. Moving the rupture forward, reconnecting its crown to the bank and reducing the casing's coloured fill gave the wet muscle a distinct silhouette. A further pass tapered the outer membrane's opacity where small hostiles cross it. In Manual, the first monitor row was cropped and its faces merged with their dark bezels. Moving the faces forward and lighting them exposed a second problem in the kiting view, where four monitors seemed to stand on separate legs. The continuous switch shelf, bank of switches and retained damaged dais join the silhouette. The narrower station fits west of the fight circle. The final portable unit sits forward of the desk. The two inspection rounds are retained in [round one](../../artifacts/nextgen/room14b-r1/index.html) and [round two](../../artifacts/nextgen/room14b-r2/index.html).
+
+**Remaining weaknesses.** Freight's leaning mass and Awakening's missing berth read in fewer shapes than the recorder, whose two reels are clearest at native size. The Shaft's original winch still dominates its centre view. The torn comb reads best at the incident mark. Swarm's highest pipe ends still leave the top of the incident frame, though the split and deck arms remain visible. In the heavy frames the marine, orange warning borders and projectiles remain distinct. Several dark enemies overlap one another around the Swarm roots and Transmission desk. Their individual silhouettes are harder to count at 480 px.
+
+### Paired High / Arc performance
+
+The baseline dist was built from the production sources, public assets, configuration and debug module at `7242a2b1`. The lockfile matches the merged head. The comparison used the same bench runner, one browser, one 20-second real-time High/Arc trial per build per room, and explicit `--dist` and `--no-build` for both sides. The baseline build remains in `artifacts/nextgen/room14b/base-src/dist`. The head includes HERO14 and ONB14 as well as ROOM14.
+
+One-minute load stayed above 12 at every observation from 06:04 to 06:34 MSK. The comparison used the requested 30-minute fallback. A and B measured the art revision `bacf3c10` in opposite orders. Swarm's head p95 changed from 32.9 ms faster to 17.4 ms slower. Its full rectangular decal still submitted transparent fragments between the roots. Revision `e2c0c463` uses the relief mask to omit empty tiles within the same draw and drops shadow casting on the small vein ridges. The three Swarm views were captured again after that change.
+
+The tables compare baseline (B) and optimized head (H). Draws, triangles and lights are per-trial maxima. Frame times are wall-clock RAF intervals. C ran baseline first in each room. D ran the rooms and builds in reverse order. The separate trials retain normal adaptive rendering and native enemy replenishment.
+
+**C, baseline first**
+
+| Room | Draws B / H | Triangles B / H | Lights B / H | Frame p50 B / H (ms) | Frame p95 B / H (ms) | Δ p95 (ms) | Starting load B / H |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| swarm-junction | 134 / 141 | 505,352 / 483,202 | 9 / 9 | 24.8 / 25.0 | 40.6 / 41.8 | +1.2 | 28.0 / 36.2 |
+| manual-control-chamber | 221 / 234 | 527,067 / 526,904 | 9 / 9 | 24.9 / 42.2 | 42.5 / 100.8 | +58.3 | 64.3 / 63.6 |
+| freight-hold | 144 / 148 | 523,540 / 497,844 | 9 / 9 | 34.8 / 33.3 | 66.5 / 66.1 | -0.4 | 102.6 / 102.3 |
+
+**D, head first**
+
+| Room | Draws B / H | Triangles B / H | Lights B / H | Frame p50 B / H (ms) | Frame p95 B / H (ms) | Δ p95 (ms) | Starting load B / H |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| swarm-junction | 133 / 133 | 510,596 / 454,574 | 9 / 9 | 50.0 / 41.5 | 116.6 / 91.5 | -25.1 | 55.3 / 51.4 |
+| manual-control-chamber | 227 / 223 | 527,333 / 526,702 | 9 / 9 | 33.1 / 33.3 | 60.0 / 58.9 | -1.1 | 45.2 / 40.0 |
+| freight-hold | 145 / 149 | 497,924 / 505,312 | 9 / 9 | 34.0 / 33.3 | 66.5 / 66.9 | +0.4 | 54.7 / 63.3 |
+
+All six final head trials stayed within 234 draws and nine lights, with zero mid-combat shader compiles. Final head preparation took 0.617–2.285 s across the completed C/D records for these rooms. An earlier Manual A trial took 7.283 s, including 6.423 s in incident dressing. That preparation miss did not recur in either final order.
+
+Every baseline and head trial missed 20 ms at p95. In C, Manual's load rose from 63.6 to 97.2 during its head trial, with 96.3 ms CPU p95. In D, its head p95 was 1.1 ms faster than baseline. Swarm measured +1.2 ms in C and −25.1 ms in D. Freight differed by 0.4 ms in each direction. No room repeated a p95 regression above 1 ms in both final orders. The shared-host measurements cannot resolve a 1 ms non-regression margin or certify the absolute frame budget.
+
+Each trial retains its raw samples and preparation breakdown in `artifacts/nextgen/room14b-{A,B,C,D}-{room}-{base,head}/benchmark.json`. The final TypeScript and Vite build passed. This pass added no third-party assets.

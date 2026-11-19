@@ -2,6 +2,7 @@ import {environmentClock} from '../lighting/HotFixtureSurface';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {paintVeinedMembrane} from './Inc13ResinFloor';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
 type Brush=CanvasRenderingContext2D;
@@ -16,7 +17,7 @@ function stroke(c:Brush,path:string,color:string,width:number):void {
 
 /** Original props use room units throughout, including height. One matte
  * vertex-colour batch per incident keeps individual rods and folds cheap. */
-class IncidentPieces {
+export class IncidentPieces {
   parts:T.BufferGeometry[]=[];
   add(g:T.BufferGeometry,color:number):void {
     const geo=g.index?g.toNonIndexed():g;
@@ -42,14 +43,13 @@ class IncidentPieces {
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
     g.computeVertexNormals();this.add(g,color);
   }
-  finish(root:T.Group,id:string,x:number,z:number):void {
-    if(!this.parts.length)return;
+  finish(root:T.Group,id:string,x:number,z:number,finish?:T.Material):T.Mesh {
     const geometry=mergeGeometries(this.parts,false)!;
     this.parts.forEach(g=>g.dispose());geometry.scale(1/32,1/32,1/32);
-    const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
+    const material=finish??new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
     const mesh=new T.Mesh(geometry,material);mesh.name='inc13-'+id;mesh.position.set(x/32,0,z/32);
-    mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+    mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;
   }
 }
 interface Incident {
@@ -60,11 +60,26 @@ interface Incident {
 }
 const incidents:Record<string,Incident>={
   'passenger-vault':{
-    source:[391,471],bounds:[-195,-28,286,174],
+    source:[308,562],bounds:[-195,-28,286,174],
     paint(c){
       for(const x of [-12,12])stroke(c,'M'+x+' 14l-4 12','rgba(48,53,54,.5)',2);
     },
     pieces(p){
+      // The open suitcase has fallen lid-first; its striped sleeve is caught
+      // on the lip. The seated rabbit's long ears survive reduction to 480px.
+      p.box(-32,6,49,43,10,31,0x977154,-.18);
+      p.box(-33,11,49,36,1,24,0x4b5049,-.18);
+      p.box(-36,17,32,42,26,4,0xa68b6b,-.18,-.08);
+      p.face([[-49,12,39],[-27,14,43],[-21,12,58],[-34,14,63],[-49,12,59]],0x92afab);
+      p.face([[-49,12,59],[-34,14,63],[-31,2,75],[-52,2,72]],0x678c90);
+      p.face([[-50,6,66],[-32,7,69],[-32,5,71],[-50,4,68]],0xdfcaa7);
+      const plush=(x:number,h:number,z:number,w:number,y:number,d:number,color:number,tilt=0)=>{
+        const g=new T.SphereGeometry(1,10,7);g.scale(w,y,d);g.rotateZ(tilt);p.add(g.translate(x,h,z),color);
+      };
+      plush(9,10,65,9,11,7,0xb88961);plush(9,22,65,9,8,7,0xd0aa76);
+      plush(5,33,65,3.4,9,3,0xc5a172,.22);plush(14,32,65,3.5,8,3,0xb99470,-.32);
+      plush(9,20,71,5,4,3,0xe3cea1);plush(9,23,73,2,1.5,1.3,0x423a39);
+      for(const x of [3,16])plush(x,4,71,5,4,6,0xba9574);
       // Drawer runners, an adult shoe, a child's shoe and a keepsake frame.
       for(const x of [-24,24])p.rod([x,9,-24],[x,8,23],1.3,0x78898b);
       p.face([[-21,9,-4],[12,9,-4],[17,9,9],[-19,9,11]],0x9eaaa0);
@@ -107,7 +122,7 @@ const incidents:Record<string,Incident>={
     },
   },
   'armory':{
-    source:[273,336],bounds:[-140,-25,268,217],
+    source:[379,609],bounds:[-140,-25,268,217],
     paint(c){
       fill(c,'M-28 -9l39 1 -1 21 -40 -3Z','rgba(43,47,48,.48)');
     },
@@ -141,7 +156,7 @@ const incidents:Record<string,Incident>={
     },
   },
   'breached-loading-bay':{
-    source:[485,427],bounds:[-236,-63,366,234],
+    source:[511,490],bounds:[-236,-63,366,234],
     paint(c){
       for(const x of [-14,2,17])stroke(c,'M'+x+' 9l-17 14','rgba(81,87,88,.55)',2);
     },
@@ -172,7 +187,7 @@ const incidents:Record<string,Incident>={
     },
   },
   'transmission-chamber':{
-    source:[903,397],bounds:[-279,-69,352,224],
+    source:[865,482],bounds:[-279,-69,352,224],
     paint(c){
       for(let i=0;i<4;i++)fill(c,'M'+(-16+i*4)+' 17l7 2 -2 6 -7 -1Z','#6a706b');
     },
@@ -180,6 +195,17 @@ const incidents:Record<string,Incident>={
       p.box(-16,24,10,49,3,25,0x737f7d,-.11);for(const x of [-36,4])p.rod([x,1,9],[x,24,9],2.2,0x455354);
       p.box(-20,28,9,15,5,12,0x414c51,-.11);
       p.rod([-33,24,15],[-30,32,13],1.1,0x8e9384);p.box(-29,32,12,7,3,3,0x48595d,.18);
+      // Open reel transport. The take-up flange broke loose and landed beside
+      // the chair, leaving the recording threaded over the edge of the desk.
+      p.box(-18,36,8,38,13,19,0x414f57,-.11);
+      for(const [x,y,z,lean] of [[-26,45,8,.18],[-45,4,32,.09]]){
+        const g=new T.CylinderGeometry(9,9,3.8,16);g.rotateX(lean);
+        p.add(g.translate(x,y,z),0x9ca9a0);
+        p.box(x,y+2.2,z,4,1,4,0x46525a);
+        for(const a of [0,2.1,4.2])p.box(x+5*Math.cos(a),y+2,z+5*Math.sin(a),3.8,1,2,0x414c53,-a);
+      }
+      p.rod([-19,44,10],[-38,26,22],.9,0xa3a292);
+      p.rod([-38,26,22],[-45,5,32],.9,0x939585);
       // Empty operator's chair lies behind the unspooling recorder.
       p.box(-55,6,29,16,5,15,0x536369,.55,.64);
       p.box(-61,9,22,4,15,15,0x667778,.55,.64);
@@ -220,11 +246,21 @@ const incidents:Record<string,Incident>={
     },
   },
   'service-shaft-landing':{
-    source:[332,456],bounds:[-214,-132,252,240],
+    source:[325,560],bounds:[-214,-132,252,240],
     paint(c){
       stroke(c,'M-8 0q-9 7 -12 18','rgba(47,56,55,.59)',4);
     },
     pieces(p){
+      p.rod([-26,0,7],[-23,38,3],3.2,0x798e87);
+      p.rod([-23,38,3],[7,46,-4],3.2,0x9caa95);
+      p.rod([7,46,-4],[18,27,-2],2.5,0x75857c);
+      // The hoist cable is still tied into the northern lip. Its returned
+      // end hangs free where the southern lifting eye pulled out.
+      p.rod([4,11,-5],[12,35,-65],1.8,0x849a93);
+      p.rod([12,35,-65],[9,49,-156],1.8,0x788b83);
+      p.rod([9,49,-156],[4,39,-209],1.8,0x849a93);
+      p.box(4,21,-209,15,40,19,0x50695f);
+      p.box(4,41,-209,21,6,25,0x91a29a);
       // Torn landing comb and bent brackets fold down into the open shaft.
       for(let i=0;i<7;i++){
         const z=-25+i*9,h=5+5*Math.sin(i);
@@ -235,9 +271,18 @@ const incidents:Record<string,Incident>={
     },
   },
   'swarm-junction':{
-    source:[310,377],bounds:[-166,-52,320,233],
+    source:[361,493],bounds:[-156,-120,422,285],
     paint(c){
-      fill(c,'M-27 -8q16 8 29 3l13 6 -3 5 -15 -2 -11 3 -8 -6Z','rgba(54,50,59,.83)');
+      // Three lobes share the workshop membrane, with open fenestrae between veins.
+      for(const [angle,length,width] of [[-.44,.46,.34],[.09,.49,.32],[.68,.38,.31]]){
+        c.save();c.rotate(angle);c.scale(-length,width);c.translate(-669,-315);
+        paintVeinedMembrane(c);c.restore();
+      }
+      const ends=c.createLinearGradient(35,0,215,74);
+      ends.addColorStop(0,'#fff');ends.addColorStop(.64,'rgba(255,255,255,.76)');
+      ends.addColorStop(1,'rgba(255,255,255,.22)');
+      c.globalCompositeOperation='destination-in';c.fillStyle=ends;c.fillRect(-156,-120,422,285);
+      c.globalCompositeOperation='source-over';
     },
     pieces(p){
       const wall:Point3=[-70,59,-39];
@@ -258,7 +303,7 @@ const incidents:Record<string,Incident>={
     },
   },
   'shielding-gate':{
-    source:[455,332],bounds:[-190,-46,342,181],
+    source:[496,422],bounds:[-190,-46,342,181],
     paint(c){
       // Scraped arcs are the real swept paths of the failed shield leaves.
       // Polished ends stop where the broken carriages jammed.
@@ -356,6 +401,7 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
     c.clip(deck,'evenodd');
     c.translate(x,z);c.lineJoin='round';c.lineCap='round';incident.paint(c);
   },.021);
+  if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
   const pieces=new IncidentPieces();incident.pieces(pieces);pieces.finish(root,id,x,z);
 }
@@ -381,5 +427,33 @@ function addOverloadVents(root:T.Group,x:number,z:number):void {
       const t=environmentClock.value,phase=t%2.2;
       material.opacity=flash?(phase<.10||(phase>.32&&phase<.42)?.9:.22):.51+.15*Math.sin(t*9)+.08*Math.sin(t*27);
     };root.add(mesh);
+  }
+}
+
+function addLivingPlenum(root:T.Group,x:number,z:number):void {
+  const flesh=new IncidentPieces(),veins=new IncidentPieces();
+  // One continuous knot climbs from under the displaced plates to the duct bank.
+  for(const offset of [-13,0,12]){
+    const path=new T.CatmullRomCurve3([
+      new T.Vector3(35+offset,1,20+offset*.8),new T.Vector3(offset,7,0),
+      new T.Vector3(-22+offset,28,-16),new T.Vector3(-16+offset,48,-37),
+      new T.Vector3(-37+offset,58,-64),new T.Vector3(-79+offset,46,-146)]);
+    flesh.add(new T.TubeGeometry(path,18,8,7,false),0x49223f);
+    // Swollen muscle under the casing tapers into the first deck plate.
+    const bulb=new T.SphereGeometry(1,12,9).scale(8,8,24);
+    bulb.rotateX(.62);bulb.rotateY(offset*.035);
+    flesh.add(bulb.translate(offset+4,15,5+offset*.65),0x752752);
+    const ridge=path.points.map(p=>new T.Vector3(p.x+1,p.y+6,p.z+3));
+    veins.add(new T.TubeGeometry(new T.CatmullRomCurve3(ridge),18,2.4,6,false),0xde69b6);
+    const node=new T.SphereGeometry(1,10,7).scale(4,8,4);
+    const at=path.getPoint(.40+offset*.011);
+    veins.add(node.translate(at.x,at.y+6,at.z+5),0xffb9e3);
+  }
+  for(const [batch,glow] of [[flesh,false],[veins,true]] as const){
+    const mesh=batch.finish(root,glow?'plenum-veins':'plenum-mantle',x,z) as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>;
+    mesh.material.roughness=.24;mesh.material.emissive.setHex(glow?0xcc409d:0x701040);
+    mesh.material.emissiveIntensity=glow?.43:.45;
+    mesh.castShadow=!glow;
+    if(glow)mesh.onBeforeRender=()=>{mesh.material.emissiveIntensity=.46+.13*Math.sin(environmentClock.value*1.45);};
   }
 }
