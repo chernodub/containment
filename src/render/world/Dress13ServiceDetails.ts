@@ -44,7 +44,10 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     }
   };
   if (id === 'manual-control-chamber') {
+    const start=root.children.length;
     addInc13Manual(root);
+    const mount=incidentTransform(id);
+    for(const part of root.children.slice(start))part.applyMatrix4(mount);
   } else if (id === 'freight-hold') {
     scuff(370, 345, 2.5, 1.1); scuff(424, 349, 1.4, 1.1);
     shards(405, 342, 0x697374);

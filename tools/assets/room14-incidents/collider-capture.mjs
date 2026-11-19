@@ -31,7 +31,7 @@ const views={
   'transmission-chamber': [870, 565, 864, 469],
   'diagnostic-gallery': [453, 438, 475, 337],
   'safety-interlock-station': [504, 451, 491, 345],
-  'coolant-plant': [512, 399, 521, 265],
+  'coolant-plant': [348, 421, 337, 305],
   'service-shaft-landing': [307, 618, 335, 507],
   'infested-workshop': [568, 415, 590, 302],
   'swarm-junction': [310, 607, 310, 377],
