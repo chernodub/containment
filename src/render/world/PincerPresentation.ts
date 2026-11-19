@@ -33,7 +33,7 @@ export class PincerPresentation {
     if (enemy.wallStunAngle !== undefined) {
       this.pinned.set(model, model.body.rotation.x);
       model.root.rotation.y = Math.PI / 2 - enemy.wallStunAngle;
-      model.body.rotation.x -= .48;
+      model.body.rotation.x += .48;
     }
     if (enemy.podStage !== 'opening') return;
     const parent = game.enemies.snapshot.enemies.find(actor => actor.champion === 'matron');
@@ -58,10 +58,21 @@ export class PincerPresentation {
   private readonly broodSplits: T.Mesh[] = [];
   private readonly retreats: T.Mesh[] = [];
 
-  retreatPose(game: DepthGame, enemy: {id: number; x: number; y: number}, unit: number, angle: number, stride: number) {
+  private readonly retreatFlinches = new WeakMap<ActorModel, string>();
+
+  retreatPose(model: ActorModel, game: DepthGame, enemy: EnemySnapshot, unit: number, angle: number, stride: number, velocity: {x:number;y:number}) {
     const retreat = game.getEscortRetreat(enemy.id);
     if (!retreat) return {angle, stride};
     const direction = Math.atan2(retreat.y - enemy.y, retreat.x - enemy.x);
+    const key = `${game.roomRevision}:${enemy.id}`;
+    if (retreat.flinching && this.retreatFlinches.get(model) !== key) {
+      this.retreatFlinches.set(model,key);
+      model.hit?.(.3,direction);
+    }
+    if (!retreat.flinching) {
+      velocity.x = Math.cos(direction) * enemy.baseSpeed * 2.4;
+      velocity.y = Math.sin(direction) * enemy.baseSpeed * 2.4;
+    }
     let marker = this.retreats.find(mesh => !mesh.visible);
     if (!marker) {
       marker = new T.Mesh(this.body, this.signal);

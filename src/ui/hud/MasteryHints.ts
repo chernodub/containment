@@ -74,6 +74,7 @@ export class MasteryHints {
             showMark('kinetic',preview.crush,'',.1,preview.player);
             showMark('kinetic',preview.crush,'Crush 68',.35);
         }
+        if (preview.dashOrigin) showMark('arc',preview.dashOrigin,'',.1,preview.player);
         if (preview.link) {
             showMark('arc',preview.link,'',.45,preview.linkFrom);
             showMark('arc',preview.link,'◆',.45);
