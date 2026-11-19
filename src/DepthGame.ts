@@ -227,7 +227,7 @@ export class DepthGame {
   const run=this.expedition.run;
   return run.runStructure?storyOpening(run.seed,depth,this.difficulty==='story',salvage&&isJunction(depth),run.junctions).name:undefined;
  }
- get encounterObjective(){if(this.status!=='playing')return '';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.';if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.coverLesson&&!this.coverLesson.learned&&this.enemies.snapshot.enemies.some(enemy=>enemy.type==='spitter'))return "Break the Spitter’s line of sight";if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'ESCORT BROKEN';const pincer=this.encounter.pincer;if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;const siege=this.siege;if(siege){if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Leader down — ${encounter.canceledReinforcements} reinforcements stopped. Clear the escort.`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
+ get encounterObjective(){if(this.status!=='playing')return '';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.';if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.coverLesson&&!this.coverLesson.learned&&this.enemies.snapshot.enemies.some(enemy=>enemy.type==='spitter'))return "Break the Spitter’s line of sight";if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'ESCORT BROKEN';const pincer=this.encounter.pincer;if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;const siege=this.siege;if(siege){if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
  private storySkipped=false;
  get storyPresentation(){return this.storySkipped?undefined:this.storyRoom?.story;}
  skipStory(){this.storySkipped=true;}
@@ -331,6 +331,13 @@ export class DepthGame {
  private nextRigDrill:{augment:AugmentId;depth:number}|null=null;
  private rigDrill:{augment:AugmentId;ids:number[];until:number;won:boolean;priorCharge?:number}|null=null;
  get augmentDrillActive(){return this.rigDrill!==null;}
+ get augmentDrillTarget(){
+  const drill=this.rigDrill;
+  if(drill&&!drill.won)for(const id of drill.ids){
+   const enemy=this.enemies.getSnapshot(id);
+   if(enemy)return enemy;
+  }
+ }
 
  private stageRigDrill(){
   const next=this.nextRigDrill;
@@ -519,7 +526,7 @@ export class DepthGame {
   if(expiry>1e-7&&expiry<ms-1e-7){this.updateStep(expiry,input);this.updateStep(ms-expiry,input);}
   else this.updateStep(ms,input);
  }
- private broodCollapse: {id:number; pods:readonly {x:number;y:number}[]} | undefined;
+ private broodCollapse: {id:number; canceled:number; pods:readonly {x:number;y:number}[]} | undefined;
  get broodInterruption(){
   const collapse=this.broodCollapse;
     const remainingMs=collapse?this.enemies.getSnapshot(collapse.id)?.stunRemainingMs??0:0;
@@ -527,9 +534,9 @@ export class DepthGame {
  }
 
  private interruptBrood(id:number,beat:number|undefined){
-  this.director.reportBroodInterrupted(beat);
+  const reserve=this.director.reportBroodInterrupted(beat);
   const pods=this.enemies.snapshot.enemies.filter(enemy=>enemy.pod&&enemy.beat===beat&&beat!==undefined);
-  this.broodCollapse={id,pods};
+  this.broodCollapse={id,canceled:reserve+pods.length,pods};
   for(const pod of pods)this.enemies.remove(pod.id);
   this.pending=this.pending.filter(request=>!request.options?.pod||request.options.beat!==beat);
   this.enemies.stagger(id,1800);

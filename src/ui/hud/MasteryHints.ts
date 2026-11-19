@@ -69,6 +69,7 @@ export class MasteryHints {
             node.style.transform = start ? `rotate(${Math.atan2(end.y-start.y,end.x-start.x)}rad)` : '';
         };
         if (preview.drill) showMark('bonus',preview.drill,'20 CR',1.8);
+        if (preview.augmentDrill) showMark('bonus',preview.augmentDrill,'15 CR',1.8);
         for (const target of preview.ignite) showMark('pyro',target,'◇',1.1);
         if (preview.crush) {
             showMark('kinetic',preview.crush,'',.1,preview.player);

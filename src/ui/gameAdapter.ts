@@ -524,7 +524,7 @@ export function getMasteryPreview(game: DepthGame) {
       .sort((a,b)=>Math.hypot(a.x-overload.x,a.y-overload.y)-Math.hypot(b.x-overload.x,b.y-overload.y)||a.id-b.id)[0]
     : undefined;
   const drill = getAwakeningDrill(game);
-  return {roomRevision:game.roomRevision,linkFrom:next&&overload?overload:step&&arcOrigin?arcOrigin:player,dashOrigin:!next&&step?arcOrigin:null,walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:next??step??overload??null};
+  return {augmentDrill:game.augmentDrillTarget,roomRevision:game.roomRevision,linkFrom:next&&overload?overload:step&&arcOrigin?arcOrigin:player,dashOrigin:!next&&step?arcOrigin:null,walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:next??step??overload??null};
 }
 
 

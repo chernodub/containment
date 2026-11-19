@@ -238,8 +238,12 @@ export class EncounterDirector {
   }
 
   get objectiveBroken(){return this.broken;}
-  reportBroodInterrupted(beat:number|undefined){
-    if(beat===this.beatIndex&&this.plan.beats?.[beat]?.consequence==='brood')this.defusedBeats.add(beat);
+  reportBroodInterrupted(beat:number|undefined):number {
+    if(beat!==this.beatIndex||this.defusedBeats.has(beat))return 0;
+    const current=this.plan.beats?.[beat];
+    if(current?.consequence!=='brood')return 0;
+    this.defusedBeats.add(beat);
+    return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
   resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean}[],pending:number,siegeReady:boolean):Cleanup|undefined {
     const beat=this.plan.beats?.[this.beatIndex];

@@ -130,7 +130,7 @@ export class ContextualOnboarding {
     // Refresh geometry once at HUD cadence, never on ordinary animation frames.
     this.layoutDirty = true;
     if (game.status === 'complete' && !this.finished) {this.finished=true;try {this.storage?.setItem('containment.finished.v1','true');}catch{}}
-    const playing = game.status === 'playing' && hints && !this.finished;
+    const playing = game.status === 'playing' && hints && !this.finished && !game.augmentDrillActive;
 
     this.enabled = playing;
     if (this.seed !== game.expedition.run.seed) {
