@@ -60,33 +60,10 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     });
     // Recreate the modeller's wall-backed group on the actual registered bank
     // face (z340), keeping the crossing bare between the banks and heart.
-    brood('brood-hive-heart', 470, 620, .65);
-    brood('brood-nest-large', 300, 375, .8);
-    brood('brood-consumed-shell', 220, 392, 1.05, 0, .3);
-    brood('brood-nest-large', 900, 375, .8);
-    brood('brood-consumed-shell', 975, 392, .85);
-    brood('brood-nest-medium', 250, 831, .8, 0, Math.PI);
-    brood('brood-burst-duct', 370, 399, .55);
-    brood('brood-pods-large', 210, 620, .65);
-    brood('brood-pods-hatched', 360, 407, .6);
-    brood('brood-pods-small', 965, 410, .65);
-    // Small ragged fringes connect each mass to its wall; no free deck fields.
-    for (const [x,z,a] of [[255,365,.3],[335,386,.7],[210,640,1.4],[885,365,2.8],[950,385,1.3],[450,650,.4]]) {
-      brood('brood-creep-c',x,z,.46,.002,a);
-    }
     for (const [x,z,a] of [[300,341,0],[900,341,0]]) {
       brood('brood-creep-wall',x,z,.55,.15,a);
       result[result.length-1].matrix.scale(new T.Vector3(2,1,1));
       result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
-    }
-    // Measured plenum tops (1.81m) to nest crowns: real sloping anchors.
-    for (const [x,y,z,bx,by,bz] of [[235,1.75,365,285,2.5,375],[355,1.75,365,315,2.4,375],[955,1.75,365,908,2.5,375]]) {
-      const gap=new T.Vector3((bx-x)/32,by-y,(bz-z)/32);
-      brood('brood-web-short',x,z,1,y);
-      result[result.length-1].matrix.compose(new T.Vector3(x/32,y,z/32),
-        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
-          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.6)),
-        new T.Vector3(gap.length()/1.5,.25,.55));
     }
   }
   if (id === 'overload-floor') {

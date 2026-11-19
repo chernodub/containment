@@ -1,0 +1,192 @@
+{
+  "bakeSeconds": 34.942,
+  "blenderPNGDecodeMs": 7.832,
+  "file": "incidents-normal.png",
+  "size": 512,
+  "bytes": 265984,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 136338,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "sealed-berth--e9-body",
+      "role": "e9-body",
+      "seconds": 1.249,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "sealed-berth--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.898,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "sealed-berth--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.831,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "sealed-berth--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.426,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "sealed-berth--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.569,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "queue-barrier--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.646,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "queue-barrier--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.215,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "crushed-bench--e9-body",
+      "role": "e9-body",
+      "seconds": 0.45,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "crushed-bench--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.139,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "crushed-bench--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.162,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "crushed-bench--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.07,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "fallen-ceiling--e9-body",
+      "role": "e9-body",
+      "seconds": 0.116,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "fallen-ceiling--e9-dark",
+      "role": "e9-dark",
+      "seconds": 2.983,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "fallen-ceiling--p11-steel",
+      "role": "p11-steel",
+      "seconds": 2.583,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "shifted-load--e9-body",
+      "role": "e9-body",
+      "seconds": 0.964,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "shifted-load--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.638,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "shifted-load--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.453,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-sled--e9-body",
+      "role": "e9-body",
+      "seconds": 0.424,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-sled--e9-dark",
+      "role": "e9-dark",
+      "seconds": 1.461,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-sled--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.974,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "split-plenum--e9-body",
+      "role": "e9-body",
+      "seconds": 0.623,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "split-plenum--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.714,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "split-plenum--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.375,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "bypass--e9-body",
+      "role": "e9-body",
+      "seconds": 0.119,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "bypass--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.259,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "bypass--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.857,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "escaped-gurney--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.714,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "escaped-gurney--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.416,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "escaped-gurney--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.543,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "glazing--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.355,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

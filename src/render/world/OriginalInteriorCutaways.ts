@@ -1,3 +1,4 @@
+import type {RoomCutawayTargets} from './RoomCutawayTargets';
 import * as T from 'three';
 
 type Body = {x:number; y:number; radius:number};
@@ -32,7 +33,7 @@ function projectBody(body:Body,height:number,camera:T.Camera,point:T.Vector3,out
 /** Remove an overhead assembly locally when it crosses a full actor silhouette.
  * Alpha testing cuts solid metal away; it never turns machinery translucent. */
 export function updateOriginalInteriorCutaways(root:T.Object3D|undefined,camera:T.Camera,
-  marine:Body,marineHeight:number,enemies:readonly Actor[],models:ReadonlyMap<number,Model>):void {
+  marine:Body,marineHeight:number,enemies:readonly Actor[],models:ReadonlyMap<number,Model>,targets?:RoomCutawayTargets):void {
   if(!root)return;
   const state=states.get(root);if(!state)return;
   const {point,actors,box}=state;
@@ -42,6 +43,8 @@ export function updateOriginalInteriorCutaways(root:T.Object3D|undefined,camera:
     if(bodies===1025)break;
     projectBody(enemy,model?.height??4.7,camera,point,actors,bodies++*4);
   }
+  for(let i=0;targets&&i<targets.count&&bodies<1025;i++)
+    projectBody(targets.bodies[i],.6,camera,point,actors,bodies++*4);
   for(const piece of state.pieces){
     const b=piece.bounds;
     projectBox(b.min.x,b.max.x,b.min.y,b.max.y,b.min.z,b.max.z,camera,point,box,0);

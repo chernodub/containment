@@ -120,9 +120,10 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
 
  // Expose the rear structural bay above the rim. Its lower posts still reach
  // the shaft base; the diagonal is clear of the counterweight silhouette.
+ const reflectedZinc=material('near-truss-return',0x899c9e,.57,0x476567);
  for(const [z,low,high] of [[285,-15,65],[530,-128,-22]]){
   const truss=new T.Group();truss.name=z===285?'rear-truss':'front-truss';bracing.add(truss);
-  beam(truss,[470,low,z],[690,high,z],6,zinc);beam(truss,[690,low,z],[470,high,z],6,zinc);
+  beam(truss,[470,low,z],[690,high,z],6,z===530?reflectedZinc:zinc);beam(truss,[690,low,z],[470,high,z],6,z===530?reflectedZinc:zinc);
   for(const x of [470,690]){
    for(const y of [low,high])box(truss,x,y,z,22,20,12,steel);
    beam(truss,[x,-132,z],[x,high,z],7,steel);

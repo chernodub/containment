@@ -1,3 +1,4 @@
+import type {RoomCutawayTargets} from './RoomCutawayTargets';
 import * as T from 'three';
 import type {CombatViewport} from '../camera/HudCombatFraming';
 import {addMountedIngress} from './MountedIngress';
@@ -336,9 +337,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
 }
 
 /** Uniform-only biological breathing; no geometry, textures or arrays allocated per frame. */
-export function updateWorldDressing(world:T.Object3D,time:number,reducedMotion=false,camera?:T.Camera,marine?:{x:number;y:number;radius:number},marineHeight=2.05,enemies?:readonly {id:number;x:number;y:number;radius:number}[],models?:ReadonlyMap<number,{height:number;root?:T.Object3D}>,viewport?:CombatViewport):void {
+export function updateWorldDressing(world:T.Object3D,time:number,reducedMotion=false,camera?:T.Camera,marine?:{x:number;y:number;radius:number},marineHeight=2.05,enemies?:readonly {id:number;x:number;y:number;radius:number}[],models?:ReadonlyMap<number,{height:number;root?:T.Object3D}>,viewport?:CombatViewport,targets?:RoomCutawayTargets):void {
   const root=world.name==='g2-world-dressing'?world:world.getObjectByName('g2-world-dressing');if(!root)return;
   const material=root.userData.pulseMaterial as T.MeshStandardMaterial|undefined;
-  updateWarningRepeaterVisibility(root,camera,marine,marineHeight,enemies,models,viewport);
+  updateWarningRepeaterVisibility(root,camera,marine,marineHeight,enemies,models,viewport,targets);
   if(material)material.emissiveIntensity=(root.userData.growthIntensity as number)*(reducedMotion?1:1+Math.sin(time*1.4)*.1);
 }

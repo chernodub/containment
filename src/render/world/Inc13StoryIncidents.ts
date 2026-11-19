@@ -49,7 +49,7 @@ class IncidentPieces {
     const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
     const mesh=new T.Mesh(geometry,material);mesh.name='inc13-'+id;mesh.position.set(x/32,0,z/32);
-    mesh.receiveShadow=true;root.add(mesh);
+    mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
   }
 }
 interface Incident {
@@ -60,19 +60,9 @@ interface Incident {
 }
 const incidents:Record<string,Incident>={
   'passenger-vault':{
-    source:[366,368],bounds:[-195,-28,286,174],
+    source:[391,471],bounds:[-195,-28,286,174],
     paint(c){
-      // The woven wrap hangs out of Voss's drawer and was pulled in a broad
-      // turn down the aisle. A family of embroidered birds marks its hem.
-      const blanket=new Path2D('M-20 -3 Q-27 23 -57 27 L-72 30 Q-78 46 -106 45 Q-141 43 -168 72 L-177 83 -168 81 -164 87 -156 86 -147 92 Q-127 69 -98 74 Q-59 80 -42 56 Q-29 45 0 49 Q20 47 23 21 L16 0 Z');
-      c.fillStyle='rgba(105,127,123,.85)';c.fill(blanket);c.save();c.clip(blanket);
-      for(let i=0;i<7;i++)stroke(c,'M-181 '+(70+i*5)+'Q-142 '+(43+i*4)+' -99 '+(47+i*4)+' T-44 '+(30+i*4)+' Q-8 '+(39+i*3)+' 21 '+(-2+i*4),i%3?'#616f6d':'#a2a591',i%3?1.4:2.7);
-      for(let i=0;i<8;i++){const x=-153+i*15,z=68-i*3+3*Math.cos(i);stroke(c,'M'+x+' '+z+'q3 -4 6 0q2 -5 5 -4','#b2ac94',1.4);}
-      c.restore();
-      for(let i=0;i<11;i++)for(const [offset,size] of [[0,1],[16,.63]]){
-        c.save();c.translate(-29-i*11,58+i*5+offset+(i%2)*4);c.rotate(-.35);c.scale(size,size);
-        c.fillStyle='rgba(20,37,42,.56)';c.beginPath();c.ellipse(0,0,4,2.1,0,0,Math.PI*2);c.fill();c.restore();
-      }
+      for(const x of [-12,12])stroke(c,'M'+x+' 14l-4 12','rgba(48,53,54,.5)',2);
     },
     pieces(p){
       // Drawer runners, an adult shoe, a child's shoe and a keepsake frame.
@@ -90,16 +80,7 @@ const incidents:Record<string,Incident>={
   'communal-atrium':{
     source:[565,425],bounds:[-206,-52,330,178],
     paint(c){
-      // An overturned dining table has pulled its long striped cloth around
-      // the planter. Soil and knocked cups interrupt the original pattern.
-      const cloth=new Path2D('M26 -12 Q7 17 -32 20 L-57 31 Q-88 18 -118 35 L-179 60 -166 73 -172 88 -153 87 -145 100 Q-105 77 -80 85 Q-47 89 -22 63 Q15 44 55 55 L67 29 52 25 58 6Z');
-      c.save();c.clip(cloth);c.fillStyle='#797562';c.fillRect(-206,-52,330,178);
-      for(let i=0;i<15;i++)stroke(c,'M'+(-186+i*17)+' 123q22 -22 6 -55t12 -60','#616c63',3.5);
-      for(let i=0;i<4;i++)stroke(c,'M-181 '+(75+i*5)+'Q-104 '+(40+i*5)+' -79 '+(54+i*5)+'T-6 '+(36+i*5)+'Q30 '+(21+i*4)+' 79 '+(29+i*4),'#a39a7c',1.7);
-      c.restore();for(let i=0;i<115;i++){
-        const x=22-i*.88+19*Math.sin(i*4),z=5+i*.38+13*Math.cos(i*7.18);
-        c.fillStyle='rgba(47,50,35,.67)';c.fillRect(x,z,1+i%5,1+i%3);
-      }
+      for(const [x,z,r] of [[-13,7,7],[4,14,4],[11,12,2]]){c.fillStyle='rgba(42,41,32,.58)';c.beginPath();c.ellipse(x,z,r,r*.45,-.34,0,Math.PI*2);c.fill();}
     },
     pieces(p){
       for(const [x,z,s] of [[-72,64,1],[-90,50,.78],[-56,55,.60]]){
@@ -112,13 +93,7 @@ const incidents:Record<string,Incident>={
   'crew-checkpoint':{
     source:[606,338],bounds:[-331,-87,406,228],
     paint(c){
-      // Skid rubber bunches at the foot of the jam, then diverges along the
-      // inspection lane. Short crosswise scuffs record the wheels turning.
-      const grime=c.createLinearGradient(-295,70,-20,5);
-      grime.addColorStop(0,'rgba(41,48,49,.13)');grime.addColorStop(1,'rgba(37,43,44,.66)');
-      fill(c,'M33 -28 Q-48 -7 -82 12 Q-124 36 -183 32 L-260 62 -289 79 -263 75 -275 94 Q-215 78 -177 71 Q-99 82 -48 45 L20 22Z',grime);
-      for(let i=0;i<4;i++)stroke(c,'M'+(18-i*3)+' '+(4+i*8)+'C-88 '+(23+i*6)+' -86 '+(69+i*6)+' -175 '+(58+i*6)+'S-240 '+(85+i*5)+' -299 '+(92+i*4),'rgba(42,47,45,.69)',2.6);
-      for(let i=0;i<12;i++){c.fillStyle='rgba(106,110,99,.63)';c.fillRect(-63-i*12,35+i*2,3,i%3+3);}
+      for(const x of [-13,13])stroke(c,'M'+x+' 2q-3 7 -1 15','rgba(33,38,40,.62)',4);
     },
     pieces(p){
       // Telescoping checkpoint leaves have folded toward the baggage conveyor.
@@ -134,15 +109,7 @@ const incidents:Record<string,Incident>={
   'armory':{
     source:[273,336],bounds:[-140,-25,268,217],
     paint(c){
-      const foam=new Path2D('M-32 -2 L48 14 45 32 31 33 Q13 65 -2 102 L-55 142 -91 132 -67 111 -68 91 -34 66 -36 46 -49 37Z');
-      c.fillStyle='rgba(68,76,76,.88)';c.fill(foam);
-      // The extracted issue tray shows three human-scale weapon-shaped recesses.
-      for(let i=0;i<3;i++){
-        c.save();c.translate(-15-i*18,15+i*33);c.rotate(.32+i*.12);
-        fill(c,'M-20 -5 -9 -5 -6 -8 7 -8 8 -5 27 -5 27 -2 12 -2 10 2 3 2 3 7 -2 6 -4 2 -14 1 -18 5 -22 4Z','#232c30');
-        stroke(c,'M-20 -6l12 0 3 -3 13 0','#7c8988',1);c.restore();
-      }
-      stroke(c,'M-7 22 Q-73 83 -97 148 T-128 175','rgba(86,89,82,.62)',3);
+      fill(c,'M-28 -9l39 1 -1 21 -40 -3Z','rgba(43,47,48,.48)');
     },
     pieces(p){
       for(let i=0;i<3;i++){
@@ -158,10 +125,7 @@ const incidents:Record<string,Incident>={
   'freight-hold':{
     source:[306,292],bounds:[-152,-32,363,216],
     paint(c){
-      const dirt=c.createLinearGradient(0,0,168,145);dirt.addColorStop(0,'rgba(116,99,69,.64)');dirt.addColorStop(1,'rgba(107,92,68,.14)');
-      fill(c,'M-43 -18 Q19 -6 53 18 L102 63 165 74 191 110 155 103 179 132 133 121 129 141 76 97 45 86 -5 38Z',dirt);
-      for(const offset of [-13,12])stroke(c,'M-23 '+offset+' C24 '+(12+offset)+' 65 '+(61+offset)+' 109 '+(68+offset)+' S158 '+(84+offset)+' 181 '+(115+offset),'rgba(49,49,41,.76)',5);
-      stroke(c,'M27 11Q-30 60 -54 89T-128 139','#615b4a',3);
+      stroke(c,'M5 5l18 4 7 13 -8 5','rgba(42,37,33,.72)',4);stroke(c,'M26 19l14 4 4 9','rgba(63,59,51,.7)',2);
     },
     pieces(p){
       // High back stack retains its corner posts; the sling has slipped off
@@ -179,9 +143,7 @@ const incidents:Record<string,Incident>={
   'breached-loading-bay':{
     source:[485,427],bounds:[-236,-63,366,234],
     paint(c){
-      // Oil and paint follow the peel direction toward the torn plating lip.
-      fill(c,'M68 -46 Q21 9 -7 31 Q-42 51 -85 75 L-171 118 -138 109 -167 138 -109 118 -148 155 -84 127 Q-40 84 32 54 L88 5Z','rgba(48,58,59,.73)');
-      for(let i=0;i<10;i++)stroke(c,'M'+(57+i*5)+' '+(-30+i*2)+' Q'+(-10+i*4)+' '+(50+i*2)+' '+(-62+i*3)+' '+(69+i*3)+' T'+(-196+i*6)+' '+(137+i*2),'rgba(118,126,123,.40)',i%3?1.3:2.8);
+      for(const x of [-14,2,17])stroke(c,'M'+x+' 9l-17 14','rgba(81,87,88,.55)',2);
     },
     pieces(p){
       // Paired faces fold over real transverse ribs; the jagged inner edges
@@ -198,15 +160,7 @@ const incidents:Record<string,Incident>={
   'relay-racks':{
     source:[584,421],bounds:[-276,-91,318,225],
     paint(c){
-      // A whole patch loom has been pulled out as one folded bight. Several
-      // strands are still bound together before their connectors spread apart.
-      for(let i=0;i<11;i++){
-        const k=i-5;
-        const d='M10 '+(-22+k*2)+'C-38 '+(-41+k*2)+' -51 '+(44+k*2)+' -113 '+(48+k*2)+' S-220 '+(21+k*2.2)+' -234 '+(52+k*2)+' C-250 '+(91+k*2)+' -156 '+(108+k*2.4)+' -127 '+(81+k*3)+' Q-89 '+(48+k*4)+' -54 '+(72+k*6);
-        stroke(c,d,'rgba(14,30,32,.85)',4.4);stroke(c,d,i%4===0?'#657c79':'#475c5b',2.2);
-        c.fillStyle='#829087';c.fillRect(-55,69+k*6,5,3.5);
-      }
-      for(const [x,z] of [[-71,33],[-145,49],[-216,40]]){c.save();c.translate(x,z);c.rotate(-.18);c.fillStyle='#8e9584';c.fillRect(-2,-12,4,25);c.restore();}
+      for(const x of [-15,14])stroke(c,'M'+x+' -6l-14 24','rgba(47,54,55,.62)',2.3);
     },
     pieces(p){
       p.box(4,20,-2,24,27,40,0x3e4d50,-.15,.12);
@@ -220,14 +174,7 @@ const incidents:Record<string,Incident>={
   'transmission-chamber':{
     source:[903,397],bounds:[-279,-69,352,224],
     paint(c){
-      // The last message has run off a strip printer. The long accordion fold
-      // sits in slack loops of the uplink lead, still plugged into the desk.
-      stroke(c,'M0 -10 C-49 36 -48 2 -81 15 S-151 45 -128 69 C-106 94 -58 61 -91 53 S-188 102 -242 87','#323f49',4.8);
-      for(let i=0;i<16;i++){
-        const x=-i*12,z=16+41*Math.sin(i*.20)+i*2,zz=16+41*Math.sin((i+1)*.20)+(i+1)*2;
-        fill(c,'M'+x+' '+z+'l-1 13 -12 '+(zz-z)+' 1 -13Z',i%2?'#92948a':'#777f7b');
-        c.fillStyle='rgba(45,62,66,.72)';c.fillRect(x-10,z+4,7-i%3,1.4);c.fillRect(x-9,z+7,5,1);
-      }
+      for(let i=0;i<4;i++)fill(c,'M'+(-16+i*4)+' 17l7 2 -2 6 -7 -1Z','#6a706b');
     },
     pieces(p){
       p.box(-16,24,10,49,3,25,0x737f7d,-.11);for(const x of [-36,4])p.rod([x,1,9],[x,24,9],2.2,0x455354);
@@ -241,10 +188,7 @@ const incidents:Record<string,Incident>={
   'diagnostic-gallery':{
     source:[362,338],bounds:[-184,-40,311,187],
     paint(c){
-      const albumen=c.createLinearGradient(0,9,-138,95);
-      albumen.addColorStop(0,'rgba(111,142,138,.76)');albumen.addColorStop(1,'rgba(70,103,101,.42)');
-      fill(c,'M-23 4 Q1 1 21 12 Q50 30 18 43 Q-4 48 -23 46 Q-52 55 -48 72 Q-54 89 -84 86 Q-99 79 -113 98 Q-145 117 -158 101 Q-178 87 -148 76 Q-125 67 -106 72 Q-85 73 -83 50 Q-79 30 -51 31 Q-28 31 -23 4Z',albumen);
-      for(let i=0;i<8;i++)stroke(c,'M'+(-4-i*9)+' '+(28+i*5)+'q-8 8 -23 9','rgba(171,195,185,.43)',1.5);
+      const wet=c.createRadialGradient(0,12,2,0,12,23);wet.addColorStop(0,'rgba(59,82,80,.8)');wet.addColorStop(1,'rgba(59,82,80,0)');c.fillStyle=wet;c.fillRect(-24,-12,48,48);
     },
     pieces(p){
       // The torn restraint leaves define the missing volume of the specimen.
@@ -262,15 +206,7 @@ const incidents:Record<string,Incident>={
   'safety-interlock-station':{
     source:[550,351],bounds:[-242,-44,303,205],
     paint(c){
-      // A portable welding blanket was dragged out from under the fused door.
-      // Steel grit fans from the seam and burns small islands through the cloth.
-      const cloth=new Path2D('M-39 -1 7 7 -5 36 -45 49 Q-83 63 -97 95 L-151 123 -182 100 -165 86 -176 78 -132 54 -109 35 -79 27Z');
-      c.save();c.clip(cloth);c.fillStyle='#6c7163';c.fillRect(-242,-44,303,205);
-      for(let i=0;i<38;i++){
-        const x=-20-i*3.7,z=14+i*2.25+14*Math.sin(i*2.15),r=2+i%4;
-        c.fillStyle='rgba(44,42,39,.7)';c.beginPath();c.ellipse(x,z,r,1+r*.55,-.36,0,Math.PI*2);c.fill();
-      }c.restore();
-      for(let i=0;i<5;i++)stroke(c,'M12 '+(-4+i*2)+'Q-53 '+(14+i*3)+' -77 '+(53+i*5)+'T-158 '+(93+i*6),'rgba(89,80,62,.56)',1.4);
+      for(const x of [-9,3,12])stroke(c,'M'+x+' 4l-4 13','rgba(33,33,32,.66)',6);
     },
     pieces(p){
       // Massive dog bolts cross the welded split, two bent out of their seats.
@@ -286,14 +222,7 @@ const incidents:Record<string,Incident>={
   'service-shaft-landing':{
     source:[332,456],bounds:[-214,-132,252,240],
     paint(c){
-      // One torn lift rope has run back over the landing. A second, still
-      // captive on the drum, ends in a tight loaded loop at the shaft edge.
-      for(let i=0;i<3;i++){
-        const d='M3 '+(-69+i*3)+'C-30 -51 -20 -24 -49 -12 S-142 -33 -158 9 C-173 55 -91 69 -68 45 S-33 11 -16 14';
-        stroke(c,d,'#354444',5);stroke(c,d,i===0?'#8d9282':'#667774',2);
-      }
-      for(let i=0;i<7;i++)stroke(c,'M-157 10 Q-171 '+(20+i*3)+' '+(-185+i*2)+' '+(14+i*6),'rgba(129,138,126,.78)',1.4);
-      for(const off of [-8,5])stroke(c,'M-3 '+(23+off)+'Q-64 '+(25+off)+' -97 '+(51+off)+'T-171 '+(76+off),'rgba(94,100,89,.60)',3.3);
+      stroke(c,'M-8 0q-9 7 -12 18','rgba(47,56,55,.59)',4);
     },
     pieces(p){
       // Torn landing comb and bent brackets fold down into the open shaft.
@@ -308,17 +237,19 @@ const incidents:Record<string,Incident>={
   'swarm-junction':{
     source:[310,377],bounds:[-166,-52,320,233],
     paint(c){
-      const web=new Path2D('M-118 -25 Q-68 -2 -48 -13 Q-26 -7 -16 -35 Q3 2 28 -13 L58 -28 Q40 13 73 12 Q109 10 127 -1 Q97 27 67 46 Q38 48 29 79 Q20 92 -7 95 Q-39 106 -39 138 Q-55 158 -96 173 Q-61 137 -72 119 Q-71 93 -113 102 Q-92 83 -76 62 Q-62 40 -96 42 L-139 55 Q-94 28 -101 14Z');
-      c.save();c.clip(web);const g=c.createLinearGradient(0,-25,-57,155);g.addColorStop(0,'#614964');g.addColorStop(1,'rgba(61,46,61,.66)');c.fillStyle=g;c.fillRect(-166,-52,320,233);
-      for(let i=0;i<15;i++){
-        const x=-105+(i*47)%210,z=3+(i*29)%125;
-        c.globalCompositeOperation='destination-out';fill(c,'M'+x+' '+z+'q14 -8 25 -7 -10 7 -18 17 -11 7 -7 -10Z','rgba(0,0,0,.86)');
-        c.globalCompositeOperation='source-over';
-      }c.restore();
-      for(let i=0;i<4;i++)stroke(c,'M'+(-64+i*25)+' 0 Q'+(-74+i*27)+' 54 '+(-53+i*8)+' 80 T'+(-96+i*7)+' '+(164-i*8),'rgba(112,85,112,.68)',3.2-i*.45);
+      fill(c,'M-27 -8q16 8 29 3l13 6 -3 5 -15 -2 -11 3 -8 -6Z','rgba(54,50,59,.83)');
     },
     pieces(p){
-      // Split vent louvers remain embedded in the same membrane as the nest.
+      const wall:Point3=[-70,59,-39];
+      for(const [dx,dy] of [[-7,0],[0,6],[6,-2]]){
+        const torn:Point3=[-36+dx,26+dy,29];
+        const crown:Point3=[-29+dx,61+dy,15];
+        const bend:Point3=[-54+dx,69+dy,-20];
+        p.rod(torn,crown,3.6,0x625568);
+        p.rod(crown,bend,3.2,0x706474);
+        p.rod(bend,wall,2.6,0x635669);
+        p.face([torn,crown,bend,[-39+dx,51+dy,-5]],0x655766);
+      }
       for(let i=0;i<6;i++){
         const x=-31+i*12;
         p.face([[x,2,-10],[x+7,2,-10],[x+13,21+i%3*5,4],[x+8,25+i%3*5,6]],0x64686b);
@@ -424,7 +355,7 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
     for(const hole of room.voids??[])ring(hole);
     c.clip(deck,'evenodd');
     c.translate(x,z);c.lineJoin='round';c.lineCap='round';incident.paint(c);
-  },.049);
+  },.021);
   if(id==='overload-floor')addOverloadVents(root,x,z);
   const pieces=new IncidentPieces();incident.pieces(pieces);pieces.finish(root,id,x,z);
 }

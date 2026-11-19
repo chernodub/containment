@@ -1,6 +1,5 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {addResidentialCasterDust, residentialRunnerGeometry} from './Inc13ResidentialDeck';
 import type {OriginalKitInstance, OriginalKitPack} from './OriginalShipKitAssets';
 
 /** Interrupted packing spills into the passage outside the first cabin. */
@@ -20,7 +19,7 @@ export function dress13ResidentialPlacements(): OriginalKitInstance[] {
   add('service-access-hatch',323,285,-.3,.55,.4,.55,.12);
   out[out.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
   add('service-transit-case',202,252,.05,.9,.35,1,.025);
-  add('last-cabin',410,241,.08,1,1,1,0,'p11-inc13-residential');
+  add('last-cabin',407,290,.08,1,1,1,0,'p11-inc13-residential');
   add('deck-rubber-panel',275,322,.3,.45,.5,.4,.025,'clinical');
   return out;
 }
@@ -34,14 +33,6 @@ export function addDress13ResidentialDetails(root:T.Group):void {
     box(x,.27,z,.7,.018,.4,0x29363c,a);box(x+3,.29,z,.36,.04,.28,0x8b8a7f,a+.2);
     box(x-5,.32,z-3,.2,.06,.18,0x586c71,a);
   }
-  const runner = residentialRunnerGeometry();
-  const clothMaterial = new T.MeshStandardMaterial({vertexColors:true,roughness:1,side:T.DoubleSide});
-  clothMaterial.userData.actorMaterial = true;
-  const cloth = new T.Mesh(runner, clothMaterial);
-  cloth.name = 'inc13-residential-linen-runner';
-  cloth.receiveShadow = true;
-  root.add(cloth);
-  addResidentialCasterDust(root);
   const pillow=new T.SphereGeometry(1,12,8);pillow.scale(.225,.065,.17);pillow.translate(213/32,.085,275/32);put(pillow,0xa0a79c);
   const shirtShape=new T.Shape([[-.22,.3],[-.1,.4],[-.06,.26],[.06,.26],[.1,.4],[.22,.3],[.18,.15],[.11,.2],[.1,-.25],[-.1,-.25],[-.11,.2],[-.18,.15]].map(p=>new T.Vector2(p[0],p[1])));
   const shirt=new T.ShapeGeometry(shirtShape);shirt.rotateX(-Math.PI/2);shirt.translate(246/32,.34,303/32);put(shirt,0x86988f);
@@ -51,15 +42,6 @@ export function addDress13ResidentialDetails(root:T.Group):void {
   box(202,.27,241,.8,.12,.035,0x8c968d,.05);box(202,.24,264,.25,.035,.06,0x69777a,.05);
   for(let i=0;i<5;i++)box(265+i*18,.027,341+(i%2)*5,.12,.008,.3,0x8d958c,i*.6);
   for(let i=0;i<4;i++)box(248+i*8,.026,345,.018,.004,1.2,0x3d4444,.4);
-  // Paired caster furrows follow the load round the bend to the jammed door.
-  for(const offset of [-6,6]){
-    const track=new T.Shape();
-    track.moveTo(188,235+offset);track.bezierCurveTo(256,339+offset,324,337+offset,418,272+offset);
-    track.bezierCurveTo(329,343+offset,248,341+offset,188,235+offset);
-    const furrow=new T.ShapeGeometry(track,20);
-    furrow.scale(1/32,-1/32,1);furrow.rotateX(-Math.PI/2);furrow.translate(0,.035,0);
-    put(furrow,0x48423c);
-  }
   // A proper four-legged chair lies on its side beside the packing trail.
   const chair:T.BufferGeometry[]=[];
   for(const [x,y,z,w,h,d] of [[0,.45,0,.48,.09,.48],[0,.83,-.22,.48,.68,.07],[-.19,.22,-.19,.055,.44,.055],[.19,.22,-.19,.055,.44,.055],[-.19,.22,.19,.055,.44,.055],[.19,.22,.19,.055,.44,.055]]){const g=new T.BoxGeometry(w,h,d);g.translate(x,y,z);chair.push(g);}
@@ -76,7 +58,7 @@ export function addDress13ResidentialDetails(root:T.Group):void {
   const drawingMaterial=new T.MeshStandardMaterial({map:texture,roughness:1,side:T.DoubleSide});drawingMaterial.userData.actorMaterial=true;drawingMaterial.addEventListener('dispose',()=>texture.dispose());
   // Mount the children's paper at the front of the torn left leaf, below its lamp.
   const pictures=new T.Group();
-  pictures.position.set(410/32,0,241/32);pictures.rotation.y=.08;
+  pictures.position.set(407/32,0,290/32);pictures.rotation.y=.08;
   for(const [x,y,tilt,w,h,left,top,right,bottom] of [
     [-1.03,1.88,.08,.57,.49,18,65,178,244],
     [-1.12,1.39,-.1,.54,.37,265,63,431,244],

@@ -38,7 +38,7 @@ const profile = (p: RoomValueProfile) => Object.freeze(p);
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
   // Occupied pod windows, medical observation face and south life-support chain.
   'passenger-vault': profile({
-    landmark:{at:[368,366],color:0xb3c5e4,radius:10,body:.55,spill:.035},
+    landmark:{at:[402,501],color:0xb3c5e4,radius:10,body:.55,spill:.035,height:1.04},
     fixturesAt:[[600,320],[1000,440],[600,700]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.34,lane:.75},
     wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,
@@ -46,7 +46,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Warm cabin lamps at interrupted packing, opposite cabin and common nook.
   'residential-gallery': profile({
-    landmark:{at:[394,250],color:0xffce94,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
+    landmark:{at:[400,295],color:0xffce94,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
     fixturesAt:[[300, 280], [900, 720], [160, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,
@@ -125,7 +125,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
   'swarm-junction': profile({
-    landmark:{at:[307,381],color:0xcf76f5,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
+    landmark:{at:[267,406],color:0xa7bdaf,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
     // Hive heart and the occupied northern/southern ventilation mouths.
     fixturesAt:[[470,620],[600,250],[600,790]],
     floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
@@ -149,7 +149,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
   'manual-control-chamber': profile({
-    landmark:{at:[570,386],color:0xffebd3,radius:6.2,body:.81,spill:.046,keyGain:.66},
+    landmark:{at:[472,433],color:0xffebd3,radius:6.2,body:.81,spill:.046,height:3.6,keyGain:.74},
     // Authorization desk, southern cost/status desk and hardwired cabinet.
     fixturesAt:[[640,380],[640,920],[860,280]],
     floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
