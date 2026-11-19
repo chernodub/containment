@@ -519,8 +519,12 @@ export function getMasteryPreview(game: DepthGame) {
   const overload=slots?.tactical.id==='overload' && slots.tactical.ready ? first(player,520,
     game.currentAimPoint??{x:player.x+Math.cos(player.angle)*520,y:player.y+Math.sin(player.angle)*520}) : undefined;
   const step = arcOrigin && first(arcOrigin,160,arcOrigin);
+  const next = overload && !game.expedition.build.mutations.includes('live-wire')
+    ? nearby(overload,200).filter(target=>target.id!==overload.id)
+      .sort((a,b)=>Math.hypot(a.x-overload.x,a.y-overload.y)-Math.hypot(b.x-overload.x,b.y-overload.y)||a.id-b.id)[0]
+    : undefined;
   const drill = getAwakeningDrill(game);
-  return {walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:step&&arcOrigin?step:overload??null};
+  return {roomRevision:game.roomRevision,linkFrom:step&&arcOrigin?arcOrigin:next&&overload?overload:player,walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:step??next??overload??null};
 }
 
 

@@ -581,7 +581,7 @@ export class AbilitySystem {
     this.states[slot].active = Math.max(0, ...this.deployables.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs), ...this.zones.filter(x => this.zoneSlot(x) === slot).map(x => x.remainingMs));
     if (d.kind === 'ice-wall') {
       const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, deliberate ? 100 : 45, 'chill');
-      this.event(d.ability, 'burst', d, { entityId: d.id, radius: 150, targetIds: ids });
+      this.event(d.ability, 'burst', d, { entityId: d.id, radius: 150, targetIds: ids, deliberate });
     }
     this.event(d.ability, 'end', d, { entityId: d.id });
   }

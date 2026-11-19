@@ -11,8 +11,8 @@ export class EncounterCues {
         const kind = event.encounterCue;
         if (!kind) return;
         const x = event.cueX ?? event.x, y = event.cueY ?? event.y;
-        if (kind === 'priority' || kind === 'escort-broken') {
-            this.set(this.locations[2], x, y, kind === 'escort-broken' ? 2 : 0, kind, beat);
+        if (kind === 'priority' || kind === 'escort-broken' || kind === 'pincer-broken') {
+            this.set(this.locations[2], x, y, kind === 'priority' ? 0 : 2, kind, beat);
             return;
         }
         let slot: Cue | undefined;
@@ -38,8 +38,9 @@ export class EncounterCues {
             this.canceled = 0;
         }
         const leader = this.locations[2];
-        if (canceled > this.canceled && leader.beat === beat) leader.life = 1;
+        if (canceled > this.canceled && leader.beat === beat && leader.kind === 'priority') leader.life = 1;
         this.canceled = canceled;
+        if (leader.life > 0 && leader.kind === 'pincer-broken') return 'PINCER BROKEN — flank sealed';
         if (leader.life > 0) return leader.kind === 'escort-broken' ? 'ESCORT BROKEN' : 'Leader down · reinforcements stopped';
         for (const cue of this.locations) {
             if (cue.life <= 0) continue;

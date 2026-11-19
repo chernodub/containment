@@ -65,6 +65,7 @@ export function createScreens(context: ScreenContext) {
   let previousStatus = '';
   let dismissedRecord = '';
   let lessonSeen = false;
+  let deliberateRig = false;
   let selectedRig: RigId = 'breacher';
   try {
     const savedRig=storage?.getItem('containment.last-rig.v1');
@@ -111,8 +112,9 @@ export function createScreens(context: ScreenContext) {
     el('sound').setAttribute('aria-pressed',String(audioPreferences.muted));
   }
 
-  function inspectRig(id: RigId, focusCard = false): void {
+  function inspectRig(id: RigId, focusCard = false, deliberate = false): void {
     selectedRig = id;
+    if (deliberate) deliberateRig = true;
     playUiCue(audio,'rig-equip');
     syncScreen(true);
     if (focusCard) el('overlay').querySelector<HTMLButtonElement>(`[data-rig="${id}"]`)?.focus();
@@ -203,10 +205,10 @@ export function createScreens(context: ScreenContext) {
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-rig]').forEach(button=>{
       const id=button.dataset.rig as RigId;
-      button.addEventListener('click',()=>inspectRig(id,true));
+      button.addEventListener('click',()=>inspectRig(id,true,true));
       // Real mouse movement previews a rig without taking keyboard focus.
-      button.addEventListener('pointermove',()=>{if(selectedRig!==id) inspectRig(id);});
-      button.addEventListener('focus',()=>{if(selectedRig!==id) inspectRig(id,true);});
+      button.addEventListener('pointermove',()=>{if(!deliberateRig&&selectedRig!==id) inspectRig(id);});
+      button.addEventListener('focus',()=>{if(!deliberateRig&&selectedRig!==id) inspectRig(id,true);});
     });
     root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>setPauseTab(button.dataset.tab as PauseTab,true)));
     root.querySelectorAll<HTMLElement>('.owned-boon').forEach(card=>{
@@ -243,11 +245,12 @@ export function createScreens(context: ScreenContext) {
     const graphicsBlocked=context.graphicsLost()||recoveryPending;
     const blocked=status!=='playing'||graphicsBlocked;
     if(routeNode!==game.node.id) {routeNode=game.node.id;selectedRoute=game.node.next[0]??'';}
+    if(status!=='rig-select')deliberateRig=false;
     const saved=status==='menu'&&game.canContinue?loadCheckpoint(storage):null;
     const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
     const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
-    const key=JSON.stringify([status,phase,game.node.id,difficultyOpen,pendingDifficulty,selectedDifficulty,game.difficulty,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
+    const key=JSON.stringify([status,phase,game.node.id,difficultyOpen,pendingDifficulty,selectedDifficulty,game.difficulty,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,deliberateRig,selectedRoute,continuation,
       game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),recoveryPending,graphicsBlocked?context.recovering():false,
       blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
       blocked?game.combat.snapshot.credits:0,status==='reward'?game.combat.snapshot:null,blocked?run.draftRoll:0,
@@ -290,7 +293,7 @@ export function createScreens(context: ScreenContext) {
     }
     else if(difficultyOpen) html=difficultyCards();
     else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation);
-    else if(status==='rig-select') html=secondary!.rigScreen(selectedRig);
+    else if(status==='rig-select') html=secondary!.rigScreen(selectedRig,deliberateRig);
     else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
     else if(status==='route') html=game.node.templateId==='manual-control-chamber'?secondary!.destroyScreen():secondary!.routeScreen(game,selectedRoute);
@@ -373,11 +376,11 @@ export function createScreens(context: ScreenContext) {
       if(target?.closest('.ability-preview')&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(event.key)) return;
       if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
         event.preventDefault(); const delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?3:1;
-        inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true);
+        inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true,true);
       } else if(/^[1-4]$/.test(shortcut)) {
-        event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true);
+        event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true,true);
       } else if(event.key==='Enter'&&(!target?.closest('button,summary')||!!target?.closest('[data-rig]'))) {
-        event.preventDefault(); el('equip-rig')?.click();
+        event.preventDefault(); el(deliberateRig&&selectedRig!=='cryo'?'equip-rig':'recommended-loadout')?.click();
       }
       return;
     }

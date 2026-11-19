@@ -1,12 +1,13 @@
+import type {AbilityEvent} from '../../game/abilities/contract';
 import type {DepthRenderer} from '../../render/DepthRenderer';
 import {projectWorld, type getMasteryPreview} from '../gameAdapter';
 import '../styles/mastery.css';
 
 const prompt = {
     cryo: 'F — shatter for 100',
-    pyro: 'Q — ignite marked targets',
+    pyro: 'Detonate',
     kinetic: 'Shift — Ram into Bulwark',
-    arc: 'Next hop',
+    arc: 'Link ends here',
 };
 type RigColor = keyof typeof prompt;
 type MarkColor = RigColor | 'bonus';
@@ -20,6 +21,8 @@ export class MasteryHints {
     private readonly point = {x: 0, y: 0, visible: false};
     private shown: RigColor | null = null;
     private remaining = 0;
+    private room = -1;
+    private shownInRoom = new Set<RigColor>();
     private enabled = true;
 
     constructor(host: HTMLElement, private readonly storage: Pick<Storage, 'getItem' | 'setItem'> | null) {
@@ -29,20 +32,21 @@ export class MasteryHints {
         this.layer.append(this.callout);
         host.append(this.layer);
         try {
-            for (const rig of Object.keys(prompt)) if (storage?.getItem(`containment.mastery.${rig}`)==='seen') this.seen.add(rig);
+            for (const rig of Object.keys(prompt)) if (storage?.getItem(`containment.mastery.${rig}`)==='learned') this.seen.add(rig);
         } catch {}
     }
 
     tick(renderer: DepthRenderer, preview: ReturnType<typeof getMasteryPreview> | null, enabled: boolean, dt: number) {
-        if (enabled && !this.enabled) {
-            this.seen.clear();
-            try { for (const rig of Object.keys(prompt)) this.storage?.setItem(`containment.mastery.${rig}`, ''); } catch {}
-        }
         this.enabled = enabled;
         this.callout.hidden = true;
         for (const mark of this.marks) mark.hidden = true;
         this.remaining -= dt;
         if (!preview) {this.remaining=0; return;}
+        if (preview.roomRevision !== this.room) {
+            this.room=preview.roomRevision;
+            this.shownInRoom.clear();
+            this.remaining=0;
+        }
         let count = 0;
         const anchor = (point: Point, height: number) => projectWorld(renderer, point.x, point.y, this.point, height);
         const showMark = (rig: MarkColor, point: Point, text: string, height: number, from?: Point) => {
@@ -68,29 +72,44 @@ export class MasteryHints {
         for (const target of preview.ignite) showMark('pyro',target,'◇',1.1);
         if (preview.crush) {
             showMark('kinetic',preview.crush,'',.1,preview.player);
-            showMark('kinetic',preview.crush,'✥',.1);
+            showMark('kinetic',preview.crush,'Crush 68',.35);
         }
-        if (preview.link) showMark('arc',preview.link,'',.45,preview.player);
+        if (preview.link) {
+            showMark('arc',preview.link,'',.45,preview.linkFrom);
+            showMark('arc',preview.link,'◆',.45);
+        }
         const opportunities: [RigColor, Point | undefined][] = [
             ['cryo',preview.shatter], ['pyro',preview.ignite[0]], ['kinetic',preview.crush], ['arc',preview.link??undefined],
         ];
         if (!enabled) {this.remaining=0; return;}
         for (const [rig, point] of opportunities) {
             if (!point || !anchor(point,1.3).visible) continue;
-            if (!this.seen.has(rig)) {
-                this.seen.add(rig);
-                try {this.storage?.setItem(`containment.mastery.${rig}`, 'seen');} catch {}
+            if (this.seen.has(rig)) continue;
+            if (!this.shownInRoom.has(rig)) {
+                this.shownInRoom.add(rig);
                 this.shown=rig;
                 this.remaining=2.5;
             }
             if (this.shown!==rig || this.remaining<=0) continue;
             this.callout.dataset.rig=rig;
-            this.callout.textContent=prompt[rig];
+            this.callout.textContent=rig==='pyro' ? `Q · Detonate ${preview.ignite.length}` : prompt[rig];
             this.callout.style.left=`${this.point.x+16}px`;
             this.callout.style.top=`${this.point.y}px`;
             this.callout.hidden=false;
             break;
         }
+    }
+
+    effect(event: AbilityEvent) {
+        if (!this.enabled || !event.targetIds?.length) return;
+        const rig: RigColor | undefined =
+            event.phase === 'burst' && event.ability === 'glacier' && event.deliberate ? 'cryo' :
+            event.phase === 'burst' && event.ability === 'flashfire' ? 'pyro' :
+            event.phase === 'burst' && event.ability === 'ram' ? 'kinetic' :
+            event.phase === 'link' && (event.ability === 'overload' || event.ability === 'static-step') ? 'arc' : undefined;
+        if (!rig) return;
+        this.seen.add(rig);
+        try {this.storage?.setItem(`containment.mastery.${rig}`, 'learned');} catch {}
     }
 
     dispose() {this.layer.remove();}

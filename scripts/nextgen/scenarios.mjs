@@ -1,3 +1,4 @@
+import {PLAY16_SCENARIOS} from './play16-scenarios.mjs';
 import {ONB14_SCENARIOS} from "./onb14-scenarios.mjs";
 import {ART14_SCENARIOS} from './art14-scenarios.mjs';
 import {E9_TOUR_SCENARIO} from './e9-room-tour.mjs';
@@ -94,6 +95,7 @@ function integrationKitingSetup(tier){
 
 export const SCENARIOS=[
  ...ONB14_SCENARIOS,
+ ...PLAY16_SCENARIOS,
  E9_TOUR_SCENARIO,
  ...U6_SCENARIOS,...G4_SCENARIOS,...G4_FORM_SCENARIOS,
  ...I4_SCENARIOS,...V2_SCENARIOS,...V3_SCENARIOS,

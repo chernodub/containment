@@ -211,7 +211,8 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'pickup') this.playPickup();
     else if (effect.type === 'acid') this.enemy('spitter', 'attack', false, pan, distance);
     else if (effect.type === 'boon') {
-      if (effect.boon === 'shatter') this.playElemental('shatter');
+      if (effect.encounterCue === 'pincer-broken') this.cue(impactRecipe('wall'), { pan, distance });
+      else if (effect.boon === 'shatter') this.playElemental('shatter');
       else if (effect.boon === 'overload') this.playElemental('reactor');
     }
   }

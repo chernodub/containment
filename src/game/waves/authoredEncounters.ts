@@ -27,7 +27,7 @@ export const AWAKENING_DRILL = Object.freeze({
 
 /** Canonical beat sets in campaign order, also used as the fixed order for older saves. */
 export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.freeze([
- [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),swarm(3)],
+ [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),b('crossfire','Use the wreck to cross the firing lane',g('spitter',1,'ranged'),g('crawler',2,'screen'))],
  [b('priority','One heavy swing: step aside, punish recovery',g('brute',1,'anchor',{lesson:'brute'})),cross(1),swarm(2)],
  [b('interception','One revealed lunge: sidestep, then punish',g('stalker',1,'flanker',{lesson:'stalker'})),swarm(3),cross(1)],
  [pincer(2),priority(1),flank(1)],

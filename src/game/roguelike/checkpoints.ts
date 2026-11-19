@@ -1,3 +1,4 @@
+import {TRANSFORMATIVE_AUGMENT_IDS,type AugmentId} from '../abilities/augmentCatalog';
 import {difficultyId} from '../difficulty';
 import {isValidRunStatsSnapshot} from '../abilities/RunStats';
 import { isValidBuildState } from './builds';
@@ -68,7 +69,7 @@ export function isValidCheckpointExtensions(value: unknown): boolean {
 
 function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-  const optional = ['abilities','stats','difficulty'].filter(key=>Object.hasOwn(value,key));
+  const optional = ['abilities','stats','difficulty','pendingRigDrill'].filter(key=>Object.hasOwn(value,key));
   if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources', ...optional]) || !isValidCheckpointExtensions(value) ||
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
@@ -79,6 +80,9 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
   }
   // Initial choices cannot contain an already installed boon or completed room.
   if (['rig-select','starting-boon'].includes(value.run.phase) && (value.build.mutations.length !== 0 || value.run.completedNodeIds.length !== 0)) return false;
+  if (Object.hasOwn(value,'pendingRigDrill') && (value.run.phase!=='route'
+    || !TRANSFORMATIVE_AUGMENT_IDS.includes(value.pendingRigDrill as AugmentId)
+    || !value.build.mutations.includes(value.pendingRigDrill as AugmentId))) return false;
   if (value.stats !== undefined && !isValidRunStatsSnapshot(value.stats,value.run)) return false;
   return true;
 }
