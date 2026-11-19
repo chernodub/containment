@@ -22,7 +22,8 @@ sys.path.insert(0, str(K10))
 
 # Reuse K10's verified clip sampler / rest correction / weapon frame code.
 _ns = {'__file__': str(K10 / 'portraits.py'), 'ROOT': ROOT}
-_mod = ast.parse((K10 / 'portraits.py').read_text())
+# Shipping weapons are KTX2 (Blender cannot decode Basis); stage from the plain/ PNG fallbacks.
+_mod = ast.parse((K10 / 'portraits.py').read_text().replace("'public/assets/models' / (weapon_id", "'public/assets/models/plain' / (weapon_id"))
 _keep = [n for n in _mod.body if isinstance(n, (ast.Import, ast.ImportFrom, ast.FunctionDef)) or
          (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in ('WEAPONS', 'ACCENTS') for t in n.targets))]
 exec(compile(ast.Module(body=_keep, type_ignores=[]), 'k10-portraits', 'exec'), _ns)

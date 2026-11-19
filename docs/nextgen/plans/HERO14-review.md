@@ -20,3 +20,9 @@ mapping, so only shadowed rig panels kept their hue.
 
 **Round 3.** Rig-panel albedo darkened (×.58) so lit tops stay saturated; rig panels self-emit more; one Pyro
 exhaust fin removed from the game LOD to hold the 25k budget. Result: see the after sheets (judged below).
+
+**Round 4.** Lit rig panels take .32 of the direct light (specular .4) and rely on self-emission, so tops no longer
+clip to white. Greyscale sheet: in all twelve room/state cells he is the highest-contrast figure (white plates,
+black undersuit) and reads as armour; colour sheet: Breacher amber, Cryo blue, Pyro orange-red, Arc violet are
+nameable in calm frames, weaker in heavy frames where combat effects overlay him. Rig coverage is below the 15–20 %
+target (estimate ~10 % of the top-down silhouette).

@@ -10,7 +10,7 @@ import bpy
 
 PALETTE = {
     # linear RGB
-    'ceramic': (.52, .49, .41),       # warm ivory paint over composite
+    'ceramic': (.50, .52, .54),        # HERO14: cool off-white (close-up)       # warm ivory paint over composite
     'ceramic_game': (.80, .84, .88),   # HERO14: neutral-cool white, never cream
     'amber_game': (.95, .60, .04),     # HERO14: yellow-amber, apart from hostile orange
     'amber': (.86, .34, .02),
