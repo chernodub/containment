@@ -89,7 +89,7 @@
   },
   "reward-reserve-thruster": {
     "file": "reward-reserve-thruster.webp",
-    "bytes": 10586,
+    "bytes": 10606,
     "shot": {
       "width": 640,
       "height": 360,
@@ -145,7 +145,7 @@
   },
   "reward-slide-loader": {
     "file": "reward-slide-loader.webp",
-    "bytes": 10586,
+    "bytes": 10606,
     "shot": {
       "width": 640,
       "height": 360,
@@ -201,7 +201,7 @@
   },
   "reward-tactical-salvage": {
     "file": "reward-tactical-salvage.webp",
-    "bytes": 18498,
+    "bytes": 18342,
     "shot": {
       "width": 640,
       "height": 360,
@@ -257,7 +257,7 @@
   },
   "reward-drive-dynamo": {
     "file": "reward-drive-dynamo.webp",
-    "bytes": 25128,
+    "bytes": 25130,
     "shot": {
       "width": 640,
       "height": 360,
@@ -313,7 +313,7 @@
   },
   "reward-afterquake": {
     "file": "reward-afterquake.webp",
-    "bytes": 13902,
+    "bytes": 13796,
     "shot": {
       "width": 640,
       "height": 360,
@@ -369,11 +369,11 @@
   },
   "reward-reinforced-bulwark": {
     "file": "reward-reinforced-bulwark.webp",
-    "bytes": 13644,
+    "bytes": 12318,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 4.75,
       "subjects": [
         {
           "kind": "marine",
@@ -442,7 +442,7 @@
   },
   "reward-spreading-nova": {
     "file": "reward-spreading-nova.webp",
-    "bytes": 18140,
+    "bytes": 18192,
     "shot": {
       "width": 640,
       "height": 360,
@@ -498,7 +498,7 @@
   },
   "reward-twin-glacier": {
     "file": "reward-twin-glacier.webp",
-    "bytes": 15932,
+    "bytes": 16002,
     "shot": {
       "width": 640,
       "height": 360,
@@ -587,7 +587,7 @@
   },
   "reward-scorched-fan": {
     "file": "reward-scorched-fan.webp",
-    "bytes": 11408,
+    "bytes": 11206,
     "shot": {
       "width": 640,
       "height": 360,
@@ -644,7 +644,7 @@
   },
   "reward-napalm-triplet": {
     "file": "reward-napalm-triplet.webp",
-    "bytes": 14734,
+    "bytes": 14706,
     "shot": {
       "width": 640,
       "height": 360,
@@ -746,7 +746,7 @@
   },
   "reward-forked-overload": {
     "file": "reward-forked-overload.webp",
-    "bytes": 11556,
+    "bytes": 11658,
     "shot": {
       "width": 640,
       "height": 360,
@@ -802,7 +802,7 @@
   },
   "reward-twin-pylon": {
     "file": "reward-twin-pylon.webp",
-    "bytes": 15786,
+    "bytes": 15858,
     "shot": {
       "width": 640,
       "height": 360,
@@ -891,11 +891,11 @@
   },
   "reward-siege-plow": {
     "file": "reward-siege-plow.webp",
-    "bytes": 13640,
+    "bytes": 12300,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 4.75,
       "subjects": [
         {
           "kind": "marine",
@@ -964,7 +964,7 @@
   },
   "reward-fault-line": {
     "file": "reward-fault-line.webp",
-    "bytes": 14232,
+    "bytes": 14120,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1036,7 +1036,7 @@
   },
   "reward-shard-harvest": {
     "file": "reward-shard-harvest.webp",
-    "bytes": 12348,
+    "bytes": 12420,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1125,7 +1125,7 @@
   },
   "reward-ice-road": {
     "file": "reward-ice-road.webp",
-    "bytes": 15454,
+    "bytes": 15556,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1197,7 +1197,7 @@
   },
   "reward-ember-relay": {
     "file": "reward-ember-relay.webp",
-    "bytes": 10886,
+    "bytes": 10920,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1254,7 +1254,7 @@
   },
   "reward-meltdown-core": {
     "file": "reward-meltdown-core.webp",
-    "bytes": 15612,
+    "bytes": 15662,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1326,7 +1326,7 @@
   },
   "reward-pilgrim-pylon": {
     "file": "reward-pilgrim-pylon.webp",
-    "bytes": 13812,
+    "bytes": 13916,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1399,7 +1399,7 @@
   },
   "reward-live-wire": {
     "file": "reward-live-wire.webp",
-    "bytes": 12280,
+    "bytes": 12264,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1466,7 +1466,7 @@
   },
   "reward-kinetic": {
     "file": "reward-kinetic.webp",
-    "bytes": 13950,
+    "bytes": 13918,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1522,7 +1522,7 @@
   },
   "reward-cryo": {
     "file": "reward-cryo.webp",
-    "bytes": 18518,
+    "bytes": 18394,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1578,7 +1578,7 @@
   },
   "reward-pyro": {
     "file": "reward-pyro.webp",
-    "bytes": 11804,
+    "bytes": 11848,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1635,7 +1635,7 @@
   },
   "reward-arc": {
     "file": "reward-arc.webp",
-    "bytes": 11584,
+    "bytes": 11618,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1691,7 +1691,7 @@
   },
   "reward-acid": {
     "file": "reward-acid.webp",
-    "bytes": 11754,
+    "bytes": 11790,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1747,7 +1747,7 @@
   },
   "reward-universal": {
     "file": "reward-universal.webp",
-    "bytes": 10586,
+    "bytes": 10606,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1803,7 +1803,7 @@
   },
   "reward-recovery": {
     "file": "reward-recovery.webp",
-    "bytes": 18486,
+    "bytes": 18320,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1859,7 +1859,7 @@
   },
   "reward-demolition": {
     "file": "reward-demolition.webp",
-    "bytes": 13954,
+    "bytes": 13880,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1915,7 +1915,7 @@
   },
   "reward-executioner": {
     "file": "reward-executioner.webp",
-    "bytes": 18102,
+    "bytes": 18130,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1971,7 +1971,7 @@
   },
   "reward-wildfire": {
     "file": "reward-wildfire.webp",
-    "bytes": 11730,
+    "bytes": 11780,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2028,7 +2028,7 @@
   },
   "reward-cycling": {
     "file": "reward-cycling.webp",
-    "bytes": 11610,
+    "bytes": 11598,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2084,7 +2084,7 @@
   },
   "service-heal": {
     "file": "service-heal.webp",
-    "bytes": 3892,
+    "bytes": 3932,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2104,7 +2104,7 @@
   },
   "service-medkit": {
     "file": "service-medkit.webp",
-    "bytes": 3892,
+    "bytes": 3932,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2124,7 +2124,7 @@
   },
   "service-armor": {
     "file": "service-armor.webp",
-    "bytes": 3970,
+    "bytes": 4058,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2144,7 +2144,7 @@
   },
   "service-ammo": {
     "file": "service-ammo.webp",
-    "bytes": 4748,
+    "bytes": 4760,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2164,7 +2164,7 @@
   },
   "service-grenade": {
     "file": "service-grenade.webp",
-    "bytes": 3216,
+    "bytes": 3254,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2184,7 +2184,7 @@
   },
   "service-reroll": {
     "file": "service-reroll.webp",
-    "bytes": 4508,
+    "bytes": 4490,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2204,7 +2204,7 @@
   },
   "service-upgrade": {
     "file": "service-upgrade.webp",
-    "bytes": 4254,
+    "bytes": 4310,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2220,7 +2220,7 @@
   },
   "service-revive": {
     "file": "service-revive.webp",
-    "bytes": 1836,
+    "bytes": 1976,
     "shot": {
       "width": 448,
       "height": 168,
@@ -2241,11 +2241,11 @@
   },
   "weapon-pistol": {
     "file": "weapon-pistol.webp",
-    "bytes": 4244,
+    "bytes": 6092,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 0.95,
+      "span": 0.56,
       "subjects": [
         {
           "kind": "weapon",
@@ -2261,7 +2261,7 @@
   },
   "weapon-rifle": {
     "file": "weapon-rifle.webp",
-    "bytes": 5876,
+    "bytes": 5982,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2281,7 +2281,7 @@
   },
   "weapon-shotgun": {
     "file": "weapon-shotgun.webp",
-    "bytes": 6694,
+    "bytes": 6738,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2301,7 +2301,7 @@
   },
   "weapon-plasma": {
     "file": "weapon-plasma.webp",
-    "bytes": 8098,
+    "bytes": 8174,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2321,7 +2321,7 @@
   },
   "weapon-rocket": {
     "file": "weapon-rocket.webp",
-    "bytes": 10466,
+    "bytes": 10498,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2341,7 +2341,7 @@
   },
   "lesson-crawler": {
     "file": "lesson-crawler.webp",
-    "bytes": 8446,
+    "bytes": 8632,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2372,7 +2372,7 @@
   },
   "lesson-stalker": {
     "file": "lesson-stalker.webp",
-    "bytes": 7382,
+    "bytes": 7396,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2403,11 +2403,11 @@
   },
   "lesson-spitter": {
     "file": "lesson-spitter.webp",
-    "bytes": 8036,
+    "bytes": 8828,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.6,
+      "span": 4.05,
       "subjects": [
         {
           "kind": "enemy",
@@ -2434,7 +2434,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 9268,
+    "bytes": 9266,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2465,7 +2465,7 @@
   },
   "lesson-carrier": {
     "file": "lesson-carrier.webp",
-    "bytes": 9520,
+    "bytes": 9444,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2496,11 +2496,11 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 12594,
+    "bytes": 10990,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 5.7,
+      "span": 6.65,
       "subjects": [
         {
           "kind": "enemy",
@@ -2509,7 +2509,7 @@
           "pose": "attack",
           "aim": 0,
           "x": -1.45,
-          "z": -0.6
+          "z": -0.15
         },
         {
           "kind": "marine",
@@ -2528,11 +2528,11 @@
   },
   "lesson-matron": {
     "file": "lesson-matron.webp",
-    "bytes": 12612,
+    "bytes": 10704,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.6,
+      "span": 6.65,
       "subjects": [
         {
           "kind": "enemy",
@@ -2541,7 +2541,7 @@
           "pose": "attack",
           "aim": 0,
           "x": -1.45,
-          "z": -0.6
+          "z": -0.15
         },
         {
           "kind": "marine",
@@ -2560,7 +2560,7 @@
   },
   "route-awakening-bay": {
     "file": "route-awakening-bay.webp",
-    "bytes": 24938,
+    "bytes": 25434,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2577,7 +2577,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 29320,
+    "bytes": 32354,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2594,7 +2594,7 @@
   },
   "route-residential-gallery": {
     "file": "route-residential-gallery.webp",
-    "bytes": 17638,
+    "bytes": 22630,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2611,7 +2611,7 @@
   },
   "route-communal-atrium": {
     "file": "route-communal-atrium.webp",
-    "bytes": 24928,
+    "bytes": 30052,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2628,7 +2628,7 @@
   },
   "route-crew-checkpoint": {
     "file": "route-crew-checkpoint.webp",
-    "bytes": 15146,
+    "bytes": 16490,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2645,7 +2645,7 @@
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 15606,
+    "bytes": 19638,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2662,7 +2662,7 @@
   },
   "route-freight-hold": {
     "file": "route-freight-hold.webp",
-    "bytes": 14766,
+    "bytes": 20094,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2679,7 +2679,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 13712,
+    "bytes": 17342,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2696,7 +2696,7 @@
   },
   "route-relay-racks": {
     "file": "route-relay-racks.webp",
-    "bytes": 19538,
+    "bytes": 23758,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2713,7 +2713,7 @@
   },
   "route-transmission-chamber": {
     "file": "route-transmission-chamber.webp",
-    "bytes": 32016,
+    "bytes": 31272,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2730,7 +2730,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 19596,
+    "bytes": 21544,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2747,7 +2747,7 @@
   },
   "route-safety-interlock-station": {
     "file": "route-safety-interlock-station.webp",
-    "bytes": 31110,
+    "bytes": 33374,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2764,7 +2764,7 @@
   },
   "route-coolant-plant": {
     "file": "route-coolant-plant.webp",
-    "bytes": 16556,
+    "bytes": 20722,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2781,7 +2781,7 @@
   },
   "route-service-shaft-landing": {
     "file": "route-service-shaft-landing.webp",
-    "bytes": 25200,
+    "bytes": 27336,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2798,7 +2798,7 @@
   },
   "route-infested-workshop": {
     "file": "route-infested-workshop.webp",
-    "bytes": 31492,
+    "bytes": 32872,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2815,7 +2815,7 @@
   },
   "route-swarm-junction": {
     "file": "route-swarm-junction.webp",
-    "bytes": 18350,
+    "bytes": 28888,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2832,7 +2832,7 @@
   },
   "route-shielding-gate": {
     "file": "route-shielding-gate.webp",
-    "bytes": 11316,
+    "bytes": 14758,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2849,7 +2849,7 @@
   },
   "route-containment-annulus": {
     "file": "route-containment-annulus.webp",
-    "bytes": 12748,
+    "bytes": 18828,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2866,7 +2866,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 15232,
+    "bytes": 26516,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2883,7 +2883,7 @@
   },
   "route-overload-floor": {
     "file": "route-overload-floor.webp",
-    "bytes": 28870,
+    "bytes": 33070,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2898,125 +2898,368 @@
       ]
     }
   },
-  "route-warden-cache": {
-    "file": "route-warden-cache.webp",
-    "bytes": 14380,
+  "route-cache": {
+    "file": "route-cache.webp",
+    "bytes": 29184,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 3.85,
+      "span": 4.7,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "container-flat-open",
+          "tint": 9212506,
+          "x": 0.78,
+          "z": -0.65,
+          "aim": 1.5707963267948966,
+          "scale": 1.38,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "container-wide",
+          "tint": 6056792,
+          "x": 1.64,
+          "z": -0.61,
+          "scale": 0.52
+        },
+        {
+          "kind": "light",
+          "color": 16233788,
+          "intensity": 8,
+          "distance": 2.1,
+          "x": 0.89,
+          "z": 0.3,
+          "y": 0.61
+        },
+        {
+          "kind": "pickup",
+          "id": "credits",
+          "x": 0.4,
+          "z": 0.32,
+          "scale": 0.85
+        },
+        {
+          "kind": "pickup",
+          "id": "credits",
+          "x": 0.9,
+          "z": 0.57,
+          "scale": 0.85
+        },
+        {
+          "kind": "pickup",
+          "id": "credits",
+          "x": 1.26,
+          "z": 0.27,
+          "scale": 0.85
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 11762724,
+          "x": 0.7,
+          "z": -0.02,
+          "y": 0.29
+        }
+      ],
+      "view": "gameplay",
+      "room": "communal-atrium",
+      "origin": [
+        23.90625,
+        15.21875
+      ]
+    }
+  },
+  "route-armor": {
+    "file": "route-armor.webp",
+    "bytes": 14748,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.7,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Shelves_WideShort",
+          "tint": 4087911,
+          "x": 0.7,
+          "z": -0.9,
+          "scale": 0.88,
+          "shadow": 1
+        },
+        {
+          "kind": "pickup",
+          "id": "armor",
+          "x": 0.26,
+          "z": -0.8,
+          "y": 0.42
+        },
+        {
+          "kind": "pickup",
+          "id": "armor",
+          "x": 0.75,
+          "z": -0.8,
+          "y": 0.42
+        },
+        {
+          "kind": "pickup",
+          "id": "armor",
+          "x": 1.28,
+          "z": -0.8,
+          "y": 0.42
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate",
+          "tint": 7495742,
+          "scale": 0.8,
+          "shadow": 0.85,
+          "x": 0.46,
+          "z": 0.72
+        },
+        {
+          "kind": "pickup",
+          "id": "grenade",
+          "x": 1.58,
+          "z": 0.6,
+          "scale": 1.3
+        },
+        {
+          "kind": "pickup",
+          "id": "grenade",
+          "x": 1.84,
+          "z": 1.18,
+          "scale": 1.22
+        },
+        {
+          "kind": "light",
+          "color": 11061751,
+          "intensity": 8,
+          "distance": 2.1,
+          "x": 1.58,
+          "z": 0.86,
+          "y": 0.73
+        }
+      ],
+      "view": "gameplay",
+      "room": "breached-loading-bay",
+      "origin": [
+        18.75,
+        21.25
+      ]
+    }
+  },
+  "route-medicine": {
+    "file": "route-medicine.webp",
+    "bytes": 28416,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.7,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer-wide",
+          "tint": 3762022,
+          "x": 0.78,
+          "z": -0.52,
+          "shadow": 1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 2682001,
+          "x": 1.22,
+          "z": 0.12,
+          "y": 1.05
+        },
+        {
+          "kind": "light",
+          "color": 2814865,
+          "intensity": 8,
+          "distance": 2.1,
+          "x": 1.25,
+          "z": 0.36,
+          "y": 1.2
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate",
+          "tint": 3630170,
+          "scale": 0.8,
+          "shadow": 0.85,
+          "x": 0.32,
+          "z": 0.48
+        },
+        {
+          "kind": "pickup",
+          "id": "health",
+          "x": 1.58,
+          "z": 0.71,
+          "y": 0.14,
+          "scale": 1.15
+        }
+      ],
+      "view": "gameplay",
+      "room": "safety-interlock-station",
+      "origin": [
+        20,
+        22.8125
+      ]
+    }
+  },
+  "route-warden-cache": {
+    "file": "route-warden-cache.webp",
+    "bytes": 24262,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 6.4,
       "subjects": [
         {
           "kind": "enemy",
           "family": "brute",
           "champion": "warden",
-          "x": -0.6
+          "aim": 0.9,
+          "x": -0.75,
+          "z": 0.24,
+          "shadow": 1.5
         },
         {
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Crate_Large",
-          "x": 1.2
-        }
-      ],
-      "view": "gameplay"
-    }
-  },
-  "route-cache": {
-    "file": "route-cache.webp",
-    "bytes": 9954,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 3,
-      "subjects": [
+          "tint": 6705466,
+          "x": 1.45,
+          "z": 0.46,
+          "scale": 0.68,
+          "shadow": 1
+        },
         {
           "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Crate_Large"
-        },
-        {
-          "kind": "pickup",
-          "id": "credits",
-          "x": -1.1,
-          "z": 0.5
-        }
-      ],
-      "view": "gameplay"
-    }
-  },
-  "route-medicine": {
-    "file": "route-medicine.webp",
-    "bytes": 9252,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 2.4,
-      "subjects": [
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Crate"
-        },
-        {
-          "kind": "pickup",
-          "id": "health",
-          "x": 0.92
-        }
-      ],
-      "view": "gameplay"
-    }
-  },
-  "route-armor": {
-    "file": "route-armor.webp",
-    "bytes": 9940,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 1.05,
-      "subjects": [
-        {
-          "kind": "pickup",
-          "id": "armor"
-        },
-        {
-          "kind": "pickup",
-          "id": "grenade",
-          "x": 0.64
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 13208103,
+          "x": 1.38,
+          "z": 0.72,
+          "y": 0.61
         }
       ],
       "view": "gameplay",
-      "focus": [
-        0.3,
-        0.16,
-        0
+      "room": "swarm-junction",
+      "origin": [
+        18.75,
+        16.25
       ]
     }
   },
   "route-capacitor": {
     "file": "route-capacitor.webp",
-    "bytes": 5848,
+    "bytes": 12400,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 2,
+      "span": 4.7,
       "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
         {
           "kind": "prop",
           "kit": "station",
-          "name": "computer-system"
+          "name": "computer-system",
+          "tint": 4415093,
+          "x": 0.94,
+          "z": -0.33,
+          "shadow": 1.2
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 5682941,
+          "x": 0.99,
+          "z": -0.13,
+          "y": 0.8
+        },
+        {
+          "kind": "ring",
+          "radius": 1.18,
+          "color": 7712506,
+          "x": 0.94,
+          "z": -0.33,
+          "y": 0.038
+        },
+        {
+          "kind": "ring",
+          "radius": 0.95,
+          "color": 8900314,
+          "x": 0.94,
+          "z": -0.33,
+          "y": 0.037
         }
       ],
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "manual-control-chamber",
+      "origin": [
+        20,
+        17.1875
+      ]
     }
   },
   "route-workshop-siege-plow": {
     "file": "route-workshop-siege-plow.webp",
-    "bytes": 12754,
+    "bytes": 16918,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3044,8 +3287,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3088,16 +3355,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-fault-line": {
     "file": "route-workshop-fault-line.webp",
-    "bytes": 19298,
+    "bytes": 19942,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3125,8 +3397,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3168,16 +3464,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-shard-harvest": {
     "file": "route-workshop-shard-harvest.webp",
-    "bytes": 13728,
+    "bytes": 17528,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3219,8 +3520,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3265,16 +3590,21 @@
           "targetY": 41.6
         }
       ],
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-ice-road": {
     "file": "route-workshop-ice-road.webp",
-    "bytes": 19328,
+    "bytes": 21108,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3302,8 +3632,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3345,16 +3699,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-ember-relay": {
     "file": "route-workshop-ember-relay.webp",
-    "bytes": 11944,
+    "bytes": 15956,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3382,8 +3741,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3410,16 +3793,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-meltdown-core": {
     "file": "route-workshop-meltdown-core.webp",
-    "bytes": 19324,
+    "bytes": 20314,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3447,8 +3835,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3490,16 +3902,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-pilgrim-pylon": {
     "file": "route-workshop-pilgrim-pylon.webp",
-    "bytes": 15638,
+    "bytes": 18994,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3527,8 +3944,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3571,16 +4012,21 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-workshop-live-wire": {
     "file": "route-workshop-live-wire.webp",
-    "bytes": 13574,
+    "bytes": 16026,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.12,
+      "span": 5.35,
       "subjects": [
         {
           "kind": "marine",
@@ -3608,8 +4054,32 @@
           "kind": "prop",
           "kit": "industrial",
           "name": "Prop_Desk_Medium",
-          "x": 1.25,
-          "z": -1.9
+          "tint": 2374723,
+          "x": 0.6,
+          "z": -1.38,
+          "scale": 0.74,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 3430480,
+          "x": 0.57,
+          "z": -1.43,
+          "y": 0.71,
+          "scale": 0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 4427657,
+          "x": 0.99,
+          "z": -1.37,
+          "y": 0.76
         }
       ],
       "focus": [
@@ -3646,65 +4116,54 @@
         "durationMs": 700,
         "maxTargets": 3
       },
-      "view": "gameplay"
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
+      ]
     }
   },
   "route-upgrade": {
     "file": "route-upgrade.webp",
-    "bytes": 5984,
+    "bytes": 12288,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 1.6,
-      "subjects": [
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium"
-        }
-      ],
-      "view": "gameplay"
-    }
-  },
-  "title-composite": {
-    "file": "title-composite.webp",
-    "bytes": 49720,
-    "compositeOf": [
-      "U10 surviving plates",
-      "title-hero"
-    ]
-  },
-  "title-hero": {
-    "file": "title-hero.webp",
-    "bytes": 32122,
-    "shot": {
-      "width": 1280,
-      "height": 720,
-      "span": 2.2,
+      "span": 4.7,
       "subjects": [
         {
           "kind": "marine",
           "rig": "breacher",
           "weapon": "shotgun",
-          "pose": "",
-          "aim": 2.62
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "tint": 4808550,
+          "x": 0.6,
+          "z": -0.8,
+          "shadow": 1.1
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer",
+          "tint": 4748153,
+          "x": 0.77,
+          "z": -0.8,
+          "y": 0.73
         }
       ],
-      "focus": [
-        -0.88,
-        1.43,
-        0.63
-      ],
-      "transparent": true,
-      "key": [
-        -2,
-        4,
-        3
-      ],
-      "rim": [
-        4,
-        3,
-        -6
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "origin": [
+        19.375,
+        17.59375
       ]
     }
   }

@@ -42,32 +42,9 @@ try{
       await page.evaluate(id=>window.__containmentDebug.gotoRoom(id,{rig:'breacher'}),nextRoom);
       room=nextRoom;
     }
-    let data=await page.evaluate(input=>window.__containmentDebug.studio(input),shot);
-    if(!description&&name==='title-hero'){
-      const plates=await page.evaluate(async hero=>{
-        const canvas=document.createElement('canvas');
-        canvas.width=1280;canvas.height=720;
-        const ctx=canvas.getContext('2d');
-        const draw=async(src,alpha=1)=>{
-          const image=new Image();image.src=src;await image.decode();
-          ctx.globalAlpha=alpha;ctx.drawImage(image,0,0,1280,720);
-        };
-        await draw(hero);
-        const layer=canvas.toDataURL('image/webp',.92);
-        ctx.clearRect(0,0,1280,720);
-        for(const name of ['background','midground'])await draw('/assets/ui/u10/'+name+'-1280.webp');
-        await draw(hero);
-        await draw('/assets/ui/u10/foreground-1280.webp');
-        await draw('/assets/ui/u10/fog-1280.webp',.55);
-        return {layer,composite:canvas.toDataURL('image/webp',.9)};
-      },data);
-      const composite=Buffer.from(plates.composite.split(',')[1],'base64');
-      await writeFile(resolve(out,'title-composite.webp'),composite);
-      manifest['title-composite']={file:'title-composite.webp',bytes:composite.length,compositeOf:['U10 surviving plates','title-hero']};
-      data=plates.layer;
-    }
+    const data=await page.evaluate(input=>window.__containmentDebug.studio(input),shot);
     const bytes=Buffer.from(data.split(',')[1],'base64');
-    const file=name+(shot.transparent&&(description||name!=='title-hero')?'.png':'.webp');
+    const file=name+(shot.transparent?'.png':'.webp');
     await writeFile(resolve(out,file),bytes);
     manifest[name]={file,bytes:bytes.length,shot};
     console.log(`${file} (${bytes.length} bytes)`);

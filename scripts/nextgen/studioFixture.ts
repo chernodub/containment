@@ -1,3 +1,4 @@
+import {groundIndicatorMaterial} from '../../src/render/vfx/GroundIndicatorMaterial';
 import * as T from 'three';
 import type {DepthRenderer} from '../../src/render/DepthRenderer';
 import type {DepthGame, GameEffect} from '../../src/DepthGame';
@@ -13,18 +14,20 @@ import {registerGeometry, GEOMETRY_CLASSES} from '../../src/render/post/Geometry
 import {disposeModel} from '../../src/render/meshParts';
 import {retireRoomModels} from '../../src/render/RoomModelCache';
 
-type Mark = {x?:number; z?:number; aim?:number};
+type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow?:number};
 type Subject = Mark & (
   {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
-  | {kind:'prop'; kit:keyof typeof KIT_URLS; name:string}
+  | {kind:'prop'; kit:keyof typeof KIT_URLS; name:string; tint?:number; glow?:number}
+  | {kind:'ring'; color:number; radius:number}
+  | {kind:'light'; color:number; intensity:number; distance:number}
 );
 export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
-  transparent?:boolean; room?:string; lesson?:boolean; effect?:AbilityEvent; effectFrames?:number;
+  transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
   boonEffects?:GameEffect[];
@@ -40,7 +43,14 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const stage=new T.Group();
   const effects=owner['effects'];
   const disposable:Array<()=>void>=[];
-  const center=new T.Vector3(...(shot.focus??[0,.6,0]));
+  const [originX,originZ]=shot.origin??[0,0];
+  const worldX=originX*32, worldY=originZ*32;
+  const target=(event:AbilityEvent)=>({...event,
+    targetX:event.targetX===undefined?undefined:event.targetX+worldX,
+    targetY:event.targetY===undefined?undefined:event.targetY+worldY,
+  });
+  stage.position.set(originX,0,originZ);
+  const center=new T.Vector3(...(shot.focus??[0,.6,0])).add(stage.position);
   const aspect=shot.width/shot.height;
   const camera=new T.OrthographicCamera(-shot.span*aspect/2,shot.span*aspect/2,shot.span/2,-shot.span/2,.05,150);
   const direction=shot.view==='gameplay'
@@ -51,7 +61,12 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(0xa5e6ec,1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
-  stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
+  if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
+  else if(shot.origin){
+    key.intensity=1.15;
+    stage.add(key,key.target);
+  }
+  let firstSubject:T.Object3D|undefined;
   try {
     post['time']=0;
     post.distortion.clear();
@@ -114,17 +129,45 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           root.rotation.y=Math.PI/2;
           disposable.push(()=>disposeModel(root));
           break;
+        case 'light':
+          root=new T.PointLight(subject.color,subject.intensity,subject.distance);
+          break;
+        case 'ring': {
+          const ring=new T.Mesh(new T.RingGeometry(subject.radius-.035,subject.radius,72),
+            new T.MeshStandardMaterial({color:subject.color,emissive:subject.color,emissiveIntensity:1.1,side:T.DoubleSide}));
+          ring.geometry.rotateX(-Math.PI/2);
+          root=ring;disposable.push(()=>{ring.material.dispose();ring.geometry.dispose();});
+          break;
+        }
         case 'prop': {
           const kit=await acquireRoomKit(KIT_URLS[subject.kit]);
           disposable.push(()=>retireRoomModels(kit));
           const prop=kit.getObjectByName(subject.name);
           if(!prop)throw Error(`Unknown ${subject.kit} prop ${subject.name}`);
           root=new T.Group();root.add(prop.clone(true));root.children[0].position.set(0,0,0);
+          if(subject.tint!==undefined||subject.glow!==undefined)root.traverse(object=>{
+            if(!(object instanceof T.Mesh)||!(object.material instanceof T.MeshStandardMaterial))return;
+            const material=object.material.clone();
+            if(subject.tint!==undefined)material.color.setHex(subject.tint);
+            if(subject.glow!==undefined){material.emissive.setHex(subject.glow);material.emissiveIntensity=.7;}
+            material.roughness=.72;
+            object.material=material;
+            disposable.push(()=>material.dispose());
+          });
           break;
         }
       }
-      root.position.set(subject.x??0,subject.kind==='pickup'?.1:0,subject.z??0);
-      root.visible=true; stage.add(root);
+      root.position.set(subject.x??0,subject.y??(subject.kind==='pickup'?.1:0),subject.z??0);
+      root.scale.multiplyScalar(subject.scale??1);
+      if(subject.kind==='prop')root.rotation.y=subject.aim??0;
+      const radius=subject.shadow??(shot.transparent||subject.kind==='ring'||subject.kind==='light'?0:subject.kind==='marine'?.7:subject.kind==='enemy'?.58:.42);
+      if(radius>0){
+        const shadow=new T.Mesh(new T.PlaneGeometry(radius*2,radius*1.55),groundIndicatorMaterial('contact',0x000609));
+        shadow.rotation.x=-Math.PI/2;shadow.position.set(root.position.x,.012,root.position.z);
+        stage.add(shadow);registerGeometry(shadow);
+        disposable.push(()=>{shadow.material.dispose();shadow.geometry.dispose();});
+      }
+      root.visible=true; stage.add(root);firstSubject??=root;
       registerGeometry(root,subject.kind==='marine'?GEOMETRY_CLASSES.marine:subject.kind==='enemy'?GEOMETRY_CLASSES.enemy:undefined);
     }
     for(const child of original.keys()){
@@ -180,7 +223,10 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     }
     if(shot.boonEffects?.length){
       effects.clear();
-      for(const receipt of shot.boonEffects)effects.event(receipt);
+      for(const receipt of shot.boonEffects)effects.event({...receipt,x:receipt.x+worldX,y:receipt.y+worldY,
+        targetX:receipt.targetX===undefined?undefined:receipt.targetX+worldX,
+        targetY:receipt.targetY===undefined?undefined:receipt.targetY+worldY,
+      });
       for(const mesh of effects['meshes']())if(mesh.parent===scene)mesh.visible=true;
       for(let tick=0;tick<(shot.effectFrames??4);tick++)effects.update(1/60,camera,[]);
     }
@@ -189,11 +235,14 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       abilities.clear(); abilities.root.visible=true;
       const kit=abilities.kit;
       if(kit){kit.time=0;kit['serial']=0;}
-      for(const receipt of shot.extraEffects??[])abilities.event(receipt.event,receipt.x*32,receipt.z*32);
-      abilities.event(effect,(shot.subjects[0]?.x??0)*32,(shot.subjects[0]?.z??0)*32);
+      for(const receipt of shot.extraEffects??[])abilities.event(target(receipt.event),receipt.x*32+worldX,receipt.z*32+worldY);
+      abilities.event(target(effect),(shot.subjects[0]?.x??0)*32+worldX,(shot.subjects[0]?.z??0)*32+worldY);
+      const deployables=shot.deployables?.map(d=>({...d,x:d.x+worldX,y:d.y+worldY}))??[];
+      const zones=shot.zones?.map(z=>({...z,x:z.x+worldX,y:z.y+worldY,x2:z.x2+worldX,y2:z.y2+worldY}))??[];
+      const links=shot.links?.map(l=>({...l,x:l.x+worldX,y:l.y+worldY,targetX:l.targetX+worldX,targetY:l.targetY+worldY}))??[];
       const snapshot=game.abilities.snapshot;
       for(let tick=0;tick<(shot.effectFrames??10);tick++){
-        abilities.update({...snapshot,rig:effect.rig,deployables:shot.deployables??[],zones:shot.zones??[],links:shot.links??[]},1/60,true,undefined,stage.children[3],camera);
+        abilities.update({...snapshot,rig:effect.rig,deployables,zones,links},1/60,true,undefined,firstSubject,camera);
       }
     }
     renderer.setPixelRatio(1); renderer.setSize(shot.width,shot.height,false);

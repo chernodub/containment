@@ -51,7 +51,7 @@
 #overlay .requisition-item[data-purchase='upgrade'] { --service-color: #9eeaf1; }
 #overlay .requisition-item:enabled:hover { border-color: var(--service-color); background: #254451; }
 #overlay .requisition-item:disabled { opacity: 1; border: 1px dashed #6c8089; background: #13232b; }
-#overlay .requisition-item:disabled .service-illustration { filter: grayscale(.35) brightness(.85); }
+#overlay .requisition-item:disabled .service-illustration { filter: grayscale(.85) brightness(.8); }
 #overlay .requisition-item:disabled .requisition-status { color: #ffc6a6; }
 #overlay .requisition-name { font: 600 22px/1.1 var(--font-display); color: #f1f9fc; }
 #overlay .requisition-outcome, #overlay .requisition-status { font-size: 14px; line-height: 1.2; color: #ccdde5; }
@@ -76,6 +76,13 @@
   color: var(--service-color);
 }
 
+.service-art-shadow { fill: #050e13; }
+.service-art-guide { stroke: currentColor; opacity: .24; fill: none; }
+.service-art-body { fill: #24404d; stroke: currentColor; stroke-width: 1.5; }
+.service-art-face { fill: #38535e; stroke: currentColor; }
+.service-art-detail { fill: none; stroke: #c6d8df; opacity: .8; }
+.service-art-mark { fill: currentColor; }
+
 @media (max-width: 900px) {
   #overlay .service-shop.requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -84,4 +91,5 @@
 #overlay .panel.requisition-panel :is(.requisition-inventory,.requisition-footer p,.requisition-footer button) {
   font-size: 14px;
 }
+
 #overlay img.service-illustration { object-fit: contain; background: #081820; }
