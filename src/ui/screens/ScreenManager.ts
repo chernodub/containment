@@ -379,8 +379,15 @@ export function createScreens(context: ScreenContext) {
         inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true,true);
       } else if(/^[1-4]$/.test(shortcut)) {
         event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true,true);
-      } else if(event.key==='Enter'&&(!target?.closest('button,summary')||!!target?.closest('[data-rig]'))) {
-        event.preventDefault(); el(deliberateRig&&selectedRig!=='cryo'?'equip-rig':'recommended-loadout')?.click();
+      } else if(event.key==='Enter') {
+        const focusedRig=target?.closest<HTMLButtonElement>('[data-rig]')?.dataset.rig as RigId|undefined;
+        if(focusedRig&&(!deliberateRig||focusedRig!==selectedRig)){
+          event.preventDefault();
+          inspectRig(focusedRig,true,true);
+        }else if(focusedRig||!target?.closest('button,summary')){
+          event.preventDefault();
+          el(deliberateRig&&selectedRig!=='cryo'?'equip-rig':'recommended-loadout')?.click();
+        }
       }
       return;
     }

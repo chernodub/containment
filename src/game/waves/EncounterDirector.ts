@@ -23,7 +23,7 @@ export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficult
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
-  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup}>[];
+  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true}>[];
 }>;
 export type PincerSnapshot = Readonly<{
   state: 'staging' | 'sealed' | 'open';
@@ -54,7 +54,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   if(index>=0){
    const beat=source[index],flank=beat.groups.find(group=>group.role==='flanker'&&!group.reinforcement)!;
    const groups=beat.groups.flatMap(group=>group!==flank?[group]:group.count>1?[{...group,count:group.count-1}]:[]);
-   source.splice(index,1,{grammar:'interception',label:'Read the lunge from cover',lullMs:900,
+   source.splice(index,1,{grammar:'interception',label:'Read the lunge from cover',lullMs:900,recallAfterLunge:true,
     groups:[{...flank,count:1}]},{...beat,groups});
   }
  }
@@ -92,7 +92,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
-  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,cleanup:beat.cleanup??(beat.label==='Read the lunge from cover'?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
+  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
  return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(12,6+Math.floor(node.depth/3)),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
 }
@@ -245,13 +245,15 @@ export class EncounterDirector {
     this.defusedBeats.add(beat);
     return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
-  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean}[],pending:number,siegeReady:boolean):Cleanup|undefined {
+  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
     const beat=this.plan.beats?.[this.beatIndex];
     if(!beat||this.clearingBeat)return;
     if(!this.broken&&beat.consequence==='pincer'&&this.beatElapsedMs<PINCER_WINDOW_MS&&this.dispatched>beat.start
       &&this.plan.schedule.slice(this.dispatched,beat.end).every(request=>request.reinforcement)
       &&!pending&&!live.some(enemy=>enemy.role==='screen'))this.breakBeat(beat.end);
     if(this.broken)return 'withdraw';
+    if(beat.recallAfterLunge&&this.dispatched===beat.end&&!pending
+      &&live.some(enemy=>enemy.role==='flanker'&&enemy.meleePhase==='recovery'))return 'withdraw';
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }

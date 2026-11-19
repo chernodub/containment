@@ -569,7 +569,7 @@ export class DepthGame {
   for(const enemy of live){
    if(enemy.priority)continue;
    let departure=this.departures.get(enemy.id);
-   if(!mode&&!departure?.escort)continue;
+   if(!mode&&!departure)continue;
    if(!departure){
     if(mode==='rush'&&this.cleanupElapsed<800){this.enemies.beginRush(enemy.id);continue;}
     const breaches=this.openBreaches.length?this.openBreaches:this.geometry.breaches;
