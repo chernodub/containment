@@ -171,6 +171,31 @@ export const SCENARIOS=[
  {id:'boss-radar',state:'playing',room:'reactor-vault',required:['#radar-hud','.radar-objective'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.uiFixture({preferences:{radar:true,combatText:true}});}},
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
  {id:'route',state:'route',required:['[data-detour="direct"]','[data-detour="salvage"]','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('residential-gallery',{phase:'route'});}},
+ ...['residential-gallery','freight-hold','diagnostic-gallery'].map((room,index)=>({
+  id:`run15-junction-${index+1}`,room,state:'route',diagnosticOnly:true,
+  setup:async room=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom(room,{phase:'route',rig:'cryo',runStructure:true});
+   if(room==='diagnostic-gallery')d.grantBoons(['ice-road']);
+   d.game.combat.setCredits(300);
+   d.refresh();
+  },
+ })),
+ ...['communal-atrium','breached-loading-bay','safety-interlock-station'].map((room,index)=>({
+  id:`run15-condition-${index+1}`,room,state:'playing',diagnosticOnly:true,
+  setup:async room=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom(room,{rig:'arc',runStructure:true});
+   d.step(3200);
+  },
+ })),
+ {id:'run15-results',state:'complete',diagnosticOnly:true,setup:async()=>{
+  const d=window.__containmentDebug, g=d.game;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  g.expedition={...g.expedition,run:{...g.expedition.run,junctions:{3:'salvage',7:'salvage',11:'salvage'}}};
+  g.status='complete';
+  d.refresh();
+ }},
  {id:'route-legacy-branch',state:'route',map:true,legacyBranch:true,required:['.deck-map','.route-destination','[data-route]','[data-inspect-route]'],setup:async()=>{const d=window.__containmentDebug;for(const room of ['receiving','forklift-loop','freight-crossing','rail-depot']){await d.gotoRoom(room,{version:2,phase:'route'});if(d.game.node.next.length>1)return;}throw Error('Legacy branch route unavailable');}},
  {id:'f2-fallback-corpse',state:'playing',burst:true,setup:async()=>{
   const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(true);d.renderer.ragdolls.dispose();

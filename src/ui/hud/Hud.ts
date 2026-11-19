@@ -1,6 +1,6 @@
 import {captureWeaponPointer} from './weaponInput';
 import {MasteryHints} from './MasteryHints';
-import {getAwakeningDrill, getMasteryPreview} from '../gameAdapter';
+import {getAwakeningDrill, getMasteryPreview, getRoomOpening, getShipCondition} from '../gameAdapter';
 import {EncounterCues} from './EncounterCues';
 import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
@@ -312,7 +312,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        text('room-objective', [getRoomOpening(game), (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -362,7 +362,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('reload-label', s.reloading ? 'RELOADING' : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
         text('depth-label', `${(game.storyRoom?.environment ?? ACT_NAMES[Math.min(2, Math.floor(game.node.depth / 4))]).toUpperCase()} · ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)}`);
-        text('room-name', ROOM_TEMPLATES[game.node.templateId].name);
+        text('room-name', [ROOM_TEMPLATES[game.node.templateId].name,getShipCondition(game)?.name].filter(Boolean).join(' · '));
         const q = game.boss.snapshot;
         hidden('boss-hud', !q.active);
         const phase = q.vulnerable ? 'exposed' : q.phase === 'nest-spawn' ? 'nests' : 'armored';

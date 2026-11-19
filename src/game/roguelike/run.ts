@@ -1,6 +1,7 @@
 import type { RoomKind, RunGraph, RunNode, RunPhase, RunState, TemplateId } from './types';
 
 import {SERVICE_IDS,SERVICE_CATALOG,DETOUR_DEPTHS,type DetourChoice} from './economy';
+import {isJunction} from './shipConditions';
 import {ROOM_STORY_ROUTE} from './storyRooms';
 export const RUN_LENGTH = 20;
 export const runLength=(version:1|2|3=3)=>version===1?6:version===2?12:RUN_LENGTH;
@@ -117,13 +118,20 @@ function generateStoryRun(seed:number):RunGraph {
  return Object.freeze({seed,nodes:Object.freeze(nodes),startId:id(0),bossId:id(19)});
 }
 
-function freezeState(state: RunState): RunState {
-  return Object.freeze({ ...state, completedNodeIds: Object.freeze([...state.completedNodeIds]),...(state.service?{service:Object.freeze({...state.service,purchases:Object.freeze([...state.service.purchases])})}:{}),...(state.detour?{detour:Object.freeze({...state.detour})}:{}) });
+export function freezeRunState(state: RunState): RunState {
+  return Object.freeze({
+    ...state,
+    completedNodeIds: Object.freeze([...state.completedNodeIds]),
+    ...(state.junctions ? {junctions:Object.freeze({...state.junctions})} : {}),
+    ...(state.contract ? {contract:Object.freeze({...state.contract})} : {}),
+    ...(state.service ? {service:Object.freeze({...state.service,purchases:Object.freeze([...state.service.purchases])})} : {}),
+    ...(state.detour ? {detour:Object.freeze({...state.detour})} : {}),
+  });
 }
 
 export function createRun(seed: number): RunState {
   const graph = generateRun(seed);
-  return freezeState({ version: 3, seed, currentNodeId: graph.startId, completedNodeIds: [], phase: 'combat',draftRoll:0 });
+  return freezeRunState({ version: 3, seed, runStructure:1, currentNodeId: graph.startId, completedNodeIds: [], phase: 'combat',draftRoll:0 });
 }
 
 const PHASES: readonly RunPhase[] = ['rig-select', 'starting-boon', 'combat', 'reward', 'route', 'complete', 'dead'];
@@ -137,7 +145,8 @@ export function isValidRunState(value: unknown): value is RunState {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
-  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
+  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
+  if(record.runStructure!==undefined&&(record.runStructure!==1||record.version!==3))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
   if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>10||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
   if(record.detour!==undefined){const q=record.detour as RunState['detour'];if(record.version!==3||!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='choice,depth'||!Number.isInteger(q.depth)||!DETOUR_DEPTHS.some(d=>d+1===q.depth)||!['direct','salvage'].includes(q.choice))return false;}
@@ -149,9 +158,22 @@ export function isValidRunState(value: unknown): value is RunState {
   const graph = generateRun(record.seed,record.version as 1|2|3);
   const current = graph.nodes.find(node => node.id === record.currentNodeId);
   if (!current) return false;
+  if(record.contract!==undefined){
+    const contract=record.contract as RunState['contract'];
+    if(record.runStructure!==1||!contract||typeof contract!=='object'||Array.isArray(contract)||Object.keys(contract).some(key=>!['earned','progress','lastPayout'].includes(key))||(contract.lastPayout!==undefined&&typeof contract.lastPayout!=='boolean')||!Number.isFinite(contract.progress)||contract.progress<0||contract.progress>20000||!Number.isInteger(contract.earned)||contract.earned<0||contract.earned>3)return false;
+  }
+  if(record.junctions!==undefined){
+    if(record.runStructure!==1||!record.junctions||typeof record.junctions!=='object'||Array.isArray(record.junctions))return false;
+    if(Object.entries(record.junctions).some(([key,value])=>key!==String(Number(key))||!isJunction(Number(key))||Number(key)>current.depth||(value!=='direct'&&value!=='salvage')))return false;
+  }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
-  if(record.detour!==undefined&&(record.detour as NonNullable<RunState['detour']>).depth!==current.depth)return false;
+  if(record.detour!==undefined){
+    const detour=record.detour as NonNullable<RunState['detour']>;
+    if(detour.depth!==current.depth)return false;
+    const junctions=record.junctions as RunState['junctions'];
+    if(record.runStructure===1&&isJunction(current.depth)&&junctions?.[current.depth]!==detour.choice)return false;
+  }
   if ((record.phase === 'starting-boon' || record.phase === 'rig-select') && (record.version !== 3 || current.id !== graph.startId)) return false;
   const completed = record.completedNodeIds as string[];
   const cleared = record.phase === 'reward' || record.phase === 'route' || record.phase === 'complete';
@@ -180,7 +202,7 @@ function requirePhase(state: RunState, phase: RunPhase): void {
 export function clearRoom(state: RunState): RunState {
   requirePhase(state, 'combat');
   const graph = generateRun(state.seed,state.version);
-  return freezeState({
+  return freezeRunState({
     ...state,
     completedNodeIds: [...state.completedNodeIds, state.currentNodeId],
     phase: state.currentNodeId === graph.bossId ? 'complete' : 'reward',
@@ -190,7 +212,7 @@ export function clearRoom(state: RunState): RunState {
 /** Host calls after applying the pending reward exactly once. */
 export function finishReward(state: RunState): RunState {
   requirePhase(state, 'reward');
-  return freezeState({ ...state, phase: 'route' });
+  return freezeRunState({ ...state, phase: 'route' });
 }
 
 export function enterRoom(state: RunState, nextId: string, action?:'destroy-ship',detour?:DetourChoice): RunState {
@@ -200,11 +222,12 @@ export function enterRoom(state: RunState, nextId: string, action?:'destroy-ship
   if (!current.next.includes(nextId)) throw new Error('Requested room is not an available route.');
   if(detour!==undefined&&(state.version!==3||!DETOUR_DEPTHS.includes(current.depth as typeof DETOUR_DEPTHS[number])||!['direct','salvage'].includes(detour)))throw new Error('Preparation choice unavailable.');
   const {service: _service,detour: _detour,...continuation}=state;
-  return freezeState({ ...continuation, ...(detour?{detour:{depth:current.depth+1,choice:detour}}:{}),currentNodeId: nextId, phase: 'combat',...(state.version!==1?{draftRoll:0}:{}) });
+  const junctions=state.runStructure&&isJunction(current.depth+1)?{...state.junctions,[current.depth+1]:detour??'direct'}:state.junctions;
+  return freezeRunState({ ...continuation, ...(junctions?{junctions}:{}), ...(detour?{detour:{depth:current.depth+1,choice:detour}}:{}),currentNodeId: nextId, phase: 'combat',...(state.version!==1?{draftRoll:0}:{}) });
 }
 
 /** Death is terminal and can occur only during an active room. */
 export function endRun(state: RunState): RunState {
   requirePhase(state, 'combat');
-  return freezeState({ ...state, phase: 'dead' });
+  return freezeRunState({ ...state, phase: 'dead' });
 }

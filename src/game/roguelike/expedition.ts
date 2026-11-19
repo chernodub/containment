@@ -1,7 +1,7 @@
 import {serviceStock,serviceCost,type ServiceId,type DetourChoice} from './economy';
 import type {RigId} from '../abilities/contract';
 import {RIG_CATALOG} from '../abilities/catalog';
-import {createRun,generateRun,clearRoom,finishReward,enterRoom,endRun,isValidRunState} from './run';
+import {createRun,generateRun,clearRoom,finishReward,enterRoom,endRun,freezeRunState,isValidRunState} from './run';
 import {createBuild,addMutation,draftMutationOffers,isValidBuildState} from './builds';
 import {isValidRunResources,isValidCheckpointExtensions,parseCheckpoint,serializeCheckpoint} from './checkpoints';
 import type {BuildState,MutationId,RunCheckpoint,RunResources,RunState} from './types';
@@ -15,7 +15,7 @@ function assertExpedition(expedition:Expedition):void {
 }
 function snapshot(run:RunState,build:BuildState,resources:RunResources,runtime:ExpeditionRuntimeState={}):Expedition {
   const result=Object.freeze({
-    run:Object.freeze({...run,completedNodeIds:Object.freeze([...run.completedNodeIds]),...(run.service?{service:Object.freeze({...run.service,purchases:Object.freeze([...run.service.purchases])})}:{}),...(run.detour?{detour:Object.freeze({...run.detour})}:{})}),
+    run:freezeRunState(run),
     build:Object.freeze({...build,mutations:Object.freeze([...build.mutations]),...(build.augmentUpgrades?{augmentUpgrades:Object.freeze([...build.augmentUpgrades])}:{})}),
     resources:resourcesCopy(resources),
     ...(runtime.abilities?{abilities:Object.freeze({...runtime.abilities})}:{}),

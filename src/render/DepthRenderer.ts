@@ -570,6 +570,10 @@ export class DepthRenderer {
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
+  // RUN15: ship conditions adjust the existing reflection and fog uniforms.
+  const condition=game.condition, conditionMood=getEnvironmentMood(this.roomEnvironment);
+  this.scene.environmentIntensity=conditionMood.reflectionIntensity*(condition?.reflection??1);
+  if(this.scene.fog instanceof T.FogExp2)this.scene.fog.density=conditionMood.fog.density*.25*(condition?.haze??1);
   // ImageBitmap completion shares browser/GPU scheduling with WebGL. Do not
   // queue expensive fallback frames ahead of the room's bounded optional decode.
   // Main freezes gameplay/input until a settled room frame has rendered.

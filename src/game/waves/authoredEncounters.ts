@@ -1,3 +1,4 @@
+import type {DetourChoice} from '../roguelike/economy';
 import type {StandardEnemyId} from '../enemies/types';
 
 export type EncounterGrammar = 'interception'|'crossfire'|'priority'|'pincer'|'swarm'|'siege';
@@ -24,7 +25,7 @@ export const AWAKENING_DRILL = Object.freeze({
   confirmationMs: 1100,
 } as const);
 
-/** Twenty room identities, authored in campaign order; seeds vary approach sides, not tactical intent. */
+/** Canonical beat sets in campaign order, also used as the fixed order for older saves. */
 export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.freeze([
  [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),swarm(3)],
  [b('priority','One heavy swing: step aside, punish recovery',g('brute',1,'anchor',{lesson:'brute'})),cross(1),swarm(2)],
@@ -57,3 +58,71 @@ export const STORY_ENCOUNTER_OVERRIDES:Readonly<Partial<Record<number,readonly A
  12:Object.freeze([cross(4),withRules(priority(2,'warden',2),{lullMs:4000}),brokenPincer(4)]),
  13:Object.freeze([withRules(flank(3),{lullMs:4000}),brokenPincer(4),cross(4)]),
 });
+
+/** Names follow the authored beat order. A variant promotes one of the first
+ * three beats to the opener, then plays the remaining beats in authored order.
+ * Teaching rooms instead keep the isolated lesson and change the approach. */
+const OPENING_NAMES = [
+ ['Main hatch rush','Port hatch rush','Far hatch rush'],
+ ['Heavy at the hatch','Heavy on the flank','Heavy across the bay'],
+ ['Lunge from the hatch','Lunge from the flank','Lunge across the deck'],
+ ['Break the pincer','Cut off the brood','Hold the atrium relay'],
+ ['Split the firing lanes','Turn the flank','Stop the brood'],
+ ['Bait the Warden','Cross the firing lanes','Stop the rush'],
+ ['Hold back the rush','Split the pincer','Cut out the leader'],
+ ['Intercept the flank','Silence the crossfire','Escape the pincer'],
+ ['Clear the firing lanes','Bait the Warden','Intercept the flank'],
+ ['Charge the relay','Break the pincer','Silence the crossfire'],
+ ['Stop the brood leader','Turn the flank','Split the crossfire'],
+ ['Break the crawler arm','Hold the relay','Stop the brood leader'],
+ ['Clear the firing lanes','Bait the Warden','Break the pincer'],
+ ['Intercept the flank','Break the pincer','Clear the firing lanes'],
+ ['Stem the rush','Stop the brood','Turn the flank'],
+ ['Interrupt the Matron','Escape the pincer','Charge the relay'],
+ ['Split the crossfire','Prevent reinforcements','Turn the flank'],
+ ['Break the crawler arm','Split the crossfire','Stop the brood'],
+ ['Turn the flank','Bait the Warden','Clear the firing lanes'],
+ ['Break the crawler arm','Cut off the brood','Charge the final relay'],
+] as const;
+
+export function storyBeats(depth:number, story:boolean) {
+ return (story ? STORY_ENCOUNTER_OVERRIDES[depth] : undefined) ?? AUTHORED_ENCOUNTERS[depth];
+}
+
+/** A separate seed stream keeps opening selection independent of spawn rolls. */
+export function openingRoll(seed:number, depth:number, salt=0) {
+ let value=seed ^ Math.imul(depth+1,0x9e3779b9) ^ salt;
+ value=Math.imul(value^(value>>>16),0x21f0aaad);
+ value=Math.imul(value^(value>>>15),0x735a2d97);
+ return (value^(value>>>15))>>>0;
+}
+
+/** The isolated Stalker lesson always uses interception. Give the Atrium’s
+ * heavy flank a relay objective when it opens, without changing its roster. */
+const ATRIUM_RELAY = withRules(AUTHORED_ENCOUNTERS[3][2], {
+ grammar:'siege',
+ label:'Hold the atrium relay as the heavy flank arrives',
+});
+
+export function openingBeat(depth:number, index:number, beat:AuthoredBeat) {
+ return depth===3&&index===2 ? ATRIUM_RELAY : beat;
+}
+
+export function storyOpening(seed:number, depth:number, story:boolean, salvage=false, junctions?:Readonly<Partial<Record<number,DetourChoice>>>) {
+ let previous:EncounterGrammar|undefined;
+ let selected=0;
+ for(let room=0;room<=depth;room++){
+  const beats=storyBeats(room,story);
+  const choices=[0,1,2].filter(index=>room<3||beats[index].grammar!==previous);
+  const choseSalvage=room===depth?salvage:junctions?.[room]==='salvage';
+  const alternate=choseSalvage&&choices.length>1?1:0;
+  const roll=openingRoll(seed,room);
+  // Preserve both established approaches on the other seeds. When the relay
+  // is available, put it on either card and retain the other card's opening.
+  const relayAtAtrium=room===3&&openingRoll(seed,room,0x4d21)%3===0&&!!choseSalvage===!!(roll&1);
+  selected=relayAtAtrium?2:choices[(roll+alternate)%choices.length];
+  const opening=room<3?0:selected;
+  previous=openingBeat(room,opening,beats[opening]).grammar;
+ }
+ return {index:selected,name:OPENING_NAMES[depth][selected]};
+}

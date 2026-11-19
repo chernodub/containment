@@ -84,7 +84,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(game.status!=='reward'||run.version!==3||run.phase!=='starting-boon'||run.seed!==value||run.completedNodeIds.length||build.mutations.length||build.rig!==rig||game.abilities.snapshot.rig!==rig)throw Error('Legacy start requires an untouched native rig choice for the same seed');
    seed=value;setUiFixture(game,null);nativeRealtimeUiDt=null;presentation?.reset();game.newRun(seed,{version:2,rig});events.length=0;await ready();
   },
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number;runStructure?:true}={}){
    if(options.seed!==undefined)seed=options.seed;
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
@@ -92,7 +92,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(index===0)game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
    else{
     const target=nodes[index],path:typeof nodes[number][]=[];let cursor=target;while(cursor.depth>0){cursor=nodes.find(n=>n.depth===cursor.depth-1&&n.next.includes(cursor.id))!;if(!cursor)throw Error('No route to target');path.unshift(cursor);}
-    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[],...(options.rig?{rig:options.rig}:{})},resources:game.combat.getRunResources()});
+    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,...(version===3&&options.runStructure?{runStructure:1 as const}:{}),currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[],...(options.rig?{rig:options.rig}:{})},resources:game.combat.getRunResources()});
     if(!serialized)throw Error(`Invalid checkpoint before ${templateId}`);
     game.expedition=restoreExpedition(parseCheckpoint(serialized)!);game.node=previous;game.status='route';
     if(previous.templateId==='manual-control-chamber')game.authorizeDestruction();else game.route(nodes[index].id);

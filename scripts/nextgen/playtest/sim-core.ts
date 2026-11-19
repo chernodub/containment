@@ -329,7 +329,7 @@ export function runSimulation(options: SimOptions) {
                     if (!choice)
                         throw Error('No earned route');
                     const augment=augmentUpgrades?.(game.expedition.build).at(-1);
-                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth):undefined;
+                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile):undefined;
                     game.route(choice.id,augmentUpgrades&&game.node.depth===10&&(!augment||game.combat.snapshot.credits<180)?'direct':detour,augment);
                 }
                 feel.reset();
@@ -349,7 +349,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
                 startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }

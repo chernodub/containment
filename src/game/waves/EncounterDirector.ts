@@ -1,4 +1,6 @@
-import {AUTHORED_ENCOUNTERS,STORY_ENCOUNTER_OVERRIDES,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
+import type {DetourChoice} from '../roguelike/economy';
+import type {ShipCondition} from '../roguelike/shipConditions';
+import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
 import {DIFFICULTIES,latePressureProgress,type DifficultyId} from '../difficulty';
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
@@ -18,10 +20,10 @@ export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;runStructure?:1;condition?:ShipCondition;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
-  concurrentCap: number; schedule: readonly EncounterSpawn[];
+  concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
   beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup}>[];
 }>;
 export type EncounterSnapshot = Readonly<{
@@ -32,8 +34,16 @@ export type EncounterSnapshot = Readonly<{
 function authoredPlan(options:EncounterOptions):EncounterPlan {
  const {node}=options,mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(node.depth,mode,true);
- const storyOverride=mode==='story'?STORY_ENCOUNTER_OVERRIDES[node.depth]:undefined;
- const source=[...(storyOverride??AUTHORED_ENCOUNTERS[node.depth])];const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;if(extra)source.push(extra);
+ const source=[...storyBeats(node.depth,mode==='story')];
+ const opening=options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
+ if(opening&&node.depth>=3){
+  const [beat]=source.splice(opening.index,1);
+  source.unshift(openingBeat(node.depth,opening.index,beat));
+ }
+ const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;
+ if(extra)source.push(extra);
+ const requisitionSpacing=node.depth===9&&options.junctions?.[7]==='salvage'?1.1:1;
+ const conditionCadence=options.condition?.cadence??1;
  let state=(options.seed^Math.imul(node.depth+1,0x9e3779b9))>>>0;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
@@ -56,15 +66,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
-    const breachId=ids[(rotation+beatIndex+side+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?14000:4500)+index*650:650+ordinal*450,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
+    const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?14000:4500)+index*650:650+ordinal*450*conditionCadence*requisitionSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
-  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,cleanup:beat.cleanup??(node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
+  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs+(options.condition?.lull??0),start,end:schedule.length,consequence:beat.consequence,cleanup:beat.cleanup??(node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(12,6+Math.floor(node.depth/3)),schedule:Object.freeze(schedule),beats:Object.freeze(beats)});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(12,6+Math.floor(node.depth/3))+(options.condition?.cap??0),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {

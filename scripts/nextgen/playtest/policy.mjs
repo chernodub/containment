@@ -162,12 +162,23 @@ export function chooseServicePurchase(available,combat,build={},run={}) {
   if(combat.reserve<12)priorities.push('ammo');
   return priorities.find(id=>available.includes(id))??null;
 }
-export function chooseDetour(combat,depth) {
+// RUN15 run structure. Only score terms published on the route cards.
+export function chooseDetour(combat,depth,offers=[],profile='competent') {
+  const salvage=offers.find(offer=>offer.detour==='salvage'&&!offer.disabled);
+  const direct=offers.find(offer=>offer.detour==='direct');
+  const risk=offer=>(offer?.condition?.cap??0)*2 + Number((offer?.condition?.cadence??1)<1) + Number((offer?.condition?.movement??1)<1) + Number(/pincer|crossfire/i.test(offer?.variant??''));
+  if(salvage?.variant&&direct?.variant){
+    const hurt=combat.health<(profile==='novice'?80:65);
+    if(hurt&&depth!==10&&risk(salvage)<risk(direct))return 'salvage';
+    if(hurt&&risk(salvage)>risk(direct))return 'direct';
+    if(!hurt&&profile==='competent'&&[2,6,10].includes(depth))return 'salvage';
+  }
   if(depth===2)return 'salvage';
   if(depth===6)return combat.credits>=70&&(combat.armor<30||combat.grenades<2)?'salvage':'direct';
   if(depth===10)return combat.health<70?'direct':'salvage';
   return combat.health>=85&&combat.armor>=25&&combat.medkits>0?'salvage':'direct';
 }
+// End RUN15 run structure.
 /** Focus a visible marked priority threat, then ranged pressure; never use hidden state. */
 export function chooseTarget(enemies, player) {
   return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
