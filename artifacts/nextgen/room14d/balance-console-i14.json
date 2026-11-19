@@ -1,0 +1,2650 @@
+[
+  {
+    "label": "room14d-i14-control-story",
+    "difficulty": "story",
+    "profile": "novice",
+    "provenance": {
+      "workspaceHead": "35874a8dc82d6bbe29c4de9e398e4e799da15382",
+      "mode": "sim-human-v1",
+      "dirtyBackend": false,
+      "patchHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backendHash": "0a788b0e124d4a950a0f8ce81c1404a878d8b18acd0db6b96536ae50a389e260",
+      "sourceHashes": {
+        "sim-core.ts": "743f7886ffa6647003f247d9d2812bbdbeb8e128df53b7487f48ea1f04b93806",
+        "sim-native-emulation.ts": "1736d942c30ffad64f249a0e96f88e3ca0ae1af17145d5da93d89bbd42e5d956",
+        "sim.mjs": "f9cc1a07ee61802eb30acecdf4b49930765bcfd55796c31cf6a2e6833a94c1d5",
+        "sim-metrics.mjs": "bfb4695307da1f62f79adcfe80bb0f1eb8bd12bd0bbde05ec05bfc8ac0ff847d",
+        "sim-worker.mjs": "ef1a56c9e8b3c20576754dffd661ec15847a854d422f8383d3b4c5285eb3a473"
+      },
+      "patchFormat": "git diff --binary HEAD for tracked backend files followed by exact untracked source snapshots"
+    },
+    "runs": [
+      {
+        "rig": "arc",
+        "seed": 101,
+        "outcome": "stalled",
+        "clears": 6,
+        "lastRoom": "freight-hold",
+        "sha256": "5db57f5bb54e330c243887656e97bd4a9f9a40f06f5320cda951a62af140fee1"
+      },
+      {
+        "rig": "arc",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4e601288b8c64c7da586ee8a4b23b919c1ac3a0a58e32ed449852805f5000ca9"
+      },
+      {
+        "rig": "arc",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 15,
+        "lastRoom": "swarm-junction",
+        "sha256": "cc648122e92a62400504a2c4e8d34906d5cfea3eeac956c0fa8d9cbf922d78ce"
+      },
+      {
+        "rig": "arc",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6dbdb6d5ec1d6b95cc664fea5ab6b3d47836e2ebda1b25e2ada58df847986de8"
+      },
+      {
+        "rig": "arc",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "70eced8f0a8aeea785e4236798d231b5e9c7db3e89ef7307f261b9b680ded10b"
+      },
+      {
+        "rig": "arc",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "890401ca9d1cca0ca7ed63165c79014ab49512a7db9ef76910b1a677d6c7a6aa"
+      },
+      {
+        "rig": "arc",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "f64f93e86278f000ea02d8a8492503f9c428e6d48aaa1f3195e79d7b266b977e"
+      },
+      {
+        "rig": "arc",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a43eaa56d31e667bcbd9cf4d45bfcb516cd8553b8e48fb8355b7008096147f71"
+      },
+      {
+        "rig": "arc",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b2759f48dd03cb8097bbdd52dd3f0f067b99f34a2fbe95424c5660c415433dc4"
+      },
+      {
+        "rig": "arc",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "489fd0e698eb34e4f5afb7a8f757b0db3c0c35878e16e00fa271b09c53205b49"
+      },
+      {
+        "rig": "arc",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "79f1b86c2bab4710d01d7bff9c3bb6aa9cbebb4ecdd7e22b1145908c7b0fa837"
+      },
+      {
+        "rig": "arc",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a76ea425b6ef26eb37cc5470ac078e3237a1a0a1b6ba5a93c1d4ecb6e6104fd6"
+      },
+      {
+        "rig": "arc",
+        "seed": 32768,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "d04eab863dceb27e1383937f274d6c22cd635306e17a3697ef4e33352deca202"
+      },
+      {
+        "rig": "arc",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5db790ad9d66ddf0b22657f6f3214bd3443fcf5e1f5def6c9b1df57f000803b6"
+      },
+      {
+        "rig": "arc",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "358cd57d2c6617b03d407dd5f74c08820dd508f23f4a19d12cc0eb075c01cd0c"
+      },
+      {
+        "rig": "arc",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "486dd332c157a3680f22d052d55180dba750349777ce9cca1d9f6e52db2c668e"
+      },
+      {
+        "rig": "arc",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "50d9474ad2f251158d3d887a68143d411852f4e8908664c258f86a3c38689390"
+      },
+      {
+        "rig": "arc",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8440472020ef6f50b0bf138e4b16aa209cdfb52a649610808f4dc15b3b317f24"
+      },
+      {
+        "rig": "arc",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1cc630e43fcf575f454320b28921219ac321fbbb22f832023f5653b6aaa072c0"
+      },
+      {
+        "rig": "arc",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b90f8bcd7410f64d2b6a5431384b3c7580feac393680f4ad8481854320e4ac60"
+      },
+      {
+        "rig": "breacher",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7999027fe5f16e1641be3745f802396efea9f007d83d252171ab7ebc6358eb32"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5ccf52e73a0d9ae40b8da9c9e614131849751d5dbc9076ddcd1278d41c1cd781"
+      },
+      {
+        "rig": "breacher",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c79fa495f3b20006e21d930a2b6bb38680dcd903cdc36590cf59b22bcc167497"
+      },
+      {
+        "rig": "breacher",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "0e2af6f4a866982639176c49eee97f17f3ccecbf820e8b52eb3224bce952f4ab"
+      },
+      {
+        "rig": "breacher",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b878dffd03eb198e4dffa3eec3f19e50c8052a27bee1dd0d4da112d2b12e8ad2"
+      },
+      {
+        "rig": "breacher",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a27fe4bb59fea5b41eb92aaa95ae044b86b9e7b8b4470f831bcd639a2f07ae55"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "37975084334ca234b891b56c97b7c4faf3a857721cfe005ff2869862df4b4fc0"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "af67e47f473935ff21d4762a3ecae76abc01677da5a462356208159e9163aa64"
+      },
+      {
+        "rig": "breacher",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a1052f24e92a8c133804f68d88f6bb86e043b6d6247e2eafe0158af644cf5a9d"
+      },
+      {
+        "rig": "breacher",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6c43af65002791c69fffa270b701b1e7b064bdbe4eaee48beeed25783053768f"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "4cfd9050d532f5158ef0a7ee3aa2c149923dba0201d117687a4452cb7b81c2b6"
+      },
+      {
+        "rig": "breacher",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "18db7c3acdf040a073e9a1fe5ae5ba55e85309bb9f8c6bc14f8d4362e0590a30"
+      },
+      {
+        "rig": "breacher",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "dd8eb9d61c222025cefad6a2f922432b64c4c7ba8725fce421cb245944a67dfa"
+      },
+      {
+        "rig": "breacher",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "59293ad1d2c9cee8b17f281f004cbfcae5face0214e6626c2b52aca370d19d04"
+      },
+      {
+        "rig": "breacher",
+        "seed": 42,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "ce14eb5d684016426f5d469a10c9123af15aa12adfdad8525476367db59a3260"
+      },
+      {
+        "rig": "breacher",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "f5ad275c3ba27b0a5eeddbb19d2d3603f7325a5dbfb560df3042a7fbe67c7603"
+      },
+      {
+        "rig": "breacher",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "53d3ee6b5777b476fd142702e041ed407f8d71472c84a4f1d4efc798b63c1a8e"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5360f8a4c5da75f8ba834602962f317a30b1e2bec77a90e1a0583d35b8397857"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7b8c310d2650df60f0ed51d852fec83d04d3985c6121acbfa685cb570169dbb3"
+      },
+      {
+        "rig": "breacher",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c0a727cae2b4be250dcd6d381b71d616cdad8ae7e43b43deb9619686070b650c"
+      },
+      {
+        "rig": "cryo",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f0fa8f1a92454875497a368753a287a0b658ce792336b4d4a489818252c67614"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1024,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "84fcf2d35238bb2b0270f6e540a4cdd4ad70ab27a5713cad5fa6c0fd6aea5472"
+      },
+      {
+        "rig": "cryo",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "dfcee2b24a39758e102eef4383a0b78b7f81d2f5ef58531c0f864a5bfebef584"
+      },
+      {
+        "rig": "cryo",
+        "seed": 137,
+        "outcome": "stalled",
+        "clears": 4,
+        "lastRoom": "crew-checkpoint",
+        "sha256": "ee2eeac7141da982171a1c93ebafd98772430e3a54fde9c58244c8966ffee852"
+      },
+      {
+        "rig": "cryo",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c2087ddfe1d5d9c9194d2412d3b2b8b62db99eb9cbffe75db1ab104941795324"
+      },
+      {
+        "rig": "cryo",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 17,
+        "lastRoom": "containment-annulus",
+        "sha256": "0674f9ebbda31b3d84405828a6330b28d09a7655ec1761fd756f624cf7683d65"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "01617abf5cfe53468ca9e83c3bd4a17041b99a7723669129032e7299cc6cd89b"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2026,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "567e2eb2508f4b1d7f14dcb752b2f0c97279104f6400b0c5e609e77db62b49f1"
+      },
+      {
+        "rig": "cryo",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8a02550e394c4c48396e57e13d24ed10b18abb403aa092e4a7c090450ae842bd"
+      },
+      {
+        "rig": "cryo",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7d6da27488f6449ac5972f2928f037d39b31319ce22c52288509f93f172aa04f"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "4daf378debc5f256d3ba747c9002f81154eb606888467039a1c60e4d0c305d5a"
+      },
+      {
+        "rig": "cryo",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "330256c9eec67ee2933df941ab1887d4c29d8c53d00e9879b6c4208f42f92e8c"
+      },
+      {
+        "rig": "cryo",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "dd2977debea8c3ecdff47b6c85f4b493af5bec493885c7d1d2e84f92ff5af6e2"
+      },
+      {
+        "rig": "cryo",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e1807c84660ed0a72d1a0d45a034861fde04192187b0f33a6f1601f3f7a1e31d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d6d50be7fd03c156e878fe4038d382781af88cd7c7c63abec4a25157a580d7ee"
+      },
+      {
+        "rig": "cryo",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ee74f81b8170343ee145ce4814dad0f4ea4fc74fc2f05f5c85977773c2d2a21a"
+      },
+      {
+        "rig": "cryo",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1966f7eb06c61a13576e81d95f1c17ee89ba3c16f5d8eacfdebee04a3fdc49f9"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c12c5ae08320f6d4c59a4a0b6481d2bc34670398aff08451b825420aa30c3270"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e787d9a9e18caba6caf2057335c1a9154007bb5545788338688c57a8587d51e2"
+      },
+      {
+        "rig": "cryo",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "3c1f70f359840283f7429c48cfa204e2b7f3f5442afec92b3c0284f3238114c0"
+      },
+      {
+        "rig": "pyro",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5c73dcf24e579235147b9654a7a91da0825361edef258276a7770b588d2b5930"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "65e26d90dad43214bee29c89fd1b3cee07339a8454261982a2fe6b886419ec62"
+      },
+      {
+        "rig": "pyro",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ba25a4b37e06d3e1551f4b2043d4cf3ff5820a37c7e7cef2d873dea4f481c090"
+      },
+      {
+        "rig": "pyro",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ec64cce386adec6dd8de78d9f7f469d0df67880ee0683a5f2a6077feb4396855"
+      },
+      {
+        "rig": "pyro",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "078888a8c558af26c866c0d508468197052f3768cf5076af84c310464bd1c0c9"
+      },
+      {
+        "rig": "pyro",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9fbbb3b3d45cb95b407143cb133138a8d96df7260d7486d1b45f04d4f00f7a8a"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4d9e2e1f2bc0a4c6cc1a376fcadf75e88d4ad64bf3b53ef0e08f7ca715493d82"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "30a6139197ace2660b277c9e6eae3aa1950522848c9fcb400670c7304fa94e72"
+      },
+      {
+        "rig": "pyro",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5a2f50ff61784c29959a287d0315abedb76b5b62a9cf510668eb7177ad3e204e"
+      },
+      {
+        "rig": "pyro",
+        "seed": 256,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "db4be5a5af8747262f0ef5e65e396498799e66a6d0aa89896bb55a72df117fff"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b0115782202088d1defec1e7733948197615468c2b6f5330eb6e62a9c1de728b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a60042d512929e0c1d76eed1748d4da5240f3a74d515d750f97b24be18cd37ba"
+      },
+      {
+        "rig": "pyro",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6d219e52cd9048843ead7036836e1330a313ac04e7f7e009315a650ef1b941be"
+      },
+      {
+        "rig": "pyro",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cf38d03803e5e31dbb9f76c35684ab7f41baf6481df7e050f34d5fdb93ab64d1"
+      },
+      {
+        "rig": "pyro",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "2c8c5ac640f16f8f36cf298edb95d902403f31f4c194cdf2d91f4eb25943a245"
+      },
+      {
+        "rig": "pyro",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f517f0e8f082f6b89f8a8703e310d890e9c5326bd7c4cccaf97c63d3deb72a57"
+      },
+      {
+        "rig": "pyro",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ed6b747d175da23da6c57dff718f30384319f1e1425b6b2acaf71aed89d55fe9"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e4fefa51621762497ac6c04f519241ab18ad836d62226c8df2a8efe714a47f3b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a80c92daa8dca0e66bb888f8540f8421e0faac5de143e0271f3e2cb0c5f71c08"
+      },
+      {
+        "rig": "pyro",
+        "seed": 9001,
+        "outcome": "dead",
+        "clears": 18,
+        "lastRoom": "manual-control-chamber",
+        "sha256": "1e5905638773d61c0714300b8249aafe6c3b6435d4c87cb2edaa0c2d3635eebc"
+      }
+    ]
+  },
+  {
+    "label": "room14d-i14-console-story",
+    "difficulty": "story",
+    "profile": "novice",
+    "provenance": {
+      "workspaceHead": "35bc5e56a0b5b2478b1a1c4eb6dac41c22c5d7e3",
+      "mode": "sim-human-v1",
+      "dirtyBackend": false,
+      "patchHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backendHash": "0a788b0e124d4a950a0f8ce81c1404a878d8b18acd0db6b96536ae50a389e260",
+      "sourceHashes": {
+        "sim-core.ts": "743f7886ffa6647003f247d9d2812bbdbeb8e128df53b7487f48ea1f04b93806",
+        "sim-native-emulation.ts": "1736d942c30ffad64f249a0e96f88e3ca0ae1af17145d5da93d89bbd42e5d956",
+        "sim.mjs": "f9cc1a07ee61802eb30acecdf4b49930765bcfd55796c31cf6a2e6833a94c1d5",
+        "sim-metrics.mjs": "bfb4695307da1f62f79adcfe80bb0f1eb8bd12bd0bbde05ec05bfc8ac0ff847d",
+        "sim-worker.mjs": "ef1a56c9e8b3c20576754dffd661ec15847a854d422f8383d3b4c5285eb3a473"
+      },
+      "patchFormat": "git diff --binary HEAD for tracked backend files followed by exact untracked source snapshots"
+    },
+    "runs": [
+      {
+        "rig": "arc",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "840e899ffcbe0ff973ae23162aefd6ab9b5ce1b0b88cf3b13a1cf58251c1c6e6"
+      },
+      {
+        "rig": "arc",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "83fdca1516fc65d64127e0b4fdf8f12829b92eee359218574245a5fc0be623e5"
+      },
+      {
+        "rig": "arc",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "99ad32f63a037fc924c8d9f893ef80180ee0d48d7f7e6fc381cb8e47195781a5"
+      },
+      {
+        "rig": "arc",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9412538cdee0efbc6a53d6b77d28a0f2cf501be4fc8e86e1187ca7b4efbd6d6f"
+      },
+      {
+        "rig": "arc",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cff19cd7eb122ef76261450c172eb6641299c52078b6577c00f2817b1921a741"
+      },
+      {
+        "rig": "arc",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "0021d26234d4f2110efa07d553844f4dcd6f1bab746537e78927a80f94054029"
+      },
+      {
+        "rig": "arc",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 15,
+        "lastRoom": "swarm-junction",
+        "sha256": "10249cb22123796fdb94bf3c55329b9d5d72152d90ef7ee0ef4e6710034b21f3"
+      },
+      {
+        "rig": "arc",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "21129797ab2224b2333fba4c01e86f8f7e59adc048d9d7de4ba2f9a1c5467f1f"
+      },
+      {
+        "rig": "arc",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d94d9a3dbee00bbfde5e33a8f3c796e28b4f316e3032a2e24a4ba7f025ef3626"
+      },
+      {
+        "rig": "arc",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "36cd3c219cd9820d49448f3ab3bf91fd01d3b37eff936404a27dc47830560592"
+      },
+      {
+        "rig": "arc",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fc0d2009a7fc7942c4b0b09bb7b281d669a56e7928faa88ec08dd827dba062c4"
+      },
+      {
+        "rig": "arc",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "91f345e530fcfb0d31f31a9cd592c7d75e928cba794776e2aa4707145f0d17ee"
+      },
+      {
+        "rig": "arc",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "65b96550eb50729cdc795400731d3c1d2058c32ad4ac9dc737bd1e440029022a"
+      },
+      {
+        "rig": "arc",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ffc84e08cc2e8325cc6646bd6a16707583157bb3c387a936fc19580e80e7c9ea"
+      },
+      {
+        "rig": "arc",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c9e7b0a37e54bbd753b0b56be2515dd64705119a91bdac5b3c502ade4f00acb5"
+      },
+      {
+        "rig": "arc",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "779101d2e1087b46f0dc42f5ff9dfc21567b6f7669abc11ac681ed85fb92e408"
+      },
+      {
+        "rig": "arc",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "af6f5861d116754a92113cc7a2b9a0f435122128a6ab89c35314f5683eafe036"
+      },
+      {
+        "rig": "arc",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6942f4b6aab9f787409648659e479b40c071b648437e7910e7ce6003e46186e4"
+      },
+      {
+        "rig": "arc",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "af1ff6f674518c77019db66e4ae528a4457b7ac8d4edc210d26ad426df7dc636"
+      },
+      {
+        "rig": "arc",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "22541d3eb238a0df71f39ea7089d40a06252581930e6f2aec59d13ace663126e"
+      },
+      {
+        "rig": "breacher",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "8e4d405707d29fbbe11cc2128a05048ef521f6085c1888d79e8e5dba2cfab489"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b3d16805bbaa994849cf03f4537b002693bd73ab10bc1b7a260571d0348501c5"
+      },
+      {
+        "rig": "breacher",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "55f319723587d664c82dbe2e6df2cd6165c34217f43addd2420590747a164006"
+      },
+      {
+        "rig": "breacher",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e722b6e1ce378ad6b0ca11c531843692a803daf7a5722edaf70308033196506f"
+      },
+      {
+        "rig": "breacher",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "3103ad1b8c6c7cafc31657e52e93ea4d6f6b362b77efb2ce0c6e33275fbae1b2"
+      },
+      {
+        "rig": "breacher",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f21532b21e39d883b858682991df713bcaebc3e5548c3bb42a662a604f7586b5"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "513bf465fefcfd3798c91903233b4abb7bb2053dbefae51a48484d1ea6bace52"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a1b0c93670044ee0c75612406d07642675f2ff09bf6136594761debd0cde0981"
+      },
+      {
+        "rig": "breacher",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "056940c949c3e9ac2cfa27438b064b4348a3e78b047c9acde275417c9b4e2c39"
+      },
+      {
+        "rig": "breacher",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "af4ef2792a3985faab5f70e17481168b843e6c16ad56ad62aa592c0ea55b931c"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "05c92d1b204c0ebdcb16d0b92c72ce76ba1e356c2e7b0273ca7e36d73f540cdb"
+      },
+      {
+        "rig": "breacher",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1b9add839426ff17fa8764a49d0ff0a0fc34af6672117d1828c415c33469d64b"
+      },
+      {
+        "rig": "breacher",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a464c3bde6eba87baf97d72c16e07f5e3b9e3d5a1306bed163fd199534360170"
+      },
+      {
+        "rig": "breacher",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "79d4216f8b78e676c603afe710785324b194d530b969af1fc79da6f233fdbfa9"
+      },
+      {
+        "rig": "breacher",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8d7f514a555780e22103e77232d3d400a6f5c575b6a840d640458b54ce0074d8"
+      },
+      {
+        "rig": "breacher",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "452088b3f7ce3c5e756bb24dccecb4ab3d7c66b1b7e8fe55732d3d62d1032625"
+      },
+      {
+        "rig": "breacher",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e67ad7ea4601d5303545c24b1489af51fdc7c3ea13fc3ccf0bd869979d68897f"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8192,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "2e295ca92cd1b85573c75122d831ef5f2758578a9a3030d65ce53b2e9b874510"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f6b9568186f8d4e90bd5df53fb28887ec55a48cabd08d1aa760d9d6887f5df8a"
+      },
+      {
+        "rig": "breacher",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4865e96a9ecef9cae439958989c34dc5a6dffd96a7c5c57906f46326fe5e2a15"
+      },
+      {
+        "rig": "cryo",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "08f34eb623e320c9e7460a4e838c0b0171d3a21dd1c1f3a43b958b3a67edecb3"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "41b6c809a139d92ad89086f2035900ca554111affc9a89165e094f0835dc8207"
+      },
+      {
+        "rig": "cryo",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5dabb1db1c48a3c501ff47a5fa254ddbd2d1be8ed6c325cf60d2a73ba26d2179"
+      },
+      {
+        "rig": "cryo",
+        "seed": 137,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "69a18a7d7234dc42851ee579a7783a59d9e2f8f9df1e52860da9c62fd4e511f6"
+      },
+      {
+        "rig": "cryo",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fa8fbd40a1669e89aaeae000b79b020ee94cff9f03bbb947179b3f5855480927"
+      },
+      {
+        "rig": "cryo",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "2a3705d6ea5dc8c215c9083d0af262761c90f547c2acc991ea9d9c00e0949383"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8f58b958b21d2ca87ab83fbef694803bc4aa0477d77cf026fe0d885e48bb6512"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2026,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "80929dcb18595681f3729c9f9853e7d5447c5febac8a5e28bd52dad7f14f98c4"
+      },
+      {
+        "rig": "cryo",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "69583a7591025b58c524cc9d3da8ea1834077b1655d638965d74c9f05c8c8ab3"
+      },
+      {
+        "rig": "cryo",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "2566ef5519e18c7b403a8114c9547041ff27468abcd2218de343ce4cc6c1bee5"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 17,
+        "lastRoom": "containment-annulus",
+        "sha256": "8ac3f7f6f8843a7fdcddd9f6fd8e33178a2507954c0cc264affd57f23a79fb24"
+      },
+      {
+        "rig": "cryo",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "bb0c6496f5e37b13a49a4bc8aa184565734fa0df55fd17a923b01d55239979c7"
+      },
+      {
+        "rig": "cryo",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "986c33ca94531af7b4ab0142b9825778b9a9ee15687efbeaa33721b01fa8119c"
+      },
+      {
+        "rig": "cryo",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "bb33dbd6a677aac8580587fbc63eda0a00276e82ec5b7c3c44e2a5d54432f7fc"
+      },
+      {
+        "rig": "cryo",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "416e2a2248f525ead5cea59dbb0b8e34812af7017331ecc4968e3436914efb1a"
+      },
+      {
+        "rig": "cryo",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "559394f5a74a179a7933d35571881d021d0101e1b602d10d60e560b80afd0f45"
+      },
+      {
+        "rig": "cryo",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9912dbc45d07d0924cea045e6a4c1be2ff689473320684f37332e0ffaf1baeb0"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "bb19d5475c1dfef9ab3b2604fc6fa69229fdbbe9ce2f9d7ca78b63abe41b3f18"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1493fa42feac9dc680a3011196e11d3c6ad95992912606cee332f9bbf7011989"
+      },
+      {
+        "rig": "cryo",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "872d3fd8541a359ce2d2bff597771482396c75eb2750626a79d83bb781666c1a"
+      },
+      {
+        "rig": "pyro",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9f8a2b139f9eab15f2b7de2add47262d504b3b04a0f99156b7822604faa79349"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "88d359e2ce3f144a00641975be68555b3277bb6beebf7b14ab8a2efa0e25c97d"
+      },
+      {
+        "rig": "pyro",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 18,
+        "lastRoom": "manual-control-chamber",
+        "sha256": "dd4567dd37a4416826a85bb37d04c8726517996ba03c8178ac0aef6ef38e770e"
+      },
+      {
+        "rig": "pyro",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "904579e3d4c32921fd3dd8695f0be9b0a99466f4d4e252e969e45990fa1b40b5"
+      },
+      {
+        "rig": "pyro",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "660b5b18621583b5eb5dee06fb530ba9e688d6d3ac40b4eb6e4c40a16d8731e4"
+      },
+      {
+        "rig": "pyro",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "456e74f0039ca6a7d5572d35e368c1f35e8e28548cccc22ea43d2b20651fdc83"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "91f918dd7300766e9613ef3c02fa8180358b49bd4e240d1d22c8bacc8c8691cb"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "0598f74dbc49901a4d5b0753ef14da50a926bb0c178d36ef07ca47d57ff66ec8"
+      },
+      {
+        "rig": "pyro",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c4ddf96628bcdf00534730701d3dc9301e85072b358178196367667691722543"
+      },
+      {
+        "rig": "pyro",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4ad524cfa7fa0bb695d2dec7b3a7efbca354a1094deac47ec1aa218ef5354da3"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c07f2e0c39c90df08d64bd97469fd664d4c23350ed029ec2304661f7c6b9d43e"
+      },
+      {
+        "rig": "pyro",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8b4faf46d223539c776bc24972f3c9d06fdc3f9af518c3d1ec9b812dc295df36"
+      },
+      {
+        "rig": "pyro",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "385edd434864288222869c74518fad212ab13699492d89212114eab6a058b060"
+      },
+      {
+        "rig": "pyro",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5eec9dd4a3dcd9e76cf7a3e64431f54bdd401f0b7b54e6981917ecc8d79b5cbe"
+      },
+      {
+        "rig": "pyro",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6d34b9420777772b07549b32fb67129c65d7b56fe63ed7822315193d60291348"
+      },
+      {
+        "rig": "pyro",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "3aa0a48c0098e3dd8aa4eab792e2306b0d0ae5e555f8b7ef3c201338fb579423"
+      },
+      {
+        "rig": "pyro",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "feba67d1183e77452f07587ab47d43606a077b1f4e137c507b34ffbb2f49d83b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f722fd5fb7f1c23d08760330b1685be09f85149e89c4cdd6ba0872e86e7d4169"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "75e21835ce3ff75c3d62bb1b553155e288dd5331753538ad630ac6e07ed519d4"
+      },
+      {
+        "rig": "pyro",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f8c099112936cacfe3697464cd1eae2516000305fe856ff4c80052f13224a94e"
+      }
+    ]
+  },
+  {
+    "label": "room14d-i14-control-standard",
+    "difficulty": "standard",
+    "profile": "competent",
+    "provenance": {
+      "workspaceHead": "35874a8dc82d6bbe29c4de9e398e4e799da15382",
+      "mode": "sim-human-v1",
+      "dirtyBackend": false,
+      "patchHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backendHash": "0a788b0e124d4a950a0f8ce81c1404a878d8b18acd0db6b96536ae50a389e260",
+      "sourceHashes": {
+        "sim-core.ts": "743f7886ffa6647003f247d9d2812bbdbeb8e128df53b7487f48ea1f04b93806",
+        "sim-native-emulation.ts": "1736d942c30ffad64f249a0e96f88e3ca0ae1af17145d5da93d89bbd42e5d956",
+        "sim.mjs": "f9cc1a07ee61802eb30acecdf4b49930765bcfd55796c31cf6a2e6833a94c1d5",
+        "sim-metrics.mjs": "bfb4695307da1f62f79adcfe80bb0f1eb8bd12bd0bbde05ec05bfc8ac0ff847d",
+        "sim-worker.mjs": "ef1a56c9e8b3c20576754dffd661ec15847a854d422f8383d3b4c5285eb3a473"
+      },
+      "patchFormat": "git diff --binary HEAD for tracked backend files followed by exact untracked source snapshots"
+    },
+    "runs": [
+      {
+        "rig": "arc",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "2bd671d9f54cc00dd6dbd425904131a5d3cfb67f5f7725990fda8bd2389dc20a"
+      },
+      {
+        "rig": "arc",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "22c626677c23537215e8b9914744ec7ed1615ea585075b2580c2c45caa282bf1"
+      },
+      {
+        "rig": "arc",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "b5a716d6b70ad361f9e2b2cdbbc37e587faa4e4d0d9e0a89fdcfbbdfa69ecf9d"
+      },
+      {
+        "rig": "arc",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "95f8beeceb7813ea49e42562b7ace980bd69830a9dcb71c362e1dee962c219f3"
+      },
+      {
+        "rig": "arc",
+        "seed": 16384,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "19a0253c08c5897334a68ba19a92facef9daecedda0c839f18b766e0b35ec99f"
+      },
+      {
+        "rig": "arc",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d7fd5f89dd5336065a4dff07d0328612a47fb11f7746f57dbc0c4e7ab779ae46"
+      },
+      {
+        "rig": "arc",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "462b0d3754320f857e9053d363cb381304f3b7d6fac5bef41e856f2b5564b298"
+      },
+      {
+        "rig": "arc",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fa3927a0502c76f4d2ca99328f2d575cb62654b1964fdb72cff21b243a66bbab"
+      },
+      {
+        "rig": "arc",
+        "seed": 23,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "a8dc64fab1883908e3b763a967c73c140019918a878e9e25f4facb2c117e2427"
+      },
+      {
+        "rig": "arc",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9e690bf2a7ff3329e75d554e9212b58240c92177caefee94355d5ea84c72abe8"
+      },
+      {
+        "rig": "arc",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e91e6ff63e45a1b151f25bacc259e308afb6ff44e37b7fa4b7f6e520ad68c0bc"
+      },
+      {
+        "rig": "arc",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6abab95020c2757160cecf07d56f7081bf4fcf6f037882f1e14c22aae4ab9a3b"
+      },
+      {
+        "rig": "arc",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "167a8a972761ca1f388150c559fe10a5c22b59ed25c8e8e2399ac433e30b7871"
+      },
+      {
+        "rig": "arc",
+        "seed": 4096,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "f12e2b5f3fd457711619f7e2be3a5a72a6be248744b583a429fb031145d4c7fc"
+      },
+      {
+        "rig": "arc",
+        "seed": 42,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "9f6c4ae5093338373c84753d69a895049f56f5e8c45e5b681fee26ca21546df8"
+      },
+      {
+        "rig": "arc",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "72a1c79ffaeb13416a5a72d0dc27645be4e975905234eedee75c4a4490eda689"
+      },
+      {
+        "rig": "arc",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "daf7e9f13c6d01f307412c5eb904405f28d3b9e105439f69e159f99ba34623f1"
+      },
+      {
+        "rig": "arc",
+        "seed": 8192,
+        "outcome": "dead",
+        "clears": 17,
+        "lastRoom": "containment-annulus",
+        "sha256": "5132dd843db5c39061c4b7384d4c08b625a61162f0a070f57117fa25692384a7"
+      },
+      {
+        "rig": "arc",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f7d287237dd0443c4ce69068db442635f8b09c0279c6dea5db0d2b4edb8e7543"
+      },
+      {
+        "rig": "arc",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1ec31f102b5006c750b736ae310b944a3b4e70601e4709749091159633415d04"
+      },
+      {
+        "rig": "breacher",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 11,
+        "lastRoom": "safety-interlock-station",
+        "sha256": "b851190cefffc77842a8f18473ce429d9ff7069bd1b149cbfb4f0a2ce3248ecc"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5c6f4b692b2a6c612f008795641c568b95da72c2b09151f50d583360b1ef9bfa"
+      },
+      {
+        "rig": "breacher",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "32bdbf84dc14961b6c7a9a7933c2406a2e563716b8ee87db73d393df9c7ca0a1"
+      },
+      {
+        "rig": "breacher",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a3994784886435acc4221d983dfbc82fe240fa0e9ea097020c2b19ffbc6d5185"
+      },
+      {
+        "rig": "breacher",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "0f4168197f733117243477e008ac58589045580f344715f57719687d30ee586c"
+      },
+      {
+        "rig": "breacher",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8339a42d752fec798003df344e54d6775a459a48959956029d3efdeac7890881"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "fa2260631b6c9ad584d241d1e9b4607cbce9cb49e01e2a260fa4a1ef13462fc9"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "746038064ce04d5614a84b3666130980ce9bbde01de35b0a4273ed18e7127d00"
+      },
+      {
+        "rig": "breacher",
+        "seed": 23,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "c2f499361a66b8d6a9a1cabcee77ae5c8ebf22c443a8586087326072c95667be"
+      },
+      {
+        "rig": "breacher",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d8e4960c51d354592a5c3a2efdf10025023f6e29f359fc271cacbd566c6a7e98"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ad2aa98c30f830597b6d83c77432f4d8bf1370730efa1d5c020a417eec1a69e9"
+      },
+      {
+        "rig": "breacher",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "90db0ee7b91c4ce2185962341520d751140a3ac21ca6e437df6eb0c22f613b21"
+      },
+      {
+        "rig": "breacher",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9b3ae5369bda8bbacc2f3b1f8644f6149ac8a8badd4de6c1dcd0b0e5eff99697"
+      },
+      {
+        "rig": "breacher",
+        "seed": 4096,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "6d1cf925216c32e5dc2acc17dcef801ffb62c698614c4f235983325d5d32e26f"
+      },
+      {
+        "rig": "breacher",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "44236a3aa235edce1eafb8ff30343e84156b61b054516b3d228b353244abec8b"
+      },
+      {
+        "rig": "breacher",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "ef26c8b021662de0f5b71fb46a08c70a4aa619f461cc5d967a40ddbe9923cee4"
+      },
+      {
+        "rig": "breacher",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5e9afb0bbdc69296e34291022aa7210578e0684a5e589703390d0567847242e9"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8192,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "c5d7ea1f537d5c0a8d96213781db7513afdffb860502924d936afda5f8b9025e"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "770b375330b279ca6b5e58600995cc3286893b8858f45d1a4f356ca0798a1b70"
+      },
+      {
+        "rig": "breacher",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4cbdc3d0e9313c74d814b866bd4761f9dd2f4f1052156c1edea52f6650d58373"
+      },
+      {
+        "rig": "cryo",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 8,
+        "lastRoom": "relay-racks",
+        "sha256": "90aaf5e8c8ddde474e128058765ef39a5203d8f0eb919b644f2da53ffc7fba78"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "20dc923fa10bfe1f74d77c7089e2a31070bd36974bb41a595e62d0c0a2095cc4"
+      },
+      {
+        "rig": "cryo",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "bc19a9b24c4119cb2c9d09eb510561f3f16993c41da3c65f2905ac9aa768ac46"
+      },
+      {
+        "rig": "cryo",
+        "seed": 137,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "61fc57316e8aa04020db45681b25cb159eed5a661d05985c611f33b30c7c7e07"
+      },
+      {
+        "rig": "cryo",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "14fd2ba01683c3524d3ddc8a9f66a4e916ea36b775d4f6c6a2daa3dda7d9689d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "fecee7b3ff66785fdd0623967f71499d81832b80c2a25dca5dd391ed45415d89"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "30d39e38c42bf256f176dfcc09febae75d74169b5cbe63ec5e641335b864ec4c"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2026,
+        "outcome": "dead",
+        "clears": 12,
+        "lastRoom": "coolant-plant",
+        "sha256": "82fce660be15432a8272eadabc2d46b0c96dd4f49b152441ae37564f2122b8cd"
+      },
+      {
+        "rig": "cryo",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "dcd288d3a3f5afbfac80e0a59bab9399998c57d14c15477e5620b5b84167f575"
+      },
+      {
+        "rig": "cryo",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cbfd9eae12148797e3308a86b95413784e03fb4ac63e9369592171acaf118631"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "7d4730e99b6fcbf5eb601030631162ce32f8271465f85c6c0ff589b29e680288"
+      },
+      {
+        "rig": "cryo",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8631ca542ab00853867a2514acf1371db3dbbac5c96cff630d4e6854e96b38d4"
+      },
+      {
+        "rig": "cryo",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "87e021f272f64db0f3f887a21bd27877a02d7e156ed552a324a3f6c0878760ca"
+      },
+      {
+        "rig": "cryo",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8e550fb7c908747a58fc70b2d47483a39b38eeb7cac4b78e089055c3ecfacdcf"
+      },
+      {
+        "rig": "cryo",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "374d8fccc39594345a99bf5bc6e91a3c4f7a48d69ec0ca028bd242e776896507"
+      },
+      {
+        "rig": "cryo",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "3f25ae42d8860b39d13bc5f2f6710d69e6ef4a63b4d4785242e021b8390db444"
+      },
+      {
+        "rig": "cryo",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "219407f249a63ca874ae2f1d51c1b8434f5d5bcf48b484128c4e2db119126f25"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9b99d04c7a583abeb707c096d9132ca43006a49420b263f7cc1b89e1bb5c3626"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fd55a79f12157091485d8e9aa1265c2b1bd8d507094bc140ea86e5184977d235"
+      },
+      {
+        "rig": "cryo",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "aa063a864ace61d64e8440e58af4c41f9032b73767efb486af2cfe601810a9ca"
+      },
+      {
+        "rig": "pyro",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "970b2db2cc755e7bebaa9453504cc5ded6ecfdab7b8f2066de5d66257b79126f"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1024,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "a7e06d255051451effd7d437dc0016d9f88ae201158e23f0716e936cc644e80b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 18,
+        "lastRoom": "manual-control-chamber",
+        "sha256": "d352c483bc98d6840ea787cbbf94da8aa33f290238fd1ed0be81090c05cc8fbe"
+      },
+      {
+        "rig": "pyro",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7f56cc4c460f19ca89cb514a4471b39a0153f4d8d68370f1220defe0d3e5f57b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fdd0a1a93a278386fddc4e77ee4ad18fd43d87c25782e442e1913fbe59262489"
+      },
+      {
+        "rig": "pyro",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cc708d28b628a80e808b809ea1899cacf09047cba6caf4b042d097cb31dd7897"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "2e7ee330e0950428275ab24c791ade7fe2319c158c70440246ee6eb0d769bc1f"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "48041bd0f6398fbf8fad82aecf64ac1580e71e15530e41486dd537ae27ee4d6c"
+      },
+      {
+        "rig": "pyro",
+        "seed": 23,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "e0e7a1638d89a1163b47976e3a3fd4dd19dbb5f194d4768dde4cfa81f5c813ec"
+      },
+      {
+        "rig": "pyro",
+        "seed": 256,
+        "outcome": "dead",
+        "clears": 12,
+        "lastRoom": "coolant-plant",
+        "sha256": "ce57d6c1b925b2518f6c92410bb5c4a74adf2efb4e724cd5e82ad4e4375164c5"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2718,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "8e1c08817da49d58d97adb6eca95a6692daba235b4d4d6c2a2d48b6422126cba"
+      },
+      {
+        "rig": "pyro",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "0f430d38e3b49c742a975ff8dc5b60543c4101e8466dde089bca538faf951951"
+      },
+      {
+        "rig": "pyro",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8458f88f45470ab63092ba544e70553e8c63832f000cbcf11d85dba2795b2880"
+      },
+      {
+        "rig": "pyro",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cbd3be7d044d285e84727eff64427682b98e60fa90f1620ebb97e7d81669124f"
+      },
+      {
+        "rig": "pyro",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "eb980415792fe915c1cab1c66988728b2f41e1e5fc48f092984246bf45f6bd81"
+      },
+      {
+        "rig": "pyro",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "7e1aa74b0677a2932404b2d3d23e9548ea1f601af91f5d996583a5a57982b89a"
+      },
+      {
+        "rig": "pyro",
+        "seed": 65537,
+        "outcome": "dead",
+        "clears": 7,
+        "lastRoom": "breached-loading-bay",
+        "sha256": "f71d677f31bf11bc696bb8b2d0638cf96e39ab08aaa31ad73de1d9d10336190f"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8192,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "740f6f8a43faadbcc41b0c8c6cf7681b4657d451c27be962c161c3b98a077a34"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a6fc59cb63b640a854b98b6037df308223473a466c81804393a4a8641e8af72a"
+      },
+      {
+        "rig": "pyro",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "88e5db6fdcf5e9154755a29b490e7ac371c7db54057e31aca2b723ec03dfef80"
+      }
+    ]
+  },
+  {
+    "label": "room14d-i14-console-standard",
+    "difficulty": "standard",
+    "profile": "competent",
+    "provenance": {
+      "workspaceHead": "35bc5e56a0b5b2478b1a1c4eb6dac41c22c5d7e3",
+      "mode": "sim-human-v1",
+      "dirtyBackend": false,
+      "patchHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backendHash": "0a788b0e124d4a950a0f8ce81c1404a878d8b18acd0db6b96536ae50a389e260",
+      "sourceHashes": {
+        "sim-core.ts": "743f7886ffa6647003f247d9d2812bbdbeb8e128df53b7487f48ea1f04b93806",
+        "sim-native-emulation.ts": "1736d942c30ffad64f249a0e96f88e3ca0ae1af17145d5da93d89bbd42e5d956",
+        "sim.mjs": "f9cc1a07ee61802eb30acecdf4b49930765bcfd55796c31cf6a2e6833a94c1d5",
+        "sim-metrics.mjs": "bfb4695307da1f62f79adcfe80bb0f1eb8bd12bd0bbde05ec05bfc8ac0ff847d",
+        "sim-worker.mjs": "ef1a56c9e8b3c20576754dffd661ec15847a854d422f8383d3b4c5285eb3a473"
+      },
+      "patchFormat": "git diff --binary HEAD for tracked backend files followed by exact untracked source snapshots"
+    },
+    "runs": [
+      {
+        "rig": "arc",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "b10ab3d17cdf0f2b6f27b4cb2b7e6f901fc976f0bc8b11093196165154974960"
+      },
+      {
+        "rig": "arc",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "fc213ae270d4a6cc1159006b3971b6f1d0b478b9180442978b3698c65434089a"
+      },
+      {
+        "rig": "arc",
+        "seed": 123456,
+        "outcome": "dead",
+        "clears": 15,
+        "lastRoom": "swarm-junction",
+        "sha256": "f0523a8380adfd9e3c7cc433c8b907011e7be4d6b2cef6afcfd993b16a3f89cf"
+      },
+      {
+        "rig": "arc",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "618bfad551b7fe6f3246a83ca97febcb9052ab45661c75809d6a223b599ab511"
+      },
+      {
+        "rig": "arc",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "a6ae07d8da005ecf57b6b317e6372236968013c6cac87116dd4b88a34f40681e"
+      },
+      {
+        "rig": "arc",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "863c8a539de29ce1fc24ad0c6d45dc528463e2c60264be5050db6204203316fd"
+      },
+      {
+        "rig": "arc",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6caeda8e411e0f68840ba005f8ed1611b49648e3d5d4b8336700e8d647b753c0"
+      },
+      {
+        "rig": "arc",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "42f64d5c166ad8c43b9488586f70bdf3dd180a80119150ab8033e99673262cbe"
+      },
+      {
+        "rig": "arc",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ba0df6799252e3add5c5cb3f952a84161f5ae851fcc4dea3818f8531990b685f"
+      },
+      {
+        "rig": "arc",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "700cf8b8dbee61b74a749da8ae465881ad942502aaf88bec945a7021f4e6914a"
+      },
+      {
+        "rig": "arc",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "1d85a80794f52d96a20981738eb6f655302cea7b88b488495eae053ed43f9ae1"
+      },
+      {
+        "rig": "arc",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "efb78aad2188e8e07e16ea60c5499c04180e956dd9e990e06dbfc5caa1ad3ea2"
+      },
+      {
+        "rig": "arc",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5d3e1cbf973de8645cba99b2e323706d6f8e166723ee17e497273b8a5dbca031"
+      },
+      {
+        "rig": "arc",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "99b869ff5903de53ddb10b10d5942982291d48b1d775c42da1adc659d997b228"
+      },
+      {
+        "rig": "arc",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d6695157c461fc9a9bc51302765205c29187c32d10f0feac86ff747bda984eef"
+      },
+      {
+        "rig": "arc",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "10e27c358358fc13538ec05025fb637d4042324e1dc11bfeaaab00438b0063f5"
+      },
+      {
+        "rig": "arc",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c716cc3fb5235a5249509b15fe38b999804179d0def586a7523295358df294da"
+      },
+      {
+        "rig": "arc",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "127e811a6433edb405f606c2197fa23ae436f79822b6baf9934a19267553543e"
+      },
+      {
+        "rig": "arc",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "14464195be28b89910b5d08bff64d442017129722e739ac131523fc99dbba31b"
+      },
+      {
+        "rig": "arc",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "8bfe9ef13d7a8e91343892151e3fc91424c7f0dee58672d327f1912040fc931e"
+      },
+      {
+        "rig": "breacher",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 11,
+        "lastRoom": "safety-interlock-station",
+        "sha256": "22191b08f6509c365eab3099235d67ba5571106671532df22c744ef3d4dbad69"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1024,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e7ca743e945c64d38cd72249fd6724be942911ce85cda6e10aa11f591e5fcfe0"
+      },
+      {
+        "rig": "breacher",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c848c25e63e8a5237b65d94e1c78355a58b6ac80adc64e04a5ed8ff3c6b37dc7"
+      },
+      {
+        "rig": "breacher",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "85b65e534f98b4c47ecf304722c5239235869397b64abdc213f106afa6933e05"
+      },
+      {
+        "rig": "breacher",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7eba3f7b93d6179c4d0b02d023f48861ea05d6037ec726f323e1bcb6c471c3e7"
+      },
+      {
+        "rig": "breacher",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "97da259ddff8485ca4ab248f11f8aaf3d48a164657d7cdcb7328d59fdd6826f6"
+      },
+      {
+        "rig": "breacher",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "f975cacb15f4b7daf5e7960bfdafc63fc7ccef3fb458d04bd8207d74667c84af"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "02e0239dd583c98cf77d0ca230f9e980ddd8356fc1e3c5e9b04cb524a96f930c"
+      },
+      {
+        "rig": "breacher",
+        "seed": 23,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "e867558feb4035d74f65dc25638cde2b66229fb7cf91b8db5b402b17f293b43e"
+      },
+      {
+        "rig": "breacher",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4a199053c655165bb809fb12d26c6e9e91ba4dabec3ac1583a9c088e1b22c5ab"
+      },
+      {
+        "rig": "breacher",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "4d1160ab8ae66d4654e379588fe97f826df8c82cb1b4e757570103b2dc066699"
+      },
+      {
+        "rig": "breacher",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "edc00233ed2e84e83398fd11a3bd02c7689616240ebdf23ad8eda600c450eb19"
+      },
+      {
+        "rig": "breacher",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "00921aced9317e1aa790d59f394270a84c951d9995d6b428c23c724fbcb5e396"
+      },
+      {
+        "rig": "breacher",
+        "seed": 4096,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "534b313661815ff330efe8b77832cb2a42a6a81d1286261bde71dcbf7f4d0311"
+      },
+      {
+        "rig": "breacher",
+        "seed": 42,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "28409e02c25d745ba3ecc013ca3b4f4a11623a9aefacf4fdd7dbaf9259b135fa"
+      },
+      {
+        "rig": "breacher",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 11,
+        "lastRoom": "safety-interlock-station",
+        "sha256": "cfa7121a9b0fca8777faef4522f6333bcee294fd43ff9850e08be010b3582622"
+      },
+      {
+        "rig": "breacher",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f2216dca221d8148a52f13fc78846b79853d346ccb9301a1eddc833b6daa1585"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c2693f0cf8d50524b7cc62470ef6276ef1ec94f4dad53989fb7b08f3827b547f"
+      },
+      {
+        "rig": "breacher",
+        "seed": 8675309,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "ee09f01a9853ded2ce78c503184a134c30fe74fbc2fe9ac20c24febc898ac714"
+      },
+      {
+        "rig": "breacher",
+        "seed": 9001,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "576d39221a81e75981b87168db66077406335026a0eabc75d9dcccfc5ea61621"
+      },
+      {
+        "rig": "cryo",
+        "seed": 101,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "e22d1112386ae53fc4df71f08313329a13a5e7915c6611190273c06eb64eee50"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1024,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "f994e9cce9e74776484506e6a1b0d119657fc0265afb0aff8f4db8f5684869ae"
+      },
+      {
+        "rig": "cryo",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7c4eb3b3df540a4a3fd69b6e4ce7a8db834c2f9a598a92e29d51fe5d23c0bc5c"
+      },
+      {
+        "rig": "cryo",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "d1c5e2de5fa2debe4a9c519a8a0c70f240d669ab87cd57cc5e46745d9a9eb9f5"
+      },
+      {
+        "rig": "cryo",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5a96d754206264f47bc17362d11228cac864dd783585da39db16455f6786736d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 17,
+        "outcome": "dead",
+        "clears": 11,
+        "lastRoom": "safety-interlock-station",
+        "sha256": "5278d5066aed15e83efe670bef666b8bc4ca04354d00aaa169080c341003b08d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 1729,
+        "outcome": "dead",
+        "clears": 10,
+        "lastRoom": "diagnostic-gallery",
+        "sha256": "c31316d06e2098c96824be42f91b0c8f29e0090a44ff945533858b387266c9ad"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2026,
+        "outcome": "dead",
+        "clears": 9,
+        "lastRoom": "transmission-chamber",
+        "sha256": "2e005fe462fc14db84aad885c7f757ed585658ef8157e36885f527705add807e"
+      },
+      {
+        "rig": "cryo",
+        "seed": 23,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "b8bd7c2ba8d707973a98135483f471c051151aa0d7e8468321bc4449bf6b5ee5"
+      },
+      {
+        "rig": "cryo",
+        "seed": 256,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "9cf5550869a17c2e604fe1add9573fd57a9c8c2472941d797b75b9d85948892d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "cf1a1272a4c0fd2a9f6e9866a8d6e2aa549ebcb2afaf55f940ae008ac1e8c81b"
+      },
+      {
+        "rig": "cryo",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "aafec4833991a969eee0a9c027b13a1cf285285ac397953165b5d66a2f6790dd"
+      },
+      {
+        "rig": "cryo",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "3ec4ece5512710866a6fe1dc82075ca8097d3ea1b18f99a52233017410b55f29"
+      },
+      {
+        "rig": "cryo",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "47c4048925017743c764706ee9dcc9e546498f2e0ebdadf5a44e1c8a4a0fb434"
+      },
+      {
+        "rig": "cryo",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "090c36028ebe794de3da51130f575c5c0e74a5deb800692bef60f21336b65c6f"
+      },
+      {
+        "rig": "cryo",
+        "seed": 512,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f85686c7ebc3c73c0f261f6ca6797182650c79ca27c9bdbf1cf2ac73aecf8756"
+      },
+      {
+        "rig": "cryo",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "c2c39e1abd29fe9ef3cc527db2d02ba6361a9a3f27089589731839a4f12706d2"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8192,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "67a97621a21225f50a707d4ebfdec6d2dd7b418f10c8de128708e197066127a5"
+      },
+      {
+        "rig": "cryo",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "93daf64770475d9bda044b67ee0e9b29793b6aa0ff1596b2103f12ec01e2034d"
+      },
+      {
+        "rig": "cryo",
+        "seed": 9001,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "5bf2eac5148ce71dc805ec37b8ec912921a491511d7ea419e15210767286844c"
+      },
+      {
+        "rig": "pyro",
+        "seed": 101,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "93f1f3ffb1665167b69747b8b915ee42069356e85c073f73cb6deddb90453cf2"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1024,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "a049f1732964e79c958cd116529de6f2f7d654e9865b17b06604af6adfb74da7"
+      },
+      {
+        "rig": "pyro",
+        "seed": 123456,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "97685f4eb0e533942f04dc6881cd257d84b3589e35e295b131399c7c672a221c"
+      },
+      {
+        "rig": "pyro",
+        "seed": 137,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "04f2a94218ada8e9cca0db698c2adf5bffe47946b2ab2530ee4aa5728a2d5761"
+      },
+      {
+        "rig": "pyro",
+        "seed": 16384,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "e7dc611fbbbb6f3853e9d955a90e1058df0740c4b95ea3d33474f58c72cad90b"
+      },
+      {
+        "rig": "pyro",
+        "seed": 17,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "43ef199c42cce58c448adc097518188bb6d0bcfb019dcc1ccc5ddb1949a265d6"
+      },
+      {
+        "rig": "pyro",
+        "seed": 1729,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "540c3e1cb32ed88d7fde0918f11d1a5019ca61f3c9a0a92edf00e94a86f80be5"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2026,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "0cd3369339514e3c9714af3c115dc47d2a14678bb9e32662a077e38cc63bb047"
+      },
+      {
+        "rig": "pyro",
+        "seed": 23,
+        "outcome": "dead",
+        "clears": 14,
+        "lastRoom": "infested-workshop",
+        "sha256": "59bfde3d27f31509315ebbb5fcfa8f3b9ca4a3a15096b95dd2b7055aa5c64544"
+      },
+      {
+        "rig": "pyro",
+        "seed": 256,
+        "outcome": "dead",
+        "clears": 13,
+        "lastRoom": "service-shaft-landing",
+        "sha256": "004f8dcb636485b7f9bf0477ea4192d9b0b2f7280eccd30c1c50e997778f0c1a"
+      },
+      {
+        "rig": "pyro",
+        "seed": 2718,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "51c1763aa49b0b741e444b9c4e173f4459bc80df7248ec018256989ca2b0c710"
+      },
+      {
+        "rig": "pyro",
+        "seed": 31415,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "ecea1c8d8e16bf29e13ae67d4e39f4aff6b74d31a5137759cd1e2f645aaa9af9"
+      },
+      {
+        "rig": "pyro",
+        "seed": 32768,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "40f54209ec35bad48a6aa63e45c895a8970590225ea0024a95a82222bd5db374"
+      },
+      {
+        "rig": "pyro",
+        "seed": 4096,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "7284b5d65896a0c882368e9c9c18c970e2293b94900275697f39f4c8f50e5e80"
+      },
+      {
+        "rig": "pyro",
+        "seed": 42,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "f707d12a19dd2bdfb9e48c6703b3d44527fc1c1be5061b7221953d4886f5e155"
+      },
+      {
+        "rig": "pyro",
+        "seed": 512,
+        "outcome": "dead",
+        "clears": 12,
+        "lastRoom": "coolant-plant",
+        "sha256": "1bc3e824b5446cea87ed7f63cdfae1a2858a4521738fce8cbeb7ce2a527e55dc"
+      },
+      {
+        "rig": "pyro",
+        "seed": 65537,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "16ea75c1bc76b0b0fe2cd0020bb83862bc67b302d10ea1169c44c4263f07aece"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8192,
+        "outcome": "dead",
+        "clears": 18,
+        "lastRoom": "manual-control-chamber",
+        "sha256": "9bf2b546f23ad144464f8d2863522a3f4bcf2784f51385625b49eaa0e69bf259"
+      },
+      {
+        "rig": "pyro",
+        "seed": 8675309,
+        "outcome": "complete",
+        "clears": 19,
+        "lastRoom": "overload-floor",
+        "sha256": "6184cd25ce1ba5838d3dce723cc36a5c8a43144a5e226150dc62292ed35f33af"
+      },
+      {
+        "rig": "pyro",
+        "seed": 9001,
+        "outcome": "dead",
+        "clears": 16,
+        "lastRoom": "shielding-gate",
+        "sha256": "f7389b7c5606a8b8ff96946c360868e053d5b7fba71bb345b2873d02a3f725c4"
+      }
+    ]
+  }
+]

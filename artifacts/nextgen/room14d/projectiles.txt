@@ -8,8 +8,8 @@ crew-checkpoint 0 face 706.5 364 rifle hit distance 8 spit hit distance 10 remai
 crew-checkpoint 1 face 756.25 359 rifle hit distance 8 spit hit distance 10 remaining 0
 armory 0 face 374 626 rifle hit distance 8 spit hit distance 11 remaining 0
 freight-hold 0 face 474 482 rifle hit distance 8 spit hit distance 11 remaining 0
-breached-loading-bay 0 face 547.5 506 rifle hit distance 8 spit hit distance 11 remaining 0
-relay-racks 0 face 581.6 372 rifle hit distance 8 spit hit distance 10 remaining 0
+breached-loading-bay 0 face 595.5 498 rifle hit distance 8 spit hit distance 11 remaining 0
+relay-racks 0 face 599 423.5 rifle hit distance 8 spit hit distance 11 remaining 0
 transmission-chamber 0 face 849 498 rifle hit distance 8 spit hit distance 11 remaining 0
 transmission-chamber 1 face 874 486 rifle hit distance 8 spit hit distance 17 remaining 0
 diagnostic-gallery 0 face 475 371 rifle hit distance 8 spit hit distance 10 remaining 0

@@ -5,8 +5,8 @@ communal-atrium incident-facing 100% -0.44,-0.06,-0.02,0.48  incident-kiting 100
 crew-checkpoint incident-facing 100% -0.28,0.11,0.29,0.61  incident-kiting 100% 0.54,0.92,0.23,0.52
 armory incident-facing 100% -0.24,0,-0.47,-0.05  incident-kiting 100% -0.74,-0.49,0.18,0.58
 freight-hold incident-facing 100% 0.02,0.41,-0.38,0.17  incident-kiting 49% -1.02,-0.67,0.77,1.21
-breached-loading-bay incident-facing 100% -0.41,0.01,0.15,0.75  incident-kiting 80% -0.36,0,0.59,1.11
-relay-racks incident-facing 100% -0.14,0.07,0.23,0.88  incident-kiting 100% 0.44,0.67,-0.02,0.54
+breached-loading-bay incident-facing 100% -0.25,0.17,0.18,0.79  incident-kiting 80% -0.31,0.04,0.6,1.1
+relay-racks incident-facing 100% -0.06,0.15,0.23,0.88  incident-kiting 100% 0.5,0.74,-0.02,0.54
 transmission-chamber incident-facing 100% -0.19,0.07,0.13,0.56  incident-kiting 100% 0.25,0.51,0.26,0.65
 diagnostic-gallery incident-facing 100% -0.31,0,0.13,0.66  incident-kiting 100% -0.69,-0.38,0.43,0.91
 safety-interlock-station incident-facing 100% -0.32,-0.12,0.21,0.61  incident-kiting 100% 0.28,0.46,0.36,0.72

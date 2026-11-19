@@ -156,3 +156,93 @@ The initial inventory had 72 violations, including 19 worklight housings. The re
 The suitcase, rabbit, open berth and queue barrier now share the southern pod plinth. The Residential cabin, pictures and loose luggage occupy the blocked common nook. Swarm's split casing, raised roots and vein ridges sit on its northern duct bank. Its normal-mapped floor membrane continues over the walkable plates at 0.021 m. Manual's damaged desk and bypass share the native console footprint, with the low floor cable still walkable. The other raised incident assemblies were fitted to existing blocked structures. Coolant and Infested Workshop only needed worklight moves. Awakening Bay already cleared the footprint check.
 
 The Arc campaign (seed 1729, fast) cleared 20 rooms with zero errors on the first mounted build. Following shelf-placement refinements, a four-room run produced [storyboard frames](../../artifacts/nextgen/room14c/storyboard-review.jpg) for Passenger Vault, Residential Gallery and Communal Atrium. The marine and enemies stayed visually clear of the raised debris in the six inspected frames. The [capture gallery](../../artifacts/nextgen/room14c/index.html) includes incident-facing and kiting views for all 19 changed rooms, each at 1920×1080 and 480×270. Passenger's open case reads on its plinth. Swarm's raised machinery reads best from centre. Manual's desk still grazes the upper edge on approach, and Diagnostic's sign attracts the eye before the damaged furniture.
+
+## Fourth pass — floor-standing incident cover
+
+The twenty templates now supply 31 rectangles to the existing native blocker list. The renderer draws the incident itself. Passenger Vault uses one solid for the suitcase and rabbit and another for the berth and fallen queue barrier. Manual Control uses one for the console and one for the bypass. Freight’s leaning stack stands beside the container. Swarm’s split plenum retains its vertical silhouette with a shallower footprint beside the duct and a flush membrane extending onto the deck. Template IDs and the campaign route are unchanged. Both room entry and checkpoint restoration derive blockers from the template.
+
+The placement inventory covers the ROOM14 meshes, the procedural INC13 and DRESS13 batches, the P11 room kits and worklight housings. The final sweep loads shipping triangles wherever a rotated or multi-part kit model spans open space in its bounding rectangle. This cleared the Atrium conservatory, Armory carousel and wedged loading pod. Crew’s redundant freestanding scanner was removed from the existing portal. The Transmission dish now fits the wall pedestal and the Overload crown fits the reactor island. Raised batches with mixed floor marks are inspected triangle by triangle. The inset around bevelled incident art is at most 1.6 native units. Unsupported loose fittings are seated, flattened to at most 0.021 m, or omitted. The final inventory contains 195 raised parts and 119 flush surfaces with zero raised overlaps.
+
+Dimensions below are native ship units (32 per metre). “Largest” measures the indicated body from the marine spawn to the exit and breach entry positions, plus the fixed access pickup where present. “Markers” uses exact breach coordinates. “Native” uses the marine for exit and pickup access and the largest room body for travel between breach entry and arena. An arrow shows before and after. Straight charge lanes sampled are baseline wall-stun approaches.
+
+| Room | Cover width × depth | Largest radius | Largest reached / total, before → after | Markers before → after | Native before → after | Minimum sampled lane before → after | Warden rays shortened / checked |
+|---|---|---:|---|---|---|---|---|
+| awakening-bay | 376 × 98, 74 × 49 | 16 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 46.9 → 46.9 | 0/0 |
+| passenger-vault | 94 × 97, 109 × 56 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 37.2 → 37.2 | 0/0 |
+| residential-gallery | 168 × 73 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 32.6 → 32.6 | 0/0 |
+| communal-atrium | 107 × 57 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 119.5 → 119.5 | 0/0 |
+| crew-checkpoint | 78 × 22, 51 × 17 | 28 | 5/5 → 5/5 | 2 → 2 | 5 → 5 | 32.8 → 32.8 | 0/0 |
+| armory | 66 × 40 | 64 | 4/5 → 4/5 | 0 → 0 | 5 → 5 | 35.2 → 35.2 | 0/16 |
+| freight-hold | 110 × 69 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 69.4 → 69.4 | 0/0 |
+| breached-loading-bay | 129 × 90 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 135.2 → 135.2 | 0/0 |
+| relay-racks | 66 × 103 | 64 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 35.2 → 35.2 | 0/13 |
+| transmission-chamber | 34 × 45, 72 × 33 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 43.2 → 43.2 | 0/0 |
+| diagnostic-gallery | 94 × 69 | 28 | 5/5 → 5/5 | 3 → 3 | 5 → 5 | 40.0 → 40.0 | 0/0 |
+| safety-interlock-station | 53 × 35, 28 × 10 | 28 | 6/6 → 6/6 | 4 → 4 | 6 → 6 | 35.2 → 35.2 | 0/0 |
+| coolant-plant | 143 × 29, 112 × 38 | 64 | 4/5 → 4/5 | 4 → 4 | 5 → 5 | 34.0 → 34.0 | 0/12 |
+| service-shaft-landing | 26 × 68, 24 × 56 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 48.8 → 48.8 | 0/0 |
+| infested-workshop | 96 × 81, 79 × 43 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 32.0 → 32.0 | 0/0 |
+| swarm-junction | 160 × 63 | 64 | 5/5 → 5/5 | 2 → 2 | 5 → 5 | 103.2 → 103.2 | 0/8 |
+| shielding-gate | 154 × 28, 61 × 56 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 48.0 → 48.0 | 0/0 |
+| containment-annulus | 28 × 56, 28 × 20 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 75.2 → 75.2 | 0/0 |
+| manual-control-chamber | 128 × 60, 51 × 41 | 64 | 0/5 → 0/5 | 0 → 0 | 5 → 5 | 35.2 → 35.2 | 0/12 |
+| overload-floor | 181 × 84 | 28 | 5/5 → 5/5 | 4 → 4 | 5 → 5 | 65.1 → 65.1 | 0/0 |
+
+All 101 role-specific targets remain reachable. Starting every largest body at the marine spawn instead reaches 94/101 targets on both layouts. The largest body reaches 67 of the 80 exact breach markers on each layout. The default audit reports inherited failures in six rooms when a large enemy must start at the marine spawn and stand exactly on each breach marker. In Manual Control the 64-unit Warden cannot occupy the marine spawn even with all incident cover removed. Armory and Coolant also have exits that cannot admit the Warden. Crew, Diagnostic and Swarm have breach markers too close to blocked geometry for their largest body. Native breach spawning tries an inward offset and alternate legal positions. The strict audit returns failure for those exceptions. Running with `--compare-baseline` checks for losses against the same template with the incident solids removed.
+
+The width audit sweeps both deck axes in four-unit steps and on both sides of each rectangular edge, then measures the authored openings separately. No sampled minimum declined. All 61 sampled wall-stun approaches retained their baseline length. These samples do not exhaust every possible Warden charge angle.
+
+The native rifle and enemy spit probe records both effect positions and surviving projectiles for all 31 rectangles. The upper part of Awakening’s berth shares an existing stock housing. Its perimeter intercepts the shot before it can reach the inner box. The mint outline in the collider captures uses the same rectangles passed to simulation. In Passenger Vault three southern berth sockets are empty so the legacy bank cannot obscure the suitcase and rabbit. The fourth sleeper remains sealed.
+
+
+The Diagnostic gurney moved to the end of the partition, and the shaft assembly moved toward the void. The final loading pod and Relay sled use the positions from the successful native campaign. The Manual console wall and bypass retain their height and width with 16% less depth along the southern approach. All their parts, screens and the flush cable follow the same transform.
+
+### Visual and native verification
+
+The gallery contains incident-facing, centre-kiting and heavy-combat frames for every room at 1920×1080 and 480×270, collider-debug views for all twenty and two additional Freight cutaway views. The comparison uses the eight ROOM14b captures and the previous unchanged views for the other twelve. The camera-mark ledger identifies each retained frame. Breached Loading Bay and Relay Racks were the only rooms with new obstacle positions after the console capture. [Gallery](../../artifacts/nextgen/room14d/index.html) · [Four-wide incident sheet](../../artifacts/nextgen/room14d/incident-facing.jpg) · [Second-pass comparison](../../artifacts/nextgen/room14d/incident-comparison.jpg) · [Historical approach marks](../../artifacts/nextgen/room14d/historical-marks.jpg) · [Frame ledger](../../artifacts/nextgen/room14d/frames.json)
+
+From the incident marks, all twenty projected cover footprints fit in frame using a two-metre prism. Every centre view includes part of its footprint. Service Shaft Landing has the least centre coverage at 18%, followed by Freight at 49%. Freight’s stack reads clearly from the approach, but the integrity HUD overlaps it from the centre. Manual’s screens and bypass read together. Swarm’s casing remains visible when the marine touches its front bevel. Crew’s broken arm is quiet at 480×270, and the Relay sled can blend into the rack. Hostile sectors remain visible in all twenty heavy frames. Infantry silhouettes at the right of Armory and Overload have the weakest separation at reduced size. [Projected bounds](../../artifacts/nextgen/room14d/projected-bounds.txt) · [Heavy frames](../../artifacts/nextgen/room14d/combat-heavy.jpg) · [Collider overlays](../../artifacts/nextgen/room14d/colliders.jpg)
+
+On the four-room revision, native Breacher and Arc both cleared twenty rooms at seed 1729 with zero runtime errors. Their 9,931 and 10,307 sampled marine circles had zero penetrations. The five Breacher storyboards show movement around the Passenger, Freight, Relay, Swarm and Manual assemblies. Across 1,689 near-cover observations, zero actor centres entered a solid. On the subsequent compact-console revision, Breacher died in Diagnostic after ten clears with zero runtime errors. The upstream Loading and Relay positions were then restored. Final-head verification covers the placement, navigation, projectile, capture and simulation results. The native campaign receipts and storyboards describe the earlier full runs. [Campaign receipts](../../artifacts/nextgen/room14d/campaigns.json) · [Storyboard observations](../../artifacts/nextgen/room14d/storyboards/observations.txt) · [Projectile impacts](../../artifacts/nextgen/room14d/projectiles.txt)
+
+### Balance comparison
+
+The acceptance review used the compact-console results, with Story Arc rising from 13 to 18 completions, Standard Arc from 13 to 16 and Standard Breacher falling from 14 to 12. No room gained more than two deaths across both modes on that layout. The lead waived the ±2 completion requirement and stopped further tuning. The cohort already running at that decision uses the final gameplay revision `030cf458`.
+
+The integrated control is I14 at `7c3e35a0`. A local control rerun of Breacher seed 1729 in both modes matched the archived gameplay, policy and backend hashes, every per-room duration and ending health. PROPS14 and TITLE15 subsequently changed presentation. Earlier complete comparisons are retained for the pre-I14 layout, the first footprint refit, the four-room adjustment, the pump-edge experiment and the compact console. [Pre-I14](../../artifacts/nextgen/room14d/balance-pre-i14.md) · [First I14 fit](../../artifacts/nextgen/room14d/balance-first-i14.md) · [Four-room adjustment](../../artifacts/nextgen/room14d/balance-edge-i14.md) · [Pump-edge experiment](../../artifacts/nextgen/room14d/balance-header-i14.md) · [Reviewed console layout](../../artifacts/nextgen/room14d/balance-console-i14.md)
+
+**Final head.** The existing cohort finished all 160 runs at `030cf458`. Story cleared 67/80 against 62/80 on the control. Standard cleared 55/80 against 52/80. Standard Swarm Junction gained three deaths (0 → 3). Across both modes Manual Control gained three (2 → 5). These are the two room-death exceptions on the final layout. The production type-check and Vite build passed. [Final paired ledger](../../artifacts/nextgen/room14d/balance.json)
+
+| Difficulty and profile | Rig | Paired seeds | Baseline clears | Cover clears | Difference |
+|---|---|---:|---:|---:|---:|
+| Story novice | Breacher | 20/20 | 17 | 18 | +1 |
+| Story novice | Cryo | 20/20 | 14 | 15 | +1 |
+| Story novice | Pyro | 20/20 | 18 | 16 | -2 |
+| Story novice | Arc | 20/20 | 13 | 18 | +5 |
+| Standard competent | Breacher | 20/20 | 14 | 10 | -4 |
+| Standard competent | Cryo | 20/20 | 13 | 15 | +2 |
+| Standard competent | Pyro | 20/20 | 12 | 15 | +3 |
+| Standard competent | Arc | 20/20 | 13 | 15 | +2 |
+
+| Death room | Story baseline → cover | Standard baseline → cover | Combined difference |
+|---|---:|---:|---:|
+| awakening-bay | 0 → 0 | 0 → 0 | +0 |
+| passenger-vault | 0 → 0 | 0 → 0 | +0 |
+| residential-gallery | 0 → 0 | 0 → 0 | +0 |
+| communal-atrium | 0 → 0 | 0 → 0 | +0 |
+| crew-checkpoint | 0 → 0 | 0 → 0 | +0 |
+| armory | 0 → 0 | 0 → 0 | +0 |
+| freight-hold | 0 → 0 | 0 → 0 | +0 |
+| breached-loading-bay | 0 → 0 | 1 → 1 | +0 |
+| relay-racks | 0 → 0 | 1 → 0 | -1 |
+| transmission-chamber | 2 → 3 | 4 → 5 | +2 |
+| diagnostic-gallery | 2 → 1 | 3 → 0 | -4 |
+| safety-interlock-station | 0 → 0 | 1 → 2 | +1 |
+| coolant-plant | 0 → 0 | 2 → 0 | -2 |
+| service-shaft-landing | 3 → 0 | 6 → 5 | -4 |
+| infested-workshop | 3 → 1 | 4 → 2 | -4 |
+| swarm-junction | 1 → 0 | 0 → 3 | +2 |
+| shielding-gate | 3 → 3 | 4 → 4 | +0 |
+| containment-annulus | 1 → 2 | 1 → 1 | +1 |
+| manual-control-chamber | 1 → 3 | 1 → 2 | +3 |
+| overload-floor | 0 → 0 | 0 → 0 | +0 |
