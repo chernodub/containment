@@ -7,6 +7,11 @@ export function addWorkshopResin(root:T.Group):void {
   paintIncidentDeck(root,'inc13-resin-runout',[371,294,221,144],c=>{
     // The original membrane contracts around the ruptured duct foot.
     c.translate(515,325);c.scale(.35,.42);c.translate(-515,-325);
+    paintVeinedMembrane(c);
+  });
+}
+
+export function paintVeinedMembrane(c:CanvasRenderingContext2D):void {
     // Flattened outer crust forms a continuous footprint below the strands.
     // Its rim splits into broad lobes, tethered to the old service grating.
     const crust=new Path2D('M667 310 Q707 359 641 372 Q619 378 631 393 Q590 374 567 393 C522 415 547 436 501 420 Q475 414 461 442 Q437 470 412 458 Q385 445 367 473 C350 505 325 481 303 505 Q277 531 250 512 Q241 507 212 525 Q216 504 194 509 Q228 476 239 472 Q250 462 241 450 Q277 455 296 432 C314 410 301 400 340 397 Q365 389 353 371 Q395 375 409 346 Q422 326 430 313 Q463 326 494 306 Q546 273 591 310 Z');
@@ -65,5 +70,4 @@ export function addWorkshopResin(root:T.Group):void {
       c.strokeStyle='rgba(77,54,75,.83)';c.lineWidth=width*.70;c.stroke(path);
       c.save();c.translate(0,-1.2);c.strokeStyle='rgba(128,99,125,.31)';c.lineWidth=width*.21;c.stroke(path);c.restore();
     }
-  });
 }

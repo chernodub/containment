@@ -1,23 +1,61 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {environmentClock} from '../lighting/HotFixtureSurface';
+import {IncidentPieces} from './Inc13StoryIncidents';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 import type {OriginalKitInstance} from './OriginalShipKitAssets';
 
-const dais = new T.Matrix4().makeScale(1.17, 1.32, 1.01).setPosition(550 / 32, 0, 411 / 32);
+const dais = new T.Matrix4().makeScale(.64, .96, .78).setPosition(449 / 32, 0, 572 / 32);
 
 export function inc13ManualPlacement(): OriginalKitInstance {
   return {
     pack: 'p11-inc13-manual', asset: 'burned-manual-dais', matrix: dais.clone(),
-    purpose: 'P11 / burned-manual-dais', cutaway: true,
+    purpose: 'P11 / burned-manual-dais', cutaway: false,
   };
 }
 
 export function addInc13Manual(root: T.Group): void {
-  paintIncidentDeck(root,'room14-manual-scorch',[425,360,140,73],c=>{
-    const ash=c.createRadialGradient(480,392,4,480,392,35);
-    ash.addColorStop(0,'rgba(24,24,24,.85)');ash.addColorStop(1,'rgba(35,35,35,0)');
-    c.fillStyle=ash;c.fillRect(435,355,90,76);
+  const frame=new IncidentPieces(), phosphor=new IncidentPieces(), failing=new IncidentPieces();
+  // A sloped instrument bridge behind the original switch desk. The open
+  // fourth bay exposes three insulated bus bars under its inspection lamp.
+  for(let i=0;i<4;i++){
+    const x=-54+i*34,h=84-Math.abs(1-i)*4;
+    frame.box(x,h-22,-15,33,46,11,0x51616a);
+    frame.face([[x-15,h,-9],[x+15,h,-9],[x+15,h-26,4],[x-15,h-26,4]],0x19262b);
+    if(i<2){
+      const screen=i===1?failing:phosphor;
+      screen.face([[x-12,h-3,-4],[x+12,h-3,-4],[x+12,h-21,5],[x-12,h-21,5]],0x98c9cb);
+      for(let j=0;j<3;j++)frame.box(x-7+j*6,h-12,2,3,2+j*2,2,0xadc1b8);
+    }
+    if(i===3)for(const offset of [-8,0,8]){
+      phosphor.rod([x+offset,h-2,-8],[x+offset-2,h-22,4],1.6,0xbd985d);
+    }
+    frame.rod([x,2,-17],[x,h-7,-18],3,0x58676a);
+  }
+  // Shared kickplate and projecting switch shelf join the monitors in silhouette.
+  frame.box(-2,13,0,128,24,14,0x41535a);
+  frame.box(-3,30,7,135,8,28,0x809391);
+  frame.box(-12,35,14,51,2,10,0x323c41);
+  for(let i=0;i<7;i++)frame.box(-33+i*6,37,14,2,3,6,0xc9b99b);
+  for(let i=0;i<3;i++){
+    const x=7+i*9;frame.rod([x,34,12],[x-2,41+i*2,7],1.5,0xbfaa90);
+  }
+  frame.finish(root,'master-station',449,556).scale.x=.70;
+  for(const bank of [phosphor,failing]){
+    const lit=new T.MeshBasicMaterial({color:bank===failing?0x82c3b7:0xb5dbda,vertexColors:true,side:T.DoubleSide});
+    const mesh=bank.finish(root,'station-phosphor',449,556,lit);
+    mesh.scale.x=.70;mesh.castShadow=false;
+    if(bank===failing)mesh.onBeforeRender=()=>{lit.color.setScalar(Math.sin(environmentClock.value*9)>.77?.22:.91);};
+
+  }
+  paintIncidentDeck(root,'room14-manual-cable',[407,548,91,114],c=>{
+    c.lineCap='round';
+    for(const offset of [-4,0,4]){
+      c.save();c.translate(0,offset);
+      const cable=new Path2D('M454 570 C459 591 417 594 426 617 S459 622 465 643');
+      c.lineWidth=4;c.strokeStyle='#272828';c.stroke(cable);
+      c.lineWidth=1.4;c.strokeStyle='#8b8c75';c.stroke(cable);c.restore();
+    }
   });
 
   // Blender (x, y, z) exports to glTF (x, z, -y). These endpoints are the

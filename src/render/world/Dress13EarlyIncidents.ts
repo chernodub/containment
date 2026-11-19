@@ -16,8 +16,8 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
   if (id === 'passenger-vault') {
     // One empty drawer has been pulled into the aisle shoulder. Its open case,
     // separate lid, folded clothes and personal objects remain in one trail.
-    put('service-transit-case',373,482,-.4,[.66,.32,.56]);
-    put('service-access-hatch',364,477,-.4,[.54,.35,.47],.10);
+    put('service-transit-case',301,571,-.4,[.66,.32,.56]);
+    put('service-access-hatch',292,566,-.4,[.54,.35,.47],.10);
     pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.25));
   }
   if (id === 'communal-atrium') {
@@ -107,7 +107,7 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#26363c';ctx.fillRect(0,0,512,128);ctx.fillStyle='#b3b9ac';ctx.font='bold 38px monospace';ctx.fillText('K. VOSS / BERTH 04',18,54);ctx.font='24px monospace';ctx.fillText('PERSONAL EFFECTS - RELEASED',18,101);
     const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
     const label=new T.MeshStandardMaterial({map:texture,roughness:1,metalness:0,side:T.DoubleSide});label.name='dress13-passenger-nameplate';label.userData.actorMaterial=true;label.addEventListener('dispose',()=>texture.dispose());
-    mesh(new T.PlaneGeometry(1.1,.275),label,406,.75,520).rotation.x=-.55;
+    mesh(new T.PlaneGeometry(1.1,.275),label,354,.75,669).rotation.x=-.55;
   }
   if(id==='crew-checkpoint') {
     const rim=material('checkpoint-foot-return',0x79898c,.58);

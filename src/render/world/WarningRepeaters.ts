@@ -151,7 +151,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  w.box(m.signal,source.x,source.y+.045,source.z,.28,.06,.14);
  root.userData.lightFixtures=[{x:source.x,y:source.y+.08,z:source.z,color:m.signal.emissive.getHex(),nativeColor:true,poolStyle:1,poolWidth:.35,poolDepth:5},{x:lampX,y:ceiling-.23,z:headerZ,color:lampColor,nativeColor:true,poolStyle:1,poolAngle:Math.PI/2,poolWidth:.7,poolDepth:5.5,distance:10,gain:.8}];
  root.userData.warningStructure=components;root.userData.canonicalWarningDisplays=canonicalCenters;root.userData.storyDisplays=displays;root.userData.storyDisplay=displays[0];root.userData.warningSupports=supports;root.userData.warningClearance=WARNING_FRAME_LOWEST;
- root.userData.warningVisibility={allDisplays:displays,material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,normalOpacity:.96};
+ root.userData.warningVisibility={allDisplays:displays,material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,console:id==='manual-control-chamber'?{x:449,y:556,radius:49}:undefined,normalOpacity:id==='manual-control-chamber'?.28:.96};
 }
 
 /** One existing merged batch uses built-in Standard RGBA vertex alpha. The
@@ -170,6 +170,7 @@ export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera
  const state=root.userData.warningVisibility,displays=state?.allDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
  const point=state.point as T.Vector3,screen=state.screenBounds as Float64Array,actors=state.actorBounds as Float64Array,structure=state.structureBounds as Float64Array;
  let bodies=1;projectActor(marine,marineHeight,camera,point,actors,0);
+ if(state.console)projectActor(state.console,2.7,camera,point,actors,bodies++*4);
  for(let i=0;i<enemies.length;i++){const enemy=enemies[i],model=models?.get(enemy.id);if(model?.root?.visible===false)continue;if(bodies===1025)break;projectActor(enemy,model?.height??4.7,camera,point,actors,bodies++*4);}
   for(let i=0;targets&&i<targets.count&&bodies<1025;i++)
     projectActor(targets.bodies[i],.6,camera,point,actors,bodies++*4);

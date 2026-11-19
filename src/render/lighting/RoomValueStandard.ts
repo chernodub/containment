@@ -38,7 +38,7 @@ const profile = (p: RoomValueProfile) => Object.freeze(p);
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
   // Occupied pod windows, medical observation face and south life-support chain.
   'passenger-vault': profile({
-    landmark:{at:[402,501],color:0xb3c5e4,radius:10,body:.55,spill:.035,height:1.04},
+    landmark:{at:[360,651],color:0xb3c5e4,radius:10,body:.55,spill:.035,height:1.04},
     fixturesAt:[[600,320],[1000,440],[600,700]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.34,lane:.75},
     wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,
@@ -62,7 +62,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Carousel spindle, port magazine and starboard fitting lamps.
   'armory': profile({
-    landmark:{at:[277,342],color:0xe6efff,radius:5.5,body:.6,spill:.04,height:4.5,keyGain:.75},
+    landmark:{at:[371,609],color:0xe6efff,radius:5.5,body:.6,spill:.04,height:1.32,keyGain:.95},
     fixturesAt:[[600, 450], [180, 380], [1020, 380]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xcdd7e9,
@@ -78,7 +78,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Boarding scar, wedged pod and pressure lock.
   'breached-loading-bay': profile({
-    landmark:{at:[503,417],color:0x90cfff,radius:7,body:.55,spill:.035,keyGain:.65},
+    landmark:{at:[523,480],color:0x90cfff,radius:7,body:.55,spill:.035,height:1.7,keyGain:.85},
     fixturesAt:[[215, 265], [690, 390], [1080, 520]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,
@@ -86,7 +86,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Tracking dish, uplink chancel and service rack.
   'transmission-chamber': profile({
-    landmark:{at:[882,392],color:0x5f9eff,radius:5.5,body:.65,spill:.035,keyGain:.6},
+    landmark:{at:[846,482],color:0x5f9eff,radius:5.5,body:.65,spill:.035,height:1.22,keyGain:.88},
     fixturesAt:[[816, 380], [600, 160], [300, 600]],
     floor:{lit:.66,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbbd0ef,
@@ -109,7 +109,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.44,ambient:.45,marineGlow:1,exit:.9,
   }),
   'service-shaft-landing': profile({
-    landmark:{at:[334,436],color:0x53e0bc,radius:8,body:.6,spill:.02,height:-.6,keyGain:1},
+    landmark:{at:[303,565],color:0x53e0bc,radius:8,body:.6,spill:.02,height:1.15,keyGain:1},
     // Surviving junction above the shaft, upper and lower docking diffusers.
     fixturesAt:[[359,405],[1060,6],[1060,874]],
     floor:{lit:.52,unlit:.26,edge:.13},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
@@ -125,7 +125,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
   'swarm-junction': profile({
-    landmark:{at:[267,406],color:0xa7bdaf,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
+    landmark:{at:[343,483],color:0xe977d4,radius:4.8,body:.20,spill:.012,height:1.4,keyGain:.88},
     // Hive heart and the occupied northern/southern ventilation mouths.
     fixturesAt:[[470,620],[600,250],[600,790]],
     floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
@@ -133,7 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
-    landmark:{at:[455,333],color:0x9a9cff,radius:7,body:.55,spill:.025,keyGain:.6},
+    landmark:{at:[496,423],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},
@@ -149,7 +149,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
   'manual-control-chamber': profile({
-    landmark:{at:[472,433],color:0xffebd3,radius:6.2,body:.81,spill:.046,height:3.6,keyGain:.74},
+    landmark:{at:[483,558],color:0xffebd3,radius:6.2,body:.81,spill:.046,height:2.24,keyGain:1.12},
     // Authorization desk, southern cost/status desk and hardwired cabinet.
     fixturesAt:[[640,380],[640,920],[860,280]],
     floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
