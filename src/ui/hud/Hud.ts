@@ -318,7 +318,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', [getRoomOpening(game), ((getAwakeningDrill(game)||game.augmentDrillActive) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
+        text('room-objective', [getRoomOpening(game), ((getAwakeningDrill(game)||game.augmentDrillActive||game.coverLessonActive) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}

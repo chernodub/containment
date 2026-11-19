@@ -74,7 +74,12 @@ async function stagedConsequence(kind) {
         }
         if(kind==='cover'){
           const pickup=game.pickups.snapshot.find(item=>item.kind==='armor');
-          if(pickup)Object.assign(game.player,{x:pickup.x,y:pickup.y+40});
+          if(pickup){
+            const position=[0,Math.PI,Math.PI/2,-Math.PI/2].map(angle=>({
+              x:pickup.x+Math.cos(angle)*38,y:pickup.y+Math.sin(angle)*38,
+            })).find(point=>d.canStand(point.x,point.y,18));
+            if(position)Object.assign(game.player,position,{angle:Math.atan2(relevant.y-position.y,relevant.x-position.x)});
+          }
           break;
         }
       }else if(kind==='cover'||(kind==='escort'&&game.encounter.grammar!=='priority')||(kind==='brood'&&game.encounter.grammar!=='priority')){
@@ -104,9 +109,21 @@ async function stagedConsequence(kind) {
     Object.assign(game.player,lane.p,{angle:lane.angle+Math.PI});
     const id=d.spawn('brute',lane.x,lane.y,true);
     game.enemies.promote(id,'warden');
+    let sidestepped=false;
     for(let i=0;i<220;i++){
       d.stepSimulation(50);
-      if(game.enemies.getSnapshot(id)?.wallStunAngle!==undefined)break;
+      const warden=game.enemies.getSnapshot(id);
+      if(warden?.wallStunAngle!==undefined)break;
+      if(!sidestepped&&warden?.pendingAttack==='charge'){
+        const angle=Math.atan2(warden.lockY,warden.lockX)+Math.PI/2;
+        const position=[92,-92,70,-70].map(distance=>({
+          x:game.player.x+Math.cos(angle)*distance,y:game.player.y+Math.sin(angle)*distance,
+        })).find(point=>d.canStand(point.x,point.y,18));
+        if(position){
+          Object.assign(game.player,position,{angle:Math.atan2(warden.y-position.y,warden.x-position.x)});
+          sidestepped=true;
+        }
+      }
     }
   }
   const enemies=game.enemies.snapshot.enemies;

@@ -29,7 +29,7 @@ export class PincerPresentation {
   }>();
   private readonly noActors = new Map<number, ActorModel>();
   private readonly crownPosition = new T.Vector3();
-  private readonly crownExtent = new T.Vector3(1, .65, 1);
+  private readonly crownExtent = new T.Vector3(1.45, .9, 1.45);
 
   bossPose(model: ActorModel, enemy: EnemySnapshot, game: DepthGame, unit: number, camera: T.Camera, marineHeight: number) {
     const original = this.pinned.get(model);
@@ -91,7 +91,7 @@ export class PincerPresentation {
     updateOriginalInteriorCutaways(cutaway.root,camera,game.player,marineHeight,[],this.noActors);
     if (cutaway.piece.hidden) {
       cutaway.scale.copy(cutaway.head.scale);
-      cutaway.head.scale.multiplyScalar(.12);
+      cutaway.head.scale.multiplyScalar(.035);
       cutaway.cut = true;
     }
   }
@@ -119,12 +119,12 @@ export class PincerPresentation {
     let marker = this.retreats.find(mesh => !mesh.visible);
     if (!marker) {
       marker = new T.Mesh(this.body, this.signal);
-      marker.scale.set(.55, .5, .35);
+      marker.scale.set(.9, .7, .6);
       this.root.add(marker);
       this.retreats.push(marker);
     }
     marker.visible = true;
-    marker.position.set(enemy.x / unit, .12, enemy.y / unit);
+    marker.position.set(enemy.x / unit, model.height*.68, enemy.y / unit);
     marker.rotation.set(0, -direction, -Math.PI / 2);
     return {angle: retreat.flinching ? angle : direction, stride: retreat.flinching ? 0 : 1};
   }
@@ -208,7 +208,7 @@ export class PincerPresentation {
     this.broodSac.position.set(matron.x/unit,2.45,matron.y/unit);
     this.broodSac.rotation.z=Math.PI;
     const collapse=Math.min(1,remaining/1800);
-    this.broodSac.scale.set(1.5,interruption?.remainingMs ? .22+collapse**12 : 1.6,1.5);
+    this.broodSac.scale.set(interruption?.82:1.25,interruption ? .16+collapse**12 : 1.4,interruption?.82:1.25);
     this.broodSac.material=interruption?this.signal:this.warning;
     for(const pod of this.broodSplits)pod.visible=false;
     interruption?.pods.forEach((point,index)=>{
