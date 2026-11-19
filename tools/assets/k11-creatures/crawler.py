@@ -7,7 +7,7 @@ side mandibles, raptorial forelegs (right hook heavier), four walking legs.
 import numpy as np
 
 import sdf as S
-from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "dretch"
@@ -65,8 +65,8 @@ def build(sk):
     head_c = v3((0.40, 0.0, 0.46 * sk.aspect))
     body.add(A.mass(head_c, (0.13, 0.16, 0.09 * sk.aspect), frame((1, 0, -0.35)), bone=chest, k=0.05))
     prow_F = frame((1, 0, -0.42))
-    body.add(Plate(head_c + v3((0.03, 0, 0.085 * sk.aspect)), (0.2, 0.27, 0.075), prow_F, 0.055, rings=0.005, ring_count=3,
-                   lip=0.015, chip=0.01, zone=CREST, bone=chest, plate=40, tint=1.0, k=0.0))
+    body.add(Plate(head_c + v3((0.05, 0, 0.085 * sk.aspect)), (0.25, 0.34, 0.08), prow_F, 0.06, rings=0.005, ring_count=3,
+                   lip=0.015, chip=0.01, zone=BONE, bone=chest, plate=40, tint=1.0, k=0.0))
     # keel ridge on the prow
     body.add(RoundCone((0.30, 0, 0.62 * sk.aspect), (0.52, 0, 0.50 * sk.aspect), 0.022, 0.012, zone=SHELL, bone=chest,
                        k=0.02, tint=1.15))
@@ -75,7 +75,7 @@ def build(sk):
     for s_, bn in ((-1, "antenna_right0"), (1, "antenna_left0")):
         body.extend(A.hook([(0.5, 0.17 * s_, 0.47 * sk.aspect), (0.66, 0.2 * s_, 0.45 * sk.aspect),
                             (0.78, 0.12 * s_, 0.40 * sk.aspect), (0.80, 0.05 * s_, 0.36 * sk.aspect)],
-                           0.035, 0.008, bn, zone=CREST, tip_zone=TOOTH, k=0.015, tip=0.4))
+                           0.05, 0.01, bn, zone=BONE, tip_zone=BONE, k=0.015, tip=0.4))
     # wet flesh in the waist seam
     body.add(Ellipsoid((-0.04, 0, 0.52 * sk.aspect), (0.09, 0.2, 0.07 * sk.aspect), zone=FLESH,
                        bone=("blend", chest, tail, (0.05, 0, 0.9), (-0.2, 0, 0.9)), k=0.03))
@@ -98,7 +98,7 @@ def build(sk):
             # raptorial scythe: crescent blade, cutting edge facing forward/inward
             shin = normalize(foot - knee)
             edge = v3((1.0, -0.35 * side, 0.6))
-            body.extend(A.blade(knee + shin * 0.04, foot + v3((0.02, 0, 0.03)), edge, 0.09 * heavy, 0.028 * heavy, lo,
+            body.extend(A.blade(knee + shin * 0.04, foot + v3((0.02, 0, 0.03)), edge, 0.13 * heavy, 0.03 * heavy, lo, zone=BONE, edge_zone=BONE,
                                 hook=0.45, serrations=3))
         else:
             body.extend(A.limb(hip, knee, foot, 0.165, 0.125, 0.04, up, lo, seed=sum(map(ord, leg)) % 50,
@@ -106,18 +106,22 @@ def build(sk):
 
     # --- elite rank: bone crest + heavier shoulder plates --------------------
     elite = S.Sculpture("crawler-elite")
-    pts, nrm = [], []
-    for u in np.linspace(0.5, -0.6, 6):
+    # split, raised dorsal plates (left one larger) with a tall pale bone fin rising between them
+    for side, scale in ((1, 1.35), (-1, 1.0)):
+        p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.05, 0.55 * side)
+        lift = normalize(n + v3((0, 0, 0.9)))
+        elite.add(Plate(p + n * 0.1, (0.42 * scale, 0.26 * scale, 0.1), frame(v3((1, 0, 0.2)), lift), 0.06, rings=0.004, lip=0.015,
+                        chip=0.012, zone=CREST, bone=ab_bone(0), plate=60 + side))
+    fin_pts = []
+    for u in np.linspace(0.5, -0.55, 4):
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
-        pts.append(p + n * 0.04)
-        nrm.append(n)
-    elite.extend(A.crest_spines(pts, nrm, 0.85, 0.065, lambda p: ab_bone(0), sweep=(-1, 0, 0.15)))
-    # flesh web stretched between the sail spines
-    for i in range(len(pts) - 1):
-        a0, a1 = pts[i] + nrm[i] * 0.32, pts[i + 1] + nrm[i + 1] * 0.32
-        c = (a0 + a1) / 2
-        elite.add(Ellipsoid(c, (float(np.linalg.norm(a1 - a0)) * 0.6, 0.016, 0.26), frame(normalize(a1 - a0), (0, 0, 1)),
-                            zone=FLESH, bone=ab_bone(0), k=0.02))
+        fin_pts.append(p + n * 0.05)
+    for i in range(len(fin_pts) - 1):
+        a0, a1 = fin_pts[i], fin_pts[i + 1]
+        h = (0.55, 0.75, 0.5)[i]
+        elite.add(Plate((a0 + a1) / 2 + v3((0, 0, h * 0.5)), (float(np.linalg.norm(a1 - a0)) * 0.62, h * 0.55, 0.04),
+                        frame(normalize(a1 - a0) + v3((0, 0, 0.4)), v3((0, 1, 0))), 0.03, rings=0.003, lip=0.01, chip=0.012,
+                        zone=BONE, bone=ab_bone(0), plate=70 + i))
     # second lantern bulging from the thorax
     p, n = A.ellipsoid_surface(thorax_c, thorax_r, frame((1, 0, -0.15)), -0.15, 0.0)
     elite.extend(A.lantern(p - v3((0.12, 0, 0)), p + v3((0.12, 0, 0)), 0.1, chest, height=1.5, ribs=0.045))

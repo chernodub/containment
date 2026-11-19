@@ -38,7 +38,7 @@ started = time.time()
 
 ZONE_KEY = {S.SHELL: "shell", S.MEMBRANE: "membrane", S.SINEW: "sinew", S.CLAW: "claw", S.ORGAN: "organ",
             S.EYE: "eye", S.CREST: "crest", S.TOOTH: "tooth", S.CAVITY: "cavity", S.UNDER: "under",
-            S.ARMOR: "armor", S.FLESH: "flesh"}
+            S.ARMOR: "armor", S.FLESH: "flesh", S.BONE: "bone"}
 
 scene = K.reset_scene()
 arm = K.load_contract(M.ASSET)
@@ -55,6 +55,8 @@ def palette():
     shell, edge = np.asarray(P["shell"], np.float32), np.asarray(P["edge"], np.float32)
     P.setdefault("armor", tuple(shell * 0.35 + edge * 0.65))
     P.setdefault("flesh", (0.30, 0.045, 0.055))
+    # BOSS14 attacking plane: matte pale bone, clearly lighter than body and deck, never emissive
+    P.setdefault("bone", (0.60, 0.55, 0.46))
     return P
 
 
@@ -127,7 +129,7 @@ def colorize(high, sculpture):
         g = np.asarray(M.GLOW[key], np.float32)
         glow[sel] = g * (0.55 + 0.45 * np.clip(1 - concave[sel], 0, 1))[:, None]
     # translucent brood: pods glow through soft skin with distance falloff
-    pods = getattr(M, "GLOW_PODS", [])
+    pods = M.glow_pods_for(sculpture.name) if hasattr(M, "glow_pods_for") else getattr(M, "GLOW_PODS", [])
     if pods:
         soft = np.isin(zone, [S.FLESH, S.MEMBRANE, S.SINEW])
         g = np.asarray(M.GLOW["organ"], np.float32)
@@ -234,6 +236,7 @@ ranks = ["base", "elite"] + (["boss"] if "boss" in parts else [])
 variants = {}
 for rank in ranks:
     members = ["body"] + (["elite"] if rank in ("elite", "boss") and "elite" in lows else []) + (["boss"] if rank == "boss" else [])
+    members = getattr(M, "RANK_PARTS", {}).get(rank, members)
     copies = [K.duplicate(lows[m], f"k11-{M.FAMILY}-{rank}") for m in members]
     bpy.ops.object.select_all(action="DESELECT")
     for c in copies:

@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 import sdf as S
-from sdf import bezier, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import bezier, BONE, UNDER, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 from spitter import chain
 
@@ -18,17 +18,23 @@ ASSET = "dragoon"
 FAMILY = "carrier"
 ASPECT = 2.7
 VOXEL = 0.075
-TRIS = {"body": 11000, "elite": 1500, "boss": 9000}
-RANK_SCALE = {"boss": 1.4}   # Carrier Matron: uniform boss-tier scale applied by the loader
+TRIS = {"body": 11000, "elite": 1500, "boss": 21000}
+RANK_SCALE = {"boss": 1.9}   # Carrier Matron (BOSS14): her own full body, scaled to the boss tier
+RANK_PARTS = {"boss": ["boss"]}   # the Matron rank is a complete skin, not base + addons   # Carrier Matron: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 1.0
 PALETTE = {
     "shell": (0.13, 0.045, 0.06), "edge": (0.52, 0.38, 0.36), "membrane": (0.11, 0.025, 0.045),
-    "sinew": (0.26, 0.06, 0.1), "claw": (0.02, 0.012, 0.016), "tooth": (0.7, 0.6, 0.5),
-    "organ": (0.55, 0.04, 0.3), "eye": (1.0, 0.35, 0.75), "crest": (0.5, 0.4, 0.38), "flesh": (0.25, 0.05, 0.10), "wet": (0.55, 0.28, 0.36),
+    "sinew": (0.16, 0.03, 0.06), "claw": (0.02, 0.012, 0.016), "tooth": (0.7, 0.6, 0.5),
+    "organ": (0.55, 0.04, 0.3), "eye": (1.0, 0.35, 0.75), "crest": (0.5, 0.4, 0.38), "flesh": (0.25, 0.05, 0.10), "wet": (0.55, 0.28, 0.36), "membrane_matron": (0.09, 0.025, 0.05),
     "cavity": (0.03, 0.005, 0.012), "under": (0.08, 0.03, 0.04),
 }
 GLOW_PODS = []   # (centre, radius): pods glowing through the brood skin
+MATRON_PODS = []
+
+
+def glow_pods_for(name):
+    return MATRON_PODS if name == "carrier-matron" else GLOW_PODS
 GLOW = {"organ": (0.9, 0.03, 0.45), "eye": (1.0, 0.3, 0.7)}
 
 
@@ -93,7 +99,7 @@ def build(sk):
         names = [f"upper_arm.{side}", f"upper_arm.001.{side}", f"upper_arm.002.{side}"]
         chain(body, sk, names, [0.75 * heavy, 0.6 * heavy, 0.55 * heavy, 0.5 * heavy], s, plates=(0, 1), tint=0.7)
         wr, end = sk.h(f"claw.{side}"), sk.end(f"claw.{side}")
-        body.extend(A.blade(wr, end, v3((1, -0.2 * s, 0.4)), 1.0 * heavy, 0.3 * heavy, f"claw.{side}", hook=0.5, serrations=4))
+        body.extend(A.blade(wr, end, v3((1, -0.2 * s, 0.4)), 1.1 * heavy, 0.3 * heavy, f"claw.{side}", hook=0.5, serrations=4, zone=BONE, edge_zone=BONE))
         for leg in ("front", "middle", "back"):
             names = [f"leg_{leg}.{side}", f"leg_{leg}.001.{side}", f"leg_{leg}.002.{side}", f"leg_{leg}.003.{side}", f"leg_{leg}.004.{side}"]
             g = {"front": 1.0, "middle": 1.15, "back": 1.4}[leg]      # hind legs carry the brood
@@ -109,61 +115,91 @@ def build(sk):
     elite = S.Sculpture("carrier-elite")
     # one great bone shield over the thorax, horned at the front
     p, n = A.ellipsoid_surface(th_c, th_r, th_R, 0.1, 0.0)
-    elite.add(Plate(p + n * 0.55, (3.0, 2.7, 1.0), frame(v3((1, 0, -0.05)), n), 0.6, rings=0.025, ring_count=5, lip=0.15,
-                    chip=0.1, zone=CREST, bone="body.001", plate=200))
+    elite.add(Plate(p + n * 0.55 + v3((0, 0.6, 0)), (3.0, 2.4, 1.0), frame(v3((1, 0, -0.05)), normalize(n + v3((0, 0.4, 0)))), 0.6, rings=0.025,
+                    ring_count=5, lip=0.15, chip=0.1, zone=BONE, bone="body.001", plate=200))   # asymmetric pale shield
     for s_ in (-1, 1):
         q = p + n * 0.9 + v3((2.0, 1.4 * s_, 0.2))
         elite.extend(A.hook([q, q + v3((0.8, 0.5 * s_, 0.9)), q + v3((1.6, 0.7 * s_, 1.0)), q + v3((2.2, 0.4 * s_, 0.6))],
                             0.35, 0.05, "body", zone=CREST, tip_zone=TOOTH, k=0.15, tip=0.3))
     # --- boss (Carrier Matron): a hugely expanded brood and attendant pods ------------
-    boss = S.Sculpture("carrier-matron")
-    mb_c, mb_r, mb_R = z(-5.0, 0, 8.4), v3((4.3, 3.7, 2.9 * a)), frame((1, 0, 0.3))
-    mb_bone = ("blend", "tail", "tip", z(-2.0, 0, 9.5), z(-9.0, 0, 9.5))
-    boss.add(A.mass(mb_c, mb_r, mb_R, bone=mb_bone, zone=FLESH, lump=0.06, freq=0.5, seed=4))
-    boss.extend(A.shingles(mb_c, mb_r, mb_R, None, rows=3, phis=(1.15, 1.75), u0=0.6, u1=-0.5, size=(1.5, 1.4, 0.65),
-                           thickness=0.45, lift=0.35, rings=0.02, bone_fn=lambda u: mb_bone, seed=60, plate0=60))
-    # --- towering brood spire: three ribbed chambers stacked on the brood mass, leaning back
-    top = 8.4 + 2.6
-    segs = [(z(-4.7, 0, top + 1.2), 2.5, 1.3), (z(-5.5, 0, top + 3.4), 2.0, 1.15), (z(-6.3, 0, top + 5.4), 1.45, 1.0)]
-    tower_bone = ("blend", "tail", "tail.001", z(-2.5, 0, 10.0), z(-6.0, 0, 10.5))
-    for i, (c, rh, rv) in enumerate(segs):
-        boss.add(A.mass(c, (rh, rh * 0.9, rv * a), frame((1, 0, 0.35)), bone=tower_bone, zone=FLESH, lump=0.05, freq=0.7, seed=70 + i, k=0.6))
-    for k in range(7):   # bone ribs climbing the spire
-        ang = k * 2 * math.pi / 7 + 0.2
-        d = v3((math.cos(ang), math.sin(ang), 0))
-        pts = [segs[0][0] + d * 2.7 - z(0, 0, 1.4), segs[0][0] + d * 2.75, segs[1][0] + d * 2.2, segs[2][0] + d * 1.6, segs[2][0] + d * 0.4 + z(0, 0, 1.3)]
-        boss.add(S.Tube(bezier(pts[0], pts[1], pts[3], pts[4], 8), [0.42 - 0.03 * j for j in range(9)], zone=ARMOR, bone=tower_bone, k=0.25))
-    # ribbed hatching vents, one per chamber, facing different ways (emission region matron-vents)
-    for i, (c, rh, rv) in enumerate(segs):
-        ang = (-0.9, 3.0, 0.9)[i]
-        n = normalize(v3((math.cos(ang), math.sin(ang), 0.35)))
-        p = c + n * rh * 0.92
-        r = (1.05, 0.9, 0.75)[i]
-        boss.add(Ellipsoid(p, (r, r, r), op="sub", zone=CAVITY, k=0.3))
-        boss.add(S.Torus(p - n * 0.1, n, r * 1.05, r * 0.36, zone=SINEW, bone=tower_bone, k=0.25, name="matron-vents"))
-        for t in (-0.45, 0.45):   # ribbed lips
-            boss.add(S.Torus(p - n * (0.35 - t * 0.2), n, r * (1.15 + 0.1 * t), r * 0.14, zone=ARMOR, bone=tower_bone, k=0.15, name="matron-vents"))
-        boss.add(Ellipsoid(p - n * r * 0.9, (r * 0.7,) * 3, zone=ORGAN, bone=tower_bone, name="matron-vents"))
-        GLOW_PODS.append((p - n * r * 0.6, r * 0.45))
-    lantern = A.lantern(segs[2][0] + z(0.6, 0, 0.9), segs[2][0] + z(-0.6, 0, 1.3), 0.7, tower_bone, height=1.3, ribs=0.3)
-    boss.extend(lantern)
-    # --- hanging pod clusters under the brood mass, on sinew stalks
-    for side in (-1, 1):
-        for u in (0.15, -0.45):
-            p, n = A.ellipsoid_surface(mb_c, mb_r, mb_R, u, 1.6 * side)
-            hang = p + v3((0, 0.6 * side, -1.6 * a))
-            boss.add(S.Tube([p - n * 0.3, p + n * 0.4 + v3((0, 0, -0.5 * a)), hang], [0.2, 0.18, 0.14], zone=SINEW, bone=mb_bone, k=0.15))
-            for j, off in enumerate((v3((0.35, 0, -0.2)), v3((-0.35, 0.25, -0.35)), v3((0, -0.3, -0.6)))):
-                c = hang + off * 1.4 - v3((0, 0, 0.45 * a))
-                boss.add(Ellipsoid(c, (0.55, 0.55, 0.75 * a), zone=EYE, bone=mb_bone, k=0.15))
-                GLOW_PODS.append((c, 0.35))
-    # --- attendant stalks rising from the thorax, each bearing a pod bulb
-    for i, (u, phi, lean) in enumerate(((0.35, 0.7, 0.4), (0.35, -0.7, -0.4), (-0.25, 0.95, 0.7), (-0.25, -0.95, -0.7))):
-        p, n = A.ellipsoid_surface(th_c, th_r, th_R, u, phi)
-        tip = p + v3((0.4, lean * 1.6, 4.2 * a))
-        boss.add(S.Tube(bezier(p - n * 0.3, p + n * 1.0 + v3((0, 0, 1.0 * a)), tip - v3((0, lean * 0.5, 1.2 * a)), tip, 7),
-                        [0.32, 0.3, 0.27, 0.24, 0.21, 0.19, 0.17, 0.16], zone=ARMOR, bone=bf(u), k=0.15))
-        boss.add(Ellipsoid(tip + v3((0, 0, 0.5 * a)), (0.7, 0.7, 0.85 * a), zone=EYE, bone=bf(u), k=0.2))
-        boss.add(S.Torus(tip + v3((0, 0, 0.05 * a)), (0, 0, 1), 0.62, 0.16, zone=SINEW, bone=bf(u), k=0.12))
-        GLOW_PODS.append((tip + v3((0, 0, 0.5 * a)), 0.4))
+    boss = matron(sk, a, z, bf)
     return {"body": body, "elite": elite, "boss": boss}
+
+
+def matron(sk, a, z, bf):
+    """BOSS14 Carrier Matron: heavy low thorax on splayed uneven legs, huge veined brood sac holding glowing shapes,
+    flank egg clusters, small armoured head, ground stain. Same dragoon armature."""
+    m = S.Sculpture("carrier-matron")
+    # --- ground stain (presentation-only decal skinned to the static root)
+    m.add(S.Displace(Ellipsoid(z(-1.2, 0, 0.02), (8.6, 7.6, 0.045 * a)), 0.05, 0.35, 21, zone=UNDER, bone="root"))
+    # --- heavy low thorax carried between the legs
+    th_c, th_r, th_R = z(0.7, 0, 8.2), v3((3.3, 3.1, 2.0 * a)), frame((1, 0, 0.08))
+    m.add(A.mass(th_c, th_r, th_R, bone=("blend", "body", "body.002", z(3, 0, 8.5), z(-1.5, 0, 8.8)), zone=MEMBRANE, lump=0.06, freq=0.6, seed=31))
+    m.extend(A.shingles(th_c, th_r, th_R, None, rows=3, phis=(0.0, 0.9, 1.6), u0=0.6, u1=-0.5, size=(1.6, 1.45, 0.7),
+                        thickness=0.5, lift=0.35, rings=0.02, bone_fn=bf, seed=32, plate0=1))
+    # --- small armoured head, low and forward
+    head_c = z(4.4, 0, 7.6)
+    m.add(Ellipsoid(z(3.0, 0, 8.0), (1.2, 1.4, 0.95 * a), zone=MEMBRANE, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.4))
+    m.add(A.mass(head_c, (1.25, 1.05, 0.7 * a), frame((1, 0, -0.35)), bone="head", k=0.35))
+    m.add(Plate(head_c + z(-0.1, 0, 0.55), (1.4, 1.15, 0.45), frame((1, 0, -0.45)), 0.36, rings=0.018, ring_count=3, lip=0.1,
+                chip=0.07, zone=BONE, bone="head", plate=40))
+    for side in ("R", "L"):
+        m.add(Ellipsoid(sk.h(f"eye_front.{side}") + z(-0.6, 0, -0.4), (0.22, 0.22, 0.22 * a), zone=EYE, bone="head"))
+    for s_, side in ((-1, "R"), (1, "L")):
+        p0, p1 = sk.h(f"mandible_low.{side}"), sk.h(f"mandible_low.001.{side}")
+        e = sk.end(f"mandible_low.001.{side}")
+        m.extend(A.hook([p0, p1, e + v3((0.1, 0.25 * s_, 0)), e + v3((0.0, -0.4 * s_, -0.1))], 0.3, 0.05, f"mandible_low.001.{side}",
+                        zone=BONE, tip_zone=BONE, k=0.12, tip=0.4))
+    # --- splayed, bent, uneven load-bearing legs (thick femurs, knuckled knees, planted pads)
+    girth = {("front", "R"): 1.35, ("front", "L"): 1.25, ("middle", "R"): 1.6, ("middle", "L"): 1.75, ("back", "R"): 1.95, ("back", "L"): 1.8}
+    for s_, side in ((-1, "R"), (1, "L")):
+        for leg in ("front", "middle", "back"):
+            g = girth[(leg, side)]
+            names = [f"leg_{leg}.{side}", f"leg_{leg}.001.{side}", f"leg_{leg}.002.{side}", f"leg_{leg}.003.{side}", f"leg_{leg}.004.{side}"]
+            chain(m, sk, names, [1.15 * g, 1.0 * g, 0.9 * g, 0.75 * g, 0.6 * g, 0.16 * g], s_, plates=(1, 2, 3), tint=0.55)
+            knee = sk.h(f"leg_{leg}.002.{side}")
+            m.add(Plate(knee + v3((0, 0.45 * s_ * g, 0.6 * g)), (1.0 * g, 0.75 * g, 0.4 * g), frame(v3((0, 0, 1)), v3((0.2, s_, 0.6))), 0.3 * g,
+                        rings=0.015, lip=0.08, chip=0.06, zone=ARMOR, bone=f"leg_{leg}.002.{side}", plate=80 + len(leg) + (s_ > 0)))
+        # fore-claws, pale attacking plane
+        wr, end = sk.h(f"claw.{side}"), sk.end(f"claw.{side}")
+        chain(m, sk, [f"upper_arm.{side}", f"upper_arm.001.{side}", f"upper_arm.002.{side}"], [0.95, 0.8, 0.72, 0.65], s_, plates=(0, 1), tint=0.7)
+        m.extend(A.blade(wr, end, v3((1, -0.2 * s_, 0.4)), 1.25, 0.32, f"claw.{side}", hook=0.5, serrations=4, zone=BONE, edge_zone=BONE))
+    # --- the brood: a huge swollen sac rising behind, veined, holding glowing shapes, with hatch vents
+    sc, sr, sR = z(-5.6, 0, 11.6), v3((5.2, 4.5, 3.9 * a)), frame((1, 0, 0.45))
+    sac_bone = ("blend", "tail", "tip", z(-2.0, 0, 10.0), z(-8.5, 0, 12.0))
+    m.add(A.mass(sc, sr, sR, bone=sac_bone, zone=MEMBRANE, lump=0.12, freq=0.45, seed=33, k=1.2))
+    m.add(A.mass(z(-2.6, 0, 9.2), (2.6, 2.8, 1.6 * a), None, bone=("blend", "body.002", "tail", z(-1.2, 0, 9), z(-3.5, 0, 10)),
+                 zone=FLESH, lump=0.05, freq=0.6, seed=34, k=1.0))   # the neck of the brood, fused onto the thorax
+    m.extend(A.shingles(sc, sr, sR, None, rows=2, phis=(1.7, 2.2), u0=0.75, u1=0.35, size=(1.6, 1.4, 0.6), thickness=0.45,
+                        lift=0.35, rings=0.02, bone_fn=lambda u: sac_bone, seed=35, plate0=20))
+    rng = np.random.default_rng(37)
+    for u, phi, r in [(0.45, 0.1, 1.5), (0.1, -0.55, 1.7), (0.1, 0.65, 1.6), (-0.3, 0.0, 1.8), (-0.35, -1.1, 1.4),
+                      (-0.3, 1.15, 1.5), (0.35, -1.25, 1.2), (0.4, 1.3, 1.25), (-0.65, -0.5, 1.3), (-0.65, 0.55, 1.3), (-0.05, 1.7, 1.1),
+                      (-0.05, -1.75, 1.1)]:
+        p, n = A.ellipsoid_surface(sc, sr, sR, u, phi)
+        c = p - n * r * 0.55
+        m.add(Ellipsoid(c, (r * 1.25, r, r * 1.05), frame(normalize(v3(rng.normal(size=3)) + n * 2), n), zone=MEMBRANE, bone=sac_bone, k=0.5))
+        MATRON_PODS.append((c, r * 0.62))
+    for k in range(14):   # veins crawling over the sac
+        u0, u1 = rng.uniform(0.3, 0.8), rng.uniform(-0.8, -0.2)
+        ph = rng.uniform(-1.8, 1.8)
+        pts = [A.ellipsoid_surface(sc, sr * 1.01, sR, u0 + (u1 - u0) * t, ph + 0.4 * np.sin(t * 3 + k))[0] for t in np.linspace(0, 1, 6)]
+        m.add(S.Tube(pts, [0.34, 0.38, 0.34, 0.3, 0.25, 0.18], zone=SINEW, bone=sac_bone, k=0.2))
+    for i, (u, phi) in enumerate(((-0.55, 1.35), (-0.75, 0.0), (-0.55, -1.35))):   # hatch vents (matron-vents)
+        p, n = A.ellipsoid_surface(sc, sr, sR, u, phi)
+        r = 1.1
+        m.add(Ellipsoid(p, (r, r, r), op="sub", zone=CAVITY, k=0.35))
+        m.add(S.Torus(p - n * 0.1, n, r * 1.05, r * 0.38, zone=SINEW, bone=sac_bone, k=0.3, name="matron-vents"))
+        m.add(Ellipsoid(p - n * r * 0.9, (r * 0.75,) * 3, zone=ORGAN, bone=sac_bone, name="matron-vents"))
+        MATRON_PODS.append((p - n * r * 0.6, r * 0.5))
+    # --- egg clusters along the thorax flanks
+    for s_ in (-1, 1):
+        for j, u in enumerate((0.45, 0.0, -0.45)):
+            p, n = A.ellipsoid_surface(th_c, th_r, th_R, u, 1.45 * s_)
+            m.add(Ellipsoid(p + n * 0.2, (0.9, 0.7, 0.55 * a), frame(v3((1, 0, 0)), n), zone=FLESH, bone=bf(u), k=0.3))
+            for q in range(3):
+                off = v3((np.cos(q * 2.1 + j), np.sin(q * 2.1 + j) * 0.6, 0.3))
+                c = p + n * 0.75 + off * 0.55
+                m.add(Ellipsoid(c, (0.5, 0.45, 0.45 * a), zone=EYE, bone=bf(u), k=0.15))
+                MATRON_PODS.append((c, 0.3))
+    return m
