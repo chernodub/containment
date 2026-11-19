@@ -4,6 +4,7 @@ import {meleeStrikeContains} from '../game/enemies/meleeAttacks';
 import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
 import {canTraverseExpedition} from '../game/world/expeditionGeometry';
 import type {Telegraph} from './vfx/TelegraphBatch';
+import type {EnemySnapshot} from '../game/enemies/EnemySystem';
 import type {DepthGame} from '../DepthGame';
 import * as T from 'three';
 import type {WeaponId} from '../game/combat/types';
@@ -355,8 +356,8 @@ export class AttackEffects {
    this.particle(this.smoke,EFFECT_LIMITS.smoke,exhaust,0x82938d,id==='rocket'?.32:.21,id==='rocket'?.30:.22,forward.clone().multiplyScalar(id==='rocket'?-.8:.3).add(new T.Vector3(0,.3,0)));
    if(id!=='rocket'){
     const casing=p.clone().addScaledVector(forward,-.65).addScaledVector(right,.09);
-    const v=right.multiplyScalar(id==='rifle'?2.5:1.6+Math.random()).addScaledVector(forward,-.42);v.y=1.7;
-    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xe9b450,id==='shotgun'?.065:id==='rifle'?.061:.038,id==='rifle'?.58:2.8,v,9.8,id==='rifle'?1.95:2.5);
+    const v=right.multiplyScalar(id==='rifle'?2.5:id==='shotgun'?.82:1.6+Math.random()).addScaledVector(forward,-.42);v.y=id==='shotgun'?.84:1.7;
+    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xe9b450,id==='shotgun'?.065:id==='rifle'?.061:.038,id==='rifle'?.58:id==='shotgun'?.47:2.8,v,9.8,id==='rifle'?1.95:2.5);
    }
   }
  }
@@ -650,7 +651,33 @@ export class AttackEffects {
   this.dummy.position.copy(start).add(end).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.multiplyScalar(1/length));this.dummy.scale.set(width,length,width);this.dummy.updateMatrix();
   this.beamMesh.setMatrixAt(index,this.dummy.matrix);this.beamMesh.setColorAt(index,this.beamColor.setHex(color).multiplyScalar(width<.05?3:1.4));(this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,alpha);return index+1;
  }
- update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0){
+ // A deck skip marks a segment that has already passed beside a visible
+ // hostile. It never predicts whether the projectile will hit a later target.
+ private readonly skippedRifles: (Bullet | undefined)[] = new Array(24);
+ private skipCursor = 0;
+ private deckSkip(b:Bullet,from:T.Vector3,to:T.Vector3,targets:readonly EnemySnapshot[]) {
+  const dx=to.x-from.x,dz=to.z-from.z,length2=dx*dx+dz*dz;
+  if(length2<.0001 || this.skippedRifles.includes(b))return;
+  for(const target of targets){
+   if(target.health<=0)continue;
+   const x=target.x/32-from.x,z=target.y/32-from.z;
+   const t=(x*dx+z*dz)/length2;
+   if(t<=0 || t>1)continue;
+   const gap=Math.hypot(x-t*dx,z-t*dz)-target.radius/32;
+   if(gap<.13 || gap>.80)continue;
+   this.skippedRifles[this.skipCursor]=b;
+   this.skipCursor=(this.skipCursor+1)%this.skippedRifles.length;
+   this.bulletSkipPoint.set(from.x+t*dx,.045,from.z+t*dz);
+   this.forward.set(dx,.12,dz).normalize().multiplyScalar(1.8);
+   this.particle(this.debris,EFFECT_LIMITS.debris,this.bulletSkipPoint,0xc5c0a9,.097,.22,this.forward,7,2.4);
+   this.forward.multiplyScalar(.55);
+   this.forward.y=.58;
+   this.particle(this.debris,EFFECT_LIMITS.debris,this.bulletSkipPoint,0x999584,.066,.14,this.forward,8,1.8);
+   return;
+  }
+ }
+ private readonly bulletSkipPoint=new T.Vector3();
+ update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[]){
   if(dt<=0||this.disposed)return;
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
   let beam=0,hostile=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
@@ -673,6 +700,7 @@ export class AttackEffects {
      this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xff2340:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
     }
    }
+   if(targets && id==='rifle' && b.kind==='player')this.deckSkip(b,old,p,targets);
    if(old===this.bulletPrevious)this.previous.set(b,p.clone());else old.copy(p);
    if(trail&&(id==='plasma'||id==='rocket'||hazard)&&!grenade){
     this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0xff2340:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
@@ -748,7 +776,7 @@ export class AttackEffects {
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.unionCount.value?1:0);
 
  }
- clear(){for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.emptyPriorityTexture.dispose();this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}

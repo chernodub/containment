@@ -7,6 +7,7 @@ import {readFile, writeFile, mkdir, stat, readdir} from 'node:fs/promises';
 import {resolve, extname, dirname} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {recordMotion16Scenes} from './motion16-studies.mjs';
 import {chromium} from 'playwright';
 import {registerFeel12WeaponScenarios} from './feel12-weapon-scenarios.mjs';
 
@@ -21,7 +22,7 @@ const weaponModule=ts.transpileModule(weaponSource,{compilerOptions:{module:ts.M
 const {WEAPONS}=await import('data:text/javascript;base64,'+Buffer.from(weaponModule).toString('base64'));
 
 const args=process.argv.slice(2);
-const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim','travel','collection','lanes','overdrives']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
+const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim','travel','collection','lanes','overdrives','scenes']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const out=resolve(option('out','artifacts/nextgen/m9-final/before')),dist=resolve(option('dist','dist'));
 const subjects=option('subjects','marine,crawler,spitter,brute,stalker,carrier,crawler-elite,spitter-elite,brute-elite,stalker-elite,carrier-elite,brute-warden,carrier-matron,crowd').split(',');
@@ -30,7 +31,8 @@ const actionFilter=option('actions','all').split(',');
 const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const studyAim=Number(option('aim',0))*Math.PI/180;assert(Number.isFinite(studyAim),'Invalid aim angle');
 const travelOption=option('travel',null),travelOverrideAngle=travelOption===null?null:Number(travelOption)*Math.PI/180;assert(travelOverrideAngle===null||Number.isFinite(travelOverrideAngle),'Invalid travel angle');
-const motion14=option('collection','')==='motion14';
+const motion16=option('collection','')==='motion16';
+const motion14=motion16||option('collection','')==='motion14';
 const frames=motion14?30:Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=30);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
@@ -43,6 +45,10 @@ const reel={
  carrier:['idle','heavy-hit','stagger','attack'],
  spitter:['idle','light-hit'],
 };
+if(motion16){
+ reel.marine=[...new Set([...reel.marine,...marineActions.filter(a=>a.startsWith('run-')||a.startsWith('fire-'))])];
+ for(const family of ['crawler','stalker','spitter'])reel[family]=[...new Set([...reel[family],'attack','weapon-hit-rifle'])];
+}
 const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn',...['pistol','rifle','shotgun','plasma','rocket'].flatMap(w=>[`weapon-hit-${w}`,`weapon-kill-${w}`])];
 const manifest={version:1,meleeProfiles:MELEE_ATTACKS,eliteWindupScale:ELITE_MELEE_WINDUP_SCALE,eliteRecoveryScale:ELITE_MELEE_RECOVERY_SCALE,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
 await mkdir(out,{recursive:true});await stat(resolve(dist,'index.html'));
@@ -118,6 +124,7 @@ try{
     const castMs={ram:0,'seismic-slam':220,bulwark:0,railbreaker:250,'frost-trail':0,'cryo-nova':0,glacier:150,whiteout:0,afterburn:0,flashfire:0,'napalm-charge':180,meltdown:0,'static-step':0,overload:0,'tesla-pylon':160,overclock:0}[ability]??0;
     if(isCast){abilitySnapshot.rig=rigs[ability];abilitySnapshot.slots[abilitySlot].id=ability;}
     let shotNumber=0,lastShotTick=-100,triggered=false,chainShot=false,chainHit=false,chainBullet=null,chainTravel=0;
+    let deferredCorpse;
     const chainBullets=[];
     const shotPeriod=motion14?60/weapons[currentWeapon].roundsPerSecond:12;
     const roomStrip=motion14?document.createElement('canvas'):null;
@@ -165,8 +172,12 @@ try{
        if(action.startsWith('death')&&tick===Math.floor(frames*steps*.2)){
         const deathCue=action==='death-frost'?'frost':action==='death-burn'?'burn':action==='death-arc'?'arc':action==='death-acid'?'acid':'none';
         model.root.userData.motionDeathCue=deathCue;model.hit?.(1,Math.PI/2,true);if(!human)model.freeze?.();deathStarted=true;if(human)setDead?.(true);
-        if(!human)r.effects.event({type:'corpse',id:-900001,x:g.player.x,y:g.player.y,family,elite,vx:action==='death-high-impulse'?960:416,vy:192,elements:deathCue==='frost'?['ice']:deathCue==='burn'?['fire']:[]},deathCue);
+        if(!human)deferredCorpse={cue:deathCue,tick,event:{type:'corpse',id:-900001,x:g.player.x,y:g.player.y,family,elite,vx:action==='death-high-impulse'?960:416,vy:192,elements:deathCue==='frost'?['ice']:deathCue==='burn'?['fire']:[]}};
         {r.ragdolls.add(-900001,model,human?'marine':family,{x:action==='death-high-impulse'?30:13,z:6},model.root.userData.motionDeathCue,.032);ragdollStarted=r.ragdolls.has(-900001);if(!ragdollStarted)throw Error('Native ragdoll was not prepared');}
+       }
+       if(deferredCorpse && (model.corpseEffectReady?.((tick-deferredCorpse.tick)/60)??true)){
+        r.effects.event(deferredCorpse.event,deferredCorpse.cue);
+        deferredCorpse=undefined;
        }
        if(chain){
         const cfg=weapons[chainWeapon],shotTick=Math.floor(frames*steps*.18);
@@ -187,7 +198,7 @@ try{
          if(chainTravel>=distance){
           chainHit=true;const lethal=chainKill&&(!sequence||shotNumber===3);
           r.effects.event({type:'acid',contact:'damage',x:chainBullet.x,y:chainBullet.y,angle:studyAim,weapon:chainWeapon,targetId:-900001,damage:cfg.damage,lethal},'none',family);
-          model.hit?.(chainWeapon==='shotgun'?.68:Math.max(chainWeapon==='rifle'?.4:0,Math.min(1,cfg.damage/42)),studyAim,chainWeapon==='shotgun'||chainWeapon==='rocket'||lethal);
+          model.hit?.(chainWeapon==='shotgun'?.68:Math.max(chainWeapon==='rifle'?.4:0,Math.min(1,cfg.damage/42)),studyAim,chainWeapon==='shotgun'||chainWeapon==='rocket'||lethal,chainWeapon);
           if(lethal){
            model.freeze?.();deathStarted=true;const impulse=cfg.knockback*12;
            r.effects.event({type:'corpse',id:-900001,x:origin.x*32,y:origin.z*32,family,elite,vx:Math.cos(studyAim)*impulse,vy:Math.sin(studyAim)*impulse});
@@ -290,7 +301,17 @@ try{
     for(let tick=0;tick<72;tick++){
      if(tick===55)d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
      d.step(1000/60);d.refresh();actor.updateWorldMatrix(true,true);
-     samples.push({tick,x:g.player.x,y:g.player.y,feet:feet.map(foot=>foot.getWorldPosition(point).toArray())});
+     const knee=['L','R'].map(side=>{
+      const hip=actor.getObjectByName('thigh'+side).getWorldPosition(point.clone());
+      const knee=actor.getObjectByName('shin'+side).getWorldPosition(point.clone());
+      const sole=actor.getObjectByName('ankle'+side).getWorldPosition(point.clone());
+      return 180-hip.sub(knee).angleTo(sole.sub(knee))*180/Math.PI;
+     });
+     const heading=(left,right)=>{
+      const a=actor.getObjectByName(left).getWorldPosition(point.clone()),b=actor.getObjectByName(right).getWorldPosition(point.clone());
+      return Math.atan2(b.z-a.z,b.x-a.x)*180/Math.PI;
+     };
+     samples.push({tick,x:g.player.x,y:g.player.y,knee,shoulders:heading('shoulderL','shoulderR'),hips:heading('thighL','thighR'),hipHeight:actor.getObjectByName('hips').getWorldPosition(point).y,feet:feet.map(foot=>foot.getWorldPosition(point).toArray())});
      if(tick%3===2){const i=Math.floor(tick/3);ctx.drawImage(r.canvas,(i%4)*480,Math.floor(i/4)*270,480,270);}
     }
     return {samples,image:sheet.toDataURL('image/webp',.90).split(',')[1]};
@@ -302,7 +323,7 @@ try{
  if(motion14&&option('overdrives','false')==='true'){
   const directory=resolve(out,'overdrives');await mkdir(directory,{recursive:true});
   for(const rig of ['breacher','cryo','pyro','arc']){
-   const result=await page.evaluate(async rig=>{
+   const result=await page.evaluate(async ({rig,motion16})=>{
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     await d.gotoRoom('crew-checkpoint',{rig});d.invulnerable(true);g.enemies.reset();
     d.uiFixture({preferences:{combatText:false}});
@@ -316,21 +337,35 @@ try{
     d.step(850);g.enemies.reset();d.settlePresentation(90);
     const ids=[d.spawn('crawler',lane.x+90,lane.y,false),d.spawn('brute',lane.x+170,lane.y,false)];
     d.step(100);d.fillOverdrive();
-    const start=g.elapsed,accepted=g.useAbility('overdrive');
-    if(rig==='arc')d.setInput({fire:true,x:0,y:0,angle:0,autoAim:false});
+    // Keep one healthy comparison and one wounded victim for the lethal zone tick.
+    if(motion16 && (rig==='cryo'||rig==='pyro')){
+     const first=g.enemies.getSnapshot(ids[0]);
+     if(first)g.damage(first.id,first.health-3,undefined,'weapon',false);
+    }
+    const presentation=[];
+    const start=g.elapsed,accepted=g.useAbility(motion16&&rig==='arc'?'tactical':'overdrive');
+    if(rig==='arc'&&!motion16)d.setInput({fire:true,x:0,y:0,angle:0,autoAim:false});
     const sheet=document.createElement('canvas');sheet.width=480*4;sheet.height=270*6;
     const ctx=sheet.getContext('2d');
     for(let i=0;i<24;i++){
-     d.step(rig==='cryo'?100:50);d.refresh();ctx.drawImage(r.canvas,i%4*480,Math.floor(i/4)*270,480,270);
+     d.step(rig==='cryo'?100:50);d.refresh();
+     if(motion16)presentation.push(ids.map(id=>{
+      const c=r.corpses.find(c=>c.id===id),actor=c?.model??r.actors.get(id);
+      const center=actor?.body.getWorldPosition(actor.root.position.clone());
+      if(center){center.y+=actor.height*.42;center.project(r.camera);}
+      return {id,pixel:center?[(center.x+1)*240,(1-center.y)*135]:undefined,corpseAge:c?.age,pending:c?.pendingEffect!==undefined,cue:actor?.root.userData.motionDeathCue,
+       hold:actor?.elementalHold?.(),local:actor?.body.position.toArray()};
+     }));
+     ctx.drawImage(r.canvas,i%4*480,Math.floor(i/4)*270,480,270);
     }
-    return {accepted,ids,stepMs:rig==='cryo'?100:50,events:d.events.filter(e=>e.at>=start&&(e.ability||e.contact||e.type==='corpse')),image:sheet.toDataURL('image/webp',.92).split(',')[1]};
-   },rig);
+    return {accepted,ids,presentation,stepMs:rig==='cryo'?100:50,events:d.events.filter(e=>e.at>=start&&(e.ability||e.contact||e.type==='corpse')),image:sheet.toDataURL('image/webp',.92).split(',')[1]};
+   },{rig,motion16});
    await writeFile(resolve(directory,`${rig}.webp`),Buffer.from(result.image,'base64'));delete result.image;
    await writeFile(resolve(directory,`${rig}.json`),JSON.stringify(result,null,2));
   }
  }
  // A native firing lane complements the controlled hit/kill replay.
- if(motion14&&manifest.shots.some(shot=>shot.action==='weapon-sequence-rifle')){
+ if(!motion16&&motion14&&manifest.shots.some(shot=>shot.action==='weapon-sequence-rifle')){
   const scenarios=[];registerFeel12WeaponScenarios(scenarios);
   await page.evaluate(scenarios.find(s=>s.id==='feel12-weapon-rifle-crew-checkpoint').setup);
   await page.evaluate(()=>window.__containmentDebug.uiFixture({preferences:{combatText:false}}));
@@ -341,6 +376,7 @@ try{
   }
   await writeFile(resolve(directory,'encounter.json'),JSON.stringify(await page.evaluate(()=>window.__containmentDebug.g5Proof.weaponTimeline),null,2));
  }
+ if(motion16&&option('scenes',''))await recordMotion16Scenes(page,out,option('scenes',''));
  assert(manifest.shots.length>0,'No actions matched the motion selection');
  assert.equal(manifest.errors.length,0,JSON.stringify(manifest.errors));
 }catch(error){manifest.errors.push(String(error));process.exitCode=1;console.error(error);}finally{

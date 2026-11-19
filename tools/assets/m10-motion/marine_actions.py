@@ -40,6 +40,8 @@ class Pose:
     right_pole: tuple | None = None
     left_knee: tuple | None = None
     right_knee: tuple | None = None
+    firing_shoulder: tuple = (0, 0, 0)
+    shoulder_turn: tuple = (0, 0, 0)
     left_delta: tuple = (0, 0, 0)
     right_delta: tuple = (0, 0, 0)
 
@@ -428,10 +430,10 @@ CASTS = [
 WEAPONS = [
     Clip("m10-fire-pistol", [
         Pose(0),
-        Pose(.02, pelvis=(-.075, -.015, -.050), spine=(-.21, .08, -.045), ribs=(-.12, -.08, .02),
+        Pose(.02, firing_shoulder=(-.030,.012,.016), shoulder_turn=(-.12,-.07,.04), pelvis=(-.075, -.015, -.050), spine=(-.21, .08, -.045), ribs=(-.12, -.08, .02),
              head=(.12, -.025, .025), right_delta=(-.055, -.01, .075), right_wrist=(-.17, 0, 0),
              left=(-.015, .54, 1.20), left_foot=(.01, .025, 0), right_foot=(-.035, -.025, 0)),
-        Pose(.055, pelvis=(-.095, -.02, -.065), spine=(-.24, .11, -.055), ribs=(-.12, -.10, .025),
+        Pose(.045, firing_shoulder=(-.045,.016,.02), shoulder_turn=(-.15,-.09,.05), pelvis=(-.095, -.02, -.065), spine=(-.24, .11, -.055), ribs=(-.12, -.10, .025),
              head=(.14, -.035, .03), right_delta=(-.075, -.015, .095), right_wrist=(-.20, 0, 0),
              left=(-.045, .59, 1.23), left_foot=(.015, .035, 0), right_foot=(-.07, -.035, 0)),
         Pose(.12, pelvis=(.018, .005, -.025), spine=(.085, -.055, .035), ribs=(.045, .04, -.02),
@@ -444,10 +446,10 @@ WEAPONS = [
         # Ballistic contact travels up the chain over three 60 Hz drawings.
         Pose(1/60, right_delta=(-.08, -.01, .048), right_wrist=(-.19, 0, 0),
              left_delta=(-.055, .012, .035), ribs=(-.035, .018, 0)),
-        Pose(2/60, right_delta=(-.125, -.028, .065), left_delta=(-.12, .02, .06),
+        Pose(2/60, firing_shoulder=(-.080,.025,.018), shoulder_turn=(-.19,-.15,.08), right_delta=(-.125, -.028, .065), left_delta=(-.12, .02, .06),
              right_pole=(-.27, -.91, 1.12), spine=(-.075, -.036, -.022),
              ribs=(-.12, -.075, -.035), right_wrist=(-.12, 0, 0)),
-        Pose(3/60, pelvis=(-.065, -.018, -.045), spine=(-.15, -.12, -.055),
+        Pose(3/60, firing_shoulder=(-.105,.033,.035), shoulder_turn=(-.21,-.16,.09), pelvis=(-.085, -.030, -.05), spine=(-.22, -.20, -.085),
              ribs=(-.085, -.10, -.045), head=(.10, .11, .035),
              right_delta=(-.10, -.045, .045), left_delta=(-.075, .026, .035)),
         Pose(5/60, pelvis=(-.02, 0, -.02), spine=(-.035, -.055, -.012),
@@ -456,17 +458,17 @@ WEAPONS = [
     ], upper="rifle_delta"),
     Clip("m10-fire-shotgun", [
         Pose(0),
-        Pose(.02, pelvis=(-.10, -.015, -.075), spine=(-.22, .06, -.05), ribs=(-.20, .035, -.035),
+        Pose(.02, firing_shoulder=(-.14,.045,.045), shoulder_turn=(-.29,-.18,.11), pelvis=(-.12, -.025, -.065), spine=(-.32, -.15, -.08), ribs=(-.20, .035, -.035),
              head=(.12, -.025, .02), left_delta=(-.10, .045, .10), right_delta=(-.10, -.02, .12),
              right_wrist=(-.25, 0, 0), left_foot=(.015, .035, 0), right_foot=(-.06, -.025, .015)),
-        Pose(.065, pelvis=(-.12, -.02, -.09), spine=(-.27, .08, -.065), ribs=(-.17, -.025, -.025),
+        Pose(.09, firing_shoulder=(-.19,.065,.075), shoulder_turn=(-.42,-.27,.13), pelvis=(-.19, -.075, -.11), spine=(-.52, -.33, -.15), ribs=(-.17, -.025, -.025),
              head=(.13, .03, .025), left_delta=(-.12, .07, .10), right_delta=(-.12, -.025, .13),
              right_wrist=(-.28, -.025, 0), left_foot=(.02, .045, 0), right_foot=(-.09, -.03, .025)),
-        Pose(.15, pelvis=(-.045, .015, -.06), spine=(.025, -.07, .035), ribs=(.08, -.035, .015),
+        Pose(.21, firing_shoulder=(-.085,.025,.03), shoulder_turn=(-.18,-.08,.06), pelvis=(-.078, -.025, -.055), spine=(.025, -.07, .035), ribs=(.08, -.035, .015),
              left_delta=(-.025, .10, .015), right_delta=(-.035, -.015, .02), right_wrist=(-.025, .015, 0),
              left_foot=(.015, .025, 0), right_foot=(-.045, -.015, 0)),
         # Pull the fore-end to the hip, then send it back to battery.
-        Pose(.22, spine=(.095, -.07, .03), ribs=(.06, -.11, .035),
+        Pose(.25, spine=(.095, -.07, .03), ribs=(.06, -.11, .035),
              left_delta=(-.23, .038, -.11), right_delta=(-.025, -.012, -.055)),
         Pose(.31, spine=(.075, -.055, .025), left_delta=(-.26, .07, -.13),
              left_pole=(-.32, 1.05, 1.04), right_delta=(0, 0, -.045)),
@@ -476,10 +478,10 @@ WEAPONS = [
     ]),
     Clip("m10-fire-plasma", [
         Pose(0),
-        Pose(.035, pelvis=(-.075, .025, -.075), spine=(-.17, -.20, .045), ribs=(-.10, .18, -.025),
+        Pose(.035, firing_shoulder=(-.065,.034,.05), shoulder_turn=(-.16,.15,.10), pelvis=(-.075, .025, -.075), spine=(-.17, -.20, .045), ribs=(-.10, .18, -.025),
              head=(.08, .07, -.02), left_delta=(-.04, .12, .05), right_delta=(-.060, -.015, .065),
              right_wrist=(-.13, 0, 0), left_foot=(.025, .035, 0), right_foot=(-.070, -.035, 0)),
-        Pose(.09, pelvis=(-.065, .035, -.065), spine=(-.20, -.24, .055), ribs=(-.08, .20, -.03),
+        Pose(.09, firing_shoulder=(-.095,.052,.055), shoulder_turn=(-.22,.19,.16), pelvis=(-.065, .035, -.065), spine=(-.24, -.32, .075), ribs=(-.08, .20, -.03),
              head=(.10, .085, -.025), left_delta=(-.035, .15, .065), right_delta=(-.050, -.018, .050),
              right_wrist=(-.10, 0, 0), left_foot=(.020, .030, 0), right_foot=(-.060, -.030, 0)),
         Pose(.18, pelvis=(0, 0, -.025), spine=(.09, .10, -.03), ribs=(.05, -.08, .02),
@@ -488,14 +490,14 @@ WEAPONS = [
         Pose(.29), Pose(.35),
     ], upper="prifle_delta"),
     Clip("m10-fire-rocket", [
-        Pose(0),
-        Pose(.02, pelvis=(-.10, -.015, -.13), spine=(-.20, -.08, -.06), ribs=(-.20, .04, -.04),
+        Pose(0, pelvis=(.025,0,-.055), spine=(.16,.04,0), right_knee=(.65,-.42,.46)),
+        Pose(.02, firing_shoulder=(-.105,.04,.05), shoulder_turn=(-.27,-.15,.09),pelvis=(-.10, -.015, -.13), spine=(-.20, -.08, -.06), ribs=(-.20, .04, -.04),
              head=(.14, .025, .035), left_delta=(-.09, .045, .09), right_delta=(-.10, -.02, .10),
              right_wrist=(-.20, 0, 0), left_foot=(.08, .08, 0), right_foot=(-.10, -.07, .015)),
-        Pose(.08, pelvis=(-.14, -.025, -.16), spine=(-.28, -.10, -.07), ribs=(-.17, .07, -.025),
+        Pose(.08, firing_shoulder=(-.22,.078,.06), shoulder_turn=(-.45,-.23,.14),pelvis=(-.22, -.046, -.14), spine=(-.43, -.18, -.09), ribs=(-.17, .07, -.025),
              head=(.16, -.03, .04), left_delta=(-.12, .07, .11), right_delta=(-.14, -.025, .12),
              right_wrist=(-.24, -.025, 0), left_foot=(.12, .10, 0), right_foot=(-.15, -.09, .025)),
-        Pose(.15, pelvis=(-.11, -.02, -.14), spine=(-.22, -.06, -.04), ribs=(-.12, .035, -.015),
+        Pose(.18, firing_shoulder=(-.145,.035,.04), shoulder_turn=(-.28,-.13,.09),pelvis=(-.11, -.02, -.14), spine=(-.22, -.06, -.04), ribs=(-.12, .035, -.015),
              left_delta=(-.09, .08, .08), right_delta=(-.10, -.015, .08), right_wrist=(-.17, 0, 0),
              left_foot=(.10, .08, 0), right_foot=(-.13, -.07, .01)),
         Pose(.23, pelvis=(0, 0, -.085), spine=(.035, .025, .015), ribs=(.025, -.01, .005),
@@ -773,6 +775,10 @@ class MarineAuthor:
         self.rotate("spine", pose.spine)
         self.rotate("ribs", pose.ribs)
         self.rotate("head", pose.head)
+        if any(pose.firing_shoulder):
+            self.translate("shoulder.R", pose.firing_shoulder)
+        if any(pose.shoulder_turn):
+            self.rotate("shoulder.R", pose.shoulder_turn)
         for name in self.BODY:
             bone = self.arm.pose.bones[name]
             bone.keyframe_insert("location", frame=frame, group=name)

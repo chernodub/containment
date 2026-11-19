@@ -1,0 +1,5 @@
+# MOTION16 comparison sources
+
+The original [MOTION14 final strips](../../motion14/after/final) supply the historical poses. The [supplement](../supplement) records the merged production build before the MOTION16 edits, including additional firing and travel directions, translated knee angles and the standard twenty-enemy crowd. Use the [matched native encounters](../matched) for the numbers-off rifle miss, surviving hit and kill, and for all four lethal elemental targets. In those encounters the marked Stalker and one zone victim start wounded. Each trigger, collision, surviving reaction and kill after setup goes through ordinary gameplay.
+
+The [Stalker crowd](../crowd-before/scenes) exchanges the inner Crawler berth with a Stalker. The [Carrier and Spitter crowd](../crowd-follow/scenes) uses a short player approach or retreat before recording. The floor positions, roster and desktop camera come from value14-crowd-crew-checkpoint. Every variant keeps ten Crawlers, three Brutes, three Stalkers, two Spitters and two Carriers at spawn.

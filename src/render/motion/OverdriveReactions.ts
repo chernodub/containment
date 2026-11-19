@@ -16,9 +16,9 @@ export class OverdriveReactions {
       if (ability.phase === 'end') this.overclock = false;
       return;
     }
-    if (ability?.slot === 'overdrive' && ability.targetIds) {
+    if (ability && (ability.slot === 'overdrive' || ability.ability === 'overload') && ability.targetIds) {
       const element = ability.ability === 'railbreaker' && ability.phase === 'link' ? 'kinetic'
-        : ability.ability === 'whiteout' ? 'ice' : ability.ability === 'meltdown' ? 'fire' : undefined;
+        : ability.ability === 'overload' ? 'arc' : ability.ability === 'whiteout' ? 'ice' : ability.ability === 'meltdown' ? 'fire' : undefined;
       if (element) for (const id of ability.targetIds) {
         this.target(id, actors, corpses)?.reactToElement?.(element, ability.angle ?? 0);
       }

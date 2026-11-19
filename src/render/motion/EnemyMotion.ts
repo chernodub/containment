@@ -117,7 +117,7 @@ export class EnemyMotion {
 
   hit(strength = 1, direction = 0, heavy = false) {
     if (strength <= 0) { this.impact = this.hold = 0; return; }
-    if (this.beamAge > .20) this.beamAngle = undefined;
+    if (this.beamAge > .42) this.beamAngle = undefined;
     this.impact = Math.max(this.impact, Math.min(1, strength));
     this.impactAge = 0;
     this.hitAngle = direction;
@@ -191,9 +191,11 @@ export class EnemyMotion {
       // a squared immediate fade vanished between native 4-tick strip cells.
       const contact=this.impact*(1-T.MathUtils.smoothstep(this.impactAge,.035,ACTOR_IMPULSE_SECONDS))*motion;
       // The shorter Crawler centre tracks reserve more of the same radius for shot travel.
-      const direction=aim-this.hitAngle;
-      const share=this.beamAngle!==undefined&&this.impactAge<.25?.64:this.family==='crawler'?(this.heavy?.36:.54):.14;
-      const offset=this.state.offsetLimit*contact*share;
+      const beam=this.beamAngle!==undefined&&this.beamAge<.62;
+      const direction=aim-(beam?this.beamAngle!:this.hitAngle);
+      const share=beam?.64:this.family==='crawler'?(this.heavy?.36:.54):.14;
+      const carry=beam ? T.MathUtils.smoothstep(this.beamAge,0,.10)*(1-T.MathUtils.smoothstep(this.beamAge,.415,.62))*motion : 0;
+      const offset=this.state.offsetLimit*Math.max(contact,carry)*share;
       // Clips supply the limbs; the presentation parent carries the entire mass.
       // Hold a readable silhouette from the first native warning frame, rather
       // than waiting for the sampled clip to reach its anticipation extreme.
