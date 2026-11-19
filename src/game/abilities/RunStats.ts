@@ -4,7 +4,7 @@ import {generateRun} from '../roguelike/run';
 import type {RunState} from '../roguelike/types';
 
 export type DamageSource = 'weapon' | 'ability' | 'status' | 'boon';
-export type IncomingDamageSource = 'enemy-contact' | 'enemy-charge' | 'enemy-projectile' | 'acid-pool' | 'boss-attack' | 'unknown';
+export type IncomingDamageSource = 'enemy-contact' | 'enemy-charge' | 'enemy-projectile' | 'acid-pool' | 'boss-attack' | 'scripted' | 'unknown';
 export type IncomingDamageOrigin = Readonly<{source: IncomingDamageSource; enemyFamily?: EnemyId}>;
 /** Actual armor/health lost, with the authoritative simulation clock and run-node id. */
 export type IncomingDamageReceipt = IncomingDamageOrigin & Readonly<{amount: number; room: string; atMs: number}>;
@@ -29,7 +29,7 @@ export const RUN_STATS_LIMITS = Object.freeze({ counter: 1_000_000_000, timeMs: 
 export const INCOMING_DAMAGE_WINDOW_MS = 5000;
 export const INCOMING_DAMAGE_CAPACITY = 32;
 const FAMILIES = ['crawler', 'brute', 'spitter', 'stalker', 'carrier', 'queen'] as const;
-const INCOMING_SOURCES: readonly IncomingDamageSource[] = ['enemy-contact', 'enemy-charge', 'enemy-projectile', 'acid-pool', 'boss-attack', 'unknown'];
+const INCOMING_SOURCES: readonly IncomingDamageSource[] = ['enemy-contact', 'enemy-charge', 'enemy-projectile', 'acid-pool', 'boss-attack', 'scripted', 'unknown'];
 const SOURCES = ['weapon', 'ability', 'status', 'boon'] as const;
 const SLOTS = ['dash', 'tactical', 'power', 'overdrive'] as const;
 const KEYS = ['kills', 'damageDealt', 'damageTaken', 'shotsFired', 'shotsHit', 'abilityUses', 'overdrivesUsed', 'highestMultiKill', 'roomTimeMs', 'creditsEarned'];

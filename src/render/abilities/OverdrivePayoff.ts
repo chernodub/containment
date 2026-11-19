@@ -1,3 +1,4 @@
+import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilityEvent, RigId } from '../../game/abilities/contract';
 import type { ElementKit } from './ElementKit';
 import { FxMode, type FxSlot } from './FlagshipFx';
@@ -57,6 +58,8 @@ export class OverdrivePayoff {
         k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, i % 3 ? ICE : WHITE);
       }
     } else if (event.ability === 'meltdown') {
+      const shape = ABILITY_CATALOG.meltdown.shape;
+      if (shape.kind === 'circle') k.scar('soot', px, pz, shape.radius / UNIT * .86, 0x2a1510, 7);
       const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
       column.range = .42; column.h0 = .05; column.h1 = 5.5; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);

@@ -137,3 +137,53 @@ V2_SCENARIOS.push({id:'v2-recovery',room:'armory',state:'playing',setup:async()=
 for(const rig of Object.keys(rigs))V2_SCENARIOS.push({id:`v2-full-${rig}-low-armory`,room:'armory',state:'playing',burst:true,setupArgument:{rig,room:'armory',tier:'low',heavy:true,showcase:true},setup:stageV2});
 
 V2_SCENARIOS.push({id:'v2-scorched-fan',room:'overload-floor',state:'playing',burst:true,setupArgument:{rig:'pyro',id:'flashfire',slot:'tactical',room:'overload-floor',boons:['scorched-fan']},setup:stageV2});
+
+// Time the three-frame gallery around actual contact. Overclock has no
+// damaging cast, so its target reacts to a rifle hit during slowed time.
+async function stageGalleryOverdrive({rig}){
+ const d=window.__containmentDebug,g=d.game;
+ await d.gotoRoom('armory',{rig});
+ d.invulnerable(true);
+ g.enemies.reset();
+ const {width,height}=g.geometry.bounds;
+ let lane;
+ search:for(let y=height*.45;y<height-135;y+=24)for(let x=width*.34;x<width-135;x+=24){
+  if(!d.canStand(x,y,32))continue;
+  for(const angle of [-Math.PI/2,0,Math.PI,Math.PI/2]){
+   const offsets=rig==='breacher'?[[86,0],[158,0]]:[[86,0],[86,58],[86,-58]];
+   const targets=offsets.map(([along,across])=>({
+    x:x+Math.cos(angle)*along-Math.sin(angle)*across,
+    y:y+Math.sin(angle)*along+Math.cos(angle)*across,
+   }));
+   if(targets.every(p=>d.canStand(p.x,p.y,28)&&d.clearShot(p.x,p.y,{x,y}))){
+    lane={x,y,angle,targets};
+    break search;
+   }
+  }
+ }
+ if(!lane)throw Error('No legal gallery contact lane');
+ const {x,y,angle,targets}=lane;
+ Object.assign(g.player,{x,y,angle,vx:0,vy:0});
+ d.setInput({x:0,y:0,angle,fire:false,autoAim:false});
+ g.setAimPoint(targets[0]);
+ for(const p of targets)if(!d.spawn('brute',p.x,p.y))throw Error('Gallery target placement denied');
+ d.step(1);
+ d.fillOverdrive();
+ if(!g.useAbility('overdrive'))throw Error('Gallery Overdrive denied');
+ if(rig==='arc'){
+  d.step(g.abilities.snapshot.slots.overdrive.castRemainingMs+1);
+  g.switchWeapon('rifle');
+  d.setInput({fire:true});
+ }
+ const damageSource=rig==='arc'?'weapon':'ability';
+ const previous=g.stats.damageDealt[damageSource];
+ for(let frame=0;frame<100&&g.stats.damageDealt[damageSource]===previous;frame++)d.step(1000/60);
+ if(g.stats.damageDealt[damageSource]===previous)throw Error('Gallery target never received damage');
+ d.setInput({fire:false});
+ d.refresh();
+}
+
+for(const rig of Object.keys(rigs)){
+ V2_SCENARIOS.push({id:`gallery-overdrive-${rig}`,room:'armory',state:'playing',
+  diagnosticOnly:true,burst:true,frameCount:3,stepMs:1000/60,setupArgument:{rig},setup:stageGalleryOverdrive});
+}

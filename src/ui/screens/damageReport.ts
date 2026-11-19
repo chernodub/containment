@@ -19,7 +19,8 @@ export function incomingDamageLabel(receipt: Pick<IncomingDamageReceipt, 'source
     case 'enemy-projectile': return `${family} ${receipt.enemyFamily === 'spitter' ? 'acid shot' : 'projectile'}`;
     case 'acid-pool': return receipt.enemyFamily ? `${family} acid pool` : 'Acid pool';
     case 'boss-attack': return receipt.enemyFamily ? `${family} area blast` : 'Boss attack';
-    default: return 'Direct damage · source unrecorded';
+    case 'scripted': return 'Scripted damage';
+    case 'unknown': return 'Unknown damage source';
   }
 }
 

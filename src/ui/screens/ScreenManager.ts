@@ -194,6 +194,7 @@ export function createScreens(context: ScreenContext) {
       game.chooseMutation(button.dataset.mutation as MutationId); playUiCue(audio,'boon-acquired'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(button=>button.addEventListener('click',()=>{
+      if(button.getAttribute('aria-disabled')==='true')return;
       game.route(button.dataset.route!,button.dataset.detour as import('../../game/roguelike/economy').DetourChoice|undefined,button.dataset.augment); playUiCue(audio,'confirm'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-inspect-route]').forEach(button=>button.addEventListener('click',()=>{
@@ -393,7 +394,7 @@ export function createScreens(context: ScreenContext) {
         if(id) {event.preventDefault();game.route(id);playUiCue(audio,'confirm');syncScreen();}
       } else if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
         event.preventDefault();
-        const preparations=[...root.querySelectorAll<HTMLButtonElement>('[data-route][data-detour]:not(:disabled)')];
+        const preparations=[...root.querySelectorAll<HTMLButtonElement>('[data-route][data-detour]')];
         if(preparations.length){const current=preparations.indexOf(document.activeElement as HTMLButtonElement),step=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;preparations[(current+step+preparations.length)%preparations.length].focus();return;}
         const index=game.node.next.indexOf(selectedRoute),delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;
         selectedRoute=game.node.next[(index+delta+game.node.next.length)%game.node.next.length];

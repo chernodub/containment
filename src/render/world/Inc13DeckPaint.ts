@@ -58,8 +58,11 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   const reliefMap=relief(canvas),normalMap=reliefMap.texture;
   const wet=/fluid|frozen|resin|diagnostic|swarm/.test(name);
+  // These deposits sit over the biased named-space paint and trim.
+  const layered=name==='inc13-cryo-fluid'||name==='inc13-frozen-discharge'||name==='inc13-containment-annulus-deck';
+  const bias=layered?-5:-1;
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
-    transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+    transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
   if(name.includes('swarm')){material.emissiveMap=map;material.emissive.setHex(0xfca5ec);material.emissiveIntensity=.66;}
   material.addEventListener('dispose',()=>normalMap.dispose());
   material.userData.actorMaterial = true;

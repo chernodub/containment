@@ -2403,33 +2403,40 @@
   },
   "lesson-spitter": {
     "file": "lesson-spitter.webp",
-    "bytes": 8828,
+    "bytes": 10992,
     "shot": {
       "width": 640,
       "height": 360,
-      "span": 4.05,
+      "span": 3.65,
       "subjects": [
         {
           "kind": "enemy",
           "family": "spitter",
           "pose": "attack",
           "aim": 0,
-          "x": -1.45,
-          "z": -0.6
+          "x": -2.1,
+          "z": 0.15
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate_Large",
+          "x": 0,
+          "z": 0.15,
+          "scale": 0.44
         },
         {
           "kind": "marine",
           "rig": "breacher",
           "weapon": "shotgun",
           "pose": "ram",
-          "x": 1.25,
-          "z": 1.35,
-          "aim": 1.5707963267948966,
-          "ghost": true
+          "x": 1.85,
+          "z": 0.15,
+          "aim": 3.141592653589793
         }
       ],
       "view": "gameplay",
-      "lesson": true
+      "lesson": "blocked-shot"
     }
   },
   "lesson-brute": {

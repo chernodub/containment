@@ -27,7 +27,7 @@ type Subject = Mark & (
 export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
-  transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean; effect?:AbilityEvent; effectFrames?:number;
+  transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
   boonEffects?:GameEffect[];
@@ -67,6 +67,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     stage.add(key,key.target);
   }
   let firstSubject:T.Object3D|undefined;
+  let lessonCover:T.Object3D|undefined;
   try {
     post['time']=0;
     post.distortion.clear();
@@ -168,6 +169,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         disposable.push(()=>{shadow.material.dispose();shadow.geometry.dispose();});
       }
       root.visible=true; stage.add(root);firstSubject??=root;
+      if(shot.lesson==='blocked-shot'&&subject.kind==='prop')lessonCover=root;
       registerGeometry(root,subject.kind==='marine'?GEOMETRY_CLASSES.marine:subject.kind==='enemy'?GEOMETRY_CLASSES.enemy:undefined);
     }
     for(const child of original.keys()){
@@ -185,7 +187,21 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       disposable.push(()=>{floor.geometry.dispose();floor.material.dispose();});
     }
     scene.add(stage);
-    if(shot.lesson){
+    if(shot.lesson==='blocked-shot'&&lessonCover){
+      const bounds=new T.Box3().setFromObject(lessonCover);
+      const muzzle=new T.Vector3(-1.8,bounds.max.y*.66,.15);
+      const impact=new T.Vector3(bounds.min.x,muzzle.y,muzzle.z);
+      const shotMaterial=new T.MeshStandardMaterial({color:0xbbeb54,emissive:0x8bcc25,emissiveIntensity:1.8});
+      const trail=new T.Mesh(new T.CylinderGeometry(.021,.045,muzzle.distanceTo(impact),8),shotMaterial);
+      trail.rotation.z=Math.PI/2;
+      trail.position.copy(muzzle).lerp(impact,.5);
+      const splash=new T.Mesh(new T.IcosahedronGeometry(.12,0),shotMaterial);
+      splash.position.copy(impact);
+      stage.add(trail,splash);
+      registerGeometry(trail);
+      registerGeometry(splash);
+      disposable.push(()=>{trail.geometry.dispose();splash.geometry.dispose();shotMaterial.dispose();});
+    }else if(shot.lesson){
       const attacker=shot.subjects.find(subject=>subject.kind==='enemy');
       const escape=shot.subjects.find(subject=>subject.kind==='marine');
       if(attacker&&escape){

@@ -121,7 +121,15 @@ const incidents:Record<string,Incident>={
   'crew-checkpoint':{
     source:[606,338],bounds:[-331,-87,406,228],
     paint(c){
-      for(const x of [-13,13])stroke(c,'M'+x+' 2q-3 7 -1 15','rgba(33,38,40,.62)',4);
+      const soot=c.createRadialGradient(-62,44,6,-62,44,79);
+      soot.addColorStop(0,'rgba(23,24,25,.91)');
+      soot.addColorStop(1,'rgba(47,38,32,0)');
+      c.save();c.translate(-62,44);c.rotate(-.23);c.scale(1,.56);c.translate(62,-44);
+      c.fillStyle=soot;c.fillRect(-141,-35,158,158);c.restore();
+      fill(c,'M-102 38l22 -12 7 6 18 -10 12 9 32 5 -21 11 -18 -1 -13 11 -17 -6 -22 3Z','rgba(29,26,26,.82)');
+      for(const d of ['M-80 41l-20 -8 -13 3 -15 -6','M-53 45l-6 15 -19 5 -4 10','M-36 34l14 -12 17 -3']){
+        stroke(c,d,'rgba(21,25,26,.74)',2.5);
+      }
     },
     pieces(p){
       // Telescoping checkpoint leaves have folded toward the baggage conveyor.
@@ -428,7 +436,7 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
     for(const hole of room.voids??[])ring(hole);
     c.clip(deck,'evenodd');
     c.translate(x,z);c.lineJoin='round';c.lineCap='round';incident.paint(c);
-  },.021);
+  },id==='containment-annulus'||id==='crew-checkpoint'?.022:.021);
   if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
   const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z);

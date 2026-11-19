@@ -151,7 +151,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  w.box(m.signal,source.x,source.y+.045,source.z,.28,.06,.14);
  root.userData.lightFixtures=[{x:source.x,y:source.y+.08,z:source.z,color:m.signal.emissive.getHex(),nativeColor:true,poolStyle:1,poolWidth:.35,poolDepth:5},{x:lampX,y:ceiling-.23,z:headerZ,color:lampColor,nativeColor:true,poolStyle:1,poolAngle:Math.PI/2,poolWidth:.7,poolDepth:5.5,distance:10,gain:.8}];
  root.userData.warningStructure=components;root.userData.canonicalWarningDisplays=canonicalCenters;root.userData.storyDisplays=displays;root.userData.storyDisplay=displays[0];root.userData.warningSupports=supports;root.userData.warningClearance=WARNING_FRAME_LOWEST;
- root.userData.warningVisibility={allDisplays:displays,material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,console:id==='manual-control-chamber'?{x:449,y:556,radius:49}:undefined,normalOpacity:id==='manual-control-chamber'?.28:.96};
+ root.userData.warningVisibility={allDisplays:displays,material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*6),screenBounds:new Float64Array(displays.length*6),actorBounds:new Float64Array(1025*6),faded:false};
 }
 
 /** One existing merged batch uses built-in Standard RGBA vertex alpha. The
@@ -170,23 +170,22 @@ export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera
  const state=root.userData.warningVisibility,displays=state?.allDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
  const point=state.point as T.Vector3,screen=state.screenBounds as Float64Array,actors=state.actorBounds as Float64Array,structure=state.structureBounds as Float64Array;
  let bodies=1;projectActor(marine,marineHeight,camera,point,actors,0);
- if(state.console)projectActor(state.console,2.7,camera,point,actors,bodies++*4);
- for(let i=0;i<enemies.length;i++){const enemy=enemies[i],model=models?.get(enemy.id);if(model?.root?.visible===false)continue;if(bodies===1025)break;projectActor(enemy,model?.height??4.7,camera,point,actors,bodies++*4);}
+ for(let i=0;i<enemies.length;i++){const enemy=enemies[i],model=models?.get(enemy.id);if(model?.root?.visible===false)continue;if(bodies===1025)break;projectActor(enemy,model?.height??4.7,camera,point,actors,bodies++*6);}
   for(let i=0;targets&&i<targets.count&&bodies<1025;i++)
-    projectActor(targets.bodies[i],.6,camera,point,actors,bodies++*4);
+    projectActor(targets.bodies[i],.6,camera,point,actors,bodies++*6);
  let fade=false,selected=-1,best=-Infinity;
  for(let i=0;i<displays.length;i++){
-  const n=i*4;screen[n]=screen[n+1]=Infinity;screen[n+2]=screen[n+3]=-Infinity;
+  const n=i*6;resetBounds(screen,n);
   for(const corner of displays[i].corners){point.fromArray(corner).applyMatrix4(root.matrixWorld).project(camera);extend(screen,n,point);}
   const safe=screen[n]>=viewport.left&&screen[n+2]<=viewport.right&&screen[n+1]>=viewport.bottom&&screen[n+3]<=viewport.top;
   const body=overlapsBodies(screen,n,actors,bodies),score=(safe?1000:0)-(body?200:0)-Math.abs((screen[n]+screen[n+2])*.5)-Math.abs((screen[n+1]+screen[n+3])*.5)*.3;
   if(score>best){best=score;selected=i;fade=body;}
  }
  root.userData.storyDisplays=selected<0?[]:[displays[selected]];root.userData.storyDisplay=displays[selected];state.selectedDisplay=selected;
- state.faded=fade;(state.material as T.MeshStandardMaterial).opacity=fade?.04:state.normalOpacity;
+ state.faded=fade;(state.material as T.MeshStandardMaterial).opacity=fade?.04:.96;
  const components=root.userData.warningStructure as Component[];let fadedParts=0;
  for(let i=0;i<components.length;i++){
-  const part=components[i],n=i*4;structure[n]=structure[n+1]=Infinity;structure[n+2]=structure[n+3]=-Infinity;
+  const part=components[i],n=i*6;resetBounds(structure,n);
   for(let x=0;x<2;x++)for(let y=0;y<2;y++)for(let z=0;z<2;z++){
    point.set(x?part.max[0]:part.min[0],y?part.max[1]:part.min[1],z?part.max[2]:part.min[2]).applyMatrix4(root.matrixWorld).project(camera);extend(structure,n,point);
   }
@@ -195,11 +194,15 @@ export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera
  }
  state.structureFaded=fadedParts>0;state.fadedParts=fadedParts;state.totalParts=components.length;
 }
-function extend(rect:Float64Array,n:number,p:T.Vector3):void {rect[n]=Math.min(rect[n],p.x);rect[n+1]=Math.min(rect[n+1],p.y);rect[n+2]=Math.max(rect[n+2],p.x);rect[n+3]=Math.max(rect[n+3],p.y);}
+function resetBounds(rect:Float64Array,n:number):void {
+ rect[n]=rect[n+1]=rect[n+4]=Infinity;
+ rect[n+2]=rect[n+3]=rect[n+5]=-Infinity;
+}
+function extend(rect:Float64Array,n:number,p:T.Vector3):void {rect[n]=Math.min(rect[n],p.x);rect[n+1]=Math.min(rect[n+1],p.y);rect[n+2]=Math.max(rect[n+2],p.x);rect[n+3]=Math.max(rect[n+3],p.y);rect[n+4]=Math.min(rect[n+4],p.z);rect[n+5]=Math.max(rect[n+5],p.z);}
 function projectActor(body:Body,height:number,camera:T.Camera,point:T.Vector3,rect:Float64Array,n:number):void {
- rect[n]=rect[n+1]=Infinity;rect[n+2]=rect[n+3]=-Infinity;
+ resetBounds(rect,n);
  for(let sx=-1;sx<=1;sx+=2)for(let sz=-1;sz<=1;sz+=2)for(let top=0;top<2;top++){point.set((body.x+sx*body.radius)/32,top*height,(body.y+sz*body.radius)/32).project(camera);extend(rect,n,point);}
 }
 function overlapsBodies(bounds:Float64Array,n:number,actors:Float64Array,count:number):boolean {
- for(let i=0;i<count;i++){const a=i*4;if(actors[a]<=bounds[n+2]+.015&&actors[a+2]>=bounds[n]-.015&&actors[a+1]<=bounds[n+3]+.015&&actors[a+3]>=bounds[n+1]-.015)return true;}return false;
+ for(let i=0;i<count;i++){const a=i*6;if(actors[a+5]>bounds[n+4]&&actors[a]<=bounds[n+2]+.015&&actors[a+2]>=bounds[n]-.015&&actors[a+1]<=bounds[n+3]+.015&&actors[a+3]>=bounds[n+1]-.015)return true;}return false;
 }

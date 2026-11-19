@@ -54,7 +54,7 @@ function boundaryFixtures(boundary?: readonly BoundaryPoint[]): BoundaryFixture[
 }
 
 /** Side-wall fixtures retain individual light origins after static room batching. */
-export function addRoomPracticals(world:T.Group,width:number,depth:number,environment:ShipEnvironment,boundary?:readonly BoundaryPoint[]){
+export function addRoomPracticals(world:T.Group,width:number,depth:number,environment:ShipEnvironment,boundary?:readonly BoundaryPoint[],lowForeground=false){
   const polygonFixtures=boundaryFixtures(boundary);
   const organic=environment==='infested',count=polygonFixtures?.length??Math.min(32,Math.max(4,Math.ceil(depth/4.5)*2));
   const geometry=organic?organicFissureGeometry().clone():new T.BoxGeometry(1,1,1);
@@ -73,7 +73,9 @@ export function addRoomPracticals(world:T.Group,width:number,depth:number,enviro
   for(let i=0;i<count;i++){
     const fixture=polygonFixtures?.[i];
     const right=i>=perSide,index=fixture?i:i%perSide,jitter=organic?Math.sin(i*12.73+width*2.13)*.58:0,tangentX=fixture?Math.sin(fixture.angle):0,tangentZ=fixture?Math.cos(fixture.angle):1,z=(fixture?.z??1.8+(depth-3.6)*(index+.5)/perSide)+jitter*tangentZ,x=(fixture?.x??(right?width-.32:.32))+jitter*tangentX;
-    const height=organic?.72+(Math.sin(i*6.71+depth)*.5+.5)*.87:1.65,scale=organic?.7+(Math.sin(i*9.32)*.5+.5)*.65:1;
+    // Seat foreground Atrium housings in the low parapet, below the walkable sightline.
+    const foreground=lowForeground&&fixture&&fixture.z<fixture.mountZ-.05;
+    const height=organic?.72+(Math.sin(i*6.71+depth)*.5+.5)*.87:foreground?.43:1.65,scale=organic?.7+(Math.sin(i*9.32)*.5+.5)*.65:1;
     const humanFailed=organic&&i%7===0;(geometry.getAttribute('humanFixtureFailure') as T.InstancedBufferAttribute).setX(i,humanFailed?1:0);
     const sourceGain=wallSourceGain(environment,i)*(organic?1:.55);
     const tint=humanFailed?0xbfd2e1:organic?(index%3===1?0xdc68ca:0xa1ef72):environment==='security'?(index%2?0xe8f1ff:0xff6650):getEnvironmentMood(environment).practical.color;
