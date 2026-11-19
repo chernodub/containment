@@ -18,7 +18,6 @@ import '../styles/screens.css';
 import {EFFECT_SET_LESSON, EFFECT_SET_LESSON_KEY, needsEffectSetLesson} from '../boonPresentation';
 import {clearRoomRecord} from '../storyPresentation';
 import {revealTitleLayers} from './title/keyArt';
-import {preloadRigPortraits} from './rigPortraits';
 import {installBoonInspection} from './boonInspection';
 
 export type ScreenSettings = {
@@ -44,10 +43,6 @@ export type ScreenContext = {
 /** Owns blocking screens and native actions; simulation remains behind public methods. */
 export function createScreens(context: ScreenContext) {
   const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
-  const warmPortraits = () => preloadRigPortraits();
-  el('overlay').addEventListener('pointerover', warmPortraits, {once:true});
-  el('overlay').addEventListener('focusin', warmPortraits, {once:true});
-  const portraitWarmup = window.setTimeout(warmPortraits, 1200);
   const disposeBoonInspection = installBoonInspection(el('overlay'));
   let secondary:typeof import('./templates')|undefined;
   let secondaryLoad:Promise<void>|undefined;
@@ -436,6 +431,6 @@ export function createScreens(context: ScreenContext) {
     get graphicsBlocked() {return context.graphicsLost()||recoveryPending;},
     resetSettings() {const notice=el('application-notice');if(notice)notice.hidden=true;settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {window.clearTimeout(portraitWarmup);el('overlay').removeEventListener('pointerover',warmPortraits);el('overlay').removeEventListener('focusin',warmPortraits);disposeBoonInspection();window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
+    dispose() {disposeBoonInspection();window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }

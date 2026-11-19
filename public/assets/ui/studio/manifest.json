@@ -1,0 +1,3711 @@
+{
+  "portrait-breacher": {
+    "file": "portrait-breacher.png",
+    "bytes": 143936,
+    "shot": {
+      "width": 640,
+      "height": 640,
+      "span": 2.55,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun"
+        }
+      ],
+      "focus": [
+        0,
+        1.23,
+        0
+      ],
+      "transparent": true
+    }
+  },
+  "portrait-cryo": {
+    "file": "portrait-cryo.png",
+    "bytes": 144151,
+    "shot": {
+      "width": 640,
+      "height": 640,
+      "span": 2.55,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle"
+        }
+      ],
+      "focus": [
+        0,
+        1.23,
+        0
+      ],
+      "transparent": true
+    }
+  },
+  "portrait-pyro": {
+    "file": "portrait-pyro.png",
+    "bytes": 160566,
+    "shot": {
+      "width": 640,
+      "height": 640,
+      "span": 2.55,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket"
+        }
+      ],
+      "focus": [
+        0,
+        1.23,
+        0
+      ],
+      "transparent": true
+    }
+  },
+  "portrait-arc": {
+    "file": "portrait-arc.png",
+    "bytes": 149080,
+    "shot": {
+      "width": 640,
+      "height": 640,
+      "span": 2.55,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma"
+        }
+      ],
+      "focus": [
+        0,
+        1.23,
+        0
+      ],
+      "transparent": true
+    }
+  },
+  "reward-reserve-thruster": {
+    "file": "reward-reserve-thruster.webp",
+    "bytes": 10586,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "ram",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "dash",
+        "phase": "dash-end",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-slide-loader": {
+    "file": "reward-slide-loader.webp",
+    "bytes": 10586,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "ram",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "dash",
+        "phase": "dash-end",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-tactical-salvage": {
+    "file": "reward-tactical-salvage.webp",
+    "bytes": 18498,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "cryo-nova",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-drive-dynamo": {
+    "file": "reward-drive-dynamo.webp",
+    "bytes": 25128,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overclock",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "overclock",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "overdrive",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-afterquake": {
+    "file": "reward-afterquake.webp",
+    "bytes": 13902,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "seismic-slam",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "seismic-slam",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-reinforced-bulwark": {
+    "file": "reward-reinforced-bulwark.webp",
+    "bytes": 13644,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "bulwark",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": 12,
+          "y": -8,
+          "kind": "barrier",
+          "ability": "bulwark",
+          "element": "kinetic",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "bulwark",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-spreading-nova": {
+    "file": "reward-spreading-nova.webp",
+    "bytes": 18140,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "cryo-nova",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-twin-glacier": {
+    "file": "reward-twin-glacier.webp",
+    "bytes": 15932,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "glacier",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": 12,
+          "y": -8,
+          "kind": "ice-wall",
+          "ability": "glacier",
+          "element": "cryo",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        },
+        {
+          "id": 2,
+          "x": 46,
+          "y": 26,
+          "kind": "ice-wall",
+          "ability": "glacier",
+          "element": "cryo",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "glacier",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-scorched-fan": {
+    "file": "reward-scorched-fan.webp",
+    "bytes": 11408,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "flashfire",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "arcRadians": 1.25,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-napalm-triplet": {
+    "file": "reward-napalm-triplet.webp",
+    "bytes": 14734,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "napalm-charge",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "napalm-charge",
+          "element": "pyro",
+          "shape": "circle",
+          "x": 32,
+          "y": -24,
+          "radius": 28,
+          "x2": 32,
+          "y2": -24,
+          "width": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        },
+        {
+          "id": 2,
+          "ability": "napalm-charge",
+          "element": "pyro",
+          "shape": "circle",
+          "x": 50,
+          "y": 4,
+          "radius": 28,
+          "x2": 50,
+          "y2": 4,
+          "width": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        },
+        {
+          "id": 3,
+          "ability": "napalm-charge",
+          "element": "pyro",
+          "shape": "circle",
+          "x": 27,
+          "y": 30,
+          "radius": 28,
+          "x2": 27,
+          "y2": 30,
+          "width": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "napalm-charge",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-forked-overload": {
+    "file": "reward-forked-overload.webp",
+    "bytes": 11556,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-twin-pylon": {
+    "file": "reward-twin-pylon.webp",
+    "bytes": 15786,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "tesla-pylon",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": 12,
+          "y": -8,
+          "kind": "pylon",
+          "ability": "tesla-pylon",
+          "element": "arc",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        },
+        {
+          "id": 2,
+          "x": 46,
+          "y": 26,
+          "kind": "pylon",
+          "ability": "tesla-pylon",
+          "element": "arc",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "tesla-pylon",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-siege-plow": {
+    "file": "reward-siege-plow.webp",
+    "bytes": 13640,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "bulwark",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": 12,
+          "y": -8,
+          "kind": "barrier",
+          "ability": "bulwark",
+          "element": "kinetic",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "bulwark",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-fault-line": {
+    "file": "reward-fault-line.webp",
+    "bytes": 14232,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "seismic-slam",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "seismic-slam",
+          "element": "kinetic",
+          "shape": "strip",
+          "x": -30,
+          "y": 0,
+          "x2": 95,
+          "y2": 14,
+          "width": 29,
+          "radius": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "seismic-slam",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-shard-harvest": {
+    "file": "reward-shard-harvest.webp",
+    "bytes": 12348,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -2.15,
+          "aim": 0.2
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 0,
+          "z": 0
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.6,
+          "z": -1.65
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 2.2,
+          "z": -0.2
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.8,
+          "z": 1.3
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effectFrames": 4,
+      "boonEffects": [
+        {
+          "type": "boon",
+          "boon": "shatter",
+          "x": 0,
+          "y": 0,
+          "radius": 46
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 51.2,
+          "targetY": -52.8
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 70.4,
+          "targetY": -6.4
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 57.6,
+          "targetY": 41.6
+        }
+      ]
+    }
+  },
+  "reward-ice-road": {
+    "file": "reward-ice-road.webp",
+    "bytes": 15454,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "glacier",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "frost-trail",
+          "element": "cryo",
+          "shape": "strip",
+          "x": -80,
+          "y": -12,
+          "x2": 95,
+          "y2": 12,
+          "width": 70,
+          "radius": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "glacier",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-ember-relay": {
+    "file": "reward-ember-relay.webp",
+    "bytes": 10886,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "flashfire",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "arcRadians": 1.25,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-meltdown-core": {
+    "file": "reward-meltdown-core.webp",
+    "bytes": 15612,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "meltdown",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "meltdown",
+          "element": "pyro",
+          "shape": "circle",
+          "x": 25,
+          "y": 0,
+          "radius": 55,
+          "x2": 25,
+          "y2": 0,
+          "width": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "meltdown",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "overdrive",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-pilgrim-pylon": {
+    "file": "reward-pilgrim-pylon.webp",
+    "bytes": 13812,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "tesla-pylon",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": -91,
+          "y": -8,
+          "kind": "pylon",
+          "ability": "tesla-pylon",
+          "element": "arc",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "tesla-pylon",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-live-wire": {
+    "file": "reward-live-wire.webp",
+    "bytes": 12280,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [
+        {
+          "id": 1,
+          "ability": "overload",
+          "element": "arc",
+          "x": -40,
+          "y": 0,
+          "targetX": 52,
+          "targetY": 12,
+          "width": 28
+        }
+      ],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-kinetic": {
+    "file": "reward-kinetic.webp",
+    "bytes": 13950,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "seismic-slam",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "seismic-slam",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-cryo": {
+    "file": "reward-cryo.webp",
+    "bytes": 18518,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "cryo-nova",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-pyro": {
+    "file": "reward-pyro.webp",
+    "bytes": 11804,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "flashfire",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "arcRadians": 1.25,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-arc": {
+    "file": "reward-arc.webp",
+    "bytes": 11584,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-acid": {
+    "file": "reward-acid.webp",
+    "bytes": 11754,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-universal": {
+    "file": "reward-universal.webp",
+    "bytes": 10586,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "ram",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "dash",
+        "phase": "dash-end",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-recovery": {
+    "file": "reward-recovery.webp",
+    "bytes": 18486,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "cryo-nova",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-demolition": {
+    "file": "reward-demolition.webp",
+    "bytes": 13954,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "seismic-slam",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "seismic-slam",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-executioner": {
+    "file": "reward-executioner.webp",
+    "bytes": 18102,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "cryo-nova",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-wildfire": {
+    "file": "reward-wildfire.webp",
+    "bytes": 11730,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "flashfire",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "arcRadians": 1.25,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "reward-cycling": {
+    "file": "reward-cycling.webp",
+    "bytes": 11610,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      }
+    }
+  },
+  "service-heal": {
+    "file": "service-heal.webp",
+    "bytes": 3892,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.52,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "health"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-medkit": {
+    "file": "service-medkit.webp",
+    "bytes": 3892,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.52,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "health"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-armor": {
+    "file": "service-armor.webp",
+    "bytes": 3970,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.52,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "armor"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-ammo": {
+    "file": "service-ammo.webp",
+    "bytes": 4748,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.52,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "ammo"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-grenade": {
+    "file": "service-grenade.webp",
+    "bytes": 3216,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.78,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "grenade"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-reroll": {
+    "file": "service-reroll.webp",
+    "bytes": 4508,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.52,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "credits"
+        }
+      ],
+      "focus": [
+        0,
+        0.13,
+        0
+      ]
+    }
+  },
+  "service-upgrade": {
+    "file": "service-upgrade.webp",
+    "bytes": 4254,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 1.78,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium"
+        }
+      ]
+    }
+  },
+  "service-revive": {
+    "file": "service-revive.webp",
+    "bytes": 1836,
+    "shot": {
+      "width": 448,
+      "height": 168,
+      "span": 0.54,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_HealthPack_Tube"
+        }
+      ],
+      "focus": [
+        0,
+        0.16,
+        0
+      ]
+    }
+  },
+  "weapon-pistol": {
+    "file": "weapon-pistol.webp",
+    "bytes": 4244,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 0.95,
+      "subjects": [
+        {
+          "kind": "weapon",
+          "id": "pistol"
+        }
+      ],
+      "focus": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "weapon-rifle": {
+    "file": "weapon-rifle.webp",
+    "bytes": 5876,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 0.95,
+      "subjects": [
+        {
+          "kind": "weapon",
+          "id": "rifle"
+        }
+      ],
+      "focus": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "weapon-shotgun": {
+    "file": "weapon-shotgun.webp",
+    "bytes": 6694,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 0.95,
+      "subjects": [
+        {
+          "kind": "weapon",
+          "id": "shotgun"
+        }
+      ],
+      "focus": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "weapon-plasma": {
+    "file": "weapon-plasma.webp",
+    "bytes": 8098,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 0.95,
+      "subjects": [
+        {
+          "kind": "weapon",
+          "id": "plasma"
+        }
+      ],
+      "focus": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "weapon-rocket": {
+    "file": "weapon-rocket.webp",
+    "bytes": 10466,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 0.95,
+      "subjects": [
+        {
+          "kind": "weapon",
+          "id": "rocket"
+        }
+      ],
+      "focus": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "lesson-crawler": {
+    "file": "lesson-crawler.webp",
+    "bytes": 8446,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-stalker": {
+    "file": "lesson-stalker.webp",
+    "bytes": 7382,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "stalker",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-spitter": {
+    "file": "lesson-spitter.webp",
+    "bytes": 8036,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-brute": {
+    "file": "lesson-brute.webp",
+    "bytes": 9268,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-carrier": {
+    "file": "lesson-carrier.webp",
+    "bytes": 9520,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-warden": {
+    "file": "lesson-warden.webp",
+    "bytes": 12594,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 5.7,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "champion": "warden",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "lesson-matron": {
+    "file": "lesson-matron.webp",
+    "bytes": 12612,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.6,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "champion": "matron",
+          "pose": "attack",
+          "aim": 0,
+          "x": -1.45,
+          "z": -0.6
+        },
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "ram",
+          "x": 1.25,
+          "z": 1.35,
+          "aim": 1.5707963267948966,
+          "ghost": true
+        }
+      ],
+      "view": "gameplay",
+      "lesson": true
+    }
+  },
+  "route-awakening-bay": {
+    "file": "route-awakening-bay.webp",
+    "bytes": 24938,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "awakening-bay",
+      "focus": [
+        20,
+        0.25,
+        13.75
+      ]
+    }
+  },
+  "route-passenger-vault": {
+    "file": "route-passenger-vault.webp",
+    "bytes": 29320,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "passenger-vault",
+      "focus": [
+        18.75,
+        0.25,
+        13.75
+      ]
+    }
+  },
+  "route-residential-gallery": {
+    "file": "route-residential-gallery.webp",
+    "bytes": 17638,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "residential-gallery",
+      "focus": [
+        5,
+        0.25,
+        15
+      ]
+    }
+  },
+  "route-communal-atrium": {
+    "file": "route-communal-atrium.webp",
+    "bytes": 24928,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "communal-atrium",
+      "focus": [
+        20.3125,
+        0.25,
+        11.71875
+      ]
+    }
+  },
+  "route-crew-checkpoint": {
+    "file": "route-crew-checkpoint.webp",
+    "bytes": 15146,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "crew-checkpoint",
+      "focus": [
+        14.0625,
+        0.25,
+        13.75
+      ]
+    }
+  },
+  "route-armory": {
+    "file": "route-armory.webp",
+    "bytes": 15606,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "armory",
+      "focus": [
+        18.75,
+        0.25,
+        23.125
+      ]
+    }
+  },
+  "route-freight-hold": {
+    "file": "route-freight-hold.webp",
+    "bytes": 14766,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "freight-hold",
+      "focus": [
+        9.9375,
+        0.25,
+        18.25
+      ]
+    }
+  },
+  "route-breached-loading-bay": {
+    "file": "route-breached-loading-bay.webp",
+    "bytes": 13712,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "breached-loading-bay",
+      "focus": [
+        18.75,
+        0.25,
+        21.25
+      ]
+    }
+  },
+  "route-relay-racks": {
+    "file": "route-relay-racks.webp",
+    "bytes": 19538,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "relay-racks",
+      "focus": [
+        20,
+        0.25,
+        26.25
+      ]
+    }
+  },
+  "route-transmission-chamber": {
+    "file": "route-transmission-chamber.webp",
+    "bytes": 32016,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "transmission-chamber",
+      "focus": [
+        26.25,
+        0.25,
+        6.875
+      ]
+    }
+  },
+  "route-diagnostic-gallery": {
+    "file": "route-diagnostic-gallery.webp",
+    "bytes": 19596,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "diagnostic-gallery",
+      "focus": [
+        11.25,
+        0.25,
+        7.1875
+      ]
+    }
+  },
+  "route-safety-interlock-station": {
+    "file": "route-safety-interlock-station.webp",
+    "bytes": 31110,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "safety-interlock-station",
+      "focus": [
+        20,
+        0.25,
+        15
+      ]
+    }
+  },
+  "route-coolant-plant": {
+    "file": "route-coolant-plant.webp",
+    "bytes": 16556,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "coolant-plant",
+      "focus": [
+        13.4375,
+        0.25,
+        15
+      ]
+    }
+  },
+  "route-service-shaft-landing": {
+    "file": "route-service-shaft-landing.webp",
+    "bytes": 25200,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "service-shaft-landing",
+      "focus": [
+        5.3125,
+        0.25,
+        13.75
+      ]
+    }
+  },
+  "route-infested-workshop": {
+    "file": "route-infested-workshop.webp",
+    "bytes": 31492,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "infested-workshop",
+      "focus": [
+        13,
+        0.25,
+        7.1875
+      ]
+    }
+  },
+  "route-swarm-junction": {
+    "file": "route-swarm-junction.webp",
+    "bytes": 18350,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "swarm-junction",
+      "focus": [
+        18.75,
+        0.25,
+        16.25
+      ]
+    }
+  },
+  "route-shielding-gate": {
+    "file": "route-shielding-gate.webp",
+    "bytes": 11316,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "shielding-gate",
+      "focus": [
+        22,
+        0.25,
+        15
+      ]
+    }
+  },
+  "route-containment-annulus": {
+    "file": "route-containment-annulus.webp",
+    "bytes": 12748,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "containment-annulus",
+      "focus": [
+        36.25,
+        0.25,
+        16.25
+      ]
+    }
+  },
+  "route-manual-control-chamber": {
+    "file": "route-manual-control-chamber.webp",
+    "bytes": 15232,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "manual-control-chamber",
+      "focus": [
+        20,
+        0.25,
+        5.625
+      ]
+    }
+  },
+  "route-overload-floor": {
+    "file": "route-overload-floor.webp",
+    "bytes": 28870,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 9,
+      "subjects": [],
+      "view": "gameplay",
+      "room": "overload-floor",
+      "focus": [
+        21.875,
+        0.25,
+        9.0625
+      ]
+    }
+  },
+  "route-warden-cache": {
+    "file": "route-warden-cache.webp",
+    "bytes": 14380,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 3.85,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "champion": "warden",
+          "x": -0.6
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate_Large",
+          "x": 1.2
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "route-cache": {
+    "file": "route-cache.webp",
+    "bytes": 9954,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate_Large"
+        },
+        {
+          "kind": "pickup",
+          "id": "credits",
+          "x": -1.1,
+          "z": 0.5
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "route-medicine": {
+    "file": "route-medicine.webp",
+    "bytes": 9252,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 2.4,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Crate"
+        },
+        {
+          "kind": "pickup",
+          "id": "health",
+          "x": 0.92
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "route-armor": {
+    "file": "route-armor.webp",
+    "bytes": 9940,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 1.05,
+      "subjects": [
+        {
+          "kind": "pickup",
+          "id": "armor"
+        },
+        {
+          "kind": "pickup",
+          "id": "grenade",
+          "x": 0.64
+        }
+      ],
+      "view": "gameplay",
+      "focus": [
+        0.3,
+        0.16,
+        0
+      ]
+    }
+  },
+  "route-capacitor": {
+    "file": "route-capacitor.webp",
+    "bytes": 5848,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 2,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer-system"
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-siege-plow": {
+    "file": "route-workshop-siege-plow.webp",
+    "bytes": 12754,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "bulwark",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": 12,
+          "y": -8,
+          "kind": "barrier",
+          "ability": "bulwark",
+          "element": "kinetic",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "bulwark",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-fault-line": {
+    "file": "route-workshop-fault-line.webp",
+    "bytes": 19298,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "seismic-slam",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "seismic-slam",
+          "element": "kinetic",
+          "shape": "strip",
+          "x": -30,
+          "y": 0,
+          "x2": 95,
+          "y2": 14,
+          "width": 29,
+          "radius": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "seismic-slam",
+        "rig": "breacher",
+        "element": "kinetic",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-shard-harvest": {
+    "file": "route-workshop-shard-harvest.webp",
+    "bytes": 13728,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "x": -2.15,
+          "aim": 0.2
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 0,
+          "z": 0
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.6,
+          "z": -1.65
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 2.2,
+          "z": -0.2
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.8,
+          "z": 1.3
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effectFrames": 4,
+      "boonEffects": [
+        {
+          "type": "boon",
+          "boon": "shatter",
+          "x": 0,
+          "y": 0,
+          "radius": 46
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 51.2,
+          "targetY": -52.8
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 70.4,
+          "targetY": -6.4
+        },
+        {
+          "type": "boon",
+          "boon": "frost",
+          "x": 0,
+          "y": 0,
+          "targetX": 57.6,
+          "targetY": 41.6
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-ice-road": {
+    "file": "route-workshop-ice-road.webp",
+    "bytes": 19328,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "cryo",
+          "weapon": "rifle",
+          "pose": "glacier",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "frozen",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "frost-trail",
+          "element": "cryo",
+          "shape": "strip",
+          "x": -80,
+          "y": -12,
+          "x2": 95,
+          "y2": 12,
+          "width": 70,
+          "radius": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "glacier",
+        "rig": "cryo",
+        "element": "cryo",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-ember-relay": {
+    "file": "route-workshop-ember-relay.webp",
+    "bytes": 11944,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "flashfire",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "tactical",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "arcRadians": 1.25,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-meltdown-core": {
+    "file": "route-workshop-meltdown-core.webp",
+    "bytes": 19324,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "pose": "meltdown",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [
+        {
+          "id": 1,
+          "ability": "meltdown",
+          "element": "pyro",
+          "shape": "circle",
+          "x": 25,
+          "y": 0,
+          "radius": 55,
+          "x2": 25,
+          "y2": 0,
+          "width": 0,
+          "remainingMs": 3800,
+          "durationMs": 5000,
+          "attached": false
+        }
+      ],
+      "links": [],
+      "effect": {
+        "ability": "meltdown",
+        "rig": "pyro",
+        "element": "pyro",
+        "slot": "overdrive",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-pilgrim-pylon": {
+    "file": "route-workshop-pilgrim-pylon.webp",
+    "bytes": 15638,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "tesla-pylon",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [
+        {
+          "id": 1,
+          "x": -91,
+          "y": -8,
+          "kind": "pylon",
+          "ability": "tesla-pylon",
+          "element": "arc",
+          "angle": 0.12,
+          "length": 95,
+          "thickness": 24,
+          "radius": 42,
+          "remainingMs": 4000,
+          "durationMs": 5000,
+          "health": 80,
+          "maxHealth": 100
+        }
+      ],
+      "zones": [],
+      "links": [],
+      "effect": {
+        "ability": "tesla-pylon",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "power",
+        "phase": "impact",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-workshop-live-wire": {
+    "file": "route-workshop-live-wire.webp",
+    "bytes": 13574,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.12,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "arc",
+          "weapon": "plasma",
+          "pose": "overload",
+          "x": -1.25,
+          "aim": 0.12
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.15,
+          "z": -0.6
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "pose": "hit",
+          "x": 1.65,
+          "z": 0.45
+        },
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium",
+          "x": 1.25,
+          "z": -1.9
+        }
+      ],
+      "focus": [
+        -0.18,
+        0.68,
+        0
+      ],
+      "deployables": [],
+      "zones": [],
+      "links": [
+        {
+          "id": 1,
+          "ability": "overload",
+          "element": "arc",
+          "x": -40,
+          "y": 0,
+          "targetX": 52,
+          "targetY": 12,
+          "width": 28
+        }
+      ],
+      "effect": {
+        "ability": "overload",
+        "rig": "arc",
+        "element": "arc",
+        "slot": "tactical",
+        "phase": "link",
+        "angle": 0.12,
+        "targetX": 48,
+        "targetY": 4,
+        "length": 110,
+        "width": 52,
+        "radius": 70,
+        "durationMs": 700,
+        "maxTargets": 3
+      },
+      "view": "gameplay"
+    }
+  },
+  "route-upgrade": {
+    "file": "route-upgrade.webp",
+    "bytes": 5984,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 1.6,
+      "subjects": [
+        {
+          "kind": "prop",
+          "kit": "industrial",
+          "name": "Prop_Desk_Medium"
+        }
+      ],
+      "view": "gameplay"
+    }
+  },
+  "title-composite": {
+    "file": "title-composite.webp",
+    "bytes": 49720,
+    "compositeOf": [
+      "U10 surviving plates",
+      "title-hero"
+    ]
+  },
+  "title-hero": {
+    "file": "title-hero.webp",
+    "bytes": 32122,
+    "shot": {
+      "width": 1280,
+      "height": 720,
+      "span": 2.2,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "breacher",
+          "weapon": "shotgun",
+          "pose": "",
+          "aim": 2.62
+        }
+      ],
+      "focus": [
+        -0.88,
+        1.43,
+        0.63
+      ],
+      "transparent": true,
+      "key": [
+        -2,
+        4,
+        3
+      ],
+      "rim": [
+        4,
+        3,
+        -6
+      ]
+    }
+  }
+}
