@@ -138,7 +138,7 @@ const mapResponse = ShaderChunk.map_fragment
     // HERO14: three value groups. Saturated rig panels keep their hue; everything else is
     // either cool off-white plate or near-black gunmetal undersuit (never a warm midtone).
     bool rigPanel=marineMax-marineMin>.16&&marineMax>.18;
-    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.6)/max(.001,marineMax-marineMin*.6)*.92;
+    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.8)/max(.001,marineMax-marineMin*.8)*.58; // lit tops must not clip to white
     else diffuseColor.rgb=marineValue>.30?vec3(.80,.85,.90):vec3(.035,.040,.047);
   }
   // Family values replace the inherited photographic/material tint together;

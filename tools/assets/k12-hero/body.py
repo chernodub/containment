@@ -536,7 +536,7 @@ class Suit:
             for v, h in zip(stack.data.vertices, heat.data):
                 h.value = max(0, min(1, (v.co - a).dot((b - a).normalized()) / .275))
             self.add(stack, 'heat', 'ribs')
-            for k in range(4 if self.high else 2):
+            for k in range(4 if self.high else 1):
                 self.ring('exhaust fin', a + (b - a).normalized() * (.06 + k * .04), (b - a).normalized(), .040, .008, bone='ribs')
             throat = kit.lathe('pyro exhaust glow', [(0, .262), (.024, .262), (0, .262)], a, (b - a).normalized(), 20 if self.high else 8, collection=self.col)
             self.add(throat, 'fire_glow', 'ribs')

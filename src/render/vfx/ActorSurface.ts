@@ -42,7 +42,7 @@ if(actorDeathStyle>2.5&&actorDeathStyle<3.5)diffuseColor.rgb=diffuseColor.rgb*ve
 ${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage)*actorHierarchy.x;'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.35);`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
-${friendly ? '// HERO14: room light keeps only a slight colour cast on the marine.\nreflectedLight.directDiffuse=mix(vec3(dot(reflectedLight.directDiffuse,vec3(.2126,.7152,.0722))),reflectedLight.directDiffuse,.35);reflectedLight.indirectDiffuse=mix(vec3(dot(reflectedLight.indirectDiffuse,vec3(.2126,.7152,.0722))),reflectedLight.indirectDiffuse,.35);' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*actorStageLight*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
+${friendly ? '// HERO14: room light keeps only a slight colour cast on the marine; lit rig panels must stay saturated, not clip to white.\nreflectedLight.directDiffuse*=mix(.85,.32,marineRig);reflectedLight.directSpecular*=mix(1.0,.4,marineRig);reflectedLight.directDiffuse=mix(vec3(dot(reflectedLight.directDiffuse,vec3(.2126,.7152,.0722))),reflectedLight.directDiffuse,.35);reflectedLight.indirectDiffuse=mix(vec3(dot(reflectedLight.indirectDiffuse,vec3(.2126,.7152,.0722))),reflectedLight.indirectDiffuse,.35);' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*actorStageLight*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),4.2);
 ${friendly ? `// HERO14 marine: authored three-value palette (cool plates, dark undersuit, rig panels).
@@ -50,7 +50,7 @@ ${friendly ? `// HERO14 marine: authored three-value palette (cool plates, dark 
 // from authored panels and glows, never from tinting top-facing armour.
 float marinePlate=smoothstep(.40,.65,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
 float marineRig=smoothstep(.10,.30,max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b)));
-totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.55*max(marinePlate,marineRig*.8)*actorStageLight;` : `float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
+totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.55*marinePlate+1.1*marineRig)*actorStageLight;` : `float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
 totalEmissiveRadiance=max(vec3(0.0),mix(vec3(lanternLuma),totalEmissiveRadiance,1.35))*actorHierarchy.z*(1.0+actorReveal);`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
