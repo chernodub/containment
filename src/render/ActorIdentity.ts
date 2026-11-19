@@ -14,6 +14,7 @@ export const FAMILY_IDENTITY = Object.freeze({
   carrier: 0xb982c5,
   queen: 0x756b7d,
 });
+export const FAMILY_LANTERNS = Object.freeze({crawler:0xff276e, stalker:0x9570ff, spitter:0xa7ff42, brute:0xfff0a8, carrier:0xf85de7, queen:0xea42af});
 export const ENEMY_BODY_COLORS = Object.freeze({crawler:0x43312b,brute:0x30232a,spitter:0x253229,stalker:0x292737,carrier:0x382b3b,queen:0x241c2a});
 export const RIG_ACCENTS = Object.freeze({breacher:0xffb454,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 
@@ -225,7 +226,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         float facing=abs(dot(normalize(identityNormal),normalize(identityView)));
         vec3 color=identityColor;
         float light=.38+.38*smoothstep(.28,.32,facing)+.34*smoothstep(.65,.69,facing);
-        if(role>.5&&role<1.5){color=vec3(1.0,.36,.12);light=1.15;}
+        if(role>.5&&role<1.5){color=vec3(.72,.85,1.0);light=.76;}
         if(role>1.5&&role<2.5){color=vec3(.085,.042,.038);light=.40+.22*smoothstep(.28,.32,facing)+.24*smoothstep(.65,.69,facing);}
         if((role>2.5&&role<3.5)||(role>16.5&&role<18.5)){
           if(identityOpening<.08)discard;
