@@ -12,7 +12,8 @@
     "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235",
     "bench": "node scripts/nextgen/bench.mjs",
     "bench:rooms": "node scripts/nextgen/bench-rooms.mjs",
-    "verify": "npm run build"
+    "verify": "npm run build",
+    "studio": "npm run build && node scripts/nextgen/studio.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",

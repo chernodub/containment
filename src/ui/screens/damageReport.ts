@@ -1,3 +1,4 @@
+import {studioImage} from '../studioArt';
 import {getRoomDamage} from '../gameAdapter';
 import {MELEE_ATTACKS} from '../../game/enemies/meleeAttacks';
 import type {DepthGame} from '../../DepthGame';
@@ -49,13 +50,13 @@ export function completionEnding(game: DepthGame): string {
 }
 
 const lessons = {
-  crawler: [`Back off the swipe fan. Use the Crawler’s ${MELEE_ATTACKS.crawler.recoveryMs} ms base recovery to shoot.`, 'M23 27 61 8Q81 27 61 46ZM57 27h25m-8-6 8 6-8 6'],
-  stalker: ['Step sideways when the lunge line locks.', 'M23 21h54v12H23zM55 29V6m-6 6 6-6 6 6'],
-  spitter: ['Break the sightline behind solid cover.', 'M24 26h23m19 0h14m-32-15h16v30H48zm30 17v17m-6-6 6 6 6-6'],
-  brute: ['Sidestep the overhead strike, then shoot during recovery.', 'M24 16h43v22H24zm31 11v17m-6-6 6 6 6-6m19-17h13'],
-  warden: ['Bait the charge into a wall, then shoot while the Warden is stunned.', 'M24 27h53m-9-7 9 7-9 7m14-23v32M58 27V8m-6 6 6-6 6 6'],
-  carrier: ['Back away from the brood-claw slam and shoot during recovery.', 'M24 16h43v22H24zm31 11v17m-6-6 6 6 6-6'],
-  matron: ['Shoot the pods or focus the Matron to interrupt its brood.', 'M26 27h16m14 0h21m-17-10-7 10 7 10m20-10-7-9m7 9-7 9'],
+  crawler: `Back off the swipe fan. Use the Crawler’s ${MELEE_ATTACKS.crawler.recoveryMs} ms base recovery to shoot.`,
+  stalker: 'Step sideways when the lunge line locks.',
+  spitter: 'Break the sightline behind solid cover.',
+  brute: 'Sidestep the overhead strike, then shoot during recovery.',
+  warden: 'Bait the charge into a wall, then shoot while the Warden is stunned.',
+  carrier: 'Back away from the brood-claw slam and shoot during recovery.',
+  matron: 'Shoot the pods or focus the Matron to interrupt its brood.',
 } as const;
 
 export function retryLesson(game: DepthGame): string {
@@ -63,6 +64,6 @@ export function retryLesson(game: DepthGame): string {
   const family=top?.enemyFamily;
   const key=top?.guardian??family;
   if(!key||key==='queen'||!Object.hasOwn(lessons,key))return '';
-  const [copy,path]=lessons[key];
-  return `<aside class="retry-lesson"><svg viewBox="0 0 96 54" width="96" height="54" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="15" cy="27" r="8"/><path d="${path}"/></svg><p><b>TRY NEXT RUN</b><br>${escapeHtml(copy)}</p></aside>`;
+  const copy=lessons[key];
+  return `<aside class="retry-lesson">${studioImage(`lesson-${key}`,'retry-lesson-art',320,180)}<p><b>TRY NEXT RUN</b><br>${escapeHtml(copy)}</p></aside>`;
 }

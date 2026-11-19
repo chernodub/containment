@@ -76,7 +76,7 @@ export function rigScreen(selected: RigId): string {
   const rig = RIG_CATALOG[selected];
   return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> equip</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
-    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p><button id="recommended-loadout" class="primary" aria-label="Recommended loadout — Cryo and a starting boon">Recommended loadout ${arrow()}</button><button id="equip-rig" class="secondary">Equip ${rig.name} ${arrow()}</button></div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · ORANGE: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
+    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p><button id="recommended-loadout" class="primary" aria-label="Recommended loadout — Cryo and a starting boon">Recommended loadout ${arrow()}</button><button id="equip-rig" class="secondary">Equip ${rig.name} ${arrow()}</button></div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · RED: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
 }
 
 const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power','siege-plow':'power','fault-line':'tactical','ice-road':'power','meltdown-core':'overdrive','pilgrim-pylon':'power','live-wire':'tactical'};
@@ -196,7 +196,7 @@ export function shopScreen(game: DepthGame): string {
       else status='Full after allocation';
     }
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
-      ${serviceArt(id==='revive'?'medkit':id)}
+      ${serviceArt(id)}
       <strong class="requisition-name">${escapeHtml(name)}</strong>
       <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
       <span class="requisition-item-footer"><span class="requisition-price">${cost} CR</span><span class="requisition-status">${status}</span></span>
@@ -247,7 +247,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const options=offers.length
     ? offers.flatMap<{destination:typeof next;detour?:(typeof offers)[number]['id'];title:string;risk?:string;reward?:string;vignette?:string;augment?:ReturnType<typeof availableAugmentUpgrades>[number];disabled:boolean}>(offer=>{
       const augments=offer.id==='salvage'&&workshop?availableAugmentUpgrades(game.expedition.build):[];
-      const base={destination:next,detour:offer.id,title:offer.name,risk:offer.risk,reward:offer.reward,vignette:offer.id==='salvage'?({2:'cache',6:'armor',10:'upgrade',14:'grenade',17:'ammo'} as Record<number,string>)[game.node.depth]??'cache':workshop?'medicine':undefined};
+      const base={destination:next,detour:offer.id,title:offer.name,risk:offer.risk,reward:offer.reward,vignette:offer.id==='salvage'?({2:'cache',6:'armor',10:'upgrade',14:'warden-cache',17:'capacitor'} as Record<number,string>)[game.node.depth]??'cache':workshop?'medicine':undefined};
       if(augments.length)return augments.map(augment=>({...base,augment,vignette:augment,title:`Upgrade ${MUTATION_CATALOG[augment].name}`,
         reward:playerFacingText(AUGMENT_UPGRADE_RULES[augment]??''),disabled:game.combat.snapshot.credits<180}));
       return [{...base,augment:undefined,disabled:offer.id==='salvage'&&(workshop||game.node.depth===6&&game.combat.snapshot.credits<70)}];

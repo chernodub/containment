@@ -75,6 +75,7 @@
   background: radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--service-color) 13%, #12252e), #0b1820 78%);
   color: var(--service-color);
 }
+
 .service-art-shadow { fill: #050e13; }
 .service-art-guide { stroke: currentColor; opacity: .24; fill: none; }
 .service-art-body { fill: #24404d; stroke: currentColor; stroke-width: 1.5; }
@@ -90,3 +91,5 @@
 #overlay .panel.requisition-panel :is(.requisition-inventory,.requisition-footer p,.requisition-footer button) {
   font-size: 14px;
 }
+
+#overlay img.service-illustration { object-fit: contain; background: #081820; }
