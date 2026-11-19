@@ -8,7 +8,7 @@ throat, and high-arched legs like a harvestman's.
 import numpy as np
 
 import sdf as S
-from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "marauder"
@@ -95,7 +95,7 @@ def build(sk):
         for t in (0.25, 0.75):   # sinew collars hold the duct to the neck plates
             body.add(S.Torus(path[i] + (path[i + 1] - path[i]) * t, path[i + 1] - path[i], 0.27 - 0.02 * i, 0.07, zone=SINEW,
                              bone=duct_bones[i], k=0.05))
-    body.add(RoundCone(mz0, mz1, 0.42, 0.36, zone=SHELL, bone="jaw", k=0.15, tint=1.1))
+    body.add(RoundCone(mz0, mz1, 0.46, 0.4, zone=BONE, bone="jaw", k=0.15))   # pale mortar mouth: the aiming face
     body.add(Ellipsoid(mz1, (0.24, 0.28, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
     body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.14, 0.2, 0.2 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
     for s in (-1, 1):
@@ -120,4 +120,9 @@ def build(sk):
     for x in (-0.45, 0.0, 0.45):
         elite.add(S.Torus(nc + v3((x, 0, -0.03 * a)), (1, 0, 0.3), 0.62 - abs(x) * 0.4, 0.07, zone=SINEW, bone=ves.bone, k=0.05))
     elite.add(Ellipsoid(nc - v3((0, 0, 0.35 * a)), (0.9, 0.75, 0.25 * a), zone=FLESH, bone=ves.bone, k=0.2))
+    # pale crest fin riding the main vessel (rank read from above)
+    for i, x in enumerate((-0.9, -0.2, 0.5)):
+        c = sac_c + v3((x, 0, (0.62 + 0.05 * i) * a))
+        elite.add(Plate(c, (0.42, 0.55 - 0.08 * abs(i - 1), 0.08), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.06, rings=0.005, lip=0.02,
+                        chip=0.02, zone=BONE, bone="spine" if x < 0 else "spine1", plate=90 + i))
     return {"body": body, "elite": elite}

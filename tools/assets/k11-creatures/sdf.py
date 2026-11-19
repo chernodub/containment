@@ -20,8 +20,8 @@ import numpy as np
 F = np.float32
 
 # Material zones: flat readable value groups baked into the atlas.
-SHELL, MEMBRANE, SINEW, CLAW, ORGAN, EYE, CREST, TOOTH, CAVITY, UNDER, ARMOR, FLESH = range(12)
-ZONE_NAMES = ["shell", "membrane", "sinew", "claw", "organ", "eye", "crest", "tooth", "cavity", "under", "armor", "flesh"]
+SHELL, MEMBRANE, SINEW, CLAW, ORGAN, EYE, CREST, TOOTH, CAVITY, UNDER, ARMOR, FLESH, BONE = range(13)
+ZONE_NAMES = ["shell", "membrane", "sinew", "claw", "organ", "eye", "crest", "tooth", "cavity", "under", "armor", "flesh", "bone"]
 
 
 # ---------------------------------------------------------------- utilities

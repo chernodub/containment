@@ -5,7 +5,7 @@ import {EncounterCues} from './EncounterCues';
 import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
 import {getCombatDamageElement} from '../gameAdapter';
-import { invalidateHudLayout, getHudInsets, beginHudOcclusion, markHudOcclusion, finishHudOcclusion, clearHudOcclusion } from './layout';
+import { invalidateHudLayout, getHudInsets, beginHudOcclusion, markHudOcclusion, markHudWarningOcclusion, finishHudOcclusion, clearHudOcclusion } from './layout';
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { familyCount } from '../../game/roguelike/builds';
@@ -20,7 +20,7 @@ import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilitie
 import {setChip, effectChip} from '../boonChips';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds, visitHostileWarnings } from '../gameAdapter';
+import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -194,20 +194,25 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         else obscureWorld(x, y, radius);
     };
+    const statusActive = (target: number) => {
+        const status = game.boonStatuses(target);
+        return status.burning || status.poisoned;
+    };
+    const warningOverlaps = (left: number, top: number, right: number, bottom: number) =>
+        renderer.warningObstructs(left, top, right, bottom);
     const protectPanels = () => {
         onboardingObstacles.length = 0;
         beginHudOcclusion();
         markHudOcclusion(bounds.left, bounds.top, bounds.right, bounds.bottom);
         for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureActor(enemy.id, enemy.x, enemy.y, enemy.radius);
-        for (const enemy of game.enemies.snapshot.enemies) if (enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike') obscureWorld(enemy.meleeOriginX, enemy.meleeOriginY, enemy.meleeShape.range + enemy.meleeShape.width, .05);
         const boss = game.boss.snapshot;
         if (boss.active) obscureActor(-1, boss.x, boss.y, 92);
-        visitHostileWarnings(game, obscureWarning);
         for (const warning of warnings) if (warning.life > 0) {
             obscureWarning(warning.x, warning.y, warning.radius, warning.targetX, warning.targetY);
         }
         for (const pool of game.pools) if (pool.life > 0) obscureWorld(pool.x, pool.y, pool.radius, .05);
         for (const bullet of game.bullets) if (bullet.kind === 'hazard') obscureWorld(bullet.x, bullet.y, bullet.request.radius, .15);
+        markHudWarningOcclusion(warningOverlaps);
         finishHudOcclusion();
     };
     const protect = () => Object.assign(bounds, renderer.playerScreenBounds(game.player.radius));
@@ -592,7 +597,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         masteryHints.tick(renderer, game.status==='playing' ? mastery : null, preferences().masteryHints !== false, elapsed);
         onboarding.tick(elapsed, bounds, onboardingObstacles);
         abilityHints.tick(bounds, true);
-        combatText.tick(elapsed, bounds);
+        combatText.tick(elapsed, bounds, statusActive);
         threats.tick(elapsed);
         toasts.tick(elapsed);
     };
