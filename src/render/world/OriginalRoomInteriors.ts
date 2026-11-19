@@ -1,3 +1,4 @@
+import {mountMatrix,mountObject} from './Room14Mounts';
 import {room14Debris} from './Room14Debris';
 import {addRoom14Fittings} from './Room14Fittings';
 import {addStoryIncident} from './Inc13StoryIncidents';
@@ -33,6 +34,8 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         // The north common-nook solid owns bespoke furniture. Its split low
         // mesh starts above deck height, so generic 3D hero bounds cannot
         // reliably remove the legacy cabinet mounted on this collider.
+        // This solid keeps its native footprint and now wears the ruptured casing.
+        if (id === 'swarm-junction' && furnishing.asset === 'swarm-plenum-tall' && furnishing.x === 300 && furnishing.z < 400) continue;
         if (id === 'shielding-gate' && furnishing.source === 'solid' && furnishing.x === 460 && furnishing.z === 210) continue;
         if (id === 'transmission-chamber' && furnishing.source === 'solid' && furnishing.x === 816 && furnishing.z === 380) continue;
         if (id === 'residential-gallery' && furnishing.source === 'solid'
@@ -97,6 +100,10 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
     instances.push(...room14Debris(id),...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
+    const mount=mountMatrix(id);
+    if(mount)for(const i of instances){
+      if(i.pack==='p11-room14'||i.pack==='p11-inc13-manual'||(id==='residential-gallery'&&i.purpose.startsWith('DRESS13 /'))||(id==='passenger-vault'&&i.purpose.startsWith('DRESS13 /')))i.matrix.premultiply(mount);
+    }
     return instances;
 }
 /** Prepare only compressed or raw GLB bytes. Geometry work stays in the hold. */
@@ -165,9 +172,16 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             root = buildOriginalShipKit(sources, instances, t);
             record?.('kitMerge',performance.now()-mergeStarted);
             const dressingStarted=performance.now();
+            const firstDetail=root.children.length;
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
             addStoryIncident(root,t);
+            const affected:T.Object3D[]=[];
+            for(const detail of root.children.slice(firstDetail))detail.traverse(o=>{
+                const mat=o instanceof T.Mesh?o.material.name:'';
+                if(o.name.startsWith('inc13-')||o.name==='room14-manual-cable'||o.name==='dress13-residential-evacuation-evidence'||o.name==='residential-cabin-drawings'||o.name==='dress13-atrium-fallen-dining-tables'||mat==='dress13-passenger-nameplate'||mat==='checkpoint-foot-return')affected.push(o);
+            });
+            for(const o of affected)mountObject(t.id,o);
             addRoom14Fittings(root,t.id);
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
