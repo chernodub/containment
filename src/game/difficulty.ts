@@ -13,3 +13,9 @@ export function incomingDamageLimit(mode:DifficultyId,family:string):number {
  const base:Record<string,number>={crawler:12,stalker:26,spitter:12,carrier:22,brute:42};
  return Math.min(45,(base[family]??45)*(mode==='story'?.7:mode==='veteran'?1.3:1));
 }
+
+/** Depth is zero-based. Veteran and legacy expeditions retain the original step. */
+export function latePressureProgress(depth: number, mode: DifficultyId, authored: boolean): number {
+ if (depth < 10) return 0;
+ return authored && mode === 'story' ? Math.min(1, (depth - 9) / 3) : 1;
+}

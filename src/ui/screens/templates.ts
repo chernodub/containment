@@ -1,6 +1,6 @@
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
-import {SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,nextAugmentUpgrade,detourOffers} from '../../game/roguelike/economy';
+import {SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
 export type {ContinueSummary} from './initialTemplates';
@@ -170,7 +170,7 @@ export function draftScreen(game: DepthGame): string {
 export function shopScreen(game: DepthGame): string {
   const run=game.expedition.run, resources=game.combat.snapshot;
   const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
-  const upgrade=nextAugmentUpgrade(game.expedition.build);
+  const upgrades=availableAugmentUpgrades(game.expedition.build);
   const outcomes = {
     heal: 'Restore up to 35 health.',
     armor: 'Restore up to 30 armor.',
@@ -178,10 +178,13 @@ export function shopScreen(game: DepthGame): string {
     medkit: 'Add one medkit.',
     grenade: 'Add up to two grenades.',
     reroll: 'Bank one free boon reroll.',
-    upgrade: upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):'Improve an installed augment.',
+    upgrade: 'Improve an installed augment.',
+    revive: SERVICE_CATALOG.revive.description,
   };
-  const cards=SERVICE_IDS.map(id=>{
-    const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id);
+  const cards=SERVICE_IDS.filter(id=>id!=='revive'||game.node.depth===18&&run.version===3)
+    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
+    .map(({id,upgrade})=>{
+    const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
     const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
     let status=`${stock} in stock`;
     if(!stock) status='Sold out';
@@ -192,10 +195,10 @@ export function shopScreen(game: DepthGame): string {
       else if(id==='reroll') status='Reroll bank full';
       else status='Full after allocation';
     }
-    return `<button id="purchase-${id}" class="requisition-item" data-purchase="${id}" ${enabled?'':'disabled'}>
-      ${serviceArt(id)}
+    return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
+      ${serviceArt(id==='revive'?'medkit':id)}
       <strong class="requisition-name">${escapeHtml(name)}</strong>
-      <span class="requisition-outcome">${escapeHtml(outcomes[id])}</span>
+      <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
       <span class="requisition-item-footer"><span class="requisition-price">${cost} CR</span><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
@@ -240,22 +243,27 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   if (!offers.length && destinations.length===1) {
     return `<section class="panel screen-enter"><h2>${nextName}</h2><button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }
-  type RouteCopy = {id:string; name?:string; title?:string; deal?:string; risk?:string; price?:string|number; reward?:string; vignetteKey?:string};
+  const workshop=game.node.depth===fieldWorkshopDepth;
   const options=offers.length
-    ? offers.map((offer:RouteCopy)=>({destination:next, detour:offer.id, title:offer.title??offer.name??nextName,
-      risk:offer.risk, deal:offer.deal??offer.reward, price:offer.price, vignette:offer.vignetteKey??offer.id}))
+    ? offers.flatMap<{destination:typeof next;detour?:(typeof offers)[number]['id'];title:string;risk?:string;reward?:string;vignette?:string;augment?:ReturnType<typeof availableAugmentUpgrades>[number];disabled:boolean}>(offer=>{
+      const augments=offer.id==='salvage'&&workshop?availableAugmentUpgrades(game.expedition.build):[];
+      const base={destination:next,detour:offer.id,title:offer.name,risk:offer.risk,reward:offer.reward,vignette:offer.id==='salvage'?({2:'cache',6:'armor',10:'upgrade',14:'grenade',17:'ammo'} as Record<number,string>)[game.node.depth]??'cache':workshop?'medicine':undefined};
+      if(augments.length)return augments.map(augment=>({...base,augment,vignette:augment,title:`Upgrade ${MUTATION_CATALOG[augment].name}`,
+        reward:playerFacingText(AUGMENT_UPGRADE_RULES[augment]??''),disabled:game.combat.snapshot.credits<180}));
+      return [{...base,augment:undefined,disabled:offer.id==='salvage'&&(workshop||game.node.depth===6&&game.combat.snapshot.credits<70)}];
+    })
     : destinations.map(destination=>({destination, title:ROOM_TEMPLATES[destination.templateId].name,
-      detour:undefined, risk:undefined, deal:undefined, price:undefined, vignette:undefined}));
+      detour:undefined, risk:undefined, reward:undefined,vignette:undefined,augment:undefined,disabled:false}));
   return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
     ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
     <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
     ${offers.length?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
     <div class="route-briefing-grid">
-      ${options.map(({destination,detour,title,risk,deal,price,vignette},index)=>{
+      ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled},index)=>{
         const room=ROOM_TEMPLATES[destination.templateId];
         const encounter=destination.id.endsWith('r3-safe')?'Safer encounter':ROOM_KIND_LABELS[destination.kind];
         const roomReward=destination.reward==='upgrade'?'Boon':destination.reward==='rare-upgrade'?'Rare boon':ROOM_REWARD_LABELS[destination.reward];
-        return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${detour?`data-detour="${escapeHtml(detour)}"`:`data-inspected="${destination.id===selected}"`}>
+        return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'disabled':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
@@ -263,7 +271,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
             ${risk&&risk!==encounter?`<span class="route-option-terms" data-route-term="risk">${icon('warning')} ${escapeHtml(risk)}</span>`:''}
             <span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(deal??roomReward)}</span>
           </span>
-          <span class="route-option-action">${price!==undefined?`${escapeHtml(String(price))} · `:''}Enter sector ${arrow()}</span>
+          <span class="route-option-action">Enter sector ${arrow()}</span>
         </button>`;
       }).join('')}
     </div>

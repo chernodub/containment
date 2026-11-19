@@ -4,7 +4,7 @@ import {ENEMIES} from '../../../src/game/enemies/catalog';
 import {HudCombatFraming} from '../../../src/render/camera/HudCombatFraming';
 import {RoomCombatFraming} from '../../../src/render/camera/RoomCombatFraming';
 import {combatPointVisible} from '../../../src/game/observation/combatVisibility';
-import {SERVICE_IDS,detourOffers} from '../../../src/game/roguelike/economy';
+import * as economy from '../../../src/game/roguelike/economy';
 import * as T from 'three';
 import { DepthGame, type GameEffect, type GameInput } from '../../../src/DepthGame';
 import { GameFeel } from '../../../src/ui/feel';
@@ -28,6 +28,9 @@ import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
 const TICK = 1000 / 60;
+const {SERVICE_IDS,detourOffers} = economy;
+const augmentUpgrades = Reflect.get(economy, 'availableAugmentUpgrades') as typeof economy.availableAugmentUpgrades | undefined;
+
 const WIDTH = 1920, HEIGHT = 1080, VIEW = COMBAT_VIEW_HEIGHT;
 const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
 /** CPU-only observer using the same framing, perspective projection and follow spring. */
@@ -265,6 +268,18 @@ export function runSimulation(options: SimOptions) {
                 }
                 const vitals=game.combat.mutationResources();
                 if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
+                if (room && game.status === 'playing') {
+                    const encounter = game.encounter;
+                    if (encounter.beat !== undefined && !(encounter.lullRemainingMs ?? 0)) {
+                        const enemies = game.enemies.snapshot.enemies.filter(enemy => enemy.beat === encounter.beat);
+                        const objectiveSatisfied = game.siege ? game.siege.remainingMs <= 0
+                            : encounter.grammar === 'priority' && (encounter.canceledReinforcements ?? 0) > 0;
+                        if (objectiveSatisfied || (!encounter.beatRemaining && enemies.length <= 3 && enemies.length > 0)) {
+                            room.cleanupByBeat ??= {};
+                            room.cleanupByBeat[encounter.beat] = (room.cleanupByBeat[encounter.beat] ?? 0) + step / 1000;
+                        }
+                    }
+                }
                 game.update(step, input);
             });
             kit.time += camera.update(game, dt / 1000);
@@ -276,11 +291,11 @@ export function runSimulation(options: SimOptions) {
         if (!room)
             return;
         const stats = game.stats;
-        Object.assign(room, { result, topDamageSources:game.roomDamage, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
+        Object.assign(room, { result, cleanupSeconds: Object.values<number>(room.cleanupByBeat ?? {}).reduce((sum, value) => sum + value, 0), topDamageSources:game.roomDamage, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
             hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, firstHitElapsed:pressure.get(game.node.id)?.firstHitElapsed??null, timeToDeathFromFullHealth:result==='dead'&&lastFullHealthElapsed!==null?game.elapsed-lastFullHealthElapsed:null, timeToDeathFromFirstHit:result==='dead'&&pressure.get(game.node.id)?.firstHitElapsed!=null?game.elapsed-pressure.get(game.node.id)!.firstHitElapsed!:null, hitTimes:pressure.get(game.node.id)?.hitTimes??[], pressure: pressure.get(game.node.id)?.byFamily ?? {},
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
-            overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
+            overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endCredits: game.combat.snapshot.credits, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
         delete room.startStats;
         room = null;
     }
@@ -302,7 +317,7 @@ export function runSimulation(options: SimOptions) {
                 const offers = expeditionRewardOffers(game.expedition);
                 if (offers.length)
                     game.chooseMutation(chooseBoon(offers.map(o => o.id), options.rig, [...game.expedition.build.mutations]));
-                else {const purchase=chooseServicePurchase(SERVICE_IDS.filter(id=>game.canPurchaseService(id)),game.combat.snapshot,game.expedition.build,game.expedition.run);if(purchase)game.purchaseService(purchase);else game.claimResources();}
+                else {const purchase=chooseServicePurchase(SERVICE_IDS.filter(id=>game.canPurchaseService(id)),game.combat.snapshot,game.expedition.build,game.expedition.run);if(purchase)game.purchaseService(purchase,augmentUpgrades?.(game.expedition.build).at(-1));else game.claimResources();}
             }
             else if (game.status === 'route') {
                 const graph = generateRun(options.seed, game.expedition.run.version);
@@ -313,7 +328,9 @@ export function runSimulation(options: SimOptions) {
                     const choice = chooseRoute(choices, game.combat.snapshot.health);
                     if (!choice)
                         throw Error('No earned route');
-                    game.route(choice.id,detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot):undefined);
+                    const augment=augmentUpgrades?.(game.expedition.build).at(-1);
+                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth):undefined;
+                    game.route(choice.id,augmentUpgrades&&game.node.depth===10&&(!augment||game.combat.snapshot.credits<180)?'direct':detour,augment);
                 }
                 feel.reset();
                 for (const presentation of Object.values(presentations))
@@ -333,7 +350,7 @@ export function runSimulation(options: SimOptions) {
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
             room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
-                startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
+                startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
         const statsBefore = game.stats, playerBefore = { ...game.player };

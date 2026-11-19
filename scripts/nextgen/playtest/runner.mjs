@@ -306,7 +306,7 @@ try {
         if(ids.length){const id=chooseBoon(ids,rig,s.build.mutations);await page.locator(`[data-mutation="${id}"]`).click();}
         else {
           const purchase=chooseServicePurchase(s.actions.map(a=>a.purchase).filter(Boolean),s.combat,s.build,s.run);
-          if(purchase)await page.locator(`[data-purchase="${purchase}"]`).click();
+          if(purchase)await page.locator(`[data-purchase="${purchase}"]:not(:disabled)`).last().click();
           else if(s.actions.some(a=>a.id==='claim'))await page.locator('#claim').click();
         }
       } else if(s.status==='route') {
@@ -314,7 +314,11 @@ try {
         else {
           const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
-          if(s.actions.some(a=>a.detour)){await page.locator(`[data-detour="${chooseDetour(s.combat)}"]`).click();}
+          if(s.actions.some(a=>a.detour)){
+            const preferred=chooseDetour(s.combat,s.node.depth);
+            const choice=s.actions.some(a=>a.detour===preferred)?preferred:'direct';
+            await page.locator(`[data-detour="${choice}"]:not(:disabled)`).last().click();
+          }
           else if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
         }
       } else if(s.status==='paused') await page.keyboard.press('Escape');

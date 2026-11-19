@@ -137,7 +137,7 @@ export function isValidRunState(value: unknown): value is RunState {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
-  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['draftRoll','service','detour','rerollTokens'].includes(key)))return false;
+  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
   if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>10||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
   if(record.detour!==undefined){const q=record.detour as RunState['detour'];if(record.version!==3||!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='choice,depth'||!Number.isInteger(q.depth)||!DETOUR_DEPTHS.some(d=>d+1===q.depth)||!['direct','salvage'].includes(q.choice))return false;}
@@ -149,6 +149,7 @@ export function isValidRunState(value: unknown): value is RunState {
   const graph = generateRun(record.seed,record.version as 1|2|3);
   const current = graph.nodes.find(node => node.id === record.currentNodeId);
   if (!current) return false;
+  if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
   if(record.detour!==undefined&&(record.detour as NonNullable<RunState['detour']>).depth!==current.depth)return false;
   if ((record.phase === 'starting-boon' || record.phase === 'rig-select') && (record.version !== 3 || current.id !== graph.startId)) return false;
