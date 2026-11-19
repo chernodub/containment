@@ -60,7 +60,7 @@ export class TelegraphBatch {
     geometry.setAttribute('telegraph', this.shapes);
     geometry.setAttribute('appearance', this.inks);
     const material = new T.ShaderMaterial({ vertexShader: vertex, fragmentShader: fragment,
-      transparent: true, depthWrite: false, depthTest:false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+      transparent: true, depthWrite: false, depthTest:true, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.name = 'ground-telegraphs';
     // Keep the public world-batch order above friendly ground boundaries (18).
@@ -94,7 +94,7 @@ export class TelegraphBatch {
     this.dummy.updateMatrix();
     this.mesh.setMatrixAt(slot, this.dummy.matrix);
     this.shapes.setXYZW(slot, SHAPES[effect.shape], T.MathUtils.clamp(effect.progress ?? 0, 0, 1), T.MathUtils.clamp(effect.arc ?? Math.PI / 2, 0, Math.PI * 2), 1);
-    this.color.set(effect.color ?? 0xff5a36);
+    this.color.set(effect.color ?? 0xff2340);
     this.inks.setXYZW(slot, this.color.r, this.color.g, this.color.b, effect.opacity ?? 1);
     this.mesh.count = Math.max(this.mesh.count, slot + 1);
     this.flush();
