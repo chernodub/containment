@@ -23,13 +23,19 @@
 #combat-text .combat-float[data-source=ability] { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 #combat-text .combat-float[data-source=status] { font-style: italic; }
 #combat-text .combat-float[data-source=boon] { text-decoration: overline; text-decoration-thickness: 1px; }
-#combat-text .combat-float[data-damage-token=neutral] { color: var(--damage-neutral, #f0fbff); }
-#combat-text .combat-float[data-damage-token=kinetic] { color: var(--kinetic, #ffd063); }
-#combat-text .combat-float[data-damage-token=pyro] { color: var(--pyro, #ff7a2e); }
-#combat-text .combat-float[data-damage-token=cryo] { color: var(--cryo, #7fd6ff); }
-#combat-text .combat-float[data-damage-token=acid] { color: var(--acid, #9dff5a); }
-#combat-text .combat-float[data-damage-token=arc] { color: var(--arc, #b79cff); }
-#combat-text .combat-float[data-damage-token=healing] { color: var(--healing, #8ce6c3); }
+#combat-text .combat-float[data-damage-token=neutral] { --combat-ink: var(--damage-neutral, #f0fbff); }
+#combat-text .combat-float[data-damage-token=kinetic] { --combat-ink: var(--kinetic, #ffd063); }
+#combat-text .combat-float[data-damage-token=pyro] { --combat-ink: var(--pyro, #ff7a2e); }
+#combat-text .combat-float[data-damage-token=cryo] { --combat-ink: var(--cryo, #7fd6ff); }
+#combat-text .combat-float[data-damage-token=acid] { --combat-ink: var(--acid, #9dff5a); }
+#combat-text .combat-float[data-damage-token=arc] { --combat-ink: var(--arc, #b79cff); }
+#combat-text .combat-float[data-damage-token=healing] { --combat-ink: var(--healing, #8ce6c3); }
+#combat-text .combat-float[data-kind=status] {color:var(--combat-ink,#f0fbff);}
+#combat-text .combat-float[data-kind=damage] {color:#f0eee5;text-decoration:none;}
+#combat-text .combat-float[data-kind=damage]:not([data-damage-token=neutral])::after {
+  content:""; display:inline-block; vertical-align:middle;
+  width:.16em; height:.16em; margin-left:.16em; background:var(--combat-ink);
+}
 #combat-text .combat-float[data-critical=true] { font-size: 40px; }
 /* A kill keeps its element; size, weight and the × mark emphasize the outcome. */
 #combat-text .combat-float[data-lethal=true] { font-size: 42px; font-weight: 800; text-shadow: -1px 0 #061018, 1px 0 #061018, 0 -1px #061018, 0 2px 1px #020609, 0 0 7px currentColor; }

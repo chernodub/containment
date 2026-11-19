@@ -270,8 +270,8 @@ void main(){
   float fade=1.-smoothstep(.5,1.,k);
   float crisp=exp(-age*2.5);
   vec3 ice=vec3(.5,.8,1.);
-  emit=(ice*(veins*.32+fern*.5+band*.12)*(.35+1.3*crisp))*cover*fade*fxIntensity;
-  alpha=cover*(.015+patchy*.03+veins*.22+band*.14+fern*.2)*fade;
+  emit=(ice*(veins*.14+fern*.5+band*.12)*(.35+1.3*crisp))*cover*fade*fxIntensity;
+  alpha=cover*(.015+patchy*.03+veins*.11+band*.14+fern*.2)*fade;
   base=fxParam>.5?vec3(.035,.085,.12):vec3(.66,.82,.9);
   if(fxParam>.5)alpha+=cover*(.18+patchy*.18)*fade;
   if(m>11.5){
@@ -330,12 +330,14 @@ void main(){
   float fade=fxParam;
   // Pool (m 8): soft irregular soot underlay rather than an opaque disc; strips keep the dense film.
   float soot=m>10.5?.94:(.42+.3*fxFbm(q*.5+7.))*(1.-smoothstep(R*.55,R,r)*.35);
-  alpha=edge*(soot+channels*.2+rim*.3)*fade;
+  float islands=smoothstep(.51,.78,n)*smoothstep(R*.22,R*.68,r);
+  float fireDetail=m>10.5?1.:max(rim,islands);
+  alpha=edge*(soot*(m>10.5?1.:.27)+channels*.2*fireDetail+rim*.3)*fade;
   base=vec3(.004,.002,.001);
   // Pool edge stays orange-amber so it never reads as the hostile red warning.
   vec3 flame=m>10.5?mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
   flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
-  emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity;
+  emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity*fireDetail;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -394,8 +396,8 @@ void main(){
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
    float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
-   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.18)+vec3(1.,1.4,1.9)*pulse*1.3;
-   alpha=inside*(.02+c.z*.03+crack*.2+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
+   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.07)+vec3(1.,1.4,1.9)*pulse*.55;
+   alpha=inside*(.01+c.z*.01+crack*.08+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
    // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
@@ -440,6 +442,16 @@ void main(){
   alpha=min(.12,mark*.16);base=vec3(.025,.08,.13);
   emit=(fxColor*.22+vec3(.12))*mark*fxIntensity;
  }
+ #ifdef HAS_ABILITY_PRIORITY_MASK
+ // Ground sheets keep a flat, quiet tint underneath the warning.
+ bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5);
+ if(groundSheet){
+  float warning=prioritySample.g;
+  float coverage=step(.004,alpha+dot(emit,vec3(.333)));
+  alpha=mix(alpha,.18*coverage,warning);
+  emit=mix(emit,vec3(0.),warning);
+ }
+ #endif
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
