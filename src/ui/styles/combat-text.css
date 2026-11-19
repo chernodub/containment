@@ -24,7 +24,7 @@
 #combat-text .combat-float[data-source=status] { font-style: italic; }
 #combat-text .combat-float[data-source=boon] { text-decoration: overline; text-decoration-thickness: 1px; }
 #combat-text .combat-float[data-damage-token=neutral] { color: var(--damage-neutral, #f0fbff); }
-#combat-text .combat-float[data-damage-token=kinetic] { color: var(--kinetic, #ffb454); }
+#combat-text .combat-float[data-damage-token=kinetic] { color: var(--kinetic, #ffd063); }
 #combat-text .combat-float[data-damage-token=pyro] { color: var(--pyro, #ff7a2e); }
 #combat-text .combat-float[data-damage-token=cryo] { color: var(--cryo, #7fd6ff); }
 #combat-text .combat-float[data-damage-token=acid] { color: var(--acid, #9dff5a); }

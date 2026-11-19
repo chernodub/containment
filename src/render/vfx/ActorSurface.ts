@@ -16,7 +16,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const hierarchy = { value: new T.Vector3(friendly ? .42 : .42, friendly ? .55 : 0, friendly ? 2.6 : elite ? 2.3 : 1.8) };
   const lanternColor = { value: new T.Color(0xffffff) };
   const reveal = { value: 0 };
-  const rigColor = { value: new T.Color(0xffb454) };
+  const rigColor = { value: new T.Color(0xffd063) };
   for (const material of materials) {
     material.userData.containmentMarineSurface=friendly;
     const previous = material.onBeforeCompile;

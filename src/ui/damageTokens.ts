@@ -5,7 +5,7 @@ import type {BoonEffect} from '../game/roguelike/ElementalRuntime';
 /** Combat hue is the damage's element, never its accounting category. */
 export const DAMAGE_TOKENS = Object.freeze({
   neutral: {variable: '--damage-neutral', color: '#f0fbff'},
-  kinetic: {variable: '--kinetic', color: '#ffb454'},
+  kinetic: {variable: '--kinetic', color: '#ffd063'},
   cryo: {variable: '--cryo', color: '#7fd6ff'},
   pyro: {variable: '--pyro', color: '#ff7a2e'},
   arc: {variable: '--arc', color: '#b79cff'},

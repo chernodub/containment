@@ -290,7 +290,7 @@ export class ElementKit {
                 Math.cos(a) * speed, cold ? 2 + i % 5 * .55 : .7 + i % 5 * .24, Math.sin(a) * speed,
                 cold ? .12 + Math.sin(i * 7.13) ** 2 * .17 : .025 + i % 3 * .012,
                 cold ? 1.2 + i % 3 * .15 : .38 + i % 3 * .09,
-                cold ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 4 ? 0xffb454 : 0xe8fbff));
+                cold ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 4 ? 0xffd063 : 0xe8fbff));
         }
     }
     /** Thick hot core, broad corona and persistent glowing air, all in the existing ribbon draw. */
