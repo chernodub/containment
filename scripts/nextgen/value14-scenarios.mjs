@@ -12,7 +12,7 @@ export function registerValue14Scenarios(scenarios) {
       const setup = melee.setup.toString().replaceAll('awakening-bay', room);
       scenarios.push({...melee, id: `value14-${family}-attack-${room}`, room, diagnosticOnly: true,
         setup: new Function(`return (${setup})();`)});
-      const calm = setup.replace(/let e;for.*?(?=d\.g5Proof=)/s, '');
+      const calm = setup.replace(/\/\/ The ranged Spitter.*?(?=d\.g5Proof=)/s, '');
       scenarios.push({...melee, id: `value14-${family}-calm-${room}`, room, diagnosticOnly: true, burst: false,
         setup: new Function(`return (${calm})();`)});
     }

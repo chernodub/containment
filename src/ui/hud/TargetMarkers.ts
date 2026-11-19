@@ -5,7 +5,7 @@ import {hudObstructs, presentationObstructs} from './layout';
 
 import type {EncounterCues} from './EncounterCues';
 
-const gold = '#eac786';
+const paleCrest = '#dbe8f1';
 const violet = '#c3a9ed';
 
 export class TargetMarkers {
@@ -36,7 +36,7 @@ export class TargetMarkers {
             const point = projectWorld(renderer, cue.x, cue.y, this.point, .12);
             if (!point.visible || hudObstructs(point.x - 28, point.y - 20, point.x + 28, point.y + 20)) continue;
             this.painted = true;
-            ctx.strokeStyle = cue.kind === 'priority' ? '#81c8b7' : '#eac786';
+            ctx.strokeStyle = cue.kind === 'priority' ? '#81c8b7' : '#fff0ce';
             ctx.globalAlpha = cue.life * .8;
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -55,7 +55,7 @@ export class TargetMarkers {
             this.painted = true;
             ctx.lineJoin = 'round';
             if (enemy.priority) {
-                ctx.strokeStyle = gold;
+                ctx.strokeStyle = paleCrest;
                 ctx.lineWidth = 2.8;
                 ctx.beginPath();
                 ctx.moveTo(x - 13, y - 7);
@@ -67,21 +67,6 @@ export class TargetMarkers {
                 ctx.lineTo(x - 5, y - 2);
                 ctx.closePath();
                 ctx.stroke();
-
-                ctx.strokeStyle = '#eac78655';
-                ctx.lineWidth = 1;
-                let links = 0;
-                for (const escort of enemies) {
-                    if (escort.health <= 0 || escort.priority || escort.beat !== enemy.beat ||
-                        (escort.role !== 'screen' && escort.role !== 'anchor')) continue;
-                    projectWorld(renderer, escort.x, escort.y, this.point, .22);
-                    if (!this.point.visible || hudObstructs(this.point.x, this.point.y, this.point.x, this.point.y)) continue;
-                    ctx.beginPath();
-                    ctx.moveTo(x, body.bottom);
-                    ctx.lineTo(this.point.x, this.point.y);
-                    ctx.stroke();
-                    if (++links === 3) break;
-                }
             }
             if (enemy.controlResistant) {
                 const resisted = game.boonStatuses(enemy.id).controlResisted;
@@ -95,11 +80,6 @@ export class TargetMarkers {
                 ctx.lineTo(iconX, y + 7);
                 ctx.lineTo(iconX - 5, y + 2);
                 ctx.closePath();
-                ctx.stroke();
-                ctx.strokeStyle = resisted ? '#e2bcffcc' : '#c3a9ed72';
-                ctx.beginPath();
-                ctx.ellipse(x, (body.top + body.bottom) / 2, Math.max(5, (body.right - body.left) / 2),
-                    Math.max(5, (body.bottom - body.top) / 2), 0, Math.PI * .78, Math.PI * 1.25);
                 ctx.stroke();
                 if (resisted) {
                     ctx.font = '700 18px Barlow, sans-serif';
