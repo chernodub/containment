@@ -1,4 +1,4 @@
-import {AUTHORED_ENCOUNTERS,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
+import {AUTHORED_ENCOUNTERS,STORY_ENCOUNTER_OVERRIDES,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
 import {DIFFICULTIES,latePressureProgress,type DifficultyId} from '../difficulty';
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
@@ -32,7 +32,8 @@ export type EncounterSnapshot = Readonly<{
 function authoredPlan(options:EncounterOptions):EncounterPlan {
  const {node}=options,mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(node.depth,mode,true);
- const source=[...AUTHORED_ENCOUNTERS[node.depth]];const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;if(extra)source.push(extra);
+ const storyOverride=mode==='story'?STORY_ENCOUNTER_OVERRIDES[node.depth]:undefined;
+ const source=[...(storyOverride??AUTHORED_ENCOUNTERS[node.depth])];const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;if(extra)source.push(extra);
  let state=(options.seed^Math.imul(node.depth+1,0x9e3779b9))>>>0;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
@@ -44,7 +45,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    // Later Story and Standard firing lanes retain one more ranged threat.
    // Earlier teaching beats are unchanged.
    const extraRanged=group.family==='spitter'&&node.depth>=10&&(options.difficulty==='story'||options.difficulty==='standard');
-   const count=baseCount+(extraRanged?1:0);
+   const standardFinaleEscort=mode==='standard'&&node.depth===19&&beat.grammar==='siege'&&group.role==='screen';
+   const count=baseCount+(extraRanged?1:0)+(standardFinaleEscort?1:0);
    for(let index=0;index<count;index++){
     // Exchange only the final body, preserving the pack's original arrival times.
     const rangedRelief=options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1&&index===count-1;
