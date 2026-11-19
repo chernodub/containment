@@ -1,6 +1,5 @@
-"""KA12 title-only second pass. Blender 5.3, original MIT scene dressing.
-blender -b -t 4 -P tools/assets/u10-keyart/title.py -- --round=21 --preview
-Final: --round=25 --layers. Accepted ending remains in stage.py.
+"""TITLE15 cast in the KA12 breach. See docs/nextgen/TITLE15-REPORT.md.
+Use --preview --study for a composition study or --actor-plates for delivery.
 """
 import sys,math,random
 from pathlib import Path
@@ -18,7 +17,7 @@ rng=random.Random(1729)
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
 s=bpy.context.scene;s.render.engine='CYCLES';choose_render_device(s);s.cycles.samples=24 if '--preview' in args else 128;s.cycles.use_denoising=True
 s.cycles.volume_bounces=2;s.cycles.adaptive_threshold=.025
-s.render.resolution_x=1920 if '--preview' in args else 2560;s.render.resolution_y=s.render.resolution_x*9//16;s.render.resolution_percentage=100
+s.render.resolution_x=1920 if '--preview' in args else 2560;s.render.resolution_y=s.render.resolution_x*9//16;s.render.resolution_percentage=35 if '--study' in args else 100
 s.render.image_settings.file_format='PNG';s.render.image_settings.color_mode='RGBA'
 s.view_settings.view_transform='AgX';s.view_settings.look='AgX - Medium High Contrast';s.view_settings.exposure=-1.6
 s.world.use_nodes=True;s.world.node_tree.nodes['Background'].inputs[0].default_value=(.025,.04,.06,1);s.world.node_tree.nodes['Background'].inputs[1].default_value=.006
@@ -43,15 +42,27 @@ def tube(name,pts,r=.025,mat=wire,p='background'):
  spl=d.splines.new('BEZIER');spl.bezier_points.add(len(pts)-1)
  for b,co in zip(spl.bezier_points,pts):b.co=co;b.handle_left_type=b.handle_right_type='AUTO'
  o=bpy.data.objects.new(name,d);bpy.context.collection.objects.link(o);o.data.materials.append(mat);return register(o,p)
+# Compensate for the retained amber key in the close-up paint, preserving wear.
+import materials as suit
+suit.PALETTE.update(amber=(.88,.72,.012), ceramic=(.30,.56,.85))
 objects,meshes,arm=stage_hero('breacher',curl=65)
 for o in objects:register(o,'hero')
 hidden.update(o for o in objects if o.hide_render)
 for o in objects:
  if o.parent not in objects:o.matrix_world=Matrix.Rotation(math.radians(23),4,'Z')@o.matrix_world
 for mat in bpy.data.materials:
+ if mat.name.startswith('K10-rifle-baked-zones'):
+  # A cool mid-grey receiver under the amber key, retaining the KA12 atlas markings.
+  tree=mat.node_tree
+  bs=tree.nodes.get('Principled BSDF')
+  base_color=bs.inputs['Base Color']
+  atlas=base_color.links[0].from_socket
+  grade=tree.nodes.new('ShaderNodeMixRGB');grade.blend_type='MULTIPLY'
+  grade.inputs[0].default_value=1;grade.inputs[2].default_value=(.64,1,1.8,1)
+  tree.links.new(atlas,grade.inputs[1]);tree.links.new(grade.outputs[0],base_color)
  if mat.name=='k12-hazard':
   # Clean amber paint; a separate surface-aligned unit stencil is added below.
-  n=mat.node_tree.nodes;n.clear();out=n.new('ShaderNodeOutputMaterial');bs=n.new('ShaderNodeBsdfPrincipled');bs.inputs['Base Color'].default_value=(.86,.34,.02,1);bs.inputs['Roughness'].default_value=.32
+  n=mat.node_tree.nodes;n.clear();out=n.new('ShaderNodeOutputMaterial');bs=n.new('ShaderNodeBsdfPrincipled');bs.inputs['Base Color'].default_value=(*suit.PALETTE["amber"],1);bs.inputs['Roughness'].default_value=.44
   mat.node_tree.links.new(bs.outputs[0],out.inputs['Surface'])
  if 'visor' in mat.name and mat.use_nodes:
   bs=mat.node_tree.nodes.get('Principled BSDF')
@@ -131,16 +142,44 @@ bpy.ops.object.text_add();sign=bpy.context.object;sign.name='Small bulkhead sten
 sign.rotation_euler=Matrix((right,V((0,0,1)),-forward)).transposed().to_euler();sign.data.materials.append(insulation);register(sign)
 # Creature staging: their source meshes stay untouched. Presentation materials suppress
 # broad shell fill while retaining the authored emission map for caste lanterns.
-def brood(file,x,y,z,height,yaw=0,tilt=0,lean=0):
- before=set(bpy.data.objects);bpy.ops.import_scene.gltf(filepath=str(ROOT/f'public/assets/models/{file}.glb'));obs=[o for o in bpy.data.objects if o not in before];ms=[o for o in obs if o.type=='MESH']
+def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
+ before=set(bpy.data.objects)
+ bpy.ops.import_scene.gltf(filepath=str(ROOT/f'public/assets/models/plain/{file}.glb'))
+ obs=[o for o in bpy.data.objects if o not in before]
+ ms=[o for o in obs if o.type=='MESH']
  for o in ms:
-  if 'elite' in o.name or 'boss' in o.name:o.hide_render=True
-  for idx,mat in enumerate(o.data.materials):
-   m=mat.copy();o.data.materials[idx]=m
-   if m.use_nodes:
-    for bs in [n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED']:
-     for l in list(bs.inputs['Base Color'].links):m.node_tree.links.remove(l)
-     bs.inputs['Base Color'].default_value=(.009,.012,.016,1);bs.inputs['Roughness'].default_value=.29;bs.inputs['Metallic'].default_value=.25;bs.inputs['Emission Strength'].default_value=5
+  o.hide_render=not o.name.split('.')[0].endswith('-'+rank)
+  if o.hide_render:continue
+  for mat in o.data.materials:
+   nodes=mat.node_tree.nodes
+   links=mat.node_tree.links
+   bs=next(n for n in nodes if n.type=='BSDF_PRINCIPLED')
+   # Strip the inherited ember albedo from shell and organs. The bone zones
+   # retain their atlas values while the emission map supplies family colour.
+   base_color=bs.inputs['Base Color']
+   albedo=base_color.links[0].from_socket
+   grade=nodes.new('ShaderNodeHueSaturation')
+   grade.inputs['Saturation'].default_value=.06
+   grade.inputs['Value'].default_value=.77
+   links.new(albedo,grade.inputs['Color'])
+   links.new(grade.outputs['Color'],base_color)
+   bs.inputs['Roughness'].default_value=.46
+   glow=bs.inputs['Emission Color']
+   mask=glow.links[0].from_socket
+   tint=nodes.new('ShaderNodeMixRGB')
+   tint.inputs[1].default_value=(0,0,0,1)
+   tint.inputs[2].default_value=(*lantern,1)
+   links.new(tint.outputs[0],glow)
+   # Glow atlas channels encode family colours. Take their maximum so a red
+   # mask is as luminous as a green mask before assigning the title hue.
+   split=nodes.new('ShaderNodeSeparateColor')
+   links.new(mask,split.inputs[0])
+   rg=nodes.new('ShaderNodeMath');rg.operation='MAXIMUM'
+   rgb=nodes.new('ShaderNodeMath');rgb.operation='MAXIMUM'
+   links.new(split.outputs[0],rg.inputs[0]);links.new(split.outputs[1],rg.inputs[1])
+   links.new(rg.outputs[0],rgb.inputs[0]);links.new(split.outputs[2],rgb.inputs[1])
+   links.new(rgb.outputs[0],tint.inputs[0])
+   bs.inputs['Emission Strength'].default_value=0 if rank=='boss' else 9
  pts=[o.matrix_world@V(c) for o in ms if not o.hide_render for c in o.bound_box];lo=min(p.z for p in pts);hi=max(p.z for p in pts);cx=(min(p.x for p in pts)+max(p.x for p in pts))/2;cy=(min(p.y for p in pts)+max(p.y for p in pts))/2
  # glTF imports native animal forward along +X. Aim toward camera, slightly across frame.
  angle=math.atan2(-forward.y,-forward.x)+math.radians(yaw)
@@ -150,11 +189,18 @@ def brood(file,x,y,z,height,yaw=0,tilt=0,lean=0):
   register(o,'midground')
  hidden.update(o for o in obs if o.hide_render)
  return obs
-brood('tyrant',.3,-.5,.15,1.8,60,lean=25)
+warden=brood('tyrant','boss',(1,.85,.5),.17,-.40,.18,1.90,-18,lean=20)
+# Grazing bounce on the ram mask. Link it to the cast to preserve the wreck lighting.
+receivers=bpy.data.collections.new('Brood bounce receivers')
+for o in warden:
+ if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
+bounce=area_light('Ram mask bounce',P(-1.4,-2.3,2.2),170,1.2,(.70,.79,1),target=P(.2,-.4,1.1))
+bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
-brood('dretch',-.3,-1.1,2.1,.65,90,-20)
-brood('dretch',-1.0,-1,1.45,.65,-90,25)
-brood('marauder',-.85,4.8,0,2.7,45)
+crawler=brood('dretch','base',(1,.003,.33),-.46,-.82,2.20,.36,72,66,lean=12)
+stalker=brood('basilisk','base',(.24,.008,1),-.98,-.84,1.50,.48,-54,-62,lean=16)
+for o in crawler+stalker:
+ if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
 # Backlighting makes hard shell rims, while the lit volume separates silhouettes.
 area_light('Crawler edge cut',P(-1,1,2.7),450,.45,(.65,.75,1),target=P(-.7,-1,2))
 area_light('Breach cold rim',P(.2,3.8,2.2),1300,1.3,(.48,.52,1),target=P(0,-1,1.4))
@@ -188,9 +234,9 @@ for p,items in plates.items():
  for o in items:o['ka12Plate']=p
 s.render.film_transparent=False;s.render.filepath=str(OUT/'composition.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'stage.blend'))
-if '--layers-only' not in args:bpy.ops.render.render(write_still=True)
-if '--layers' in args:
- for plate in plates:
+if '--layers-only' not in args and '--actor-plates' not in args:bpy.ops.render.render(write_still=True)
+if '--layers' in args or '--actor-plates' in args:
+ for plate in (('midground','hero') if '--actor-plates' in args else plates):
   for name,items in plates.items():
    for o in items:
     o.hide_render=o in hidden;o.is_holdout=False
