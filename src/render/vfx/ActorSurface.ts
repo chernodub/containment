@@ -9,7 +9,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
   const rimColor = { value: new T.Color(friendly ? 0x78838c : elite ? 0xc1d8e5 : 0x91b9d1) };
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
-  const rimStrength = { value: friendly ? .035 : elite ? .20 : .12 };
+  const rimStrength = { value: friendly ? .035 : elite ? .24 : .19 };
   // LIGHT13 hierarchy: marine = brightest, most saturated figure (self-lit plates,
   // rig colour on top-facing armour, hot visor); creatures = dark masses with a
   // cool rim and hot lanterns. x: body value / plate lift, y: rig crown, z: emissive gain.
@@ -50,14 +50,19 @@ float marineTop=smoothstep(-.15,.45,dot(normalize(normal),marineUp));
 float marinePlate=smoothstep(.06,.30,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
 diffuseColor.rgb=mix(diffuseColor.rgb,actorRigColor,.65*marineTop*marinePlate);
 reflectedLight.directDiffuse*=mix(vec3(1.0),actorRigColor*1.5,.75*marineTop*marinePlate);
-totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.35+.65*marinePlate)*actorStageLight+actorRigColor*marineTop*marinePlate*actorHierarchy.y*actorStageLight;` : `float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
-totalEmissiveRadiance=max(vec3(0.0),mix(vec3(lanternLuma),totalEmissiveRadiance,1.35))*actorHierarchy.z*(1.0+actorReveal);`}
+totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.35+.65*marinePlate)*actorStageLight+actorRigColor*marineTop*marinePlate*actorHierarchy.y*actorStageLight;` : `vec3 creatureUp=viewMatrix[1].xyz;
+float dorsal=smoothstep(.25,.82,dot(nonPerturbedNormal,creatureUp));
+float shell=smoothstep(.018,.19,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
+float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);
+float shellLift=dorsal*mix(.55,1.0,shell)*mix(1.0,.21,limb);
+float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
+totalEmissiveRadiance=max(vec3(0.0),mix(vec3(lanternLuma),totalEmissiveRadiance,1.35))*actorHierarchy.z*(1.0+actorReveal)+vec3(.069,.084,.106)*shellLift*actorStageLight*actorCamouflage*(1.0-actorDissolve);`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.50,.72,1.0),.6)'}*actorRim*(actorRimStrength+actorReveal*.28)*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity+deathColor*deathContact;`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v8-light14:${friendly ? 'marine' : 'alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v8-light14:marine' : 'actor-surface-v9-value14:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
@@ -67,7 +72,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.50,.7
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },
     plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },
-    identity(color:number,champion=false,strength?:number) { rimColor.value.setHex(color);rimStrength.value=strength??(champion?.28:elite?.20:.12); },
+    identity(color:number,champion=false,strength?:number) { rimColor.value.setHex(color);rimStrength.value=strength??(champion?.28:elite?.24:.19); },
     reveal(value: number) { reveal.value = value; },
     hit(value: number) { flash.value = T.MathUtils.clamp(value, 0, 1); },
     dissolve(value: number) { dissolve.value = T.MathUtils.clamp(value, 0, 1); },
