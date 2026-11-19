@@ -1219,3 +1219,13 @@ sheets and source/failure receipts. It reads ordinary G6 frame02; only a missing
 Manual Control frame may use an explicitly supplied DRESS13 frame01, labeled on
 the sheet. It does not alter capture guards or turn a failed burst into a pass.
 The room indexes also include historical/current calm pairs with native links. Defaults use the consolidated final gallery parents; replacement JSON names explicitly recaptured cells and retains every parent failure receipt. Per-room native review captures live in `landmark-correction/room-reviews/`.
+
+## VALUE14 danger and creature value review
+
+The opt-in `value14-crowd-<room>` and `value14-<family>-{calm,attack}-<room>`
+cases replay the existing native melee staging in Relay Racks, Swarm Junction
+and Crew Checkpoint. Use the exact scenario IDs with `--scenarios` and keep seed,
+viewport and burst settings identical across distributions. The crowd requests
+twenty contacts and reports live counts. The `value14-overlap-<rig>` cases use
+native tactical input during the mixed crowd. Use `g4-danger-napalm-charge` for
+the separate sustained Napalm case and its `-low` counterpart for Low.

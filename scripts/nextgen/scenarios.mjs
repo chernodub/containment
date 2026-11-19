@@ -936,3 +936,6 @@ SCENARIOS.push({
     "g.enemies.spawn(families[i],p.x,p.y,false,{beat:0,role:i===13?'brood':i<3?'screen':undefined,priority:i===13,controlResistant:i===13}).enemy?.id"
   )})();`),
 });
+
+import {registerValue14Scenarios} from './value14-scenarios.mjs';
+registerValue14Scenarios(SCENARIOS);

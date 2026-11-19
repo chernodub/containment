@@ -33,6 +33,8 @@
   --cyan: #9fe8ff;
   /* Reward gold, kinetic amber and fire orange have separate meanings. */
   --gold: #ffd27a;
+  --neutral-accent: #fff0ce;
+  --hostile-warning: #ff2340;
   --damage-neutral: #f0fbff;
   --healing: #8ce6c3;
   --danger: #ff5a36;

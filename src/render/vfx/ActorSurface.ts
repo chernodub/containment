@@ -23,12 +23,13 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     const previousKey = material.customProgramCacheKey();
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
-      Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor, actorLanternColor: lanternColor });
+      Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
+      if (!friendly) shader.uniforms.actorLanternColor = lanternColor;
       shader.vertexShader = 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;').replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `uniform vec3 actorLanternColor;uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `${friendly ? '' : 'uniform vec3 actorLanternColor;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
@@ -53,11 +54,13 @@ diffuseColor.rgb=mix(diffuseColor.rgb,actorRigColor,.65*marineTop*marinePlate);
 reflectedLight.directDiffuse*=mix(vec3(1.0),actorRigColor*1.5,.75*marineTop*marinePlate);
 totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.35+.65*marinePlate)*actorStageLight+actorRigColor*marineTop*marinePlate*actorHierarchy.y*actorStageLight;` : `vec3 creatureUp=viewMatrix[1].xyz;
 float dorsal=smoothstep(.25,.82,dot(nonPerturbedNormal,creatureUp));
-float shell=smoothstep(.018,.19,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
+float shellValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+float shell=smoothstep(.018,.19,shellValue);
 float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);
 float shellLift=dorsal*mix(.55,1.0,shell)*mix(1.0,.21,limb);
+float crest=shellLift*smoothstep(.13,.23,shellValue)*step(2.2,actorHierarchy.z);
 float lanternPeak=max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b));
-totalEmissiveRadiance=actorLanternColor*lanternPeak*actorHierarchy.z*(1.0+actorReveal)+vec3(.069,.084,.106)*shellLift*actorStageLight*actorCamouflage*(1.0-actorDissolve);`}
+totalEmissiveRadiance=actorLanternColor*lanternPeak*actorHierarchy.z*(1.0+actorReveal)+(vec3(.069,.084,.106)*shellLift+vec3(.095,.105,.115)*crest)*actorStageLight*actorCamouflage*(1.0-actorDissolve);`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;

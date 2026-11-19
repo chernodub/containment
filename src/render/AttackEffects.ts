@@ -59,7 +59,7 @@ else if(style>5.5){
    sweep=max(sweep,leadingEdge*urgency);
   }
  }
- alpha=max(fill*mix(.75,1.,warningFillScale),sweep*(.48+.36*flashScale));
+ alpha=max(fill*warningFillScale,sweep*(.48+.36*flashScale));
  if(alpha<.005)discard;
  color=mix(vec3(.89,.002,.014),vec3(1.65,.018,.044),sweep);
 
@@ -214,7 +214,8 @@ export class AttackEffects {
   // coverage to 2.5% of the viewport. Edges are deliberately outside this budget.
   if(this.priorityCamera){let l=1,r=-1,t=1,b=-1;for(let k=0;k<4;k++){const p=this.priorityPoint.set(k&1?maxX:minX,.04,k&2?maxZ:minZ).project(this.priorityCamera);l=Math.min(l,p.x);r=Math.max(r,p.x);t=Math.min(t,p.y);b=Math.max(b,p.y);}
    const area=Math.max(0,Math.min(1,r)-Math.max(-1,l))*Math.max(0,Math.min(1,b)-Math.max(-1,t))*.25;
-   this.warningCoverage+=area*(heavy?.18:.09);
+   const urgency=1-T.MathUtils.smoothstep(Math.max(0,remaining)/1000,.055,.30);
+   this.warningCoverage+=area*T.MathUtils.lerp(.025,heavy?.30:.24,urgency);
   }
  }
  private warningRoot(i:number):number{while(this.warningParents[i]!==i)i=this.warningParents[i];return i;}
