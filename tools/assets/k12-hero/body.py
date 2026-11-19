@@ -444,7 +444,7 @@ class Suit:
             lame = P([(-62 + k * 5, -30 - k * 18), (62 - k * 5, -30 - k * 18), (66 - k * 5, -6 - k * 18), (-66 + k * 5, -6 - k * 18)])
             o = kit.plate(f'{rig} pauldron lame {k} {side}', kit.fillet(lame, 5, 3 if self.high else 1), proj, self.bvh[name], .018 + (.01 if big else 0) - k * .003, .010,
                           None, .004, self.high, 48 if self.high else 12, unit=unit)
-            self.add(o, col if k == 0 else 'ceramic', bone)
+            self.add(o, col, bone)
         if self.high:
             for lon in (-40, 40):
                 p, n = kit.cast(self.bvh[name], proj, lon * scale, 20 * scale)
@@ -477,7 +477,7 @@ class Suit:
         for s in (1, -1):
             x = s * .125
             barrel = kit.cylinder('breacher ram barrel', (x, -.21, 1.30), (x, -.21, 1.52), .030, 24 if self.high else 10, self.col)
-            self.add(barrel, 'gunmetal', 'ribs')
+            self.add(barrel, col, 'ribs')
             rod = kit.cylinder('breacher ram rod', (x, -.21, 1.52), (x, -.21, 1.68), .015, 20 if self.high else 8, self.col)
             self.add(rod, 'steel', 'ribs')
             self.ring('ram gland', V((x, -.21, 1.52)), (0, 0, 1), .032, .014, bone='ribs')
@@ -559,7 +559,7 @@ class Suit:
         for s in (1, -1):
             c = V((s * .15, -.225, 1.50))
             core = kit.cylinder('arc coil core', c + V((0, 0, -.12)), c + V((0, 0, .14)), .020, 20 if self.high else 8, self.col)
-            self.add(core, 'gunmetal', 'ribs')
+            self.add(core, col, 'ribs')
             turns = 14 if self.high else 6
             pts = [c + V((math.cos(a) * .032, math.sin(a) * .032, -.10 + .20 * a / (turns * math.tau))) for a in [i * math.tau / (12 if self.high else 6) for i in range(turns * (12 if self.high else 6) + 1)]]
             coil = kit.sweep('arc coil winding', pts, .0055, 8 if self.high else 4, collection=self.col)

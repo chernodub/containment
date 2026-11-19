@@ -11,7 +11,8 @@ import bpy
 PALETTE = {
     # linear RGB
     'ceramic': (.52, .49, .41),       # warm ivory paint over composite
-    'ceramic_game': (.84, .81, .72),
+    'ceramic_game': (.80, .84, .88),   # HERO14: neutral-cool white, never cream
+    'amber_game': (.95, .60, .04),     # HERO14: yellow-amber, apart from hostile orange
     'amber': (.86, .34, .02),
     'ice': (.07, .36, .74),
     'fire': (.74, .09, .02),
@@ -62,7 +63,7 @@ ROLES = {
     'arc_glow': ('glow', 'arc_glow', .3, .0, .0, .0),
 }
 GLOW_STRENGTH = {'glow': 6.0, 'amber_glow': 5.0, 'ice_glow': 5.5, 'fire_glow': 6.0, 'arc_glow': 6.0}
-GAME_VALUE = {'ceramic': 'ceramic_game', 'fabric': 'fabric_game', 'graphite': 'graphite_game', 'gunmetal': 'gunmetal_game', 'rubber': 'rubber_game'}
+GAME_VALUE = {'ceramic': 'ceramic_game', 'amber': 'amber_game', 'fabric': 'fabric_game', 'graphite': 'graphite_game', 'gunmetal': 'gunmetal_game', 'rubber': 'rubber_game'}
 
 _cache = {}
 COORD_SCALE = 1.0   # object-space texture scale (1/6.8 for meshes stored in source units)
@@ -265,7 +266,7 @@ def build(role, mode='render'):
         wave.inputs['Scale'].default_value = 7.0; wave.inputs['Distortion'].default_value = 0
         links.new(m['object'], wave.inputs['Vector'])
         band = _ramp(nodes, links, wave.outputs['Fac'], [(.48, 0), (.52, 1)])
-        paint = _mix(nodes, links, band, PALETTE['amber'] + (1,), PALETTE['marking'] + (1,))
+        paint = _mix(nodes, links, band, PALETTE['amber_game' if game else 'amber'] + (1,), PALETTE['marking'] + (1,))
     if kind == 'heat':
         # Temper colours: straw → bronze → blue → dark, along object Z (exhaust tips).
         sep = nodes.new('ShaderNodeSeparateXYZ'); links.new(m['object'], sep.inputs[0])

@@ -78,7 +78,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*1.0,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
    if(abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
-    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*.80);
+    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*(center.w==3.0?.22:.80)); // HERO14: marine plates read as forms
   }
  } else if(inkMode>1.5&&inkStrength>.01) {
   for(int i=0;i<4;i++) {

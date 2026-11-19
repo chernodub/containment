@@ -17,6 +17,8 @@ export const WEAPON_MOTION:Record<WeaponId,{kick:number;pitch:number;returnRate:
 export const WEAPON_FIT:Record<WeaponId,{scale:number;aimYaw:number}>={pistol:{scale:.65146,aimYaw:-5.69},rifle:{scale:.60640,aimYaw:2.99},shotgun:{scale:.65039,aimYaw:7.62},plasma:{scale:.84341,aimYaw:2.53},rocket:{scale:.84286,aimYaw:3.70}};
 export function weaponModel(id:WeaponId):GunModel{
  const asset=instantiateAsset(id),root=new T.Group(),slide=new T.Group();root.name=`weapon-${id}`;root.add(slide);slide.add(asset.root);asset.root.scale.multiplyScalar(WEAPON_FIT[id].scale);
+ // HERO14: weapons keep their authored grey-metal atlas instead of the actor family tone.
+ asset.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])m.userData.k10Original=true;});
  const muzzle=asset.root.getObjectByName('muzzle');if(!muzzle)throw new Error(`Missing muzzle socket: ${id}`);
  return{root,slide,muzzle,id};
 }
