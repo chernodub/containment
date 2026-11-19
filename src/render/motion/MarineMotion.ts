@@ -52,6 +52,7 @@ type Leg = {
  */
 export class MarineMotion {
   authored=false;
+  rifleLoad = 0;
   get actionName(){return this.action;}
   get actionNormalized(){return this.actionProgress;}
   private heldCast=false;
@@ -368,6 +369,11 @@ export class MarineMotion {
     this.axis.set(-Math.sin(this.aim),0,Math.cos(this.aim));
     this.rotate(this.ribs,this.axis,aimPitch-recoil*WEAPON_MOTION[weapon].pitch*.3*strength,this.yawQ);
     this.rotate(this.spine,this.axis,(this.leanX*Math.cos(this.aim)+this.leanZ*Math.sin(this.aim))*.35*strength,this.yawQ);
+    if (this.rifleLoad > .001 && !reload && !this.action) {
+      const load = this.rifleLoad * strength;
+      this.rotate(this.spine, this.axis, .22 * load, this.yawQ);
+      this.rotate(this.ribs, this.up, -.15 * load, this.yawQ);
+    }
     const flinch=this.hitAmount*Math.sin(Math.PI*this.hitLife/MARINE_REACTION_SECONDS)*strength;
     if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
     if((this.moving||this.stoppedFor<.14)&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);

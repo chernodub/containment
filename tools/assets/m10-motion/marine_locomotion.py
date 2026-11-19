@@ -18,7 +18,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[3]
 FPS = 60
-CYCLE_SECONDS = 18 / FPS
+CYCLE_SECONDS = 16 / FPS
 NOMINAL_SIM_SPEED = 220.0
 UP = Vector((0, -1, 0))
 FORWARD = Vector((1, 0, 0))
@@ -71,7 +71,7 @@ def foot_path(direction, side, phase, source_speed):
     if phase < stance:
         along = half_stride - source_speed * CYCLE_SECONDS * phase
         displacement = travel * along
-        pitch = arc(((0, -.14), (.18, 0), (.70, .025), (1, .22)), phase / stance)[0]
+        pitch = arc(((0, -.14), (.18, 0), (.60, .025), (.84, .15), (1, .34)), phase / stance)[0]
         if direction in (135, 180, 225):
             pitch = arc(((0, .22), (.26, .03), (.76, -.04), (1, -.13)), phase / stance)[0]
         return displacement, pitch, yaw, True
@@ -79,13 +79,13 @@ def foot_path(direction, side, phase, source_speed):
     along, height = arc(((0, -half_stride, 0), (.19, -half_stride * 1.12, lift * .58),
         (.49, -half_stride * .04, lift), (.79, half_stride * .91, lift * .54),
         (1, half_stride, 0)), swing)
-    displacement = travel * along + UP * max(0, height)
+    displacement = travel * along + UP * (.70 * max(0, height))
     envelope = math.sin(math.pi * swing)
     # Trailing foot crosses in front; leading foot circles behind it. This
     # separates the two shoes in the crossing interval instead of intersecting.
     leading = side == ('L' if math.sin(angle) >= 0 else 'R')
     if direction in (90, 270):
-        displacement += FORWARD * envelope * (forward_bow if not leading else -.72)
+        displacement += FORWARD * envelope * (.70 * forward_bow if not leading else -.57)
         displacement += RIGHT * envelope * side_bow * (1 if leading else -.6)
     elif direction in (45, 135, 225, 315):
         displacement += FORWARD * envelope * forward_bow * (1 if not leading else -.35)
@@ -93,7 +93,7 @@ def foot_path(direction, side, phase, source_speed):
     else:
         displacement += FORWARD * envelope * forward_bow
         displacement += RIGHT * envelope * side_bow * (-1 if side == 'R' else 1)
-    pitch = arc(((0, .22), (.30, -.30), (.66, -.22), (1, -.14)), swing)[0]
+    pitch = arc(((0, .34), (.30, -.30), (.66, -.22), (1, -.14)), swing)[0]
     if direction in (135, 180, 225):
         pitch = arc(((0, -.13), (.34, .30), (.72, .24), (1, .22)), swing)[0]
     return displacement, pitch, yaw * .78 + envelope * (.065 if leading else -.05), False
@@ -177,12 +177,12 @@ class MarineFootRig:
             matrix.translation = pivot
             bone.matrix = matrix
 
-        turn('spine', Quaternion(RIGHT, lean) @ Quaternion(UP, -1.92 * yaw))
+        turn('spine', Quaternion(RIGHT, lean) @ Quaternion(UP, -1.90 * yaw))
         bpy.context.view_layer.update()
         # The pack rides the rib cage. Both hands absorb the descending stock
         # a little later, while the head keeps its firing orientation.
         lag = math.sin((phase - .09) * math.tau) * min(1., abs(yaw) * 5 + crouch * .18)
-        turn('ribs', Quaternion(FORWARD, -.64 * yaw) @ Quaternion(UP, -.35 * yaw))
+        turn('ribs', Quaternion(FORWARD, -.46 * yaw) @ Quaternion(UP, -.35 * yaw))
         bpy.context.view_layer.update()
         for side in ('L', 'R'):
             side_sign = 1 if side == 'L' else -1
@@ -201,11 +201,11 @@ class MarineFootRig:
         # followed by a narrower passing position and a rising push-off.
         beat = math.cos((phase - .13) * math.tau)
         load = (1 + math.cos((phase - .12) * math.tau * 2)) * .5
-        dip = crouch * .70 + 1.28 * load
+        dip = -.075 + crouch * .22 + .72 * load
         angle = math.radians(direction)
         lean = -.17 * math.cos(angle) + .085 * (load - .5)
-        self.torso(dip * weight, beat * (rotation + .23) * weight, lean * weight,
-            beat * (.60 + .18 * abs(math.sin(angle))) * weight, phase)
+        self.torso(dip * weight, beat * (rotation + .25) * weight, lean * weight,
+            beat * (.45 + .17 * abs(math.sin(angle))) * weight, phase)
         for side in ('L', 'R'):
             displacement, pitch, yaw, planted = foot_path(direction, side, phase, self.source_speed)
             self.control(side, displacement * weight, pitch * weight, yaw * weight,

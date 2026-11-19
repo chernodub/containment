@@ -93,7 +93,7 @@ import type {RunNode,RoomTemplate} from '../game/roguelike/types';
 const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
 export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number;materialProfiles:number};
-type Corpse={model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
+type Corpse={pendingEffect?:GameEffect;model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
 export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
@@ -561,13 +561,14 @@ export class DepthRenderer {
   if(effect.type==='corpse'){
    if(effect.id===undefined)return;
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
-   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
+   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({pendingEffect:effect,model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
   }
   // FEEL12: presentation family survives native lethal-event actor retirement.
   let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
   if(!targetModel&&effect.targetId!==undefined)for(const corpse of this.corpses)if(corpse.id===effect.targetId){targetModel=corpse.model;break;}
   // The killing weapon receipt can follow the corpse receipt within one native tick.
   if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
+  if(effect.type==='corpse'&&this.corpses[this.corpses.length-1]?.pendingEffect===effect)return;
   this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
@@ -646,7 +647,19 @@ export class DepthRenderer {
   for(const[id,model]of this.nests)if(!nestIds.has(id)){updateNest(model,this.time,true);if(this.nests.size>10){disposeModel(model);this.nests.delete(id);}}
   if(this.staticDirty){this.freezeRoomTransforms();this.ragdolls.refreshStatic(this.world);this.staticDirty=false;}
   this.ragdolls.update(dt,p.x/UNIT,p.y/UNIT);if(this.ragdolls.has(-2147483648))this.player.syncWeaponPose?.(); // M10 falling hand keeps weapon socket
-  for(const c of this.corpses){setActorLOD(c.model.root,true);c.model.setDeathAge?.(c.age+dt);if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
+  for(const c of this.corpses){
+   if(c.pendingEffect && (c.model.corpseEffectReady?.(c.age) ?? true)){
+    this.effects.event(c.pendingEffect,c.model.root.userData.motionDeathCue??'none');
+    c.pendingEffect=undefined;
+   }
+   // The active Rapier budget can fill during a simultaneous elemental kill.
+   // Keep the same drawing and debris clock on the retained fallback corpse.
+   if(!this.ragdolls.has(c.id) && c.model.elementalHold?.() && c.age<.64){
+    c.model.poseDeath?.(c.model.root.userData.motionDeathCue??'none',c.age/.64);
+    c.age+=dt;
+    continue;
+   }
+   setActorLOD(c.model.root,true);c.model.setDeathAge?.(c.age+dt);if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
   }
 
@@ -686,7 +699,7 @@ export class DepthRenderer {
   this.muzzleLife-=dt;this.muzzle.intensity=this.muzzleLife>0?6*Math.min(1,this.muzzleLife/.035)*this.options.flashIntensity*(this.motionQuery?.matches?.5:1):0;
   this.interimAbilities.updatePriority(this.camera);
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture);
-  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT);
+  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies);
   let index=0;for(const b of game.bullets){if(b.kind==='hazard')continue;if(index>=320)break;if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;this.dummy.position.set(b.x/UNIT,b.kind==='grenade'?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.95,b.y/UNIT);this.dummy.rotation.set(0,Math.PI/2-b.request.angle,0);this.dummy.scale.set(.025,.025,b.request.weaponId==='rocket'?.35:.24);this.dummy.updateMatrix();this.bulletMesh.setMatrixAt(index,this.dummy.matrix);if(this.tier==='high'&&this.options.dynamicLights&&(b.request.weaponId==='plasma'||b.request.weaponId==='rocket')){let id=this.projectileLightIds.get(b);if(id===undefined){id=this.nextProjectileLight--;this.projectileLightIds.set(b,id);}const light=this.attachedLight;light.x=this.dummy.position.x;light.y=this.dummy.position.y;light.z=this.dummy.position.z;light.color=b.request.weaponId==='plasma'?0x9fe8ff:0xffb454;light.intensity=1.7;light.priority=1;this.lighting.pool.attach(id,light);light.y=1;}this.bulletMesh.setColorAt(index,this.bulletColor.setHex(b.request.weaponId==='plasma'?0x73eced:0xffd58f));index++;}this.bulletMesh.count=index;this.bulletMesh.instanceMatrix.needsUpdate=true;if(this.bulletMesh.instanceColor)this.bulletMesh.instanceColor.needsUpdate=true;
 
   this.pickupInstances?.update(visiblePickups,this.time);

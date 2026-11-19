@@ -1,0 +1,84 @@
+{
+  "room": "safety-interlock-station",
+  "checkoutBase": "78e468a42bbcecdf74dba2945bed910f56f1ef45",
+  "timingAcceptanceEligible": true,
+  "errors": [],
+  "budgetFailures": [],
+  "runs": [
+    {
+      "name": "safety-interlock-station-pyro-high-0",
+      "room": "safety-interlock-station",
+      "rig": "pyro",
+      "tier": "high",
+      "before": {
+        "at": "2026-11-19T22:30:06.396Z",
+        "load": [
+          735.81591796875,
+          484.30322265625,
+          645.13134765625
+        ],
+        "cores": 10
+      },
+      "after": {
+        "at": "2026-11-19T22:30:36.190Z",
+        "load": [
+          586.00537109375,
+          665.078125,
+          705.0771484375
+        ],
+        "cores": 10
+      },
+      "actualRenderFrames": null,
+      "deterministicSegment": null,
+      "simulationSeconds": 12.074499999999992,
+      "count": 399,
+      "programs": 0,
+      "combatProgramKeys": [],
+      "glError": 0,
+      "contextLost": false,
+      "uses": {
+        "dash": 10,
+        "tactical": 3,
+        "power": 1,
+        "overdrive": 1
+      },
+      "summary": {
+        "cpu": {
+          "min": 6.799999952316284,
+          "p50": 12.799999952316284,
+          "p95": 30.59999990463257,
+          "max": 95.10000014305115,
+          "average": 15.69649122771165
+        },
+        "render": {
+          "min": 5.5,
+          "p50": 9.700000047683716,
+          "p95": 27.299999952316284,
+          "max": 93.60000014305115,
+          "average": 13.019047616418442
+        },
+        "draws": {
+          "min": 182,
+          "p50": 235,
+          "p95": 272,
+          "max": 301,
+          "average": 232.04010025062658
+        },
+        "triangles": {
+          "min": 269114,
+          "p50": 375830,
+          "p95": 434284,
+          "max": 478622,
+          "average": 374804.23558897246
+        },
+        "enemies": {
+          "min": 15,
+          "p50": 25,
+          "p95": 25,
+          "max": 25,
+          "average": 24.50375939849624
+        }
+      }
+    }
+  ]
+}

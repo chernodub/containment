@@ -1,0 +1,124 @@
+{
+  "accepted": true,
+  "ids": [
+    1,
+    2
+  ],
+  "stepMs": 50,
+  "events": [
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "railbreaker",
+        "slot": "overdrive",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "overdrive-ready",
+        "length": 900,
+        "width": 44
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "railbreaker",
+        "slot": "overdrive",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "cast",
+        "length": 900,
+        "width": 44,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "durationMs": 250
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "corpse",
+      "id": 1,
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "vx": 0,
+      "vy": 0,
+      "family": "crawler",
+      "elite": false,
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "targetId": 1,
+      "damage": 46.37684210526316,
+      "lethal": true,
+      "source": "ability",
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "railbreaker",
+        "slot": "overdrive",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "link",
+        "length": 900,
+        "width": 44,
+        "angle": 0,
+        "targetX": 1784.8,
+        "targetY": 352,
+        "targetIds": [
+          1,
+          2
+        ],
+        "totalDamage": 466.37684210526317
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1035.080864524343,
+      "y": 346.8898103288627,
+      "targetId": 2,
+      "damage": 420,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "railbreaker",
+        "slot": "overdrive",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "impact",
+        "length": 900,
+        "width": 44,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "targetIds": [
+          1,
+          2
+        ],
+        "durationMs": 0,
+        "totalDamage": 0
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.2000000000000006
+    }
+  ]
+}

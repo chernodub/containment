@@ -1,0 +1,1205 @@
+{
+  "accepted": true,
+  "ids": [
+    1,
+    2
+  ],
+  "presentation": [
+    [
+      {
+        "id": 1,
+        "pixel": [
+          220.7071052470628,
+          144.48263963521023
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          0,
+          0.03778519332754439,
+          0
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          289.777048044158,
+          133.22060552890005
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          220.4177572905968,
+          144.0175522875416
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          0,
+          0.03778519332754439,
+          0
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          284.6463890633127,
+          131.85130152977956
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          215.37597727127715,
+          143.96011209644712
+        ],
+        "corpseAge": 0.06666666666666665,
+        "pending": true,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.007709910051372414
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          275.72051572046416,
+          131.34246568276012
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          206.400371248339,
+          145.06281626033197
+        ],
+        "corpseAge": 0.1666666666666666,
+        "pending": true,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.0372882033923055
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          263.66944483283913,
+          131.68066483267384
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          4.2490568649704225e-18,
+          0.018858286913381785,
+          0.0031893418189594736
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          202.35215619848452,
+          145.73112076163295
+        ],
+        "corpseAge": 0.26666666666666655,
+        "pending": true,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.0675570405466456
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          256.7928814144425,
+          131.59511317953925
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          1.2430144881426409e-18,
+          0.02023821931825534,
+          0.0005598039585615326
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          201.6135452304455,
+          146.1459010865826
+        ],
+        "corpseAge": 0.36666666666666653,
+        "pending": true,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          253.08930983460183,
+          131.35016047588596
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          1.7881162545017098e-18,
+          0.018418972495424037,
+          0.004026479848734514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          202.1228685375765,
+          146.44390531676507
+        ],
+        "corpseAge": 0.4666666666666665,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          250.51832216976155,
+          130.95902773057406
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          3.2478029928708655e-18,
+          0.01957250974012295,
+          0.0018283505435582514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          202.9541920413043,
+          146.6868648710272
+        ],
+        "corpseAge": 0.5666666666666665,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          248.6958713801453,
+          130.6130939322499
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          203.80080003467222,
+          146.89215349705802
+        ],
+        "corpseAge": 0.6666666666666667,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          246.98357552371672,
+          130.2939416780637
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          -5.6654091532938964e-18,
+          0.018858286913381785,
+          0.0031893418189594736
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          204.61650512176885,
+          147.07723726668584
+        ],
+        "corpseAge": 0.7666666666666669,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          245.3725466075747,
+          129.94096345302782
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -1.7402202833996974e-18,
+          0.02023821931825534,
+          0.0005598039585615326
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          205.41729089026728,
+          147.25435570564687
+        ],
+        "corpseAge": 0.8666666666666671,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          243.59664351109421,
+          129.59809675639954
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -5.36434876350513e-18,
+          0.018418972495424037,
+          0.004026479848734514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          206.21345160782877,
+          147.4286464206227
+        ],
+        "corpseAge": 0.9666666666666673,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          241.94952255931454,
+          129.23771644680863
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -5.6836552375240145e-18,
+          0.01957250974012295,
+          0.0018283505435582514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          207.00882194580421,
+          147.6019860593344
+        ],
+        "corpseAge": 1.066666666666667,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          240.29164382577176,
+          128.87787427961726
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          209.4467704259159,
+          181.58493181496158
+        ],
+        "corpseAge": 1.1666666666666667,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          241.29195344251264,
+          161.37811640725175
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -5.6654091532938964e-18,
+          0.018858286913381785,
+          0.0031893418189594736
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          210.21947305048516,
+          186.64796843537772
+        ],
+        "corpseAge": 1.2666666666666664,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          239.92148223868992,
+          165.56185000453942
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -2.2374260786567536e-18,
+          0.02023821931825534,
+          0.0005598039585615326
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          210.32125790313924,
+          177.02904013233913
+        ],
+        "corpseAge": 1.366666666666666,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          237.225999170534,
+          155.5302717386229
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          -3.5762325090034196e-18,
+          0.018418972495424037,
+          0.004026479848734514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          210.75425881397038,
+          171.48469018749952
+        ],
+        "corpseAge": 1.4666666666666657,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          235.02793417868335,
+          149.5286954858485
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          -6.495605985741731e-18,
+          0.01957250974012295,
+          0.0018283505435582514
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          211.41383518326137,
+          168.59656397211205
+        ],
+        "corpseAge": 1.5666666666666653,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          233.05766687702422,
+          146.17148256861134
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020531993990386757,
+          0
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          212.26599824474593,
+          168.39756628046572
+        ],
+        "corpseAge": 1.666666666666665,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          231.1863331559382,
+          145.478249553575
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          4.2490568649704225e-18,
+          0.018858286913381785,
+          0.0031893418189594736
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          212.58262305820557,
+          157.73538845547438
+        ],
+        "corpseAge": 1.7666666666666646,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          229.18914909272567,
+          134.74831589469605
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020041670786340098,
+          0.0009343381054889085
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          212.96657690447267,
+          152.21172331166485
+        ],
+        "corpseAge": 1.8666666666666643,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          229.42604361155136,
+          129.47888248594145
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020041670786340098,
+          0.0009343381054889085
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          213.21002069344118,
+          150.11596426028424
+        ],
+        "corpseAge": 1.966666666666664,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          229.57147127563567,
+          127.53692364121814
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020041670786340098,
+          0.0009343381054889085
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          213.34834905941966,
+          149.39725404233246
+        ],
+        "corpseAge": 2.0666666666666638,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          229.6448675820102,
+          126.91382756759411
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": true,
+        "local": [
+          0,
+          0.020041670786340098,
+          0.0009343381054889085
+        ]
+      }
+    ],
+    [
+      {
+        "id": 1,
+        "pixel": [
+          213.42663680701799,
+          149.15715138241413
+        ],
+        "corpseAge": 2.1666666666666634,
+        "pending": false,
+        "cue": "frost",
+        "hold": true,
+        "local": [
+          0,
+          0.06501799491871892,
+          0.07656249999999999
+        ]
+      },
+      {
+        "id": 2,
+        "pixel": [
+          229.6818675796808,
+          126.73253055109903
+        ],
+        "pending": false,
+        "cue": "none",
+        "hold": false,
+        "local": [
+          0,
+          0.020041670786340098,
+          0.0009343381054889085
+        ]
+      }
+    ]
+  ],
+  "stepMs": 100,
+  "events": [
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "overdrive-ready",
+        "radius": 300
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "cast",
+        "radius": 300,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "durationMs": 0
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "durationMs": 8000
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "impact",
+        "radius": 300,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "targetIds": [],
+        "durationMs": 8000,
+        "totalDamage": 0
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "corpse",
+      "id": 1,
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "vx": 0,
+      "vy": 0,
+      "family": "crawler",
+      "elite": false,
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "targetId": 1,
+      "damage": 3,
+      "lethal": true,
+      "source": "ability",
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 7
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1035.080864524343,
+      "y": 346.8898103288627,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.2500000000000004
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.4499999999999997
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1022.5099156586111,
+      "y": 343.6320644135129,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.4999999999999996
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.6999999999999988
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1012.1573695338913,
+      "y": 340.9492148361663,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.7499999999999987
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.949999999999998
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1004.0232261501836,
+      "y": 338.84126159682194,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.9999999999999978
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.199999999999997
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 995.889082766476,
+      "y": 336.7333083574776,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.249999999999997
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.449999999999996
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 987.7549393827684,
+      "y": 334.62535511813326,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.499999999999996
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.6999999999999953
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 979.6207959990608,
+      "y": 332.5174018787889,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.749999999999995
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 4
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.9499999999999944
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 971.4866526153531,
+      "y": 330.409448639445,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.9999999999999942
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          2,
+          4
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 3.1999999999999935
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 971.4866526153531,
+      "y": 330.409448639445,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 3.2499999999999933
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 955.5161841268967,
+      "y": 239.65814304277228,
+      "targetId": 4,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 3.2499999999999933
+    }
+  ]
+}

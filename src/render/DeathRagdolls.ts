@@ -220,7 +220,12 @@ export class DeathRagdolls {
   this.elapsedMs=0;if(!this.world||dt<=0)return;
   const authoredDt=Math.min(dt,.05);
   for(const [id,death] of this.authored){
-    death.age+=authoredDt;death.model.poseDeath?.(death.cue,Math.min(1,death.age/death.duration));death.model.setDeathAge?.(death.age);
+    death.age+=authoredDt;
+    // An ability can identify its victim after the native corpse event.
+    death.cue=death.model.terminalCue?.(death.cue)??death.cue;
+    const duration=death.model.poseDeath?.(death.cue,Math.min(1,death.age/death.duration));
+    if(duration)death.duration=duration;
+    death.model.setDeathAge?.(death.age);
     // Carry the accepted shot direction through the authored collapse, before
     // handing the settled pose to physics. A strong small-body kill travels
     // farther than a rifle drop; heavy castes retain their planted mass.

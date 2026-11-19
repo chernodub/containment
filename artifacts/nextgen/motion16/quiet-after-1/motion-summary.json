@@ -1,0 +1,159 @@
+{
+  "room": "safety-interlock-station",
+  "checkoutBase": "78e468a42bbcecdf74dba2945bed910f56f1ef45",
+  "timingAcceptanceEligible": true,
+  "errors": [],
+  "budgetFailures": [],
+  "runs": [
+    {
+      "name": "safety-interlock-station-pyro-high-0",
+      "room": "safety-interlock-station",
+      "rig": "pyro",
+      "tier": "high",
+      "before": {
+        "at": "2026-11-19T22:31:24.199Z",
+        "load": [
+          1009.29931640625,
+          937.0146484375,
+          803.46484375
+        ],
+        "cores": 10
+      },
+      "after": {
+        "at": "2026-11-19T22:31:52.916Z",
+        "load": [
+          885.26904296875,
+          87.18212890625,
+          859.00732421875
+        ],
+        "cores": 10
+      },
+      "actualRenderFrames": null,
+      "deterministicSegment": null,
+      "simulationSeconds": 13.50000000000002,
+      "count": 662,
+      "programs": 0,
+      "combatProgramKeys": [],
+      "glError": 0,
+      "contextLost": false,
+      "uses": {
+        "dash": 12,
+        "tactical": 3,
+        "power": 2,
+        "overdrive": 1
+      },
+      "summary": {
+        "cpu": {
+          "min": 6.3999998569488525,
+          "p50": 10,
+          "p95": 25.700000047683716,
+          "max": 98.90000009536743,
+          "average": 12.534894256433331
+        },
+        "render": {
+          "min": 5.200000047683716,
+          "p50": 7.599999904632568,
+          "p95": 22.5,
+          "max": 98,
+          "average": 10.176132928208641
+        },
+        "draws": {
+          "min": 180,
+          "p50": 238,
+          "p95": 267,
+          "max": 288,
+          "average": 234.08610271903322
+        },
+        "triangles": {
+          "min": 237733,
+          "p50": 372564,
+          "p95": 441224,
+          "max": 468250,
+          "average": 357841.88670694863
+        },
+        "enemies": {
+          "min": 15,
+          "p50": 25,
+          "p95": 25,
+          "max": 25,
+          "average": 24.66012084592145
+        }
+      }
+    },
+    {
+      "name": "safety-interlock-station-pyro-high-1",
+      "room": "safety-interlock-station",
+      "rig": "pyro",
+      "tier": "high",
+      "before": {
+        "at": "2026-11-19T22:31:52.920Z",
+        "load": [
+          885.26904296875,
+          87.18212890625,
+          859.00732421875
+        ],
+        "cores": 10
+      },
+      "after": {
+        "at": "2026-11-19T22:32:21.594Z",
+        "load": [
+          610.1904296875,
+          274.07958984375,
+          904.05078125
+        ],
+        "cores": 10
+      },
+      "actualRenderFrames": null,
+      "deterministicSegment": null,
+      "simulationSeconds": 13.25049999999998,
+      "count": 524,
+      "programs": 0,
+      "combatProgramKeys": [],
+      "glError": 0,
+      "contextLost": false,
+      "uses": {
+        "dash": 12,
+        "tactical": 3,
+        "power": 2,
+        "overdrive": 1
+      },
+      "summary": {
+        "cpu": {
+          "min": 7.200000047683716,
+          "p50": 12.199999809265137,
+          "p95": 29.299999952316284,
+          "max": 93.5,
+          "average": 15.016603053981111
+        },
+        "render": {
+          "min": 6.099999904632568,
+          "p50": 9.799999952316284,
+          "p95": 25.09999990463257,
+          "max": 92.09999990463257,
+          "average": 12.411641220555051
+        },
+        "draws": {
+          "min": 190,
+          "p50": 236,
+          "p95": 277,
+          "max": 320,
+          "average": 238.7232824427481
+        },
+        "triangles": {
+          "min": 240689,
+          "p50": 404754,
+          "p95": 506582,
+          "max": 571960,
+          "average": 399901.01908396947
+        },
+        "enemies": {
+          "min": 15,
+          "p50": 25,
+          "p95": 25,
+          "max": 25,
+          "average": 24.58206106870229
+        }
+      }
+    }
+  ]
+}
