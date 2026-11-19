@@ -313,6 +313,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
   let lastMove = -Infinity;
+  let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
     profile, config,
@@ -374,6 +375,16 @@ export function createHumanPolicy(seed, profile = 'competent') {
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       let target = chooseTarget(perceived.enemies,s.player);
+      // WEAPONS15 aim selection for formed groups.
+      if (target && s.resources?.ammo.rocket.magazine &&
+          (profile !== 'novice' || (seed+s.node.depth)%4!==0) &&
+          !target.champion && target.type !== 'brute') {
+        const group = visible.find(e => e.clear && distance(e,s.player)>210 &&
+          (e.pod || e.broodRemainingMs ||
+            visible.filter(other=>other.clear && distance(other,e)<112).length>=3));
+        if (group) target=group;
+      }
+      // End WEAPONS15 aim selection.
       if (target) {
         const dx=target.x-s.player.x,dy=target.y-s.player.y;
         const screen=target.screen&&s.player.screen?{
@@ -403,10 +414,34 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
       const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
       if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
-      const ammo=s.resources?.ammo, near=Math.min(Infinity,...visible.map(e=>distance(e,s.player)));
-      const desired=ammo?(near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol'):s.combat.weapon;
-      const weapon = !actions.length && now >= nextInput ? desired : s.combat.weapon;
-      if (weapon !== s.combat.weapon) nextInput = now + config.inputMs;
+      // WEAPONS15 weapon selection. Keep encounter movement and ability decisions above.
+      const ammo = s.resources?.ammo;
+      const current = s.combat.weapon;
+      const range = target ? distance(target, s.player) : Infinity;
+      let job = 'rifle';
+      if (target) {
+        const cluster = visible.filter(e => e.clear && distance(e, target) < 115);
+        if (range > 207 && (target.pod || target.broodRemainingMs || cluster.length >= 3)) job = 'rocket';
+        else if (target.type === 'brute' || target.champion === 'warden' || target.armor > 0 ||
+            (target.elite && !target.champion && (target.priority || target.health>155))) job = 'plasma';
+        else if (range < 196 && (target.type === 'crawler' || target.meleePhase === 'recovery' ||
+            visible.some(e => e.type==='crawler' && e.clear && distance(e,s.player)<130))) job = 'shotgun';
+        else if (target.health <= 40 && range < 400) job = 'pistol';
+      }
+      const desired = !ammo || !target ? current
+        : (s.reloadingWeapons?.includes(job) || job===current && s.combat.reloading) ? 'pistol'
+        : ammo[job].magazine > 0 ? job
+        : job === current && ammo[job].reserve > 0 && !s.combat.reloading ? job
+        : 'pistol';
+      if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
+      const noviceReady = profile !== 'novice' || (now - weaponNotice >= 450 &&
+        (desired === 'rifle' || desired === 'shotgun' || (seed + s.node.depth) % 4 !== 0));
+      const weapon = !actions.length && now >= nextInput && noviceReady && now >= weaponHold ? desired : current;
+      if (weapon !== current) {
+        nextInput = now + config.inputMs;
+        weaponHold = now + (profile === 'novice' ? 1000 : 270);
+      }
+      // End WEAPONS15 weapon selection.
       // The optional drill asks for a committed miss before a recovery shot.
       const drillEnemy=s.drill&&s.enemies.find(enemy=>enemy.id===s.drill.id);
       if(drillEnemy){

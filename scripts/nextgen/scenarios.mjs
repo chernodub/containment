@@ -400,14 +400,16 @@ export function stageCombat({status=false}){
   if(g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length<18)staged=refine().placed;
  }
  if(g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length<18)throw Error('Heavy native framing lost eighteen initial visible targets');
+ g.switchWeapon(status?'rifle':'plasma');
  if(!status){
+  // Let the weapon draw finish while the real grenade resolves.
   // Resolve the real grenade before firing, so the first captured plasma pulse
   // does not depend on a short accidental overlap between two independent clocks.
   g.grenade();d.step(700);
   for(let i=0;i<60&&!d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25);i++)d.step(1000/60);
   if(!d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25))throw Error('Heavy fixture grenade did not explode');
  }
- g.switchWeapon(status?'rifle':'plasma');d.setInput({fire:true,angle:null,autoAim:true});
+ d.setInput({fire:true,angle:null,autoAim:true});
  if(status){
   // A confirmed rifle hit supplies burn, poison and chill; native Cryo Nova then
   // freezes that already-chilled target. Capture the actual next muzzle pulse.

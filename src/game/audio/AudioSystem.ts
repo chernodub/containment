@@ -199,7 +199,7 @@ export class AudioSystem implements GameAudioDirector {
     const pan = Math.max(-.85, Math.min(.85, dx / 500)), distance = Math.hypot(dx, dy);
     if (effect.type === 'ability' && effect.ability) { this.handleAbility(effect.ability, pan, distance); return; }
     if (effect.type === 'shot') this.weapon(effect.weapon ?? 'pistol', pan, distance);
-    else if (effect.type === 'hit' && effect.contact) this.cue(impactRecipe(effect.lethal ? 'kill' : effect.contact === 'armor' ? 'armor' : effect.contact === 'blocked' ? 'blocked' : 'flesh'), { pan, distance });
+    else if (effect.type === 'hit' && (effect.contact || effect.weapon)) this.cue(impactRecipe(effect.weapon === 'plasma' ? 'plasma-hit' : !effect.contact ? 'wall' : effect.lethal ? 'kill' : effect.contact === 'armor' ? 'armor' : effect.contact === 'blocked' ? 'blocked' : 'flesh'), { pan, distance, level: effect.weapon === 'pistol' ? .7 : 1 });
     else if (effect.type === 'corpse') { this.cue(impactRecipe('body'), { pan, distance }); this.enemy(effect.family ?? 'crawler', 'death', effect.elite, pan, distance); }
     else if (effect.type === 'wall-slam') this.cue(impactRecipe('wall'), { pan, distance });
     else if (effect.type === 'explosion') this.explosion((effect.radius ?? 120) > 180 ? 'large-explosion' : (effect.radius ?? 120) < 80 ? 'small-explosion' : 'explosion', pan, distance);
@@ -258,6 +258,7 @@ export class AudioSystem implements GameAudioDirector {
     else if (previous?.dead) { this.startAmbience(); this.updateHeartbeat(); }
     if (snapshot.dead || !snapshot.reloading || previous?.weaponId !== snapshot.weaponId) this.cancelReload();
     if (previous && previous.weaponId !== snapshot.weaponId && !snapshot.dead) this.cue(impactRecipe('switch'));
+    if(previous?.weaponId===snapshot.weaponId&&previous.magazine>0&&snapshot.magazine===0&&snapshot.reserve===0)this.cue(impactRecipe('dry'));
     if (snapshot.reloading && (!previous?.reloading || previous.weaponId !== snapshot.weaponId)) this.playReload(snapshot.reloadRemainingMs);
   }
   /** Stable diagnostics for tests/audition, never used to influence gameplay. */
@@ -382,6 +383,11 @@ export class AudioSystem implements GameAudioDirector {
   private duck(depth: number, hold: number): void { if (this.audible()) this.mixer?.duck(depth, hold); }
   private playReload(durationMs: number, resume = false): void {
     this.cancelReload(); if (!this.audible()) return;
+    if(this.previousCombat?.weaponId==='plasma'){
+      const voice=this.mixer!.play(this.buffer(impactRecipe('vent')),{bus:'weapons',level:.65,priority:60});
+      if(voice)this.reloadVoices.push(voice);
+      return;
+    }
     const duration = Math.max(.15, durationMs / 1000);
     const cues = resume ? [[Math.max(0, duration - .36), 1, .34]] : [[0, .08, .2], [Math.max(.08, duration * .48 - .1), .52, .3], [Math.max(.12, duration - .36), 1, .34]];
     for (const [delay, offset, length] of cues) {

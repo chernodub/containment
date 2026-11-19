@@ -2,7 +2,7 @@ import type { CueRecipe, SynthLayer } from './synthesis';
 
 export type WeaponCueId = 'pistol' | 'rifle' | 'shotgun' | 'plasma' | 'rocket';
 export type ImpactCueId = 'flesh' | 'armor' | 'blocked' | 'kill' | 'body' | 'wall'
-  | 'small-explosion' | 'explosion' | 'large-explosion' | 'reload' | 'shell' | 'hurt' | 'grenade' | 'switch';
+  | 'small-explosion' | 'explosion' | 'large-explosion' | 'reload' | 'vent' | 'dry' | 'plasma-hit' | 'shell' | 'hurt' | 'grenade' | 'switch';
 export type EnemyCuePhase = 'warning' | 'attack' | 'death';
 
 const noise = (gain: number, cutoff: number, duration: number, extra: Partial<SynthLayer> = {}): SynthLayer =>
@@ -74,6 +74,9 @@ const impacts: Record<ImpactCueId, CueRecipe> = {
   'small-explosion': impact('small-explosion', .48, [noise(.8, 3700, .12), tone(.9, 168, 40, .35), noise(.45, 650, .4, { delay: .04 })], { priority: 68, interval: .08 }),
   explosion: impact('explosion', .95, [noise(.95, 4400, .16), tone(1.1, 130, 27, .66, { decay: 4 }), noise(.7, 580, .88, { delay: .03, decay: 4.7 }), metal(.15, 710, .46, { delay: .18, decay: 5 })], { rms: .14, peak: .70, priority: 80, interval: .09 }),
   'large-explosion': impact('large-explosion', 1.4, [noise(1, 5600, .19), tone(1.2, 107, 22, 1, { decay: 4 }), noise(.85, 460, 1.3, { delay: .03, decay: 4.1 }), metal(.25, 295, .67, { delay: .2, decay: 4 }), noise(.24, 1900, .4, { delay: .55, decay: 4 })], { rms: .16, peak: .72, priority: 90, interval: .15 }),
+  vent: impact('vent', .52, [noise(.75, 4200, .48, {decay: 4}), tone(.35, 860, 130, .35)], {priority: 60}),
+  dry: impact('dry', .07, [metal(.8, 990, .055, {decay: 9})], {priority: 54}),
+  'plasma-hit': impact('plasma-hit', .24, [tone(.6, 1300, 220, .20, {fm: 2}), noise(.48, 5700, .17)], {priority: 57}),
   reload: impact('reload', .22, [metal(.7, 870, .06, { decay: 7 }), noise(.6, 3800, .08, { delay: .025 }), metal(.45, 1500, .10, { delay: .11, decay: 6 })], { rms: .055, peak: .32, priority: 52, interval: .08 }),
   shell: impact('shell', .17, [{ wave: 'pluck', gain: .8, frequency: 2860, duration: .09 }, metal(.38, 3900, .07, { delay: .065, decay: 6 }), noise(.16, 6100, .025)], { rms: .026, peak: .18, priority: 18, interval: .09 }),
   hurt: impact('hurt', .34, [tone(.9, 160, 52, .30, { fm: 1.2, decay: 5 }), noise(.65, 1100, .16), metal(.22, 510, .2, { delay: .035 })], { priority: 86, interval: .16 }),

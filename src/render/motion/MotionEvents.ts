@@ -45,8 +45,11 @@ export function actorImpact(model: ActorModel | undefined, effect: GameEffect) {
     : effect.angle ?? Math.PI / 2 - (model.root?.rotation.y ?? Math.PI / 2);
   // Per-pellet receipts still deserve a shotgun body stagger. These floors
   // change presentation amplitude only; damage and native shove stay untouched.
-  const strength = Math.min(1, Math.max(effect.weapon==='shotgun'?.68:effect.weapon==='rifle'?.40:0,(effect.damage ?? 24) / 42));
-  model.hit?.(strength, direction, effect.weapon==='shotgun'||effect.weapon==='rocket'||!!effect.lethal || (effect.damage ?? 0) >= 36 || (effect.impulse ?? 0) > 200);
+  const base = effect.weapon === 'pistol' ? .43 : effect.weapon === 'rifle' ? .40
+    : effect.weapon === 'shotgun' ? .72 : effect.weapon === 'plasma' ? .55
+    : effect.weapon === 'rocket' ? 1 : Math.min(1, (effect.damage ?? 24) / 42);
+  const strength = effect.lethal ? Math.max(.68, base) : base;
+  model.hit?.(strength, direction, effect.weapon==='shotgun'||effect.weapon==='rocket'||!!effect.lethal || (!effect.weapon && (effect.damage ?? 0) >= 36) || (effect.impulse ?? 0) > 200);
 }
 
 /** Read the last living status: the native dead-target query has already cleared it. */
