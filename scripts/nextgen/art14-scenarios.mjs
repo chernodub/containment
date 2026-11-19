@@ -13,6 +13,8 @@ async function stageLesson(family) {
 export const ART14_SCENARIOS=[
   {id:'art14-route-requisition',diagnosticOnly:true,state:'route',required:['[data-detour="direct"]','[data-detour="salvage"]'],
     setup:async()=>{await window.__containmentDebug.gotoRoom('freight-hold',{phase:'route',rig:'cryo'});}},
+  {id:'route-field-workshop',diagnosticOnly:true,state:'route',required:['[data-detour="direct"]','[data-detour="salvage"]'],
+    setup:async()=>{await window.__containmentDebug.gotoRoom('diagnostic-gallery',{phase:'route',rig:'cryo'});}},
   ...['crawler','stalker','spitter'].map(family=>({
     id:`art14-results-${family}`,state:'dead',diagnosticOnly:true,required:['#retry-rig','.retry-lesson'],
     setup:stageLesson,setupArgument:family,

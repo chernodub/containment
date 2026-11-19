@@ -41,7 +41,7 @@ export function addRecoverySpill(root:T.Group):void {
       c.save();c.translate(x,z);c.rotate(.70*Math.cos(t*4)-.06);c.fillStyle='rgba(12,30,33,'+(.78-.47*t)+')';
       c.beginPath();c.ellipse(3,0,4.9,2.7,0,0,Math.PI*2);c.fill();c.fillRect(-4,-2.3,3,4.6);c.restore();
     }
-  });
+  },.022);
   creepingVapour(root,[[479,369,266,70,.17],[557,379,295,63,-.05],[397,409,220,80,.42],[311,482,249,59,.33]]);
   const lens=new T.MeshBasicMaterial({color:0xc1e9ee});
   lens.userData.actorMaterial = true;

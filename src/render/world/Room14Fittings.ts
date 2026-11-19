@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
+import {INCIDENT_OBSTACLES} from '../../game/roguelike/incidentObstacles';
 import {roomValueProfile} from '../lighting/RoomValueStandard';
 
 type Insert = readonly [kind:'drain'|'hatch'|'rails'|'trench', length:number, width:number, yaw:number, bays:number];
@@ -52,8 +53,24 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
       plate(x,kind==='hatch'?width*.26:0,.15,.045,.019,.021,0x303637);
     }
   }
+  if(id==='passenger-vault'||id==='freight-hold'){
+    // The luggage and cargo spilled onto their transport bases. The broad
+    // blocking footprint is visible even between individual loose pieces.
+    const cover=INCIDENT_OBSTACLES[id][id==='passenger-vault'?1:0];
+    const base=new T.Mesh(new T.BoxGeometry((cover.width-1.4)/32,.24,(cover.height-1.4)/32),
+      new T.MeshStandardMaterial({color:id==='passenger-vault'?0x687b83:0x6e5139,roughness:.82,metalness:.18}));
+    base.name='room14-displaced-transport-base';
+    base.position.set((cover.x+cover.width*.5)/32,.12,(cover.y+cover.height*.5)/32);
+    base.receiveShadow=true;
+    base.material.userData.actorMaterial=true;
+    root.add(base);
+  }
   const geometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
   const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.26});
+  // The recessed machined faces sit between the named-space paint and wet decals.
+  material.polygonOffset=true;
+  material.polygonOffsetFactor=-3;
+  material.polygonOffsetUnits=-3;
   material.userData.actorMaterial=true;
   const mesh=new T.Mesh(geometry,material);
   mesh.name='room14-'+kind;mesh.position.set(plan.arena.x/32,.0002,plan.arena.y/32+1.1);

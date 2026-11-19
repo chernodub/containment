@@ -70,8 +70,16 @@ for(const id of ['pistol','rifle','shotgun','plasma','rocket']){
 for(const id of ['crawler','stalker','spitter','brute','carrier','warden','matron']){
   const family=id==='warden'?'brute':id==='matron'?'carrier':id;
   const champion=id==='warden'||id==='matron'?id:undefined;
+  if(id==='spitter'){
+    add('lesson-spitter',[
+      {kind:'enemy',family,pose:'attack',aim:0,x:-2.1,z:.15},
+      {...prop('Prop_Crate_Large'),x:0,z:.15,scale:.44},
+      {...marine('breacher','ram'),x:1.85,z:.15,aim:Math.PI},
+    ],{view:'gameplay',span:3.65,lesson:'blocked-shot'});
+    continue;
+  }
   add('lesson-'+id,[{kind:'enemy',family,champion,pose:'attack',aim:0,x:-1.45,z:champion?-.15:-.6},
-    {...marine('breacher','ram'),x:1.25,z:1.35,aim:Math.PI/2,ghost:true}],{view:'gameplay',span:champion?6.65:id==='spitter'?4.05:4.6,lesson:true});
+    {...marine('breacher','ram'),x:1.25,z:1.35,aim:Math.PI/2,ghost:true}],{view:'gameplay',span:champion?6.65:4.6,lesson:true});
 }
 const landmarks={
   'awakening-bay':'Pod aisle','passenger-vault':'Cryo aisle','residential-gallery':'Common nook',

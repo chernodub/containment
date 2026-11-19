@@ -273,6 +273,12 @@ try{
     if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.damageDealt.weapon>0&&evidence.stats.shotsHit>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine ability and weapon combat receipts');}
     if(scenario.state==='dead'||scenario.state==='complete')assert(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)')),`${name}: source accounting legend implies an element`);
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
+    if(evidence.warningProof)evidence.warningProof.hudPanels=await page.evaluate(()=>[...document.querySelectorAll('#hud :is(.vitals,#status-hud,#action-bar,#radar-hud)')].filter(panel=>panel.getClientRects().length).map(panel=>{
+     const {left,top,right,bottom}=panel.getBoundingClientRect();
+     const background=getComputedStyle(panel).backgroundColor;
+     const alpha=background.startsWith('rgba(')?Number(background.split(',').at(-1).slice(0,-1)):1;
+     return {left,top,right,bottom,alpha,faded:panel.dataset.obscuresThreat==='true'};
+    }));
     assertNativeWarning(evidence,name,{quiet:scenario.roomTour||scenario.id==='combat-calm'||scenario.id==='l8-arena-calm'});
     if(scenario.roomTour)assertRoomTour(evidence,frame,name);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);

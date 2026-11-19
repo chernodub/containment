@@ -411,6 +411,11 @@ void main(){
    float heat=crack*reveal*(.5+.5*near)*flow;
    emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9+vec3(.8,.12,.015)*near*reveal*.75;
    alpha=reveal*((.18+.28*near)*(1.-crack)+crack*.45);
+   // The activation flash fills the centre before the moving aura settles.
+   float pulse=smoothstep(0.,.06,age)*(1.-smoothstep(.14,.46,age));
+   float core=1.-smoothstep(R*.17,R*(.65+.13*n),r);
+   emit+=vec3(1.45,.43,.09)*core*pulse;
+   alpha+=core*pulse*.30;
    base=vec3(.025,.01,.006);
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -444,7 +449,7 @@ void main(){
  }
  #ifdef HAS_ABILITY_PRIORITY_MASK
  // Ground sheets keep a flat, quiet tint underneath the warning.
- bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5);
+ bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5&&fxArc>1.5&&fxArc<2.5);
  if(groundSheet){
   float warning=prioritySample.g;
   float coverage=step(.004,alpha+dot(emit,vec3(.333)));

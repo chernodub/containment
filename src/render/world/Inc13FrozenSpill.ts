@@ -38,6 +38,6 @@ export function addFrozenSpill(root:T.Group):void {
     c.globalCompositeOperation='source-over';
     c.strokeStyle='rgba(171,195,197,.41)';c.lineWidth=1.3;c.stroke(rim);
     c.restore();
-  });
+  },.022);
   creepingVapour(root,[[396,320,210,74,-.14],[310,374,232,75,.47],[215,430,170,58,.63]]);
 }
