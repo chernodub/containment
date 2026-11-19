@@ -18,7 +18,10 @@ type Bucket = { material: T.Material; meshes: T.Mesh[] };
 // These constructor-owned groups contain only rigid procedural ship fittings.
 // Loaded/lazy owners, exit signals, live fixtures and other authored roots keep
 // their existing hierarchy and lifecycle boundaries.
-const rigidEquipmentOwners = new Set(['l8-equipment', 'armory-carousel-and-issue-bay']);
+const rigidEquipmentOwners = new Set([
+  'l8-equipment', 'armory-carousel-and-issue-bay',
+  'safety-recorder', 'disconnected-ai-housing', 'split-contactor-battery',
+]);
 const sharedRoomFinishKeys = new Map<T.Material, string>(
   Object.values(MAT).map(material => [material, material.customProgramCacheKey()]),
 );
@@ -121,7 +124,7 @@ function meshKey(mesh: T.Mesh, rigidEquipment = false): string | undefined {
 
 /**
  * Consolidate already-baked static room meshes before applyRoomMood adds hooks.
- * Each parent is an independent resource boundary, except for two explicit
+ * Each parent is an independent resource boundary, except for explicit
  * rigid procedural equipment constructors. Instanced/loaded assets, transparent
  * meshes, live dressing and other named owner roots remain untouched.
  */

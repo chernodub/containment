@@ -272,8 +272,10 @@ export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, cli
     // fitFootprint scales from the grounded actor origin, preserving floor contact.
     const heights = rankHeights.get(family) ?? {};heights[rank] = Math.max(0,top)*scale;rankHeights.set(family,heights);
     // A scaled boss rank owns a proportionally larger collider (integration scales the native radius by the same factor).
-    if(radial>0)fits[rank]=scale*radius*.94/radial;
+    if(radial>0&&rank!=='elite')fits[rank]=scale*radius*.94/radial;
   });
+  // Elite skins share the base anatomy. Added blades and armour must not rescale it.
+  if(fits.base!==undefined)fits.elite=fits.base*originalCreatureRankScale(family,'elite');
   mixer.stopAllAction();mixer.uncacheRoot(asset);
   for(const pose of poses){pose.bone.position.copy(pose.position);pose.bone.quaternion.copy(pose.quaternion);pose.bone.scale.copy(pose.scale);pose.bone.updateMatrix();}
   root.updateMatrixWorld(true);

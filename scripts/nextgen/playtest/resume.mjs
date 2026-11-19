@@ -32,6 +32,11 @@ export function checkpointFromEarnedBoundary(state, parentReport) {
   const charge = abilities?.overdrive?.charge;
   assert(finite(charge) && charge >= 0 && charge <= 1, 'Recorded Overdrive charge is required');
   assert(finite(state.elapsed) && state.elapsed >= 0 && Number.isSafeInteger(Math.round(state.elapsed * 1000)), 'Recorded elapsed time is invalid');
+  const difficulty = state.difficulty ?? parentReport.difficulty;
+  if (difficulty !== undefined) {
+    assert(['story', 'standard', 'veteran'].includes(difficulty), 'Recorded difficulty is invalid');
+    assert(parentReport.difficulty === undefined || parentReport.difficulty === difficulty, 'Parent difficulty must match boundary difficulty');
+  }
   // No defaults, rewards, refills, room progression or stat edits: retain the captured values exactly.
   return structuredClone({
     version: 1,
@@ -39,6 +44,7 @@ export function checkpointFromEarnedBoundary(state, parentReport) {
     run,
     build,
     resources,
+    ...(difficulty === undefined ? {} : {difficulty}),
     abilities: {overdriveCharge: charge},
     stats,
   });

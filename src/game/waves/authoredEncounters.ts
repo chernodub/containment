@@ -51,3 +51,9 @@ export const DETOUR_BEATS:Readonly<Partial<Record<number,AuthoredBeat>>>=Object.
  15:priority(2,'warden'),
  18:siege(3),
 });
+
+/** Story relief for the two maintenance rooms, preserving each room's tactical beats. */
+export const STORY_ENCOUNTER_OVERRIDES:Readonly<Partial<Record<number,readonly AuthoredBeat[]>>>=Object.freeze({
+ 12:Object.freeze([cross(4),withRules(priority(2,'warden',2),{lullMs:4000}),brokenPincer(4)]),
+ 13:Object.freeze([withRules(flank(3),{lullMs:4000}),brokenPincer(4),cross(4)]),
+});
