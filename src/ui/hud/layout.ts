@@ -68,11 +68,23 @@ function updateInsets(width: number, height: number): void {
 /** Begin one projection pass; reused panel records avoid DOM measurements. */
 export function beginHudOcclusion(): void { for (const group of cached) {group.obscured = false; group.threatDistance = Infinity;} }
 /** Threat footprints include bodies, hostile warning areas and the marine. */
+export function markHudWarningOcclusion(intersectsWarning: (left: number, top: number, right: number, bottom: number) => boolean): void {
+    for (const group of cached) {
+        if (group.obscured || !isThreatPanel(group.element)) continue;
+        const box = group.previous!;
+        if (!intersectsWarning(box.left, box.top, box.right, box.bottom)) continue;
+        group.obscured = true;
+        group.threatX = (box.left + box.right) / 2;
+        group.threatY = (box.top + box.bottom) / 2;
+    }
+}
+function isThreatPanel(element: HTMLElement): boolean {
+    return element.id === 'action-bar' || element.id === 'status-hud' || element.id === 'radar-hud' || element.classList.contains('vitals');
+}
 export function markHudOcclusion(left: number, top: number, right: number, bottom: number): void {
     if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isFinite(right) || !Number.isFinite(bottom)) return;
     for (const group of cached) {
-        const id = group.element.id;
-        if (id !== 'action-bar' && id !== 'status-hud' && id !== 'radar-hud' && !group.element.classList.contains('vitals')) continue;
+        if (!isThreatPanel(group.element)) continue;
         const box = group.previous!;
         if (left >= box.right || right <= box.left || top >= box.bottom || bottom <= box.top) continue;
         const x = (left + right) / 2, y = (top + bottom) / 2;
