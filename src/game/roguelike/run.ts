@@ -145,7 +145,7 @@ export function isValidRunState(value: unknown): value is RunState {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
-  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','guardianRoute','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
+  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','guardianRoute','weaponLessons','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
   if(record.runStructure!==undefined&&(record.runStructure!==1||record.version!==3))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
   if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>10||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
@@ -168,6 +168,7 @@ export function isValidRunState(value: unknown): value is RunState {
   }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
+  if(record.weaponLessons!==undefined&&(record.version!==3||![1,2,3].some(value=>value===record.weaponLessons)))return false;
   if(record.guardianRoute!==undefined){
     const junctions=record.junctions as RunState['junctions'];
     if(record.runStructure!==1||current.depth<3||
