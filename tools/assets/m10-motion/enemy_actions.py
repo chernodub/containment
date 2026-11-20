@@ -504,6 +504,16 @@ class Creature:
                 for arm in self.arms:
                     desired=arm['rest']+UP*H*.12+FWD*W*.09*math.sin(phase+arm['index']*math.pi/2)
                     self.solve(arm,desired)
+        elif action=='m10-wall-stun':
+            self.move(self.center,-UP*H*.22)
+            self.rotate(self.center,SIDE,.32)
+            self.rotate('head',SIDE,.49)
+            head=self.base_matrices['head'].translation
+            deck=min(leg['rest'].dot(UP) for leg in self.legs)
+            for arm in self.arms:
+                tip=head+FWD*W*.49+SIDE*arm['index']*W*.40
+                tip+=UP*(deck+.09*H-tip.dot(UP))
+                self.solve(arm,tip,16)
         elif action in ('m10-windup','m10-strike','m10-recovery'):
             if self.family=='brute':self.cleaver(action,t,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
@@ -679,6 +689,8 @@ def author(family, patterns=None):
     arm=import_rig(family)
     creature=Creature(arm,family)
     takes = {name: seconds for name,seconds in DURATIONS.items() if not patterns or any(fnmatchcase(name,p) for p in patterns)}
+    if family=='brute' and (not patterns or any(fnmatchcase('m10-wall-stun',p) for p in patterns)):
+        takes['m10-wall-stun']=.10
     if family in ('stalker','crawler','brute','carrier','spitter'):
         for direction in ('front','right','back','left'):
             name=f'm10-hit-rifle-{direction}'

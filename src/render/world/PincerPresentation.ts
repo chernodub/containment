@@ -57,7 +57,7 @@ export class PincerPresentation {
     if (enemy.wallStunAngle !== undefined) {
       this.pinned.set(model, model.body.rotation.x);
       model.root.rotation.y = Math.PI / 2 - enemy.wallStunAngle;
-      model.body.rotation.x += .48;
+      model.body.rotation.x += .10;
       this.cutAwayCrown(model, game, camera, marineHeight);
     }
     if (enemy.podStage !== 'opening') return;
@@ -68,14 +68,14 @@ export class PincerPresentation {
     model.root.rotation.z = -.3 * progress;
     let seam = this.seams.find(mesh => !mesh.visible);
     if (!seam) {
-      seam = new T.Mesh(this.block, this.warning);
+      seam = new T.Mesh(this.block, this.shadow);
       this.root.add(seam);
       this.seams.push(seam);
     }
     seam.visible = true;
-    seam.position.set(enemy.x / unit, .85, enemy.y / unit);
+    seam.position.set(enemy.x / unit, .12, enemy.y / unit);
     seam.rotation.y = -angle;
-    seam.scale.set(.65 + .45 * progress, .075, .09 + .1 * progress);
+    seam.scale.set(.20 + .08 * progress, .075, .78);
   }
 
   releaseActor(model: ActorModel) {
@@ -231,9 +231,13 @@ export class PincerPresentation {
         this.brood.add(pod);
       }
       pod.visible=true;
-      pod.position.set(point.x/unit,.4*wither,point.y/unit);
-      pod.scale.setScalar(wither);
-      pod.rotation.z=(1-wither)*Math.PI/2;
+      const fold = T.MathUtils.smoothstep(1800-remaining, index===0 ? 0 : 120, 650);
+      const dx=matron.x-point.x, dz=matron.y-point.y;
+      const pull=fold*Math.min(.72,64/Math.max(1,Math.hypot(dx,dz)));
+      pod.position.set((point.x+dx*pull)/unit,.36*wither,(point.y+dz*pull)/unit);
+      pod.rotation.y=-Math.atan2(dz,dx);
+      pod.scale.set((1.28+.58*fold)*wither,(1.65-1.36*fold)*wither,1.1*wither);
+      pod.material=this.metal;
     });
   }
 
