@@ -52,3 +52,28 @@ These are maximum whole-scene draw counts across the five sampled frames in each
 | overclock | 97 | 118 | A fracture field and one faint marine echo. Damaging hops come from Overload. |
 
 The final joint lookup also recognises the Stalker, Spitter and Carrier skeletons. The mixed-family full build and overlap cases, plus Glacier and Tesla Pylon in both rooms, were recaptured on 419573ed. The comparison gallery uses these 41 refreshed frames wherever available. The remaining views use the renderer from c08f0b2d. [Final joint capture](../../artifacts/nextgen/fx17/review/joints/index.html)
+
+## Full-kit benchmark
+
+Safety Interlock Station, 25 native actors, 20 seconds per row, one repeat. Frame percentiles are measured RAF time. Host load is the one-minute load average on the 10-core host. Program inventory includes preparation.
+
+| Rig and tier | Peak draws | Program inventory | Combat compiles | Frame p50 / p95 ms | CPU p95 ms | Load before → after |
+|---|---:|---:|---:|---:|---:|---:|
+| breacher-high | 269 | 152 | 0 | 18.0 / 83.7 | 55.0 | 16.8 → 15.7 |
+| breacher-low | 265 | 331 | 0 | 16.7 / 41.8 | 37.0 | 15.7 → 15.5 |
+| cryo-high | 271 | 152 | 0 | 17.2 / 50.0 | 25.4 | 15.5 → 14.3 |
+| cryo-low | 267 | 331 | 0 | 16.7 / 33.4 | 21.4 | 14.3 → 11.7 |
+| pyro-high | 303 | 152 | 0 | 18.2 / 74.7 | 29.1 | 11.7 → 13.2 |
+| pyro-low | 276 | 331 | 0 | 23.3 / 57.9 | 24.9 | 13.2 → 12.2 |
+| arc-low | 255 | 331 | 0 | 16.7 / 42.4 | 38.8 | 9.2 → 8.3 |
+| arc-high | 268 | 152 | 0 | 16.8 / 58.3 | 41.5 | 8.3 → 7.9 |
+
+[Benchmark measurements](../../artifacts/nextgen/fx17/benchmark.json)
+
+All eight accepted rig/tier measurements stayed below 330 draws and created zero combat programs. The existing light pool peaked at nine on High. FX17 adds no render targets or passes. Frame p95 ranged from 33.4 to 83.7 ms on this host. Each High run exceeded the separate 20 ms p95 frame-time target.
+
+The first Arc High trial reached 276 draws and zero compiles, but median enemy count was 23 against the fixture minimum of 24. That stopped the first matrix before Arc Low. Both Arc rows above come from a fresh retry with the same room, seed, duration and population checks. [Arc retry](../../artifacts/nextgen/fx17-arc-budget/benchmark.json)
+
+## Production build and playtest
+
+The final TypeScript check and Vite production build passed. Both desktop bot campaigns used seed 1729, fast rendering, six rooms and the 180000 ms startup timeout. Pyro and Arc each cleared Armory and reached the six-room limit with zero errors and zero reported defects. [Pyro campaign](../../artifacts/nextgen/playtest/fx17-pyro/report.json) · [Arc campaign](../../artifacts/nextgen/playtest/fx17-arc/report.json)
