@@ -21,7 +21,7 @@ const portraitPose={
 for(const rig of Object.keys(rigKit)){
   const {aim,pose,frame,span,rimColor}=portraitPose[rig];
   add('portrait-'+rig,[{...marine(rig,pose),frame,aim,reload:rig === 'pyro' ? .32 : 0}],{
-    width:640,height:640,focus:[0,.99,0],span,rimColor,framePortrait:true,transparent:true,
+    width:640,height:640,focus:[0,.99,0],span,rimColor,key:[-3,5,2],framePortrait:true,transparent:true,
   });
 }
 const rewards={

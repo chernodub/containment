@@ -193,7 +193,7 @@ class Suit:
         self.limb_plate('upper arm plate ' + side, name, a, b, side,
                         [(-55, .07), (35, .06), (60, .12), (45, .26), (-40, .27), (-70, .16)], bone=up, radius=.1)
         self.limb_plate('rear upper arm plate ' + side, name, a, b, side,
-                        [(-150, .08), (-62, .08), (-60, .25), (-150, .25)], bone=up, radius=.1, standoff=.010, crown=.004)
+                        [(-150, .08), (-62, .08), (-60, .25), (-150, .25)], role='graphite', bone=up, radius=.1, standoff=.010, crown=.004)
         ab = (b - a).length
         self.limb_plate('vambrace ' + side, name, b, c, side,
                         [(-80, .035), (60, .03), (95, .09), (80, .175), (-70, .18), (-100, .1)], bone=fo, radius=.08, crown=.004)
@@ -336,7 +336,7 @@ class Suit:
         pecs = {}
         for mirror, bone in ((False, 'ribs'), (True, 'ribs')):
             side = 'L' if not mirror else 'R'
-            pecs[side] = self.torso_plate('pectoral plate ' + side, pec, mirror=mirror, crown=.012)
+            pecs[side] = self.torso_plate('pectoral plate ' + side, pec, role='graphite', mirror=mirror, crown=.012)
         # Pectoral intake vents: three gunmetal slats on a dark bed, lower outer corner.
         for mirror in ((False, True) if self.high else ()):
             sgn = -1 if mirror else 1
@@ -430,7 +430,7 @@ class Suit:
         scale = 1.40 if big else (1.0 if rig == 'arc' else 1.15)   # SHADE15: one broad saturated shoulder plane
         def P(pts):
             return [(u * scale, v * scale) for u, v in pts]
-        role = col   # SHADE15: solid rig colour (the title's big pauldron), no hazard stripes
+        role = col if big else 'ceramic'
         cap = P([(-70, -8), (70, -8), (76, 34), (48, 74), (-48, 74), (-76, 34)])
         self.__dict__.setdefault('pauldron_caps', {}); self.__dict__.setdefault('pauldron_centre', {})
         self.pauldron_centre[side] = c

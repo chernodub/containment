@@ -40,27 +40,30 @@ varying vec3 vBeaconView;
 uniform float strength;
 uniform sampler2D sceneDepth;
 uniform sampler2D sceneGeometry;
-uniform float hasSceneGeometry;
 uniform float marineId;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
 void main(){
   float bossOcclusion=0.;
+  float occlusion=0.;
   if(hasSceneDepth>.5){
     vec2 uv=gl_FragCoord.xy*inverseViewport;
-    if(hasSceneGeometry>.5){
-      float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
+    vec4 geometry=texture2D(sceneGeometry,uv);
+    float classification=floor(geometry.a*255.+.5);
+    float kind=mod(classification,8.);
+    float depthDelta=gl_FragCoord.z-texture2D(sceneDepth,uv).x;
+    if(classification==255.){
+      // Depth-tested hostile priority fragments mark the geometry attachment.
+      // Recover only where the borrowed skin shares their underlying opaque depth.
+      occlusion=.58*(1.-smoothstep(.00008,.00045,abs(depthDelta)));
+    }else{
       bossOcclusion=1.-step(.25,abs(kind-6.));
-      if(abs(kind-2.)>.25&&bossOcclusion<.5)discard;
+      if(abs(kind-2.)>.25&&(kind<4.||kind>6.))discard;
+      float nearestId=floor(geometry.b*255.0+.5);
+      if(marineId>.5&&abs(nearestId-marineId)<.5)discard;
+      occlusion=smoothstep(.00008,.0008,depthDelta);
     }
-    float surface=texture2D(sceneDepth,uv).x;
-    if(gl_FragCoord.z<=surface+.00008)discard;
-    // B stores the actor identity; A separately packs class and actor region.
-    // A nearer piece of our own armor is self-occlusion, not an obstruction.
-    if(hasSceneGeometry>.5&&marineId>.5){
-      float nearestId=floor(texture2D(sceneGeometry,uv).b*255.0+.5);
-      if(abs(nearestId-marineId)<.5)discard;
-    }
+    if(occlusion<=0.)discard;
   }
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
   float fill=mix(.07*strength,.24,bossOcclusion);
@@ -68,7 +71,7 @@ void main(){
   // A dark outer keyline preserves the cyan silhouette against white frost,
   // muzzle flashes and friendly particle cores, without another skin draw.
   vec3 color=mix(mix(vec3(.55,.89,1.0),vec3(.82,.95,1.),bossOcclusion),vec3(.012,.035,.048),smoothstep(.72,.95,rim));
-  gl_FragColor=vec4(color,max(fill,edge*mix(min(1.0,strength+.30),.93,bossOcclusion)));
+  gl_FragColor=vec4(color,occlusion*max(fill,edge*mix(min(1.0,strength+.30),.93,bossOcclusion)));
   #include <colorspace_fragment>
 }`;
 
@@ -97,7 +100,7 @@ function locatorTexture():T.DataTexture {
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},hasSceneGeometry:{value:0},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
   private readonly locatorMap=locatorTexture();
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
@@ -157,7 +160,6 @@ export class PlayerBeacon {
     // Contour-enabled Low and High already own the classified MRT; no new target.
     this.material.visible=!!depth&&hasGeometry;
     this.material.uniforms.sceneGeometry.value=hasGeometry?geometry:null;
-    this.material.uniforms.hasSceneGeometry.value=hasGeometry?1:0;
     this.material.uniforms.hasSceneDepth.value=depth?1:0;
     this.material.uniforms.inverseViewport.value.set(1/Math.max(1,width),1/Math.max(1,height));
     this.material.depthTest=!depth;this.material.depthFunc=T.GreaterDepth;

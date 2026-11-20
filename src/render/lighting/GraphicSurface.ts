@@ -131,15 +131,11 @@ const mapResponse = ShaderChunk.map_fragment
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
   diffuseColor *= sampledDiffuseColor;
   if(graphicMarine>.5){
-    // K12 keeps the authored palette, but wear/AO must not turn ivory plates blue-grey.
+    // MARINE17: the atlas encodes the undersuit and ceramic values.
+    // Rig paint is applied by the actor material using the authored mask.
     float marineValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-    float marineMax=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b));
-    float marineMin=min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
-    // HERO14: three value groups. Saturated rig panels keep their hue; everything else is
-    // either cool off-white plate or near-black gunmetal undersuit (never a warm midtone).
-    bool rigPanel=marineMax-marineMin>.16&&marineMax>.18;
-    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin)/max(.001,marineMax-marineMin)*.74; // SHADE15: pure rig hue, one broad saturated plane
-    else diffuseColor.rgb=marineValue>.30?vec3(.74,.78,.82):vec3(.13,.14,.16); // SHADE15: dark slate undersuit, no black panels
+    diffuseColor.rgb=mix(vec3(.018,.021,.025),vec3(.77,.78,.79),
+      smoothstep(.19,.38,marineValue));
   }
   // Family values replace the inherited photographic/material tint together;
   // a pale source multiply must not bleach graphite armor or a russet crawler.
@@ -161,7 +157,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
   const key = material.customProgramCacheKey();
   // Retained preparation proxies copy an already-patched hook and cache key.
-  if (key.includes(':graphic-surface-v2')) return;
+  if (key.includes(':graphic-surface-v2') || key.includes(':graphic-surface-marine17')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   // K10's original flat zones replace inherited photographic skins. Keep the
@@ -220,7 +216,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         vec3 graphicActorHue = clamp(graphicActorDiffuse / max(.008,dot(graphicActorDiffuse,vec3(.2126,.7152,.0722))),vec3(.55),vec3(1.4));
         // Marine value steps are diffuse reflectance, not emission. Mostly neutral
         // incident hue preserves ivory/graphite and the saturated authored rig panels.
-        if(graphicMarine>.5){graphicActorLight=.66+.34*smoothstep(.30,.62,graphicActorIncident);graphicActorHue=mix(vec3(1.),graphicActorHue,.08);}
+        if(graphicMarine>.5){graphicActorLight=.66+.34*smoothstep(.30,.62,graphicActorIncident);graphicActorHue=vec3(1.);}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
@@ -235,6 +231,6 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
         totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
-  material.customProgramCacheKey = () => `${key}:graphic-surface-v2`;
+  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-marine17" : "graphic-surface-v2"}`;
   material.needsUpdate = true;
 }

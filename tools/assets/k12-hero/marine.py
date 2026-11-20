@@ -67,18 +67,14 @@ def build(joints, tails, high):
         for obj in objects:
             kit.apply_all(obj)
             name = obj.name.split('.')[0]
-            painted = (
-                name == 'gorget collar'
-                or name.startswith(('vambrace L', 'vambrace R', 'thigh side plate ', 'thigh front plate ',
-                                    'helmet crown half ', 'shoulder blade plate '))
-                or any(zone in name for zone in (' pauldron ', ' crown stripe ', ' forearm guard'))
-            )
-            module = name in (
-                'breacher accumulator', 'breacher ram barrel', 'ram gland',
-                'cryo dewar', 'dewar valve', 'pyro fuel cell', 'pyro exhaust stack',
-                'arc capacitor bank', 'coil cap', 'arc coil core',
-            )
+            big_side = 'R' if key == 'pyro' else 'L'
+            painted = name.endswith('pauldron cap ' + big_side) or ' crown stripe ' in name
+            module = name in ('breacher accumulator', 'cryo dewar', 'pyro fuel cell', 'arc capacitor bank')
             if not high:
+                if not painted and not module:
+                    for slot in obj.material_slots:
+                        if slot.material.get('k12Role') in (*M.RIG_COLOUR.values(), 'hazard'):
+                            slot.material = M.get('ceramic')
                 mask = obj.data.attributes.new('rig_paint', 'FLOAT', 'FACE')
                 up = obj.matrix_world.to_3x3().inverted().transposed()
                 for face in obj.data.polygons:

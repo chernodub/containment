@@ -215,7 +215,13 @@ def build(role, mode='render'):
             em.inputs['Color'].default_value = PALETTE[key] + (1,)
             em.inputs['Strength'].default_value = 1.0
         elif kind == 'visor':
-            em.inputs['Color'].default_value = (.02, .09, .11, 1)
+            height = _n(nodes, 'ShaderNodeSeparateXYZ', (0, 0))
+            position = _n(nodes, 'ShaderNodeNewGeometry', (-200, 0))
+            links.new(position.outputs['Position'], height.inputs[0])
+            lower = _math(nodes, links, 'GREATER_THAN', height.outputs['Z'], 1.876)
+            upper = _math(nodes, links, 'LESS_THAN', height.outputs['Z'], 1.882)
+            links.new(_math(nodes, links, 'MULTIPLY', lower, upper), em.inputs['Strength'])
+            em.inputs['Color'].default_value = (.005, .15, .21, 1)
         else:
             em.inputs['Color'].default_value = (0, 0, 0, 1)
         links.new(em.outputs[0], out.inputs['Surface'])
@@ -234,7 +240,7 @@ def build(role, mode='render'):
         return mat
     if kind == 'visor':
         if mode == 'albedo':
-            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = (.03, .10, .13, 1)
+            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = (.008, .012, .016, 1)
             links.new(em.outputs[0], out.inputs['Surface'])
             return mat
         # Smoked glass over a luminous HUD layer: a glossy coat with emission that
