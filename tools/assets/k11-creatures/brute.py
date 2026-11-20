@@ -20,6 +20,11 @@ RANK_SCALE = {"boss": 2.3, "elite": 1.12}
 RANK_PARTS = {"boss": ["body", "boss"]}   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 2.0
+BANDS = {   # CREATURE18: dark chitin, warm flesh, blades at ~half the old bone value (cool grey), ochre lantern
+    "chitin": (0.10, 0.05, 0.035), "flesh": (0.62, 0.36, 0.20), "bone": (0.17, 0.18, 0.20),
+    "accent": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15),
+}
+BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}   # top-view plates carry the mid band, gaps go dark
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),

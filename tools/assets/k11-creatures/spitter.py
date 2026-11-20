@@ -18,7 +18,12 @@ VOXEL = 0.03
 TRIS = {"body": 9500, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16
 ATLAS = 1024
-GLOW_STRENGTH = 1.3
+GLOW_STRENGTH = 0.9   # CREATURE18: a lantern, not a glow blob
+BANDS = {   # CREATURE18: dark chitin, olive-ochre flesh (mid mass), pale mortar mouth, acid accent
+    "chitin": (0.08, 0.075, 0.04), "flesh": (0.54, 0.50, 0.26), "bone": (0.48, 0.46, 0.34),
+    "accent": (0.35, 0.95, 0.08), "eye": (0.55, 1.0, 0.25),
+}
+BAND_MAP = {"shell": "flesh"}
 PALETTE = {
     "shell": (0.12, 0.06, 0.028), "edge": (0.55, 0.45, 0.24), "membrane": (0.09, 0.03, 0.02),
     "sinew": (0.22, 0.08, 0.04), "claw": (0.02, 0.015, 0.01), "tooth": (0.68, 0.62, 0.42),

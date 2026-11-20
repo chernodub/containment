@@ -90,8 +90,63 @@ def tertiary(high, sculpture, seed=0):
     K.set_verts(high, co + n * d[:, None])
 
 
+# CREATURE18 three-band finish: dark chitin, mid flesh, one saturated accent (+ a matte "bone" plane).
+BAND_OF = {S.SHELL: "chitin", S.UNDER: "chitin", S.CLAW: "chitin", S.ARMOR: "chitin", S.CREST: "chitin",
+           S.CAVITY: "chitin", S.MEMBRANE: "flesh", S.FLESH: "flesh", S.SINEW: "flesh", S.BONE: "bone",
+           S.TOOTH: "bone", S.ORGAN: "accent", S.EYE: "accent"}
+ELITE_GOLD = (0.70, 0.50, 0.14)
+
+
+def colorize_bands(high, sculpture):
+    """Large deliberate value shapes that survive two-band shading at 60-140 px: no grain, no blotches."""
+    co = K.verts_np(high)
+    _, win = sculpture.evaluate_points(co, track=True)
+    zone = np.array([sculpture.prims[i].zone if i >= 0 else S.SHELL for i in win])
+    plate = np.array([sculpture.prims[i].plate if i >= 0 else 0 for i in win])
+    cv = K.curvature(high)
+    cv = K.laplacian(cv, K.edges_np(high), len(co), 6, 0.5)
+    cv = cv / (np.std(cv) + 1e-6)
+    B = M.BANDS
+    base = np.zeros((len(co), 3), np.float32)
+    remap = getattr(M, "BAND_MAP", {})   # caste override: zone key -> band
+    bands = np.empty(len(co), object)
+    for z, band in BAND_OF.items():
+        band = remap.get(ZONE_KEY[z], band)
+        sel = zone == z
+        bands[sel] = band
+    for pid, band in getattr(M, "PLATE_BAND", {}).items():   # chosen plates keep a deliberate band
+        bands[plate == pid] = band
+    for band in set(bands.tolist()):
+        sel = bands == band
+        base[sel] = B[band]
+    base[zone == S.EYE] = B.get("eye", B["accent"])
+    base[zone == S.CAVITY] *= 0.5
+    chitin = bands == "chitin"
+    elite = sculpture.name.endswith("-elite")
+    if elite:   # rank reads as a gold crest/plating that adds silhouette, not only a tint
+        hard = np.isin(zone, [S.SHELL, S.UNDER, S.ARMOR, S.CREST, S.CLAW, S.BONE, S.TOOTH])
+        base[hard] = ELITE_GOLD
+        chitin &= ~hard
+    # one quiet plate step so shingles stay legible without becoming camouflage
+    base[chitin] *= (0.94 + 0.12 * ((plate[chitin] * 2654435761) % 997 / 997.0))[:, None]
+    convex = S.smoothstep(0.9, 2.2, cv)
+    concave = S.smoothstep(0.6, 1.8, -cv)
+    lift = np.where(chitin, 0.22, np.where(bands == "bone", 0.10, 0.0))
+    base = base + (np.minimum(base * 2.2 + 0.03, 1.0) - base) * (convex * lift)[:, None]
+    base *= (1 - 0.22 * concave)[:, None]
+    glow = np.zeros((len(co), 3), np.float32)
+    for key in ("organ", "eye"):
+        sel = zone == (S.ORGAN if key == "organ" else S.EYE)
+        glow[sel] = np.asarray(M.GLOW[key], np.float32) * (0.75 + 0.25 * np.clip(1 - concave[sel], 0, 1))[:, None]
+    ones = np.ones((len(co), 1), np.float32)
+    K.write_color(high, "glow", np.hstack([glow, ones]))
+    K.write_color(high, "base", np.hstack([np.clip(base, 0, 1), ones]))
+
+
 def colorize(high, sculpture):
     """Flat readable zones + painted edge wear from curvature, as vertex colours."""
+    if hasattr(M, "BANDS"):
+        return colorize_bands(high, sculpture)
     co = K.verts_np(high)
     _, win = sculpture.evaluate_points(co, track=True)
     zone = np.array([sculpture.prims[i].zone if i >= 0 else S.SHELL for i in win])
@@ -202,7 +257,10 @@ ao = K.image_np(images["ao"])
 glow = K.image_np(images["glow"])
 normal = K.image_np(images["normal"])
 # Bake AO into the albedo (actors draw without an AO sampler on the flat path).
-base[..., :3] *= (0.42 + 0.58 * ao[..., :3]) ** 1.15
+if hasattr(M, "BANDS"):   # CREATURE18: light occlusion only, so crevices do not turn the mid band to mud
+    base[..., :3] *= 0.74 + 0.26 * ao[..., :3]
+else:
+    base[..., :3] *= (0.42 + 0.58 * ao[..., :3]) ** 1.15
 paths = {kind: BAKES / f"{M.FAMILY}-{kind}.png" for kind in ("base", "normal", "glow")}
 K.save_np(base, paths["base"], M.ATLAS)
 K.save_np(normal, paths["normal"], M.ATLAS, data=True)
