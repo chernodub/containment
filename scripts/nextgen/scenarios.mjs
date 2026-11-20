@@ -427,7 +427,13 @@ export function stageCombat({status=false,family}){
   g.enemies.reset();const placed=[];
   for(const p of points){const id=d.spawn(family??(placed.length%5===0?'spitter':'brute'),p.x,p.y,placed.length%4===0);if(id){
    const actor=g.enemies.getSnapshot(id);
-   if(!actor||!d.canStand(p.x,p.y,actor.radius)||!d.clearShot(p.x,p.y)||Math.hypot(p.x-g.player.x,p.y-g.player.y)<actor.radius+g.player.radius+12)throw Error('Heavy native spawn clearance failed');
+   if(!actor)throw Error('Heavy native spawn has no actor snapshot');
+   // The packing radius is only an estimate. Reject candidates that fail
+   // clearance at their actual native rank radius and keep searching.
+   if(!d.canStand(p.x,p.y,actor.radius)||!d.clearShot(p.x,p.y)||Math.hypot(p.x-g.player.x,p.y-g.player.y)<actor.radius+g.player.radius+12){
+    g.enemies.remove(id);
+    continue;
+   }
    placed.push({...p,id,radius:actor.radius});
   }}
   return placed;

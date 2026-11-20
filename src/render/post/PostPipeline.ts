@@ -417,7 +417,7 @@ export class PostPipeline {
     const height = Math.max(1, Math.round(this.height * this.pixelRatio * scale));
     r.scene.setSize(width, height);
     r.present.setSize(width,height);r.antialias.uniforms.resolution.value.set(1/width,1/height);
-    r.ao.setSize(this.tier==='low'?1:Math.max(1, Math.ceil(width / 2)),this.tier==='low'?1:Math.max(1, Math.ceil(height / 2)));
+    r.ao.setSize(this.tier==='low'?1:Math.max(1, Math.ceil(width / 4)),this.tier==='low'?1:Math.max(1, Math.ceil(height / 4)));
     r.aoDenoised.setSize(r.ao.width, r.ao.height);
     r.gtao.setSize(r.ao.width, r.ao.height);
     const quarterWidth = this.tier==='low'?1:Math.max(1, Math.ceil(width / 4));
