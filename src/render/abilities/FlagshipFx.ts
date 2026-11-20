@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { ELEMENT_COLORS } from './types';
 
 /**
  * VFX13/VFX14 surfaces: one retained procedural program for the hero
@@ -54,9 +55,9 @@ void main(){
   if(col>39.5){s=1.;}
   float h1=fract(sin(seg*12.9898+fxAngle*7.1)*43758.5),h2=fract(sin(seg*78.233+fxAngle*3.3)*12543.1),h3=fract(sin(seg*39.425+fxAngle)*24634.6);
   float ang=seg*2.39996+fxAngle*6.2831853;
-  float rr=fxRange*(.12+.74*sqrt(h1));
+  float rr=fxRange*(.63+.31*sqrt(h1));
   vec3 base=vec3(fxOrigin.x+cos(ang)*rr,fxHeight.x,fxOrigin.z+sin(ang)*rr);
-  float H=fxHeight.y*(.55+.7*h2)*fxParam;float W=.34+.3*h3;
+  float H=fxHeight.y*(.55+.7*h2)*fxParam;float W=.42+.36*h3;
   vec3 right=normalize(vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]));
   w=base+right*(s*W*(1.-.55*v))+vec3(0.,v*H,0.);
   fxLocal=vec2(s,v);fxSeg=seg+step(39.5,col)*.5;
@@ -88,6 +89,7 @@ void main(){
   vec2 xz=mix(polar,fxMuzzle.xz,pull*step(m,.5));
   float lift=m<.5?fxParam*fxAge*1.1:0.;
   w=vec3(xz.x,mix(fxHeight.x,fxHeight.y,smoothstep(0.,1.,r))+lift,xz.y);
+  if(m<.5 && fxArc>6.)w.y+=fxHeight.y*(1.-r*r)*(1.-smoothstep(.06,.38,fxAge));
   fxLocal=vec2(s,r);
  }else if(m<3.5){
   // Strip: u across the half width, v along the exact length.
@@ -104,7 +106,11 @@ void main(){
  gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);fxScreen=gl_Position;
 }`;
 
+const COLD_FIELD_LIMIT = 8;
 const fragment = `
+uniform vec4 coldAxes[${COLD_FIELD_LIMIT}];
+uniform float coldRadii[${COLD_FIELD_LIMIT}];
+uniform int coldCount;uniform int coldOwner;
 uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
 uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
 uniform float fxParam;uniform float fxLow;uniform vec3 fxOrigin;uniform float fxAngle;uniform float fxYield;
@@ -133,7 +139,7 @@ void main(){
  if(m<.5){
   // Fire volume slice. param 0 = low hot sheet, .5 = body, 1 = smoke crown.
   float s=fxLocal.x,r=fxLocal.y,layer=max(0.,fxParam);
-  float front=1.-pow(1.-clamp(age/.12,0.,1.),3.);
+  float front=.65+.35*(1.-pow(1.-clamp(age/.10,0.,1.),3.));
   // Anisotropic flow space: features stretch along the jet into licking tongues.
   vec2 q=vec2(s*(r*1.05+.12)*fxRange*.72,r*fxRange*.42);
   vec2 flow=vec2(0.,t*(3.2-layer*1.4))+fxSeed;
@@ -168,6 +174,16 @@ void main(){
   alpha=max(smoke*.45*(1.-smoothstep(.5,1.,k)),dens*.12+rim*.3*(1.-layer*.6));
   base=mix(vec3(.025,.022,.021),vec3(.2,.035,.008),max(cool,dens*(1.-smoke)));
   emit*=1.-smoothstep(.62,1.,k);
+  if(fxArc>6.){
+   float belly=(1.-smoothstep(.28+n*.16,.75+n*.17,r))*(1.-smoothstep(.045,.29,age));
+   emit=fxHeat(.48+.49*(1.-r))*belly*(.6+.4*n)*fxIntensity;
+   alpha=max(alpha*.45,belly*.6);
+  }else if(fxParam>=0.){
+   float surge=(1.-smoothstep(.045,.22,age))*tip*body*(1.-layer*.8);
+   float roll=surge*smoothstep(.24,.52,n+.13*fine);
+   emit+=fxHeat(.41+.44*(1.-abs(s))*(1.-r*.7))*roll*.78*fxIntensity;
+   alpha=max(alpha,roll*.55);
+  }
   if(fxParam<-.5){
    float tongueWidth=.65*pow(max(0.,1.-r),.65)+n*.18;
    float tongue=(1.-smoothstep(tongueWidth*.55,tongueWidth,abs(s)))*(1.-smoothstep(.55+n*.25,.9+n*.1,r));
@@ -200,7 +216,7 @@ void main(){
   float lead=clamp(age/.018,0.,1.);
   float reach=smoothstep(lead+.002,lead-.02,v);
   float headGlow=exp(-abs(v-lead)*40.)*(1.-step(1.,lead));
-  float life=1.-smoothstep(.018,.045,age);
+  float life=1.-smoothstep(.016,.033,age);
   float coreW=.06+.05*life;
   float core=1.-smoothstep(coreW*.3,coreW,s);
   float halo=exp(-s*s*9.)*.55;
@@ -225,8 +241,8 @@ void main(){
   vec3 hot=mix(vec3(2.2,1.9,1.5),fxColor*1.6,smoothstep(0.,.35,k));
   if(fxParam>2.5){
    float jitter=(fxNoise(vec2(along*4.,floor(t*18.)+fxSeed))-.5)*.8;
-   float bolt=1.-smoothstep(.025,.09,abs(s-jitter));
-   float body=1.-smoothstep(.08,.3,abs(s-jitter));
+   float bolt=1.-smoothstep(.065,.19,abs(s-jitter));
+   float body=1.-smoothstep(.16,.54,abs(s-jitter));
    float halo=exp(-pow((s-jitter)*2.5,2.));
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
@@ -332,8 +348,9 @@ void main(){
   float fade=fxParam;
   // Pool (m 8): soft irregular soot underlay rather than an opaque disc; strips keep the dense film.
   float soot=m>10.5?.94:(.42+.3*fxFbm(q*.5+7.))*(1.-smoothstep(R*.55,R,r)*.35);
-  float islands=smoothstep(.51,.78,n)*smoothstep(R*.22,R*.68,r);
+  float islands=smoothstep(.39,.66,n+.08*fine)*(.58+.42*smoothstep(R*.22,R*.68,r));
   float fireDetail=m>10.5?1.:max(rim,islands);
+  if(m<10.5)channels=max(channels,islands*.8);
   alpha=edge*(soot*(m>10.5?1.:.27)+channels*.2*fireDetail+rim*.3)*fade;
   base=vec3(.004,.002,.001);
   // Pool edge stays orange-amber so it never reads as the hostile red warning.
@@ -358,6 +375,11 @@ void main(){
   float fade=1.-smoothstep(.15,1.,k);
   float mark=ribs*fragments*taper*fade;
   alpha=mark*.14;emit=(fxColor*.7+vec3(.9))*mark*fxIntensity;
+  if(fxParam>.5){
+   float plume=(1.-smoothstep(.045,.26,age))*(1.-smoothstep(.24+fragments*.30,.88,v));
+   alpha=max(alpha,plume*.50);
+   emit+=fxHeat(.88-.46*v)*plume*fxIntensity;
+  }
  }else if(m>14.5){
   // Standing flame tongue: narrowing body, upward-scrolling erosion, lean and flicker, temperature by height.
   if(abs(fxSeg-floor(fxSeg+.5))>.01)discard;
@@ -414,10 +436,10 @@ void main(){
    emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9;
    alpha=reveal*(.025*(1.-crack)+crack*.76);
    // The activation flash fills the centre before the moving aura settles.
-   float pulse=smoothstep(0.,.06,age)*(1.-smoothstep(.05,.18,age));
-   float core=1.-smoothstep(R*.045,R*(.23+.04*n),r);
-   emit+=vec3(1.45,.43,.09)*core*pulse;
-   alpha+=core*pulse*.30;
+   float pulse=1.-smoothstep(.05,.27,age);
+   float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
+   emit+=fxHeat(.52+.26*core)*core*pulse*(.44+.56*n);
+   alpha+=core*pulse*.64;
    base=vec3(.025,.01,.006);
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -465,12 +487,29 @@ void main(){
  float keep=1.-actionBar*.94;
  #ifdef HAS_ABILITY_PRIORITY_MASK
  float coreCover=max(prioritySample.b,prioritySample.r);
- if(groundSheet || m<.5 || m>14.5){
+ if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
    // Premultiplied emission must obey the same cap as coverage.
    keep*=1.-.83*coreCover;
  }
  #endif
  // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
+ if(coldOwner>=0 && coldCount>1){
+  int overlaps=0;
+  for(int i=0;i<${COLD_FIELD_LIMIT};i++){
+   if(i>=coldCount)break;
+   if(i==coldOwner)continue;
+   vec4 axis=coldAxes[i];vec2 rel=fxWorld.xz-axis.xy;
+   float along=clamp(dot(rel,axis.zw)/max(.0001,dot(axis.zw,axis.zw)),0.,1.);
+   if(length(rel-along*axis.zw)<coldRadii[i]-.035)overlaps++;
+  }
+  // Retain the exposed perimeter. Intersecting deposits share a faint interior.
+  if(overlaps>0){
+   // No inner shock rim where another field already owns the deck.
+   if(m>3.5 && m<4.5)discard;
+   keep*=overlaps>1?.06:.18;
+   alpha=min(alpha,.18);
+  }
+ }
  keep*=fxYield;
  alpha=clamp(alpha*keep,0.,1.);emit*=keep;
  if(alpha<.002&&dot(emit,vec3(1.))<.004)discard;
@@ -490,6 +529,9 @@ export class FlagshipFx {
   low = false;
   flashIntensity = 1;
   private readonly geometry = new T.PlaneGeometry(1, 1, 40, 24);
+  private readonly coldAxes = Array.from({ length: COLD_FIELD_LIMIT }, () => new T.Vector4());
+  private readonly coldRadii = new Float32Array(COLD_FIELD_LIMIT);
+  private readonly coldSlots: FxSlot[] = [];
   private cursor = 0;
   private time = 0;
   private readonly color = new T.Color();
@@ -500,6 +542,7 @@ export class FlagshipFx {
     for (let i = 0; i < capacity; i++) {
       const material = new T.ShaderMaterial({
         uniforms: {
+          coldAxes: { value: this.coldAxes }, coldRadii: { value: this.coldRadii }, coldCount: { value: 0 }, coldOwner: { value: -1 },
           fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
           fxOrigin: { value: new T.Vector3() }, fxMuzzle: { value: new T.Vector3() }, fxAngle: { value: 0 }, fxArc: { value: 1 },
           fxRange: { value: 1 }, fxInner: { value: 0 }, fxHeight: { value: new T.Vector2() }, fxParam: { value: 0 },
@@ -555,12 +598,31 @@ export class FlagshipFx {
     // Sustained (long-lived or settled) surfaces share one area budget; impact beats are exempt.
     let area = 0;
     for (const slot of this.slots) if (slot.live && this.sustained(slot)) area += this.area(slot);
+    const fields = this.coldSlots;
+    fields.length = 0;
+    for (const slot of this.slots) {
+      if (!slot.live || fields.length >= COLD_FIELD_LIMIT) continue;
+      const strip = slot.mode === FxMode.FrostStrip;
+      if (!strip && slot.mode !== FxMode.Frost && !(slot.mode === FxMode.Climax && slot.arc === 1)) continue;
+      const i = fields.length;
+      fields.push(slot);
+      this.coldAxes[i].set(slot.x, slot.z, strip ? slot.range * Math.cos(slot.angle) : 0, strip ? slot.range * Math.sin(slot.angle) : 0);
+      this.coldRadii[i] = strip ? slot.inner : slot.range;
+    }
     const cap = this.low ? 70 : 110;
     const yieldScale = area > cap ? Math.max(.45, cap / area) : 1;
     for (const slot of this.slots) {
       if (slot.live) slot.material.uniforms.fxYield.value = this.sustained(slot) ? yieldScale : 1;
       if (!slot.live) { slot.mesh.visible = false; continue; }
       const u = slot.material.uniforms;
+      let owner = fields.indexOf(slot);
+      if (fields.length > 1 && (slot.mode === FxMode.Blizzard || slot.mode === FxMode.Shock && slot.color === ELEMENT_COLORS.cryo)) {
+        for (let i = 0; i < fields.length; i++) {
+          const f = fields[i];
+          if (f.x === slot.x && f.z === slot.z && f.range === slot.range) { owner = i; break; }
+        }
+      }
+      u.coldOwner.value = owner; u.coldCount.value = fields.length;
       u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
       u.fxSeed.value = slot.seed; (u.fxOrigin.value as T.Vector3).set(slot.x, slot.y, slot.z);
       (u.fxMuzzle.value as T.Vector3).set(slot.mx, slot.my, slot.mz);

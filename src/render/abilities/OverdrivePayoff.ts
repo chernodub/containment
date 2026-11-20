@@ -13,7 +13,6 @@ const AMBER = ELEMENT_COLORS.kinetic;
 const RIG_COLOR: Readonly<Record<RigId, number>> = { breacher: AMBER, cryo: ICE, pyro: FIRE, arc: VIOLET };
 /** Overclock has no native area; its fracture field is presentation-only around the marine. */
 const ARC_FIELD = 5.5;
-type Actor = { x: number; y: number; radius: number; id: number };
 
 /**
  * VFX15: four different Overdrive climaxes (no shared ring template).
@@ -34,21 +33,10 @@ export class OverdrivePayoff {
   private radius = ARC_FIELD;
   private age = 0;
   private arcClock = 0;
-  private readonly ignitions = Array.from({ length: 40 }, () => ({ id: -1, start: 0 }));
-  private nextIgnition = 0;
-
   constructor(private readonly kit: ElementKit) {}
 
   event(event: AbilityEvent, x: number, y: number): void {
     if (event.slot !== 'overdrive') return;
-    if (event.ability === 'meltdown') {
-      if (event.phase === 'impact') for (const hit of this.ignitions) hit.id = -1;
-      for (const id of event.targetIds ?? []) {
-        if (this.ignitions.some(hit => hit.id === id)) continue;
-        const hit = this.ignitions[this.nextIgnition++ % this.ignitions.length];
-        hit.id = id; hit.start = this.kit.time;
-      }
-    }
     const px = x / UNIT, pz = y / UNIT, k = this.kit;
     if (event.ability === 'railbreaker') { if (event.phase === 'cast') this.rail(px, pz, (event.durationMs ?? 300) / 1000); return; }
     if (event.phase !== 'impact') return;
@@ -71,7 +59,7 @@ export class OverdrivePayoff {
       const shape = ABILITY_CATALOG.meltdown.shape;
       if (shape.kind === 'circle') k.scar('soot', px, pz, shape.radius / UNIT * .86, 0x2a1510, 7);
       const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
-      column.range = .42; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
+      column.param = 1; column.range = .82; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);
       k.flash(px, pz, FIRE, 16, 8, 5, .7);
 
@@ -180,49 +168,10 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
-    if (!active || !game) return;
-    const k = this.kit, enemies = game.enemies?.snapshot.enemies as readonly Actor[] | undefined;
-    if (!enemies) return;
-    k.sustain(this.age);
-    if (this.rig === 'cryo') this.iceOnEnemies(enemies);
-    else if (this.rig === 'pyro') this.standingFlame(enemies);
-    else this.crawl(game, dt);
-    k.impact();
-  }
-
-  /** Ice climbs enemies as the frost wall reaches them; bounded clusters at the feet and shins. */
-  private iceOnEnemies(enemies: readonly Actor[]): void {
-    const k = this.kit, front = this.radius * Math.min(1, this.age / .7);
-    let drawn = 0;
-    for (const e of enemies) {
-      if (drawn >= (k.low ? 4 : 10)) break;
-      const ex = e.x / UNIT, ez = e.y / UNIT, d = Math.hypot(ex - this.x, ez - this.z);
-      if (d > front || d > this.radius) continue;
-      drawn++;
-      const grow = Math.min(1, (front - d) / 1.2) * this.level, r = Math.max(.25, e.radius / UNIT);
-      for (let j = 0; j < (k.low ? 2 : 4); j++) {
-        const a = j * 1.9 + e.id, h = (.35 + (j % 2) * .25) * grow;
-        k.draw('shard', ex + Math.cos(a) * r * .8, h * .45, ez + Math.sin(a) * r * .8, .07, h, .06, j % 2 ? WHITE : ICE, .8, -a, .3);
-      }
-    }
-  }
-
-  /** Enemies near the suit stand in leaning flame tongues (inside the exact native radius). */
-  private standingFlame(enemies: readonly Actor[]): void {
-    const k = this.kit;
-    let drawn = 0;
-    for (const e of enemies) {
-      if (drawn >= (k.low ? 3 : 8)) break;
-      const ex = e.x / UNIT, ez = e.y / UNIT, d = Math.hypot(ex - this.x, ez - this.z);
-      if (d > this.radius) continue;
-      const away = Math.atan2(ez - this.z, ex - this.x), heat = (1 - d / this.radius * .6) * this.level;
-      const hit = this.ignitions.find(item => item.id === e.id);
-      if (!hit) continue;
-      drawn++;
-      const travel = Math.min(1, (k.time - hit.start) * 2.6);
-      const offset = (travel - .5) * e.radius / UNIT * 1.6;
-      k.directedFlame(ex + Math.cos(away) * offset, .04, ez + Math.sin(away) * offset, .2 + heat * .1, .55 + heat * .6, away, .45, e.id, .78 * heat);
-      if (!k.low) k.directedFlame(ex + Math.cos(away + 1.7) * .25, .04, ez + Math.sin(away + 1.7) * .25, .14, .4 + heat * .35, away, .6, e.id + 3.1, .6 * heat, true);
+    if (active && game && this.rig === 'arc') {
+      this.kit.sustain(this.age);
+      this.crawl(game, dt);
+      this.kit.impact();
     }
   }
 
