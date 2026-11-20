@@ -12,7 +12,7 @@ const STEEL = 0x34414d;
 const TAU = Math.PI * 2;
 const NO_LINKS: readonly AbilityLinkSnapshot[] = [];
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
-type Discharge = { sx: number; sz: number; sy: number; ty: number; jointX: number; jointY: number; jointZ: number; joint: boolean; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
+type Discharge = { sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
@@ -22,7 +22,7 @@ type Front = { live: boolean; x: number; z: number; radius: number; age: number;
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
-  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, ty: .75, jointX: 0, jointY: 0, jointZ: 0, joint: false, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
+  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
@@ -162,7 +162,7 @@ class ArcPresentation implements AbilityPresentation {
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
     d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
-    d.ty = .75; d.joint = false;
+    d.ty = .75; d.victimId = event.targetIds?.[0] ?? -1;
     const id = event.targetIds?.[0], root = id === undefined ? undefined : k.statusActor(id)?.root;
     if (root) {
       let joint = this.contactBones.get(root);
@@ -172,9 +172,8 @@ class ArcPresentation implements AbilityPresentation {
         this.contactBones.set(root, joint);
       }
       if (joint?.parent) {
-        const tip = joint.matrixWorld.elements, base = joint.parent.matrixWorld.elements;
+        const tip = joint.matrixWorld.elements;
         d.x = tip[12]; d.ty = tip[13]; d.z = tip[14];
-        d.jointX = base[12]; d.jointY = base[13]; d.jointZ = base[14]; d.joint = true;
       }
     }
   }
@@ -248,7 +247,14 @@ class ArcPresentation implements AbilityPresentation {
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');
-      if (d.joint && d.age - d.delay < .34) k.ribbon(d.jointX, d.jointY, d.jointZ, d.x, d.ty, d.z, 0xb8caff, .105, .82 * fade, false);
+      if (d.victimId >= 0 && d.age - d.delay < .34) {
+        const actor = k.statusActor(d.victimId);
+        const joint = actor && this.contactBones.get(actor.root);
+        if (joint?.parent) {
+          const base = joint.parent.matrixWorld.elements, tip = joint.matrixWorld.elements;
+          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, .105, .82 * fade, false);
+        }
+      }
       if (d.age - d.delay > .28) continue;
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
