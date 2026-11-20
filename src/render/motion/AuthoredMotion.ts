@@ -32,8 +32,10 @@ function reactionLayer(clip: T.AnimationClip): T.AnimationClip {
     if (!layer) {
         layer = clip.clone();
         layer.name += '-reaction';
-        layer.tracks = layer.tracks.filter(track => track.name.endsWith('.quaternion')
-            && !/^(?:ik|eye|antenna|finger|tongue)/i.test(track.name));
+        const rifle = clip.name.startsWith('m10-hit-rifle-');
+        layer.tracks = layer.tracks.filter(track =>
+            (track.name.endsWith('.quaternion') && !/^(?:ik|eye|antenna|finger|tongue)/i.test(track.name))
+            || (rifle && /^(?:chest|torso|body|bum)\.position$/.test(track.name)));
         T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
         reactionLayers.set(clip, layer);
     }
