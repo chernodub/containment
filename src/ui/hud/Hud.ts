@@ -23,7 +23,7 @@ import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilitie
 import {setChip, effectChip} from '../boonChips';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds } from '../gameAdapter';
+import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudCoachedTarget, setHudInsets, projectWorld, projectActorBounds } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -556,6 +556,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
+        setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
         targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
         if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;

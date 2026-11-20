@@ -124,6 +124,7 @@ export class DepthRenderer {
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
  private marineEnvelope=new DrawnMarineEnvelope();private roomCombatFraming=new RoomCombatFraming();private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ hudCoachedTargetId:number|null=null;
  private hudFraming=new HudCombatFraming();
  private actorLODStudy:'auto'|'full'|'low'='auto';
  setActorLODStudy(mode:'auto'|'full'|'low'){this.actorLODStudy=mode;}
@@ -615,7 +616,7 @@ export class DepthRenderer {
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
   combatFocusTarget(p.x/UNIT,p.y/UNIT,p.angle,bossFrame.x/UNIT,bossFrame.y/UNIT,bossWeight,!!this.motionQuery?.matches||menu,this.desiredFocus);
-  const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight,this.camera);if(bossWeight)hud.selectPrimaryContact(-1,bossFrame.x/UNIT,bossFrame.y/UNIT,3.4,this.queen?.height??4.5);/* I13: tall guardian anatomy must stay paired with the marine during brood/charge. */else{const guardian=enemies.find(e=>e.champion&&e.health>0&&Math.hypot(e.x-p.x,e.y-p.y)<12.5*UNIT);if(guardian)hud.selectPrimaryContact(guardian.id,guardian.x/UNIT,guardian.y/UNIT,guardian.radius/UNIT,this.cameraContactHeight(guardian.id));}hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
+  const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight,this.camera,this.hudCoachedTargetId);if(bossWeight)hud.selectPrimaryContact(-1,bossFrame.x/UNIT,bossFrame.y/UNIT,3.4,this.queen?.height??4.5);/* I13: tall guardian anatomy must stay paired with the marine during brood/charge. */else{const guardian=enemies.find(e=>e.champion&&e.health>0&&Math.hypot(e.x-p.x,e.y-p.y)<12.5*UNIT);if(guardian)hud.selectPrimaryContact(guardian.id,guardian.x/UNIT,guardian.y/UNIT,guardian.radius/UNIT,this.cameraContactHeight(guardian.id));}hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   if(!hud.hasEngagement||bossWeight)this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
   if(!menu&&game.node.templateId==='passenger-vault'&&!hud.hasEngagement){
@@ -625,7 +626,7 @@ export class DepthRenderer {
    this.desiredFocus.z+=2.7*entry;
   }
   // WARN16 look-ahead precedes the existing room AABB and marine-envelope fit.
-  if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint);
+  if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint,this.hudCoachedTargetId);
   if(condition?.condition.id==='vent'&&condition.ventLive&&dt>0)this.cameraRig.setRumbleFloor(.19);
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
