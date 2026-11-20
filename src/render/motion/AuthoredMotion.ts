@@ -557,12 +557,15 @@ export class AuthoredEnemyMotion {
             this.clearReaction();
             return this.player.sample(base, progress, dt, this.phase === 'strike' ? 0 : .025);
         }
-        if (this.rifle && reacting && !elementClip && this.attackAge >= .55) {
-            const gait = moving > .3 ? 'm10-run' : 'm10-idle';
-            const run = this.player.duration(gait);
+        if (this.rifle && reacting && !elementClip) {
+            const base = this.attackAge < .16 ? 'm10-strike' : this.attackAge < .55 ? 'm10-recovery'
+                : moving > .3 ? 'm10-run' : 'm10-idle';
+            const cycle = this.player.duration(base);
+            const progress = this.attackAge < .16 ? this.attackAge / .16 : this.attackAge < .55
+                ? (this.attackAge - .16) / .39 : (time * (moving > .3 ? speed : 1) % cycle) / cycle;
             this.player.beginBatch();
             this.player.clearUpper();
-            this.player.sample(gait, (time * (moving > .3 ? speed : 1) % run) / run, dt, .04);
+            this.player.sample(base, progress, dt, .04);
             this.player.overlay(hit, this.hitAge / durationHit, reactionWeight);
             this.player.endBatch();
             this.layered = true;

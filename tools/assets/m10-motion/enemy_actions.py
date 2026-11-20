@@ -76,7 +76,7 @@ class Creature:
                 self.legs.append(self.chain(names,None,index))
             for side in ['R','L']:
                 self.arms.append(self.chain(tuple(f'{name}.{side}'for name in ['upper_arm','upper_arm.001','upper_arm.002','claw']),None,-1 if side=='R' else 1))
-        if family in ('stalker','brute'):
+        if family in ('crawler','stalker','brute'):
             self.fit_blade()
         self.antennae = [n for n in self.names if n.startswith('antenna_') and n.endswith('0')]
         self.reset()
@@ -88,7 +88,7 @@ class Creature:
         # The fused crescent extends past the retained claw bone's tail and
         # bends sideways. Measure the blade on the untouched production skin.
         mesh=bpy.data.objects.get(f'k11-{self.family}-base')
-        claw=self.arms[0]
+        claw=self.legs[0] if self.family=='crawler' else self.arms[0]
         self.loaded_blade=dict(claw)
         name=claw['bones'][-1]
         group=mesh.vertex_groups.get(name) if mesh else None
@@ -330,6 +330,8 @@ class Creature:
         self.move(self.center,-UP*H*(.13*load+.18*reach))
         self.mouth(.62*load+.87*reach)
         if self.family=='crawler':
+            self.rotate(self.center,UP,.42*load-.47*reach)
+            self.rotate(self.center,FWD,-.34*load+.43*reach)
             for leg in self.legs:
                 i=leg['index']
                 if i in (0,5):
@@ -424,7 +426,7 @@ class Creature:
     def show_edge(self, action, t):
         # Roll about the actual blade axis after FK/IK. Neither socket nor tip
         # is translated by exposing the broad face of the loaded limb.
-        if self.family=='crawler':limb=self.legs[0]
+        if self.family=='crawler':limb=self.loaded_blade
         elif self.family in ('stalker','brute'):limb=self.loaded_blade
         else:limb=next((a for a in self.arms if a['index']<0),None)
         if not limb:return
