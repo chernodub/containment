@@ -19,10 +19,15 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
   material.vertexShader = `varying vec4 priorityClip;${attribute ? `attribute float ${attribute};varying float priorityWeight;` : ''}\n` + material.vertexShader;
   material.vertexShader = material.vertexShader.replace('void main(){', `void main(){${attribute ? `priorityWeight=${attribute};` : ''}`)
     .replace(/gl_Position\s*=\s*([^;]+);/, '$&priorityClip=gl_Position;');
-  material.fragmentShader = `uniform sampler2D abilityPriorityMap;uniform bool diagnosticPrioritySampling;varying vec4 priorityClip;${attribute ? 'varying float priorityWeight;' : ''}\n#define HAS_ABILITY_PRIORITY_MASK\nvec3 abilityPriority(){if(!diagnosticPrioritySampling)return vec3(0.);return smoothstep(vec3(.4),vec3(.6),texture2D(abilityPriorityMap,priorityClip.xy/max(.001,priorityClip.w)*.5+.5).rgb);}\n` + material.fragmentShader;
-  material.fragmentShader = material.fragmentShader.replace('void main(){', 'void main(){vec3 prioritySample=abilityPriority();')
+  material.fragmentShader = `uniform sampler2D abilityPriorityMap;uniform bool diagnosticPrioritySampling;varying vec4 priorityClip;${attribute ? 'varying float priorityWeight;' : ''}\n#define HAS_ABILITY_PRIORITY_MASK\nvec4 abilityPriority(){
+ if(!diagnosticPrioritySampling)return vec4(0.);
+ vec4 distanceSample=texture2D(abilityPriorityMap,priorityClip.xy/max(.001,priorityClip.w)*.5+.5);
+ // Red uses a 0.8-texel fade (12 px at 1080p). Warnings and marine retain their previous fade.
+ return smoothstep(vec4(.366667,.4,.4,.4),vec4(.633333,.6,.6,.6),distanceSample);
+}\n` + material.fragmentShader;
+  material.fragmentShader = material.fragmentShader.replace('void main(){', 'void main(){vec4 prioritySample=abilityPriority();')
     .replace('#include <tonemapping_fragment>', `
- float priority=${hostileOnly ? '0.' : 'prioritySample.r'};
+ float priority=${hostileOnly ? '0.' : 'max(prioritySample.r,prioritySample.a)'};
  gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-prioritySample.b));
  gl_FragColor.a*=1.-prioritySample.g;
  gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'}*.97;
@@ -60,12 +65,15 @@ export class AbilityPriorityMask {
     this.raster.fill(0);
     this.hasDanger = false;
     const p = game.player;
-    this.actor(p.x / 32, p.y / 32, .62, 2.05);
+    this.segment(p.x / 32, .62 * .35, p.y / 32, p.x / 32, 2.05, p.y / 32, .62, 3);
     this.shape({shape:'circle',x:p.x/32,z:p.y/32,radius:1.5},2);
     for (const e of game.enemies.snapshot.enemies) {
       if (e.health <= 0) continue;
-      const actor = actorFor?.(e.id), span = actor?.root.userData.affliction?.span ?? 0;
-      this.actor(e.x / 32, e.y / 32, Math.max(e.radius / 32 + .13, span * .46), actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15));
+      // Models are fitted to their family collision envelopes. The snapshot radius
+      // already carries the elite scale and any guardian-specific body radius.
+      const actor = actorFor?.(e.id);
+      const height = actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15);
+      this.actor(e.x / 32, e.y / 32, e.radius / 32 * .78, height);
       // Snapshot fallback also works while the world renderer evolves its warning accessor.
       if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
         const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
@@ -105,17 +113,27 @@ export class AbilityPriorityMask {
 
   /** Stamp a projected actor capsule including its head, rather than only its ground circle. */
   private actor(x: number, z: number, radius: number, height: number): void {
-    this.segment(x, radius * .35, z, x, height, z, radius, 0);
+    this.segment(x, 0, z, x, height, z, radius, 0);
   }
 
   private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1): void {
     this.point.set(x, y, z).project(this.camera!);
-    const px = (this.point.x * .5 + .5) * this.width, py = (this.point.y * .5 + .5) * this.height;
+    let px = (this.point.x * .5 + .5) * this.width, py = (this.point.y * .5 + .5) * this.height;
     this.point.set(x + radius, y, z).project(this.camera!);
-    const r = Math.max(1.1, Math.abs((this.point.x * .5 + .5) * this.width - px)) + .35;
+    const projectedRadius = Math.abs((this.point.x * .5 + .5) * this.width - px);
     this.point.set(tx, ty, tz).project(this.camera!);
-    const dx = (this.point.x * .5 + .5) * this.width - px;
-    const dy = (this.point.y * .5 + .5) * this.height - py;
+    let dx = (this.point.x * .5 + .5) * this.width - px;
+    let dy = (this.point.y * .5 + .5) * this.height - py;
+    // Inset the centreline so the round caps end at the body bounds.
+    // The added 0.93 texels include the 8 px margin and half the 12 px fade.
+    const r = channel === 0 ? projectedRadius + .93 : Math.max(1.1, projectedRadius) + .35;
+    if (channel === 0) {
+      const inset = Math.min(.5, projectedRadius / Math.max(1e-6, Math.hypot(dx, dy)));
+      px += dx * inset;
+      py += dy * inset;
+      dx *= 1 - 2 * inset;
+      dy *= 1 - 2 * inset;
+    }
     const inverseLengthSquared = 1 / Math.max(1e-6, dx * dx + dy * dy);
     const extent = r + DISTANCE_RANGE;
     const x0 = Math.max(0, Math.floor(px + Math.min(0, dx) - extent));
