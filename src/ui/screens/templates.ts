@@ -1,4 +1,5 @@
 import type {MutationId} from "../../game/roguelike/types";
+import {GUARDIAN_ROUTES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
@@ -279,6 +280,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
     ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
     <div class="route-briefing-grid">
       ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled,cost},index)=>{
+        const firstJunction=run.runStructure&&destination.depth===3;
         const room=ROOM_TEMPLATES[destination.templateId];
         const condition=getShipCondition(game,destination.depth,detour==='salvage');
         const variant=getRoomOpening(game,destination.depth,detour==='salvage');
@@ -291,7 +293,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
         const grenades = Math.min(6, inventory.grenades + (direct && depth === 2 ? EARLY_LOCKER.grenades : salvage && depth === 6 ? 2 : 0));
         const credits = inventory.credits + (salvage && depth === 2 ? EARLY_LOCKER.salvageCredits : 0) - (cost ?? 0);
-        const later = consequence ?? (salvage && (depth === 14 || depth === 17) ? deal : undefined);
+        const later = firstJunction?undefined:consequence ?? (salvage && (depth === 14 || depth === 17) ? deal : undefined);
         const conditionTerms = condition && {
           dark: 'Ambush damage / − hidden hostiles',
           coolant: 'Stronger shoves / − slippery deck',
@@ -306,8 +308,8 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
           <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
-            <span class="route-option-terms" data-route-term="reward">${outcome}</span>
-            <span class="route-option-subtitle">${escapeHtml(variant ?? risk ?? ROOM_KIND_LABELS[destination.kind])}${condition ? ` <small class="condition-chip" title="${condition.name}">+ ${conditionTerms}</small>` : ''}</span>
+            <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>
+            <span class="route-option-subtitle">${escapeHtml((firstJunction?risk:variant ?? risk) ?? ROOM_KIND_LABELS[destination.kind])}${condition&&!firstJunction ? ` <small class="condition-chip" title="${condition.name}">+ ${conditionTerms}</small>` : ''}</span>
           </span>
         </button>${later ? `<details class="route-later"><summary>Later</summary><p>${escapeHtml(later)}</p></details>` : ''}</div>`;
       }).join('')}
@@ -351,6 +353,10 @@ function resultsRunRecord(game: DepthGame) {
   const decisions=Object.entries(run.junctions??{}).map(([key,choice])=>{
     const depth=Number(key);
     const names:Readonly<Record<number,string>>={3:'Early salvage',7:'Field requisition',11:'Field workshop'};
+    if(depth===3&&run.guardianRoute){
+      const route=GUARDIAN_ROUTES[run.guardianRoute];
+      return `<li>${route.name} · Coolant Plant · ${route.fight}</li>`;
+    }
     const name=choice==='salvage'?names[depth]:depth===fieldWorkshopDepth+1?'Field infirmary':depth===3?'Emergency supply locker':depth===18?'Protected passage':'Stay on mission';
     return `<li>Sector ${depth+1} · ${escapeHtml(name)} · ${escapeHtml(getRoomOpening(game,depth,choice==='salvage')??'')}</li>`;
   });

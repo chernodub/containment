@@ -280,6 +280,12 @@ export class CombatSystem {
     return added;
   }
 
+  grantRouteAmmo(weapon: 'plasma'|'rocket', rounds: number) {
+    if(weapon==='rocket')this.#addRockets(rounds);
+    else this.#ammo.plasma.reserve=Math.min(100_000,this.#ammo.plasma.reserve+rounds);
+    this.#emit();
+  }
+
   collectAmmoPack(field = true) {
     for (const [id, rounds] of [['rifle',20],['shotgun',4],['plasma',8]] as const)
       this.#ammo[id].reserve = Math.min(100_000, this.#ammo[id].reserve + rounds);

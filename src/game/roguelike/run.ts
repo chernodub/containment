@@ -145,7 +145,7 @@ export function isValidRunState(value: unknown): value is RunState {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
-  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
+  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','guardianRoute','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
   if(record.runStructure!==undefined&&(record.runStructure!==1||record.version!==3))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
   if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>10||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
@@ -168,6 +168,11 @@ export function isValidRunState(value: unknown): value is RunState {
   }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
+  if(record.guardianRoute!==undefined){
+    const junctions=record.junctions as RunState['junctions'];
+    if(record.runStructure!==1||current.depth<3||
+      !(record.guardianRoute==='plate-breaker'&&junctions?.[3]==='direct'||record.guardianRoute==='brood'&&junctions?.[3]==='salvage'))return false;
+  }
   if(record.detour!==undefined){
     const detour=record.detour as NonNullable<RunState['detour']>;
     if(detour.depth!==current.depth)return false;
@@ -223,7 +228,9 @@ export function enterRoom(state: RunState, nextId: string, action?:'destroy-ship
   if(detour!==undefined&&(state.version!==3||!DETOUR_DEPTHS.includes(current.depth as typeof DETOUR_DEPTHS[number])||!['direct','salvage'].includes(detour)))throw new Error('Preparation choice unavailable.');
   const {service: _service,detour: _detour,...continuation}=state;
   const junctions=state.runStructure&&isJunction(current.depth+1)?{...state.junctions,[current.depth+1]:detour??'direct'}:state.junctions;
-  return freezeRunState({ ...continuation, ...(junctions?{junctions}:{}), ...(detour?{detour:{depth:current.depth+1,choice:detour}}:{}),currentNodeId: nextId, phase: 'combat',...(state.version!==1?{draftRoll:0}:{}) });
+  const guardianRoute=state.runStructure&&current.depth===2&&detour
+    ?detour==='direct'?'plate-breaker':'brood':state.guardianRoute;
+  return freezeRunState({ ...continuation, ...(guardianRoute?{guardianRoute}:{}), ...(junctions?{junctions}:{}), ...(detour?{detour:{depth:current.depth+1,choice:detour}}:{}),currentNodeId: nextId, phase: 'combat',...(state.version!==1?{draftRoll:0}:{}) });
 }
 
 /** Death is terminal and can occur only during an active room. */
