@@ -49,6 +49,8 @@ The same six rooms used the same 25-enemy Arc trial on Low. The shared hull trim
 | awakening-bay | 179 → 182 | 334 → 339 | 3.00 → 3.26 |
 | relay-racks | 163 → 178 | 318 → 322 | 0.62 → 0.68 |
 
+Two final Low preparation holds exceeded three seconds. Gate took 3.71 seconds, including 3.05 seconds in reflection capture. Awakening took 3.26 seconds, including 2.05 seconds in reflection capture. Replaying the two trials gave 0.93 and 1.68 seconds respectively. The benchmark also records the initial room load before its explicit tier selection and final prepare. Across the full Low setup history, the longest Gate entry was 6.79 seconds on the final build and 13.56 seconds on the baseline. Preparation is still variable on this machine.
+
 ## Incident lighting
 
 In each final incident-facing view the highest-energy active pooled practical belongs to the landmark assembly. The display measurements below use the 90th percentile of Rec.709 code values in a 17 × 7 pixel window around the projected diffuser, median sampled visible floor, and the 99th percentile inside the marine's projected body bounds. These are screenshot measurements at the authored camera marks.
