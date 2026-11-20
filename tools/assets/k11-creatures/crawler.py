@@ -18,11 +18,13 @@ TRIS = {"body": 7600, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
 BANDS = {   # CREATURE18: dark chitin, rust flesh, pale tan dorsal carapace (mid mass at 480x270), red lantern
-    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.52, 0.42, 0.30),
+    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.58, 0.46, 0.32),
     "accent": (0.95, 0.10, 0.03), "eye": (1.0, 0.40, 0.08),
 }
 BAND_MAP = {"bone": "chitin", "tooth": "chitin"}   # legs, hooks and leg blades join the dark chitin
-PLATE_BAND = {p: "bone" for p in (40, 70, 71, 72, 73, 74, 75)}   # head shield + dorsal abdomen plates: the tan mid mass that keeps it off dark floors
+# CREATURE18b: the abdomen mantle (plates 1-16), tail cap (20), thorax shingles (30-31) and head shield (40) form one
+# tan dorsal cap around the red lantern slit, so the top view is a mid-value body, walking or curled.
+PLATE_BAND = {p: "bone" for p in (*range(1, 17), 20, 30, 31, 40)}
 PALETTE = {
     "shell": (0.20, 0.06, 0.02), "edge": (0.62, 0.40, 0.20), "membrane": (0.13, 0.026, 0.03),
     "sinew": (0.24, 0.05, 0.045), "claw": (0.020, 0.012, 0.010), "tooth": (0.70, 0.56, 0.36),
@@ -54,8 +56,8 @@ def build(sk):
 
     # --- shingled abdomen mantle with dorsal split --------------------------
     ab_bone = lambda u: ("blend", chest, tail, (0.0, 0, 0.9), (-0.9, 0, 1.0))
-    body.extend(A.shingles(ab_c, ab_r, ab_R, None, rows=4, phis=(0.98, 1.62), u0=0.62, u1=-0.62,
-                           size=(0.215, 0.22, 0.11), thickness=0.055, lift=0.38, rings=0.0025, grow=-0.18,
+    body.extend(A.shingles(ab_c, ab_r, ab_R, None, rows=4, phis=(0.80, 1.45), u0=0.62, u1=-0.62,   # CREATURE18b: wider dorsal cap
+                           size=(0.25, 0.26, 0.11), thickness=0.055, lift=0.38, rings=0.0025, grow=-0.18,
                            bone_fn=ab_bone, seed=10, plate0=1))
     # tail cap plate
     p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, -0.88, 0.0)
