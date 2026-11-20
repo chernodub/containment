@@ -11,6 +11,7 @@ import { SYNTH_SAMPLE_RATE, synthesize, type AudioBus, type CueRecipe } from './
 import { ABILITY_RECIPES, abilityLoopRecipe, abilityRecipe } from './abilityCues';
 import { COMBAT_RECIPES, enemyRecipe, impactRecipe, weaponRecipe } from './combatCues';
 import { ENVIRONMENT_PROFILES, ENVIRONMENT_RECIPES, HEARTBEAT_RECIPE } from './environmentCues';
+import { ALERTS, type AlertCue } from './alertCues';
 import { UI_RECIPES, uiRecipe } from './uiCues';
 
 export type AudioVolumes = Readonly<{ master: number; music: number; effects: number }>;
@@ -35,7 +36,7 @@ const loadEncoded = (name: Sample): Promise<ArrayBuffer | null> => {
   return request;
 };
 export const AUDIO_RECIPES: readonly CueRecipe[] = [
-  ...COMBAT_RECIPES, ...ABILITY_RECIPES, ...ENVIRONMENT_RECIPES, ...UI_RECIPES, HEARTBEAT_RECIPE,
+  ...COMBAT_RECIPES, ...ABILITY_RECIPES, ...ENVIRONMENT_RECIPES, ...UI_RECIPES, ...Object.values(ALERTS), HEARTBEAT_RECIPE,
 ];
 type Loop = { voice: MixVoice; ability: string };
 
@@ -181,6 +182,7 @@ export class AudioSystem implements GameAudioDirector {
     this.setMusicIntensity(Math.max(state.intensity, state.boss ? .7 : 0));
     const scale = Number.isFinite(state.hostileTimeScale) ? Math.max(.1, Math.min(1, state.hostileTimeScale)) : 1;
     const danger = clamp01(state.danger);
+    if (danger >= .7 && this.danger < .7) this.playAlert('critical');
     const scaleChanged = scale !== this.hostileTimeScale;
     if (scaleChanged) {
       const ratio = Math.sqrt(scale / this.hostileTimeScale);
@@ -197,6 +199,11 @@ export class AudioSystem implements GameAudioDirector {
   handleEffect(effect: GameEffect, listener: AudioListener): void {
     const dx = effect.x - listener.x, dy = effect.y - listener.y;
     const pan = Math.max(-.85, Math.min(.85, dx / 500)), distance = Math.hypot(dx, dy);
+    if (effect.encounterCue === 'flank' || effect.encounterCue === 'crossfire') {
+      this.playAlert(effect.encounterCue, pan, distance);
+      return;
+    }
+    if (effect.encounterCue) this.playAlert('resolved', pan, distance);
     if (effect.type === 'ability' && effect.ability) { this.handleAbility(effect.ability, pan, distance); return; }
     if (effect.type === 'shot') this.weapon(effect.weapon ?? 'pistol', pan, distance);
     else if (effect.type === 'hit' && (effect.contact || effect.weapon)) this.cue(impactRecipe(effect.weapon === 'plasma' ? 'plasma-hit' : !effect.contact ? 'wall' : effect.lethal ? 'kill' : effect.contact === 'armor' ? 'armor' : effect.contact === 'blocked' ? 'blocked' : 'flesh'), { pan, distance, level: effect.weapon === 'pistol' ? .7 : 1 });
@@ -211,8 +218,7 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'pickup') this.playPickup();
     else if (effect.type === 'acid') this.enemy('spitter', 'attack', false, pan, distance);
     else if (effect.type === 'boon') {
-      if (effect.encounterCue === 'pincer-broken') this.cue(impactRecipe('wall'), { pan, distance });
-      else if (effect.boon === 'shatter') this.playElemental('shatter');
+      if (effect.boon === 'shatter') this.playElemental('shatter');
       else if (effect.boon === 'overload') this.playElemental('reactor');
     }
   }
@@ -246,7 +252,10 @@ export class AudioSystem implements GameAudioDirector {
     if (onset) this.playElemental('freeze');
     this.frozenIds.clear(); for (let i = 0; i < ids.length; i++) this.frozenIds.add(ids[i]);
   }
-  playPickup(): void { this.cue(uiRecipe('purchase'), {}, 'pickup', .09); }
+  playAlert(cue: AlertCue, pan = 0, distance = 0): void {
+    this.cue(ALERTS[cue], { pan, distance });
+  }
+  playPickup(): void { this.playAlert('pickup'); }
   playAlarm(): void { this.playUi('boss-intro'); }
   /** Legacy gesture helper; paused menu clicks remain available as before. */
   playUI(): void {
@@ -257,6 +266,7 @@ export class AudioSystem implements GameAudioDirector {
     const previous = this.previousCombat; this.previousCombat = snapshot;
     if (snapshot.dead) { this.stopLoops(); this.stopAmbience(); this.stopHeartbeat(); }
     else if (previous?.dead) { this.startAmbience(); this.updateHeartbeat(); }
+    if (previous && previous.armor > 0 && snapshot.armor <= 0 && !snapshot.dead) this.playAlert('armor');
     if (snapshot.dead || !snapshot.reloading || previous?.weaponId !== snapshot.weaponId) this.cancelReload();
     if (previous && previous.weaponId !== snapshot.weaponId && !snapshot.dead) this.cue(impactRecipe('switch'));
     if(previous?.weaponId===snapshot.weaponId&&previous.magazine>0&&snapshot.magazine===0&&snapshot.reserve===0)this.cue(impactRecipe('dry'));
