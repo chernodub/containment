@@ -128,17 +128,19 @@ async function snapshot() {
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
       return {x:(v.x+1)*innerWidth/2,y:(1-v.y)*innerHeight/2,depth:v.z};
     };
-    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,burning:g.boonStatuses(e.id).burning,clear:d.clearShot(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
-    for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.clearShot(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
+    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,burning:g.boonStatuses(e.id).burning,clear:d.botShotClear(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
+    for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.botShotClear(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const siege=g.siege,goal=siege&&siege.remainingMs>0?siege:nearest;const waypoint=goal ? d.botWaypoint(goal)??goal : null;
+    const lookAhead=waypoint&&!enemies.some(e=>e.visible&&e.clear)
+      ?Math.max(20,Math.min(90,Math.hypot(waypoint.x-g.player.x,waypoint.y-g.player.y))):90;
     const candidates=[];
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
-      const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*90,y=g.player.y+dy/length*90;
+      const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*lookAhead,y=g.player.y+dy/length*lookAhead;
       let legal=true;
       for(let i=1;i<=6;i++) if(!d.canStand(g.player.x+(x-g.player.x)*i/6,g.player.y+(y-g.player.y)*i/6,g.player.radius)) legal=false;
       if(g.abilities.blocksMovement(g.player,{x,y},g.player.radius))legal=false;
-      candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.clearShot(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.clearShot(nearest.x,nearest.y,{x,y}):false});
+      candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.botShotClear(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.botShotClear(nearest.x,nearest.y,{x,y}):false});
     }
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));

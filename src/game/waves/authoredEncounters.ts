@@ -104,8 +104,12 @@ const ATRIUM_RELAY = withRules(AUTHORED_ENCOUNTERS[3][2], {
  label:'Hold the atrium relay as the heavy flank arrives',
 });
 
-export function openingBeat(depth:number, index:number, beat:AuthoredBeat) {
- return depth===3&&index===2 ? ATRIUM_RELAY : beat;
+const MANUAL_CONTROL_STORY_OPENING = priority(3,'warden',3);
+
+export function openingBeat(depth:number, index:number, beat:AuthoredBeat, story=false) {
+ if(depth===3&&index===2)return ATRIUM_RELAY;
+ if(story&&depth===18&&index===1)return MANUAL_CONTROL_STORY_OPENING;
+ return beat;
 }
 
 export function storyOpening(seed:number, depth:number, story:boolean, salvage=false, junctions?:Readonly<Partial<Record<number,DetourChoice>>>) {
