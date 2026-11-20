@@ -176,7 +176,9 @@ void main(){
   emit*=1.-smoothstep(.62,1.,k);
   if(fxArc>6.){
    float belly=(1.-smoothstep(.28+n*.16,.75+n*.17,r))*(1.-smoothstep(.045,.29,age));
-   emit=fxHeat(.48+.49*(1.-r))*belly*(.6+.4*n)*fxIntensity;
+   float coal=smoothstep(.23,.67,n+.16*fine);
+   float hot=1.-smoothstep(.045,.1,age);
+   emit=fxHeat(.37+.48*(1.-r)*(.5+.5*hot))*belly*(.31+.69*coal)*fxIntensity;
    alpha=max(alpha*.45,belly*.6);
   }else if(fxParam>=0.){
    float surge=(1.-smoothstep(.045,.22,age))*tip*body*(1.-layer*.8);
@@ -245,10 +247,11 @@ void main(){
    float jitter=(fxNoise(vec2(along*4.,floor(t*18.)+fxSeed))-.5)*.8;
    float bolt=1.-smoothstep(.065,.19,abs(s-jitter));
    float body=1.-smoothstep(.16,.54,abs(s-jitter));
-   float halo=exp(-pow((s-jitter)*2.5,2.));
+   float delta=s-jitter;
+   float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(vec3(2.4)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   emit=(vec3(1.45)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
    alpha=(bolt*.22+fork*.08+halo*.06)*gate;
   }else{emit=hot*i0*fxIntensity;alpha=i0*.12;}
  }else if(m<4.5){

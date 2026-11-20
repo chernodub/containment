@@ -124,7 +124,7 @@ export class BreacherPresentation implements AbilityPresentation {
       kit.draw('spark', x + Math.cos(angle) * .7, .9, z + Math.sin(angle) * .7, 1.3, .32, 1, CORE, 1, 0, -angle);
       kit.burst(x, .85, z, 'kinetic', 20, 6.5, .5);
       kit.flash(x, z, CORE, 24, 6, 6, .033);
-      kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 18, length * .6, 5, .3);
+      kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 13, Math.min(7, length * .35), 5, .12);
       kit.camera(.92, angle);
       kit.anticipate(40, .06);
 
@@ -154,7 +154,7 @@ export class BreacherPresentation implements AbilityPresentation {
           const side = j % 2 ? 1 : -1, a = angle + side * (.5 + (j % 4) * .3);
           kit.mote('spark', tx, h, tz, Math.cos(a) * (3 + j % 3 * 2), 1 + j % 3, Math.sin(a) * (3 + j % 3 * 2), .03, .45 + j % 3 * .12, j % 3 ? AMBER : CORE);
         }
-        kit.flash(tx, tz, AMBER, 6, 3, 3, .14);
+        kit.flash(tx, tz, AMBER, 6, 3, 3, .033);
       }
       const count = this.kit.low ? 6 : 15;
       for (let i = 0; i < count; i++) {

@@ -247,7 +247,7 @@ class SystemPresentation implements AbilityPresentation {
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
     // One low foot shell complements actor-owned frost without encasing anatomy.
-    this.kit.iceShell(x, z, radius, height, .08 + flash * .08);
+    this.kit.iceShell(x, z, radius * .84, height, .055 + flash * .06);
   }
 
   /** Chill stacks thicken the foot fringe; actor materials retain upper-body identity. */
@@ -267,14 +267,14 @@ class SystemPresentation implements AbilityPresentation {
     const travel = receipt ? Math.min(1, (k.time - receipt.ignition) / .38) : 1;
     const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
     for (let i = 0; i < (k.low ? 1 : 2); i++) {
-      const growth = Math.min(1, Math.max(0, travel * 2.4 - i * .8));
+      const growth = Math.min(1, Math.max(0, .32 + travel * 2.4 - i * .8));
       if (growth <= 0) continue;
       const a = incoming + (asymmetry < 0 ? -1 : 1) * (travel * 1.9 - i * .85);
       const end = a + .63 + asymmetry * .4, h = height * (.28 + .14 * i);
       k.flowFlame(x + Math.cos(a) * radius * .84, h, z + Math.sin(a) * radius * .84,
         x + Math.cos(end) * radius, h + height * (.3 + .18 * asymmetry + .22 * i) * growth,
-        z + Math.sin(end) * radius, radius * (.22 + .08 * asymmetry) * growth,
-        seed + i * 3.7, .73 * growth, i === 0 && travel < .35);
+        z + Math.sin(end) * radius, radius * (.31 + .09 * asymmetry) * growth,
+        seed + i * 3.7, .86 * growth, i === 0 && travel < .35);
     }
   }
 
