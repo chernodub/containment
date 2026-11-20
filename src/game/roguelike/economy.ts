@@ -3,6 +3,12 @@ import {AUGMENT_IDS,AUGMENT_UPGRADE_RULES} from '../abilities/augmentCatalog';
 export const SUPPLY_DEPTHS = [3,7,11,14,18] as const;
 export const DETOUR_DEPTHS = [2,6,10,14,17] as const;
 export type DetourChoice = 'direct'|'salvage';
+export const GUARDIAN_ROUTE_DEPTH = 12;
+export const GUARDIAN_ROUTES = {
+ 'plate-breaker': {name:'Plate-breaker route', fight:'Warden escort', banner:'Armoured Warden escort'},
+ brood: {name:'Brood route', fight:'Matron interception', banner:'Matron intercepts'},
+} as const;
+export type GuardianRoute = keyof typeof GUARDIAN_ROUTES;
 export const EARLY_LOCKER = Object.freeze({ health:25, grenades:1, salvageCredits:45 });
 const DIRECT = {id:'direct' as const,name:'Stay on mission',risk:'Standard encounter',reward:'Keep your current supplies'};
 const DETOURS = {
@@ -16,6 +22,10 @@ export const fieldWorkshopDepth = 10;
 export function detourOffers(run:RunState){
  const depth=run.completedNodeIds.length-1;
  if(run.version!==3||!Object.hasOwn(DETOURS,depth))return [];
+ if(depth===2&&run.runStructure)return [
+  {id:'direct' as const,name:GUARDIAN_ROUTES['plate-breaker'].name,risk:'Coolant Plant · Break the armoured Warden escort with plasma.',reward:'+24 plasma rounds'},
+  {id:'salvage' as const,name:GUARDIAN_ROUTES.brood.name,risk:'Coolant Plant · Interrupt the Matron’s hatching brood with rockets.',reward:'Up to 2 rockets'},
+ ];
  const deal=DETOURS[depth as keyof typeof DETOURS];
  const protectedRoute = depth===2
   ? {...DIRECT,name:'Emergency supply locker',reward:'Restore up to 25 health and take one grenade immediately'}

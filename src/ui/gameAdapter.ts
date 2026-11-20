@@ -588,6 +588,7 @@ export function getWeaponSituation(game: DepthGame, platedId?: number) {
   const combat = game.combat.snapshot;
   if (!combat.magazine && combat.weaponId !== 'pistol')
     return {weapon: 'pistol' as const, text: '1 · Pistol while empty'};
+  if(game.expedition.run.version===3)return;
   const enemies = game.enemies.snapshot.enemies.filter(enemy => enemy.health > 0);
   const plate = enemies.find(enemy => enemy.id === platedId && enemy.armor > 0);
   if (plate && combat.weaponId === 'rifle')

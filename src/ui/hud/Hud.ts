@@ -486,8 +486,11 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 ? game.enemies.snapshot.enemies.find(enemy => enemy.health > 0 && enemy.type === 'spitter') : undefined);
         const interrupted = game.broodInterruption;
         const matron = interrupted && game.enemies.getSnapshot(interrupted.id);
+        const weaponLesson=preferences().hints!==false?game.weaponLessonPrompt:undefined;
+        const lessonDanger=game.enemies.snapshot.enemies.some(enemy=>enemy.meleePhase==='windup'||enemy.windupMs>0
+            ||enemy.chargeMs>0||enemy.pod);
         const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
-            suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
+            weaponLesson && !lessonDanger && 'weapon-lesson', suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {
             if (!candidate || !playing) continue;
@@ -513,7 +516,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             && (enemy.champion === 'warden' && !!enemy.stunRemainingMs
                 || enemy.champion === 'matron' && !!enemy.broodRemainingMs || enemy.pod));
         const target = prompt === 'lesson' ? lessonTarget : prompt === 'brood' ? matron
-            : prompt === 'weapon' ? situation?.target : prompt === 'objective' && !game.siege && !encounter.pincer ? encounterTarget : undefined;
+            : prompt === 'weapon-lesson' ? weaponLesson?.target : prompt === 'weapon' ? situation?.target : prompt === 'objective' && !game.siege && !encounter.pincer ? encounterTarget : undefined;
         const anchor = target && projectWorld(renderer, target.x, target.y, projected, prompt === 'brood' ? 2.65 : 1.4);
         const anchored = anchor && (projected.visible || prompt === 'brood'
             && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
@@ -523,7 +526,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
             objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
         }
-        text('room-objective', prompt === 'weapon' ? situation?.text ?? '' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
+        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');

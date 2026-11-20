@@ -171,14 +171,9 @@ export function createScreens(context: ScreenContext) {
     listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
     listen('retry-rig',()=>{playUiCue(audio,'confirm');start(false,true);});
     listen('recommended-loadout',()=>{
-      const rig = previousRig ?? 'cryo';
-      const repeat = previousRig !== undefined;
-      if(!chooseRig(game,rig))return;
-      selectedRig=rig;
-      rememberRig(rig);
-      const offers=expeditionRewardOffers(game.expedition);
-      const recommendation=offers.find(offer=>offer.id==='cryogenic')??offers.find(offer=>offer.family==='Recovery')??offers.find(offer=>offer.rarity==='common')??offers[0];
-      if(!repeat&&recommendation)game.chooseMutation(recommendation.id);
+      if(!previousRig||!chooseRig(game,previousRig))return;
+      selectedRig=previousRig;
+      rememberRig(previousRig);
       playUiCue(audio,'rig-equip');
       syncScreen(true);
     });

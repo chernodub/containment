@@ -226,8 +226,22 @@ export const SCENARIOS=[
  {id:'run15-results',state:'complete',diagnosticOnly:true,setup:async()=>{
   const d=window.__containmentDebug, g=d.game;
   await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
-  g.expedition={...g.expedition,run:{...g.expedition.run,junctions:{3:'salvage',7:'salvage',11:'salvage'}}};
+  const run=g.expedition.run;
+  g.expedition={...g.expedition,run:{...run,phase:'complete',guardianRoute:'brood',junctions:{3:'salvage',7:'salvage',11:'salvage'},completedNodeIds:[...run.completedNodeIds,run.currentNodeId]}};
   g.status='complete';
+  d.uiFixture({stats:{...g.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},
+   roomTimeMs:Object.fromEntries(g.expedition.run.completedNodeIds.map((id,index)=>[id,18000+index*2350])),
+   damageDealt:{weapon:24820,ability:7500,status:3240,boon:440},shotsFired:1820,shotsHit:1260,
+   abilityUses:{dash:46,tactical:37,power:21,overdrive:9},overdrivesUsed:9,highestMultiKill:6,creditsEarned:2260}});
+  d.refresh();
+ }},
+ {id:'run19-brood-arrival',state:'playing',room:'coolant-plant',diagnosticOnly:true,setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('coolant-plant',{rig:'arc',runStructure:true});
+  const g=d.game;
+  g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'brood',junctions:{3:'salvage'}}};
+  d.presentation(true);
+  g.enterRoom();
   d.refresh();
  }},
  {id:'route-legacy-branch',state:'route',map:true,legacyBranch:true,required:['.deck-map','.route-destination','[data-route]','[data-inspect-route]'],setup:async()=>{const d=window.__containmentDebug;for(const room of ['receiving','forklift-loop','freight-crossing','rail-depot']){await d.gotoRoom(room,{version:2,phase:'route'});if(d.game.node.next.length>1)return;}throw Error('Legacy branch route unavailable');}},

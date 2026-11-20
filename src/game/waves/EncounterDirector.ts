@@ -20,7 +20,7 @@ export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;runStructure?:1;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;runStructure?:1;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
@@ -40,6 +40,8 @@ export type EncounterSnapshot = Readonly<{
   pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
+import {GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,type GuardianRoute} from "../roguelike/economy";
+
 function authoredPlan(options:EncounterOptions):EncounterPlan {
  const {node}=options,mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(node.depth,mode,true);
@@ -48,6 +50,17 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  if(opening&&node.depth>=3){
   const [beat]=source.splice(opening.index,1);
   source.unshift(openingBeat(node.depth,opening.index,beat,mode==='story'));
+ }
+ const route=node.depth===GUARDIAN_ROUTE_DEPTH?options.guardianRoute:undefined;
+ if(route){
+  const index=source.findIndex(beat=>beat.groups.some(group=>group.guardian==='warden'));
+  if(index>=0){
+   const [beat]=source.splice(index,1);
+   source.unshift(route==='brood'?{
+    ...beat,label:'Rocket the hatching pods',consequence:'brood',
+    groups:beat.groups.map(group=>group.guardian==='warden'?{...group,guardian:'matron',family:'carrier'}:group),
+   }:{...beat,label:'Break the Warden’s armour with plasma'});
+  }
  }
  // Resolve one readable interception before admitting its screen.
  if(node.depth===9||node.depth===13){
@@ -104,7 +117,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
