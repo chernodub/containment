@@ -1,7 +1,9 @@
 import { impulseSamples, type AudioBus } from './synthesis';
 
 export const AUDIO_BUSES: readonly AudioBus[] = ['music', 'ambience', 'weapons', 'abilities', 'enemies', 'impacts', 'ui', 'danger'];
-const BED_LEVEL = { weapons: 1, abilities: 1, enemies: 1, impacts: 1, ui: 1, ambience: 1, music: 1 } as const;
+const DANGER_DUCK_DB: Partial<Record<AudioBus, number>> = {
+  music: -6, ambience: -6, abilities: -4, impacts: -4, weapons: -2.5, enemies: -3,
+};
 export const VOICE_LIMIT = 48;
 export const ACTIVE_VOICE_LIMIT = 40;
 export const LOOP_LIMIT = 10;
@@ -25,7 +27,7 @@ export class MixEngine {
   readonly buses = {} as Record<AudioBus, GainNode>;
   readonly voices = new Set<MixVoice>();
   readonly musicFilter: BiquadFilterNode;
-  readonly bed = new Map<keyof typeof BED_LEVEL, GainNode>();
+  readonly bed = new Map<AudioBus, GainNode>();
   private dangerUntil = 0;
   private readonly duckMusic: GainNode;
   private readonly duckAmbience: GainNode;
@@ -64,9 +66,8 @@ export class MixEngine {
     for (const bus of AUDIO_BUSES) {
       const node = context.createGain(); this.buses[bus] = node;
       let output = node;
-      if (bus !== 'danger') {
+      if (DANGER_DUCK_DB[bus] !== undefined) {
         output = context.createGain();
-        output.gain.value = BED_LEVEL[bus];
         node.connect(output);
         this.bed.set(bus, output);
         this.nodes.push(output);
@@ -117,17 +118,19 @@ export class MixEngine {
     this.voices.add(voice); this.admitted++; this.highWater = Math.max(this.highWater, this.voices.size);
     source.addEventListener('ended', () => this.release(voice), { once: true });
     if (source.loop) source.start(start, offset); else source.start(start, offset, duration);
-    if (voice.bus === 'danger') this.duckForDanger(voice.end);
+    if (voice.bus === 'danger') this.duckForDanger(voice.start);
     return voice;
   }
-  private duckForDanger(end: number): void {
-    const now = this.context.currentTime;
-    this.dangerUntil = Math.max(this.dangerUntil, end);
+  private duckForDanger(start: number): void {
+    if (start + .25 <= this.dangerUntil) return;
+    this.dangerUntil = start + .25;
     for (const [bus, gain] of this.bed) {
       const param = gain.gain;
-      param.cancelAndHoldAtTime(now);
-      param.setTargetAtTime(BED_LEVEL[bus] * .095, now, .006);
-      param.setTargetAtTime(BED_LEVEL[bus], this.dangerUntil, .11);
+      const level = 10 ** ((DANGER_DUCK_DB[bus] ?? 0) / 20);
+      param.cancelAndHoldAtTime(start);
+      param.linearRampToValueAtTime(level, start + .015);
+      param.setValueAtTime(level, this.dangerUntil);
+      param.linearRampToValueAtTime(1, this.dangerUntil + .18);
     }
   }
   stop(voice: MixVoice, fade = .018): void {
@@ -143,9 +146,9 @@ export class MixEngine {
     for (const voice of this.voices) this.stop(voice);
     this.dangerUntil = 0;
     const now = this.context.currentTime;
-    for (const [bus, gain] of this.bed) {
+    for (const gain of this.bed.values()) {
       gain.gain.cancelAndHoldAtTime(now);
-      gain.gain.setTargetAtTime(BED_LEVEL[bus], now, .025);
+      gain.gain.setTargetAtTime(1, now, .025);
     }
   }
   /** Preserve the remaining buffer duration and release when hostile time changes. */
@@ -158,7 +161,6 @@ export class MixEngine {
     voice.source.playbackRate.setValueAtTime(voice.rate, now);
     voice.gain.gain.cancelAndHoldAtTime(now);
     const attackEnd = Math.max(now, voice.start) + Math.min(.004, Math.max(.001, voice.end - Math.max(now, voice.start)) / 3);
-    if (voice.bus === 'danger') this.duckForDanger(voice.end);
     if (now < voice.start) voice.gain.gain.setValueAtTime(0, voice.start);
     voice.gain.gain.linearRampToValueAtTime(voice.level, attackEnd);
     voice.gain.gain.setValueAtTime(voice.level, Math.max(attackEnd, voice.end - .018));
