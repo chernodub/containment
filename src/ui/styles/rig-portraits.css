@@ -16,7 +16,6 @@
 #overlay .rig-portrait {position:relative;display:flex;align-items:center;justify-content:center;min-width:0;margin:0;overflow:hidden;color:var(--element);}
 #overlay .rig-portrait::before {content:'';position:absolute;inset:8% 20% 14%;border:1px solid color-mix(in srgb,var(--element) 20%,transparent);clip-path:polygon(0 0,80% 0,100% 20%,100% 100%,20% 100%,0 80%);}
 #overlay .rig-portrait-image {position:relative;width:100%;height:100%;filter:drop-shadow(0 12px 14px #0007);}
-#overlay .rig-portrait-image img {object-fit:contain;transform:scale(.94);}
 #overlay .rig-portrait figcaption {position:absolute;bottom:10px;left:12px;right:12px;display:flex;justify-content:space-between;font:600 9px var(--font-body);letter-spacing:.12em;color:#a7bbc7;}
 #overlay .rig-portrait figcaption>span:last-child {color:var(--element);}
 #overlay .rig-identity-copy {align-self:center;padding:18px 24px 22px 0;}

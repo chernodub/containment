@@ -37,7 +37,7 @@ export const ENEMIES: Readonly<
     label: 'Brute',
     maxHealth: 320,
     speed: 60,
-    radius: 28,
+    radius: 33,
     contactDamage: 35,
     attackCooldownMs: 1_200,
     creditReward: 35,

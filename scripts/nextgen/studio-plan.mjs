@@ -11,16 +11,18 @@ const add=(name,subjects,settings={})=>{plan[name]={width:640,height:360,span:3,
 const marine=(rig,pose)=>({kind:'marine',rig,weapon:rigKit[rig][5],pose});
 const pickup=id=>({kind:'pickup',id});
 const prop=name=>({kind:'prop',kit:'industrial',name});
-// SHADE15: large three-quarter portraits, each rig turned to show its own equipment in its own stance.
+// Face across the lens so the receiver and near-side rig hardware stay visible.
 const portraitPose={
-  breacher:{aim:Number(process.env.PB??2.2),pose:'ram',frame:.35},
-  cryo:{aim:Number(process.env.PC??-1.35),pose:'cryo-nova',frame:.30},
-  pyro:{aim:Number(process.env.PP??-3.1),pose:'flashfire',frame:.40},
-  arc:{aim:Number(process.env.PA??-1.5),pose:'overload',frame:.35},
+  breacher:{aim:1.62,pose:'',frame:0,span:2.10,rimColor:0xffd063},
+  cryo:{aim:2.0,pose:'',frame:0,span:2.13,rimColor:0x7fd6ff},
+  pyro:{aim:1.90,pose:'',frame:0,span:2.13,rimColor:0xff7a2e},
+  arc:{aim:-.10,pose:'overload',frame:.12,span:2.17,rimColor:0xb79cff},
 };
 for(const rig of Object.keys(rigKit)){
-  const {aim,pose,frame}=portraitPose[rig];
-  add('portrait-'+rig,[{...marine(rig,pose),frame,aim}],{width:640,height:640,focus:[0,1.12,0],span:2.75,transparent:true});
+  const {aim,pose,frame,span,rimColor}=portraitPose[rig];
+  add('portrait-'+rig,[{...marine(rig,pose),frame,aim,reload:rig === 'pyro' ? .32 : 0}],{
+    width:640,height:640,focus:[0,.99,0],span,rimColor,framePortrait:true,transparent:true,
+  });
 }
 const rewards={
   'reserve-thruster':['breacher',0],'slide-loader':['breacher',0],'tactical-salvage':['cryo',1],

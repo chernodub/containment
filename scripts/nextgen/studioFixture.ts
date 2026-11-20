@@ -16,7 +16,7 @@ import {retireRoomModels} from '../../src/render/RoomModelCache';
 
 type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow?:number};
 type Subject = Mark & (
-  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; ghost?:boolean}
+  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
@@ -27,7 +27,7 @@ type Subject = Mark & (
 export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
-  transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
+  framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
   boonEffects?:GameEffect[];
@@ -58,7 +58,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     : new T.Vector3(4,3.2,6).normalize();
   camera.position.copy(center).addScaledVector(direction,12);
   camera.lookAt(center); camera.updateMatrixWorld();
-  const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(0xa5e6ec,1.9);
+  const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
   if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
@@ -77,10 +77,11 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         case 'marine': {
           const actor=marine();
           actor.setRig?.(subject.rig); actor.equip?.(subject.weapon);
+          if(shot.framePortrait)actor.setAimPitch?.(-.15);
           actor.setMotionSeed?.(1729); actor.setMotionOptions?.(1,true);
           for(let tick=0;tick<30;tick++){
             actor.setAction?.(subject.pose??'',subject.frame??.55);
-            actor.animate(tick/60,0,subject.aim??.9);
+            actor.animate(tick/60,0,subject.aim??.9,0,subject.reload??0);
           }
           actor.syncWeaponPose?.();
           root=actor.root;
@@ -262,6 +263,24 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       }
     }
     renderer.setPixelRatio(1); renderer.setSize(shot.width,shot.height,false);
+    if(shot.framePortrait&&firstSubject){
+      stage.updateMatrixWorld(true);
+      const bounds=new T.Box2(),point=new T.Vector3(),projected=new T.Vector2();
+      firstSubject.traverseVisible(object=>{
+        if(!(object instanceof T.Mesh))return;
+        if(object instanceof T.SkinnedMesh)object.skeleton.update();
+        const positions=object.geometry.getAttribute('position');
+        for(let index=0;index<positions.count;index++){
+          object.getVertexPosition(index,point).applyMatrix4(object.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+          bounds.expandByPoint(projected.set(point.x,point.y));
+        }
+      });
+      const size=bounds.getSize(new T.Vector2()),middle=bounds.getCenter(new T.Vector2());
+      const frameHeight=Math.max(size.y/.92,size.x/(aspect*.98));
+      camera.left=middle.x-frameHeight*aspect/2;camera.right=middle.x+frameHeight*aspect/2;
+      camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
+      camera.updateProjectionMatrix();
+    }
     post.setCamera(camera); post.setSize(shot.width,shot.height,1);
     const output=document.createElement('canvas');
     output.width=shot.width; output.height=shot.height;
@@ -282,6 +301,18 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         foreground.data[i+3]=Math.min(255,Math.max(0,difference-2)*24);
       }
       ctx.putImageData(foreground,0,0);
+      if(shot.framePortrait&&firstSubject){
+        const foot=firstSubject.getWorldPosition(new T.Vector3()).project(camera);
+        ctx.save();
+        ctx.globalCompositeOperation='destination-over';
+        ctx.translate((foot.x*.5+.5)*shot.width,(.5-foot.y*.5)*shot.height);
+        ctx.scale(1,.28);
+        const radius=shot.width*.24,shadow=ctx.createRadialGradient(0,0,0,0,0,radius);
+        shadow.addColorStop(0,'rgba(0, 6, 9, .65)');
+        shadow.addColorStop(1,'rgba(0, 6, 9, 0)');
+        ctx.fillStyle=shadow;ctx.fillRect(-radius,-radius,radius*2,radius*2);
+        ctx.restore();
+      }
     }
     return output.toDataURL(shot.transparent?'image/png':'image/webp',.88);
   } finally {

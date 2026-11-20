@@ -243,6 +243,9 @@ const rankHeights = new Map<string, Partial<Record<Rank, number>>>();
 export function originalCreatureRankScale(family: string, rank: Rank): number {
   return rankScales.get(family)?.[rank] ?? 1;
 }
+export function originalCreatureRankHeight(family: string, rank: Rank): number {
+  return rankHeights.get(family)?.[rank] ?? 0;
+}
 /** Construction-only fixed M10 idle sample; never depends on the first combat pose. */
 export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, clips: readonly T.AnimationClip[], family: string, radius: number) {
   const key = family + ':' + radius;
