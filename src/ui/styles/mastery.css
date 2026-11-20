@@ -7,6 +7,7 @@
 .mastery-mark { font-weight: 800; translate: -50% -50%; }
 .mastery-callout { font-weight: 700; padding: .3em .6em; background: var(--panel); border-inline-start: 2px solid currentColor; }
 .mastery-link { border-top: 2px dashed currentColor; opacity: .46; transform-origin: left center; }
+.mastery-link[data-rig=arc] { opacity: .8; }
 .retry-lesson { display: flex; align-items: center; gap: 1rem; }
 .retry-lesson svg { flex: none; color: var(--cryo); }
 .clear-record-details > summary { cursor: pointer; }

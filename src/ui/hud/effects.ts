@@ -2,7 +2,7 @@ import type { AbilityEvent } from '../../game/abilities/contract';
 /** Optional presentation metadata is consumed only when the simulation supplies it. */
 export type HudEffect = Readonly<{
     type: string;
-    encounterCue?: 'flank' | 'crossfire' | 'priority' | 'escort-broken';
+    encounterCue?: 'flank' | 'crossfire' | 'priority' | 'escort-broken' | 'pincer-broken';
     cueX?: number;
     cueY?: number;
     x: number;

@@ -244,8 +244,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (entry.node.dataset.state !== state)
             entry.node.dataset.state = state;
         setHudAttribute(entry.node,'data-flash',String(entry.flash>0));
-        const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready);
-        const title = s.id==='glacier'&&mastering ? 'Shatter' : s.id==='flashfire'&&mastering ? `Ignite ${mastery?.ignite.length??0}` : definition.name;
+        const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready&&!!mastery?.ignite.length);
+        const title = s.id==='glacier'&&mastering ? 'Shatter' : s.id==='flashfire'&&mastering ? `Detonate ${mastery?.ignite.length??0}` : definition.name;
         if(entry.title.textContent!==title)entry.title.textContent=title;
         setHudAttribute(entry.node,'data-mastery',String(mastering));
         let value = 'READY';
@@ -318,7 +318,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', [getRoomOpening(game), (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
+        text('room-objective', [getRoomOpening(game), ((getAwakeningDrill(game)||game.augmentDrillActive||game.coverLessonActive) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -479,7 +479,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
         const drill = getAwakeningDrill(game);
-        skipDrill.hidden = !playing || !drill;
+        skipDrill.hidden = !playing || (!drill && !game.augmentDrillActive);
         onboarding.update(game, abilities, !abilityHints.visible, preferences().hints !== false);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
@@ -505,7 +505,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             positionHud();
             setHudInsets(renderer, getHudInsets());
             protectPanels();
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, encounterCues.locations, encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
+            const flank = encounter.pincer;
+            const flankLocations = flank?.state === 'staging'
+                ? game.geometry.breaches.filter(breach=>flank.flankers.some(enemy=>enemy.breachId===breach.id))
+                    .map(breach=>({x:breach.x,y:breach.y,life:1,kind:'flank' as const,beat:encounter.beat??-1}))
+                : [];
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
         targetMarkers.update(game, renderer, encounterCues.locations);
@@ -549,6 +554,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (event.type === 'pickup')
             toasts.show('Supplies collected', 'credits', 'reward', 'pickup');
         if (event.type === 'ability' && event.ability) {
+            masteryHints.effect(event.ability);
             const entry = slots.find(s => s.slot === event.ability!.slot);
             if (!entry)
                 return;

@@ -198,6 +198,7 @@ export type AbilityEvent = Readonly<{
   /** Authoritative chain hop distance and target cap, including augments. */
   /** Applied ability damage aggregated for this bounded targetIds receipt. */
   totalDamage?: number;
+  deliberate?: boolean;
   hopRange?: number;
   maxTargets?: number;
   phase: AbilityEventPhase;

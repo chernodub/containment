@@ -122,7 +122,7 @@ export type EnemyEvent =
 export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 
 export type PodStage = 'sealed' | 'swelling' | 'opening';
-export type EnemySnapshot = Readonly<{chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -183,7 +183,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -554,6 +554,7 @@ export class EnemySystem {
               y: clamp(enemy.y + Math.sin(angle) * enemy.radius, 0, WORLD_HEIGHT),
               elite: false,
               requestIndex: index,
+              beat: enemy.beat,
             }),
           );
         }
@@ -588,8 +589,17 @@ export class EnemySystem {
     this.#cachedSnapshot=null;
     this.#cancelMelee(enemy);
     enemy.stunRemainingMs=Math.max(enemy.stunRemainingMs,durationMs);
+    if(enemy.champion!=='warden')enemy.wallStunAngle=undefined;
     enemy.windupMs=enemy.chargeMs=enemy.broodRemainingMs=0;
     enemy.pendingAttack=null;
+  }
+
+  releaseChildReservation(id: number): void {
+    const enemy = this.#enemies.get(id);
+    if (!enemy?.reservedChildren) return;
+    this.#reservedCount -= enemy.reservedChildren;
+    enemy.reservedChildren = 0;
+    this.#cachedSnapshot = null;
   }
 
   remove(id: number): boolean {
@@ -627,6 +637,7 @@ export class EnemySystem {
   #snapshotEnemy(enemy: EnemyState): EnemySnapshot {
     return Object.freeze({
       role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
+      wallStunAngle:enemy.stunRemainingMs>0?enemy.wallStunAngle:undefined,
       id: enemy.id,
       type: enemy.type,
       elite: enemy.elite,
@@ -935,7 +946,7 @@ export class EnemySystem {
     }else this.#slide.delete(enemy.id);
     if (movementX === 0 && movementY === 0) return;
 
-    if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.chargeMs=0;enemy.stunRemainingMs=1500;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
+    if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.wallStunAngle=Math.atan2(movementY,movementX);enemy.chargeMs=0;enemy.stunRemainingMs=1500;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
     const candidates = [
       { x: enemy.x + movementX, y: enemy.y + movementY },
       { x: enemy.x + movementX, y: enemy.y },

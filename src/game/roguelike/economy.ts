@@ -3,11 +3,12 @@ import {AUGMENT_IDS,AUGMENT_UPGRADE_RULES} from '../abilities/augmentCatalog';
 export const SUPPLY_DEPTHS = [3,7,11,14,18] as const;
 export const DETOUR_DEPTHS = [2,6,10,14,17] as const;
 export type DetourChoice = 'direct'|'salvage';
+export const EARLY_LOCKER = Object.freeze({ health:25, grenades:1, salvageCredits:45 });
 const DIRECT = {id:'direct' as const,name:'Stay on mission',risk:'Standard encounter',reward:'Keep your current supplies'};
 const DETOURS = {
- 2: {name:'Early salvage',risk:'No extra enemies',reward:'Collect 45 credits now'},
+ 2: {name:'Early salvage',risk:'Salvage approach',reward:'Collect 45 credits now'},
  6: {name:'Field requisition',risk:'Costs 70 credits',reward:'Restore 25 armor and take two grenades now'},
- 10: {name:'Field workshop',risk:'Costs 180 credits',reward:'Upgrade an installed augment now'},
+ 10: {name:'Exposed workshop',risk:'Alternate combat approach · costs 180 credits',reward:'Upgrade an installed augment now'},
  14: {name:'Warden cache',risk:'Fight a Warden and its escort in the next room',reward:'Earn 160 credits on clear'},
  17: {name:'Secure the capacitor',risk:'Charge an extra relay under fire',reward:'Leave with a full Overdrive charge'},
 } as const;
@@ -16,7 +17,14 @@ export function detourOffers(run:RunState){
  const depth=run.completedNodeIds.length-1;
  if(run.version!==3||!Object.hasOwn(DETOURS,depth))return [];
  const deal=DETOURS[depth as keyof typeof DETOURS];
- return [depth===fieldWorkshopDepth?{...DIRECT,name:'Field medicine',risk:'Free',reward:'Restore 35 health immediately'}:DIRECT,{id:'salvage' as const,...deal}];
+ const protectedRoute = depth===2
+  ? {...DIRECT,name:'Emergency supply locker',reward:'Restore up to 25 health and take one grenade immediately'}
+  : depth===fieldWorkshopDepth
+  ? {...DIRECT,name:'Field infirmary',reward:'Keep supplies and restore 35 health immediately'}
+  : depth===17
+  ? {...DIRECT,name:'Protected passage',reward:'Keep your current supplies and earn the standard sector reward'}
+  : DIRECT;
+ return [protectedRoute,{id:'salvage' as const,...deal}];
 }
 export type ServiceId='heal'|'armor'|'ammo'|'medkit'|'grenade'|'reroll'|'upgrade'|'revive';
 export const SERVICE_CATALOG=Object.freeze({

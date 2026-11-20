@@ -23,11 +23,20 @@ export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficult
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
-  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup}>[];
+  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true}>[];
 }>;
+export type PincerSnapshot = Readonly<{
+  state: 'staging' | 'sealed' | 'open';
+  remainingMs: number;
+  elapsedMs: number;
+  flankers: readonly EncounterSpawn[];
+}>;
+
+export const PINCER_WINDOW_MS = 14000;
+
 export type EncounterSnapshot = Readonly<{
   phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
-  beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
+  pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
 function authoredPlan(options:EncounterOptions):EncounterPlan {
@@ -38,6 +47,16 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  if(opening&&node.depth>=3){
   const [beat]=source.splice(opening.index,1);
   source.unshift(openingBeat(node.depth,opening.index,beat));
+ }
+ // Resolve one readable interception before admitting its screen.
+ if(node.depth===9||node.depth===13){
+  const index=source.findIndex(beat=>beat.groups.some(group=>group.role==='flanker'&&!group.reinforcement));
+  if(index>=0){
+   const beat=source[index],flank=beat.groups.find(group=>group.role==='flanker'&&!group.reinforcement)!;
+   const groups=beat.groups.flatMap(group=>group!==flank?[group]:group.count>1?[{...group,count:group.count-1}]:[]);
+   source.splice(index,1,{grammar:'interception',label:'Read the lunge from cover',lullMs:900,recallAfterLunge:true,
+    groups:[{...flank,count:1}]},{...beat,groups});
+  }
  }
  const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;
  if(extra)source.push(extra);
@@ -68,12 +87,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?14000:group===broodReserve?10500:4500)+index*650:650+ordinal*450*requisitionSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*requisitionSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
-  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,cleanup:beat.cleanup??(node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
+  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
  return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(12,6+Math.floor(node.depth/3)),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
 }
@@ -147,6 +166,7 @@ const events = (...values: EncounterEvent[]): readonly EncounterEvent[] => Objec
  */
 export class EncounterDirector {
   readonly plan: EncounterPlan;
+  private readonly pincerFlanks = new Map<number, readonly EncounterSpawn[]>();
   private readonly breaches:readonly {id:string;x:number;y:number}[];
   private holdUntilMs=0;
   private skipReinforcements=false;
@@ -156,11 +176,26 @@ export class EncounterDirector {
   private dispatched = 0;
   private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
-  constructor(options: EncounterOptions) { this.plan = createEncounterPlan(options);this.holdUntilMs=options.holdUntilMs??0;this.breaches=options.breaches??[]; }
+  constructor(options: EncounterOptions) {
+    this.plan = createEncounterPlan(options);
+    this.holdUntilMs=options.holdUntilMs??0;
+    this.breaches=options.breaches??[];
+    this.plan.beats?.forEach((beat,index)=>{
+      if(beat.consequence==='pincer')this.pincerFlanks.set(index,Object.freeze(this.plan.schedule.slice(beat.start,beat.end)
+        .filter(request=>request.reinforcement&&request.role==='flanker')));
+    });
+  }
   get phase(): EncounterPhase { return this.currentPhase; }
   get currentWave(): number { return this.plan.wave; }
   get snapshot(): EncounterSnapshot {
-    return Object.freeze({ phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
+    const flankers = this.pincerFlanks.get(this.beatIndex);
+    const pincer: PincerSnapshot | undefined = flankers ? {
+      state: this.broken ? 'sealed' : this.beatElapsedMs < PINCER_WINDOW_MS ? 'staging' : 'open',
+      remainingMs: Math.max(0, PINCER_WINDOW_MS - this.beatElapsedMs),
+      elapsedMs: this.beatElapsedMs,
+      flankers,
+    } : undefined;
+    return Object.freeze({ pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
       remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,beatRemaining:Math.max(0,(this.plan.beats[this.beatIndex]?.end??this.dispatched)-this.dispatched),grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
   }
 
@@ -203,16 +238,22 @@ export class EncounterDirector {
   }
 
   get objectiveBroken(){return this.broken;}
-  reportBroodInterrupted(beat:number|undefined){
-    if(beat===this.beatIndex&&this.plan.beats?.[beat]?.consequence==='brood')this.defusedBeats.add(beat);
+  reportBroodInterrupted(beat:number|undefined):number {
+    if(beat!==this.beatIndex||this.defusedBeats.has(beat))return 0;
+    const current=this.plan.beats?.[beat];
+    if(current?.consequence!=='brood')return 0;
+    this.defusedBeats.add(beat);
+    return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
-  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean}[],pending:number,siegeReady:boolean):Cleanup|undefined {
+  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
     const beat=this.plan.beats?.[this.beatIndex];
     if(!beat||this.clearingBeat)return;
-    if(!this.broken&&beat.consequence==='pincer'&&this.beatElapsedMs<=14000&&this.dispatched>beat.start
+    if(!this.broken&&beat.consequence==='pincer'&&this.beatElapsedMs<PINCER_WINDOW_MS&&this.dispatched>beat.start
       &&this.plan.schedule.slice(this.dispatched,beat.end).every(request=>request.reinforcement)
       &&!pending&&!live.some(enemy=>enemy.role==='screen'))this.breakBeat(beat.end);
     if(this.broken)return 'withdraw';
+    if(beat.recallAfterLunge&&this.dispatched===beat.end&&!pending
+      &&live.some(enemy=>enemy.role==='flanker'&&enemy.meleePhase==='recovery'))return 'withdraw';
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }

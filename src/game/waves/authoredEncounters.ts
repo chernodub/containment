@@ -6,7 +6,7 @@ export type EnemyRole = 'screen'|'anchor'|'flanker'|'ranged'|'brood';
 export type AuthoredGroup = Readonly<{family:StandardEnemyId;count:number;role:EnemyRole;priority?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean}>;
 export type Consequence = 'leader'|'pincer'|'brood';
 export type Cleanup = 'rush'|'withdraw';
-export type AuthoredBeat = Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;consequence?:Consequence;cleanup?:Cleanup;breachOffset?:number;groups:readonly AuthoredGroup[]}>;
+export type AuthoredBeat = Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true;breachOffset?:number;groups:readonly AuthoredGroup[]}>;
 const g=(family:StandardEnemyId,count:number,role:EnemyRole,extra:Partial<AuthoredGroup>={}):AuthoredGroup=>Object.freeze({family,count,role,...extra});
 const b=(grammar:EncounterGrammar,label:string,...groups:AuthoredGroup[]):AuthoredBeat=>Object.freeze({grammar,label,lullMs:2500,groups:Object.freeze(groups)});
 const swarm=(n:number)=>b('swarm','Break the rush',g('crawler',n,'screen'));
@@ -27,7 +27,7 @@ export const AWAKENING_DRILL = Object.freeze({
 
 /** Canonical beat sets in campaign order, also used as the fixed order for older saves. */
 export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.freeze([
- [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),swarm(3)],
+ [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),b('crossfire','Use the wreck to cross the firing lane',g('spitter',1,'ranged'),g('crawler',2,'screen'))],
  [b('priority','One heavy swing: step aside, punish recovery',g('brute',1,'anchor',{lesson:'brute'})),cross(1),swarm(2)],
  [b('interception','One revealed lunge: sidestep, then punish',g('stalker',1,'flanker',{lesson:'stalker'})),swarm(3),cross(1)],
  [pincer(2),priority(1),flank(1)],

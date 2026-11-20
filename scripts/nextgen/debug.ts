@@ -148,6 +148,17 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    }
    refresh();
   },
+  /** Stage a capture with the normal fixed simulation clock and no intermediate draws. */
+  stepSimulation(ms:number){
+   if(liveObservation||nativeInput)throw Error('Simulation staging requires fixture mode');
+   if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('stepSimulation expects 0..60000 ms');
+   if(!canStepNative())throw Error('Room is still loading');
+   for(let remaining=ms;remaining>1e-7;){
+    const dt=Math.min(1000/60,remaining);
+    update(dt,controls);
+    remaining-=dt;
+   }
+  },
   /** Presentation-only settling uses the original renderer/follow-camera path.
    * Simulation, encounter clocks and UI effect clocks remain frozen. */
   settlePresentation(ticks:number){
