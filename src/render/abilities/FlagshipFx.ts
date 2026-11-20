@@ -491,9 +491,9 @@ void main(){
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
  #ifdef HAS_ABILITY_PRIORITY_MASK
- float coreCover=max(prioritySample.b,max(prioritySample.a,prioritySample.r));
+ float coreCover=max(prioritySample.b,prioritySample.a);
  if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
-   // Premultiplied emission must obey the same cap as coverage.
+   // Keep the marine cap here. Actor coverage attenuates premultiplied output once, after shading.
    keep*=1.-.83*coreCover;
  }
  #endif

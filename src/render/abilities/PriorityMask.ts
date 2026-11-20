@@ -27,10 +27,10 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
 }\n` + material.fragmentShader;
   material.fragmentShader = material.fragmentShader.replace('void main(){', 'void main(){vec4 prioritySample=abilityPriority();')
     .replace('#include <tonemapping_fragment>', `
- float priority=${hostileOnly ? '0.' : 'max(prioritySample.r,prioritySample.a)'};
+ float priority=${hostileOnly ? '0.' : 'max(prioritySample.r*.72,prioritySample.a*.97)'};
  gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-prioritySample.b));
  gl_FragColor.a*=1.-prioritySample.g;
- gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'}*.97;
+ gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'};
  if(gl_FragColor.a<.004)discard;
  #include <tonemapping_fragment>`);
 }
