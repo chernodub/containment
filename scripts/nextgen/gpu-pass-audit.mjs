@@ -162,6 +162,14 @@ export function installGpuPassAudit(configuration = {}) {
     finally{endDirect();sceneScope=previous;}
   });
   wrap(r.post?.softDepth,'blit',original=>function(...parameters){endDirect();return measure('gasDepthSnapshot',this.target,()=>original.apply(this,parameters));});
+  wrap(renderer, 'copyFramebufferToTexture', original => function (texture, ...parameters) {
+    const target = renderer.getRenderTarget();
+    if (sceneScope !== 'sceneColor' || target !== r.post?.resources?.scene || texture !== r.playerBeacon?.opaqueColor) {
+      return original.call(this, texture, ...parameters);
+    }
+    endDirect();
+    return measure('marineSilhouetteCopy', texture.image, () => original.call(this, texture, ...parameters));
+  });
   // UI-independent GPU envelope: actor updates precede this submission; HUD geometry follows it.
   wrap(r.post,'render',original=>function(...parameters){return measure('frameTotal',renderer.getRenderTarget(),()=>original.apply(this,parameters));});
   wrap(r.post, 'draw', original => function (material, target, ...parameters) {
