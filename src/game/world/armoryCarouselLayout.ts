@@ -1,6 +1,6 @@
 import type {Point} from '../roguelike/types';
 
-export const ARMORY_CENTER=Object.freeze({x:546,y:540});
+export const ARMORY_CENTER=Object.freeze({x:515,y:488});
 const polar=(radius:number,degrees:number,center={x:600,y:450}):Point=>Object.freeze({x:center.x+radius*Math.cos(degrees*Math.PI/180),y:center.y+radius*Math.sin(degrees*Math.PI/180)});
 export const ARMORY_COUNTER_START=152,ARMORY_COUNTER_END=388;
 const counterStep=(ARMORY_COUNTER_END-ARMORY_COUNTER_START)/24;

@@ -62,7 +62,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Carousel spindle, port magazine and starboard fitting lamps.
   'armory': profile({
-    landmark:{at:[510,572],color:0xe6efff,radius:5.5,body:.6,spill:.04,keyGain:.82,height:1.35},
+    landmark:{at:[485,540],color:0xe6efff,radius:5.5,body:.6,spill:.04,keyGain:.82,height:1.35},
     fixturesAt:[[600, 450], [180, 380], [1020, 380]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xcdd7e9,
