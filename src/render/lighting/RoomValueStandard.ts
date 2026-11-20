@@ -62,7 +62,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Carousel spindle, port magazine and starboard fitting lamps.
   'armory': profile({
-    landmark:{at:[371,593],color:0xe6efff,radius:5.5,body:.6,spill:.04,keyGain:.95,height:5.1},
+    landmark:{at:[510,572],color:0xe6efff,radius:5.5,body:.6,spill:.04,keyGain:.82,height:1.35},
     fixturesAt:[[600, 450], [180, 380], [1020, 380]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xcdd7e9,
@@ -70,7 +70,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Suspension gantry, loading booth and dispatch lamps.
   'freight-hold': profile({
-    landmark:{at:[458,474],color:0xd2dfdc,radius:6.5,body:.55,spill:.035,keyColor:0xc2d3d8,keyGain:.60,height:1.05},
+    landmark:{at:[432,469],color:0xd2dfdc,radius:6.5,body:.55,spill:.035,keyColor:0xc2d3d8,keyGain:.60,height:1.05},
     fixturesAt:[[790, 486], [318, 584], [1000, 600]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xefc897,
@@ -133,7 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
-    landmark:{at:[419,438],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
+    landmark:{at:[421,451],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},

@@ -18,6 +18,10 @@ export function addFrame16Incidents(root: Group, id: string) {
       for(const [x,z] of [[4,63],[11,86],[22,117]]) {
         pieces.face([[x,.697,z],[x+4,.697,z+1],[x+6,.697,z+5],[x+2,.697,z+4]],0x38474b);
       }
+      // Creased plating fans out from the rib onto the turning apron.
+      pieces.face([[-10,.67,17],[7,.67,18],[6,.67,101],[-17,.67,127],[-12,.67,86],[-23,.67,99]],0x737e83);
+      pieces.face([[12,.68,22],[29,.68,35],[61,.68,105],[54,.68,99],[59,.68,125],[39,.68,100]],0x919e9d);
+      pieces.face([[34,.68,135],[49,.68,148],[66,.68,179],[55,.68,174],[49,.68,182]],0x66787b);
       pieces.finish(root, 'folded-rib', 563, 488);
       break;
     case 'shielding-gate':
@@ -39,6 +43,13 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.face([[16,.68,18],[32,.68,14],[102,.68,111],[95,.68,110],[96,.68,120],[82,.68,111]],0x707b83);
       pieces.rod([-21,11,94],[28,22,91],3.2,0x48535d);
       pieces.box(-16,13,105,9,6,13,0xc0beab);
+      // The lower knuckle has pulled out with its bolted backing plate.
+      pieces.box(-1,13,83,62,6,21,0x44505a,.07);
+      for(const x of [-22,0,22]){
+        pieces.rod([x-8,20,88],[x+8,20,88],5,edge);
+        pieces.face([[x-6,19,85],[x+5,19,85],[x+5,13,48],[x-7,12,43]],0x647482);
+      }
+      pieces.rod([-33,20,88],[32,20,88],2.8,0x404952);
       pieces.finish(root, 'ejected-leaf', 407, 364).scale.x = .82;
       break;
     case 'overload-floor':
@@ -136,6 +147,17 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.rod([-42,12,16],[-20,6,24],1.5,0xd3b99a);
       pieces.face([[-22,.67,25],[-17,.67,24],[-51,.67,49],[-58,.67,48]],0xaf906b);
       pieces.face([[-58,.67,48],[-51,.67,49],[-75,.67,55],[-77,.67,51]],0x9f8064);
+      // The strap descends across the exposed lid and tears at the deck eye.
+      pieces.face([[-38,58,-13],[-29,58,-16],[9,77,8],[0,77,12]],0xad9e84);
+      pieces.face([[0,77,12],[9,77,8],[20,41,17],[10,38,21]],0x8b8270);
+      pieces.face([[10,38,21],[20,41,17],[23,2,31],[16,6,29],[14,1,32]],0xafa58e);
+      pieces.face([[16,.68,32],[22,.68,31],[5,.68,48],[-32,.68,60],[-31,.68,55]],0x867e6c);
+      pieces.face([[-32,.68,60],[-31,.68,55],[-46,.68,54],[-49,.68,58]],0xb1a68f);
+      pieces.face([[-54,.67,50],[-40,.67,49],[-38,.67,63],[-56,.67,64]],0x515f61);
+      for(const z of [14,23]){
+        pieces.rod([-53,8,z],[-38,26,z-3],3.6,0xb29a76);
+        pieces.rod([-38,26,z-3],[-17,7,z-5],2.8,0x7b776d);
+      }
       pieces.finish(root, 'torn-pallet', 474, 447);
       break;
   }

@@ -1,3 +1,4 @@
+import {ARMORY_CENTER} from '../../game/world/armoryCarouselLayout';
 import * as T from 'three';
 import type {OriginalKitInstance} from './OriginalShipKitAssets';
 export function p11ClinicalSecurityPlacements(id:string):OriginalKitInstance[]{
@@ -15,6 +16,6 @@ export function p11ClinicalSecurityPlacements(id:string):OriginalKitInstance[]{
   // freestanding reader projected into the lane between them.
   return [failed];
  }
- if(id==='armory')return [place('armory-weapon-carousel',600,450,0,1.65,1.3,1.65)];
+ if(id==='armory')return [place('armory-weapon-carousel',ARMORY_CENTER.x,ARMORY_CENTER.y,0,1.65,1.3,1.65)];
  return [];
 }
