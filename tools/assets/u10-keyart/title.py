@@ -142,7 +142,7 @@ bpy.ops.object.text_add();sign=bpy.context.object;sign.name='Small bulkhead sten
 sign.rotation_euler=Matrix((right,V((0,0,1)),-forward)).transposed().to_euler();sign.data.materials.append(insulation);register(sign)
 # Creature staging: their source meshes stay untouched. Presentation materials suppress
 # broad shell fill while retaining the authored emission map for caste lanterns.
-def brood(file,rank,x,y,z,height,yaw=0,tilt=0,lean=0):
+def brood(file,rank,lantern_gain,x,y,z,height,yaw=0,tilt=0,lean=0):
  before=set(bpy.data.objects)
  bpy.ops.import_scene.gltf(filepath=str(ROOT/f'public/assets/models/plain/{file}.glb'))
  obs=[o for o in bpy.data.objects if o not in before]
@@ -167,8 +167,9 @@ def brood(file,rank,x,y,z,height,yaw=0,tilt=0,lean=0):
    lantern=glow.links[0].from_socket
    fill=nodes.new('ShaderNodeVectorMath');fill.operation='SCALE'
    links.new(albedo,fill.inputs[0]);fill.inputs['Scale'].default_value=.35
-   accent=nodes.new('ShaderNodeVectorMath');accent.operation='SCALE'
-   links.new(lantern,accent.inputs[0]);accent.inputs['Scale'].default_value=2.2
+   # Grade the mapped lantern separately so red and violet survive AgX.
+   accent=nodes.new('ShaderNodeVectorMath');accent.operation='MULTIPLY'
+   links.new(lantern,accent.inputs[0]);accent.inputs[1].default_value=lantern_gain
    combined=nodes.new('ShaderNodeVectorMath');combined.operation='ADD'
    links.new(fill.outputs[0],combined.inputs[0]);links.new(accent.outputs[0],combined.inputs[1])
    links.new(combined.outputs[0],glow)
@@ -182,7 +183,7 @@ def brood(file,rank,x,y,z,height,yaw=0,tilt=0,lean=0):
   register(o,'midground')
  hidden.update(o for o in obs if o.hide_render)
  return obs
-warden=brood('tyrant','boss',.17,-.40,.18,1.90,-18,lean=20)
+warden=brood('tyrant','boss',(2.2,2.2,2.2),.17,-.40,.18,1.90,-18,lean=20)
 # Grazing bounce on the ram mask. Link it to the cast to preserve the wreck lighting.
 receivers=bpy.data.collections.new('Brood bounce receivers')
 for o in warden:
@@ -190,8 +191,8 @@ for o in warden:
 bounce=area_light('Ram mask bounce',P(-1.4,-2.3,2.2),170,1.2,(.70,.79,1),target=P(.2,-.4,1.1))
 bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
-crawler=brood('dretch','base',-.46,-.82,2.20,.36,72,66,lean=12)
-stalker=brood('basilisk','base',-.98,-.84,1.50,.48,-54,-62,lean=16)
+crawler=brood('dretch','base',(3.2,.12,.12),-.46,-.82,2.20,.36,72,66,lean=12)
+stalker=brood('basilisk','base',(1.7,.55,5.4),-.98,-.84,1.50,.48,-54,-62,lean=16)
 for o in crawler+stalker:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
 # Backlighting makes hard shell rims, while the lit volume separates silhouettes.
