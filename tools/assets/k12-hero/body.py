@@ -68,7 +68,10 @@ class Suit:
         lv = level if level is not None else (2 if self.high else 0)
         if lv:
             sub = obj.modifiers.new('k12 loft subdivision', 'SUBSURF'); sub.levels = lv
-        self.bvh[name] = kit.bvh_of(obj, subdivide=max(0, 3 - lv))
+        # HERO19: the game LOD ships the unsubdivided cage, which sits 3-8 mm outside the subdivision limit
+        # surface; plates conformed to the limit let the dark undersuit poke through them in blotches
+        # (the "camouflage"). Conform game-LOD plates to the cage they actually cover.
+        self.bvh[name] = kit.bvh_of(obj, subdivide=max(0, 3 - lv) if (self.high or lv) else 0)
         kit.apply_all(obj)
         self.lofts[name] = obj
         if register:
@@ -94,8 +97,9 @@ class Suit:
         pts = kit.fillet(pts, fil, 3 if self.high else 2)
         proj = kit.Isotropic(proj, unit)
         prof = profile or [(0, 0), (.0025, .0014), (.006, .0016), (.0085, .0002), (.0105, .0002), (.011, .0014)]
-        obj = kit.plate(name, pts, proj, self.bvh[loft], standoff, thickness, prof, crown, self.high,
-                        count=60 if self.high else 14, unit=unit)
+        lift = 0 if self.high else .005   # HERO19: game plates clear the faceted cage (no undersuit poke-through)
+        obj = kit.plate(name, pts, proj, self.bvh[loft], standoff + lift, thickness, prof, crown, self.high,
+                        count=60 if self.high else 14, unit=unit, aniso=None if self.high else (.42, 2.2))
         return self.add(obj, role, bone)
 
     def torso_plate(self, name, outline, role='ceramic', bone='ribs', standoff=.014, thickness=.011, crown=.010,
@@ -105,8 +109,9 @@ class Suit:
         pts = [(-d if mirror else d, v * unit) for d, v in outline]
         pts = kit.fillet(pts, fil, 3 if self.high else 2)
         prof = profile or [(0, 0), (.0028, .0015), (.0065, .0018), (.0095, .0003), (.0118, .0003), (.0124, .0016)]
-        obj = kit.plate(name, pts, proj, self.bvh[loft], standoff, thickness, prof, crown, self.high,
-                        count=72 if self.high else 16, unit=unit)
+        lift = 0 if self.high else .005   # HERO19: see limb_plate
+        obj = kit.plate(name, pts, proj, self.bvh[loft], standoff + lift, thickness, prof, crown, self.high,
+                        count=72 if self.high else 16, unit=unit, aniso=None if self.high else (.5, 2.0))
         return self.add(obj, role, bone)
 
     def ring(self, name, centre, axis, radius, width, role='gunmetal', bone=None, profile=None, weights_from=None):
@@ -191,14 +196,14 @@ class Suit:
         self.loft(name, sec)
         # Outer upper-arm plate and a two-piece vambrace.
         self.limb_plate('upper arm plate ' + side, name, a, b, side,
-                        [(-55, .07), (35, .06), (60, .12), (45, .26), (-40, .27), (-70, .16)], bone=up, radius=.1)
+                        [(-62, .07), (100, .06), (112, .14), (100, .26), (-40, .27), (-72, .16)], bone=up, radius=.1)   # HERO19: covers the front
         self.limb_plate('rear upper arm plate ' + side, name, a, b, side,
-                        [(-150, .08), (-62, .08), (-60, .25), (-150, .25)], role='graphite', bone=up, radius=.1, standoff=.010, crown=.004)
+                        [(-150, .08), (-62, .08), (-60, .25), (-150, .25)], bone=up, radius=.1, standoff=.010, crown=.004)
         ab = (b - a).length
         self.limb_plate('vambrace ' + side, name, b, c, side,
                         [(-80, .035), (60, .03), (95, .09), (80, .175), (-70, .18), (-100, .1)], bone=fo, radius=.08, crown=.004)
         self.limb_plate('vambrace inner ' + side, name, b, c, side,
-                        [(115, .05), (240, .05), (235, .16), (120, .16)], role='graphite', bone=fo, radius=.08, standoff=.008, thickness=.006, crown=.002, fil=6)
+                        [(115, .05), (240, .05), (235, .16), (120, .16)], bone=fo, radius=.08, standoff=.008, thickness=.006, crown=.002, fil=6)
         # Wrist cuff ring and elbow hinge discs.
         axis = (c - b).normalized()
         self.ring('wrist cuff ' + side, b.lerp(c, .93), axis, .062, .020, bone=fo)
@@ -227,18 +232,18 @@ class Suit:
         L = (b - a).length; S = (c - b).length
         # Thigh: front plate with a split side plate (overlapping layers).
         self.limb_plate('thigh front plate ' + side, name, a, b, side,
-                        [(30, .10), (150, .10), (165, .25), (140, .40), (40, .40), (20, .25)], bone=th, radius=.12, crown=.008)
+                        [(30, .10), (190, .10), (196, .25), (188, .40), (40, .40), (20, .25)], bone=th, radius=.12, crown=.008)   # HERO19: wraps the inner side
         self.limb_plate('thigh side plate ' + side, name, a, b, side,
                         [(-45, .06), (40, .07), (30, .30), (-35, .32), (-55, .18)], bone=th, radius=.12, standoff=.018, crown=.006)
         # Knee cap with hinge, shin greave and calf plate.
         self.limb_plate('knee cop ' + side, name, b, c, side,
                         [(45, -.075), (135, -.075), (150, .0), (125, .055), (55, .055), (30, .0)], bone=sh, radius=.09, standoff=.020, crown=.012)
         self.limb_plate('shin greave ' + side, name, b, c, side,
-                        [(25, .07), (155, .07), (165, .22), (145, .40), (35, .40), (15, .22)], bone=sh, radius=.10, crown=.007)
+                        [(-12, .07), (192, .07), (198, .22), (190, .40), (-10, .40), (-18, .22)], bone=sh, radius=.10, crown=.007)   # HERO19: wraps both sides
         self.limb_plate('hamstring plate ' + side, name, a, b, side,
                         [(-172, .08), (-12, .08), (-8, .38), (-172, .38)], bone=th, radius=.12, standoff=.012, crown=.006)
         self.limb_plate('calf plate ' + side, name, b, c, side,
-                        [(-172, .06), (-14, .06), (-10, .36), (-172, .36)], bone=sh, radius=.10, standoff=.010, crown=.005)
+                        [(-176, .06), (4, .06), (6, .36), (-176, .36)], bone=sh, radius=.10, standoff=.010, crown=.005)
         proj, _ = self.limb(b, c, side)
         p, n = kit.cast(self.bvh[name], proj, 0, .0)
         hinge = kit.lathe('knee hinge ' + side, [(0, 0), (.030, 0), (.030, .009), (.022, .014), (.011, .014), (.011, .019), (0, .019)], p, n, 24 if self.high else 10, collection=self.col)
@@ -336,7 +341,7 @@ class Suit:
         pecs = {}
         for mirror, bone in ((False, 'ribs'), (True, 'ribs')):
             side = 'L' if not mirror else 'R'
-            pecs[side] = self.torso_plate('pectoral plate ' + side, pec, role='graphite', mirror=mirror, crown=.012)
+            pecs[side] = self.torso_plate('pectoral plate ' + side, pec, mirror=mirror, crown=.012)   # HERO19: ceramic chest (title)
         # Pectoral intake vents: three gunmetal slats on a dark bed, lower outer corner.
         for mirror in ((False, True) if self.high else ()):
             sgn = -1 if mirror else 1
@@ -401,7 +406,8 @@ class Suit:
         getattr(self, rig)(col)
         # SHADE15: the title's big "07" on the large left pauldron, in the game mesh too (bakes into the atlas).
         big = 'L' if rig != 'pyro' else 'R'
-        self.stamp(self.pauldron_caps[big], '07', self.pauldron_centre[big] + V((-.22 if big == 'L' else .22, -.02, .10)), .075, 'upper_arm.' + big)
+        # HERO19: large stencil on the dome's outer-upper face, as on the title.
+        self.stamp(self.pauldron_caps[big], '07', self.pauldron_centre[big] + V((-.45 if big == 'L' else .45, .10, .30)), .105, 'shoulder.' + big)
         if self.high:
             # Rig code stencilled on the right pauldron cap.
             self.stamp(self.pauldron_caps['R'], {'breacher': 'BR-1', 'cryo': 'CR-2', 'pyro': 'PY-3', 'arc': 'AR-4'}[rig],
@@ -427,31 +433,43 @@ class Suit:
         bone = 'upper_arm.' + side
         unit = 1 / (.17 * math.pi / 180)
         big = (side == 'L') != (rig == 'pyro')   # SHADE15: every rig carries the title's big pauldron
-        scale = 1.40 if big else (1.0 if rig == 'arc' else 1.15)   # SHADE15: one broad saturated shoulder plane
-        def P(pts):
-            return [(u * scale, v * scale) for u, v in pts]
-        role = col if big else 'ceramic'
-        cap = P([(-70, -8), (70, -8), (76, 34), (48, 74), (-48, 74), (-76, 34)])
         self.__dict__.setdefault('pauldron_caps', {}); self.__dict__.setdefault('pauldron_centre', {})
         self.pauldron_centre[side] = c
-        o = kit.plate(f'{rig} pauldron cap {side}', kit.fillet(cap, 9, 3 if self.high else 2), proj, self.bvh[name], .022 + (.01 if big else 0), .013,
-                      [(0, 0), (.003, .002), (.008, .0024), (.011, .0006), (.0135, .0006), (.014, .0022)], .006, self.high, 72 if self.high else 16, unit=unit)
-        self.add(o, role, bone)
-        self.pauldron_caps[side] = o
-        # Raised dorsal ridge across the cap: breaks the dome into a designed form.
-        ridge = P([(-70, 44), (70, 44), (60, 58), (-60, 58)])
-        r = kit.plate(f'{rig} pauldron ridge {side}', kit.fillet(ridge, 4, 3 if self.high else 1), proj, self.bvh[name], .036 + (.01 if big else 0), .012,
-                      [(0, 0), (.003, .0015)], .003, self.high, 48 if self.high else 12, unit=unit)
-        self.add(r, 'gunmetal', bone)
-        for k in range(2 if not rig == 'arc' else 1):
-            lame = P([(-62 + k * 5, -30 - k * 18), (62 - k * 5, -30 - k * 18), (66 - k * 5, -6 - k * 18), (-66 + k * 5, -6 - k * 18)])
-            o = kit.plate(f'{rig} pauldron lame {k} {side}', kit.fillet(lame, 5, 3 if self.high else 1), proj, self.bvh[name], .018 + (.01 if big else 0) - k * .003, .010,
-                          None, .004, self.high, 48 if self.high else 12, unit=unit)
-            self.add(o, col, bone)
-        if self.high:
-            for lon in (-40, 40):
-                p, n = kit.cast(self.bvh[name], proj, lon * scale, 20 * scale)
-                self.bolt(p + n * (.038 + (.01 if big else 0)), n, bone, .0042)
+        if big:
+            # HERO19: the title's dome. A real rig-coloured hemisphere standing proud of the shoulder (about the
+            # helmet's size), tilted outward so it reads from the high game camera whichever way he faces.
+            R = .205
+            axis = V((sign * .42, -.03, .91)).normalized()
+            centre = c + V((sign * .045, -.008, .0))
+            rings = 10 if self.high else 6
+            prof = [(R * math.sin(math.radians(108 * i / rings)), R * math.cos(math.radians(108 * i / rings))) for i in range(rings + 1)]
+            lip = prof[-1]
+            prof += [(lip[0] - .014, lip[1] + .004)]   # rolled inner return (thickness at the rim)
+            o = kit.lathe(f'{rig} pauldron cap {side}', prof, centre, axis, 40 if self.high else 18, ref=V((0, 1, 0)), collection=self.col)
+            if self.high:
+                kit.bevel(o, .002, 2, 35)
+            # Bound to the clavicle, not the upper arm: the dome stays on top of the shoulder in the aim
+            # and run poses (the title silhouette) while the arm swings beneath its open rim.
+            self.add(o, col, 'shoulder.' + side)
+            self.pauldron_caps[side] = o
+            # One dark seat ring under the dome rim: the only break in the shape.
+            seat = kit.lathe(f'{rig} pauldron seat {side}', [(lip[0] - .010, lip[1] - .006), (lip[0] + .004, lip[1] - .004), (lip[0] + .004, lip[1] + .010), (lip[0] - .010, lip[1] + .012)],
+                             centre, axis, 40 if self.high else 18, ref=V((0, 1, 0)), collection=self.col, caps=False)
+            self.add(seat, 'gunmetal', 'shoulder.' + side)
+        else:
+            # HERO19: the off shoulder stays small and ceramic (one cap, one lame), clearly below the dome.
+            scale = .85
+            def P(pts):
+                return [(u * scale, v * scale) for u, v in pts]
+            cap = P([(-70, -8), (70, -8), (76, 34), (48, 74), (-48, 74), (-76, 34)])
+            o = kit.plate(f'{rig} pauldron cap {side}', kit.fillet(cap, 9, 3 if self.high else 2), proj, self.bvh[name], .020, .012,
+                          [(0, 0), (.003, .002), (.008, .0024), (.011, .0006), (.0135, .0006), (.014, .0022)], .006, self.high, 72 if self.high else 14, unit=unit)
+            self.add(o, 'ceramic', bone)
+            self.pauldron_caps[side] = o
+            lame = P([(-62, -30), (62, -30), (66, -6), (-66, -6)])
+            o = kit.plate(f'{rig} pauldron lame 0 {side}', kit.fillet(lame, 5, 3 if self.high else 1), proj, self.bvh[name], .017, .010,
+                          None, .004, self.high, 48 if self.high else 10, unit=unit)
+            self.add(o, 'ceramic', bone)
         # Coloured forearm guard over the vambrace (rig identity on the arms).
         a, b = self.j['forearm.' + side], self.j['hand.' + side]
         self.limb_plate(f'{rig} forearm guard {side}', 'arm ' + side, a, b, side,

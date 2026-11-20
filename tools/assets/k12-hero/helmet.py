@@ -71,13 +71,15 @@ class Helmet:
         import bmesh
         bm = bmesh.new(); bm.from_mesh(obj.data); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(obj.data); bm.free()
         sub = obj.modifiers.new('skull subdivision', 'SUBSURF'); sub.levels = 2 if self.high else 0
-        self.bvh = kit.bvh_of(obj, subdivide=3 - sub.levels)
+        self.bvh = kit.bvh_of(obj, subdivide=(3 - sub.levels) if self.high else 0)   # HERO19: game plates/lens on the shipped cage
         if not sub.levels:
             obj.modifiers.remove(sub)
         kit.apply_all(obj)
         self.front = kit.Spherical(CENTER, (0, 1, 0), (0, 0, 1))
         self.top = kit.Spherical(CENTER, (0, 0, 1), (0, 1, 0))   # (a, b): a>0 → −X, b>0 → forward
-        return self.add(obj, 'fabric')
+        # HERO19: in the game LOD the shell under the plates is ceramic, so the helmet reads as one light
+        # form (title) instead of a dark oval between side plates; the close-up keeps its dark seams.
+        return self.add(obj, 'fabric' if self.high else 'ceramic')
 
     def plate(self, name, outline, role='ceramic', proj=None, standoff=.010, thickness=.009, crown=.004,
               profile='panel', fil=4.0):
@@ -111,7 +113,9 @@ class Helmet:
         self.skull()
         o = self.option
         if o == 1:
-            visor = [(-63, -3), (-46, -14), (-22, -21), (0, -23), (22, -21), (46, -14), (63, -3), (61, 6), (40, 10.5), (0, 11.5), (-40, 10.5), (-61, 6)]
+            # HERO19: wider wrap (±78°) and a taller top edge so the cyan face shows in profile and from above.
+            # (top edge at 30°: the aim pose pitches the head into the sights, so the upper lens is what the camera sees)
+            visor = [(-78, -1), (-62, -13), (-30, -21), (0, -23), (30, -21), (62, -13), (78, -1), (76, 14), (50, 26), (0, 30), (-50, 26), (-76, 14)]
         elif o == 2:
             visor = [(-57, -6), (-36, -13), (0, -15), (36, -13), (57, -6), (55, 5), (30, 9), (0, 10), (-30, 9), (-55, 5)]
         else:
@@ -127,14 +131,15 @@ class Helmet:
 
     def visor(self, outline):
         grown = kit.offset_polygon(kit.fillet(outline, 5, 3), -3.0)
-        lens = kit.lens('helmet visor lens', kit.fillet(grown, 5, 3), self.front, self.bvh, .0025,
+        # HERO19: lens brought forward (10 mm) so the cyan face shows from the high game camera.
+        lens = kit.lens('helmet visor lens', kit.fillet(grown, 5, 3), self.front, self.bvh, .010,
                         count=64 if self.high else 20, rings=5 if self.high else 2, collection=self.col)
         self.add(lens, 'visor')
         # Gunmetal bezel: an inner frame wall around the opening, inside the plates.
         path = kit.surface_path(self.bvh, self.front, kit.fillet(kit.offset_polygon(outline, -1.0), 4, 3), .002,
                                 samples=96 if self.high else 20)
-        prof = [(-.003, 0), (.003, 0), (.003, .010), (.0015, .0135), (-.003, .0135)]
-        bezel = kit.ribbon('helmet visor bezel', path, .006, .013, profile=prof, collection=self.col)
+        prof = [(-.003, 0), (.003, 0), (.003, .014), (.0015, .0175), (-.003, .0175)]
+        bezel = kit.ribbon('helmet visor bezel', path, .006, .0175, profile=prof, collection=self.col)
         self.add(bezel, 'gunmetal')
         if self.high:
             # Inner HUD projector strip along the lens top (thin glowing line).
@@ -151,12 +156,14 @@ class Helmet:
             brow = [(-80, 0), (-62, 10), (-44, 7.5), (0, 5.5), (44, 7.5), (62, 10), (80, 0), (86, 18), (60, 38), (22, 47), (-22, 47), (-60, 38), (-86, 18)]
             self.plate('helmet hooded brow', brow, standoff=.016, thickness=.011, crown=.012, profile='lip', fil=5)
             return
-        top = 13.5 if o == 1 else 12
+        top = 32 if o == 1 else 12
         brow = [(-80, 1), (-64, 8.5), (-40, top - 1), (0, top), (40, top - 1), (64, 8.5), (80, 1), (86, 18), (60, 37), (24, 46), (-24, 46), (-60, 37), (-86, 18)]
+        if o == 1:   # HERO19: brow lower edge follows the taller, wider visor
+            brow = [(-90, 8), (-78, 18), (-46, top - 1), (0, top), (46, top - 1), (78, 18), (90, 8), (94, 26), (64, 43), (24, 51), (-24, 51), (-64, 43), (-94, 26)]
         if o == 1:
             # Shallow V peak over the lens: a designed brow line, not an egg rim.
             brow[3] = (0, top - 1.8)
-        self.plate('helmet brow plate', brow, standoff=.011, thickness=.010, crown=.006, profile='panel', fil=5)
+        self.plate('helmet brow plate', brow, standoff=.017, thickness=.012, crown=.008, profile='lip', fil=5)   # HERO19: deep brow rim over the lens
 
     def crown(self, o):
         t = self.top
@@ -206,7 +213,7 @@ class Helmet:
             elif o == 3:
                 cheek = [(62, 7), (60, -10), (70, -38), (96, -52), (116, -36), (120, -4), (100, 12), (78, 12)]
             else:
-                cheek = [(65, -6), (68, -30), (90, -48), (114, -38), (120, -6), (104, 9), (80, 9), (66, 3)]
+                cheek = [(80, -4), (80, -30), (94, -48), (116, -38), (122, -6), (108, 10), (90, 11), (81, 5)]   # HERO19: behind the wider visor
             if side < 0:
                 cheek = mirror(cheek)
             self.plate(f'helmet cheek plate {side}', cheek, 'ceramic', standoff=.012, thickness=.010, crown=.005, fil=5)

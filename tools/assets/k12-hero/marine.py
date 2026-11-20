@@ -58,7 +58,7 @@ def build(joints, tails, high):
     for rig in RIGS:
         suit.build_rig(rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
-        for side in (-1, 1):
+        for side in ((-1, 1) if high else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
             stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
             obj = helmet.plate(f'{rig} crown stripe {side}', stripe, M.RIG_COLOUR[rig], helmet.top, .0262, .004, .002, 'plain', 2.5)
             helmet.parts.remove(obj); suit.groups[rig].append(obj)
@@ -119,6 +119,14 @@ def review(low, high):
     scene = bpy.context.scene
     out = WORK / ('review-' + arg('round', '0')); out.mkdir(parents=True, exist_ok=True)
     floor = studio(scene, int(arg('samples', '40')))
+    if '--xray' in ARGS:   # HERO19: undersuit in flat red, to find where it shows through the plates
+        for o in low:
+            for slot in o.material_slots:
+                if slot.material and slot.material.get('k12Role') == 'fabric':
+                    red = bpy.data.materials.new('xray'); red.use_nodes = True
+                    red.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (1, 0, 0, 1)
+                    slot.material = red
+        print('XRAY', sorted({s.material.get('k12Role', s.material.name) for o in low for s in o.material_slots if s.material}), flush=True)
     bpy.ops.object.camera_add(); cam = bpy.context.object; scene.camera = cam
     files = []
     views = arg('views', 'beauty,back,game').split(',')
