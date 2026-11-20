@@ -30,3 +30,9 @@ The condition name and timer are status. Extra condition advice is absent from c
 ## Verification
 
 The production build passed. The initial heavy capture's projected body bounds, within 5.5 m and against the HUD reservation, were 0 of 11 below the clearance line in Crew Checkpoint, 0 of 14 in Overload Floor and 1 of 13 in Relay Racks. The Relay Racks body extended 38 CSS px below the line. This was measured before the last camera contact-priority adjustment. Final kiting clearance at both resolutions, per-item matched pairs, later junction word counts and both complete bot campaigns still need verification. The first Cryo run hit the runner's 20-second screenshot timeout before combat. The first Pyro run was interrupted by the host restart.
+
+### 1080p kiting and junction recaptures
+
+The 1920×1080 capture produced 18 frames. For the kiting samples, I compared the projected body bounds of every enemy within 5.5 m to the HUD reservation's upper edge. This is stricter than counting only intersections with the dock's horizontal span. Relay Racks had 0 overlaps across 10 body observations, with at least 186 CSS px of clearance. Crew Checkpoint had 0 across 24, with at least 74 px. Overload Floor had 0 across 18, with at least 44 px. These captures were made before the compact row was shortened.
+
+Junction 1 now shows 19 and 16 words, junction 2 shows 16 and 18, and junction 3 shows 18 and 17. Counts use the visible title, outcome, fight and condition terms plus Later where present, excluding mathematical separators and number-key badges. The reference junction 3 screenshot contains 34 and 43 words respectively by the same method. Delayed text is folded. The illustrated cards and condition tradeoffs remain because the route needs both an immediate decision and a preview of the fight.

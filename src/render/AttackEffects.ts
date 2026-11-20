@@ -24,7 +24,7 @@ export type AttackFeedback={
  shockwave?:(event:{position:T.Vector3;radius:number;strength:number;duration:number})=>void;
 };
 type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;direction?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
-type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean;arrival:boolean};
+type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean;arrival?:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 export const PRIORITY_ACTOR_LIMIT=130;
 const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;varying vec2 warningWorld;
