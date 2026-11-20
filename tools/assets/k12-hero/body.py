@@ -97,9 +97,9 @@ class Suit:
         pts = kit.fillet(pts, fil, 3 if self.high else 2)
         proj = kit.Isotropic(proj, unit)
         prof = profile or [(0, 0), (.0025, .0014), (.006, .0016), (.0085, .0002), (.0105, .0002), (.011, .0014)]
-        lift = 0 if self.high else .005   # HERO19: game plates clear the faceted cage (no undersuit poke-through)
+        lift = 0 if self.high else .009   # HERO19: game plates clear the faceted cage (no undersuit poke-through)
         obj = kit.plate(name, pts, proj, self.bvh[loft], standoff + lift, thickness, prof, crown, self.high,
-                        count=60 if self.high else 14, unit=unit, aniso=None if self.high else (.42, 2.2))
+                        count=60 if self.high else 14, unit=unit, aniso=None if self.high else (.36, 2.4))
         return self.add(obj, role, bone)
 
     def torso_plate(self, name, outline, role='ceramic', bone='ribs', standoff=.014, thickness=.011, crown=.010,
