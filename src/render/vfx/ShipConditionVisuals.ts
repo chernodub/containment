@@ -77,6 +77,12 @@ export class ShipConditionVisuals {
     for(let k=0;k<2;k++)f.part(sx,.69,sz,.48,.055,.048,STEEL,k*Math.PI/2);
     f.part(sx,.49,sz,.49,.12,.52,FROST);
     f.part(sx,.23,sz,.52,.14,.48,INK);
+    const spillLength=Math.hypot(x-sx,z-sz), direction=Math.atan2(x-sx,z-sz);
+    f.part(sx,.56,sz,.78,.27,.48,STEEL,direction);
+    f.part(sx,.3,sz,.38,.55,.15,FROST,direction,0,true);
+    f.part((sx+x)/2,.014,(sz+z)/2,.36,.012,spillLength,0x5f949b,direction);
+    const ripple=reduced?.46:(t*.55)%1;
+    f.part(sx+(x-sx)*ripple,.020,sz+(z-sz)*ripple,.27,.003,.24,0x95b8bc,direction);
     this.mist(sx,sz,t,low);
    }else if(id==='conduit'){
     for(const side of [-1,1]){
@@ -127,6 +133,10 @@ export class ShipConditionVisuals {
   }
   if(id==='dark'){
    for(const {x,z,a} of this.mounts.slice(0,low?2:3)){
+    const toward=Math.atan2(game.geometry.bounds.width/(2*u)-x,game.geometry.bounds.height/(2*u)-z);
+    if(!low)lights?.attach('emergency-rake-'+x+','+z,{x:x+1.4*Math.sin(toward),z:z+1.4*Math.cos(toward),y:.42,color:0xa2cbd0,intensity:3.6,distance:5,priority:0,duration:.14});
+    // Louvres shield the sides of each emergency lamp. Its low source catches legs and flanks.
+    for(const side of [-1,1])f.part(x+side*.69*Math.cos(toward),.33,z-side*.69*Math.sin(toward),.08,.47,.72,STEEL,toward);
     f.part(x,.15,z,2.3,.25,.25,INK,a);
     for(let j=-1;j<=1;j++)f.part(x+j*.70*Math.cos(a),.29,z-j*.70*Math.sin(a),.55,.072,.13,0x89a5ab,a,0,true);
    }
@@ -144,6 +154,7 @@ export class ShipConditionVisuals {
    this.fittings.part(x+s*Math.cos(a)+d*Math.sin(a),y,z-s*Math.sin(a)+d*Math.cos(a),w,h,l,color,a,roll,lit);
   for(const side of [-1,1]){
    part(side*r,.77,0,.23,1.54,.55,STEEL);
+   for(const y of [.48,1.03])part(side*r*(.47+open),y,.22,r*.99,.16,.14,BRASS);
    const slats=low?3:5,pitch=1.3/slats;
    for(let j=0;j<slats;j++)part(side*r*(.50+open),.06+(j+.5)*pitch,0,r*.95,pitch-.055,.34,j%2?0x35434c:0x53616a);
    part(side*r*(.50+open),1.39,0,r*.97,.12,.40,BRASS);
@@ -151,9 +162,9 @@ export class ShipConditionVisuals {
   }
   // The readout sits horizontally on the jamb; its glyphs face the fixed deck camera.
   const panelX=x+r*Math.cos(a),panelZ=z-r*Math.sin(a);
-  this.fittings.part(panelX,1.60,panelZ,.77,.10,.52,INK);
+  this.fittings.part(panelX,1.60,panelZ,1.16,.10,.80,INK);
   for(const [i,ch] of String(seconds).padStart(2,'0').slice(-2).split('').entries()){
-   SEGMENTS.forEach(([dx,dz,horiz],j)=>{if(DIGITS[Number(ch)]&(1<<j))this.fittings.part(panelX+(i-.5)*.29+dx,1.66,panelZ-dz,horiz?.15:.035,.012,horiz?.032:.13,0xdad4ad,0,0,true);});
+   SEGMENTS.forEach(([dx,dz,horiz],j)=>{if(DIGITS[Number(ch)]&(1<<j))this.fittings.part(panelX+(i-.5)*.44+dx*1.5,1.66,panelZ-dz*1.5,horiz?.23:.05,.012,horiz?.05:.20,0xdad4ad,0,0,true);});
   }
  }
  dispose(){

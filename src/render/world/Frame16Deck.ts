@@ -25,7 +25,7 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
   const furniture = shipInteriorFurnishings(room).flatMap(item => item.colliders);
   for (const rect of [...room.obstacles, ...(room.incidentObstacles ?? []), ...furniture]) {
     for (let spread = 20; spread >= 2; spread -= 3) {
-      c.fillStyle = 'rgba(10,17,23,.065)';
+      c.fillStyle = ['diagnostic-gallery','crew-checkpoint','residential-gallery','relay-racks'].includes(room.id) ? 'rgba(9,14,18,.11)' : 'rgba(10,17,23,.065)';
       c.fillRect(rect.x - spread, rect.y - spread, rect.width + 2 * spread, rect.height + 2 * spread);
     }
   }
@@ -35,6 +35,11 @@ function serviceJoints(c: CanvasRenderingContext2D, room: string): void {
   c.lineWidth = 3;
   c.strokeStyle = 'rgba(22,32,37,.56)';
   switch (room) {
+    case 'diagnostic-gallery':
+      for(const offset of [-8,8]){
+        c.beginPath();c.moveTo(-114,73+offset);c.bezierCurveTo(-78,45+offset,-84,-23+offset,-24,-57+offset);c.stroke();
+      }
+      break;
     case 'containment-annulus':
       for (const radius of [92, 104, 172]) {
         c.beginPath();
@@ -75,6 +80,19 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     c.save();
     contactShadows(c, room);
     c.save();
+    const scars:Record<string,number[][]>={
+      'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
+      'shielding-gate':[[425,340],[446,366],[493,390],[532,397]],
+      'manual-control-chamber':[[462,573],[491,587],[508,611],[477,644]],
+      'freight-hold':[[439,463],[424,478],[414,479],[395,493]],
+    };
+    const track=scars[room.id];
+    if(track){
+      for(const shift of [-3,3]){
+        c.beginPath();track.forEach(([x,y],i)=>i?c.lineTo(x+shift,y):c.moveTo(x+shift,y));
+        c.lineWidth=shift<0?5:2;c.strokeStyle=shift<0?'rgba(26,34,39,.77)':'rgba(124,143,146,.48)';c.stroke();
+      }
+    }
     c.translate(arena.x, arena.y);
     serviceJoints(c, room.id);
     c.restore();

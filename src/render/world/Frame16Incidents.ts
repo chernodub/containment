@@ -11,15 +11,34 @@ export function addFrame16Incidents(root: Group, id: string) {
       }
       pieces.face([[-11, 26, -35], [-7, 26, -35], [-9, 9, 4], [-13, 9, 4]], 0xa3aba7);
       pieces.box(0, 8, 4, 24, 4, 5, steel);
+      pieces.face([[-12,30,-67],[15,27,-61],[11,6,9],[-8,9,9]],0x697e8c);
+      pieces.face([[-8,9,9],[11,6,9],[13,.4,17],[-11,.4,17]],0xb2bdba);
+      // Beyond the rib the torn sheet is mashed into the deck, below the walkable relief limit.
+      pieces.face([[-11,.69,17],[13,.69,17],[48,.69,146],[32,.69,134],[19,.69,156],[-1,.69,93]],0xacb9b7);
+      for(const [x,z] of [[4,63],[11,86],[22,117]]) {
+        pieces.face([[x,.697,z],[x+4,.697,z+1],[x+6,.697,z+5],[x+2,.697,z+4]],0x38474b);
+      }
       pieces.finish(root, 'folded-rib', 563, 488);
       break;
     case 'shielding-gate':
+      // Hinge barrel sits on the sill. The torn skin folds toward the approach.
+      pieces.rod([1,23,-38],[28,23,-38],4,edge);
+      pieces.face([[1,23,-38],[28,23,-38],[28,11,-25],[2,16,-25]],0x8d9897);
+      pieces.face([[2,16,-25],[28,11,-25],[28,4,-5],[3,10,-7]],0x889594);
       pieces.face([[-33, 2, 15], [-29, 15, -13], [8, 14, -16], [30, 3, -7], [34, 2, 14]], 0x576475);
       pieces.face([[-29, 15, -13], [-28, 10, -17], [9, 10, -20], [8, 14, -16]], 0xa4b4b2);
       pieces.rod([-29, 13, -11], [8, 12, -14], 2.2, edge);
       pieces.rod([8, 12, -14], [31, 4, -6], 2.2, edge);
       for (const x of [-23, 0, 23])
         pieces.box(x, 10, 7, 5, 3, 12, steel);
+      // A full door half twists down the approach with its heel still on the carriage.
+      pieces.face([[-27,12,9],[27,11,1],[33,20,92],[-23,6,104]],0x84949d);
+      pieces.face([[-23,6,104],[33,20,92],[32,7,141],[-16,2,139]],0xadb8b4);
+      for(const x of [-17,18])pieces.rod([x,13,13],[x,14,96],2.1,steel);
+      pieces.box(4,13,77,42,3,6,0xb7b9ac);
+      pieces.face([[16,.68,18],[32,.68,14],[102,.68,111],[95,.68,110],[96,.68,120],[82,.68,111]],0x707b83);
+      pieces.rod([-21,11,94],[28,22,91],3.2,0x48535d);
+      pieces.box(-16,13,105,9,6,13,0xc0beab);
       pieces.finish(root, 'ejected-leaf', 407, 364).scale.x = .82;
       break;
     case 'overload-floor':
@@ -50,6 +69,27 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.rod([0, 38, -10], [11, 23, -11], 2, steel);
       pieces.rod([0, 38, -10], [3, 59, -16], 1.4, edge);
       pieces.finish(root, 'hoist-cage', 346, 474);
+      break;
+    case 'manual-control-chamber':
+      pieces.box(0,11,0,19,4,22,0xb2a184,.22);
+      pieces.box(2,20,9,20,18,4,0x786958,.22);
+      pieces.rod([0,2,0],[0,11,0],2.5,steel);
+      pieces.box(0,2,0,24,2,4,steel,.22);
+      pieces.box(-18,26,-7,14,3,27,edge);
+      pieces.box(-18,28,-11,9,1,12,0x527475);
+      for(const side of [-1,1]){
+        pieces.rod([side*9,11,1],[side*10,17,1],1.2,steel);
+        pieces.box(side*10,18,1,3,2,12,0xa29784);
+        pieces.rod([0,4,0],[side*9,2,-8],1.3,steel);
+      }
+      pieces.box(2,27,9,16,4,5,0xb8a793,.22);
+      pieces.finish(root,'abandoned-chair',482,644);
+      break;
+    case 'safety-interlock-station':
+      pieces.box(0,11,0,40,22,20,steel);
+      pieces.box(0,23,0,39,3,18,edge);
+      for(const x of [-14,14])pieces.box(x,13,9,3,20,2,0xc2b28d);
+      pieces.finish(root,'relay-shoulder',176,414);
       break;
     case 'residential-gallery':
       for (const x of [-18, -3, 15]) {
@@ -92,6 +132,10 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.rod([-40, 9, 18], [-28, 26, 8], 1.4, 0xd1b681);
       for (const [x, z] of [[-42, 27], [-29, 25], [-17, 19]])
         pieces.box(x, 6, z, 10, 9, 8, 0x839392, .3);
+      for(const z of [18,26])pieces.box(-30,4,z,46,6,5,0xc09a6f,-.13);
+      pieces.rod([-42,12,16],[-20,6,24],1.5,0xd3b99a);
+      pieces.face([[-22,.67,25],[-17,.67,24],[-51,.67,49],[-58,.67,48]],0xaf906b);
+      pieces.face([[-58,.67,48],[-51,.67,49],[-75,.67,55],[-77,.67,51]],0x9f8064);
       pieces.finish(root, 'torn-pallet', 474, 447);
       break;
   }

@@ -46,7 +46,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Warm cabin lamps at interrupted packing, opposite cabin and common nook.
   'residential-gallery': profile({
-    landmark:{at:[396,303],color:0xffce94,radius:7,body:.45,spill:.025,keyGain:.4,height:2.1},
+    landmark:{at:[396,303],color:0xffce94,radius:7,body:.45,spill:.025,keyGain:.68,height:2.1},
     fixturesAt:[[300, 280], [900, 720], [160, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,
@@ -78,7 +78,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Boarding scar, wedged pod and pressure lock.
   'breached-loading-bay': profile({
-    landmark:{at:[559,488],color:0x90cfff,radius:7,body:.55,spill:.035,height:1.7,keyGain:.85},
+    landmark:{at:[563,501],color:0x90cfff,radius:7,body:.55,spill:.035,height:1.7,keyGain:.85},
     fixturesAt:[[215, 265], [690, 390], [1080, 520]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,
@@ -93,7 +93,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
   'diagnostic-gallery': profile({
-    landmark:{at:[468,346],color:0x68dfec,radius:6,body:.65,spill:.03,keyGain:.55,height:3.5},
+    landmark:{at:[468,346],color:0x68dfec,radius:6,body:.65,spill:.03,keyGain:.86,height:3.5},
     // Recorder diffuser, southern service recorder, starboard instrument lamp.
     fixturesAt:[[390,126],[710,826],[1084,180]],
     floor:{lit:.42,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
@@ -133,7 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
-    landmark:{at:[422,359],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
+    landmark:{at:[419,438],color:0x9a9cff,radius:7,body:.55,spill:.025,height:1.9,keyGain:.86},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},
@@ -149,7 +149,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
   'manual-control-chamber': profile({
-    landmark:{at:[483,558],color:0xffebd3,radius:6.2,body:.81,spill:.046,height:2.24,keyGain:1.12},
+    landmark:{at:[475,585],color:0xffebd3,radius:6.2,body:.81,spill:.046,height:2.24,keyGain:1.12},
     // Authorization desk, southern cost/status desk and hardwired cabinet.
     fixturesAt:[[640,380],[640,920],[860,280]],
     floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
@@ -173,7 +173,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Palest room: cold inspection pools on the portal; cage recesses near-black.
   'crew-checkpoint': profile({
-    landmark:{at:[681,356],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.65,height:2.9},
+    landmark:{at:[681,356],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.88,height:2.9},
     // Scanner arch inspection lamps and guard-gallery ceiling fixture.
     fixturesAt:[[364,200],[364,680],[1000,440]],
     floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
@@ -189,7 +189,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Already dark: cooling-aisle pools on the lanes, rack backs black, white panels dimmed.
   'relay-racks': profile({
-    landmark:{at:[634,420],color:0x43dbdf,radius:9,body:.6,spill:.035,height:1.2,keyGain:.65},
+    landmark:{at:[634,420],color:0x43dbdf,radius:9,body:.6,spill:.035,height:1.2,keyGain:.88},
     floor:{lit:.70,unlit:.30,edge:.14}, perimeter:{inner:4.5,outer:10,value:.42,lane:.7},
     wall:{value:.62,saturation:.60}, floorSaturation:.55, tint:0xbfdcd8,
     fixtures:.25, practicals:.75, ambient:.6, marineGlow:1, exit:.9,

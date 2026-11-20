@@ -327,9 +327,9 @@ const incidents:Record<string,Incident>={
         const torn:Point3=[-36+dx,26+dy,29];
         const crown:Point3=[-29+dx,61+dy,15];
         const bend:Point3=[-54+dx,69+dy,-20];
-        p.rod(torn,crown,3.6,0x887485);
-        p.rod(crown,bend,3.2,0x96858c);
-        p.rod(bend,wall,2.6,0x837787);
+        p.rod(torn,crown,3.6,0x758b93);
+        p.rod(crown,bend,3.2,0xb0b7ad);
+        p.rod(bend,wall,2.6,0x708089);
         p.face([torn,crown,bend,[-39+dx,51+dy,-5]],0x655766);
       }
       for(let i=0;i<6;i++){
@@ -489,6 +489,9 @@ function addLivingPlenum(root:T.Group,x:number,z:number):void {
     const at=path.getPoint(.40+offset*.011);
     veins.add(node.translate(at.x,at.y+6,at.z+5),0xffb9e3);
   }
+  const runout=new T.CatmullRomCurve3([new T.Vector3(-34,36,-29),new T.Vector3(-17,31,-19),
+    new T.Vector3(-3,17,0),new T.Vector3(17,9,11),new T.Vector3(33,6,18)]);
+  veins.add(new T.TubeGeometry(runout,20,2.6,7,false),0xf1b6ce);
   for(const [batch,glow] of [[flesh,false],[veins,true]] as const){
     const mesh=batch.finish(root,glow?'plenum-veins':'plenum-mantle',x,z) as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>;
     mesh.material.roughness=.24;mesh.material.emissive.setHex(glow?0xcc409d:0x701040);

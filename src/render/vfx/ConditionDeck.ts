@@ -53,7 +53,10 @@ export function conditionDeck(){
  }else{
    mask*=1.-smoothstep(.55,1.,length(coord)+cloud*.18);
    c=mix(vec3(.10,.056,.043),vec3(.35,.22,.125),grain*cloud);
-   a=.64;
+   float branch=abs(sin(atan(coord.y,coord.x)*3.+.32*sin(length(p)*2.4)));
+   float vein=(1.-smoothstep(.04,.15,branch))*exp(-length(coord)*1.6);
+   c+=vec3(.50,.27,.16)*vein;
+   a=.64+.18*vein;
  }
  gl_FragColor=vec4(c,a*mask);
  #include <tonemapping_fragment>
