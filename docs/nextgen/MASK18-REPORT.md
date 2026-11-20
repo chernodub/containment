@@ -20,3 +20,13 @@ Draw counts match frame by frame across all 32 pairs. The same Pyro frame 04 in 
 The production build passed. The four-room Pyro playtest at seed 1729 cleared all four rooms with zero errors. Program inventory was flat from combat start to finish in each room, at 159, 152, 147 and 154 respectively. The playtest report is `artifacts/nextgen/playtest/pyro-1729/report.json`.
 
 The clearings are projected gameplay footprints. Their outlines are approximate around extended limbs and weapon geometry. The mask no longer showed coarse steps in the reviewed frames.
+
+## Follow-up capture
+
+The first pass rounded the clearings, but the projected discs left too much empty space in Pyro. The new enemy capsules use the family-sized collider as a proxy for rendered torso width. Before projection, the torso radii are approximately 0.43 m for Crawlers, 0.50 m for Stalkers, 0.55 m for Spitters, 0.64 m for Carriers and 0.80 m for Brutes. Elite radii are 1.3 times those values. I checked the projected footprints against the visible bodies in the mixed crowd. The capsules target about 8 px of full-strength margin and a further 12 px of falloff at 1080p. Animated limbs can still extend beyond a capsule.
+
+The fully covered enemy core now retains 28% of friendly opacity at full mask strength. The shared shader applies this attenuation once to Flagship effects. The marine keeps his previous capsule and near-ground treatment, and hostile warnings still clear friendly fill at their centres.
+
+The final files are under `artifacts/nextgen/mask18-after2/` with the same names as the originals above. I reviewed frame 04 for all four rigs at native scale and 480×270, plus Pyro frame 05. Pyro reads as a continuous burst and its enemies are readable through the flame. Cryo's spreading frost and Arc's chain remain readable against the pre-branch captures, and the red wedge stays legible in Cryo and Breacher.
+
+All 32 frames match both earlier capture sets in draw calls and live program inventory. The production build passed and the repeated Pyro campaign at seed 1729 cleared four rooms with zero errors. The program counts at combat entry and exit again matched in each room.
