@@ -77,7 +77,7 @@ export function abilityPreview(rig: RigId, owned?: readonly string[]): string {
 
 export function rigScreen(selected: RigId, deliberate = false): string {
   const rig = RIG_CATALOG[selected];
-  const customFirst = deliberate && selected !== 'cryo';
+  const customFirst = deliberate;
   const quick = `<button id="recommended-loadout" class="${customFirst?'secondary':'primary'}">Quick start · Cryo ${arrow()}</button>`;
   const equip = `<button id="equip-rig" class="${customFirst?'primary':'secondary'}">Equip ${rig.name} ${arrow()}</button>`;
   return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
@@ -266,7 +266,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
       const rigId=game.expedition.build.rig;
       const capacitor=game.node.depth===17&&offer.id==='salvage'&&rigId
         ? ABILITY_CATALOG[RIG_CATALOG[rigId].abilities.overdrive].name : undefined;
-      const base={destination:next,detour:offer.id,title:capacitor?`${capacitor} capacitor`:offer.name,risk:offer.risk,cost:offer.id==='salvage'?(workshop?180:game.node.depth===6?70:undefined):undefined,reward:capacitor?`Fully charge ${capacitor} on clear`:offer.reward,vignette:offer.id==='salvage'?({2:'cache',6:'armor',10:'upgrade',14:'warden-cache',17:'capacitor'} as Record<number,string>)[game.node.depth]??'cache':workshop?'medicine':undefined};
+      const base={destination:next,detour:offer.id,title:capacitor?`${capacitor} capacitor`:offer.name,risk:offer.risk,cost:offer.id==='salvage'?(workshop?180:game.node.depth===6?70:undefined):undefined,reward:capacitor?`Fully charge ${capacitor} on clear`:offer.reward,vignette:offer.id==='salvage'?({2:'cache',6:'armor',10:'upgrade',14:'warden-cache',17:rigId==='pyro'?'meltdown-capacitor':'capacitor'} as Record<number,string>)[game.node.depth]??'cache':workshop?'medicine':game.node.depth===17?'protected-passage':undefined};
       if(augments.length)return augments.map(augment=>({...base,augment,vignette:augment,title:`Upgrade ${MUTATION_CATALOG[augment].name}`,
         reward:playerFacingText(AUGMENT_UPGRADE_RULES[augment]??''),disabled:game.combat.snapshot.credits<180}));
       return [{...base,augment:undefined,disabled:offer.id==='salvage'&&(workshop||game.node.depth===6&&game.combat.snapshot.credits<70)}];

@@ -140,6 +140,9 @@ const incidents:Record<string,Incident>={
         p.box(x,2,z,12,4,9,0x454e50,.13);
       }
       p.box(15,21,-2,7,39,8,0x67797b,.14,.17);
+      // The broken conveyor shoe spans the existing eastern incident blocker.
+      p.box(11.5,5,2.5,49,10,15,0x536367);
+      p.box(18,12,2.5,33,4,11,0x718182);
     },
   },
   'armory':{

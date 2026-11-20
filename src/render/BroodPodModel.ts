@@ -15,6 +15,7 @@ export function broodPodModel(): ActorModel {
  root.userData.colliderRadius=14/32;
 
  // Linked satellite sac shares the baked vertices and both shell/core draws.
+ const hatching=root.getObjectByName('brood-pod-hatching');
  const pieces:T.Mesh[]=[];
  source.root.traverse(o=>{if(o instanceof T.Mesh)pieces.push(o);});
  const batches:T.InstancedMesh[]=[];
@@ -22,13 +23,15 @@ export function broodPodModel(): ActorModel {
  for(const mesh of pieces){
   const batch=new T.InstancedMesh(mesh.geometry,mesh.material,2);
   batch.name=mesh.name;batch.position.copy(mesh.position);batch.quaternion.copy(mesh.quaternion);batch.scale.copy(mesh.scale);
+  if(!Array.isArray(mesh.material)&&mesh.material.name==='pod-core'&&hatching?.getObjectById(mesh.id)){
+   batch.scale.x*=.72;batch.scale.z*=.72;batch.position.y-=.12;
+  }
   batch.castShadow=mesh.castShadow;batch.receiveShadow=mesh.receiveShadow;
   batch.setMatrixAt(0,new T.Matrix4());batch.setMatrixAt(1,satellite);
   mesh.parent!.add(batch);mesh.removeFromParent();batches.push(batch);
  }
  let motion=1;
  const closed=root.getObjectByName('brood-pod');
- const hatching=root.getObjectByName('brood-pod-hatching');
  const cores=source.materials.filter(material=>material.name==='pod-core');
  for(const shell of source.materials.filter(m=>m.name==='brood-pod-shell')){
   shell.transparent=true; shell.opacity=.89; shell.roughness=.48;
@@ -38,7 +41,7 @@ export function broodPodModel(): ActorModel {
   if(hatching)hatching.visible=stage==='opening';
   if(stage==='opening')source.root.scale.set(1.62,1.05,1.32);
   else source.root.scale.setScalar(stage==='swelling'?1.17+.12*motion*Math.sin(ms/100):1);
-  const glow=stage==='opening'?1.6:stage==='swelling'?.76+.27*motion*Math.sin(ms/100):.24;
+  const glow=stage==='opening'?.36:stage==='swelling'?.76+.27*motion*Math.sin(ms/100):.24;
   for(const material of cores)material.emissiveIntensity=glow;
  };
  const reset=()=>update(0,'sealed');

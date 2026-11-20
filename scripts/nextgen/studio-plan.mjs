@@ -138,11 +138,27 @@ add('route-warden-cache',[
   kit('Prop_Crate_Large',0x66513a,{x:1.45,z:.46,scale:.68,shadow:1}),
   lamp(0xc98a27,{x:1.38,z:.72,y:.61}),
 ],{...roomLane('swarm-junction',600,520),span:6.4});
+add('route-protected-passage',[
+  {...observer('pyro'),x:-.8,z:.5},
+  station('wall',0x667d87,{x:.85,z:-1.36,scale:1.55}),
+  ...[-.5,2.2].map(x=>station('wall-pillar',0x4b646d,{x,z:-1.36,scale:1.4})),
+  station('wall-detail',0x4a6268,{x:.85,z:-.98,y:.48,scale:.62}),
+  lamp(0x70ebc1,{x:1.82,z:-.91,y:.88}),
+  light(0x83efd3,{x:1.02,z:-.33,y:1.35,intensity:15,distance:4}),
+  light(0xc9e5ff,{x:-1.04,z:.42,y:1.56,intensity:12,distance:4}),
+],roomLane('manual-control-chamber',640,550));
 add('route-capacitor',[
   observer('arc'),station('computer-system',0x435e75,{x:.94,z:-.33,shadow:1.2}),
   lamp(0x56b6fd,{x:.99,z:-.13,y:.8}),
   {kind:'ring',radius:1.18,color:0x75aefa,x:.94,z:-.33,y:.038},
   {kind:'ring',radius:.95,color:0x87ceda,x:.94,z:-.33,y:.037},
+],roomLane('manual-control-chamber',640,550));
+add('route-meltdown-capacitor',[
+  observer('pyro'),station('computer-system',0x665449,{x:.94,z:-.88,shadow:1.2}),
+  lamp(0xff9b55,{x:.99,z:-.48,y:.8}),
+  light(0xff9149,{x:.94,z:-.28,y:1,intensity:14,distance:3}),
+  {kind:'ring',radius:.69,color:0xffb061,x:.94,z:.20,y:.052},
+  {kind:'glyph',name:'meltdown',color:0xffc485,x:.94,z:.20,y:.055,scale:1.12},
 ],roomLane('manual-control-chamber',640,550));
 for(const name of ['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire']){
   const reward=plan['reward-'+name];

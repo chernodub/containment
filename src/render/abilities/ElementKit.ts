@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { FriendlyBoundaryBatch } from './FriendlyBoundary';
-import { AbilityLightningBatch } from './LightningBatch';
-import type { EnergyRibbon, Telegraph } from '../vfx';
+import { AbilityLightningBatch, type EnergyRibbon } from './LightningBatch';
+import type { Telegraph } from '../vfx';
 import type { GraphicsOptions } from '../graphicsOptions';
 import type { GraphicsTier } from '../FrameBudget';
 import type { LightPool } from '../lighting/LightPool';
@@ -280,7 +280,7 @@ export class ElementKit {
         this.rings.priorityWeight = this.priorityWeight;
         this.rings.add(s);
     }
-    beam(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, life = .22, lightning = true, delay = 0): void {
+    beam(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, life = .22, lightning = true, delay = 0, clipToHud = false): void {
         const p = this.beams[this.beamCursor++ % this.beams.length];
         p.live = true;
         p.age = 0;
@@ -293,6 +293,7 @@ export class ElementKit {
         r.width = width;
         r.lightning = lightning;
         r.seed = ++this.serial;
+        r.clipToHud = clipToHud;
     }
     ribbon(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, opacity = .6, lightning = true): void {
         const r = this.line;

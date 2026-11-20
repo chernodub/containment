@@ -19,6 +19,7 @@ export type HudEffect = Readonly<{
     sourceX?: number;
     sourceY?: number;
     contact?: string;
+    rocketUnarmed?: true;
     elements?: readonly string[];
     boon?: string;
     ability?: AbilityEvent;

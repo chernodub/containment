@@ -2,16 +2,14 @@
 export function registerFeel12WeaponScenarios(scenarios){
  for(const focus of ['crawler','stalker','brute'])for(const weapon of ['rifle','shotgun','pistol','plasma','rocket'])for(const room of ['crew-checkpoint','relay-racks']){
   if(focus!=='crawler'&&weapon!=='rifle'&&weapon!=='shotgun')continue;
-  scenarios.push({
-  // Keep the first live shot and a longer native kill/settle tail for heavy health.
-  id:`feel12-weapon-${focus==='crawler'?'':`${focus}-`}${weapon}-${room}`,room,state:'playing',diagnosticOnly:true,burst:true,stepMs:focus==='crawler'?50:focus==='brute'&&room==='relay-racks'?500:250,...(focus==='crawler'?{}:{frameCount:30}),
-  setup:new Function(`return (async()=>{
+  const setup = (rocketGallery = false) => new Function(`return (async()=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer;
    await d.gotoRoom('${room}',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
    d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
    const bounds=g.geometry.bounds,lanes=[];
    const radii={crawler:14,stalker:18,brute:28,spitter:18,carrier:28};
-   const formation=[{family:'crawler',forward:112,side:0},{family:'brute',forward:235,side:0},{family:'stalker',forward:170,side:-65},{family:'spitter',forward:250,side:70},{family:'carrier',forward:325,side:-50}].filter((_,i)=>'${focus}'==='crawler'||i===0).map(a=>{
+   const groupBreak=[{family:'brute',forward:260,side:0},{family:'crawler',forward:260,side:-65},{family:'crawler',forward:260,side:65}];
+   const formation=(${rocketGallery} ? groupBreak : [{family:'crawler',forward:112,side:0},{family:'brute',forward:235,side:0},{family:'stalker',forward:170,side:-65},{family:'spitter',forward:250,side:70},{family:'carrier',forward:325,side:-50}]).filter((_,i)=>'${focus}'==='crawler'||i===0).map(a=>{
     const family=a.family==='crawler'?'${focus}':a.family==='${focus}'?'crawler':a.family;
     return {...a,family,radius:radii[family]};
    });
@@ -26,7 +24,7 @@ export function registerFeel12WeaponScenarios(scenarios){
    }
    lanes.sort((a,b)=>a.score-b.score);if(!lanes.length)throw Error('FEEL12 native weapon lane unavailable');
    const lane=lanes[0];Object.assign(g.player,{x:lane.x,y:lane.y,vx:0,vy:0,angle:lane.angle});
-   d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(1000);g.enemies.reset();d.settlePresentation(120);
+   d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});if(${rocketGallery})g.switchWeapon('rocket');d.step(1000);g.enemies.reset();d.settlePresentation(120);
    const actors=lane.points.map(p=>({id:d.spawn(p.family,p.x,p.y,false),family:p.family,x:p.x,y:p.y}));
    if(actors.some(a=>!a.id))throw Error('FEEL12 native weapon spawn rejected');
    g.switchWeapon('${weapon}');const started=g.elapsed,shotsBefore=g.stats.shotsFired;
@@ -37,7 +35,24 @@ export function registerFeel12WeaponScenarios(scenarios){
      targets:actors.map(a=>({id:a.id,family:a.family,snapshot:g.enemies.getSnapshot(a.id)??null}))};
    }});
    d.setInput({x:0,y:0,fire:true,angle:${focus==='crawler'?'lane.angle':'null'},autoAim:${focus!=='crawler'}});d.step(1000/60);d.refresh();
-  })();`),
- });
+  })();`);
+  // Keep the first live shot and a longer native kill/settle tail for heavy health.
+  scenarios.push({
+   id:`feel12-weapon-${focus==='crawler'?'':`${focus}-`}${weapon}-${room}`,room,state:'playing',diagnosticOnly:true,burst:true,stepMs:focus==='crawler'?50:focus==='brute'&&room==='relay-racks'?500:250,...(focus==='crawler'?{}:{frameCount:30}),
+   setup:setup(),
+  });
+  if(weapon==='rocket'&&room==='crew-checkpoint')scenarios.push({
+   id:'gallery-weapon-rocket',room,state:'playing',diagnosticOnly:true,
+   setup:new Function(`return (async()=>{
+    await (${setup(true).toString()})();
+    const d=window.__containmentDebug;
+    d.setInput({fire:false});
+    const hitGroup=()=>new Set(d.g5Proof.weaponTimeline.receipts.filter(e=>
+     e.type==='hit'&&e.weapon==='rocket'&&e.damage>0).map(e=>e.targetId)).size>1;
+    for(let frame=0;frame<60&&!hitGroup();frame++)d.step(1000/60);
+    if(!hitGroup())throw Error('Rocket did not damage multiple targets');
+    d.refresh();
+   })();`),
+  });
  }
 }

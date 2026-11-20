@@ -56,7 +56,7 @@ function setHudProperty(style:CSSStyleDeclaration,name:string,value:string):void
 const abilityColors: Record<string, string> = { kinetic: '#ffd063', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
-    const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'room-condition', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
+    const ids = ['hud', 'suit-vitals', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'room-condition', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
     let layoutDirty = true;
     const nodes = Object.fromEntries(ids.map(id => [id, el(id)])) as Record<typeof ids[number], HTMLElement>;
     // Font/content/CSS changes can resize a panel without resizing the canvas.
@@ -298,6 +298,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         const s = game.combat.snapshot, playing = game.status === 'playing';
+        hidden('suit-vitals', game.status === 'complete');
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
             encounterCues.clear();
@@ -383,8 +384,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         for (const button of weapons) button.classList.toggle('weapon-suggestion',
             playing && suggestionUntil > game.elapsed && suggestion !== s.weaponId && button.dataset.weapon === suggestion);
         text('reload-label', s.swapRemainingMs > 0 ? 'DRAWING' : !s.magazine && s.weaponId !== 'pistol'
-            ? (s.weaponId === 'plasma' && s.reloading ? 'VENTING · 1 PISTOL' : '1 · PISTOL')
-            : s.reloading ? (s.weaponId === 'plasma' ? (s.heatFraction >= 1 ? 'OVERHEATED · 1 PISTOL' : 'VENTING') : 'RELOADING') : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
+            ? (s.weaponId === 'plasma' && s.reloading ? 'VENTING · SWITCH TO 1' : 'SWITCH TO 1 · PISTOL')
+            : s.reloading ? (s.weaponId === 'plasma' ? (s.heatFraction >= 1 ? 'OVERHEATED · SWITCH TO 1' : 'VENTING') : 'RELOADING') : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
         text('depth-label', `${(game.storyRoom?.environment ?? ACT_NAMES[Math.min(2, Math.floor(game.node.depth / 4))]).toUpperCase()} · ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)}`);
         text('room-name', ROOM_TEMPLATES[game.node.templateId].name);
@@ -513,7 +514,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
-        targetMarkers.update(game, renderer, encounterCues.locations);
+        targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
         if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;
             clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
@@ -541,6 +542,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
         onboarding.effect(event);
+        if (event.rocketUnarmed) showDenial('Inside arming distance');
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
             const id = event.targetId ?? event.id;
             if (id !== undefined && !recentKills.includes(id)) {

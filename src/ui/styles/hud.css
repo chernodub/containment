@@ -422,7 +422,7 @@ body[data-state=playing] #world{cursor:none}
 /* Occlusion changes chrome, never the opacity of a critical value's ancestor. */
 #hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:background-color 120ms ease-out,border-color 120ms ease-out;}
 #hud :is(.vitals,#status-hud,#action-bar,#radar-hud)[data-obscures-threat=true] {opacity:1;background:#07111818;border-color:#9fe8ff15;box-shadow:none;--hud-backplate:transparent;}
-#hud [data-obscures-threat=true] :is(.vital-caption,.armor-line>span,.meter,#desktop-stock>span>span,#desktop-stock .icon,.room-label,#story-status,#story-line,#build-strip,#current-weapon-icon,.ability-title,.dial-track,.dial-progress,.overdrive-meter) {opacity:.3;}
+#hud [data-obscures-threat=true] :is(.vital-caption,.armor-line>span,.meter,#desktop-stock>span>span,#desktop-stock .icon,#depth-label,#room-condition,#story-status,#story-line,#build-strip,#current-weapon-icon,.ability-title,.dial-track,.dial-progress,.overdrive-meter) {opacity:.3;}
 /* Opaque, compact local chips give a contrast floor independent of world lighting.
    Applied in both states so a contact entering a panel cannot move its layout. */
 #hud [data-hud-critical] {background-color:#071118;background-image:none;color:#e8fbff;opacity:1;border-radius:2px;box-shadow:0 0 0 2px #071118;text-shadow:none;}
@@ -473,19 +473,36 @@ body[data-state=playing] #world{cursor:none}
 .threat-marker[data-attacking=true] {animation:threat-pressure .65s ease-in-out infinite;color:var(--hostile-warning);}
 @media(prefers-reduced-motion:reduce){.threat-marker[data-attacking=true]{animation:none;}}
 
-#hud #action-bar .weapon-bank {width:290px}
+#hud #action-bar .weapon-bank {width:316px}
 #hud #action-bar .weapon-bank #weapon-picker button,
 #hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker button {
- flex:1; width:0; height:42px; min-height:42px; flex-direction:column; justify-content:center; gap:1px;
+  flex:0 0 34px; width:34px; height:38px; min-height:38px;
+  flex-direction:column; justify-content:center; gap:1px;
 }
-#hud #action-bar .weapon-bank #weapon-picker button .icon {display:none}
+#hud #action-bar .weapon-bank #weapon-picker button .icon {display:block;width:22px;height:17px}
 #hud #action-bar .weapon-bank #weapon-picker button small {position:static}
-#hud #action-bar #weapon-picker button>span {
- display:block; flex-shrink:0; position:static; width:auto; height:auto; margin:0; clip-path:none; overflow:visible;
- white-space:normal; font-size:10px; line-height:10px; letter-spacing:0; text-align:center;
+#hud #action-bar .weapon-bank #weapon-picker button.selected {flex:1;flex-direction:row;gap:7px}
+#hud #action-bar .weapon-bank #weapon-picker button.selected .icon {display:none}
+#hud #action-bar #weapon-picker button.selected>span {
+  display:block; position:static; width:auto; height:auto; margin:0; clip-path:none; overflow:visible;
+  white-space:nowrap; font:600 18px/1 var(--font-display); letter-spacing:0;
 }
 #hud #action-bar #weapon-picker button.weapon-suggestion {outline:1px solid #e1e5e4; background:#42494c}
+#hud #action-bar .dash-slot {
+  width:112px; display:grid; grid-template-columns:45px 1fr;
+  grid-template-rows:auto auto; align-content:center; gap:3px 7px;
+}
+#hud #action-bar .dash-slot>.ability-icon {grid-area:1 / 1;justify-self:center}
+#hud #action-bar .dash-slot>div {grid-area:1 / 2 / span 2}
+#hud #action-bar .dash-slot>kbd {grid-area:2 / 1;position:static}
+#hud #action-bar .dash-pips i {width:15px}
+@media(max-height:800px) {
+  #hud #action-bar .weapon-bank #weapon-picker button,
+  #hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker button {height:28px;min-height:28px}
+  #hud #action-bar .weapon-bank #weapon-picker button .icon {height:14px}
+}
 @media(max-width:900px) {
- #hud #action-bar .weapon-bank {width:175px}
- #hud #action-bar #weapon-picker button>span {font-size:7px;line-height:8px}
+  #hud #action-bar .weapon-bank {width:236px}
+  #hud #action-bar .weapon-bank #weapon-picker button {flex-basis:24px;width:24px}
+  #hud #action-bar #weapon-picker button.selected>span {font-size:14px}
 }

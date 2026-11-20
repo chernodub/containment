@@ -8,12 +8,14 @@ export type EnergyRibbon = {
   opacity?: number;
   lightning?: boolean;
   seed?: number;
+  clipToHud?: boolean;
 };
 const UP = new T.Vector3(0, 1, 0);
 
 /** Fixed ability-only pool: centimetre cores, faint halos and 40ms branching strikes. */
 export class AbilityLightningBatch {
   low = false;
+  readonly hudViewport = new T.Vector4(-1,-1,1,1);
   priorityWeight = 0;
   private readonly priority: T.InstancedBufferAttribute;
   private readonly branch = new T.Vector3();
@@ -33,10 +35,16 @@ export class AbilityLightningBatch {
     geometry.setAttribute('ribbonPriority', this.priority);
     geometry.setAttribute('ribbonAlpha', this.alpha);
     const material = new T.ShaderMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending,
-      vertexShader: `attribute float ribbonAlpha;varying float alpha;varying vec3 color;varying vec2 local;
-void main(){alpha=ribbonAlpha;color=instanceColor;local=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,
-      fragmentShader: `varying float alpha;varying vec3 color;varying vec2 local;
-void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y);gl_FragColor=vec4(color,alpha*cap);
+      uniforms: {hudViewport: {value: this.hudViewport}},
+      vertexShader: `attribute float ribbonAlpha;varying float alpha;varying vec3 color;varying vec2 local;varying vec4 hudClip;
+void main(){alpha=ribbonAlpha;color=instanceColor;local=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);hudClip=gl_Position;}`,
+      fragmentShader: `uniform vec4 hudViewport;varying float alpha;varying vec3 color;varying vec2 local;varying vec4 hudClip;
+void main(){
+ if(alpha<0.){
+   vec2 ndc=hudClip.xy/hudClip.w;
+   if(any(lessThan(ndc,hudViewport.xy))||any(greaterThan(ndc,hudViewport.zw)))discard;
+ }
+ float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y);gl_FragColor=vec4(color,abs(alpha)*cap);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }` });
@@ -61,6 +69,8 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
     const seed = ribbon.seed ?? 1;
     const strike = reducedMotion ? 0 : Math.floor(time * 25);
     this.start.copy(ribbon.start);
+    // A negative packed alpha marks the two low, persistent Ram skid ribbons.
+    const opacity=(ribbon.opacity??1)*(ribbon.clipToHud?-1:1);
     for (let i = 1; i <= segments; i++) {
       const t = i === segments ? 1 : (i + Math.sin(i * 73.1 + seed) * .24) / segments;
       this.endpoint.copy(ribbon.start).addScaledVector(this.direction, t);
@@ -69,8 +79,8 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
         this.endpoint.addScaledVector(this.side, noise * Math.sin(t * Math.PI) * Math.min(.4, distance * .12));
       }
       const width = ribbon.lightning ? Math.max(.008, Math.min(.06, ribbon.width ?? .035)) * (1 - t * .45) : ribbon.width ?? .045;
-      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.4 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .11 : .14), 1.2);
-      this.segment(this.start, this.endpoint, width, ribbon.lightning ? 0xf2ecff : ribbon.color ?? 0xb79cff, ribbon.opacity ?? 1, ribbon.lightning ? 4 : 3);
+      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.4 : 3), ribbon.color ?? 0xb79cff, opacity * (ribbon.lightning ? .11 : .14), 1.2);
+      this.segment(this.start, this.endpoint, width, ribbon.lightning ? 0xf2ecff : ribbon.color ?? 0xb79cff, opacity, ribbon.lightning ? 4 : 3);
       if (ribbon.lightning && distance > 1 && !this.low && i % 3 === 0 && i < segments) {
         this.branch.copy(this.endpoint).addScaledVector(this.side, Math.sin(seed + i * 7.1 + strike) * .42);
         this.branch.y += .12 + Math.sin(i + strike) * .18;

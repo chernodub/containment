@@ -44,7 +44,7 @@ import {RoomConditionRuntime,onConditionZone} from './game/roguelike/RoomConditi
 import {shipCondition,isJunction,BROOD_HATCH_MS,CONDITION_LIGHT_RADIUS} from './game/roguelike/shipConditions';
 import {storyOpening} from './game/waves/authoredEncounters';
 import type {WeaponId} from './game/combat/types';
-export type GameEffect={encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';wall?:{x:number;y:number};shotId?:string;type:'ability'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'enemy-attack'|'enemy-warning'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
+export type GameEffect={encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'ability'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'enemy-attack'|'enemy-warning'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
 export type GameInput={x:number;y:number;fire:boolean;angle:number|null;autoAim:boolean;aimPoint?:{x:number;y:number}|null};
 export type Bullet={sourceX?:number;sourceY?:number;visualMuzzle?:{x:number;y:number;z:number;distance:number};x:number;y:number;life:number;kind:'player'|'grenade'|'hazard';request:ProjectileRequest;tracker:ProjectileHitTracker;hitReceipt?:{hit:boolean}};
 export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number};
@@ -492,7 +492,7 @@ export class DepthGame {
  }
  private blast(b:Bullet){
   if(b.kind==='player'){
-   if(!this.rocketArmed(b)){this.presentation.push({type:'hit',x:b.x,y:b.y,weapon:'rocket',contact:'blocked'});return;}
+   if(!this.rocketArmed(b)){this.presentation.push({type:'hit',x:b.x,y:b.y,weapon:'rocket',contact:'blocked',rocketUnarmed:true});return;}
    const distance=Math.hypot(this.player.x-b.x,this.player.y-b.y);
    if(distance<b.request.splashRadius&&hasClearExpeditionShot(this.geometry,b,this.player)){
     this.hurt(calculateSplashDamage(72,distance,b.request.splashRadius),b);

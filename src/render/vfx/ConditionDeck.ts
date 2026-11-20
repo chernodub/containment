@@ -5,7 +5,7 @@ import type {ConditionZone} from '../../game/roguelike/RoomConditionRuntime';
 
 /** x is across the fitting; y follows its long axis. Both are in metres. */
 export function conditionDeck(){
- return new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{
+ return new T.ShaderMaterial({transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5,uniforms:{
   size:{value:new T.Vector2()},lamp:{value:new T.Vector2()},kind:{value:0},charge:{value:0},clock:{value:0}
  },vertexShader:`
  varying vec2 coord,world;
