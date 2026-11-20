@@ -487,7 +487,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 ? game.enemies.snapshot.enemies.find(enemy => enemy.health > 0 && enemy.type === 'spitter') : undefined);
         const interrupted = game.broodInterruption;
         const matron = interrupted && game.enemies.getSnapshot(interrupted.id);
-        const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer?.state === 'staging' || game.siege || game.escortExitOpen) && 'objective', denialLife > 0 && 'denial',
+        const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
             suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {

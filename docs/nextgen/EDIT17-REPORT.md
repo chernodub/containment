@@ -18,7 +18,7 @@ The comparison uses the R15 final10 references and production captures under `ar
 
 1. Active awakening, augment and Spitter cover lessons, including their confirmation. A lesson suppresses idle placement previews.
 2. Matron interruption receipt.
-3. Timed pincer staging, relay and newly open escort exit.
+3. Live pincer state, active relay, escort break receipt and newly open escort exit.
 4. Attempted-action denial at the cursor.
 5. Contextual specialist weapon offer.
 6. Rig mastery callout.
@@ -29,7 +29,7 @@ The condition name and timer are status. Extra condition advice is absent from c
 
 ## Verification
 
-The production build passed. The initial heavy capture's projected body bounds, within 5.5 m and against the HUD reservation, were 0 of 11 below the clearance line in Crew Checkpoint, 0 of 14 in Overload Floor and 1 of 13 in Relay Racks. The Relay Racks body extended 38 CSS px below the line. This was measured before the last camera contact-priority adjustment. Final kiting clearance at both resolutions, per-item matched pairs, later junction word counts and both complete bot campaigns still need verification. The first Cryo run hit the runner's 20-second screenshot timeout before combat. The first Pyro run was interrupted by the host restart.
+The production build passed. The initial heavy capture's projected body bounds, within 5.5 m and against the HUD reservation, were 0 of 11 below the clearance line in Crew Checkpoint, 0 of 14 in Overload Floor and 1 of 13 in Relay Racks. The Relay Racks body extended 38 CSS px below the line. This was measured before the last camera contact-priority adjustment. The kiting recaptures and both complete bot campaigns are recorded below. The first Cryo run hit the runner's 20-second screenshot timeout before combat. The first Pyro run was interrupted by the host restart.
 
 ### 1080p kiting and junction recaptures
 
@@ -40,3 +40,13 @@ Junction 1 now shows 19 and 16 words, junction 2 shows 16 and 18, and junction 3
 Matched 1080p pairs are in `final10/encounters/` → `edit17/final/` for the three pincer states and cover, `final10/onboarding/onb14-mastery-pyro-awakening-bay.png` → `edit17/final/onb14-mastery-pyro-awakening-bay.png` for mastery, and `final10/screen-extra/` → `edit17/final/` for the freight and workshop junctions, Arc selection and the Stalker death fixture. The matched Pyro mastery fixture goes from four instructions, including the duplicate Detonate text in the ability tray, to one. The matched Stalker fixture still records a final loss of 1 and a room total of 150, with separate labels and its retry lesson intact.
 
 The Cryo Story retry at seed 1729 cleared all six requested rooms and recorded zero errors in `artifacts/nextgen/playtest/edit17-cryo-final/report.json`. It launched from the checkpoint production build. A subsequent production build passed after the encounter-presentation and compact-row follow-ups.
+
+The Pyro Standard retry at seed 1729 cleared all six requested rooms and recorded zero errors in `artifacts/nextgen/playtest/edit17-pyro-final/report.json`. Both campaigns used the native bot with `--fast --startup-timeout-ms=180000`. Bot policy needed no change. At the second junction, the reference cards contained 18 and 40 words, compared with 16 and 18 in the recapture. The reference requisition was unaffordable in its staged inventory.
+
+### 720p and final encounter frames
+
+At 1280×720, Relay Racks had 0 overlaps across 10 nearby body observations with at least 34 CSS px to spare. Crew Checkpoint had 0 across 19 with at least 23 px. Overload Floor had 0 across 19 with at least 23 px. The 720p frames and their 480×270 reductions are under `artifacts/nextgen/edit17/final720/`. The clearance numbers cover the 5.5 m radius used by the camera's nearby-contact fit. Some distant enemies in the staged crowd still extend into the tray.
+
+The matched Matron and escort recaptures are under `artifacts/nextgen/edit17/encounter-final/`. The Matron interruption receipt is adjacent to its sac. The retreating Brute keeps its cyan direction marker and loses the red ring at its feet. The upper red arrival ring in that frame remains at a separate spawn point.
+
+Coverage gaps remain for a matched capture of each of the three specialist prompts, the previous-rig button state and a frame proving the optional exit while only runners remain. The escort frame shows an earlier beat in the room. The two campaign runs preceded the last HUD-priority change for the pincer and escort receipts. The production build passed after that change.
