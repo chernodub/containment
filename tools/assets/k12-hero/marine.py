@@ -68,10 +68,12 @@ def build(joints, tails, high):
             kit.apply_all(obj)
             name = obj.name.split('.')[0]
             big_side = 'R' if key == 'pyro' else 'L'
-            painted = name.endswith('pauldron cap ' + big_side) or ' crown stripe ' in name
+            cap = name.endswith('pauldron cap ' + big_side)
+            lames = ' pauldron lame ' in name and name.endswith(' ' + big_side)
+            painted = cap or lames or ' crown stripe ' in name
             module = name in ('breacher accumulator', 'cryo dewar', 'pyro fuel cell', 'arc capacitor bank')
             if not high:
-                if not painted and not module:
+                if not cap and ' crown stripe ' not in name and not module:
                     for slot in obj.material_slots:
                         if slot.material.get('k12Role') in (*M.RIG_COLOUR.values(), 'hazard'):
                             slot.material = M.get('ceramic')
