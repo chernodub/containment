@@ -7,9 +7,10 @@ import {pathToFileURL} from 'node:url';
 import * as T from 'three';
 import {L8_CAPTURE_API as api,L8_CAPTURE_ROOMS as rooms} from '../../../scripts/nextgen/l8-capture-data.mjs';
 const scratch=mkdtempSync(resolve('node_modules/.room14-'));
+writeFileSync(scratch+'/enemy-radius.ts','export {enemyBodyRadius} from '+JSON.stringify(resolve('src/game/enemies/catalog.ts')));
 const modules=['Room14Mounts','Room14Debris','Room14Fittings','Inc13Manual','Inc13StoryIncidents','Dress13EarlyIncidents','Dress13ServiceIncidents','Dress13ServiceDetails','P11InfestedPlacements','P11MaintenancePlacements','P11ClinicalSecurityPlacements','P11CargoPlacements','P11ControlPlacements','P11HabitationPlacements','P11ServicePlacements','P11IncidentPlacements'];
 const entry=scratch+'/source.ts';
-writeFileSync(entry,modules.map(n=>'export * from '+JSON.stringify(resolve('src/render/world/'+n+'.ts'))).join('\n'));
+writeFileSync(entry,modules.map(n=>'export * from '+JSON.stringify(resolve('src/render/world/'+n+'.ts'))).join('\n')+'\nexport * from "./enemy-radius";');
 const bundle=await rolldown({input:entry,external:id=>id.startsWith('three')});
 await bundle.write({file:scratch+'/source.mjs',format:'esm'});
 const art=await import(pathToFileURL(scratch+'/source.mjs'));
@@ -119,7 +120,7 @@ const {roomClearance,chargeLanes,deckLaneWidth}=await import('./clearance.mjs');
 console.log('Room | body radius | reachable before/after/total | breach markers before/after | minimum authored opening before | narrowed below minimum | Warden bait rays shortened/checked | minimum sampled deck lane before/after | role-specific targets before/after');
 for(const [index,{id}] of rooms.entries()){
   // Warden detour in Swarm can exceed the planned radius-46 Matron.
-  const radius=[5,8,12,15,18].includes(index)?64:index===0?16:28;
+  const radius=[5,8,12,15,18].includes(index)?64:index===0?art.enemyBodyRadius('crawler'):index===1?art.enemyBodyRadius('brute'):art.enemyBodyRadius('brute',true);
   const r=roomClearance(api,api.templates[id],api.plans[id],radius);
   const charge=radius===64?chargeLanes(api,api.templates[id],api.plans[id]):{shortened:0,checked:0};
   const t=api.templates[id];

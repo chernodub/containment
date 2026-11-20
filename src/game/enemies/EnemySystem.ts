@@ -7,7 +7,7 @@ import {
   WORLD_HEIGHT,
   WORLD_WIDTH,
 } from '../constants';
-import { ENEMIES, STANDARD_ENEMY_IDS } from './catalog';
+import { ENEMIES, ENEMY_FAMILY_SCALE, ELITE_BODY_SCALE, enemyBodyRadius, STANDARD_ENEMY_IDS } from './catalog';
 import { SpatialHash } from './SpatialHash';
 import {Engagement, type AttackSlot, type EngagementState} from './Engagement';
 import type { StandardEnemyId } from './types';
@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
@@ -355,8 +355,10 @@ export class EnemySystem {
     }
 
     const definition = ENEMIES[type];
+    const bodyScale = ENEMY_FAMILY_SCALE[type] * (elite ? ELITE_BODY_SCALE : 1);
+    const {shape} = MELEE_ATTACKS[type];
     const multiplier = elite === true ? this.#balance.eliteHealth : 1;
-    const maxHealth = definition.maxHealth * multiplier * this.#balance.health;
+    const maxHealth = definition.maxHealth * multiplier * this.#balance.health * (options.healthScale??1);
     const maxArmor = type === 'brute' ? maxHealth * BRUTE_ARMOR_RATIO : 0;
     const clampedX = clamp(x, 0, WORLD_WIDTH);
     const clampedY = clamp(y, 0, WORLD_HEIGHT);
@@ -379,10 +381,10 @@ export class EnemySystem {
       maxHealth,
       armor: maxArmor,
       maxArmor,
-      radius: definition.radius,
+      radius: enemyBodyRadius(type, elite),
       speed: definition.speed*this.#balance.speed,baseSpeed:definition.speed*this.#balance.speed,
       windupMs:0,pendingAttack:null,lockX:0,lockY:0,specialCooldownMs:type==='brute'&&elite===true?(this.#balance.chargeInitialCooldownMs??1500):1500,chargeMs:0,
-      meleePhase:'approach',meleeProgress:0,meleeAngle:0,meleeFacingLocked:false,meleeShape:MELEE_ATTACKS[type].shape,meleeOriginX:clampedX,meleeOriginY:clampedY,meleeRemainingMs:0,meleeDurationMs:0,
+      meleePhase:'approach',meleeProgress:0,meleeAngle:0,meleeFacingLocked:false,meleeShape:bodyScale===1?shape:Object.freeze({...shape,range:shape.range*bodyScale,width:shape.width*bodyScale}),meleeOriginX:clampedX,meleeOriginY:clampedY,meleeRemainingMs:0,meleeDurationMs:0,
       contactDamage: definition.contactDamage * (elite?this.#balance.eliteDamage:1)*this.#balance.damage,
       creditReward: Math.round(definition.creditReward * multiplier),
       dropChance: definition.dropChance,
@@ -495,7 +497,7 @@ export class EnemySystem {
     }
     if(movementDelta>0){
       // I13: discover oversized boss neighbors once; ordinary-only queries retain their28-unit bound.
-      let largestRadius=28;for(const enemy of this.#enemies.values())if(enemy.champion&&enemy.radius>largestRadius)largestRadius=enemy.radius;
+      let largestRadius=28;for(const enemy of this.#enemies.values())if(enemy.radius>largestRadius)largestRadius=enemy.radius;
       this.#resolveCrowd(largestRadius);this.#clearCongestion(movementDelta,largestRadius);
     }
     for(const enemy of this.#enemies.values()){
@@ -1026,8 +1028,8 @@ export class EnemySystem {
   }
 
   #aimMelee(enemy:EnemyState,player:{x:number;y:number},starting=false) {
-    // Shift the ordinary Brute's footprint by its added body clearance.
-    const advance=enemy.type==='brute'&&!enemy.champion?enemy.radius-28:0;
+    // Advance the footprint by the body clearance added to the authored strike.
+    const advance=enemy.champion?0:enemy.radius-(enemy.type==='brute'?28:ENEMIES[enemy.type].radius);
     const x=starting?enemy.x:enemy.meleeOriginX-Math.cos(enemy.meleeAngle)*advance;
     const y=starting?enemy.y:enemy.meleeOriginY-Math.sin(enemy.meleeAngle)*advance;
     enemy.meleeAngle=Math.atan2(player.y-y,player.x-x);
@@ -1081,7 +1083,7 @@ export class EnemySystem {
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:enemy.radius/ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);
       enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);

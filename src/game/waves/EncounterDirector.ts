@@ -1,3 +1,4 @@
+import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
 import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
 import {DIFFICULTIES,latePressureProgress,type DifficultyId} from '../difficulty';
@@ -12,7 +13,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -77,7 +78,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    // Earlier teaching beats are unchanged.
    const extraRanged=group.family==='spitter'&&node.depth>=10&&(options.difficulty==='story'||options.difficulty==='standard');
    const standardFinaleEscort=mode==='standard'&&node.depth===19&&beat.grammar==='siege'&&group.role==='screen';
-   const count=baseCount+(extraRanged?1:0)+(standardFinaleEscort?1:0);
+   const originalCount=baseCount+(extraRanged?1:0)+(standardFinaleEscort?1:0);
+   // Keep isolated lessons, paired firing lanes and short flanks intact.
+   // Large single-family groups take fewer slots at the same body-area budget.
+   const scale=ENEMY_FAMILY_SCALE[group.family];
+   const count=originalCount>=4&&scale>1?Math.round(originalCount/(scale*scale)):originalCount;
+   const healthScale=originalCount/count;
    const reinforcement=group.reinforcement||group===broodReserve;
    for(let index=0;index<count;index++){
     // Keep the roster size while interleaving ranged threats with the screen.
@@ -89,7 +95,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.

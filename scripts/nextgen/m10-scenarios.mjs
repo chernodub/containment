@@ -1,6 +1,6 @@
 /** Capture-only deformed bounds. Root collision cylinders do not enclose long
  * presentation lunges; measuring vertices keeps native strip crops honest. */
-function installDeformedBounds(){
+function installDeformedBounds(skinOnly=false){
   const d=window.__containmentDebug,r=d.renderer,proof=d.g5Proof;
   const ids=proof.actors?.map(a=>a.id)??[proof.enemyId];
   const models=[{id:'marine',model:r.player},...ids.filter(id=>Number.isInteger(id)).map(id=>({id,model:r.actors.get(id)}))];
@@ -12,7 +12,7 @@ function installDeformedBounds(){
       b.left=b.top=Infinity;b.right=b.bottom=-Infinity;
       if(!root)continue;root.updateWorldMatrix(true,true);
       root.traverseVisible(o=>{
-        if(!o.isMesh||!o.geometry?.attributes.position)return;
+        if(!o.isMesh||(skinOnly&&!o.isSkinnedMesh)||!o.geometry?.attributes.position)return;
         if(o.isSkinnedMesh)o.skeleton.update();
         for(let i=0;i<o.geometry.attributes.position.count;i++){
           o.getVertexPosition(i,point);point.applyMatrix4(o.matrixWorld).project(r.camera);
@@ -23,6 +23,45 @@ function installDeformedBounds(){
     }
     return bounds;
   }});
+}
+
+/** Matched ranks on the production follow camera, with projected skin bounds. */
+export function registerScale17Scenarios(scenarios) {
+  for(const family of ['crawler','stalker','spitter','carrier','brute']){
+    const source=scenarios.find(s=>s.id===`k11-calm-${family}`);
+    if(!source)continue;
+    const setup=source.setup.toString()
+      .replace("(family==='brute'||family==='carrier'?3:2)","2")
+      .replace('brute:28','brute:33');
+    scenarios.push({...source,id:`scale17-pair-${family}`,setup:new Function('room',`
+      return (async()=>{
+        await (${setup})(room);
+        const d=window.__containmentDebug;
+        d.g5Proof={actors:d.game.enemies.snapshot.enemies.map(({id,type,elite,radius,baseSpeed,meleeShape})=>({id,type,elite,radius,baseSpeed,meleeShape}))};
+        (${installDeformedBounds.toString()})(true);
+      })();
+    `)});
+    for(const phase of ['approach','windup','strike','recovery']){
+      const base=scenarios.find(s=>s.id===`value14-${family}-${phase==='approach'?'calm':'attack'}-crew-checkpoint`);
+      if(!base)continue;
+      scenarios.push({...base,id:`scale17-${family}-${phase}`,burst:false,setup:new Function(`
+        return (async()=>{
+          await (${base.setup.toString()})();
+          const d=window.__containmentDebug;
+          const id=d.g5Proof.enemyId;
+          const phase='${phase}';
+          for(let tick=0;tick<140;tick++){
+            const e=d.game.enemies.getSnapshot(id);
+            if(e?.meleePhase===phase&&(phase==='approach'||e.meleeProgress>=.5||phase==='strike'))break;
+            d.step(1000/60);
+          }
+          const e=d.game.enemies.getSnapshot(id);
+          if(e?.meleePhase!==phase)throw Error('Native attack did not reach '+phase);
+          d.refresh();
+        })();
+      `)});
+    }
+  }
 }
 
 /** Real-room melee clocks: normal simulation earns each warning/strike/recovery. */
