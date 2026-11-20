@@ -48,3 +48,13 @@ Groups of at least four scale their scheduled count by inverse squared family sc
 The Diagnostic Gallery gurney, supporting solid, meal and worklight move together. The affected opening rose from 96 to 140 simulation units. The wider-radius ROOM14 sweep checks authored openings and native role-specific destinations, including legal offsets inward of breach markers.
 
 [Placement audit](../../artifacts/nextgen/scale17/placements-final.log)
+
+## Navigation and ability feel
+
+The native Breacher Standard storyboard run uses seed 1729 and records Residential Gallery, Communal Atrium and Crew Checkpoint. It cleared all five requested rooms with zero errors. In the reviewed samples, armored bodies skirt the Residential debris, the Carrier crosses the Atrium lanes, and mixed ranks emerge through Crew Checkpoint and move around deployed cover. These samples cover those encounters and do not establish a campaign-wide absence of stalls.
+
+The first launch hit the runner's 20-second listener default before the debug hook loaded. The retry applies the requested startup timeout after registering the listeners and resumes the ordinary 20-second action timeout after startup.
+
+A controlled simulation comparison used the same unobstructed Awakening Bay target positions. Seismic Slam hit the Stalker, Carrier and Spitter for 270 total damage in each build, with identical sampled launch endpoints. Ram passed through one Stalker in each build, moved the marine 150 units, dealt 18 damage and displaced the target 40.7 units at the 200 ms sample. These are same-position comparisons apart from authored encounter counts.
+
+[Native receipt](../../artifacts/nextgen/playtest/scale17-navigation-retry/report.json) · [Residential Gallery](../../artifacts/nextgen/scale17/storyboard-residential-gallery.png) · [Communal Atrium](../../artifacts/nextgen/scale17/storyboard-communal-atrium.png) · [Crew Checkpoint](../../artifacts/nextgen/scale17/storyboard-crew-checkpoint.png) · [Ability observations](../../artifacts/nextgen/scale17/ability-observations.ndjson)

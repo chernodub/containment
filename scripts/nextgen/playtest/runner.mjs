@@ -244,7 +244,8 @@ try {
   browser=await chromium.launch({channel:'chromium',headless:!options.headed,args:['--no-sandbox','--enable-gpu','--ignore-gpu-blocklist',...(process.platform==='darwin'?['--use-angle=metal']:[])]});
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
-  page=await context.newPage();page.setDefaultTimeout(Number(options['startup-timeout-ms']??30000));listen(page);
+  page=await context.newPage();listen(page);
+  page.setDefaultTimeout(Number(options['startup-timeout-ms']??30000));
   await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug);
   await enableNative();
@@ -269,6 +270,7 @@ try {
   }
   }
   assert.equal((await snapshot()).run.seed,seed,'Native Start must honor diagnostic seed');
+  page.setDefaultTimeout(20000);
   assert.equal(await page.evaluate(()=>window.__containmentDebug.game.difficulty),difficulty,'Native start must honor selected difficulty');
   let previousSnapshot=null;const foundDefects=new Set();
   let loadingSince=null,loadingHost=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();
