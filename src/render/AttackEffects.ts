@@ -319,7 +319,7 @@ export class AttackEffects {
   for(let i=0;i<n;i++)this.warningTimes[i].w=this.warningSoonest[this.warningRoot(i)];
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
- syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry'], game?:DepthGame):void {
+ syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry'], game?:DepthGame, firingSocket?:(id:number)=>T.Vector3|undefined):void {
   if (game) for (const enemy of enemies) {
    if (!game.getEscortRetreat(enemy.id)) continue;
    // A retreat can start while the earlier arrival ring is still on deck.
@@ -330,13 +330,14 @@ export class AttackEffects {
   }
   this.activeShooters.clear();
   for (const enemy of enemies) {
-   if (enemy.type !== 'spitter' || enemy.health <= 0 || enemy.pendingAttack !== 'spit' || enemy.windupMs <= 0 || game?.getEscortRetreat(enemy.id)) continue;
+   if (enemy.type !== 'spitter' || enemy.pod || enemy.health <= 0 || enemy.pendingAttack !== 'spit' || enemy.windupMs <= 0 || game?.getEscortRetreat(enemy.id)) continue;
    const angle = Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
    const distance = enemy.radius / 32 * .55;
    const cue = this.shooters.get(enemy.id) ?? {x:0,y:0,z:0,angle:0,progress:0,fade:-1};
-   cue.x=enemy.x/32+Math.cos(angle)*distance;
-   cue.z=enemy.y/32+Math.sin(angle)*distance;
-   cue.y=.8;
+   const socket=firingSocket?.(enemy.id);
+   cue.x=socket?.x??enemy.x/32+Math.cos(angle)*distance;
+   cue.z=socket?.z??enemy.y/32+Math.sin(angle)*distance;
+   cue.y=socket?socket.y+.06:.99;
    cue.angle=angle;
    cue.progress=1-Math.min(1,enemy.windupMs/650);
    cue.fade=-1;

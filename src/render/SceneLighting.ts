@@ -264,9 +264,10 @@ export class ContactShadows {
   if(ink>.5){
     vec2 local=indicatorUV*2.0-1.0;
     float facing=smoothstep(.35,.90,local.x);
-    float ring=1.0-smoothstep(.03+facing*.035,.09+facing*.035,abs(radius-.83));
+    float width=ink>1.5?.09:.06;
+    float ring=1.0-smoothstep(width*.35+facing*.025,width+facing*.025,abs(radius-.83));
     color=ink>2.5?vec3(.88,.09,.14):vec3(.54,.75,.83);
-    alpha=ring*(ink>1.5?.78:.40);
+    alpha=ring*(ink>1.5?.78:.22);
   }
   gl_FragColor`);
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
