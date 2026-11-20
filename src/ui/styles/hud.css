@@ -326,7 +326,7 @@ body[data-state=playing] #world{cursor:none}
 #hud #status-hud[data-expanded=false] #run-stock {margin-top:7px;padding-top:6px;}
 #hud #status-hud[data-expanded=false] #story-hud {border:0;margin-top:5px;padding-top:0;}
 #hud #status-hud[data-expanded=false] #story-status,#hud #status-hud[data-expanded=false] #story-presentation,#hud #status-hud[data-expanded=false] #build-strip {display:none;}
-#hud #status-hud[data-expanded=false] #room-objective {white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin:0!important;font-size:12px;}
+#hud #status-hud[data-expanded=false] #room-objective {white-space:normal;overflow:visible;margin:0!important;font-size:12px;}
 #hud #status-hud[data-expanded=false] .encounter-progress {display:none;}
 #hud.low-health::before {box-shadow:inset 0 0 42px #ff5a3620;}
 #hud[data-medkit-available=true] #desktop-stock>span:first-child {color:#e2ffe6;}
@@ -543,3 +543,23 @@ body[data-state=playing] #world{cursor:none}
   white-space: normal;
   font: 600 11px/1 var(--font-display);
 }
+
+#hud #action-bar:has(.weapon-bank[data-expanded=false]) {
+  height:auto;
+  min-height:56px;
+  padding-block:5px;
+}
+#hud #action-bar .weapon-bank[data-expanded=false] {width:172px}
+#hud #action-bar .weapon-bank[data-expanded=false] #weapon-picker button {
+  flex:0 0 23px;
+  width:23px;
+  height:21px;
+  min-height:21px;
+}
+#hud #action-bar .weapon-bank[data-expanded=false] #weapon-picker button > span {
+  position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);
+}
+#hud #action-bar .weapon-bank[data-expanded=false] :is(#reserve,.reload-key) {display:none}
+#hud #action-bar:has(.weapon-bank[data-expanded=false]) :is(.dash-slot,.overdrive-slot) {height:54px;min-height:54px}
+#hud #action-bar:has(.weapon-bank[data-expanded=false]) .cooldown-dial,
+#hud #action-bar:has(.weapon-bank[data-expanded=false]) .cooldown-dial > svg {width:30px;height:30px}

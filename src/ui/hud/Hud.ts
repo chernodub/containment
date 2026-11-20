@@ -94,12 +94,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
     denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
     (document.getElementById('app') ?? nodes.hud).append(denial);
-    let weaponInspect = 0, buildReveal = 0, denialLife = 0;
+    let buildReveal = 0, denialLife = 0;
     let pointerX = innerWidth * .64, pointerY = innerHeight * .48, pointerActive=false, pointerKnown=false, aimPointerX=0, aimPointerY=0, powerAim=false, deniedPlacementLife=0;
     const placement=createPlacementPreview(),deniedPlacement=createPlacementPreview(),deniedAim={x:0,y:0};
     let fighting = false;
     const refreshInspection = () => {
-        const expanded = !fighting || weaponInspect > 0;
+        const expanded = !fighting;
         const narrative = false;
         const reveal = buildReveal > 0;
         if (statusPanel.dataset.buildReveal !== String(reveal)) {statusPanel.dataset.buildReveal=String(reveal);layoutDirty=true;}
@@ -360,7 +360,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         nodes.hud.classList.toggle('low-health', low);
         text('vital-state', low ? 'CRITICAL' : s.health <= 50 ? 'DAMAGED' : 'NOMINAL');
         if (lastWeapon !== s.weaponId) {
-            weaponInspect=1.5;
             lastWeapon = s.weaponId;
             text('weapon-name', s.weaponId);
             nodes['current-weapon-icon'].innerHTML = icon(s.weaponId);
@@ -651,7 +650,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
         if (game.status === 'playing') encounterCues.tick(elapsed);
         for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
-        weaponInspect=Math.max(0,weaponInspect-elapsed);buildReveal=Math.max(0,buildReveal-elapsed);
+        buildReveal=Math.max(0,buildReveal-elapsed);
         denialLife=Math.max(0,denialLife-elapsed);deniedPlacementLife=Math.max(0,deniedPlacementLife-elapsed);
         if(!denialLife&&!denial.hidden){denial.hidden=true;setPlacementPreview(renderer,null);}
         refreshInspection();
