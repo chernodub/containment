@@ -7,7 +7,7 @@ import { elementalCueSamples, type ElementalCue } from './elementalCues';
 import { DEFAULT_MASTER_VOLUME } from './preferences';
 import type { AudioCombatState, AudioEnvironment, AudioListener, GameAudioDirector, UiCue } from './contract';
 import { MixEngine, type MixVoice, type VoiceOptions } from './MixEngine';
-import { SYNTH_SAMPLE_RATE, synthesize, type AudioBus, type CueRecipe } from './synthesis';
+import { SYNTH_SAMPLE_RATE, cueSeed, synthesize, type AudioBus, type CueRecipe } from './synthesis';
 import { ABILITY_RECIPES, abilityLoopRecipe, abilityRecipe } from './abilityCues';
 import { COMBAT_RECIPES, enemyRecipe, impactRecipe, weaponRecipe } from './combatCues';
 import { ENVIRONMENT_PROFILES, ENVIRONMENT_RECIPES, HEARTBEAT_RECIPE } from './environmentCues';
@@ -182,16 +182,17 @@ export class AudioSystem implements GameAudioDirector {
     this.setMusicIntensity(Math.max(state.intensity, state.boss ? .7 : 0));
     const scale = Number.isFinite(state.hostileTimeScale) ? Math.max(.1, Math.min(1, state.hostileTimeScale)) : 1;
     const danger = clamp01(state.danger);
-    if (danger >= .7 && this.danger < .7) this.playAlert('critical');
+    if (!state.paused && danger >= .7 && this.danger < .7) this.playAlert('critical');
     const scaleChanged = scale !== this.hostileTimeScale;
     if (scaleChanged) {
       const ratio = Math.sqrt(scale / this.hostileTimeScale);
       this.hostileTimeScale = scale;
-      if (this.mixer) for (const voice of this.mixer.voices) if (voice.bus === 'enemies' && !voice.loop) this.mixer.setRate(voice, voice.rate * ratio);
+      if (this.mixer) for (const voice of this.mixer.voices) if ((voice.bus === 'enemies' || voice.bus === 'danger') && !voice.loop) this.mixer.setRate(voice, voice.rate * ratio);
     }
     if (state.overdrive !== this.overdrive || danger !== this.danger || state.boss !== this.boss || scaleChanged) {
       if (state.boss && !this.boss) this.playUi('boss-intro');
-      this.danger = danger; this.overdrive = state.overdrive; this.boss = state.boss;
+      if (!state.paused) this.danger = danger;
+      this.overdrive = state.overdrive; this.boss = state.boss;
       if (!this.effectsPaused) this.mixer?.setTreatment(danger, scale < 1, state.overdrive);
       this.updateHeartbeat();
     }
@@ -212,7 +213,7 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'explosion') this.explosion((effect.radius ?? 120) > 180 ? 'large-explosion' : (effect.radius ?? 120) < 80 ? 'small-explosion' : 'explosion', pan, distance);
     else if (effect.type === 'enemy-warning' || effect.type === 'enemy-attack') {
       const family = effect.family ?? (effect.id === -1 ? this.bossPhase === 1 ? 'queen' : `queen-phase-${this.bossPhase}` : 'crawler');
-      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs);
+      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs, cueSeed(`${family}:${effect.id ?? 0}:${effect.x}:${effect.y}`));
     }
     else if (effect.type === 'hurt') this.cue(impactRecipe('hurt'));
     else if (effect.type === 'pickup') this.playPickup();
@@ -309,14 +310,14 @@ export class AudioSystem implements GameAudioDirector {
   }
   private cue(recipe: CueRecipe, options: Partial<VoiceOptions> = {}, key = recipe.id, interval = recipe.interval ?? .06, allowPaused = false): MixVoice | null {
     if (!this.rateLimit(key, interval, allowPaused)) return null;
-    return this.mixer!.play(this.buffer(recipe), { bus: recipe.bus, priority: recipe.priority ?? 45, ...options });
+    return this.mixer!.play(this.buffer(recipe), { bus: recipe.bus, priority: recipe.priority ?? 45, group: recipe.id, ...options });
   }
   private weapon(id: 'pistol' | 'rifle' | 'shotgun' | 'plasma' | 'rocket', pan = 0, distance = 0): void {
     const recipe = weaponRecipe(id);
     if (!this.rateLimit(recipe.id, recipe.interval ?? .045)) return;
     const variant = (this.variants.get(id) ?? 0) % 3; this.variants.set(id, variant + 1);
     const rate = [.988, 1.009, 1.022][variant], level = [.98, 1, .96][variant];
-    this.mixer!.play(this.buffer(recipe, variant), { bus: 'weapons', level, pan, distance, rate, priority: 65 });
+    this.mixer!.play(this.buffer(recipe, variant), { bus: 'weapons', level, pan, distance, rate, priority: 65, group: recipe.id });
     const name = (id === 'plasma' || id === 'rocket' ? `${id}.wav` : `${id}-${variant + 1}.wav`) as Sample;
     this.sample(name, id === 'shotgun' ? .27 : .23, { bus: 'weapons', priority: 60, pan, distance, rate });
     if (id === 'pistol' || id === 'shotgun' || id === 'rifle') this.cue(impactRecipe('shell'), { pan, distance, delay: id === 'shotgun' ? .32 : .15, level: .3 });
@@ -331,12 +332,13 @@ export class AudioSystem implements GameAudioDirector {
     this.sample('explosion.wav', kind === 'large-explosion' ? .38 : .28, { bus: 'impacts', priority: 75, pan, distance });
     this.duck(kind === 'large-explosion' ? .25 : .45, .30);
   }
-  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0, durationMs?: number): void {
+  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0, durationMs?: number, seed = 0): void {
     const swarm=family==='crawler'&&phase!=='death';
     for(let i=this.swarmVoices.length-1;i>=0;i--)if(!this.mixer?.voices.has(this.swarmVoices[i])||this.swarmVoices[i].end<=(this.context?.currentTime??0))this.swarmVoices.splice(i,1);
     if(swarm&&this.swarmVoices.length>=3)return;
     const recipe=enemyRecipe(family,phase,elite);
-    const voice = this.cue(recipe, { pan, distance, rate: Math.sqrt(this.hostileTimeScale)*(phase==='warning'&&durationMs&&durationMs>0?recipe.duration*1000/durationMs:1) },swarm?`swarm:${phase}`:recipe.id);
+    const variation = seed ? .97 + (seed % 61) / 1000 : 1;
+    const voice = this.cue(recipe, { pan, distance, group: `${family}:${phase}`, rate: variation * Math.sqrt(this.hostileTimeScale)*(phase==='warning'&&durationMs&&durationMs>0?recipe.duration*1000/durationMs:1) },swarm?`swarm:${phase}`:recipe.id);
     if(swarm&&voice)this.swarmVoices.push(voice);
     // Melee tells are entirely synthesized; the old common sample masked identity.
     if (voice&&phase==='death') this.sample('alien-impact.wav', .13, { bus: 'enemies', priority: 25, pan, distance, rate: .7 * Math.sqrt(this.hostileTimeScale) });

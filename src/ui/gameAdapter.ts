@@ -466,6 +466,7 @@ export function syncAudioDirector(audio: LegacyAudio, game: DepthGame, options: 
       const pan = dx / 500, distance = Math.hypot(dx, dy);
       if (!before && (enemy.champion || enemy.elite)) transport.playAlert(enemy.champion ?? 'elite', pan, distance);
       if (enemy.health > 0 && before && before.armor > 0 && enemy.armor <= 0) transport.playAlert('armor', pan, distance);
+      if (enemy.health > 0 && enemy.chargeMs > 0 && !before?.chargeMs) transport.playAlert('charge', pan, distance);
       if (enemy.health > 0 && enemy.wallStunAngle !== undefined && before?.wallStunAngle === undefined) transport.playAlert('exposed', pan, distance);
       if (enemy.health > 0 && enemy.podStage === 'opening' && before?.podStage !== 'opening') transport.playAlert('pod', pan, distance);
       if (enemy.health > 0 && before?.pod && !enemy.pod) transport.playAlert('hatch', pan, distance);

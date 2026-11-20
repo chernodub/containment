@@ -1,19 +1,20 @@
 import { impulseSamples, type AudioBus } from './synthesis';
 
-export const AUDIO_BUSES: readonly AudioBus[] = ['music', 'ambience', 'weapons', 'abilities', 'enemies', 'impacts', 'ui'];
+export const AUDIO_BUSES: readonly AudioBus[] = ['music', 'ambience', 'weapons', 'abilities', 'enemies', 'impacts', 'ui', 'danger'];
+const BED_LEVEL = { weapons: .72, abilities: .65, enemies: .46, impacts: .65, ui: .38, ambience: .42, music: .5 } as const;
 export const VOICE_LIMIT = 48;
 export const ACTIVE_VOICE_LIMIT = 40;
 export const LOOP_LIMIT = 10;
 const clamp = (n: number, max = 1) => Number.isFinite(n) ? Math.max(0, Math.min(max, n)) : 0;
 export type MixVoice = {
   source: AudioBufferSourceNode; gain: GainNode; nodes: AudioNode[];
-  bus: AudioBus; priority: number; loop: boolean; retiring: boolean; end: number; level: number;
+  group?: string; bus: AudioBus; priority: number; loop: boolean; retiring: boolean; end: number; level: number;
   rate: number; start: number; contentDuration: number; consumed: number; rateUpdatedAt: number;
 };
 export type VoiceOptions = {
   bus: AudioBus; level?: number; priority?: number; pan?: number; distance?: number;
   rate?: number; delay?: number; offset?: number; duration?: number; loop?: boolean;
-  fadeIn?: number;
+  fadeIn?: number; group?: string;
 };
 
 /** One graph for legacy samples and original PCM. All sources count toward the cap. */
@@ -24,6 +25,8 @@ export class MixEngine {
   readonly buses = {} as Record<AudioBus, GainNode>;
   readonly voices = new Set<MixVoice>();
   readonly musicFilter: BiquadFilterNode;
+  readonly bed = new Map<keyof typeof BED_LEVEL, GainNode>();
+  private dangerUntil = 0;
   private readonly duckMusic: GainNode;
   private readonly duckAmbience: GainNode;
   private readonly musicFocus: GainNode;
@@ -60,10 +63,18 @@ export class MixEngine {
     }
     for (const bus of AUDIO_BUSES) {
       const node = context.createGain(); this.buses[bus] = node;
-      if (bus === 'music') node.connect(this.music);
-      else if (bus === 'ambience') node.connect(this.duckAmbience).connect(this.effects);
-      else node.connect(this.effects);
-      if (bus !== 'music' && bus !== 'ui' && bus !== 'ambience') node.connect(this.reverbInput);
+      let output = node;
+      if (bus !== 'danger') {
+        output = context.createGain();
+        output.gain.value = BED_LEVEL[bus];
+        node.connect(output);
+        this.bed.set(bus, output);
+        this.nodes.push(output);
+      }
+      if (bus === 'music') output.connect(this.music);
+      else if (bus === 'ambience') output.connect(this.duckAmbience).connect(this.effects);
+      else output.connect(this.effects);
+      if (bus !== 'music' && bus !== 'ui' && bus !== 'ambience' && bus !== 'danger') output.connect(this.reverbInput);
       this.nodes.push(node);
     }
     this.nodes.push(this.master, this.effects, this.music, this.duckMusic, this.duckAmbience, this.musicFocus, this.musicFilter, compressor, limiter, this.reverbInput);
@@ -75,15 +86,17 @@ export class MixEngine {
     const now = this.context.currentTime;
     // Offline scheduling has no ended callbacks until rendering: reap completed scheduled voices.
     for (const voice of this.voices) if (voice.end <= now) this.release(voice);
-    let active = 0, loops = 0, victim: MixVoice | null = null;
+    let groupCount = 0, dangerCount = 0, active = 0, loops = 0, victim: MixVoice | null = null;
     const priority = options.priority ?? 40;
     for (const voice of this.voices) {
       if (voice.loop && !voice.retiring) loops++;
       if (voice.retiring) continue;
       active++;
+      if (options.group && voice.group === options.group) groupCount++;
+      if (voice.bus === 'danger') dangerCount++;
       if (!voice.loop && voice.priority < priority && (!victim || voice.priority < victim.priority)) victim = voice;
     }
-    if ((options.loop && loops >= LOOP_LIMIT) || this.voices.size >= VOICE_LIMIT || (active >= ACTIVE_VOICE_LIMIT && !victim)) { this.rejected++; return null; }
+    if (groupCount >= 3 || (options.bus === 'danger' && dangerCount >= 8) || (options.loop && loops >= LOOP_LIMIT) || this.voices.size >= VOICE_LIMIT || (active >= ACTIVE_VOICE_LIMIT && !victim)) { this.rejected++; return null; }
     if (active >= ACTIVE_VOICE_LIMIT && victim) this.stop(victim);
     const source = this.context.createBufferSource(), gain = this.context.createGain();
     const start = now + Math.max(0, options.delay ?? 0), rate = Math.max(.25, Math.min(3, options.rate ?? 1));
@@ -100,11 +113,22 @@ export class MixEngine {
     const nodes: AudioNode[] = [gain];
     const pan = this.context.createStereoPanner(); pan.pan.value = Math.max(-.85, Math.min(.85, options.pan ?? 0));
     gain.connect(pan).connect(this.buses[options.bus]); nodes.push(pan);
-    const voice: MixVoice = { source, gain, nodes, priority, bus: options.bus, loop: source.loop, retiring: false, end: source.loop ? Infinity : start + duration / rate, level, rate, start, contentDuration: duration, consumed: 0, rateUpdatedAt: start };
+    const voice: MixVoice = { source, gain, nodes, priority, group: options.group, bus: options.bus, loop: source.loop, retiring: false, end: source.loop ? Infinity : start + duration / rate, level, rate, start, contentDuration: duration, consumed: 0, rateUpdatedAt: start };
     this.voices.add(voice); this.admitted++; this.highWater = Math.max(this.highWater, this.voices.size);
     source.addEventListener('ended', () => this.release(voice), { once: true });
     if (source.loop) source.start(start, offset); else source.start(start, offset, duration);
+    if (voice.bus === 'danger') this.duckForDanger(voice.end);
     return voice;
+  }
+  private duckForDanger(end: number): void {
+    const now = this.context.currentTime;
+    this.dangerUntil = Math.max(this.dangerUntil, end);
+    for (const [bus, gain] of this.bed) {
+      const param = gain.gain;
+      param.cancelAndHoldAtTime(now);
+      param.setTargetAtTime(BED_LEVEL[bus] * .095, now, .006);
+      param.setTargetAtTime(BED_LEVEL[bus], this.dangerUntil, .11);
+    }
   }
   stop(voice: MixVoice, fade = .018): void {
     if (!this.voices.has(voice) || voice.retiring) return;
@@ -115,7 +139,15 @@ export class MixEngine {
     voice.end = now + fade;
     try { voice.source.stop(now + fade); } catch { this.release(voice); }
   }
-  stopAll(): void { for (const voice of this.voices) this.stop(voice); }
+  stopAll(): void {
+    for (const voice of this.voices) this.stop(voice);
+    this.dangerUntil = 0;
+    const now = this.context.currentTime;
+    for (const [bus, gain] of this.bed) {
+      gain.gain.cancelAndHoldAtTime(now);
+      gain.gain.setTargetAtTime(BED_LEVEL[bus], now, .025);
+    }
+  }
   /** Preserve the remaining buffer duration and release when hostile time changes. */
   setRate(voice: MixVoice, rate: number): void {
     if (voice.loop || voice.retiring || !this.voices.has(voice)) return;
@@ -126,6 +158,7 @@ export class MixEngine {
     voice.source.playbackRate.setValueAtTime(voice.rate, now);
     voice.gain.gain.cancelAndHoldAtTime(now);
     const attackEnd = Math.max(now, voice.start) + Math.min(.004, Math.max(.001, voice.end - Math.max(now, voice.start)) / 3);
+    if (voice.bus === 'danger') this.duckForDanger(voice.end);
     if (now < voice.start) voice.gain.gain.setValueAtTime(0, voice.start);
     voice.gain.gain.linearRampToValueAtTime(voice.level, attackEnd);
     voice.gain.gain.setValueAtTime(voice.level, Math.max(attackEnd, voice.end - .018));

@@ -1,6 +1,6 @@
 /** Pure, seeded PCM authoring. No AudioContext, wall clock or random global state. */
 export type CueFamily = 'weapon' | 'impact' | 'ability' | 'loop' | 'enemy' | 'ui' | 'stinger' | 'ambience';
-export type AudioBus = 'music' | 'ambience' | 'weapons' | 'abilities' | 'enemies' | 'impacts' | 'ui';
+export type AudioBus = 'music' | 'ambience' | 'weapons' | 'abilities' | 'enemies' | 'danger' | 'impacts' | 'ui';
 export type SynthLayer = Readonly<{
   wave: 'sine' | 'metal' | 'noise' | 'pluck';
   gain: number;

@@ -2,7 +2,7 @@ import type { CueRecipe } from './synthesis';
 
 function alert(id: string, notes: readonly number[], hostile = false, step = .085): CueRecipe {
   return {
-    id: `alert:${id}`, family: 'stinger', bus: hostile ? 'enemies' : 'ui',
+    id: `alert:${id}`, family: 'stinger', bus: hostile ? 'danger' : 'ui',
     duration: notes.length * step + .06, priority: hostile ? 88 : 42,
     interval: .24, rms: hostile ? .10 : .055,
     layers: notes.map((frequency, index) => ({
@@ -17,6 +17,7 @@ export const ALERTS = {
   elite: alert('elite', [420, 420, 620], true),
   warden: alert('warden', [220, 165, 110], true, .14),
   matron: alert('matron', [280, 480, 280], true, .13),
+  charge: alert('charge', [155, 275], true, .065),
   exposed: alert('exposed', [720, 440, 230], true),
   pod: alert('pod', [960, 660], true),
   hatch: alert('hatch', [290, 490, 760], true),
