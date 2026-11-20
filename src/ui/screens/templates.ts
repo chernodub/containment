@@ -277,7 +277,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
     ${runHeader(run)?`<p>${escapeHtml(runHeader(run)!)}</p>`:''}
     <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
     ${offers.length&&!run.runStructure?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
-    ${run.runStructure&&next.depth===3?`<p>45 CR now · 35 CR after Breached Loading Bay</p>`:''}
+    ${run.runStructure&&next.depth===3?`<p>45 CR now · 35 CR after Breached Loading Bay · 35 HP and 25 armor after Coolant Plant</p>`:''}
     ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
     <div class="route-briefing-grid">
       ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled,cost},index)=>{
