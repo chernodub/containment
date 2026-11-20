@@ -71,3 +71,19 @@ The focused replay cleared all 20 rooms. Substituting that one receipt gives Sta
 `npm ci` and both production builds passed with Vite's large-chunk advisory. The first native launch hit sandbox `listen EPERM` before starting a campaign. The foreground retry used the same requested Breacher, seed 1729, fast mode and 180-second startup timeout with localhost access and a separate receipt label. It completed all 20 rooms with zero runner errors. The runner returned status 1 for a Manual-control Chamber load over five seconds (5.022 s in the defect receipt). No automated tests were added.
 
 [Native receipt](../../artifacts/nextgen/playtest/bal16-native-breacher/report.json) · [Focused replay](../../artifacts/nextgen/playtest/bal16-stall-recheck/cryo-9001.json)
+
+## Lead follow-up (2026-11-20)
+
+Two passes of arrival-spacing and admission tuning left Standard at 34 of 40 clears for the competent profile: the
+bot rarely dies to pressure alone because per-hit damage is capped and recovery is plentiful. The lead changed the two
+dials that govern attrition instead: Standard `rest` .80 → .72 (shorter lulls between waves) and `pickups` .55 → .42
+(fewer health and armour drops). Same ten seeds, competent profile, simulated campaigns:
+
+| Standard competent | Breacher | Cryo | Pyro | Arc | Total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| BAL16 pass 2 | 8/10 | 7/10 | 10/10 | 9/10 | 34/40 |
+| rest .72, pickups .42 | 7/10 | 5/10 | 7/10 | 9/10 | 28/40 |
+
+Deaths fell in rooms 9–18 with no room taking more than three; no stalls. Arc is one clear above the 5–8 band and the
+spread is four (target two) on a ten-seed sample; Story and Veteran dials are unchanged. Damage ceilings, weapons,
+abilities and encounter rules are unchanged.

@@ -3,7 +3,7 @@
 export type DifficultyId = 'story'|'standard'|'veteran';
 export const DIFFICULTIES = Object.freeze({
  story:Object.freeze({damage:.7,rest:1.05,windups:2,waves:1.25,elites:.7,pickups:.8,overdrive:1.15,lateWaves:2.1,lateElites:1,lateOverdrive:1,lateRest:.75,lateWindups:2,lateStagger:1,lateMovement:1}),
- standard:Object.freeze({damage:1,rest:.8,windups:2,waves:1.5,elites:1,pickups:.55,overdrive:1,lateWaves:2,lateElites:1,lateOverdrive:1,lateRest:.54,lateWindups:2.5,lateStagger:1,lateMovement:1,finalActArrivalSpacing:.52,finalActConcurrentBonus:3}),
+ standard:Object.freeze({damage:1,rest:.72,windups:2,waves:1.5,elites:1,pickups:.42,overdrive:1,lateWaves:2,lateElites:1,lateOverdrive:1,lateRest:.54,lateWindups:2.5,lateStagger:1,lateMovement:1,finalActArrivalSpacing:.52,finalActConcurrentBonus:3}),
  veteran:Object.freeze({damage:1.3,rest:.75,windups:2,waves:1.5,elites:1,pickups:.45,overdrive:1,lateWaves:2.5,lateElites:1,lateOverdrive:1,lateRest:.5,lateWindups:2.5,lateStagger:1,lateMovement:1}),
 });
 export function difficultyId(value:unknown):DifficultyId{return value==='story'||value==='veteran'?value:'standard';}
