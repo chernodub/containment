@@ -546,7 +546,8 @@ class Creature:
             self.rotate(self.center,FWD,-vector.z*roll*hit)
             turn=(.83 if heavy else .47) if crawler else (.34 if heavy else .18)
             if rifle:
-                turn += .38
+                turn = (.83 if crawler else .69) * (1 if direction in ('front','right') else -1)
+                self.move(self.center,-vector*W*.16*catch)
                 self.rotate(self.center,FWD,(.30 if direction in ('right','front') else -.30)*catch)
             self.rotate(self.center,UP,turn*hit+(.29*catch if crawler and heavy else 0))
             if crawler:
@@ -554,6 +555,8 @@ class Creature:
             self.rotate('head',SIDE,-vector.x*.29*hit)
             self.rotate('tail',SIDE,-.32*vector.x*hit+.18*catch)
             self.mouth(.65*max(0,hit))
+            if rifle:
+                missed=min(self.legs,key=lambda leg:leg['rest'].dot(vector))['index']
             for leg in self.legs:
                 i=leg['index'];rest=leg['rest']
                 near=(rest-self.base_matrices[self.center].translation).dot(vector)<0
@@ -561,7 +564,8 @@ class Creature:
                 targets[i]=rest.lerp(self.m[self.center].translation,fold)
                 if near:
                     targets[i]+=UP*H*.17*catch - vector*W*(.20 if heavy else .08)*catch
-                    if rifle:targets[i]+=UP*H*.32*catch-vector*W*.22*catch
+                    if rifle and i == missed:
+                        targets[i]+=UP*H*.78*catch-vector*W*.37*catch
                 elif i%2==0:
                     targets[i]+=vector*W*(.21 if heavy else .085)*catch
                 if crawler and i in (0,5):
@@ -675,10 +679,10 @@ def author(family, patterns=None):
     arm=import_rig(family)
     creature=Creature(arm,family)
     takes = {name: seconds for name,seconds in DURATIONS.items() if not patterns or any(fnmatchcase(name,p) for p in patterns)}
-    if family in ('stalker','crawler'):
+    if family in ('stalker','crawler','brute','carrier','spitter'):
         for direction in ('front','right','back','left'):
             name=f'm10-hit-rifle-{direction}'
-            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.50
+            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.18
     for name,seconds in takes.items():
         new_action(arm,name,seconds)
         last=1+round(seconds*60)

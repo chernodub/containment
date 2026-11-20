@@ -324,6 +324,7 @@ export class AuthoredMarineMotion {
         const dt = this.previous === undefined ? 0 : T.MathUtils.clamp(time - this.previous, 0, .05);
         this.previous = time;
         this.hitAge += dt;
+        this.rifleContactAge += dt;
         this.fireAge += dt;
         this.burstRise *= Math.exp(-dt * 5.5);
         this.switchAge += dt;
@@ -441,6 +442,7 @@ export class AuthoredEnemyMotion {
     private heavy = false;
     private repeated = false;
     private rifle = false;
+    private rifleContactAge = Infinity;
     private layered = false;
     private attackAge = 10;
     private element: TargetElement | undefined;
@@ -499,11 +501,16 @@ export class AuthoredEnemyMotion {
     hit(strength: number, direction: number, heavy: boolean, weapon?: string): void {
         if (strength > 0 && this.feedback > 0) {
             // Several pellets delivered in one snapshot belong to one impact.
-            if (this.hitAge > 0) this.repeated = this.hitAge < .20;
+            if (weapon === 'rifle') {
+                const followUp = this.rifleContactAge < .20;
+                this.rifleContactAge = 0;
+                if (followUp && this.rifle && !this.repeated && this.hitAge < .18) return;
+                this.repeated = followUp;
+            } else if (this.hitAge > 0) this.repeated = this.hitAge < .20;
             this.hitAge = 0;
             this.hitDirection = direction;
-            this.rifle = weapon === 'rifle' && (this.family === 'crawler' || this.family === 'stalker');
-            this.heavy = heavy || this.repeated;
+            this.rifle = weapon === 'rifle' && this.player.has(RIFLE_HITS[0]);
+            this.heavy = this.rifle ? false : heavy || this.repeated;
         }
     }
     attack(): void {
@@ -521,6 +528,7 @@ export class AuthoredEnemyMotion {
         }
         this.age += dt;
         this.hitAge += dt;
+        this.rifleContactAge += dt;
         this.attackAge += dt;
         // Only pose evaluation is suspended. Native phase inputs and all local
         // ages keep advancing, so returning actors never replay missed actions.
@@ -530,6 +538,7 @@ export class AuthoredEnemyMotion {
         const hit = this.family === 'carrier' && this.repeated && this.heavy ? 'm10-stagger'
             : (this.rifle && !this.repeated ? RIFLE_HITS : this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
         const durationHit = this.player.duration(hit);
+        const reactionWeight = this.feedback * (this.rifle && this.repeated ? .23 : 1);
         const reacting = this.hitAge < durationHit;
         const elementClip = !this.elementalHold ? '' : this.element === 'arc' ? 'm10-overdrive-arc'
             : this.element === 'fire' ? 'm10-overdrive-fire' : this.element === 'kinetic' ? 'm10-overdrive-kinetic' : '';
@@ -541,7 +550,7 @@ export class AuthoredEnemyMotion {
                 this.player.beginBatch();
                 this.player.clearUpper();
                 this.player.sample(base, progress, dt, .025);
-                this.player.overlay(elementClip || hit, elementClip ? this.contactPose(this.elementAge,false) : this.hitAge / durationHit, this.feedback * .60);
+                this.player.overlay(elementClip || hit, elementClip ? this.contactPose(this.elementAge,false) : this.hitAge / durationHit, elementClip ? this.feedback * .60 : reactionWeight * .78);
                 this.player.endBatch();
                 this.layered = true;
                 return true;
@@ -549,12 +558,13 @@ export class AuthoredEnemyMotion {
             this.clearReaction();
             return this.player.sample(base, progress, dt, this.phase === 'strike' ? 0 : .025);
         }
-        if (this.rifle && !this.repeated && reacting && moving > .3 && !elementClip && this.hitAge >= .10) {
-            const run = this.player.duration('m10-run');
+        if (this.rifle && reacting && !elementClip && this.attackAge >= .55) {
+            const gait = moving > .3 ? 'm10-run' : 'm10-idle';
+            const run = this.player.duration(gait);
             this.player.beginBatch();
             this.player.clearUpper();
-            this.player.sample('m10-run', (time * speed % run) / run, dt, .04);
-            this.player.overlay(hit, this.hitAge / durationHit, this.feedback * .85);
+            this.player.sample(gait, (time * (moving > .3 ? speed : 1) % run) / run, dt, .04);
+            this.player.overlay(hit, this.hitAge / durationHit, reactionWeight);
             this.player.endBatch();
             this.layered = true;
             return true;
@@ -636,6 +646,7 @@ export class AuthoredEnemyMotion {
         this.previous = undefined;
         this.age = 0;
         this.element = undefined; this.elementAge = 10;
+        this.rifleContactAge = Infinity;
         this.hitAge = this.attackAge = 10;
         this.visible = true;
         this.renderManaged = false;
