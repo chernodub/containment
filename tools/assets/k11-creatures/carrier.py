@@ -122,6 +122,8 @@ def build(sk):
     p, n = A.ellipsoid_surface(th_c, th_r, th_R, 0.1, 0.0)
     elite.add(Plate(p + n * 0.55 + v3((0, 0.6, 0)), (3.0, 2.4, 1.0), frame(v3((1, 0, -0.05)), normalize(n + v3((0, 0.4, 0)))), 0.6, rings=0.025,
                     ring_count=5, lip=0.15, chip=0.1, zone=BONE, bone="body.001", plate=200))   # asymmetric pale shield
+    # CREATURE19 elite: a tall raked crest along the thorax so the elite outline differs from above
+    elite.extend(A.rank_fins(th_c, th_r, th_R, None, (0.5, 0.1, -0.3), 3.4 * a, 1.2, 0.32, bone_fn=bf, plate=180))   # height in design z (x aspect)
     # ATTACK16: a second, visible brood cluster riding the other flank of the thorax
     for j, (u, r) in enumerate(((0.3, 0.75), (0.0, 0.85), (-0.3, 0.7), (0.15, 0.6))):
         q, n = A.ellipsoid_surface(th_c, th_r, th_R, u, -1.05)
