@@ -168,14 +168,15 @@ function meleeRecipe(family: string, phase: EnemyCuePhase, elite: boolean): CueR
     tone(.8,82*pitch,150,duration,{fm:4.8,modRate:.31,am:.85,pulse:8,attack:.12,decay:.2}),noise(.45,680,duration,{am:.9,pulse:8}),
   ]:[tone(.9,150*pitch,48,.31,{fm:5,am:.8,pulse:11}),noise(.6,980,.20)];
   if (warning) {
-    const onsetHz: Record<string, number> = { crawler: 1550, stalker: 3400, brute: 125, spitter: 780, carrier: 295 };
+    const onsetHz: Record<string, number> = { crawler: 1550, stalker: 3400, brute: 460, spitter: 620, carrier: 295 };
     const hz = onsetHz[family] * pitch;
-    layers.push(tone(.73, hz, hz * (family === 'stalker' ? 1.16 : 1.07), .14,
-      { attack: .006, decay: 2.2, am: .28, pulse: family === 'brute' ? 18 : 29 }));
+    layers = layers.map(layer => ({ ...layer, gain: layer.gain * .52 }));
+    layers.push(tone(1.05, hz, hz * (family === 'stalker' ? 1.16 : 1.07), .24,
+      { attack: .006, decay: 1.35, am: .30, pulse: family === 'brute' ? 18 : 29 }));
   }
   return {id:`enemy:${family}${elite?'-elite':''}:${phase}`,family:'enemy',bus:warning?'danger':'enemies',duration,layers,
     priority:family==='brute'?84:family==='crawler'?65:78,interval:family==='crawler'?.10:.12,
-    rms:warning?.135:family==='crawler'?.055:family==='brute'?.105:.08,peak:warning?.67:family==='brute'?.55:.42};
+    rms:warning?.18:family==='crawler'?.055:family==='brute'?.105:.08,peak:warning?.70:family==='brute'?.55:.42};
 }
 
 const enemyRecipes = new Map<string, CueRecipe>();
