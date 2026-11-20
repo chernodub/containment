@@ -77,7 +77,7 @@ export function abilityPreview(rig: RigId, owned?: readonly string[]): string {
 
 export function rigScreen(selected: RigId, previous?: RigId): string {
   const rig = RIG_CATALOG[selected];
-  const quick = `<button id="recommended-loadout" class="secondary">${previous ? `Repeat last rig · ${RIG_CATALOG[previous].name}` : 'Quick start · Cryo'} ${arrow()}</button>`;
+  const quick = previous ? `<button id="recommended-loadout" class="secondary">Repeat last rig · ${RIG_CATALOG[previous].name} ${arrow()}</button>` : '';
   const equip = `<button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button>`;
   return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>

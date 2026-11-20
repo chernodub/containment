@@ -310,8 +310,7 @@ try {
       await release();
       if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
       if(s.phase==='rig-select') {
-        if(rig==='cryo'&&!report.legacy)await page.locator('#recommended-loadout').click();
-        else {await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();}
+        await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
       } else if(s.status==='reward') {
         const ids=s.actions.map(a=>a.mutation).filter(Boolean);
         if(ids.length){const id=chooseBoon(ids,rig,s.build.mutations);await page.locator(`[data-mutation="${id}"]`).click();}
