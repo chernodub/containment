@@ -79,5 +79,6 @@
 
 #overlay .route-choice {display: flex; flex-direction: column}
 #overlay .route-choice .route-option {width: 100%; flex: 1}
-#overlay .route-later {padding: 6px 12px; font-size: 13px}
+#overlay .route-later {padding: 6px 12px; font-size: 13px; min-height: 32px; box-sizing: border-box}
+#overlay .route-briefing-grid:has(.route-later) .route-choice:not(:has(.route-later))::after {content: ''; height: 32px; flex: none}
 #overlay .route-option-subtitle .condition-chip {white-space: normal; vertical-align: middle}
