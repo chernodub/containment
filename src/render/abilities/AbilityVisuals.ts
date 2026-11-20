@@ -64,6 +64,7 @@ export class AbilityVisuals extends AbilityGeometry {
             return;
         if (event.phase === 'cast')
             super.event(event, x, y);
+        this.kit.contact(event, x, y);
         this.registry.get(event.rig)?.event(event, x, y);
         this.system?.event(event, x, y);
     }

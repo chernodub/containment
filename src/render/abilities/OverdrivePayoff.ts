@@ -34,11 +34,21 @@ export class OverdrivePayoff {
   private radius = ARC_FIELD;
   private age = 0;
   private arcClock = 0;
+  private readonly ignitions = Array.from({ length: 40 }, () => ({ id: -1, start: 0 }));
+  private nextIgnition = 0;
 
   constructor(private readonly kit: ElementKit) {}
 
   event(event: AbilityEvent, x: number, y: number): void {
     if (event.slot !== 'overdrive') return;
+    if (event.ability === 'meltdown') {
+      if (event.phase === 'impact') for (const hit of this.ignitions) hit.id = -1;
+      for (const id of event.targetIds ?? []) {
+        if (this.ignitions.some(hit => hit.id === id)) continue;
+        const hit = this.ignitions[this.nextIgnition++ % this.ignitions.length];
+        hit.id = id; hit.start = this.kit.time;
+      }
+    }
     const px = x / UNIT, pz = y / UNIT, k = this.kit;
     if (event.ability === 'railbreaker') { if (event.phase === 'cast') this.rail(px, pz, (event.durationMs ?? 300) / 1000); return; }
     if (event.phase !== 'impact') return;
@@ -49,7 +59,7 @@ export class OverdrivePayoff {
     if (event.ability === 'whiteout') {
       k.flash(px, pz, WHITE, 22, this.radius, 6, .1);
       k.flash(px, pz, ICE, 12, this.radius + 2, 5, .5);
-      k.exposureFlash(.35);
+
       k.camera(.4);
       k.distort(px, pz, this.radius, -.006, .6);
       // The air crystallises: a short upward burst of shards, no ring.
@@ -61,10 +71,10 @@ export class OverdrivePayoff {
       const shape = ABILITY_CATALOG.meltdown.shape;
       if (shape.kind === 'circle') k.scar('soot', px, pz, shape.radius / UNIT * .86, 0x2a1510, 7);
       const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
-      column.range = .42; column.h0 = .05; column.h1 = 5.5; column.color = HOT; column.intensity = 1.3;
+      column.range = .42; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);
       k.flash(px, pz, FIRE, 16, 8, 5, .7);
-      k.exposureFlash(.3);
+
       k.grade(.8);
       k.camera(.42);
       k.distort(px, pz, 3.5, .007, 1.1, true);
@@ -77,7 +87,7 @@ export class OverdrivePayoff {
       k.flash(px, pz, WHITE, 30, 10, 6, .05);
       k.flash(px + .6, pz, 0x7fe6ff, 14, 8, 5, .14);
       k.flash(px - .6, pz, 0xd06bff, 14, 8, 5, .14);
-      k.exposureFlash(.6);
+
       k.grade(0, .9);
       k.camera(.45);
       k.anticipate(28, .05);
@@ -129,7 +139,7 @@ export class OverdrivePayoff {
       // Reverse snap: space kicks outward once, violet light collapses into the suit.
       k.flash(x, z, WHITE, 18, 7, 5, .05);
       k.flash(x, z, VIOLET, 10, 6, 4, .2);
-      k.exposureFlash(.3);
+
       k.distort(x, z, 5, .006, .25);
       k.camera(.22);
       for (let i = 0; i < (k.low ? 3 : 7); i++) {
@@ -145,7 +155,7 @@ export class OverdrivePayoff {
     const active = !!(frame.visible && snapshot && rig && rig !== 'breacher' && snapshot.overdrive.active && player);
     const dt = Math.max(0, frame.dt);
     if (rig && active) this.rig = rig;
-    if (player) { this.x = player.x / UNIT; this.z = player.y / UNIT; }
+    if (active && player) { this.x = player.x / UNIT; this.z = player.y / UNIT; }
     // Whiteout and Meltdown keep the exact native zone; Overclock follows the marine.
     if (active && snapshot) for (const zone of snapshot.zones) {
       if (zone.remainingMs <= 0) continue;
@@ -158,7 +168,7 @@ export class OverdrivePayoff {
     if (!this.wasActive && active && this.level < .5) this.age = 0;
     this.wasActive = active;
     this.age += dt;
-    this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 6 : 5));
+    this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 6 : 1.65));
     let slot = this.climax;
     if (slot && (!slot.live || slot.seed !== this.climaxSeed || slot.mode !== FxMode.Climax)) slot = this.climax = undefined;
     if (this.level < .01 && !active) {
@@ -176,7 +186,7 @@ export class OverdrivePayoff {
     k.sustain(this.age);
     if (this.rig === 'cryo') this.iceOnEnemies(enemies);
     else if (this.rig === 'pyro') this.standingFlame(enemies);
-    else this.crawl(enemies, game, dt);
+    else this.crawl(game, dt);
     k.impact();
   }
 
@@ -205,30 +215,24 @@ export class OverdrivePayoff {
       if (drawn >= (k.low ? 3 : 8)) break;
       const ex = e.x / UNIT, ez = e.y / UNIT, d = Math.hypot(ex - this.x, ez - this.z);
       if (d > this.radius) continue;
-      drawn++;
       const away = Math.atan2(ez - this.z, ex - this.x), heat = (1 - d / this.radius * .6) * this.level;
-      k.directedFlame(ex, .04, ez, .2 + heat * .1, .55 + heat * .6, away, .45, e.id, .78 * heat);
+      const hit = this.ignitions.find(item => item.id === e.id);
+      if (!hit) continue;
+      drawn++;
+      const travel = Math.min(1, (k.time - hit.start) * 2.6);
+      const offset = (travel - .5) * e.radius / UNIT * 1.6;
+      k.directedFlame(ex + Math.cos(away) * offset, .04, ez + Math.sin(away) * offset, .2 + heat * .1, .55 + heat * .6, away, .45, e.id, .78 * heat);
       if (!k.low) k.directedFlame(ex + Math.cos(away + 1.7) * .25, .04, ez + Math.sin(away + 1.7) * .25, .14, .4 + heat * .35, away, .6, e.id + 3.1, .6 * heat, true);
     }
   }
 
-  /** Lightning crawls between nearby enemies and along nearby machinery edges, re-struck ~9 times a second. */
-  private crawl(enemies: readonly Actor[], game: NonNullable<AbilityFrame['game']>, dt: number): void {
+  /** Lightning crawls along nearby machinery edges, re-struck ~9 times a second. */
+  private crawl(game: NonNullable<AbilityFrame['game']>, dt: number): void {
     const k = this.kit;
     this.arcClock -= dt;
     if (this.arcClock > 0) return;
     this.arcClock = k.low ? .22 : .11;
     const tick = Math.floor(this.age * 9);
-    let beams = 0, px = 0, pz = 0, has = false;
-    for (let i = 0; i < enemies.length && beams < (k.low ? 1 : 3); i++) {
-      const e = enemies[(i + tick) % enemies.length], ex = e.x / UNIT, ez = e.y / UNIT;
-      if (Math.hypot(ex - this.x, ez - this.z) > 7.5) continue;
-      if (has && Math.hypot(ex - px, ez - pz) < 4) {
-        k.beam(px, .9, pz, ex, .9, ez, beams % 2 ? WHITE : VIOLET, .03, .13, true);
-        beams++;
-      }
-      px = ex; pz = ez; has = true;
-    }
     const blockers = game.geometry?.blockers;
     if (!blockers || k.low) return;
     let lit = 0;

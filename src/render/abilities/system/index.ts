@@ -25,6 +25,7 @@ class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
   private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
+  private readonly frostJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
   private receiptCursor = 0;
   private ghostClock = 0;
@@ -147,6 +148,24 @@ class SystemPresentation implements AbilityPresentation {
       if (status?.burning || status?.chilled || status?.frozen || status?.shocked) k.statusOwners.add(actor.root);
     }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
+    if (status?.frozen && actor) {
+      let joints = this.frostJoints.get(actor.root);
+      if (!joints) {
+        const found: T.Object3D[] = [];
+        actor.root.traverse(node => {
+          if (found.length < 4 && node.type === 'Bone' && /forearm|shin|_lower|calf/i.test(node.name)) found.push(node);
+        });
+        this.frostJoints.set(actor.root, found);
+        joints = found;
+      }
+      k.sustain();
+      k.sprite('crack', x, .049, z, radius * 1.5, radius * 1.4, ELEMENT_COLORS.cryo, .62, enemy.id, 'ground');
+      for (let i = 0; i < Math.min(joints.length, k.low ? 2 : 4); i++) {
+        const m = joints[i].matrixWorld.elements;
+        k.draw('shard', m[12], m[13], m[14], .065, height * .13, .055, ELEMENT_COLORS.cryo, .72, i, .46);
+      }
+      k.impact();
+    }
     if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
     else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
     if (status?.burning) this.burning(x, z, radius, height, enemy.id);
