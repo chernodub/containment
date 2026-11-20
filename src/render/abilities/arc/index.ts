@@ -223,7 +223,7 @@ class ArcPresentation implements AbilityPresentation {
         if (length > .01) {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .55);
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .80;
-          arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = 1.15;
+          arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
@@ -242,7 +242,9 @@ class ArcPresentation implements AbilityPresentation {
       k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .36, false);
       const contact = d.age - d.delay < .051;
       if (contact && d.contactFrames < 3) {
-        k.sprite('glow', d.x, d.ty, d.z, .61, .47, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
+        k.impact();
+        k.sprite('glow', d.x, d.ty, d.z, .76, .55, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
+        k.sustain(d.age - d.delay);
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');

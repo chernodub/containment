@@ -161,9 +161,9 @@ void main(){
   float inside=clamp((d-erosion)/.32,0.,1.);
   float spine=(1.-smoothstep(0.,.2+r*.15,abs(s)))*(1.-smoothstep(.05,.5,r))*(1.-layer)*tip;
   float core=(1.-smoothstep(0.,.17,r-fxInner))*(1.-smoothstep(.0,.58,abs(s)))*(1.-layer*.85);
-  float cool=1.-smoothstep(.1,.45,age);
+  float cool=1.-smoothstep(.045,.28,age);
   dens=max(dens,spine*cool*.9);
-  float heat=inside*(.98-r*.42)*(.45+.55*cool)+spine*.55*cool+core*(1.-smoothstep(.06,.24,age));
+  float heat=inside*(.98-r*.42)*(.45+.55*cool)+spine*.55*cool+core*(1.-smoothstep(.045,.13,age));
   heat*=1.-layer*.42;
   heat=clamp(heat,0.,1.);
   // Smoke: cold density that outlives the flame, mostly on the crown layer.
@@ -181,7 +181,9 @@ void main(){
   }else if(fxParam>=0.){
    float surge=(1.-smoothstep(.045,.22,age))*tip*body*(1.-layer*.8);
    float roll=surge*smoothstep(.24,.52,n+.13*fine);
-   emit+=fxHeat(.41+.44*(1.-abs(s))*(1.-r*.7))*roll*.78*fxIntensity;
+   float ignition=1.-smoothstep(.045,.09,age);
+   emit*=mix(.55,1.,ignition);
+   emit+=fxHeat(.36+.38*(1.-abs(s))*(1.-r*.7))*roll*(.47+.28*ignition)*fxIntensity;
    alpha=max(alpha,roll*.55);
   }
   if(fxParam<-.5){
@@ -436,9 +438,9 @@ void main(){
    emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9;
    alpha=reveal*(.025*(1.-crack)+crack*.76);
    // The activation flash fills the centre before the moving aura settles.
-   float pulse=1.-smoothstep(.05,.27,age);
+   float pulse=1.-smoothstep(.05,.18,age);
    float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
-   emit+=fxHeat(.52+.26*core)*core*pulse*(.44+.56*n);
+   emit+=fxHeat(.52+.26*core)*core*pulse*(.23+.77*smoothstep(.27,.73,n));
    alpha+=core*pulse*.64;
    base=vec3(.025,.01,.006);
   }else{
