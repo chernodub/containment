@@ -73,6 +73,7 @@ export class PresentationBeats {
     };
     const [glyph, eyebrow, headline, detail] = data[kind];
     this.glyph.innerHTML = icon(glyph); this.eyebrow.textContent = eyebrow; this.headline.textContent = headline; this.detail.textContent = detail;
+    this.node.toggleAttribute('data-route-consequence', kind === 'room-enter' && Boolean(consequence));
     this.node.dataset.beat = kind; this.node.dataset.reducedMotion = String(this.media.matches); this.node.hidden = false;
     const cue: UiCue = kind === 'boss-defeated' ? 'room-clear' : kind;
     this.cue(cue);

@@ -18,7 +18,6 @@ import type {MutationId} from '../../src/game/roguelike/types';
 import {BOT_NAVIGATION_VERSION,botWaypoint as observeBotWaypoint} from './playtest/bot-navigation';
 import {observeAbilityAims, type AimEnemy} from './playtest/ability-aim';
 import {BOT_POLICY_VERSION} from './playtest/bot-navigation-version.mjs';
-import {progressionFor} from '../../src/game/roguelike/progression';
 import {I5_ENCOUNTER_TUNING_ENABLED} from '../../src/game/roguelike/i5Tuning';
 
 export type PresentationDebug = {
@@ -125,7 +124,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   },
   /** Build-time profile provenance only; this getter never changes simulation state. */
   get encounterTuningEnabled(){return I5_ENCOUNTER_TUNING_ENABLED;},
-  get encounterGuardian(){return progressionFor(game.node).guardianKind;},
+  get encounterGuardian(){return game.encounterGuardian;},
   /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
   botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},

@@ -155,6 +155,11 @@ export class DepthGame {
  private siegeBeat=-1;private siegeRemainingMs=12000;private siegePoint={x:0,y:0};
  private prepareSiegePoint(){this.navigation.prepare(this.geometry.playerSpawn,1);const exit=this.geometry.exitPoint;for(let ring=0;ring<=320;ring+=16){for(let i=0;i<(ring?24:1);i++){const angle=i*Math.PI/12,p={x:exit.x+Math.cos(angle)*ring,y:exit.y+Math.sin(angle)*ring};if(canOccupyExpedition(this.geometry,p,this.player.radius)&&this.navigation.reachable(p)){this.siegePoint=p;return;}}}this.siegePoint={...this.geometry.playerSpawn};}
  get siege(){const encounter=this.director?.snapshot;if(this.status!=='playing'||encounter?.grammar!=='siege'||(encounter.lullRemainingMs??0)>0)return null;return {beat:encounter.beat??0,x:this.siegePoint.x,y:this.siegePoint.y,radius:220,durationMs:12000,remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000};}
+ get encounterGuardian(){
+  return this.expedition.run.version===3
+   ?this.director.plan.schedule.find(spawn=>spawn.guardian)?.guardian??null
+   :progressionFor(this.node).guardianKind;
+ }
  get encounter(){return this.director.snapshot;}
  get encounterRemaining(){return this.director.snapshot.remaining+this.enemies.activeCount+this.enemies.reservedCount+this.pending.reduce((n,p)=>n+(p.type==='carrier'?4:1),0);}
  get canContinue(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);return c.restoreRunResources(cp.resources);}
