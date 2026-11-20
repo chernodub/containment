@@ -4,8 +4,8 @@ import type { HudEffect } from './effects';
 import {hudObstructs, presentationObstructs} from './layout';
 import {icon} from '../icons';
 import {damageToken} from '../damageTokens';
-export const COMBAT_TEXT_CAPACITY = 12;
-export const COMBAT_TEXT_MERGE_SECONDS = .6;
+export const COMBAT_TEXT_CAPACITY = 8;
+export const COMBAT_TEXT_MERGE_SECONDS = .25;
 type Float = {
     node: HTMLDivElement;
     glyph: HTMLSpanElement;
@@ -40,6 +40,8 @@ type Float = {
     scale: number;
     accumulating: boolean;
     ticks: number;
+    repeatAmount: number;
+    repeats: number;
 };
 const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
@@ -69,7 +71,7 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -121,23 +123,22 @@ export class CombatText {
         if (killed) return;
         const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && sameTarget(p)) : undefined;
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
-        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && (periodic ? p.ticks > 0 : p.ticks === 0 && p.source === source && p.status === status) && sameTarget(p));
-        const merge = !!entry && entry.kind === kind && (periodic ? entry.accumulating : entry.source === source && entry.status === status && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS);
-        const terminalTicks = lethal && !periodic
-            ? this.pool.find(p => p.life > 0 && p.accumulating && sameTarget(p))?.amount ?? 0
-            : 0;
-        const total = (merge ? entry!.amount : 0) + amount + terminalTicks;
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && sameTarget(p));
+        const merge = !!entry && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS;
+        const total = (merge ? entry!.amount : 0) + amount;
         const priority = lethal ? 3 : critical || total >= 30 ? 2 : kind === 'damage' ? 1 : 0;
         if (!entry) entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
             // Kills outrank substantial hits, which outrank routine ticks/chips.
             // Within a tier retire the oldest receipt, never a newer higher tier.
             let lowest = this.pool[0];
-            for (const p of this.pool) if (p.priority < lowest.priority || p.priority === lowest.priority && p.life < lowest.life) lowest = p;
-            if (lowest.priority > priority) return;
+            for (const p of this.pool) if (p.priority < lowest.priority || p.priority === lowest.priority && (p.amount < lowest.amount || p.amount === lowest.amount && p.quiet > lowest.quiet)) lowest = p;
+            if (lowest.priority > priority || lowest.priority === priority && lowest.amount > total) return;
             entry = lowest;
         }
         if (lethal) for (const p of this.pool) if (p !== entry && p.life > 0 && sameTarget(p)) {p.life=0;p.node.hidden=true;}
+        entry.repeats = !merge ? 1 : entry.repeatAmount === amount && entry.repeats > 0 ? entry.repeats + 1 : 0;
+        entry.repeatAmount = amount;
         entry.fromAmount = merge ? entry.displayed : amount;
         entry.amount = total;
         entry.displayed = this.reducedMotion || lethal ? total : entry.fromAmount;
@@ -164,8 +165,8 @@ export class CombatText {
         entry.node.dataset.settled = String(entry.lethal);
         entry.node.dataset.priority = String(priority);
         entry.node.hidden = false;
-        const label = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
-        entry.label.textContent = kind === 'damage' ? `${Math.round(entry.displayed)}${entry.lethal ? ' ×' : ''}` : label;
+        const label = kind === 'damage' ? this.damageLabel(entry, entry.amount) : statusLabels[status];
+        entry.label.textContent = kind === 'damage' ? this.damageLabel(entry, entry.displayed) : label;
         if (kind === 'status') {entry.node.title = label; entry.node.setAttribute('aria-label', label);}
         else {entry.node.removeAttribute('title'); entry.node.removeAttribute('aria-label');}
         entry.glyph.hidden = kind !== 'status';
@@ -181,12 +182,18 @@ export class CombatText {
         entry.width = entry.baseWidth; entry.height = entry.baseHeight;
         entry.node.dataset.lethal = String(entry.lethal);
     }
+    private damageLabel(entry: Float, amount: number): string {
+        const value = entry.repeats > 1 ? `${Math.round(entry.repeatAmount)} ×${entry.repeats}` : String(Math.round(amount));
+        return entry.lethal ? `${value} ×` : value;
+    }
     tick(dt: number, player: {
         left: number;
         right: number;
         top: number;
         bottom: number;
-    }, statusActive: (target: number) => boolean): void {
+    }, statusActive: (target: number) => boolean, threats: readonly {
+        id: number; left: number; right: number; top: number; bottom: number;
+    }[]): void {
         for (const hit of this.pendingAbilityHits) this.showEffect(hit);
         this.pendingAbilityHits.length = 0;
         const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
@@ -208,7 +215,7 @@ export class CombatText {
             if (p.kind === 'damage') {
                 const progress = this.reducedMotion || p.lethal ? 1 : Math.min(1, p.countAge / .12);
                 p.displayed = p.fromAmount + (p.amount - p.fromAmount) * (1 - (1-progress) ** 3);
-                p.label.textContent = `${Math.round(p.displayed)}${p.lethal ? ' ×' : ''}`;
+                p.label.textContent = this.damageLabel(p, p.displayed);
                 p.node.dataset.settled = String(p.lethal || p.quiet >= COMBAT_TEXT_MERGE_SECONDS);
             }
             if (!p.life) {
@@ -232,14 +239,22 @@ export class CombatText {
             p.node.style.setProperty('--actor-scale', String(p.scale));
             const rise = this.reducedMotion ? 0 : 26 * (1 - Math.exp(-p.age * 6));
             let x = Math.max(8, Math.min(w - p.width - 8, point.x - p.width / 2));
-            let lane = 0;
-            if (p.kind === 'damage' && p.target !== undefined) {
-                for (const other of this.pool) {
-                    if (other === p || other.life <= 0 || other.kind !== 'damage' || other.target !== p.target) continue;
-                    if ((sourceLanes[other.source] ?? 0) < (sourceLanes[p.source] ?? 0)) lane++;
+            let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 48 : 0)));
+            const attacker = threats.find(threat => threat.id === p.target);
+            if (attacker) {
+                if (p.ticks || p.source === 'status') {p.node.hidden = true;continue;}
+                const centerX = (attacker.left + attacker.right) / 2;
+                const centerY = (attacker.top + attacker.bottom) / 2;
+                const dx = centerX - (player.left + player.right) / 2;
+                const dy = centerY - (player.top + player.bottom) / 2;
+                if (Math.abs(dx) >= Math.abs(dy)) {
+                    x = dx >= 0 ? attacker.right + 14 : attacker.left - p.width - 14;
+                    y = centerY - p.height / 2;
+                } else {
+                    x = centerX - p.width / 2;
+                    y = dy >= 0 ? attacker.bottom + 14 : attacker.top - p.height - 14;
                 }
             }
-            let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 48 : lane * 36)));
             if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) {
                 if (player.top >= p.height + 20) y = player.top - p.height - 12 - (p.kind === 'status' ? 20 : 0);
                 else if (player.bottom + p.height + 20 <= h) y = player.bottom + 12;
@@ -254,7 +269,7 @@ export class CombatText {
             // preserves each total while preventing cross-target text piles.
             const originX = x, originY = y;
             let placed = false;
-            for (let attempt = 0; attempt < 9; attempt++) {
+            for (let attempt = 0; attempt < (attacker ? 1 : 9); attempt++) {
                 const row = Math.floor((attempt + 1) / 3);
                 const side = attempt % 3;
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
@@ -262,6 +277,8 @@ export class CombatText {
                 if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) continue;
                 if (hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) continue;
                 if (this.renderer.warningObstructs(x-8,y-8,x+p.width+8,y+p.height+8)) continue;
+                if (threats.some(body => x < body.right + 8 && x + p.width > body.left - 8 &&
+                    y < body.bottom + 8 && y + p.height > body.top - 8)) continue;
                 let occupied = false;
                 for (const other of this.pool) {
                     if (!other.placed) continue;

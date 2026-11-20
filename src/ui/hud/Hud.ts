@@ -585,11 +585,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             && 'weapon' in event && event.weapon === 'rifle') {
             plateHit = {id: event.targetId, until: game.elapsed + 3};
         }
-        const hitPoint = projectWorld(renderer, event.x, event.y, projected, .05);
-        const nearBoots = Math.hypot(event.x - game.player.x, event.y - game.player.y) <= 48;
-        const danger = hitPoint.visible && warningOverlaps(hitPoint.x - 6, hitPoint.y - 6, hitPoint.x + 6, hitPoint.y + 6);
-        const damage = nearBoots || danger ? undefined : event.damage;
-        combatText.effect({...event, damage, damageElement: getCombatDamageElement(game, event)});
+        combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
         onboarding.effect(event);
@@ -693,7 +689,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const anchor = markedEnemy && projectWorld(renderer, markedEnemy.x, markedEnemy.y, projected, 1.5);
         onboarding.tick(elapsed, bounds, onboardingObstacles, anchor?.visible ? anchor : undefined);
         abilityHints.tick(bounds, true);
-        combatText.tick(elapsed, bounds, statusActive);
+        const committedBodies = [];
+        for (const enemy of game.enemies.snapshot.enemies) {
+            if (enemy.health <= 0 || !(enemy.pendingAttack || enemy.windupMs > 0 || enemy.chargeMs > 0 ||
+                enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike')) continue;
+            const body = {id: enemy.id, left: 0, right: 0, top: 0, bottom: 0};
+            if (projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) committedBodies.push(body);
+        }
+        combatText.tick(elapsed, bounds, statusActive, committedBodies);
         threats.tick(elapsed);
         toasts.tick(elapsed);
     };
