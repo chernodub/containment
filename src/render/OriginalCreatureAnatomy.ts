@@ -121,8 +121,18 @@ function select(skin: CreatureSkin, rank: Rank, force = false): void {
   skin.rank = resolved;
   skin.mesh.geometry = skin.variants[resolved]!;
   skin.root.updateMatrixWorld(true);
-  skin.mesh.computeBoundingBox();
-  skin.mesh.computeBoundingSphere();
+  // Both bounds use the same deformed vertices. Preserve Three's incremental
+  // sphere and box accumulation while skinning each vertex only once.
+  const mesh = skin.mesh;
+  const bounds = (mesh.boundingBox ??= new T.Box3()).makeEmpty();
+  const sphere = (mesh.boundingSphere ??= new T.Sphere()).makeEmpty();
+  const point = new T.Vector3();
+  const positions = mesh.geometry.getAttribute('position');
+  for (let index = 0; index < positions.count; index++) {
+    mesh.getVertexPosition(index, point);
+    bounds.expandByPoint(point);
+    sphere.expandByPoint(point);
+  }
   skin.mesh.updateWorldMatrix(true, false);
   const root = skin.root;
   const toRoot = root.matrixWorld.clone().invert().multiply(skin.mesh.matrixWorld);

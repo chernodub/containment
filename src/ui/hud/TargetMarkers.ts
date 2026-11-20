@@ -47,11 +47,12 @@ export class TargetMarkers {
             ctx.globalAlpha = 1;
         }
         if (this.room !== game.roomRevision) {this.room=game.roomRevision;this.resistance.clear();}
-        const tokens = getComputedStyle(this.canvas);
+        let tokens: CSSStyleDeclaration | undefined;
         for (const enemy of enemies) {
             if (enemy.podStage) {
                 const point = projectWorld(renderer, enemy.x, enemy.y, this.point, .08);
                 if (point.visible) {
+                    tokens ??= getComputedStyle(this.canvas);
                     this.painted=true;
                     ctx.strokeStyle=tokens.getPropertyValue('--danger').trim() || tokens.getPropertyValue('--text').trim();
                     ctx.lineWidth=3;
@@ -91,6 +92,7 @@ export class TargetMarkers {
                 const age = game.elapsed-state.started;
                 resisted = age<.42;
                 if (resisted && !hudObstructs(body.left,body.top,body.right,body.bottom)) {
+                    tokens ??= getComputedStyle(this.canvas);
                     this.painted=true;
                     ctx.save();
                     ctx.globalAlpha=1-age/.5;
