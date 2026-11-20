@@ -113,6 +113,22 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       'manual-control-chamber':[[462,573],[491,587],[508,611],[477,644]],
       'freight-hold':[[439,463],[424,478],[414,479],[395,493]],
     };
+    // An alternating three-toed trail leads out of the opening. Its tarry
+    // deposit thins as the creature crosses the surviving turning apron.
+    if (room.id === 'breached-loading-bay') {
+      for (let step = 0; step < 8; step++) {
+        c.save();
+        const side = step % 2 ? 1 : -1;
+        c.translate(549 + step * 5 + side * 14, 499 + step * 23);
+        c.rotate(-.23 + side * .18);
+        c.fillStyle = `rgba(30,42,39,${.83 - step * .053})`;
+        c.beginPath();
+        c.moveTo(-5,-7); c.lineTo(1,-10); c.lineTo(6,-4);
+        c.lineTo(10,9); c.lineTo(4,4); c.lineTo(2,13);
+        c.lineTo(-1,5); c.lineTo(-6,10); c.lineTo(-4,1);
+        c.closePath(); c.fill(); c.restore();
+      }
+    }
     const track=scars[room.id];
     if(track){
       for(const shift of [-3,3]){

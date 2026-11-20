@@ -126,7 +126,8 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   fixture.position.set(source.at[0]/32,source.height??3.8,source.at[1]/32);
   const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
   const lens = new T.Color(source.color);
-  if (['shielding-gate','breached-loading-bay','armory','freight-hold'].includes(id)) lens.multiplyScalar(.40);
+  if (id === 'freight-hold') lens.multiplyScalar(.40);
+  if (['shielding-gate','breached-loading-bay','armory'].includes(id)) lens.multiplyScalar(.20);
   const diffuser=new T.Mesh(new T.BoxGeometry(.56,.066,.14),new T.MeshStandardMaterial({
     color:lens,emissive:lens,emissiveIntensity:.65,roughness:.36
   }));
