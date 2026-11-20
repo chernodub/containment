@@ -189,9 +189,9 @@ export class SceneLighting {
   if(this.blackout===active)return;
   this.blackout=active;
   this.applyMood(this.width,this.height);
+  this.lamp.setBlackout(active);
   if(active){
    for(const light of [this.ambient,this.key,this.fill,this.rim])light.intensity*=.08;
-   this.lamp.setRoom(30);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */
@@ -254,14 +254,33 @@ export class SceneLighting {
 export class ContactShadows {
  readonly mesh:T.InstancedMesh;
  private dummy=new T.Object3D();private count=0;
+ private readonly contactInk=new T.InstancedBufferAttribute(new Float32Array(64),1).setUsage(T.DynamicDrawUsage);
  constructor(){
   const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
   const material=groundIndicatorMaterial('contact',new T.Color(.12,.15,.15));
-  material.fragmentShader=material.fragmentShader.replace(')*.4;',')*.22;');
+  geometry.setAttribute('contactInk',this.contactInk);
+  material.vertexShader='attribute float contactInk; varying float ink;\n'+material.vertexShader.replace('indicatorUV=uv;','indicatorUV=uv; ink=contactInk;');
+  material.fragmentShader='varying float ink;\n'+material.fragmentShader.replace(')*.4;',')*.22;').replace('  gl_FragColor',`
+  if(ink>.5){
+    vec2 local=indicatorUV*2.0-1.0;
+    float facing=smoothstep(.35,.90,local.x);
+    float ring=1.0-smoothstep(.03+facing*.035,.09+facing*.035,abs(radius-.83));
+    color=ink>2.5?vec3(.88,.09,.14):vec3(.54,.75,.83);
+    alpha=ring*(ink>1.5?.78:.40);
+  }
+  gl_FragColor`);
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
  begin(){this.count=0;}
- add(x:number,z:number,radius:number){if(this.count===64)return;this.dummy.position.set(x,.025,z);this.dummy.scale.set(radius*.98,1,radius*.82);this.dummy.updateMatrix();this.mesh.setMatrixAt(this.count++,this.dummy.matrix);}
- end(){this.mesh.count=this.count;this.mesh.instanceMatrix.needsUpdate=true;}
+ add(x:number,z:number,radius:number,ink=0,angle=0){
+  if(this.count===64)return;
+  this.dummy.position.set(x,.025,z);
+  this.dummy.rotation.y=-angle;
+  this.dummy.scale.set(radius*.98,1,radius*.82);
+  this.dummy.updateMatrix();
+  this.contactInk.setX(this.count,ink);
+  this.mesh.setMatrixAt(this.count++,this.dummy.matrix);
+ }
+ end(){this.mesh.count=this.count;this.mesh.instanceMatrix.needsUpdate=true;this.contactInk.needsUpdate=true;}
  dispose(){this.mesh.dispose();this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
 }

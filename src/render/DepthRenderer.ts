@@ -693,10 +693,14 @@ export class DepthRenderer {
   this.contacts.begin();
   if(!menu)useActorContactShadows(this.player.root);
   if(menu){this.contacts.add(TITLE_STAGE.marine.x,TITLE_STAGE.marine.z,.75);this.contacts.add(TITLE_STAGE.creature.x,TITLE_STAGE.creature.z,1.2);}else{
-   this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
+   this.contacts.add(p.x/UNIT,p.y/UNIT,blackout?.88:.45,blackout?2:0,p.angle);
    if(this.queen)this.contacts.add(q.x/UNIT,q.y/UNIT,1.95);
    for(const n of q.nests)this.contacts.add(n.x/UNIT,n.y/UNIT,.7);
-   for(const e of enemies)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT);
+   for(const e of enemies){
+    const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
+    const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
+    this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact?1.45:1),contact?(attacking?3:1):0,contact?enemyMotionAim(e,p):0);
+   }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
   this.contacts.end();
@@ -706,6 +710,9 @@ export class DepthRenderer {
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}
   this.effects.syncEnemyWarnings(enemies,game.geometry,game);
+  if(blackout)this.effects.forEachShooterPriority((x,y,z,angle,id)=>{
+   this.lighting.pool.attach(`hostile-windup-${id}`,{x:x+Math.cos(angle)*.2,y:y+.22,z:z+Math.sin(angle)*.2,color:0xff2340,intensity:2.4,distance:1.6,duration:.08,priority:4});
+  });
   this.interimAbilities.update(game.abilities?.snapshot,dt,!menu,game,this.player.root,this.camera,this.player.body);
   // V2 owns body offsets; solve its sibling weapon/socket from that final pose.
   this.player.syncWeaponPose?.();

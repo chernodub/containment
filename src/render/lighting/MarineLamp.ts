@@ -6,6 +6,7 @@ export class MarineLamp {
   readonly light = new T.SpotLight(0xccefff, 12, 11, Math.PI / 6, .92, 2);
   readonly suitFill = new T.PointLight(0xabc7df, 0, 4.8, 2);
   readonly cone: T.Mesh<T.CylinderGeometry, T.ShaderMaterial>;
+  private blackout = false;
   private readonly direction = new T.Vector3();
   private readonly down = new T.Vector3(0, -1, 0);
   constructor() {
@@ -26,7 +27,7 @@ export class MarineLamp {
   update(x: number, z: number, angle: number) {
     const dx = Math.cos(angle), dz = Math.sin(angle);
     this.light.position.set(x, 1.65, z);
-    this.suitFill.position.set(x-dx*.28, 2.65, z-dz*.28);
+    this.suitFill.position.set(x-dx*(this.blackout?.72:.28), this.blackout?2.18:2.65, z-dz*(this.blackout?.72:.28));
     this.light.target.position.set(x + dx * 5.5, .04, z + dz * 5.5);
     this.cone.position.copy(this.light.position);
     this.direction.subVectors(this.light.target.position, this.light.position).normalize();
@@ -34,6 +35,7 @@ export class MarineLamp {
   }
   /** Stable local illumination keeps the full movement neighborhood readable in every room. */
   setRoom(intensity=24) { this.suitFill.visible=true;this.suitFill.intensity=intensity*1.55;this.suitFill.distance=6.4; }
+  setBlackout(active:boolean) { this.blackout=active; if(active){this.setRoom(18);this.suitFill.distance=3.4;} }
   setReactor(_reactor: boolean) { this.setRoom(); }
   setQuality(high: boolean, atmosphere = true) { this.cone.visible = high && atmosphere; }
   dispose() { this.cone.geometry.dispose(); this.cone.material.dispose(); this.root.removeFromParent(); }

@@ -6,14 +6,11 @@ export class SiegeBoundary {
     private readonly track = new Mesh(new RingGeometry(.98, 1, 128), this.material());
     private readonly sweep = new Mesh(new RingGeometry(.947, .976, 128), this.material());
 
-    private readonly sweepAlpha = new BufferAttribute(new Float32Array(this.sweep.geometry.attributes.position.count).fill(1), 1).setUsage(DynamicDrawUsage);
+    private readonly sweepPositions = this.sweep.geometry.getAttribute("position") as BufferAttribute;
+    private readonly originalSweepPositions = this.sweepPositions.clone();
 
     constructor(private readonly unit: number) {
-        this.sweep.geometry.setAttribute('sweepAlpha', this.sweepAlpha);
-        this.sweep.material.onBeforeCompile = shader => {
-            shader.vertexShader = 'attribute float sweepAlpha; varying float vSweepAlpha;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvSweepAlpha=sweepAlpha;');
-            shader.fragmentShader = 'varying float vSweepAlpha;\n' + shader.fragmentShader.replace('#include <alphatest_fragment>', 'diffuseColor.a*=vSweepAlpha;\n#include <alphatest_fragment>');
-        };
+        this.sweepPositions.setUsage(DynamicDrawUsage);
         for (const mesh of [this.track, this.sweep]) {
             mesh.rotation.x = -Math.PI / 2;
             mesh.frustumCulled = false;
@@ -35,7 +32,7 @@ export class SiegeBoundary {
         const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
         this.track.material.opacity = inside ? .34 : .23;
         this.sweep.material.opacity = inside ? .76 : .56;
-        const positions = this.sweep.geometry.attributes.position;
+        const positions = this.originalSweepPositions;
         const winding = enemies.filter(enemy => enemy.health > 0 && (enemy.windupMs > 0 || enemy.meleePhase === 'windup'));
         for (let i = 0; i < positions.count; i++) {
             const x = siege.x + positions.getX(i) * siege.radius;
@@ -45,9 +42,11 @@ export class SiegeBoundary {
                 const distance = Math.hypot(x - enemy.x, y - enemy.y);
                 alpha = Math.min(alpha, Math.max(0, Math.min(1, (distance - enemy.radius) / (this.unit * .3))));
             }
-            this.sweepAlpha.setX(i, alpha);
+            const vx = positions.getX(i), vy = positions.getY(i);
+            const scale = alpha + (1-alpha)*.976/Math.hypot(vx,vy);
+            this.sweepPositions.setXY(i,vx*scale,vy*scale);
         }
-        this.sweepAlpha.needsUpdate = true;
+        this.sweepPositions.needsUpdate = true;
         this.sweep.geometry.setDrawRange(0, Math.floor(128 * (1 - siege.remainingMs / siege.durationMs)) * 6);
     }
 
