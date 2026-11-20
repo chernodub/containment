@@ -15,6 +15,7 @@ FAMILY = "crawler"
 ASPECT = 2.35            # in-game height / horizontal scale (design z multiplier)
 VOXEL = 0.0065
 TRIS = {"body": 7600, "elite": 1400}
+RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
 PALETTE = {
     "shell": (0.20, 0.06, 0.02), "edge": (0.62, 0.40, 0.20), "membrane": (0.13, 0.026, 0.03),
@@ -65,17 +66,18 @@ def build(sk):
     head_c = v3((0.40, 0.0, 0.46 * sk.aspect))
     body.add(A.mass(head_c, (0.13, 0.16, 0.09 * sk.aspect), frame((1, 0, -0.35)), bone=chest, k=0.05))
     prow_F = frame((1, 0, -0.42))
-    body.add(Plate(head_c + v3((0.05, 0, 0.085 * sk.aspect)), (0.25, 0.34, 0.08), prow_F, 0.06, rings=0.005, ring_count=3,
+    body.add(Plate(head_c + v3((0.07, 0, 0.11 * sk.aspect)), (0.32, 0.5, 0.085), frame((1, 0, -0.12)), 0.065, rings=0.005, ring_count=3,
                    lip=0.015, chip=0.01, zone=BONE, bone=chest, plate=40, tint=1.0, k=0.0))
     # keel ridge on the prow
     body.add(RoundCone((0.30, 0, 0.62 * sk.aspect), (0.52, 0, 0.50 * sk.aspect), 0.022, 0.012, zone=SHELL, bone=chest,
                        k=0.02, tint=1.15))
     body.extend(A.eyes((0.47, 0.0, 0.47 * sk.aspect), (1, 0, -0.2), 0.075, 3, 0.017, chest, spread=0.8))
-    # paired forward tusks from the prow corners: the crawler's face read
+    # ATTACK16: two broad pale hooks sweep out from the wedge corners and curl inward: a "C" from above,
+    # with a dark gap between the hooks and the head plate
     for s_, bn in ((-1, "antenna_right0"), (1, "antenna_left0")):
-        body.extend(A.hook([(0.5, 0.17 * s_, 0.47 * sk.aspect), (0.66, 0.2 * s_, 0.45 * sk.aspect),
-                            (0.78, 0.12 * s_, 0.40 * sk.aspect), (0.80, 0.05 * s_, 0.36 * sk.aspect)],
-                           0.05, 0.01, bn, zone=BONE, tip_zone=BONE, k=0.015, tip=0.4))
+        body.extend(A.hook([(0.47, 0.32 * s_, 0.48 * sk.aspect), (0.85, 0.62 * s_, 0.46 * sk.aspect),
+                            (1.15, 0.36 * s_, 0.42 * sk.aspect), (1.08, 0.06 * s_, 0.39 * sk.aspect)],
+                           0.12, 0.02, bn, zone=BONE, tip_zone=BONE, k=0.025, n=10, tip=0.35))
     # wet flesh in the waist seam
     body.add(Ellipsoid((-0.04, 0, 0.52 * sk.aspect), (0.09, 0.2, 0.07 * sk.aspect), zone=FLESH,
                        bone=("blend", chest, tail, (0.05, 0, 0.9), (-0.2, 0, 0.9)), k=0.03))
@@ -106,22 +108,17 @@ def build(sk):
 
     # --- elite rank: bone crest + heavier shoulder plates --------------------
     elite = S.Sculpture("crawler-elite")
-    # split, raised dorsal plates (left one larger) with a tall pale bone fin rising between them
-    for side, scale in ((1, 1.35), (-1, 1.0)):
-        p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.05, 0.55 * side)
-        lift = normalize(n + v3((0, 0, 0.9)))
-        elite.add(Plate(p + n * 0.1, (0.42 * scale, 0.26 * scale, 0.1), frame(v3((1, 0, 0.2)), lift), 0.06, rings=0.004, lip=0.015,
+    # ATTACK16 elite: a forked, raised dorsal shell (two plates splayed up like a V), each carrying a tall pale fin
+    for side, scale in ((1, 1.25), (-1, 1.05)):
+        p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.0, 0.42 * side)
+        lift = normalize(n + v3((0, 0.35 * side, 1.4)))
+        elite.add(Plate(p + n * 0.12, (0.48 * scale, 0.3 * scale, 0.11), frame(v3((1, 0, 0.25)), lift), 0.065, rings=0.004, lip=0.015,
                         chip=0.012, zone=CREST, bone=ab_bone(0), plate=60 + side))
-    fin_pts = []
-    for u in np.linspace(0.5, -0.55, 4):
-        p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
-        fin_pts.append(p + n * 0.05)
-    for i in range(len(fin_pts) - 1):
-        a0, a1 = fin_pts[i], fin_pts[i + 1]
-        h = (0.55, 0.75, 0.5)[i]
-        elite.add(Plate((a0 + a1) / 2 + v3((0, 0, h * 0.5)), (float(np.linalg.norm(a1 - a0)) * 0.62, h * 0.55, 0.04),
-                        frame(normalize(a1 - a0) + v3((0, 0, 0.4)), v3((0, 1, 0))), 0.03, rings=0.003, lip=0.01, chip=0.012,
-                        zone=BONE, bone=ab_bone(0), plate=70 + i))
+        base = p + n * 0.16
+        for i, (dx, h) in enumerate(((0.28, 0.75 * scale), (-0.05, 1.0 * scale), (-0.33, 0.7 * scale))):
+            a0 = base + v3((dx, 0, 0))
+            elite.add(Plate(a0 + v3((0, 0.12 * side, h * 0.5)), (0.17, h * 0.55, 0.035), frame(v3((1, 0, 0.6)), v3((0, 1, 0.25 * side))), 0.028,
+                            rings=0.003, lip=0.01, chip=0.012, zone=BONE, bone=ab_bone(0), plate=70 + i + 3 * (side > 0)))
     # second lantern bulging from the thorax
     p, n = A.ellipsoid_surface(thorax_c, thorax_r, frame((1, 0, -0.15)), -0.15, 0.0)
     elite.extend(A.lantern(p - v3((0.12, 0, 0)), p + v3((0.12, 0, 0)), 0.1, chest, height=1.5, ribs=0.045))

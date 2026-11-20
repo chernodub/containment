@@ -56,7 +56,7 @@ def palette():
     P.setdefault("armor", tuple(shell * 0.35 + edge * 0.65))
     P.setdefault("flesh", (0.30, 0.045, 0.055))
     # BOSS14 attacking plane: matte pale bone, clearly lighter than body and deck, never emissive
-    P.setdefault("bone", (0.60, 0.55, 0.46))
+    P.setdefault("bone", (0.72, 0.67, 0.56))
     return P
 
 
