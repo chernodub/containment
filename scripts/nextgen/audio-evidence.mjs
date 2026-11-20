@@ -176,18 +176,34 @@ try {
         const rendered=await rendering;
         const r=result('melee:swarm-heavy',[rendered.getChannelData(0),rendered.getChannelData(1)],3,{samples,diagnostics:audio.diagnostics});audio.destroy();return r;
       },
-      async fight() {
-        const seconds = 12, context = new OfflineAudioContext(16, seconds * rate, rate);
+      async calm() {
+        const context = new OfflineAudioContext(2, 4 * rate, rate);
+        const audio = new AudioSystem({ master: 1, effects: 1, music: 1 }, { context, prewarm: false });
+        await audio.unlock();
+        audio.setEnvironment('cargo');
+        const stop = context.suspend(3.5);
+        const rendering = context.startRendering();
+        await stop;
+        audio.pauseAll();
+        await context.resume();
+        const rendered = await rendering;
+        const output = result('calm:master', [rendered.getChannelData(0), rendered.getChannelData(1)], 3.5);
+        audio.destroy();
+        return output;
+      },
+      async fight(withWarnings = true) {
+        const seconds = 12, channelCount = 2 + AUDIO_BUSES.length * 2;
+        const context = new OfflineAudioContext(channelCount, seconds * rate, rate);
         context.destination.channelInterpretation = 'discrete';
-        const audio = new AudioSystem({ master: .8, music: .65, effects: .8 }, { context, prewarm: false }); await audio.unlock();
-        const merger = context.createChannelMerger(16), taps = [];
+        const audio = new AudioSystem({ master: 1, music: 1, effects: 1 }, { context, prewarm: false }); await audio.unlock();
+        const merger = context.createChannelMerger(channelCount), taps = [];
         merger.channelInterpretation = 'discrete'; merger.connect(context.destination);
         AUDIO_BUSES.forEach((bus, index) => {
           const splitter = context.createChannelSplitter(2); taps.push(splitter);
           if (bus === 'music') audio.mixer.duckMusic.connect(splitter);
           else {
-            const category = context.createGain(); category.gain.value = .8; taps.push(category);
-            (bus === 'ambience' ? audio.mixer.duckAmbience : audio.mixer.buses[bus]).connect(category).connect(splitter);
+            const category = context.createGain(); category.gain.value = 1; taps.push(category);
+            (bus === 'ambience' ? audio.mixer.duckAmbience : (audio.mixer.bed.get(bus) ?? audio.mixer.buses[bus])).connect(category).connect(splitter);
           }
           splitter.connect(merger, 0, index * 2 + 2); splitter.connect(merger, 1, index * 2 + 3);
         });
@@ -200,7 +216,7 @@ try {
         for (let i = 1; i <= 64; i++) {
           await suspensions[i - 1];
           if (i === 64) { audio.pauseAll(); await context.resume(); break; }
-          const weapon = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'][i % 5];
+          const weapon = i >= 19 && i <= 28 ? 'rifle' : ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'][i % 5];
           emit({ type: 'shot', weapon, x: -70 + i % 3 * 70, y: 20 });
           emit({ type: 'hit', contact: i % 7 === 0 ? 'armor' : 'damage', lethal: i % 5 === 0, x: 140, y: 60 });
           if (i % 2 === 0) emit({ type: 'enemy-attack', family: ['crawler', 'brute', 'spitter', 'stalker', 'carrier'][i % 5], x: i % 4 * 80 - 120, y: 50, elite: i % 14 === 0 });
@@ -210,6 +226,8 @@ try {
           if (i === 4) ability('bulwark', 'tick', 11, 6000);
           if (i === 8) ability('whiteout', 'tick', 12, 5000);
           if (i === 12) ability('napalm-charge', 'tick', 13, 6000);
+          if (withWarnings && i >= 20 && i <= 22) emit({ type: 'enemy-warning', family: ['brute', 'stalker', 'spitter'][i - 20],
+            id: i, x: (i - 21) * 60, y: 55, durationMs: 700 });
           if (i === 16) ability('tesla-pylon', 'tick', 14, 5000);
           if (i % 6 === 0) ability(['seismic-slam', 'cryo-nova', 'flashfire', 'overload'][i / 6 % 4], 'impact', undefined, 0);
           if (i % 4 === 0 && i > 16) ability('tesla-pylon', 'link', 14, 0);
@@ -218,8 +236,46 @@ try {
           await context.resume();
         }
         const rendered = await rendering, diagnostics = audio.diagnostics, outputs = [];
-        outputs.push(result('fight:master', [rendered.getChannelData(0), rendered.getChannelData(1)], 8, { events, diagnostics }, '8s deterministic director fight + 4s tail • master .8 / effects .8 / music .65 • limited master'));
-        AUDIO_BUSES.forEach((bus, index) => outputs.push(result(`fight:bus:${bus}`, [rendered.getChannelData(index * 2 + 2), rendered.getChannelData(index * 2 + 3)], 8, { bus, events, diagnostics }, 'Post bus + category gain and actual music/ambience duck • before shared reverb and master • 8s fight + 4s tail')));
+        const warning = [0, 1].map(side => rendered.getChannelData(2 + 2 * AUDIO_BUSES.indexOf('danger') + side));
+        const bed = warning.map((pcm, side) => {
+          const sum = new Float32Array(pcm.length);
+          AUDIO_BUSES.forEach((bus, index) => {
+            if (bus === 'danger') return;
+            const stem = rendered.getChannelData(2 + index * 2 + side);
+            for (let frame = 0; frame < sum.length; frame++) sum[frame] += stem[frame];
+          });
+          return sum;
+        });
+        const fftSize = 1024;
+        function bandPower(channels) {
+          const bins = new Float64Array(fftSize / 2);
+          for (const pcm of channels) {
+            for (let offset = Math.ceil(2.50 * rate); offset + fftSize <= 2.99 * rate; offset += 512) {
+              const spectrum = fft(pcm, offset, fftSize);
+              for (let k = 0; k < bins.length; k++) bins[k] += spectrum[k];
+            }
+          }
+          return bins;
+        }
+        const warnings = bandPower(warning), background = bandPower(bed);
+        const octaves = [47, 94, 188, 375, 750, 1500, 3000, 6000].map(low => {
+          const begin = Math.ceil(low * fftSize / rate), end = Math.ceil(2 * low * fftSize / rate);
+          const sum = bins => bins.slice(begin, end).reduce((total, bin) => total + bin, 0);
+          return { lowHz: low, highHz: low * 2, warningPower: sum(warnings), bedPower: sum(background) };
+        });
+        const band = octaves.reduce((best, candidate) => candidate.warningPower > best.warningPower ? candidate : best);
+        const warningMarginDb = withWarnings ? 10 * Math.log10(band.warningPower / band.bedPower) : undefined;
+        outputs.push(result(withWarnings ? 'fight:master' : 'fight:no-warnings:master', [rendered.getChannelData(0), rendered.getChannelData(1)], 8,
+          { events, diagnostics, band, warningMarginDb, warningWindowSeconds: [2.50, 2.99] },
+          '8s director fight + 4s tail • master, effects and music at 1 • limited master'));
+        const weaponsIndex = 2 + AUDIO_BUSES.indexOf('weapons') * 2;
+        const weaponWindow = [2.50, 3.18];
+        const weaponChannels = [0, 1].map(side => rendered.getChannelData(weaponsIndex + side));
+        outputs[0].weaponWindowSeconds = weaponWindow;
+        outputs[0].weaponRms = stats(weaponChannels.map(pcm => pcm.subarray(weaponWindow[0] * rate, weaponWindow[1] * rate)), weaponWindow[1] - weaponWindow[0]).rms;
+        if (withWarnings) AUDIO_BUSES.forEach((bus, index) => outputs.push(result(`fight:bus:${bus}`,
+          [rendered.getChannelData(index * 2 + 2), rendered.getChannelData(index * 2 + 3)], 8, { bus, events, diagnostics },
+          'Post bus + category gain and ducking • before shared reverb and master • 8s fight + 4s tail')));
         for (const tap of taps) tap.disconnect(); merger.disconnect(); audio.destroy(); return outputs;
       },
     };
@@ -236,40 +292,44 @@ try {
     if (!(result.duration > 0 && result.duration <= 12)) failures.push(`${result.id}: excessive duration`);
   };
   const reuseRecipes = process.argv.includes('--reuse-recipes');
-  if (reuseRecipes) {
-    const previous = JSON.parse(await readFile(path.join(out, 'inventory.json'), 'utf8'));
-    for (let index = 0; index < recipes.length; index++) {
-      const recipe = recipes[index];
-      const row = previous.inventory.find(row => row.id === recipe.id);
-      if (!row) throw new Error(`Cannot reuse absent recipe ${recipe.id}; run without --reuse-recipes.`);
-      if (recipe.loop) row.loopBoundary = await page.evaluate(index => window.__evidence.boundary(index), index);
-      inventory.push(row);
+  let benchmark;
+  await save(await page.evaluate(() => window.__evidence.calm()));
+  if (!process.argv.includes('--calm-only')) {
+    if (reuseRecipes) {
+      const previous = JSON.parse(await readFile(path.join(out, 'inventory.json'), 'utf8'));
+      for (let index = 0; index < recipes.length; index++) {
+        const recipe = recipes[index];
+        const row = previous.inventory.find(row => row.id === recipe.id);
+        if (!row) throw new Error(`Cannot reuse absent recipe ${recipe.id}; run without --reuse-recipes.`);
+        if (recipe.loop) row.loopBoundary = await page.evaluate(index => window.__evidence.boundary(index), index);
+        inventory.push(row);
+      }
+      console.log(`Retaining ${recipes.length} explicitly reused recipe measurements; rendering director samples/fight afresh.`);
+    } else {
+      console.log(`Rendering ${process.argv.includes('--melee-only')?'selected melee recipes from': 'all'} ${recipes.length} authored recipes through OfflineAudioContext and production MixEngine…`);
+      for (let i = 0; i < recipes.length; i++) {
+        if(process.argv.includes('--melee-only')&&!/^enemy:(crawler|stalker|brute|spitter|carrier)(-elite)?:(warning|attack)$/.test(recipes[i].id))continue;
+        await save(await page.evaluate(index => window.__evidence.recipe(index), i));
+        if ((i + 1) % 50 === 0) console.log(`  ${i + 1}/${recipes.length} recipes`);
+      }
     }
-    console.log(`Retaining ${recipes.length} explicitly reused recipe measurements; rendering director samples/fight afresh.`);
-  } else {
-    console.log(`Rendering ${process.argv.includes('--melee-only')?'selected melee recipes from': 'all'} ${recipes.length} authored recipes through OfflineAudioContext and production MixEngine…`);
-    for (let i = 0; i < recipes.length; i++) {
-      if(process.argv.includes('--melee-only')&&!/^enemy:(crawler|stalker|brute|spitter|carrier)(-elite)?:(warning|attack)$/.test(recipes[i].id))continue;
-      await save(await page.evaluate(index => window.__evidence.recipe(index), i));
-      if ((i + 1) % 50 === 0) console.log(`  ${i + 1}/${recipes.length} recipes`);
-    }
+    for (const kind of ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket', 'large-explosion']) await save(await page.evaluate(kind => window.__evidence.layered(kind), kind));
+    for (const kind of ['freeze', 'shatter', 'reactor']) await save(await page.evaluate(kind => window.__evidence.elemental(kind), kind));
+    if(process.argv.includes('--melee-only'))await save(await page.evaluate(()=>window.__evidence.meleeCrowd()));
+    benchmark = await page.evaluate(() => window.__evidence.benchmark());
+    try { for (const result of await page.evaluate(() => window.__evidence.fight())) await save(result); for (const result of await page.evaluate(() => window.__evidence.fight(false))) await save(result); }
+    catch (error) { failures.push(`Dense fight render: ${error.message}`); }
   }
-  for (const kind of ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket', 'large-explosion']) await save(await page.evaluate(kind => window.__evidence.layered(kind), kind));
-  for (const kind of ['freeze', 'shatter', 'reactor']) await save(await page.evaluate(kind => window.__evidence.elemental(kind), kind));
-  if(process.argv.includes('--melee-only'))await save(await page.evaluate(()=>window.__evidence.meleeCrowd()));
-  const benchmark = await page.evaluate(() => window.__evidence.benchmark());
-  try { for (const result of await page.evaluate(() => window.__evidence.fight())) await save(result); }
-  catch (error) { failures.push(`Dense fight render: ${error.message}`); }
   if (errors.length) failures.push(...errors.map(error => `Browser error: ${error}`));
-  const data = { generatedAt: new Date().toISOString(), reuseRecipes, sampleRate: 24000, measurement: 'Raw recipe metrics and actual rendered stereo output are both included. Output master=1 includes .85 headroom, compressor and waveshaper. Fight bus taps include bus/category gains and actual music/ambience ducking, before shared reverb/master; final master is the actual limited destination.', benchmark, errors, failures, inventory };
+  const data = { generatedAt: new Date().toISOString(), reuseRecipes, sampleRate: 24000, measurement: 'Raw recipe metrics and actual rendered stereo output are both included. Output master=1 includes .85 headroom, compressor and waveshaper. Fight bus taps include bus/category gains and actual danger and music/ambience ducking, before shared reverb/master; final master is the actual limited destination.', benchmark, errors, failures, inventory };
   const columns = ['id', 'family', 'bus', 'duration', 'renderedDuration', 'peak', 'rms', 'centroid', 'dc', 'first', 'last', 'maxStep', 'synthesisMs', 'wav', 'png'];
   await writeFile(path.join(out, 'inventory.json'), JSON.stringify(data, null, 2));
   await writeFile(path.join(out, 'inventory.csv'), `${columns.join(',')}\n${inventory.map(row => columns.map(column => JSON.stringify(row[column] ?? '')).join(',')).join('\n')}\n`);
   const fmt = n => typeof n === 'number' ? n.toFixed(4) : '';
   await writeFile(path.join(out, 'inventory.md'), `# S2 audio measurements\n\n${data.measurement}\n\nNo acoustic listening claim. WAVs are 24 kHz, signed 16-bit PCM; metrics use the unquantized OfflineAudioContext output. Centroid uses a Hann-windowed 1024-point FFT, 512-sample hop, averaged power. Spectrograms use logarithmic frequency 40–12000 Hz and −90…−25 dBFS bin-power mapping.\n\n## Initialization\n\n\`\`\`json\n${JSON.stringify(benchmark, null, 2)}\n\`\`\`\n\n## Cue inventory\n\n| Cue | Duration s | Peak | RMS | Centroid Hz | DC |\n|---|---:|---:|---:|---:|---:|\n${inventory.map(row => `| [${row.id}](${row.png}) | ${fmt(row.duration)} | ${fmt(row.peak)} | ${fmt(row.rms)} | ${row.centroid.toFixed(0)} | ${row.dc.toExponential(2)} |`).join('\n')}\n\n## Assertions\n\n${failures.length ? failures.map(f => `- ${f}`).join('\n') : 'All renders finite, non-silent, duration-bounded, endpoint-silent and below master clipping threshold; DC within 0.006.'}\n`);
-  await writeFile(path.join(out, 'index.html'), `<!doctype html><html lang="en"><meta charset="utf-8"><title>S2 audio evidence</title><style>body{font:15px system-ui;background:#101821;color:#dcebf2;max-width:1200px;margin:28px auto}a{color:#9bd9ed}article{margin:30px 0}img{width:100%;height:auto}audio{width:100%}summary{cursor:pointer;padding:12px;border:1px solid #425e71}</style><h1>S2 audio evidence</h1><p><a href="inventory.md">Inventory with peak/RMS/duration per cue</a> · <a href="inventory.json">Full numerical evidence</a></p><p>Original synthesis through production Web Audio graph. Bus stems include category gains and actual music/ambience ducking; shared reverb and limiting are represented in final master. Listening review remains a human acceptance step.</p>${inventory.map(row => `<details${['fight:master', 'layered:shotgun', 'ability:railbreaker:impact', 'ability:whiteout:loop', 'ambience:infested', 'ui:victory'].includes(row.id) ? ' open' : ''}><summary>${row.id} · peak ${fmt(row.peak)} / RMS ${fmt(row.rms)}</summary><article><img src="${row.png}" alt="Waveform and spectrogram of ${row.id}"><audio controls preload="none" src="${row.wav}"></audio></article></details>`).join('')}</html>`);
+  await writeFile(path.join(out, 'index.html'), `<!doctype html><html lang="en"><meta charset="utf-8"><title>S2 audio evidence</title><style>body{font:15px system-ui;background:#101821;color:#dcebf2;max-width:1200px;margin:28px auto}a{color:#9bd9ed}article{margin:30px 0}img{width:100%;height:auto}audio{width:100%}summary{cursor:pointer;padding:12px;border:1px solid #425e71}</style><h1>S2 audio evidence</h1><p><a href="inventory.md">Inventory with peak/RMS/duration per cue</a> · <a href="inventory.json">Full numerical evidence</a></p><p>Original synthesis through production Web Audio graph. Bus stems include category gains and actual danger and music/ambience ducking; shared reverb and limiting are represented in final master. Listening review remains a human acceptance step.</p>${inventory.map(row => `<details${['fight:master', 'layered:shotgun', 'ability:railbreaker:impact', 'ability:whiteout:loop', 'ambience:infested', 'ui:victory'].includes(row.id) ? ' open' : ''}><summary>${row.id} · peak ${fmt(row.peak)} / RMS ${fmt(row.rms)}</summary><article><img src="${row.png}" alt="Waveform and spectrogram of ${row.id}"><audio controls preload="none" src="${row.wav}"></audio></article></details>`).join('')}</html>`);
   console.log(`Audio evidence: ${inventory.length} WAV/PNG pairs; ${failures.length} assertion failures; ${errors.length} browser errors.`);
-  console.log(`Initialization: constructor ${benchmark.constructorMs.toFixed(2)}ms; unlock without samples ${benchmark.unlockWithoutSamplesMs.toFixed(2)}ms; prewarm max ${benchmark.warmTaskMaxMs.toFixed(2)}ms / p95 ${benchmark.warmTaskP95Ms.toFixed(2)}ms.`);
+  if (benchmark) console.log(`Initialization: constructor ${benchmark.constructorMs.toFixed(2)}ms; unlock without samples ${benchmark.unlockWithoutSamplesMs.toFixed(2)}ms; prewarm max ${benchmark.warmTaskMaxMs.toFixed(2)}ms / p95 ${benchmark.warmTaskP95Ms.toFixed(2)}ms.`);
   console.log(`Inventory: ${path.join(out, 'inventory.json')}`);
   for (const row of inventory.filter(row => row.id.startsWith('fight:'))) console.log(`${row.id}: peak ${row.peak.toFixed(4)}, RMS ${row.rms.toFixed(4)}, voices ${row.diagnostics.highWater}, rejected ${row.diagnostics.rejected}`);
   if (failures.length) { for (const failure of failures) console.error(failure); process.exitCode = 1; }

@@ -7,10 +7,11 @@ import { elementalCueSamples, type ElementalCue } from './elementalCues';
 import { DEFAULT_MASTER_VOLUME } from './preferences';
 import type { AudioCombatState, AudioEnvironment, AudioListener, GameAudioDirector, UiCue } from './contract';
 import { MixEngine, type MixVoice, type VoiceOptions } from './MixEngine';
-import { SYNTH_SAMPLE_RATE, synthesize, type AudioBus, type CueRecipe } from './synthesis';
+import { SYNTH_SAMPLE_RATE, cueSeed, synthesize, type AudioBus, type CueRecipe } from './synthesis';
 import { ABILITY_RECIPES, abilityLoopRecipe, abilityRecipe } from './abilityCues';
 import { COMBAT_RECIPES, enemyRecipe, impactRecipe, weaponRecipe } from './combatCues';
 import { ENVIRONMENT_PROFILES, ENVIRONMENT_RECIPES, HEARTBEAT_RECIPE } from './environmentCues';
+import { ALERTS, type AlertCue } from './alertCues';
 import { UI_RECIPES, uiRecipe } from './uiCues';
 
 export type AudioVolumes = Readonly<{ master: number; music: number; effects: number }>;
@@ -35,7 +36,7 @@ const loadEncoded = (name: Sample): Promise<ArrayBuffer | null> => {
   return request;
 };
 export const AUDIO_RECIPES: readonly CueRecipe[] = [
-  ...COMBAT_RECIPES, ...ABILITY_RECIPES, ...ENVIRONMENT_RECIPES, ...UI_RECIPES, HEARTBEAT_RECIPE,
+  ...COMBAT_RECIPES, ...ABILITY_RECIPES, ...ENVIRONMENT_RECIPES, ...UI_RECIPES, ...Object.values(ALERTS), HEARTBEAT_RECIPE,
 ];
 type Loop = { voice: MixVoice; ability: string };
 
@@ -181,15 +182,17 @@ export class AudioSystem implements GameAudioDirector {
     this.setMusicIntensity(Math.max(state.intensity, state.boss ? .7 : 0));
     const scale = Number.isFinite(state.hostileTimeScale) ? Math.max(.1, Math.min(1, state.hostileTimeScale)) : 1;
     const danger = clamp01(state.danger);
+    if (!state.paused && danger >= .7 && this.danger < .7) this.playAlert('critical');
     const scaleChanged = scale !== this.hostileTimeScale;
     if (scaleChanged) {
       const ratio = Math.sqrt(scale / this.hostileTimeScale);
       this.hostileTimeScale = scale;
-      if (this.mixer) for (const voice of this.mixer.voices) if (voice.bus === 'enemies' && !voice.loop) this.mixer.setRate(voice, voice.rate * ratio);
+      if (this.mixer) for (const voice of this.mixer.voices) if ((voice.bus === 'enemies' || voice.bus === 'danger') && !voice.loop) this.mixer.setRate(voice, voice.rate * ratio);
     }
     if (state.overdrive !== this.overdrive || danger !== this.danger || state.boss !== this.boss || scaleChanged) {
       if (state.boss && !this.boss) this.playUi('boss-intro');
-      this.danger = danger; this.overdrive = state.overdrive; this.boss = state.boss;
+      if (!state.paused) this.danger = danger;
+      this.overdrive = state.overdrive; this.boss = state.boss;
       if (!this.effectsPaused) this.mixer?.setTreatment(danger, scale < 1, state.overdrive);
       this.updateHeartbeat();
     }
@@ -197,6 +200,11 @@ export class AudioSystem implements GameAudioDirector {
   handleEffect(effect: GameEffect, listener: AudioListener): void {
     const dx = effect.x - listener.x, dy = effect.y - listener.y;
     const pan = Math.max(-.85, Math.min(.85, dx / 500)), distance = Math.hypot(dx, dy);
+    if (effect.encounterCue === 'flank' || effect.encounterCue === 'crossfire') {
+      this.playAlert(effect.encounterCue, pan, distance);
+      return;
+    }
+    if (effect.encounterCue) this.playAlert('resolved', pan, distance);
     if (effect.type === 'ability' && effect.ability) { this.handleAbility(effect.ability, pan, distance); return; }
     if (effect.type === 'shot') this.weapon(effect.weapon ?? 'pistol', pan, distance);
     else if (effect.type === 'hit' && (effect.contact || effect.weapon)) this.cue(impactRecipe(effect.weapon === 'plasma' ? 'plasma-hit' : !effect.contact ? 'wall' : effect.lethal ? 'kill' : effect.contact === 'armor' ? 'armor' : effect.contact === 'blocked' ? 'blocked' : 'flesh'), { pan, distance, level: effect.weapon === 'pistol' ? .7 : 1 });
@@ -205,14 +213,15 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'explosion') this.explosion((effect.radius ?? 120) > 180 ? 'large-explosion' : (effect.radius ?? 120) < 80 ? 'small-explosion' : 'explosion', pan, distance);
     else if (effect.type === 'enemy-warning' || effect.type === 'enemy-attack') {
       const family = effect.family ?? (effect.id === -1 ? this.bossPhase === 1 ? 'queen' : `queen-phase-${this.bossPhase}` : 'crawler');
-      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs);
+      if (effect.type === 'enemy-warning' && effect.id === undefined) { this.playAlert('encounter', pan, distance); return; }
+      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs, cueSeed(`${family}:${effect.id ?? 0}:${effect.x}:${effect.y}`));
     }
     else if (effect.type === 'hurt') this.cue(impactRecipe('hurt'));
+    else if (effect.type === 'ambush') this.playAlert('ambush', pan, distance);
     else if (effect.type === 'pickup') this.playPickup();
     else if (effect.type === 'acid') this.enemy('spitter', 'attack', false, pan, distance);
     else if (effect.type === 'boon') {
-      if (effect.encounterCue === 'pincer-broken') this.cue(impactRecipe('wall'), { pan, distance });
-      else if (effect.boon === 'shatter') this.playElemental('shatter');
+      if (effect.boon === 'shatter') this.playElemental('shatter');
       else if (effect.boon === 'overload') this.playElemental('reactor');
     }
   }
@@ -220,7 +229,6 @@ export class AudioSystem implements GameAudioDirector {
     if (cue === 'death' || cue === 'victory' || cue === 'room-clear') { this.stopLoops(); this.stopHeartbeat(); }
     if (cue === 'death' || cue === 'victory') this.stopAmbience();
     this.cue(uiRecipe(cue));
-    if (cue === 'boss-intro' || cue === 'overdrive-ready') this.duck(.32, .65);
   }
   playPistol(): void { this.weapon('pistol'); }
   playRifle(): void { this.weapon('rifle'); }
@@ -246,7 +254,10 @@ export class AudioSystem implements GameAudioDirector {
     if (onset) this.playElemental('freeze');
     this.frozenIds.clear(); for (let i = 0; i < ids.length; i++) this.frozenIds.add(ids[i]);
   }
-  playPickup(): void { this.cue(uiRecipe('purchase'), {}, 'pickup', .09); }
+  playAlert(cue: AlertCue, pan = 0, distance = 0): void {
+    this.cue(ALERTS[cue], { pan, distance });
+  }
+  playPickup(): void { this.playAlert('pickup'); }
   playAlarm(): void { this.playUi('boss-intro'); }
   /** Legacy gesture helper; paused menu clicks remain available as before. */
   playUI(): void {
@@ -257,6 +268,7 @@ export class AudioSystem implements GameAudioDirector {
     const previous = this.previousCombat; this.previousCombat = snapshot;
     if (snapshot.dead) { this.stopLoops(); this.stopAmbience(); this.stopHeartbeat(); }
     else if (previous?.dead) { this.startAmbience(); this.updateHeartbeat(); }
+    if (previous && previous.armor > 0 && snapshot.armor <= 0 && !snapshot.dead) this.playAlert('armor');
     if (snapshot.dead || !snapshot.reloading || previous?.weaponId !== snapshot.weaponId) this.cancelReload();
     if (previous && previous.weaponId !== snapshot.weaponId && !snapshot.dead) this.cue(impactRecipe('switch'));
     if(previous?.weaponId===snapshot.weaponId&&previous.magazine>0&&snapshot.magazine===0&&snapshot.reserve===0)this.cue(impactRecipe('dry'));
@@ -299,14 +311,14 @@ export class AudioSystem implements GameAudioDirector {
   }
   private cue(recipe: CueRecipe, options: Partial<VoiceOptions> = {}, key = recipe.id, interval = recipe.interval ?? .06, allowPaused = false): MixVoice | null {
     if (!this.rateLimit(key, interval, allowPaused)) return null;
-    return this.mixer!.play(this.buffer(recipe), { bus: recipe.bus, priority: recipe.priority ?? 45, ...options });
+    return this.mixer!.play(this.buffer(recipe), { bus: recipe.bus, priority: recipe.priority ?? 45, group: recipe.id, ...options });
   }
   private weapon(id: 'pistol' | 'rifle' | 'shotgun' | 'plasma' | 'rocket', pan = 0, distance = 0): void {
     const recipe = weaponRecipe(id);
     if (!this.rateLimit(recipe.id, recipe.interval ?? .045)) return;
     const variant = (this.variants.get(id) ?? 0) % 3; this.variants.set(id, variant + 1);
     const rate = [.988, 1.009, 1.022][variant], level = [.98, 1, .96][variant];
-    this.mixer!.play(this.buffer(recipe, variant), { bus: 'weapons', level, pan, distance, rate, priority: 65 });
+    this.mixer!.play(this.buffer(recipe, variant), { bus: 'weapons', level, pan, distance, rate, priority: 65, group: recipe.id });
     const name = (id === 'plasma' || id === 'rocket' ? `${id}.wav` : `${id}-${variant + 1}.wav`) as Sample;
     this.sample(name, id === 'shotgun' ? .27 : .23, { bus: 'weapons', priority: 60, pan, distance, rate });
     if (id === 'pistol' || id === 'shotgun' || id === 'rifle') this.cue(impactRecipe('shell'), { pan, distance, delay: id === 'shotgun' ? .32 : .15, level: .3 });
@@ -321,16 +333,16 @@ export class AudioSystem implements GameAudioDirector {
     this.sample('explosion.wav', kind === 'large-explosion' ? .38 : .28, { bus: 'impacts', priority: 75, pan, distance });
     this.duck(kind === 'large-explosion' ? .25 : .45, .30);
   }
-  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0, durationMs?: number): void {
+  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0, durationMs?: number, seed = 0): void {
     const swarm=family==='crawler'&&phase!=='death';
     for(let i=this.swarmVoices.length-1;i>=0;i--)if(!this.mixer?.voices.has(this.swarmVoices[i])||this.swarmVoices[i].end<=(this.context?.currentTime??0))this.swarmVoices.splice(i,1);
     if(swarm&&this.swarmVoices.length>=3)return;
     const recipe=enemyRecipe(family,phase,elite);
-    const voice = this.cue(recipe, { pan, distance, rate: Math.sqrt(this.hostileTimeScale)*(phase==='warning'&&durationMs&&durationMs>0?recipe.duration*1000/durationMs:1) },swarm?`swarm:${phase}`:recipe.id);
+    const variation = seed ? .97 + (seed % 61) / 1000 : 1;
+    const voice = this.cue(recipe, { pan, distance, group: `${family}:${phase}`, rate: variation * Math.sqrt(this.hostileTimeScale)*(phase==='warning'&&durationMs&&durationMs>0?recipe.duration*1000/durationMs:1) },swarm?`swarm:${phase}`:recipe.id);
     if(swarm&&voice)this.swarmVoices.push(voice);
     // Melee tells are entirely synthesized; the old common sample masked identity.
     if (voice&&phase==='death') this.sample('alien-impact.wav', .13, { bus: 'enemies', priority: 25, pan, distance, rate: .7 * Math.sqrt(this.hostileTimeScale) });
-    if (elite || family === 'queen') this.duck(.6, .22);
   }
   private handleAbility(event: AbilityEvent, pan: number, distance: number): void {
     if (event.phase === 'denied' || event.phase === 'ready' || event.phase === 'overdrive-ready') {

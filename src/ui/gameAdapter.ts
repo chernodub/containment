@@ -1,3 +1,5 @@
+import type {AlertCue} from '../game/audio/alertCues';
+import type {EnemySnapshot} from '../game/enemies/EnemySystem';
 import {ROCKET_ARM_DISTANCE} from '../game/combat/catalog';
 import {deployableContact} from '../game/abilities/AbilitySystem';
 import type {DepthGame} from '../DepthGame';
@@ -377,7 +379,14 @@ export function playPresentationCue(audio: UiAudio, cue: UiCue): void {
   playUiCue(audio, cue);
 }
 
+type AudioRoomEdges = {
+  condition?: string; beat?: number; ventWarning?: boolean; ventLive?: boolean;
+  conduit?: boolean; slick?: boolean; sealed?: boolean; canceled?: number;
+  enemies: ReadonlyMap<number, EnemySnapshot>;
+};
+
 type AudioLifecycle = {
+  room?: AudioRoomEdges;
   game: DepthGame; revision: number; inRoom: boolean; status: string; checkpoint: string; boss: boolean;
 };
 const audioLifecycles = new WeakMap<object, AudioLifecycle>();
@@ -396,6 +405,7 @@ export function syncAudioDirector(audio: LegacyAudio, game: DepthGame, options: 
   }
   const transport = audio as GameAudioDirector & {
     pauseMusic?: () => void; resumeMusic?: () => void;
+    playAlert?: (cue: AlertCue, pan?: number, distance?: number) => void;
     setBossPhase?: (phase: typeof boss.phase) => void;
   };
   const paused = options.paused ?? !playing;
@@ -419,6 +429,7 @@ export function syncAudioDirector(audio: LegacyAudio, game: DepthGame, options: 
     // An explicit exit invalidates entity loops even for adjacent rooms of the same environment.
     audio.setEnvironment(null);
     lifecycle.inRoom = false;
+    lifecycle.room = undefined;
     lifecycle.revision = game.roomRevision;
   }
   if (inRoom && !lifecycle.inRoom) {
@@ -429,6 +440,39 @@ export function syncAudioDirector(audio: LegacyAudio, game: DepthGame, options: 
   if (playing && !paused) transport.resumeMusic?.();
   else transport.pauseMusic?.();
   if (playing && !paused && boss.active) transport.setBossPhase?.(boss.phase);
+  if (playing && !paused && transport.playAlert) {
+    const previous = lifecycle.room;
+    const condition = game.conditionState;
+    const encounter = game.encounter;
+    const next: AudioRoomEdges = {
+      condition: condition?.condition.id, beat: encounter.beat,
+      ventWarning: condition?.ventWarning, ventLive: condition?.ventLive,
+      conduit: condition?.conduitLive, slick: condition?.slick(game.player),
+      sealed: condition?.sealedHold && condition.countdown > 0,
+      canceled: encounter.canceledReinforcements,
+      enemies: new Map(game.enemies.snapshot.enemies.map(enemy => [enemy.id, enemy])),
+    };
+    if (condition && next.condition !== previous?.condition) transport.playAlert(condition.condition.id);
+    if (!previous || next.beat !== previous.beat) transport.playAlert('encounter');
+    if (next.ventWarning && !previous?.ventWarning) transport.playAlert('pressure');
+    if (next.ventLive && !previous?.ventLive) transport.playAlert('steam');
+    if (next.conduit && !previous?.conduit) transport.playAlert('arc');
+    if (next.slick && !previous?.slick) transport.playAlert('slip');
+    if (previous?.sealed && !next.sealed) transport.playAlert('release');
+    if ((next.canceled ?? 0) > (previous?.canceled ?? 0)) transport.playAlert('resolved');
+    for (const enemy of next.enemies.values()) {
+      const before = previous?.enemies.get(enemy.id);
+      const dx = enemy.x - game.player.x, dy = enemy.y - game.player.y;
+      const pan = dx / 500, distance = Math.hypot(dx, dy);
+      if (!before && (enemy.champion || enemy.elite)) transport.playAlert(enemy.champion ?? 'elite', pan, distance);
+      if (enemy.health > 0 && before && before.armor > 0 && enemy.armor <= 0) transport.playAlert('armor', pan, distance);
+      if (enemy.health > 0 && enemy.chargeMs > 0 && !before?.chargeMs) transport.playAlert('charge', pan, distance);
+      if (enemy.health > 0 && enemy.wallStunAngle !== undefined && before?.wallStunAngle === undefined) transport.playAlert('exposed', pan, distance);
+      if (enemy.health > 0 && enemy.podStage === 'opening' && before?.podStage !== 'opening') transport.playAlert('pod', pan, distance);
+      if (enemy.health > 0 && before?.pod && !enemy.pod) transport.playAlert('hatch', pan, distance);
+    }
+    lifecycle.room = next;
+  }
   lifecycle.boss = bossPresent;
   const checkpoint = `${game.roomRevision}:${game.expedition.run.phase}:${game.checkpointStatus}`;
   if (checkpoint !== lifecycle.checkpoint && !paused && game.status !== 'menu') {
