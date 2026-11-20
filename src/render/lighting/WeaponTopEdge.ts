@@ -17,16 +17,15 @@ export function weaponTopEdge(root:T.Object3D):void {
         shader.uniforms.weaponEdgeHeight={value:threshold};
         shader.vertexShader='varying float weaponHeight;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nweaponHeight=position.y;');
         shader.fragmentShader='varying float weaponHeight;uniform float weaponEdgeHeight;\n'+shader.fragmentShader
-          .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+          .replace('#include <opaque_fragment>', `
 const vec3 weaponLuma=vec3(.2126,.7152,.0722);
-reflectedLight.directDiffuse=vec3(min(.16,dot(reflectedLight.directDiffuse,weaponLuma)));
-reflectedLight.indirectDiffuse=vec3(min(.12,dot(reflectedLight.indirectDiffuse,weaponLuma)));
-reflectedLight.directSpecular=vec3(min(.055,dot(reflectedLight.directSpecular,weaponLuma)));`)
-          .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-float topEdge=smoothstep(weaponEdgeHeight-.015,weaponEdgeHeight,weaponHeight);
-totalEmissiveRadiance+=vec3(.17,.18,.19)*topEdge*smoothstep(.45,.85,dot(normal,viewMatrix[1].xyz));`);
+float topEdge=smoothstep(weaponEdgeHeight-.015,weaponEdgeHeight,weaponHeight)
+  *smoothstep(.45,.85,dot(normal,viewMatrix[1].xyz));
+float receiver=min(.16,dot(outgoingLight,weaponLuma));
+outgoingLight=vec3(receiver*.96,receiver,receiver*1.03)+vec3(.13,.14,.15)*topEdge;
+#include <opaque_fragment>`);
       };
-      material.customProgramCacheKey=()=>key+':marine-weapon-edge-v1';
+      material.customProgramCacheKey=()=>key+':marine-weapon-edge-v2';
       material.needsUpdate=true;
     }
   });
