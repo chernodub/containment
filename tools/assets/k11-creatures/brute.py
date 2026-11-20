@@ -24,7 +24,10 @@ BANDS = {   # CREATURE18: dark chitin, warm flesh, blades at ~half the old bone 
     "chitin": (0.10, 0.05, 0.035), "flesh": (0.62, 0.36, 0.20), "bone": (0.17, 0.18, 0.20),
     "accent": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15),
 }
-BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}   # top-view plates carry the mid band, gaps go dark
+BANDS["lead"] = (0.80, 0.55, 0.32)   # CREATURE19: the head plate is the lightest body plane (which end is the head)
+BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}
+# dorsal shingle row (hump 90/93, hind 20/23/26/29) joins the dark armour: a hard spine over ochre flanks
+PLATE_BAND = {50: "lead", **{160 + i: "lead" for i in range(6)}, **{i: "chitin" for i in (*range(90, 96), 20, 23, 26, 29)}}   # CREATURE19: the whole hump is dark armour   # top-view plates carry the mid band, gaps go dark
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),
@@ -63,21 +66,32 @@ def build(sk):
                        bone=("blend", "tail", "chest", z(-0.9, 0, 2.5), z(0.3, 0, 3.4)), k=0.3))
     body.extend(A.shingles(hind_c, hind_r, hind_R, "tail", rows=4, phis=(0.0, 1.0), u0=0.5, u1=-0.78,
                            size=(0.68, 0.62, 0.3), thickness=0.22, lift=0.4, rings=0.006, grow=-0.25, seed=60, plate0=20))
+    # CREATURE19: three hard, dark, angular dorsal plates with raised sharp trailing spikes over the ochre body
+    body.extend(A.dorsal_blades(hump_c, v3((1.05, 0.85, 0.75 * a)), frame((1, 0, 0.35)), "chest", (0.15,), 1.35, 0.85, 0.18,
+                                lift=0.45, plate=170))
+    body.extend(A.dorsal_blades(hind_c, hind_r, hind_R, "tail", (0.55, 0.05), 1.2, 0.75, 0.17, lift=0.52, plate=171))
     # --- head -------------------------------------------------------------------
-    head_c = z(1.45, 0, 4.05)
-    body.add(A.mass(head_c, (0.62, 0.56, 0.36 * a), frame((1, 0, -0.35)), bone="head", k=0.25))
-    body.add(Ellipsoid(z(0.9, 0, 4.15), (0.55, 0.55, 0.4 * a), zone=MEMBRANE, bone=("blend", "chest", "head", z(0.4, 0, 4.0), z(1.3, 0, 4.2)), k=0.2))
-    body.add(Plate(head_c + z(-0.05, 0, 0.3), (0.72, 0.62, 0.26), frame((1, 0, -0.45)), 0.18, rings=0.01, ring_count=3,
+    # CREATURE19: the head hangs forward and low out of a narrow dark neck, so it never sinks into the shoulders
+    HO = z(0.32, 0, -0.22)
+    head_c = z(1.45, 0, 4.05) + HO
+    body.add(A.mass(head_c, (0.72, 0.6, 0.38 * a), frame((1, 0, -0.35)), bone="head", k=0.18))
+    body.add(Ellipsoid(z(1.0, 0, 4.0), (0.42, 0.36, 0.26 * a), zone=MEMBRANE, bone=("blend", "chest", "head", z(0.4, 0, 4.0), z(1.3, 0, 4.2)), k=0.12))
+    # dark armoured collar ring between shoulders and head
+    body.add(S.Torus(z(0.98, 0, 4.02), (1, 0, -0.2), 0.42, 0.13, zone=ARMOR, bone=("blend", "chest", "head", z(0.4, 0, 4.0), z(1.3, 0, 4.2)), k=0.04))
+    # heavy dark jaw: an underslung mandible plate jutting past the brow
+    body.add(Plate(head_c + z(0.45, 0, -0.32), (0.62, 0.7, 0.2), frame((1, 0, -0.55), (0, 0, -1)), 0.16, rings=0.008, lip=0.04,
+                   chip=0.03, zone=ARMOR, bone="jaw", plate=55))
+    body.add(Plate(head_c + z(-0.05, 0, 0.3), (0.8, 0.66, 0.26), frame((1, 0, -0.45)), 0.18, rings=0.01, ring_count=3,
                    lip=0.05, chip=0.03, zone=CREST, bone="head", plate=50))
-    body.add(RoundCone(z(0.95, 0, 4.55), z(2.05, 0, 4.0), 0.09, 0.05, zone=CREST, bone="head", k=0.06))
-    body.extend(A.eyes(z(1.95, 0, 3.92), (1, 0, -0.3), 0.32, 3, 0.06, "head", spread=0.8))
-    body.add(Ellipsoid(z(2.12, 0, 3.7), (0.22, 0.3, 0.12 * a), op="sub", zone=CAVITY, k=0.08))
+    body.add(RoundCone(z(0.95, 0, 4.55) + HO, z(2.05, 0, 4.0) + HO, 0.09, 0.05, zone=CREST, bone="head", k=0.06))
+    body.extend(A.eyes(z(1.95, 0, 3.92) + HO, (1, 0, -0.3), 0.32, 3, 0.06, "head", spread=0.8))
+    body.add(Ellipsoid(z(2.12, 0, 3.7) + HO, (0.22, 0.3, 0.12 * a), op="sub", zone=CAVITY, k=0.08))
     for s in (-1, 1):
-        body.extend(A.hook([z(1.85, 0.3 * s, 3.7), z(2.2, 0.38 * s, 3.45), z(2.4, 0.3 * s, 3.1), z(2.5, 0.2 * s, 2.85)],
+        body.extend(A.hook([z(1.85, 0.3 * s, 3.7) + HO, z(2.2, 0.38 * s, 3.45) + HO, z(2.4, 0.3 * s, 3.1) + HO, z(2.5, 0.2 * s, 2.85) + HO],
                            0.14, 0.03, "jaw", k=0.05, tip=0.4))
     # --- crusher arms -------------------------------------------------------------
     for s, side in ((-1, "r"), (1, "l")):
-        heavy = 1.18 if s < 0 else 1.0
+        heavy = 1.36 if s < 0 else 0.9   # CREATURE19: the striking (right) arm is visibly the heavier one
         sh, el, wr = sk.h(f"shoulder.{side}"), sk.h(f"forearm.{side}"), sk.h(f"claw.{side}")
         end = sk.end(f"claw.{side}")
         body.add(RoundCone(sh, el, 0.56 * heavy, 0.42 * heavy, zone=SHELL, bone=f"shoulder.{side}", k=0.15, tint=0.8))
@@ -94,6 +108,10 @@ def build(sk):
         body.add(Ellipsoid(wr, (0.4 * heavy,) * 3, zone=MEMBRANE, bone=("blend", f"forearm.{side}", f"claw.{side}", el, end), k=0.1))
         body.extend(A.blade(wr + (end - wr) * 0.05, end + v3((0.75, 0.45 * s, 0.25)), v3((0.45, 1.0 * s, 0.6)), 1.0 * heavy, 0.18 * heavy,
                             f"claw.{side}", hook=0.5, serrations=4, zone=BONE, edge_zone=BONE))
+        if s < 0:   # CREATURE19: a dark elbow spur that reads when the striking arm loads
+            back = normalize(el - wr) + v3((0, -0.35, 0.3))
+            body.add(RoundCone(el + v3((0, -0.1, 0.1)), el + normalize(back) * 1.05, 0.3, 0.035, zone=ARMOR,
+                               bone=f"shoulder.{side}", k=0.08))
         # tendon across the elbow
         body.add(S.Tube([sh + (el - sh) * 0.5 + v3((0.15, 0, -0.1)), el + v3((0.25, 0, -0.25)), el + (wr - el) * 0.3 + v3((0.2, 0, -0.1))],
                         [0.07, 0.09, 0.07], zone=SINEW, bone=("blend", f"shoulder.{side}", f"forearm.{side}", sh, wr), k=0.05))
@@ -121,6 +139,12 @@ def build(sk):
         elite.add(S.Torus(q, z(0, 0.3, 1.0), 0.42 - 0.12 * t, 0.08, zone=ARMOR, bone="chest", k=0.05))
     elite.add(Plate(chest_c + z(-0.4, 0.9, 0.95), (0.9, 0.7, 0.35), frame((1, 0, -0.1), (0.1, 0.8, 0.7)), 0.25, rings=0.01, lip=0.06,
                     chip=0.05, zone=CREST, bone="chest", plate=140))
+    # CREATURE19 elite: a tall raked crest along the spine and a longer striking cleaver
+    elite.extend(A.rank_fins(hump_c, v3((1.05, 0.85, 0.75 * a)), frame((1, 0, 0.35)), "chest", (0.45, 0.05, -0.35), 1.9 * a, 0.6, 0.15,
+                             plate=180))
+    wr_r, end_r = sk.h("claw.r"), sk.end("claw.r")
+    elite.extend(A.blade(wr_r + (end_r - wr_r) * 0.2, end_r + v3((1.55, -0.75, 0.3)), v3((0.45, -1.0, 0.6)), 1.15, 0.2, "claw.r",
+                         hook=0.55, serrations=5, zone=BONE, edge_zone=BONE))
     # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
     boss = S.Sculpture("brute-warden")
     # --- organic crown: grown horn/bone plates rising from the shoulders, asymmetric, one broken tine
@@ -138,7 +162,7 @@ def build(sk):
         radii = [r * (1.0 - 0.8 * j / 8) for j in range(len(pts))]
         if broken:
             radii[-1] = r * 0.62
-        boss.add(S.Tube(pts, radii, zone=CREST, bone="chest", k=0.12))
+        boss.add(S.Tube(pts, radii, zone=CREST, bone="chest", k=0.12, plate=160 + i))   # CREATURE19: crown in the light lead band
         if broken:
             for k in range(3):
                 d = v3((np.cos(k * 2.1), np.sin(k * 2.1), 0.6))
@@ -158,6 +182,17 @@ def build(sk):
                        normalize(ram1 - ram0), 0.2, 0.06, zone=BONE, bone="head", name="warden-ram"))   # pale ram face = charge direction
     for s_ in (-1, 1):
         boss.add(RoundCone(ram1 + v3((-0.1, 0.75 * s_, 0.1)), ram1 + v3((0.35, 1.05 * s_, 0.35)), 0.34, 0.16, zone=CREST, bone="head"))
+    # CREATURE19 Warden's own head and stance: a forward-slung armoured helm hanging below the brow line,
+    # and low heavy dark pauldrons that widen the shoulders at elbow height
+    boss.add(Plate(head_c + z(0.55, 0, 0.3), (2.3, 1.75, 0.75), frame((1, 0, -0.7)), 0.45, rings=0.014, ring_count=3, lip=0.08,
+                   chip=0.06, zone=ARMOR, bone="head", plate=158))
+    for s_ in (-1, 1):
+        boss.add(Plate(head_c + z(0.9, 1.0 * s_, -0.2), (1.5, 0.8, 0.45), frame((1, 0, -0.8), normalize(v3((0.2, s_, 0.4)))), 0.2,
+                       rings=0.01, lip=0.05, chip=0.04, zone=ARMOR, bone="head", plate=159))
+        side_ = "r" if s_ < 0 else "l"
+        sh_ = sk.h(f"shoulder.{side_}")
+        boss.add(Plate(sh_ + v3((0.0, 0.85 * s_, 0.1)), (2.1, 1.6, 0.7), frame((1, 0, -0.15), normalize(v3((0, s_, 0.55)))), 0.42,
+                       rings=0.014, lip=0.08, chip=0.06, zone=ARMOR, bone=f"shoulder.{side_}", plate=157))
     # heavier right battering forearm: knuckle bosses along the crusher
     el, wr = sk.h("forearm.r"), sk.h("claw.r")
     for t in (0.3, 0.55, 0.8):
