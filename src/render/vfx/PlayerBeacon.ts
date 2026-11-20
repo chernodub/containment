@@ -1,4 +1,6 @@
 import * as T from 'three';
+import {observeTransparentDraws} from '../post/GeometryBuffer';
+import {projectBody} from '../world/OriginalInteriorCutaways';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 type Skin = {source:T.SkinnedMesh;overlay:T.SkinnedMesh;geometry:T.BufferGeometry;attributes:Array<{name:string;attribute:T.BufferAttribute|T.InterleavedBufferAttribute;version:number}>;index:T.BufferAttribute|null;indexVersion:number};
@@ -43,6 +45,10 @@ uniform sampler2D sceneGeometry;
 uniform float marineId;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
+uniform sampler2D opaqueColor;
+uniform sampler2D finalColor;
+uniform vec4 opaqueRegion;
+uniform vec2 coverageSize;
 void main(){
   float bossOcclusion=0.;
   float occlusion=0.;
@@ -58,10 +64,21 @@ void main(){
       occlusion=.58*(1.-smoothstep(.00008,.00045,abs(depthDelta)));
     }else{
       bossOcclusion=1.-step(.25,abs(kind-6.));
-      if(abs(kind-2.)>.25&&(kind<4.||kind>6.))discard;
       float nearestId=floor(geometry.b*255.0+.5);
-      if(marineId>.5&&abs(nearestId-marineId)<.5)discard;
-      occlusion=smoothstep(.00008,.0008,depthDelta);
+      if(kind==3.&&marineId>.5&&abs(nearestId-marineId)<.5){
+        vec2 sampleUv=(floor(uv*coverageSize)+.5)/coverageSize;
+        vec2 crop=(sampleUv-opaqueRegion.xy)*opaqueRegion.zw;
+        if(all(greaterThan(opaqueRegion.zw,vec2(0.)))&&all(greaterThan(crop,vec2(0.)))&&all(lessThan(crop,vec2(1.)))){
+          vec3 before=texture2D(opaqueColor,crop).rgb;
+          vec3 change=abs(texture2D(finalColor,sampleUv).rgb-before);
+          float delta=max(change.r,max(change.g,change.b));
+          float magnitude=max(before.r,max(before.g,before.b));
+          occlusion=smoothstep(.04,.18,delta/(.25+magnitude))
+            *(1.-smoothstep(.00008,.00045,abs(depthDelta)));
+        }
+      }else if(kind==2.||(kind>=4.&&kind<=6.)){
+        occlusion=smoothstep(.00008,.0008,depthDelta);
+      }
     }
     if(occlusion<=0.)discard;
   }
@@ -100,7 +117,53 @@ function locatorTexture():T.DataTexture {
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{opaqueColor:{value:null},finalColor:{value:null},opaqueRegion:{value:new T.Vector4()},coverageSize:{value:new T.Vector2(1,1)},strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly projection=new Float64Array(6);
+  private readonly projectPoint=new T.Vector3();
+  private readonly copyOrigin=new T.Vector2();
+  private opaqueColor?:T.FramebufferTexture;
+  private capturedColor:T.Texture|null=null;
+
+  /** Borrow the cutaway's projected marine bounds and copy only that patch.
+   * The transparent draw still writes color only. This samples real coverage
+   * after blending, including additive light and darkening smoke. */
+  beginCoverage(renderer:T.WebGLRenderer,camera:T.Camera,body:{x:number;y:number;radius:number},height:number,enabled:boolean):void {
+    this.capturedColor=null;
+    if(!enabled){
+      this.opaqueColor?.dispose();
+      this.opaqueColor=undefined;
+      return;
+    }
+    projectBody(body,height,camera,this.projectPoint,this.projection,0);
+    observeTransparentDraws(renderer,()=>{
+      const target=renderer.getRenderTarget();
+      if(!target)return;
+      observeTransparentDraws(renderer);
+      const size=Math.min(384,target.width,target.height);
+      const [left,bottom,right,top]=this.projection;
+      const x=T.MathUtils.clamp(Math.floor((left+right+2)*target.width*.25-size*.5),0,target.width-size);
+      const y=T.MathUtils.clamp(Math.floor((bottom+top+2)*target.height*.25-size*.5),0,target.height-size);
+      if(!this.opaqueColor||this.opaqueColor.image.width!==size||this.opaqueColor.type!==target.texture.type){
+        this.opaqueColor?.dispose();
+        this.opaqueColor=new T.FramebufferTexture(size,size);
+        this.opaqueColor.type=target.texture.type;
+        this.opaqueColor.format=target.texture.format;
+      }
+      this.copyOrigin.set(x,y);
+      renderer.copyFramebufferToTexture(this.opaqueColor,this.copyOrigin);
+      this.material.uniforms.opaqueRegion.value.set(x/target.width,y/target.height,target.width/size,target.height/size);
+      this.material.uniforms.coverageSize.value.set(target.width,target.height);
+      this.capturedColor=target.texture;
+    });
+  }
+
+  endCoverage(renderer:T.WebGLRenderer):void {
+    observeTransparentDraws(renderer);
+    this.material.uniforms.opaqueColor.value=this.opaqueColor??null;
+    this.material.uniforms.finalColor.value=this.capturedColor;
+    if(!this.capturedColor)this.material.uniforms.opaqueRegion.value.set(0,0,0,0);
+  }
+
   private readonly groups: SkinGroup[] = [];
   private readonly locatorMap=locatorTexture();
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
@@ -205,7 +268,7 @@ export class PlayerBeacon {
     this.hitArc.geometry.dispose();this.hitMaterial.dispose();
     // Only merged buffers are owned here. The pool owns source geometry/skeletons.
     for(const group of this.groups)group.merged?.geometry.dispose();
-    this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();
+    this.opaqueColor?.dispose();this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();
     this.root.clear();this.root.removeFromParent();this.groups.length=0;
   }
 }

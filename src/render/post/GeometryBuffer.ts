@@ -22,6 +22,14 @@ function actorIdentity(root:Object3D):number {
  throw new Error('Geometry identity capacity exceeded');
 }
 
+// A frame-scoped observer used by the marine silhouette to compare the
+// already resolved opaque color with the final effect-composited color.
+const transparentObservers = new WeakMap<WebGLRenderer, () => void>();
+export function observeTransparentDraws(renderer:WebGLRenderer, observer?:()=>void):void {
+ if(observer)transparentObservers.set(renderer,observer);
+ else transparentObservers.delete(renderer);
+}
+
 const drawBufferHooks=new WeakMap<Material,{hook:Material['onBeforeRender'];stockBase:boolean}>();
 const drawStates=new WeakMap<WebGLRenderer,{target:unknown;frame:number;write:boolean}>();
 const allBuffers=[0x8ce0,0x8ce1],colorOnly=[0x8ce0,0];
@@ -54,6 +62,7 @@ function installDrawBufferPolicy(material:Material):void {
   previous.call(this,renderer,...args);
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
+  if(material.transparent)transparentObservers.get(renderer)?.();
   const write=material.userData.containmentInkBlock===true||(!material.transparent&&material.userData.containmentPreserveGeometry!==true),frame=clearHooks.get(renderer)?.generation??renderer.info.render.frame,state=drawStates.get(renderer);
   const first=!state||state.target!==target||state.frame!==frame;
   if(first||state.write!==write) {

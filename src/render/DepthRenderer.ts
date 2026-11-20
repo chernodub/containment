@@ -732,7 +732,9 @@ export class DepthRenderer {
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
-  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  // MARINE17: compare opaque and effected marine pixels in the silhouette pass.
+  this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high');
+  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
