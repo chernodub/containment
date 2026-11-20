@@ -5,10 +5,13 @@ import type { Telegraph } from '../vfx/TelegraphBatch';
 
 /** Optional presentation accessor. Coordinates are renderer metres, never simulation units. */
 export interface HostilePrioritySource {
+  forEachShooterPriority?(visit: (x:number,y:number,z:number,angle:number)=>void): void;
   forEachHostilePriority?(visit: (shape: Readonly<Telegraph>) => void): void;
 }
 
 // Distances are measured in mask texels. Interpolate distance before evaluating coverage.
+// Capping the green-channel distance here yields about 70% coverage at its smoothstep.
+const SHOOTER_DISTANCE_CAP = .082;
 const DISTANCE_RANGE = 1.5;
 
 /** Shared shader hook; all materials are patched before renderer preparation. */
@@ -50,6 +53,10 @@ export class AbilityPriorityMask {
   private readonly point = new T.Vector3();
   private camera?: T.Camera;
   private disposed = false;
+  private readonly shooter = (x:number,y:number,z:number,angle:number) => {
+    this.segment(x,y,z,x+Math.cos(angle)*1.44,y,z+Math.sin(angle)*1.44,.6,1,SHOOTER_DISTANCE_CAP);
+    this.segment(x,y,z,x,y,z,.22,1);
+  };
   private readonly visit = (shape: Readonly<Telegraph>) => this.shape(shape);
 
   constructor() {
@@ -74,6 +81,8 @@ export class AbilityPriorityMask {
       const actor = actorFor?.(e.id);
       const height = actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15);
       this.actor(e.x / 32, e.y / 32, e.radius / 32 * .78, height);
+      if (e.type === 'spitter' && e.pendingAttack === 'spit' && e.windupMs > 0)
+        this.segment(e.x/32,0,e.y/32,e.x/32,height,e.y/32,.6,1,SHOOTER_DISTANCE_CAP);
       // Snapshot fallback also works while the world renderer evolves its warning accessor.
       if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
         const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
@@ -101,6 +110,7 @@ export class AbilityPriorityMask {
         x + Math.cos(a) * .35, .65, z + Math.sin(a) * .35, .35);
     }
     source?.forEachHostilePriority?.(this.visit);
+    source?.forEachShooterPriority?.(this.shooter);
     this.hasMask=true;
     // Camera and actor motion can quantize to the same mask, including paused frames.
     for(let i=0;i<this.raster.length;i++){
@@ -116,7 +126,7 @@ export class AbilityPriorityMask {
     this.segment(x, 0, z, x, height, z, radius, 0);
   }
 
-  private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1): void {
+  private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1, distanceCap = DISTANCE_RANGE): void {
     this.point.set(x, y, z).project(this.camera!);
     let px = (this.point.x * .5 + .5) * this.width, py = (this.point.y * .5 + .5) * this.height;
     this.point.set(x + radius, y, z).project(this.camera!);
@@ -145,7 +155,7 @@ export class AbilityPriorityMask {
       for (let column = x0; column < x1; column++) {
         const rx = column + .5 - px;
         const t = Math.max(0, Math.min(1, (rx * dx + ry * dy) * inverseLengthSquared));
-        this.writeDistance(column, row, channel, r - Math.sqrt((rx - dx * t) ** 2 + (ry - dy * t) ** 2));
+        this.writeDistance(column, row, channel, Math.min(distanceCap, r - Math.sqrt((rx - dx * t) ** 2 + (ry - dy * t) ** 2)));
       }
     }
   }

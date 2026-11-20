@@ -232,9 +232,9 @@ export class PlayerBeacon {
   hit(angle:number,strength=1){this.hitAngle=angle;this.hitLife=.32;this.hitStrength=T.MathUtils.clamp(strength,0,1);}
 
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
-  update(player:T.Object3D,angle:number,hidden=false,crowding=0,warning=false,dt=0){
+  update(player:T.Object3D,angle:number,hidden=false,crowding=0,warning=false,dt=0,blackout=false){
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible){this.hitLife=0;return;}
-    this.locatorMaterial.opacity=warning?.22:1;
+    this.locatorMaterial.opacity=warning?(blackout?.55:.22):1;
     this.hitLife=Math.max(0,this.hitLife-dt);
     // HUD preparation compiles constructor-owned materials even while hidden.
     this.hitArc.visible=this.hitLife>0&&this.hitStrength>0;

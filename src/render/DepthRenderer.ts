@@ -118,6 +118,9 @@ export class DepthRenderer {
  private aheadKey='';private aheadRooms=new RoomPreparationCache(node=>this.buildAhead(node),root=>disposeModel(root),2);
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
+ private readonly hostileSocket = new T.Vector3();
+ private readonly shooterSocket = (id:number) =>
+  this.actors.get(id)?.root.getObjectByName('jaw')?.getWorldPosition(this.hostileSocket);
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
  private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.cancelRoomPrefetch?.();this.cancelRoomPrefetch=undefined;this.graphicsGeneration++;this.initializedTextures=new WeakMap();this.introspectedPrograms=new WeakSet();for(const target of this.preparationTargets)target.dispose();this.preparationTargets.clear();this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate(true);this.post.invalidate();this.lighting.invalidateShadows();};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;this.queueRoomWarmup();void this.roomWarmWork.finally(()=>{this.recoveringGraphics=false;}).catch(()=>{});};
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
@@ -612,7 +615,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
-  this.siegeBoundary.update(menu?null:game.siege,p);
+  this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
   combatFocusTarget(p.x/UNIT,p.y/UNIT,p.angle,bossFrame.x/UNIT,bossFrame.y/UNIT,bossWeight,!!this.motionQuery?.matches||menu,this.desiredFocus);
@@ -696,7 +699,12 @@ export class DepthRenderer {
    this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
    if(this.queen)this.contacts.add(q.x/UNIT,q.y/UNIT,1.95);
    for(const n of q.nests)this.contacts.add(n.x/UNIT,n.y/UNIT,.7);
-   for(const e of enemies)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT);
+   for(const e of enemies){
+    const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
+    const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
+    const shooter=e.type==='spitter'&&!e.pod&&e.windupMs>0&&e.pendingAttack==='spit';
+    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact&&!shooter?1.25:1),contact?(shooter?3:1):0,contact?enemyMotionAim(e,p):0);
+   }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
   this.contacts.end();
@@ -705,7 +713,10 @@ export class DepthRenderer {
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}
-  this.effects.syncEnemyWarnings(enemies,game.geometry,game);
+  this.effects.syncEnemyWarnings(enemies,game.geometry,game,this.shooterSocket);
+  if(blackout)this.effects.forEachShooterPriority((x,y,z,angle,id)=>{
+   this.lighting.pool.attach(`hostile-windup-${id}`,{x:x+Math.cos(angle)*.2,y:y+.22,z:z+Math.sin(angle)*.2,color:0xff2340,intensity:2.4,distance:1.6,duration:.08,priority:4});
+  });
   this.interimAbilities.update(game.abilities?.snapshot,dt,!menu,game,this.player.root,this.camera,this.player.body);
   // V2 owns body offsets; solve its sibling weapon/socket from that final pose.
   this.player.syncWeaponPose?.();
@@ -757,7 +768,7 @@ export class DepthRenderer {
   this.post.finishCombatOutlines();
   // MARINE17: compare opaque and effected marine pixels in the silhouette pass.
   this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high'&&this.graphicsAblation!=='silhouette');
-  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
