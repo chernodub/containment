@@ -120,7 +120,11 @@ const {roomClearance,chargeLanes,deckLaneWidth}=await import('./clearance.mjs');
 console.log('Room | body radius | reachable before/after/total | breach markers before/after | minimum authored opening before | narrowed below minimum | Warden bait rays shortened/checked | minimum sampled deck lane before/after | role-specific targets before/after');
 for(const [index,{id}] of rooms.entries()){
   // Warden detour in Swarm can exceed the planned radius-46 Matron.
-  const radius=[5,8,12,15,18].includes(index)?64:index===0?art.enemyBodyRadius('crawler'):index===1?art.enemyBodyRadius('brute'):art.enemyBodyRadius('brute',true);
+  const radius=[5,8,12,15,18].includes(index)?64
+    :index===0?art.enemyBodyRadius('spitter')
+    :index===1?art.enemyBodyRadius('brute')
+    :index===2?art.enemyBodyRadius('spitter',true)
+    :art.enemyBodyRadius('brute',true);
   const r=roomClearance(api,api.templates[id],api.plans[id],radius);
   const charge=radius===64?chargeLanes(api,api.templates[id],api.plans[id]):{shortened:0,checked:0};
   const t=api.templates[id];

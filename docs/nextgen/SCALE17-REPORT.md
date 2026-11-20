@@ -76,3 +76,33 @@ Each cohort uses the same workspace head and policy with the first six BAL16 see
 The initial split remains in the shipped change. Both splits made the six-seed sample harder. The round-up trial improved some results, but total completions fell from 23 to 20 across both modes, and the largest per-rig loss increased from four to five. The initial split misses the ±2 target for Standard Cryo and Arc and Story Breacher and Arc. The six cohorts recorded natural deaths and completions without simulation stalls. The stream stops tuning after this one trial.
 
 [Standard baseline](../../artifacts/nextgen/playtest/scale17-six-before-standard/summary.json) · [Standard initial](../../artifacts/nextgen/playtest/scale17-six-after-standard/summary.json) · [Standard trial](../../artifacts/nextgen/playtest/scale17-six-tuned-standard/summary.json) · [Story baseline](../../artifacts/nextgen/playtest/scale17-six-before-story/summary.json) · [Story initial](../../artifacts/nextgen/playtest/scale17-six-after-story/summary.json) · [Story trial](../../artifacts/nextgen/playtest/scale17-six-tuned-story/summary.json)
+
+## Capture review
+
+Each side has 23 fresh frames covering the same 12-contact regular/elite crowd in Relay Racks, Swarm Junction and Crew Checkpoint, plus calm, mid-wind-up, strike entry and mid-recovery for all five families. The manifests recorded zero capture failures or browser errors. Program count stayed at 142 across all four phases for each family on the SCALE17 build. The five isolated rank pairs use the same camera system and precede the Diagnostic Gallery placement change.
+
+At 480×270 the gold floor ring and the extra body mass identify elites more reliably than the crests. The enlarged Crawler and Stalker are still the hardest regular contacts to pick out on unlit floors. Calm Brute blades sit below the marine's figure value in the isolated and mixed comparisons. The hostile footprint can still read first in close melee, and an idle Spitter's bright sac can compete with a loaded Crawler in a mixed group. Pale-plane modulation uses the baked colour and the existing skin region IDs, so fine boundaries are less distinct at 480×270.
+
+[Before frames](../../artifacts/nextgen/scale17-phases-before/manifest.json) · [After frames](../../artifacts/nextgen/scale17-phases-after/manifest.json) · [Colour and greyscale pairs](../../artifacts/nextgen/scale17/index.html)
+
+## Native campaigns
+
+The final TypeScript and production build passed. Both seed-1729 native campaigns used fast rendering and a 180-second startup timeout.
+
+| Rig | Difficulty and policy | Outcome | Clears | Errors | Defects |
+| --- | --- | --- | ---: | ---: | ---: |
+| Breacher | Standard competent | Complete | 20/20 | 0 | 0 |
+| Cryo | Story novice | Natural death in Transmission Chamber | 9/20 | 0 | 0 |
+
+[Build log](../../artifacts/nextgen/scale17/build-release.log) · [Breacher receipt](../../artifacts/nextgen/playtest/scale17-final-breacher/report.json) · [Cryo receipt](../../artifacts/nextgen/playtest/scale17-final-cryo/report.json)
+
+The native heavy pairs replay each side from the same earned checkpoint, with the baseline frozen at `9bf77b89`. The frames sample active combat at different moments as the bot takes different actions. The figures below count visible living contacts in each selected image and are independent of the planned counts above. All ten replay runs, including the two denser storyboard passes, recorded zero runner errors.
+
+| Rig | Replayed room | Visible contacts before → after |
+| --- | --- | ---: |
+| Breacher | Diagnostic Gallery | 5 → 4 |
+| Cryo | Safety-interlock Station | 7 → 3 |
+| Pyro | Service Shaft Landing | 3 → 9 |
+| Arc | Transmission Chamber | 7 → 5 |
+
+[Native heavy frame selections](../../artifacts/nextgen/scale17/heavy-selection.json) · [Evidence gallery](../../artifacts/nextgen/scale17/index.html)

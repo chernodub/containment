@@ -41,26 +41,40 @@ export function registerScale17Scenarios(scenarios) {
         (${installDeformedBounds.toString()})(true);
       })();
     `)});
-    for(const phase of ['approach','windup','strike','recovery']){
-      const base=scenarios.find(s=>s.id===`value14-${family}-${phase==='approach'?'calm':'attack'}-crew-checkpoint`);
-      if(!base)continue;
-      scenarios.push({...base,id:`scale17-${family}-${phase}`,burst:false,setup:new Function(`
-        return (async()=>{
-          await (${base.setup.toString()})();
-          const d=window.__containmentDebug;
-          const id=d.g5Proof.enemyId;
-          const phase='${phase}';
-          for(let tick=0;tick<140;tick++){
-            const e=d.game.enemies.getSnapshot(id);
-            if(e?.meleePhase===phase&&(phase==='approach'||e.meleeProgress>=.5||phase==='strike'))break;
-            d.step(1000/60);
-          }
-          const e=d.game.enemies.getSnapshot(id);
-          if(e?.meleePhase!==phase)throw Error('Native attack did not reach '+phase);
+    const calm=scenarios.find(s=>s.id===`value14-${family}-calm-crew-checkpoint`);
+    scenarios.push({...calm,id:`scale17-phases-${family}`,burst:true,frameCount:4,advanceFrame:frame=>{
+      const d=window.__containmentDebug;
+      const {enemyId,family}=d.g5Proof;
+      const phase=['approach','windup','strike','recovery'][frame];
+      if(frame===1&&family==='spitter'){
+        d.setInput({x:1,y:0,fire:false,angle:0,autoAim:false});d.step(120);
+        d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
+      }
+      for(let tick=0;tick<180;tick++){
+        const e=d.game.enemies.getSnapshot(enemyId);
+        if(e?.meleePhase===phase&&(phase==='strike'||e.meleeProgress>=.5)){
+          d.g5Proof.nativePhase={phase,progress:e.meleeProgress};
           d.refresh();
-        })();
-      `)});
-    }
+          return;
+        }
+        d.step(1000/60);
+      }
+      throw Error('Native attack did not reach '+phase);
+    }});
+  }
+  for(const room of ['relay-racks','swarm-junction','crew-checkpoint']){
+    const base=scenarios.find(s=>s.id===`value14-crowd-${room}`);
+    const setup=base.setup.toString()
+      .replace('58.01','86.31')
+      .replaceAll('d.canStand(x,y,28)','d.canStand(x,y,43)')
+      .replace('[[-28,0],[28,0],[0,-28],[0,28]]','[[-43,0],[43,0],[0,-43],[0,43]]')
+      .replace('slice(0,20)','slice(0,12)')
+      .replace('length===20','length===12')
+      .replace('length<20','length<12')
+      .replace(/const families=\[[^;]+;/,"const families=['crawler','crawler','stalker','stalker','spitter','spitter','carrier','carrier','brute','brute','crawler','crawler'];")
+      .replace('p.x,p.y,false),family:families[i]','p.x,p.y,i<10&&i%2===1),family:families[i],elite:i<10&&i%2===1')
+      .replace('requestedEnemies:20,requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2}','requestedEnemies:12,requestedFamilies:{crawler:4,brute:2,stalker:2,spitter:2,carrier:2}');
+    scenarios.push({...base,id:`scale17-crowd-${room}`,diagnosticOnly:true,setup:new Function(`return (${setup})();`)});
   }
 }
 
