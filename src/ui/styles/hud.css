@@ -563,3 +563,18 @@ body[data-state=playing] #world{cursor:none}
 #hud #action-bar:has(.weapon-bank[data-expanded=false]) :is(.dash-slot,.overdrive-slot) {height:54px;min-height:54px}
 #hud #action-bar:has(.weapon-bank[data-expanded=false]) .cooldown-dial,
 #hud #action-bar:has(.weapon-bank[data-expanded=false]) .cooldown-dial > svg {width:30px;height:30px}
+
+#hud #action-bar:has(.weapon-bank[data-expanded=true]) {height:auto;min-height:96px}
+#hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker button {
+  flex:1 1 0;
+  min-width:0;
+  height:42px;
+  padding:3px 2px;
+  flex-direction:column;
+  gap:2px;
+}
+#hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker button > span {
+  font-size:11px;
+  line-height:1.05;
+  text-align:center;
+}
