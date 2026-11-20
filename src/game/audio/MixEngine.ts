@@ -1,7 +1,7 @@
 import { impulseSamples, type AudioBus } from './synthesis';
 
 export const AUDIO_BUSES: readonly AudioBus[] = ['music', 'ambience', 'weapons', 'abilities', 'enemies', 'impacts', 'ui', 'danger'];
-const BED_LEVEL = { weapons: .72, abilities: .65, enemies: .46, impacts: .65, ui: .38, ambience: .42, music: .5 } as const;
+const BED_LEVEL = { weapons: 1, abilities: 1, enemies: 1, impacts: 1, ui: 1, ambience: 1, music: 1 } as const;
 export const VOICE_LIMIT = 48;
 export const ACTIVE_VOICE_LIMIT = 40;
 export const LOOP_LIMIT = 10;
