@@ -1,4 +1,4 @@
-"""TITLE15 cast in the KA12 breach. See docs/nextgen/TITLE15-REPORT.md.
+"""TITLE18 cast in the KA12 breach. See docs/nextgen/TITLE18-REPORT.md.
 Use --preview --study for a composition study or --actor-plates for delivery.
 """
 import sys,math,random
@@ -142,7 +142,7 @@ bpy.ops.object.text_add();sign=bpy.context.object;sign.name='Small bulkhead sten
 sign.rotation_euler=Matrix((right,V((0,0,1)),-forward)).transposed().to_euler();sign.data.materials.append(insulation);register(sign)
 # Creature staging: their source meshes stay untouched. Presentation materials suppress
 # broad shell fill while retaining the authored emission map for caste lanterns.
-def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
+def brood(file,rank,lantern_gain,x,y,z,height,yaw=0,tilt=0,lean=0):
  before=set(bpy.data.objects)
  bpy.ops.import_scene.gltf(filepath=str(ROOT/f'public/assets/models/plain/{file}.glb'))
  obs=[o for o in bpy.data.objects if o not in before]
@@ -154,51 +154,63 @@ def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
    nodes=mat.node_tree.nodes
    links=mat.node_tree.links
    bs=next(n for n in nodes if n.type=='BSDF_PRINCIPLED')
-   # Strip the inherited ember albedo from shell and organs. The bone zones
-   # retain their atlas values while the emission map supplies family colour.
-   base_color=bs.inputs['Base Color']
-   albedo=base_color.links[0].from_socket
-   grade=nodes.new('ShaderNodeHueSaturation')
-   grade.inputs['Saturation'].default_value=.06
-   grade.inputs['Value'].default_value=.77
-   links.new(albedo,grade.inputs['Color'])
-   links.new(grade.outputs['Color'],base_color)
-   bs.inputs['Roughness'].default_value=.46
+   # Let only the breach-facing planes carry the family paint. A soft
+   # terminator follows the world-space shading normal over each plate.
+   albedo=bs.inputs['Base Color'].links[0].from_socket
+   normal=nodes.new('ShaderNodeNewGeometry').outputs['Normal']
+   incidence=nodes.new('ShaderNodeVectorMath');incidence.operation='DOT_PRODUCT'
+   links.new(normal,incidence.inputs[0])
+   incidence.inputs[1].default_value=(-right*.77+forward*.16+V((0,0,.65))).normalized()
+   terminator=nodes.new('ShaderNodeValToRGB')
+   terminator.color_ramp.interpolation='EASE'
+   terminator.color_ramp.elements[1].position=.62
+   # Wrap the breach light across the banked backs; keep their undersides dark.
+   wrap=nodes.new('ShaderNodeMath');wrap.operation='ADD'
+   links.new(incidence.outputs['Value'],wrap.inputs[0])
+   wrap.inputs[1].default_value={'tyrant':.10,'dretch':.09,'basilisk':.48}[file]
+   links.new(wrap.outputs[0],terminator.inputs[0])
+   paint=nodes.new('ShaderNodeMixRGB')
+   paint.inputs[1].default_value=(.026,.036,.050,1)
+   links.new(terminator.outputs[0],paint.inputs[0])
+   links.new(albedo,paint.inputs[2]);links.new(paint.outputs[0],bs.inputs['Base Color'])
+   bs.inputs['Roughness'].default_value=.52
+   bs.inputs['Specular IOR Level'].default_value=.22
    glow=bs.inputs['Emission Color']
-   mask=glow.links[0].from_socket
-   tint=nodes.new('ShaderNodeMixRGB')
-   tint.inputs[1].default_value=(0,0,0,1)
-   tint.inputs[2].default_value=(*lantern,1)
-   links.new(tint.outputs[0],glow)
-   # Glow atlas channels encode family colours. Take their maximum so a red
-   # mask is as luminous as a green mask before assigning the title hue.
-   split=nodes.new('ShaderNodeSeparateColor')
-   links.new(mask,split.inputs[0])
-   rg=nodes.new('ShaderNodeMath');rg.operation='MAXIMUM'
-   rgb=nodes.new('ShaderNodeMath');rgb.operation='MAXIMUM'
-   links.new(split.outputs[0],rg.inputs[0]);links.new(split.outputs[1],rg.inputs[1])
-   links.new(rg.outputs[0],rgb.inputs[0]);links.new(split.outputs[2],rgb.inputs[1])
-   links.new(rgb.outputs[0],tint.inputs[0])
-   bs.inputs['Emission Strength'].default_value=0 if rank=='boss' else 9
+   lantern=glow.links[0].from_socket
+   # Grade the mapped lantern separately so red and violet survive AgX.
+   accent=nodes.new('ShaderNodeVectorMath');accent.operation='MULTIPLY'
+   links.new(lantern,accent.inputs[0]);accent.inputs[1].default_value=lantern_gain
+   combined=nodes.new('ShaderNodeVectorMath');combined.operation='ADD'
+   bounce=nodes.new('ShaderNodeVectorMath');bounce.operation='SCALE'
+   links.new(paint.outputs[0],bounce.inputs[0]);bounce.inputs['Scale'].default_value={'tyrant':.85,'dretch':.98,'basilisk':1.18}[file]
+   links.new(bounce.outputs[0],combined.inputs[0]);links.new(accent.outputs[0],combined.inputs[1])
+   links.new(combined.outputs[0],glow)
+   bs.inputs['Emission Strength'].default_value=1
  pts=[o.matrix_world@V(c) for o in ms if not o.hide_render for c in o.bound_box];lo=min(p.z for p in pts);hi=max(p.z for p in pts);cx=(min(p.x for p in pts)+max(p.x for p in pts))/2;cy=(min(p.y for p in pts)+max(p.y for p in pts))/2
  # glTF imports native animal forward along +X. Aim toward camera, slightly across frame.
  angle=math.atan2(-forward.y,-forward.x)+math.radians(yaw)
  mat=Matrix.Translation(P(x,y,z))@Matrix.Rotation(angle,4,'Z')@Matrix.Rotation(math.radians(lean),4,'Y')@Matrix.Rotation(math.radians(tilt),4,'X')@Matrix.Scale(height*1.5/(hi-lo),4)@Matrix.Translation((-cx,-cy,-lo))
+ if file=='dretch':
+  # Roll away from the lens about the body centre, opening the hooked silhouette.
+  pivot=V((cx,cy,(hi+lo)/2))
+  center=mat@pivot
+  bank=Matrix.Rotation(math.radians(13),4,(center-cam.location).normalized())
+  mat=Matrix.Translation(center)@bank@Matrix.Translation(-center)@mat@Matrix.Translation(pivot)@Matrix.Rotation(math.radians(-22),4,'X')@Matrix.Rotation(math.radians(16),4,'Z')@Matrix.Translation(-pivot)
  for o in obs:
   if o.parent not in obs:o.matrix_world=mat@o.matrix_world
   register(o,'midground')
  hidden.update(o for o in obs if o.hide_render)
  return obs
-warden=brood('tyrant','boss',(1,.85,.5),.17,-.40,.18,1.90,-18,lean=20)
+warden=brood('tyrant','boss',(2.2,2.2,2.2),.17,-.40,.18,1.90,-18,lean=20)
 # Grazing bounce on the ram mask. Link it to the cast to preserve the wreck lighting.
 receivers=bpy.data.collections.new('Brood bounce receivers')
 for o in warden:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
-bounce=area_light('Ram mask bounce',P(-1.4,-2.3,2.2),170,1.2,(.70,.79,1),target=P(.2,-.4,1.1))
+bounce=area_light('Grazing breach rim',P(-1.9,.85,3.1),390,.60,(.94,.91,1),target=P(.2,-.4,1.1))
 bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
-crawler=brood('dretch','base',(1,.003,.33),-.46,-.82,2.20,.36,72,66,lean=12)
-stalker=brood('basilisk','base',(.24,.008,1),-.98,-.84,1.50,.48,-54,-62,lean=16)
+crawler=brood('dretch','base',(5.8,.16,.12),-.46,-.82,2.20,.36,72,66,lean=12)
+stalker=brood('basilisk','base',(2.8,.70,8.2),-.98,-.84,1.50,.48,-54,-62,lean=16)
 for o in crawler+stalker:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
 # Backlighting makes hard shell rims, while the lit volume separates silhouettes.
@@ -221,6 +233,27 @@ B('Near deck fragment',2,-3,.03,.65,.4,.04,dark,'foreground')
 # Surface-aligned unit number on the existing posed shoulder, authoring scene only.
 bpy.context.view_layer.update()
 frame=cam.data.view_frame(scene=s)
+# The boss crown covers the tiny emissive region in its atlas. Expose a
+# segmented amber organ in the seam down the forehead, seated on the mesh.
+warden_skin=next(o for o in warden if o.type=='MESH' and not o.hide_render)
+skin=warden_skin.evaluated_get(bpy.context.evaluated_depsgraph_get())
+inv=skin.matrix_world.inverted()
+organ=material('Warden amber photophores',(1,.22,.009),.0,.43,10.0)
+for i in range(9):
+ u=(448+i*1.325)/960;v=1-(381-i*1.875)/540
+ q=V((min(p.x for p in frame)+u*(max(p.x for p in frame)-min(p.x for p in frame)),min(p.y for p in frame)+v*(max(p.y for p in frame)-min(p.y for p in frame)),frame[0].z))
+ direction=cam.matrix_world@q-cam.location
+ hit,point,normal,_=skin.ray_cast(inv@cam.location,inv.to_3x3()@direction)
+ if hit:
+  loc=skin.matrix_world@point
+  n=(inv.to_3x3().transposed()@normal).normalized()
+  bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=8,location=loc)
+  lobe=bpy.context.object;lobe.name='Forehead lantern rib';lobe.rotation_euler=n.to_track_quat('Z','Y').to_euler()
+  lobe.scale=(.061*(1-.15*abs(i-4)),.034,.010);lobe.data.materials.append(organ);register(lobe,'midground')
+  if i==4:
+   bpy.ops.object.light_add(type='POINT',location=loc+n*.10);spill=bpy.context.object
+   spill.name='Amber reflection in crown seam';spill.data.color=(1,.25,.035);spill.data.energy=1.0;spill.data.shadow_soft_size=.07
+   spill.light_linking.receiver_collection=receivers
 u,v=.825,.565
 q=V((min(p.x for p in frame)+(max(p.x for p in frame)-min(p.x for p in frame))*u,min(p.y for p in frame)+(max(p.y for p in frame)-min(p.y for p in frame))*v,frame[0].z))
 direction=(cam.matrix_world@q-cam.location).normalized()
@@ -234,9 +267,13 @@ for p,items in plates.items():
  for o in items:o['ka12Plate']=p
 s.render.film_transparent=False;s.render.filepath=str(OUT/'composition.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'stage.blend'))
-if '--layers-only' not in args and '--actor-plates' not in args:bpy.ops.render.render(write_still=True)
-if '--layers' in args or '--actor-plates' in args:
- for plate in (('midground','hero') if '--actor-plates' in args else plates):
+midground_only='--midground-only' in args
+if '--layers-only' not in args and '--actor-plates' not in args and not midground_only:bpy.ops.render.render(write_still=True)
+if '--layers' in args or '--actor-plates' in args or midground_only:
+ for plate in (('midground',) if midground_only else ('midground','hero') if '--actor-plates' in args else plates):
+  # Pull focus for the breach insert; retain the foreground focus on other layers.
+  cam.data.dof.focus_distance=(cam.location-(P(0,-.6,1.6) if plate=='midground' else focus)).length
+  cam.data.dof.aperture_fstop=11 if plate=='midground' else 6
   for name,items in plates.items():
    for o in items:
     o.hide_render=o in hidden;o.is_holdout=False

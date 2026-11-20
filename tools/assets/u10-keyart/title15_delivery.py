@@ -10,7 +10,9 @@ size = (2560, 1440)
 frame = Image.open(ui / 'background-2560.webp').convert('RGBA')
 
 for name in ('midground', 'hero', 'foreground', 'fog'):
-    if name in ('midground', 'hero'):
+    if name == 'hero' and '--keep-hero' in sys.argv[2:]:
+        layer = Image.open(ui / 'hero-2560.webp').convert('RGBA')
+    elif name in ('midground', 'hero'):
         layer = Image.open(raw / f'{name}.png').convert('RGBA')
         if layer.size != size:
             raise ValueError(f'{name} must be rendered at {size}')
