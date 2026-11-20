@@ -24,6 +24,8 @@ BANDS = {   # CREATURE18: violet-black chitin, mauve flesh, cool grey scythes, v
     "chitin": (0.10, 0.08, 0.13), "flesh": (0.48, 0.32, 0.52), "bone": (0.28, 0.28, 0.33),
     "accent": (0.55, 0.22, 1.0), "eye": (0.75, 0.45, 1.0),
 }
+BANDS["lead"] = (0.66, 0.56, 0.72)   # CREATURE19: broad light plane on the leading shell (facing in shadow)
+PLATE_BAND = {1: "lead", 2: "lead", 30: "lead"}
 BAND_MAP = {"armor": "flesh"}   # CREATURE18b: shingles and membrane body both carry the mauve mid band
 PALETTE = {
     "shell": (0.15, 0.06, 0.075), "edge": (0.62, 0.50, 0.55), "armor": (0.50, 0.40, 0.46), "membrane": (0.07, 0.018, 0.04),
@@ -58,7 +60,7 @@ def build(sk):
     head_c = hd + (sk.end("head") - hd) * 0.5 + v3((0.08, 0, 0.0))
     hdir = normalize(sk.end("jaw") - hd)
     body.add(A.mass(head_c, (0.3, 0.17, 0.15 * a), frame(hdir), bone="head", k=0.06))
-    body.add(Plate(head_c + v3((-0.03, 0, 0.13 * a)), (0.37, 0.2, 0.1), frame(hdir, (0, 0, 1)), 0.05, rings=0.004,
+    body.add(Plate(head_c + v3((-0.03, 0, 0.13 * a)), (0.46, 0.27, 0.11), frame(hdir, (0, 0, 1)), 0.05, rings=0.004,
                    lip=0.012, chip=0.01, zone=CREST, bone="head", plate=30))
     body.add(RoundCone(head_c + v3((-0.25, 0, 0.18 * a)), head_c + hdir * 0.3 + v3((0, 0, 0.04)), 0.03, 0.008, zone=CREST, bone="head", k=0.03))
     body.extend(A.eyes(head_c + hdir * 0.12 + v3((0, 0, 0.02 * a)), hdir, 0.09, 3, 0.022, "head", spread=0.8))
@@ -88,7 +90,7 @@ def build(sk):
         body.add(RoundCone(ridge[i], ridge[i + 1], 0.045, 0.04, zone=CREST, bone=bones_r[i], k=0.03))
     # --- scythe arms ------------------------------------------------------------------
     for s, side in ((-1, "R"), (1, "L")):
-        heavy = 1.15 if s < 0 else 1.0
+        heavy = 1.3 if s < 0 else 1.0   # CREATURE19: right scythe is clearly the striking one
         up, el, wr, end = sk.h(f"arm_up.{side}"), sk.h(f"arm_mid.{side}"), sk.h(f"claw.{side}"), sk.end(f"claw.{side}")
         body.extend(A.armour_segment(up, el, 0.14, 0.12, f"arm_up.{side}", s, plate=61 + s))
         body.add(Ellipsoid(el, (0.06,) * 3, zone=MEMBRANE, bone=("blend", f"arm_up.{side}", f"arm_mid.{side}", up, wr), k=0.03))
@@ -99,8 +101,9 @@ def build(sk):
         # ATTACK16: long broad scythes folded back along the flanks, flat face up, edge outward, a dark gap
         # to the body; at least as long as the body so the loaded limb is the largest light shape from above
         root = wr + v3((0.05, 0.12 * s, 0.05 * a))
-        tip = v3((-0.95, 1.38 * s, 1.0 * a))
-        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), 0.52 * heavy, 0.06 * heavy, f"claw.{side}",
+        # CREATURE19: the off scythe is slimmer and both splay away from the flanks so the body shows between them
+        tip = v3((-0.95, 1.38 * s, 1.0 * a)) if s < 0 else v3((-0.62, 1.4, 1.05 * a))   # same footprint radius
+        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), (0.52 * heavy) if s < 0 else 0.3, 0.06 * heavy, f"claw.{side}",
                             hook=0.62, serrations=4, zone=BONE, edge_zone=BONE))
         # a short dark hook at the wrist keeps the joint and claw read
         body.add(RoundCone(wr, end + (wr - end) * 0.55, 0.07, 0.02, zone=CLAW, bone=f"claw.{side}", k=0.03))
@@ -128,5 +131,5 @@ def build(sk):
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
         pts.append(p + n * 0.05)
         nrm.append(n)
-    elite.extend(A.crest_spines(pts, nrm, 0.55, 0.05, lambda p: bf(0), sweep=(-1, 0, 0.3)))
+    elite.extend(A.crest_spines(pts, nrm, 0.8 * a, 0.085, lambda p: bf(0), sweep=(-1, 0, 0.3)))   # CREATURE19: tall rank crest
     return {"body": body, "elite": elite}
