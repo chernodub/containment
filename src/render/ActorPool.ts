@@ -12,7 +12,8 @@ export class ActorPool {
  release(model:ActorModel){
   model.root.removeFromParent();const key=this.keys.get(model);if(!key){disposeModel(model.root);return;}
   const list=this.free.get(key)??[];if(list.includes(model))return;
-  setActorLOD(model.root,false);model.reset?.();if(list.length<4){list.push(model);this.free.set(key,list);}else{model.stop?.();disposeModel(model.root);}
+  if(list.length>=4){model.stop?.();disposeModel(model.root);return;}
+  setActorLOD(model.root,false);model.reset?.();list.push(model);this.free.set(key,list);
  }
  dispose(){for(const list of this.free.values())for(const model of list){model.stop?.();disposeModel(model.root);}this.free.clear();}
 }
