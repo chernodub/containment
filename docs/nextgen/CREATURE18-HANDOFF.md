@@ -79,3 +79,29 @@ base-colour and emission images into its own toon material at fixed positions. R
 band albedo with the same composition, poses and lights. Two things to check first: its crawlers override the
 lantern to pink `(1,.22,.62)`, and its `bands=(.08,.30,.9)` toon ramp was tuned for the old darker albedo, so the
 Brute may come out lighter than intended. I did not re-render the title.
+
+## Follow-up (CREATURE18b)
+- **Crawler:** the earlier `PLATE_BAND` targeted plates 70–75, which are the elite fins, so regular Crawlers never
+  got their tan back. Now the abdomen shingles sit closer to the dorsal line (`phis` 0.98/1.62 → 0.80/1.45, plates
+  0.215×0.22 → 0.25×0.26). They are painted tan `(0.58,0.46,0.32)` together with the tail cap (20), thorax
+  shingles (30–31) and head shield (40), so they form one tan cap around the red lantern slit. The budget is unchanged
+  (7,600 base; LOD 6,884) and so is the fit scale. On Swarm Junction at 480×270, curled Crawlers read as mid-grey pills
+  with a red slit and walking ones show a tan back in greyscale.
+- **Stalker:** from the game camera most of the "steel-blue mass" is its two serrated scythes held over the body, not
+  the body itself. The scythes rise one value step and stay cool grey (0.20 → `(0.28,0.28,0.33)`). The membrane body
+  returns to the mauve band and the chitin lifts slightly. It remains darker than the Brute's ochre in greyscale. The
+  lantern stays the family's violet `0x9570ff`, not red, to keep the learned accent.
+- **Hit card in a live room** (`c18b-burst*`, `value14-overlap-pyro`, `--burst=8 --step-ms=33`): the 0.08 threshold
+  also fired on the 0.22 elemental-hold flash cap, which turned whole burning or shocked groups into pale
+  silhouettes. The card now fires above 0.25 only, and it is an additive mid lift (diffuse ×0.45 + 0.2 flat), so
+  lanterns and family colour stay. The cluster's 90th-percentile luminance dropped from 170 to 145, against 173 on
+  the marine. The ink outline holds through the card. The death-wipe edge glow is cut to 35 % on creatures. Alien key:
+  `actor-surface-v14-creature18b`.
+- **Measured:** draw calls are unchanged (81/124/96/137). Triangles are −420 to −504 per crowd frame. Program counts
+  are constant within each playtest room. Breacher seed 1729, 4 rooms: 0 errors (`playtest/c18b-playtest`).
+  Captures: `c18b-final`, `c18b-burst`, `c18b-burst3`, `c18b-motion`.
+- **Pipeline caution:** `ship.sh` repacks every creature file. Restore the ones you did not rebuild from git, and do
+  not restore a file you just rebuilt (its source export is overwritten by the packed file).
+- **Still weak:** the Stalker is still a mostly blade-coloured cool shape from above, so the mauve body shows mainly
+  between the scythes. The death wipe was checked only in m9 strips (corpse fades start 18 s after death, outside the
+  capture windows).
