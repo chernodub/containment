@@ -54,7 +54,7 @@ export function broodPodModel(): ActorModel {
   const glow=stage==='opening'?.36:stage==='swelling'?.76+.27*motion*Math.sin(ms/100):.24;
   for(const material of cores)material.emissiveIntensity=glow;
  };
- const reset=()=>{root.rotation.set(0,0,0);update(0,'sealed');};
+ const reset=()=>{root.rotation.set(0,0,0);root.scale.setScalar(1);update(0,'sealed');};
  reset();
  return {
   root,body,limbs:[],height:.95,
