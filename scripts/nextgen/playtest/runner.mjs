@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','weapon-jobs'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','weapon-jobs'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
@@ -427,6 +427,13 @@ try {
       await finishRoom(after,'stalled');report.outcome='stalled';report.final=after;break;
     }
     const pressure=after.enemies.length*5+(100-after.combat.health)*2;
+    if(options['room-pressure']&&after.status==='playing'&&!after.loading&&after.enemies.length&&pressure>(room.peakPressure?.pressure??-Infinity)) {
+      const name=`r${room.depth+1}-${room.id}-pressure`;
+      // Reuse the same file as pressure rises, retaining one native observation per room.
+      if(room.peakPressure)report.screenshots.splice(report.screenshots.indexOf(name+'.png'),1);
+      await shot(name,after);
+      room.peakPressure={file:name+'.png',snapshot:name+'.json',pressure,elapsed:after.elapsed,step:steps};
+    }
     if(pressure>hardest+40&&after.status==='playing') {
       hardest=pressure;hardestFrames=[];report.hardestMoment={pressure,room:room.id,elapsed:after.elapsed};
       for(let frame=0;frame<4;frame++){hardestFrames.push(await shot(`hardest-${steps}-${frame}`,after));if(frame<3&&after.status==='playing'){if(options.realtime)await page.waitForTimeout(67);else await advance(1000/15);after=await snapshot();last=after;await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({burst:true,stepMs:1000/15,aim:input.aim,fire:shooting,elapsed:after.elapsed,held:[...held],state:{status:after.status,player:after.player,stats:after.stats,enemies:after.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,health:e.health}))}})+'\n');}}
