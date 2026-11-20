@@ -94,8 +94,8 @@ def build(sk):
         # ATTACK16: long broad scythes folded back along the flanks, flat face up, edge outward, a dark gap
         # to the body; at least as long as the body so the loaded limb is the largest light shape from above
         root = wr + v3((0.05, 0.12 * s, 0.05 * a))
-        tip = v3((-1.1, 0.9 * s, 1.0 * a))
-        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), 0.36 * heavy, 0.055 * heavy, f"claw.{side}",
+        tip = v3((-0.95, 1.38 * s, 1.0 * a))
+        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), 0.52 * heavy, 0.06 * heavy, f"claw.{side}",
                             hook=0.62, serrations=4, zone=BONE, edge_zone=BONE))
         # a short dark hook at the wrist keeps the joint and claw read
         body.add(RoundCone(wr, end + (wr - end) * 0.55, 0.07, 0.02, zone=CLAW, bone=f"claw.{side}", k=0.03))

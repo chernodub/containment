@@ -66,7 +66,7 @@ def build(sk):
     head_c = v3((0.40, 0.0, 0.46 * sk.aspect))
     body.add(A.mass(head_c, (0.13, 0.16, 0.09 * sk.aspect), frame((1, 0, -0.35)), bone=chest, k=0.05))
     prow_F = frame((1, 0, -0.42))
-    body.add(Plate(head_c + v3((0.07, 0, 0.085 * sk.aspect)), (0.3, 0.46, 0.085), prow_F, 0.065, rings=0.005, ring_count=3,
+    body.add(Plate(head_c + v3((0.07, 0, 0.11 * sk.aspect)), (0.32, 0.5, 0.085), frame((1, 0, -0.12)), 0.065, rings=0.005, ring_count=3,
                    lip=0.015, chip=0.01, zone=BONE, bone=chest, plate=40, tint=1.0, k=0.0))
     # keel ridge on the prow
     body.add(RoundCone((0.30, 0, 0.62 * sk.aspect), (0.52, 0, 0.50 * sk.aspect), 0.022, 0.012, zone=SHELL, bone=chest,
@@ -75,9 +75,9 @@ def build(sk):
     # ATTACK16: two broad pale hooks sweep out from the wedge corners and curl inward: a "C" from above,
     # with a dark gap between the hooks and the head plate
     for s_, bn in ((-1, "antenna_right0"), (1, "antenna_left0")):
-        body.extend(A.hook([(0.47, 0.3 * s_, 0.47 * sk.aspect), (0.78, 0.5 * s_, 0.45 * sk.aspect),
-                            (1.02, 0.3 * s_, 0.40 * sk.aspect), (0.98, 0.07 * s_, 0.37 * sk.aspect)],
-                           0.085, 0.015, bn, zone=BONE, tip_zone=BONE, k=0.02, n=10, tip=0.35))
+        body.extend(A.hook([(0.47, 0.32 * s_, 0.48 * sk.aspect), (0.85, 0.62 * s_, 0.46 * sk.aspect),
+                            (1.15, 0.36 * s_, 0.42 * sk.aspect), (1.08, 0.06 * s_, 0.39 * sk.aspect)],
+                           0.12, 0.02, bn, zone=BONE, tip_zone=BONE, k=0.025, n=10, tip=0.35))
     # wet flesh in the waist seam
     body.add(Ellipsoid((-0.04, 0, 0.52 * sk.aspect), (0.09, 0.2, 0.07 * sk.aspect), zone=FLESH,
                        bone=("blend", chest, tail, (0.05, 0, 0.9), (-0.2, 0, 0.9)), k=0.03))
