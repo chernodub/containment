@@ -39,6 +39,13 @@ if(style>6.5){
  if(vFrame<-.5){color=vec3(.006,.008,.009);alpha*=.88*(1.0-smoothstep(.75,1.0,d));}
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
+else if(style>5.5 && vFrame>.5){
+ float shaft=(1.-smoothstep(.12,.43,abs(p.y)))*(1.-smoothstep(.77,1.,vUv.x));
+ float organ=1.-smoothstep(.55,1.,length(vec2((vUv.x-.10)*9.,p.y)));
+ float pulse=.72+.28*sin(vShape.x*7.85);
+ color=vec3(1.65,.024,.055);
+ alpha*=max(shaft*.78,organ*pulse);
+}
 else if(style>5.5){
  // Merge the capsule footprints before inking their perimeter. A group
  // shares the longitudinal front of its earliest commitment.
@@ -143,6 +150,8 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
  private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,family:'',melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly shooters = new Map<number, {x:number;y:number;z:number;angle:number;progress:number;fade:number}>();
+ private readonly activeShooters = new Set<number>();
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private warningFrustum:T.Frustum|undefined;private readonly warningBounds=new T.Sphere();
  /** Borrow the renderer's settled frustum; warning state and priority stay live. */
@@ -224,7 +233,7 @@ export class AttackEffects {
   scene.remove(this.fireMesh);scene.add(this.fireMesh);
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
   this.hostileMesh=pool(scene,new T.PlaneGeometry(2,2),320,7);this.hostileMesh.name='hostile-projectiles';this.hostileMesh.renderOrder=40;(this.hostileMesh.material as T.Material).depthTest=false;
-  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+33,6);this.hostileWarningMesh.name='hostile-warning-union';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=true;(this.hostileWarningMesh.material as T.Material).forceSinglePass=true;
+  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),1+64,6);this.hostileWarningMesh.name='hostile-warning-union';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=true;(this.hostileWarningMesh.material as T.Material).forceSinglePass=true;
   Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{warningOrigin:{value:this.warningOrigins},warningSize:{value:this.warningSizes},warningTime:{value:this.warningTimes},warningCount:this.unionCount,primaryWarning:this.primaryWarning,warningFillScale:this.unionFillScale});
   this.emptyPriorityTexture.needsUpdate=true;
   for (const mesh of [this.decalMesh,this.fieldMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fireMesh,this.smokeMesh]) {
@@ -316,6 +325,22 @@ export class AttackEffects {
      pulse.age = pulse.life;
    }
   }
+  this.activeShooters.clear();
+  for (const enemy of enemies) {
+   if (enemy.type !== 'spitter' || enemy.health <= 0 || enemy.pendingAttack !== 'spit' || enemy.windupMs <= 0 || game?.getEscortRetreat(enemy.id)) continue;
+   const angle = Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
+   const distance = enemy.radius / 32 * .55;
+   const cue = this.shooters.get(enemy.id) ?? {x:0,y:0,z:0,angle:0,progress:0,fade:-1};
+   cue.x=enemy.x/32+Math.cos(angle)*distance;
+   cue.z=enemy.y/32+Math.sin(angle)*distance;
+   cue.y=.8;
+   cue.angle=angle;
+   cue.progress=1-Math.min(1,enemy.windupMs/650);
+   cue.fade=-1;
+   this.activeShooters.add(enemy.id);
+   this.shooters.set(enemy.id,cue);
+  }
+  for (const [id, cue] of this.shooters) if (cue.fade < 0 && !this.activeShooters.has(id)) this.shooters.delete(id);
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
    if(game?.getEscortRetreat(warning.id)){warning.active=false;continue;}
@@ -532,6 +557,8 @@ export class AttackEffects {
    return;
   }
   if(e.type==='enemy-attack'){
+   const shooter=e.id===undefined?undefined:this.shooters.get(e.id);
+   if(shooter && e.family==='spitter' && !e.meleeShape){shooter.fade=.15;shooter.progress=1;}
    for(const warning of this.nativeWarnings)if(warning.active&&warning.id===e.id&&!warning.melee)warning.active=false;
    // Native melee impact flashes the exact retained footprint, not a generic slash.
    if(e.meleeShape)return;
@@ -819,10 +846,37 @@ export class AttackEffects {
   this.groupWarnings();
   this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.unionCount.value?1:0);
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawShooterCues(this.unionCount.value?1:0,dt));
 
  }
- clear(){this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ private drawShooterCues(count:number,dt:number):number {
+  const mesh=this.hostileWarningMesh;
+  const frame=mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute;
+  const shape=mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute;
+  const alpha=mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
+  frame.setX(0,0);
+  alpha.setX(0,1);
+  for (const [id,cue] of this.shooters) {
+   if (cue.fade>=0) {
+    cue.fade=Math.max(0,cue.fade-dt);
+    if (cue.fade===0) {this.shooters.delete(id);continue;}
+   }
+   if (count>=mesh.instanceMatrix.count || !this.warningVisible(cue.x,cue.z,.25,1.6,cue.angle,cue.y)) continue;
+   const offset=.64;
+   this.dummy.position.set(cue.x+Math.cos(cue.angle)*offset,cue.y,cue.z+Math.sin(cue.angle)*offset);
+   this.dummy.rotation.set(-Math.PI/2,0,-cue.angle);
+   this.dummy.scale.set(.8,.16,1);
+   this.dummy.updateMatrix();
+   mesh.setMatrixAt(count,this.dummy.matrix);
+   mesh.setColorAt(count,WHITE);
+   frame.setX(count,1);
+   shape.setX(count,cue.progress);
+   alpha.setX(count,cue.fade<0?1:cue.fade/.15);
+   count++;
+  }
+  return count;
+ }
+ clear(){this.shooters.clear();this.activeShooters.clear();this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.emptyPriorityTexture.dispose();this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
