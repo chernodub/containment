@@ -73,7 +73,7 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.rod([10, 17, 0], [13, 16, 0], .9, edge);
       pieces.rod([13, 16, 0], [13, 12, 0], .9, edge);
       pieces.rod([13, 12, 0], [10, 12, 0], .9, edge);
-      pieces.finish(root, 'interrupted-meal', 448, 354);
+      pieces.finish(root, 'interrupted-meal', 362, 431);
       break;
     case 'containment-annulus':
       // The tags rest on the top lip, above the bent clamp bands.

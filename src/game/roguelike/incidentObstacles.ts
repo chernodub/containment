@@ -15,7 +15,7 @@ export const INCIDENT_OBSTACLES: Readonly<Record<string, readonly Rect[]>> = Obj
   'breached-loading-bay': rectangles([[531,408,129,90],[547,451,31,56]]),
   'relay-racks': rectangles([[599,372,66,103]]),
   'transmission-chamber': rectangles([[832,453,34,45],[838,453,72,33]]),
-  'diagnostic-gallery': rectangles([[428,302,94,69]]),
+  'diagnostic-gallery': rectangles([[342,379,94,69]]),
   'safety-interlock-station': rectangles([[473,325,53,35],[467,355,28,10]]),
   'coolant-plant': rectangles([[209,288,143,29],[337,294,112,38]]),
   'service-shaft-landing': rectangles([[330,418,33,85],[330,514,24,56]]),

@@ -10,7 +10,7 @@ const shifts:Record<string,readonly [number,number,number?]>={
   'awakening-bay':[0,-26], 'passenger-vault':[62,-20], 'residential-gallery':[-4,0],
   'communal-atrium':[-2,-16], 'breached-loading-bay':[74,-36], 'crew-checkpoint':[126,10], 'freight-hold':[141,144],
   'relay-racks':[74,0], 'transmission-chamber':[36,-24], 'safety-interlock-station':[-48,0],
-  'diagnostic-gallery':[109,-7], 'service-shaft-landing':[40,0],
+  'diagnostic-gallery':[23,70], 'service-shaft-landing':[40,0],
   'coolant-plant':[-72,186,.38], 'infested-workshop':[74,-26],
   'manual-control-chamber':[0,89.6,.84], 'swarm-junction':[0,409,.35], 'shielding-gate':[-18,-120], 'overload-floor':[88,-96],
 };
