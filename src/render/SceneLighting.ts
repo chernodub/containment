@@ -261,7 +261,10 @@ export class ContactShadows {
   geometry.setAttribute('contactInk',this.contactInk);
   material.vertexShader='attribute float contactInk; varying float ink;\n'+material.vertexShader.replace('indicatorUV=uv;','indicatorUV=uv; ink=contactInk;');
   material.fragmentShader='varying float ink;\n'+material.fragmentShader.replace(')*.4;',')*.22;').replace('  gl_FragColor',`
-  if(ink>.5){
+  if(ink>.5 && ink<1.5){
+    color=vec3(.20,.29,.35);
+    alpha=.16*(1.0-smoothstep(.04,.99,radius));
+  }else if(ink>1.5){
     vec2 local=indicatorUV*2.0-1.0;
     float facing=smoothstep(.35,.90,local.x);
     float width=ink>1.5?.09:.06;

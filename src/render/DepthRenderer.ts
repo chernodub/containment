@@ -702,7 +702,8 @@ export class DepthRenderer {
    for(const e of enemies){
     const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
     const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
-    this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact?1.45:1),contact?(attacking?3:1):0,contact?enemyMotionAim(e,p):0);
+    const shooter=e.type==='spitter'&&!e.pod&&e.windupMs>0&&e.pendingAttack==='spit';
+    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact?1.25:1),contact?(shooter?3:1):0,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
