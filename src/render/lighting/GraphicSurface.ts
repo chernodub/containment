@@ -131,11 +131,14 @@ const mapResponse = ShaderChunk.map_fragment
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
   diffuseColor *= sampledDiffuseColor;
   if(graphicMarine>.5){
-    // MARINE17: the atlas encodes the undersuit and ceramic values.
-    // Rig paint is applied by the actor material using the authored mask.
+    // HERO19: two calm values, as on the title: ceramic plates and a warm dark-grey undersuit
+    // (not black), split above the gunmetal/grime range so worn plates never break into patches.
+    // Chromatic atlas zones (cyan visor, glow strips) keep their colour; rig paint is applied by
+    // the actor material using the authored mask.
     float marineValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-    diffuseColor.rgb=mix(vec3(.018,.021,.025),vec3(.77,.78,.79),
-      smoothstep(.19,.38,marineValue));
+    float marineAtlasChroma=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
+    vec3 marineFlat=mix(vec3(.060,.055,.050),vec3(.76,.78,.80),smoothstep(.30,.42,marineValue));
+    diffuseColor.rgb=mix(marineFlat,diffuseColor.rgb,smoothstep(.12,.22,marineAtlasChroma));
   }
   // Family values replace the inherited photographic/material tint together;
   // a pale source multiply must not bleach graphite armor or a russet crawler.
@@ -157,7 +160,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
   const key = material.customProgramCacheKey();
   // Retained preparation proxies copy an already-patched hook and cache key.
-  if (key.includes(':graphic-surface-v2') || key.includes(':graphic-surface-marine17')) return;
+  if (key.includes(':graphic-surface-v2') || key.includes(':graphic-surface-hero19')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   // K10's original flat zones replace inherited photographic skins. Keep the
@@ -231,6 +234,6 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
         totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
-  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-marine17" : "graphic-surface-v2"}`;
+  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-hero19" : "graphic-surface-v2"}`;
   material.needsUpdate = true;
 }

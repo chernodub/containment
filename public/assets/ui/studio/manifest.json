@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 270183,
+    "bytes": 209011,
     "shot": {
       "width": 640,
       "height": 640,
@@ -13,7 +13,7 @@
           "weapon": "shotgun",
           "pose": "",
           "frame": 0,
-          "aim": -0.65,
+          "aim": 1.9,
           "reload": 0
         }
       ],
@@ -34,7 +34,7 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 264131,
+    "bytes": 199780,
     "shot": {
       "width": 640,
       "height": 640,
@@ -46,7 +46,7 @@
           "weapon": "rifle",
           "pose": "",
           "frame": 0,
-          "aim": -0.58,
+          "aim": 1.95,
           "reload": 0
         }
       ],
@@ -67,7 +67,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 277484,
+    "bytes": 306321,
     "shot": {
       "width": 640,
       "height": 640,
@@ -79,7 +79,7 @@
           "weapon": "rocket",
           "pose": "",
           "frame": 0,
-          "aim": 1.9,
+          "aim": -0.62,
           "reload": 0.32
         }
       ],
@@ -100,7 +100,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 283264,
+    "bytes": 242937,
     "shot": {
       "width": 640,
       "height": 640,
@@ -112,7 +112,7 @@
           "weapon": "plasma",
           "pose": "",
           "frame": 0,
-          "aim": -0.54,
+          "aim": 1.98,
           "reload": 0
         }
       ],

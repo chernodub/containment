@@ -82,7 +82,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.50,.72,1.0),.6)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.20,.185,.17)*actorHitCard;// CREATURE18b: a mid lift that keeps lanterns and family colour, a step under the marine'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v12-marine17:marine' : 'actor-surface-v14-creature18b:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v13-hero19:marine' : 'actor-surface-v14-creature18b:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

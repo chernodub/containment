@@ -220,8 +220,11 @@ def build(role, mode='render'):
             links.new(position.outputs['Position'], height.inputs[0])
             lower = _math(nodes, links, 'GREATER_THAN', height.outputs['Z'], 1.876)
             upper = _math(nodes, links, 'LESS_THAN', height.outputs['Z'], 1.882)
-            links.new(_math(nodes, links, 'MULTIPLY', lower, upper), em.inputs['Strength'])
-            em.inputs['Color'].default_value = (.005, .15, .21, 1)
+            # HERO19: the whole lens is the marine's one cool accent (title cyan), the HUD strip a step brighter.
+            strip = _math(nodes, links, 'MULTIPLY', lower, upper)
+            gain = _math(nodes, links, 'MULTIPLY_ADD', strip, 1.6); gain.node.inputs[2].default_value = 1.0
+            links.new(gain, em.inputs['Strength'])
+            em.inputs['Color'].default_value = (.016, .115, .150, 1)
         else:
             em.inputs['Color'].default_value = (0, 0, 0, 1)
         links.new(em.outputs[0], out.inputs['Surface'])
@@ -240,7 +243,7 @@ def build(role, mode='render'):
         return mat
     if kind == 'visor':
         if mode == 'albedo':
-            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = (.008, .012, .016, 1)
+            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = (.035, .26, .34, 1)   # HERO19: cyan lens
             links.new(em.outputs[0], out.inputs['Surface'])
             return mat
         # Smoked glass over a luminous HUD layer: a glossy coat with emission that

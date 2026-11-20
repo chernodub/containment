@@ -274,7 +274,7 @@ def cast(bvh, projection, u, v):
 
 def plate(name, outline, projection, target_bvh, standoff=.012, thickness=.012,
           profile=None, crown=.006, high=False, count=None, chamfer=None,
-          inner_rings=2, collection=None, unit=1.0, spacing=None):
+          inner_rings=2, collection=None, unit=1.0, spacing=None, aniso=None):
     """Conform a designed 2D outline onto a target and give it a real wall.
 
     ``outline``: (u, v) points in projection units (already filleted); any
@@ -305,17 +305,20 @@ def plate(name, outline, projection, target_bvh, standoff=.012, thickness=.012,
     step = spacing or perimeter / n * (1.15 if high else 1.6)
     us = [p[0] for p in last]; vs = [p[1] for p in last]
     interior, dists = [], []
-    gu = min(us) + step * .5
+    # HERO19: ``aniso`` = (u, v) step multipliers. Wrapped limb/torso plates need dense columns around the
+    # limb (u) so flat fill triangles never chord beneath the curved undersuit, and few rows along it (v).
+    su, sv = aniso or (1.0, 1.0)
+    gu = min(us) + step * su * .5
     row = 0
     while gu < max(us):
-        gv = min(vs) + step * (.5 + (.5 if row % 2 else 0))
+        gv = min(vs) + step * sv * (.5 + (.5 if row % 2 else 0))
         while gv < max(vs):
             if inside((gu, gv), last):
                 d = edge_distance((gu, gv), last)
-                if d > step * .6:
+                if d > step * min(su, sv) * .6:
                     interior.append((gu, gv)); dists.append(d)
-            gv += step
-        gu += step * .866
+            gv += step * sv
+        gu += step * su * .866
         row += 1
     dmax = max(dists) if dists else 1
     coords = [V(p) for p in last] + [V(p) for p in interior]

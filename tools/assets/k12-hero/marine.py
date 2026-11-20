@@ -58,7 +58,7 @@ def build(joints, tails, high):
     for rig in RIGS:
         suit.build_rig(rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
-        for side in (-1, 1):
+        for side in ((-1, 1) if high else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
             stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
             obj = helmet.plate(f'{rig} crown stripe {side}', stripe, M.RIG_COLOUR[rig], helmet.top, .0262, .004, .002, 'plain', 2.5)
             helmet.parts.remove(obj); suit.groups[rig].append(obj)
@@ -119,6 +119,14 @@ def review(low, high):
     scene = bpy.context.scene
     out = WORK / ('review-' + arg('round', '0')); out.mkdir(parents=True, exist_ok=True)
     floor = studio(scene, int(arg('samples', '40')))
+    if '--xray' in ARGS:   # HERO19: undersuit in flat red, to find where it shows through the plates
+        for o in low:
+            for slot in o.material_slots:
+                if slot.material and slot.material.get('k12Role') == 'fabric':
+                    red = bpy.data.materials.new('xray'); red.use_nodes = True
+                    red.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (1, 0, 0, 1)
+                    slot.material = red
+        print('XRAY', sorted({s.material.get('k12Role', s.material.name) for o in low for s in o.material_slots if s.material}), flush=True)
     bpy.ops.object.camera_add(); cam = bpy.context.object; scene.camera = cam
     files = []
     views = arg('views', 'beauty,back,game').split(',')
@@ -126,7 +134,7 @@ def review(low, high):
         for view in views:
             if view == 'face' and rig != 'breacher':
                 continue
-            use_high = view != 'game'
+            use_high = not view.startswith('g')
             for o in low + high:
                 is_high = o.name.endswith('-high')
                 o.hide_render = (is_high != use_high) or (o.name.startswith('k10-rig-') and not o.name.startswith('k10-rig-' + rig))
@@ -136,16 +144,19 @@ def review(low, high):
                 d, tgt, lens, res = V((.55, 1, .15)), V((0, .02, 1.70)), 85, (700, 700)
             elif view == 'back':
                 d, tgt, lens, res = V((-.7, -1, .45)), V((0, 0, 1.08)), 78, (540, 720)
-            else:   # in-game: 50° down, marine ~130 px tall
+            elif view == 'game':   # in-game: 50° down, marine ~130 px tall
                 d, tgt, lens, res = V((.3, -.9, 1.6)), V((0, 0, 1.0)), 50, (200, 200)
+            else:   # HERO19 'g<deg>': game camera at 52° down, marine yawed so it faces <deg> (0 = screen right)
+                a = math.radians(float(view[1:]) + 90)
+                d, tgt, lens, res = V((-math.sin(a) * .62, -math.cos(a) * .62, .8)), V((0, 0, 1.0)), 50, (200, 200)
             d.normalize()
             cam.location = tgt + d * (6.2 if view != 'face' else 2.2); cam.data.lens = lens
-            if view == 'game':
+            if view.startswith('g'):
                 cam.location = tgt + d * 3.6
             cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
             scene.render.resolution_x, scene.render.resolution_y = res
-            floor.hide_render = view == 'game'
-            scene.render.film_transparent = view == 'game'
+            floor.hide_render = view.startswith('g')
+            scene.render.film_transparent = view.startswith('g')
             path = out / f'{rig}-{view}.png'; scene.render.filepath = str(path)
             bpy.ops.render.render(write_still=True)
             files.append(str(path))
