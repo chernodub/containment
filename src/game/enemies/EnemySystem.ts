@@ -1014,11 +1014,21 @@ export class EnemySystem {
     this.#yieldMeleeBerth(enemy);
   }
 
+  #aimMelee(enemy:EnemyState,player:{x:number;y:number},starting=false) {
+    // Shift the ordinary Brute's footprint by its added body clearance.
+    const advance=enemy.type==='brute'&&!enemy.champion?enemy.radius-28:0;
+    const x=starting?enemy.x:enemy.meleeOriginX-Math.cos(enemy.meleeAngle)*advance;
+    const y=starting?enemy.y:enemy.meleeOriginY-Math.sin(enemy.meleeAngle)*advance;
+    enemy.meleeAngle=Math.atan2(player.y-y,player.x-x);
+    enemy.meleeOriginX=x+Math.cos(enemy.meleeAngle)*advance;
+    enemy.meleeOriginY=y+Math.sin(enemy.meleeAngle)*advance;
+  }
+
   #advanceMelee(enemy:EnemyState,player:EnemyPlayerState,deltaMs:number,events:EnemyEvent[]):void {
     if(enemy.meleePhase==='approach')return;
     const profile=MELEE_ATTACKS[enemy.type];
     if(enemy.meleePhase==='windup'&&!enemy.meleeFacingLocked){
-      enemy.meleeAngle=Math.atan2(player.y-enemy.meleeOriginY,player.x-enemy.meleeOriginX);
+      this.#aimMelee(enemy,player);
       if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs)enemy.meleeFacingLocked=true;
     }
     let remaining=deltaMs;
@@ -1062,7 +1072,7 @@ export class EnemySystem {
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
     if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
-      enemy.meleeAngle=Math.atan2(player.y-enemy.y,player.x-enemy.x);enemy.meleeOriginX=enemy.x;enemy.meleeOriginY=enemy.y;
+      this.#aimMelee(enemy,player,true);
       enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);
       if(enemy.meleeDurationMs<=melee.lockLeadMs)enemy.meleeFacingLocked=true;
       enemy.contactCooldownRemainingMs=0;enemy.velocityX=enemy.velocityY=0;enemy.yieldMs=0;enemy.blockedMs=0;

@@ -66,7 +66,26 @@ def build(joints, tails, high):
     for key, objects in suit.groups.items():
         for obj in objects:
             kit.apply_all(obj)
-            part = zlib.crc32(obj.name.split('.')[0].encode()) & 0x7fffffff
+            name = obj.name.split('.')[0]
+            painted = (
+                name == 'gorget collar'
+                or name.startswith(('vambrace L', 'vambrace R', 'thigh side plate ', 'thigh front plate ',
+                                    'helmet crown half ', 'shoulder blade plate '))
+                or any(zone in name for zone in (' pauldron ', ' crown stripe ', ' forearm guard'))
+            )
+            module = name in (
+                'breacher accumulator', 'breacher ram barrel', 'ram gland',
+                'cryo dewar', 'dewar valve', 'pyro fuel cell', 'pyro exhaust stack',
+                'arc capacitor bank', 'coil cap', 'arc coil core',
+            )
+            if not high:
+                mask = obj.data.attributes.new('rig_paint', 'FLOAT', 'FACE')
+                up = obj.matrix_world.to_3x3().inverted().transposed()
+                for face in obj.data.polygons:
+                    mask.data[face.index].value = float(
+                        painted or (module and (up @ face.normal).normalized().z > .35)
+                    )
+            part = zlib.crc32(name.encode()) & 0x7fffffff
             a = obj.data.attributes.get('k10_part') or obj.data.attributes.new('k10_part', 'INT', 'FACE')
             for e in a.data:
                 e.value = part

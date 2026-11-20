@@ -3,7 +3,7 @@ import {weaponRigAccent} from './lighting/WeaponRigAccent';
 import * as T from 'three';
 import {AuthoredMotionPlayer,AuthoredMarineMotion,AuthoredEnemyMotion} from './motion/AuthoredMotion';
 import {AnatomicalFrost} from './motion/AnatomicalFrost';
-import {originalCreatureFrost,originalCreatureHeight,originalCreatureFootprints,originalCreatureRankScale,originalCreatureEmission,type CreatureEmissionRegion} from './OriginalCreatureAnatomy';
+import {originalCreatureFrost,originalCreatureHeight,originalCreatureFootprints,originalCreatureRankScale,originalCreatureRankHeight,originalCreatureEmission,type CreatureEmissionRegion} from './OriginalCreatureAnatomy';
 import {EnemyMotion,type EnemyAttackPhase,type EnemyStrikeShape} from './motion/EnemyMotion';
 import {MarineMotion} from './motion/MarineMotion';
 import {MarineActionMotion} from './motion/MotionEvents';
@@ -84,7 +84,7 @@ function rig(name:AssetName,span:number,human=false,collisionRadius?:number){
  reset(){mixer.stopAllAction();for(const p of restBones){p.bone.position.copy(p.position);p.bone.quaternion.copy(p.quaternion);p.bone.scale.copy(p.scale);}mixer.timeScale=1;previous=undefined;attackTime=0;current=idle;idle?.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();root.position.set(0,0,0);root.rotation.set(0,0,0);body.rotation.set(0,0,0);root.traverse(o=>{if(o instanceof T.Bone)o.matrixAutoUpdate=true;if(o instanceof T.Mesh)o.castShadow=o.receiveShadow=true;});mixer.update(0);},freeze(){mixer.timeScale=0;},attack(){const attack=action('attack');if(attack){switchTo(attack,true);attackTime=attack.getClip().duration;}},stop(){mixer.stopAllAction();mixer.uncacheRoot(source.root);}};
 }
 export function alien(kind:string,elite=false):ActorModel{
- const def=species[kind]??species.crawler,collisionRadius=(kind==='queen'?92:ENEMIES[kind as keyof typeof ENEMIES]?.radius??14)/32,r=rig(def.asset,def.span,false,collisionRadius);r.root.name=`alien-${kind}`;r.root.userData.graphicActorBase=ENEMY_BODY_COLORS[kind as keyof typeof ENEMY_BODY_COLORS];
+ const def=species[kind]??species.crawler,collisionRadius=(kind==='queen'?92:ENEMIES[kind as keyof typeof ENEMIES]?.radius??14)/32,r=rig(def.asset,def.span,false,kind==='brute'?28/32:collisionRadius);r.root.name=`alien-${kind}`;r.root.userData.graphicActorBase=ENEMY_BODY_COLORS[kind as keyof typeof ENEMY_BODY_COLORS];
  const original=r.materials.some(m=>m.userData.k11Original);
  if(kind==='brute'&&!original){r.assetRoot.scale.y*=.78;r.body.position.y*=.78;r.height*=.78;}
  if(kind==='queen'){r.assetRoot.scale.y*=1.08;r.body.position.y*=1.08;r.height*=1.08;}
@@ -92,12 +92,16 @@ export function alien(kind:string,elite=false):ActorModel{
  // I11b: settled production-idle feet/skin radial fit, measured against the
  // native contact circle. Preserve vertical stature; native strike rules are unchanged.
  const sourceScale=r.assetRoot.scale.clone(),sourcePosition=r.assetRoot.position.clone(),sourceSpan=r.span;
- const footprintFits=original&&kind!=='queen'?originalCreatureFootprints(r.root,r.assetRoot,r.clips,kind,collisionRadius):{};
+ const footprintFits=original&&kind!=='queen'?originalCreatureFootprints(r.root,r.assetRoot,r.clips,kind,kind==='brute'?28/32:collisionRadius):{};
  if(original)r.root.userData.k11FootprintFits=footprintFits;
  const groundY=r.body.position.y;
  const fitFootprint=(rank?:string)=>{
   if(!original||kind==='queen')return;
-  const rankKey=rank?'boss':elite?'elite':'base',fit=footprintFits[rankKey]??1,rankScale=originalCreatureRankScale(kind,rankKey);
+  const rankKey=rank?'boss':elite?'elite':'base';
+  const regularBrute=kind==='brute'&&!rank;
+  const fit=(footprintFits[rankKey]??1)*(regularBrute?collisionRadius/(28/32):1);
+  const rankHeight=originalCreatureRankHeight(kind,rankKey);
+  const rankScale=regularBrute&&rankHeight>0?2.95/rankHeight:originalCreatureRankScale(kind,rankKey);
   r.assetRoot.scale.x=sourceScale.x*fit;r.assetRoot.scale.z=sourceScale.z*fit;
   // K11 boss tier: uniform rank scale; keep the feet on the deck by moving the asset origin, not the pooled body.
   r.assetRoot.scale.y=sourceScale.y*rankScale;r.assetRoot.position.y=sourcePosition.y+groundY*(rankScale-1);
@@ -119,7 +123,7 @@ export function alien(kind:string,elite=false):ActorModel{
  // I13: world attachments must clear the full authored boss tier across clips,
  // even if rank selection first occurs in a low spawn/anticipation pose.
  const attachmentHeight=()=>original&&kind!=='queen'
-  ?Math.max(champion==='warden'?4.5:champion==='matron'?4.8:0,originalCreatureHeight(r.root)+.08,frameHeight*Math.max(kind==='stalker'?1.3:1.12,champion?1.4:elite?1.25:1))
+  ?Math.max(champion==='warden'?4.5:champion==='matron'?4.8:kind==='brute'?3.03:0,originalCreatureHeight(r.root)+.08,frameHeight*Math.max(kind==='stalker'?1.3:1.12,champion?1.4:elite?1.25:1))
   :frameHeight*Math.max(kind==='queen'?1.4:kind==='spitter'?1.55:kind==='carrier'?1.35:kind==='stalker'?1.5:1,champion?1.72:elite?1.28:1);
 
  const restBodyY=r.body.position.y,emergenceDuration=.22,emergenceDepth=Math.min(.28,r.height*.14);

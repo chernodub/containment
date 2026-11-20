@@ -1,101 +1,113 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 166396,
+    "bytes": 215888,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.75,
+      "span": 2.1,
       "subjects": [
         {
           "kind": "marine",
           "rig": "breacher",
           "weapon": "shotgun",
-          "pose": "ram",
-          "frame": 0.35,
-          "aim": 2.2
+          "pose": "",
+          "frame": 0,
+          "aim": 1.62,
+          "reload": 0
         }
       ],
       "focus": [
         0,
-        1.12,
+        0.99,
         0
       ],
+      "rimColor": 16765027,
+      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 122093,
+    "bytes": 217583,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.75,
+      "span": 2.13,
       "subjects": [
         {
           "kind": "marine",
           "rig": "cryo",
           "weapon": "rifle",
-          "pose": "cryo-nova",
-          "frame": 0.3,
-          "aim": -1.35
+          "pose": "",
+          "frame": 0,
+          "aim": 2,
+          "reload": 0
         }
       ],
       "focus": [
         0,
-        1.12,
+        0.99,
         0
       ],
+      "rimColor": 8378111,
+      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 181973,
+    "bytes": 283734,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.75,
+      "span": 2.13,
       "subjects": [
         {
           "kind": "marine",
           "rig": "pyro",
           "weapon": "rocket",
-          "pose": "flashfire",
-          "frame": 0.4,
-          "aim": -3.1
+          "pose": "",
+          "frame": 0,
+          "aim": 1.9,
+          "reload": 0.32
         }
       ],
       "focus": [
         0,
-        1.12,
+        0.99,
         0
       ],
+      "rimColor": 16742958,
+      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 152522,
+    "bytes": 358183,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.75,
+      "span": 2.17,
       "subjects": [
         {
           "kind": "marine",
           "rig": "arc",
           "weapon": "plasma",
           "pose": "overload",
-          "frame": 0.35,
-          "aim": -1.5
+          "frame": 0.12,
+          "aim": -0.1,
+          "reload": 0
         }
       ],
       "focus": [
         0,
-        1.12,
+        0.99,
         0
       ],
+      "rimColor": 12033279,
+      "framePortrait": true,
       "transparent": true
     }
   },

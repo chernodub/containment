@@ -160,7 +160,7 @@ def export_marine(meshes, path, material=None, images=None):
         flat = [number for value in values for number in value]
         code = {5126: "f", 5123: "H", 5125: "I"}[component]
         raw = struct.pack(f"<{len(flat)}{code}", *flat)
-        accessor = {"bufferView": add_view(raw, 34963 if kind == "SCALAR" else 34962), "componentType": component,
+        accessor = {"bufferView": add_view(raw, 34963 if kind == "SCALAR" and component != 5126 else 34962), "componentType": component,
                     "count": len(values), "type": kind}
         if bounds:
             accessor["min"] = [min(row[i] for row in values) for i in range(width)]
@@ -214,8 +214,11 @@ def export_marine(meshes, path, material=None, images=None):
                 vertex_weights.append((ids + [0] * (4 - len(ids)),
                                        values + [0.0] * (4 - len(values))))
             positions, directions, uvs, colors, bone_ids, bone_weights = [], [], [], [], [], []
+            paint = mesh.attributes.get("rig_paint")
+            paint_values = []
             lookup, indices = {}, []
             for triangle in mesh.loop_triangles:
+                mask = paint.data[triangle.polygon_index].value if paint else 0.0
                 loops = reversed(triangle.loops) if mirrored else triangle.loops
                 for loop_index in loops:
                     loop = mesh.loops[loop_index]
@@ -228,7 +231,7 @@ def export_marine(meshes, path, material=None, images=None):
                     color_index = loop_index if color and color.domain == "CORNER" else loop.vertex_index
                     rgba = tuple(color.data[color_index].color) if color else ()
                     ids, weights = vertex_weights[loop.vertex_index]
-                    key = (point, direction, texcoord, rgba, tuple(ids), tuple(weights))
+                    key = (point, direction, texcoord, rgba, tuple(ids), tuple(weights), mask)
                     vertex_index = lookup.get(key)
                     if vertex_index is None:
                         vertex_index = len(positions)
@@ -237,6 +240,7 @@ def export_marine(meshes, path, material=None, images=None):
                         if uv: uvs.append(texcoord)
                         if color: colors.append(rgba)
                         bone_ids.append(ids);bone_weights.append(weights)
+                        if paint: paint_values.append((mask,))
                     indices.append((vertex_index,))
             attributes = {"POSITION": add_accessor(positions, "VEC3", bounds=True),
                           "NORMAL": add_accessor(directions, "VEC3"),
@@ -246,6 +250,8 @@ def export_marine(meshes, path, material=None, images=None):
                 attributes["TEXCOORD_0"] = add_accessor(uvs, "VEC2")
                 # AO shares the same baked layout as the base/normal atlases.
                 attributes["TEXCOORD_1"] = attributes["TEXCOORD_0"]
+            if paint_values:
+                attributes["_RIG_PAINT"] = add_accessor(paint_values, "SCALAR")
             if colors:
                 attributes["COLOR_0"] = add_accessor(colors, "VEC4")
             index = len(document["meshes"])
