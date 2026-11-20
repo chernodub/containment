@@ -1,3 +1,4 @@
+import {icon} from '../../src/ui/icons';
 import {groundIndicatorMaterial} from '../../src/render/vfx/GroundIndicatorMaterial';
 import * as T from 'three';
 import type {DepthRenderer} from '../../src/render/DepthRenderer';
@@ -21,6 +22,7 @@ type Subject = Mark & (
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
   | {kind:'prop'; kit:keyof typeof KIT_URLS; name:string; tint?:number; glow?:number}
+  | {kind:'glyph'; name:string; color:number}
   | {kind:'ring'; color:number; radius:number}
   | {kind:'light'; color:number; intensity:number; distance:number}
 );
@@ -134,6 +136,19 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         case 'light':
           root=new T.PointLight(subject.color,subject.intensity,subject.distance);
           break;
+        case 'glyph': {
+          const image=new Image();
+          const glyph=icon(subject.name).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')
+            .replace('currentColor', '#'+subject.color.toString(16).padStart(6,'0'));
+          image.src='data:image/svg+xml,'+encodeURIComponent(glyph);
+          await image.decode();
+          const map=new T.Texture(image);map.colorSpace=T.SRGBColorSpace;map.needsUpdate=true;
+          const geometry=new T.PlaneGeometry(1,1).rotateX(-Math.PI/2);
+          const material=new T.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false});
+          root=new T.Mesh(geometry,material);
+          disposable.push(()=>{map.dispose();geometry.dispose();material.dispose();});
+          break;
+        }
         case 'ring': {
           const ring=new T.Mesh(new T.RingGeometry(subject.radius-.035,subject.radius,72),
             new T.MeshStandardMaterial({color:subject.color,emissive:subject.color,emissiveIntensity:1.1,side:T.DoubleSide}));
@@ -162,7 +177,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       root.position.set(subject.x??0,subject.y??(subject.kind==='pickup'?.1:0),subject.z??0);
       root.scale.multiplyScalar(subject.scale??1);
       if(subject.kind==='prop')root.rotation.y=subject.aim??0;
-      const radius=subject.shadow??(shot.transparent||subject.kind==='ring'||subject.kind==='light'?0:subject.kind==='marine'?.7:subject.kind==='enemy'?.58:.42);
+      const radius=subject.shadow??(shot.transparent||subject.kind==='ring'||subject.kind==='glyph'||subject.kind==='light'?0:subject.kind==='marine'?.7:subject.kind==='enemy'?.58:.42);
       if(radius>0){
         const shadow=new T.Mesh(new T.PlaneGeometry(radius*2,radius*1.55),groundIndicatorMaterial('contact',0x000609));
         shadow.rotation.x=-Math.PI/2;shadow.position.set(root.position.x,.012,root.position.z);

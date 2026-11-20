@@ -112,14 +112,14 @@
   position: absolute;
   inset: 50% auto auto 50%;
   width: auto;
-  height: 100%;
+  height: calc(100% - 12px);
+  max-width: 100%;
   margin: 0;
   padding: 0;
+  transform: translate(-50%, -50%);
   background: transparent;
   filter: none;
 }
-#overlay [data-purchase='heal'] .requisition-medical-art img { transform: translate(-50%, -53%) scale(1.52); }
-#overlay [data-purchase='medkit'] .requisition-medical-art img { transform: translate(-50%, -50%) scale(1.13); }
 #overlay .requisition-medical-label {
   position: absolute;
   right: 8px;

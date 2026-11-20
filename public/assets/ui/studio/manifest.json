@@ -4197,5 +4197,167 @@
         17.59375
       ]
     }
+  },
+  "route-protected-passage": {
+    "file": "route-protected-passage.webp",
+    "bytes": 13220,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.7,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "x": -0.8,
+          "z": 0.5,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall",
+          "tint": 6716807,
+          "x": 0.85,
+          "z": -1.36,
+          "scale": 1.55
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-pillar",
+          "tint": 4940909,
+          "x": -0.5,
+          "z": -1.36,
+          "scale": 1.4
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-pillar",
+          "tint": 4940909,
+          "x": 2.2,
+          "z": -1.36,
+          "scale": 1.4
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-detail",
+          "tint": 4874856,
+          "x": 0.85,
+          "z": -0.98,
+          "y": 0.48,
+          "scale": 0.62
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 7400385,
+          "x": 1.82,
+          "z": -0.91,
+          "y": 0.88
+        },
+        {
+          "kind": "light",
+          "color": 8646611,
+          "intensity": 15,
+          "distance": 4,
+          "x": 1.02,
+          "z": -0.33,
+          "y": 1.35
+        },
+        {
+          "kind": "light",
+          "color": 13231615,
+          "intensity": 12,
+          "distance": 4,
+          "x": -1.04,
+          "z": 0.42,
+          "y": 1.56
+        }
+      ],
+      "view": "gameplay",
+      "room": "manual-control-chamber",
+      "origin": [
+        20,
+        17.1875
+      ]
+    }
+  },
+  "route-meltdown-capacitor": {
+    "file": "route-meltdown-capacitor.webp",
+    "bytes": 12250,
+    "shot": {
+      "width": 640,
+      "height": 360,
+      "span": 4.7,
+      "subjects": [
+        {
+          "kind": "marine",
+          "rig": "pyro",
+          "weapon": "rocket",
+          "x": -1.55,
+          "z": 0.42,
+          "aim": -0.5
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "computer-system",
+          "tint": 6706249,
+          "x": 0.94,
+          "z": -0.88,
+          "shadow": 1.2
+        },
+        {
+          "kind": "prop",
+          "kit": "station",
+          "name": "wall-switch",
+          "tint": 3492170,
+          "scale": 0.72,
+          "glow": 16751445,
+          "x": 0.99,
+          "z": -0.48,
+          "y": 0.8
+        },
+        {
+          "kind": "light",
+          "color": 16748873,
+          "intensity": 14,
+          "distance": 3,
+          "x": 0.94,
+          "z": -0.28,
+          "y": 1
+        },
+        {
+          "kind": "ring",
+          "radius": 0.69,
+          "color": 16756833,
+          "x": 0.94,
+          "z": 0.2,
+          "y": 0.052
+        },
+        {
+          "kind": "glyph",
+          "name": "meltdown",
+          "color": 16761989,
+          "x": 0.94,
+          "z": 0.2,
+          "y": 0.055,
+          "scale": 1.12
+        }
+      ],
+      "view": "gameplay",
+      "room": "manual-control-chamber",
+      "origin": [
+        20,
+        17.1875
+      ]
+    }
   }
 }

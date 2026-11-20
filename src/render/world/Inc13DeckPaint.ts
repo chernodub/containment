@@ -64,7 +64,9 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   const bias=layered?-5:-1;
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
-  if(name.includes('swarm')){material.emissiveMap=map;material.emissive.setHex(0xfca5ec);material.emissiveIntensity=.66;}
+  if(name.includes('swarm')||name==='inc13-resin-runout'){
+    material.emissiveMap=map;material.emissive.setHex(0xfca5ec);material.emissiveIntensity=.66;
+  }
   material.addEventListener('dispose',()=>normalMap.dispose());
   material.userData.actorMaterial = true;
   material.addEventListener('dispose',()=>map.dispose());

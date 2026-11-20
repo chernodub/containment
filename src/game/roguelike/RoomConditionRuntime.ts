@@ -53,6 +53,10 @@ export class RoomConditionRuntime {
     }
     patches.sort((a,b)=>distance(a,spawn)-distance(b,spawn));
     const radius=Math.sqrt(width*height*.23/(Math.PI*3));
+    if(id==='coolant'){
+      const whole=patches.findIndex(p=>canOccupyExpedition(geometry,p,radius));
+      if(whole>0)patches.unshift(patches.splice(whole,1)[0]);
+    }
     for(const p of patches){
       if(this.zones.some(zone=>distance(p,zone)<(id==='coolant'?radius*1.6:id==='brood'?65:110)))continue;
       if(id==='coolant')this.zones.push({...p,radius});

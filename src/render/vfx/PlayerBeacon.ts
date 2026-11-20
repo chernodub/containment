@@ -45,11 +45,13 @@ uniform float marineId;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
 void main(){
+  float bossOcclusion=0.;
   if(hasSceneDepth>.5){
     vec2 uv=gl_FragCoord.xy*inverseViewport;
     if(hasSceneGeometry>.5){
       float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
-      if(abs(kind-2.)>.25)discard;
+      bossOcclusion=1.-step(.25,abs(kind-6.));
+      if(abs(kind-2.)>.25&&bossOcclusion<.5)discard;
     }
     float surface=texture2D(sceneDepth,uv).x;
     if(gl_FragCoord.z<=surface+.00008)discard;
@@ -61,12 +63,12 @@ void main(){
     }
   }
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
-  float fill=.07*strength;
+  float fill=mix(.07*strength,.24,bossOcclusion);
   float edge=smoothstep(.14,.58,rim);
   // A dark outer keyline preserves the cyan silhouette against white frost,
   // muzzle flashes and friendly particle cores, without another skin draw.
-  vec3 color=mix(vec3(.55,.89,1.0),vec3(.012,.035,.048),smoothstep(.72,.95,rim));
-  gl_FragColor=vec4(color,max(fill,edge*min(1.0,strength+.30)));
+  vec3 color=mix(mix(vec3(.55,.89,1.0),vec3(.82,.95,1.),bossOcclusion),vec3(.012,.035,.048),smoothstep(.72,.95,rim));
+  gl_FragColor=vec4(color,max(fill,edge*mix(min(1.0,strength+.30),.93,bossOcclusion)));
   #include <colorspace_fragment>
 }`;
 

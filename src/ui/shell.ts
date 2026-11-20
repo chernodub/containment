@@ -6,14 +6,14 @@ const key = (label: string) => `<kbd data-hud-critical>${label}</kbd>`;
 export function renderShell(): string {
     return `<canvas tabindex="-1" id="world" aria-label="Containment 3D game world"></canvas><div id="shade"></div><div id="hurt-flash"></div>
 <div id="hud" hidden>
- <div class="hud-top"><div class="vitals" aria-label="Suit vitals">
+ <div class="hud-top"><div id="suit-vitals" class="vitals" aria-label="Suit vitals">
   <div class="vital-caption"><span>SUIT INTEGRITY</span><span id="vital-state">NOMINAL</span></div>
   <div class="vital-line">${icon('health')}<b id="health" data-hud-critical>100</b><div class="meter segmented"><i id="hp-lag" class="damage-lag"></i><i id="hp-bar"></i></div></div>
   <div class="armor-line">${icon('armor')}<span>ARMOR</span><div class="meter armor segmented"><i id="armor-lag" class="damage-lag"></i><i id="armor-bar"></i></div><b id="armor" data-hud-critical>50</b></div>
   <div id="desktop-stock"><span>${key('E')}${icon('medkit')}<b id="medkit-count" data-hud-critical>2</b><span>MEDKIT</span></span><span>${key('G')}${icon('grenade')}<b id="grenade-count" data-hud-critical>3</b><span>GRENADE</span></span></div>
  </div></div>
  <div id="boss-hud" hidden><div class="boss-heading"><span>${icon('boss')} THE QUEEN</span><span id="boss-phase"></span></div><div class="meter boss-meter"><i id="boss-bar"></i></div><div class="boss-phase-track"><span data-boss-phase="armored">I · ARMORED</span><span data-boss-phase="exposed">II · EXPOSED</span><span data-boss-phase="nests">III · NESTS</span></div></div>
- <div id="status-hud" aria-label="Room objective. Full room records are available in Pause."><div class="room-heading"><div class="room-label"><span id="depth-label"></span><b id="room-name"></b><div id="room-condition" hidden></div></div><button id="pause" class="icon-button" aria-label="Pause game">${icon('pause')}</button></div>
+ <div id="status-hud" aria-label="Room objective. Full room records are available in Pause."><div class="room-heading"><div class="room-label"><span id="depth-label"></span><b id="room-name" data-hud-critical></b><div id="room-condition" hidden></div></div><button id="pause" class="icon-button" aria-label="Pause game">${icon('pause')}</button></div>
   <div id="run-stock"><span id="credits" data-hud-critical></span><span id="encounter-count" data-hud-critical></span></div>
   <aside id="story-hud" hidden><p id="story-status" role="status"></p><p id="room-objective" data-hud-critical></p><div id="story-presentation"><span id="story-line"></span><button id="skip-story" aria-label="Skip dialogue">Skip ${key('↵')}</button></div></aside>
   <div id="build-strip" aria-label="Owned boon effects and sets"></div>

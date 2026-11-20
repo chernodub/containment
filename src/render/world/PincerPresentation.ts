@@ -31,6 +31,18 @@ export class PincerPresentation {
   private readonly crownPosition = new T.Vector3();
   private readonly crownExtent = new T.Vector3(1.45, .9, 1.45);
 
+  /** Gate and guardian meshes are created on demand after room readiness. */
+  registerWarmup(register: (root: T.Object3D) => void) {
+    const variants = new T.Group();
+    variants.add(
+      new T.Mesh(this.block, this.metal),
+      new T.Mesh(this.ring, this.warning),
+      new T.Mesh(this.body, this.shadow),
+      new T.Mesh(this.ring, this.signal),
+    );
+    register(variants);
+  }
+
   bossPose(model: ActorModel, enemy: EnemySnapshot, game: DepthGame, unit: number, camera: T.Camera, marineHeight: number) {
     const original = this.pinned.get(model);
     if (original !== undefined) {

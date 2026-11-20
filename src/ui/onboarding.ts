@@ -76,7 +76,8 @@ export class ContextualOnboarding {
   private crossfireOpportunity=false;
   private bruteWindup: {id:number;x:number;y:number;vitality:number;damageTaken:number}|null=null;
   private recoveringBruteId:number|null=null;
-  private bruteWarning=false;
+  private warningBruteId:number|null=null;
+  private unambiguousBruteId:number|null=null;
   private disposed = false;
   private layoutDirty = true;
   // PERF13: coalesce ordinary HUD sync invalidations; relocation/resizing stays immediate.
@@ -104,6 +105,14 @@ export class ContextualOnboarding {
     host.append(this.node);
   }
 
+
+  get markedEnemyId(): number | null {
+    if (this.node.hidden) return null;
+    if (this.active === 'brute-punish') return this.recoveringBruteId;
+    if (this.active === 'brute-evade') return this.warningBruteId;
+    if (this.active === 'priority-focus' && this.priorityTargets.length === 1) return this.priorityTargets[0];
+    return null;
+  }
 
   /** Persist once, and only after the action really occurred. */
   mark(action: OnboardingAction, observedDrill = false): void {
@@ -146,6 +155,9 @@ export class ContextualOnboarding {
     this.watchedGame=game;if(this.trackedRoom!==game.roomRevision){this.trackedRoom=game.roomRevision;this.priorityTargets=[];this.crossfire=null;this.firstStrike=null;this.evadedTarget=null;this.bruteWindup=null;}
     const enemies=game.enemies.snapshot.enemies;
     this.priorityTargets=enemies.filter(enemy=>enemy.priority&&(enemy.type==='carrier'||enemy.controlResistant)).map(enemy=>enemy.id);
+    const priorityTarget=this.priorityTargets.length===1?enemies.find(enemy=>enemy.id===this.priorityTargets[0]):undefined;
+    const unambiguousPriority=!!priorityTarget&&enemies.filter(enemy=>enemy.type===priorityTarget.type&&enemy.health>0&&
+      Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<=180).length<2;
     const spitters=enemies.filter(enemy=>enemy.type==='spitter'&&Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<600);
     const firing=spitters.filter(enemy=>hasClearExpeditionShot(game.geometry,enemy,game.player));this.crossfireOpportunity=firing.length>=2;
     if(this.crossfireOpportunity&&!this.crossfire)this.crossfire={ids:firing.slice(0,2).map(enemy=>enemy.id),x:game.player.x,y:game.player.y};
@@ -158,10 +170,13 @@ export class ContextualOnboarding {
     if(playing&&watchedStrike?.meleePhase==='recovery'&&this.firstStrike){if(Math.hypot(game.player.x-this.firstStrike.x,game.player.y-this.firstStrike.y)>20&&combat.health+combat.armor>=this.firstStrike.vitality&&game.stats.damageTaken===this.firstStrike.damageTaken&&!meleeStrikeContains(watchedStrike.meleeShape,watchedStrike.meleeOriginX,watchedStrike.meleeOriginY,watchedStrike.meleeAngle,game.player.x,game.player.y,game.player.radius)){this.mark('dash');this.evadedTarget=watchedStrike.id;}this.firstStrike=null;}
     if(this.firstStrike&&!watchedStrike)this.firstStrike=null;
     this.packOpportunity=enemies.filter(enemy=>Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<=180&&Math.cos(Math.atan2(enemy.y-game.player.y,enemy.x-game.player.x)-game.player.angle)>.5).length>=3;
-    const warning=enemies.find(enemy=>enemy.type==='brute'&&enemy.meleePhase==='windup');
-    this.bruteWarning=!!warning;
+    const nearbyBrutes=enemies.filter(enemy=>enemy.type==='brute'&&enemy.health>0&&
+      Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<=180);
+    this.unambiguousBruteId=nearbyBrutes.length===1?nearbyBrutes[0].id:null;
+    const warning=nearbyBrutes.find(enemy=>enemy.meleePhase==='windup');
+    this.warningBruteId=warning?.id??null;
     if(warning&&this.bruteWindup?.id!==warning.id)this.bruteWindup={id:warning.id,x:game.player.x,y:game.player.y,vitality:combat.health+combat.armor,damageTaken:game.stats.damageTaken};
-    const recovering=enemies.find(enemy=>enemy.type==='brute'&&enemy.meleePhase==='recovery');
+    const recovering=nearbyBrutes.find(enemy=>enemy.meleePhase==='recovery');
     this.recoveringBruteId=recovering?.id??null;
     if(playing&&recovering&&this.bruteWindup?.id===recovering.id&&Math.hypot(game.player.x-this.bruteWindup.x,game.player.y-this.bruteWindup.y)>20&&combat.health+combat.armor>=this.bruteWindup.vitality&&game.stats.damageTaken===this.bruteWindup.damageTaken&&!meleeStrikeContains(recovering.meleeShape,recovering.meleeOriginX,recovering.meleeOriginY,recovering.meleeAngle,game.player.x,game.player.y,game.player.radius))this.mark('brute-evade');
     if(recovering&&this.bruteWindup?.id===recovering.id)this.bruteWindup=null;
@@ -193,14 +208,14 @@ export class ContextualOnboarding {
       if(action==='evade-punish')return game.node.depth>=2&&enemies.length===1&&this.firstWindup&&(!this.retryShown||this.active===action);
       // Charge readiness is authoritative; the prompt retires only after a cast.
       if (action === 'overdrive') return !!abilities?.overdrive.ready;
-      if(action==='brute-evade')return this.bruteWarning;
-      if(action==='brute-punish')return this.recoveringBruteId!==null;
+      if(action==='brute-evade')return this.unambiguousBruteId!==null&&this.warningBruteId===this.unambiguousBruteId;
+      if(action==='brute-punish')return this.unambiguousBruteId!==null&&this.recoveringBruteId===this.unambiguousBruteId;
       if (action === 'medkit') return combat.health <= 65 && combat.medkits > 0;
       if (action === 'reload') return combat.magazine < combat.magazineCapacity * .6 && combat.reserve > 0;
       if (action === 'grenade') return combat.grenades > 0 && game.enemies.activeCount >= 3;
       if (action === 'dash') return this.firstWindup && !!abilities?.slots?.dash.ready;
       if (action === 'switch') return this.seen.fire === true;
-      if(action==='priority-focus')return this.priorityTargets.length>0;
+      if(action==='priority-focus')return unambiguousPriority;
       if(action==='crossfire-cover')return this.crossfireOpportunity;
       if (action === 'pack-tactical') return this.packOpportunity&&!!abilities?.slots?.tactical.ready;
       if (action === 'tactical') return this.packOpportunity&&!!abilities?.slots?.tactical.ready;

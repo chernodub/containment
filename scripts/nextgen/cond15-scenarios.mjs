@@ -26,7 +26,19 @@ export const COND15_SCENARIOS=conditions.flatMap(([condition,atrium,cargo,clock]
     }
     if('${stage}'!=='entry'&&'${condition}'==='coolant'){
      const target=s.zones[0],dx=target.x-p.x,dy=target.y-p.y,r=Math.hypot(dx,dy)||1;
-     d.setInput({x:dx/r,y:dy/r,angle:Math.atan2(dy,dx)});d.step(500);g.useAbility('dash');d.step(330);d.setInput({x:0,y:0});d.step(180);
+     let aim=Math.atan2(dy,dx);
+     if('${stage}'==='active'&&${i}){
+      // Land at the centre of the first spill so the native camera can show its whole footprint.
+      const x=target.x+225*Math.SQRT1_2,y=target.y+225*Math.SQRT1_2;
+      if(d.canStand(x,y,p.radius)&&d.clearShot(target.x,target.y,{x,y})){
+       aim=-3*Math.PI/4;
+       Object.assign(p,{x,y,vx:0,vy:0,angle:aim});
+      }
+      d.setInput({x:0,y:0,angle:aim});d.step(500);
+     }else{
+      d.setInput({x:dx/r,y:dy/r,angle:aim});d.step(500);
+     }
+     g.useAbility('dash');d.step(330);d.setInput({x:0,y:0});d.step(180);
     }else {
      const duration=${stage==='entry'?100:stage==='heavy'&&condition==='sealed'?3600:clock};
      if('${stage}'==='active'&&'${condition}'==='sealed'){

@@ -386,7 +386,7 @@ export function createScreens(context: ScreenContext) {
           inspectRig(focusedRig,true,true);
         }else if(focusedRig||!target?.closest('button,summary')){
           event.preventDefault();
-          el(deliberateRig&&selectedRig!=='cryo'?'equip-rig':'recommended-loadout')?.click();
+          el(deliberateRig?'equip-rig':'recommended-loadout')?.click();
         }
       }
       return;

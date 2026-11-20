@@ -23,7 +23,7 @@ export class TargetMarkers {
         host.prepend(this.canvas);
     }
 
-    update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations']) {
+    update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations'], hintTargetId: number | null) {
         const ctx = this.context;
         this.canvas.hidden = game.status !== 'playing';
         if (!ctx || this.canvas.hidden) return;
@@ -58,6 +58,23 @@ export class TargetMarkers {
                     ctx.beginPath();
                     ctx.ellipse(point.x,point.y,25,11,0,0,Math.PI*2*(enemy.podStage==='sealed'?1:Math.max(.05,((enemy.podProgress??0)-.2)/.45)));
                     ctx.stroke();
+                }
+            }
+            if (enemy.id === hintTargetId && !enemy.priority && enemy.health > 0 && enemy.alpha >= .2) {
+                const {x, y, visible} = projectWorld(renderer, enemy.x, enemy.y, this.point, 1.6);
+                if (visible && !hudObstructs(x - 8, y - 8, x + 8, y + 8) &&
+                    !presentationObstructs(x - 8, y - 8, x + 8, y + 8)) {
+                    this.painted = true;
+                    ctx.strokeStyle = '#08151d';
+                    ctx.fillStyle = '#d8f4ff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 6, y - 5);
+                    ctx.lineTo(x + 6, y - 5);
+                    ctx.lineTo(x, y + 2);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fill();
                 }
             }
             if (enemy.health <= 0 || enemy.alpha < .2 || (!enemy.priority && !enemy.controlResistant)) continue;

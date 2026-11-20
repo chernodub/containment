@@ -193,7 +193,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.scar('trench', (this.ramStartX + x) * .5 + sx, (this.ramStartZ + z) * .5 + sz,
         length * .5, 0x20313a, 2.4, angle, .075);
       this.kit.beam(this.ramStartX + sx, .055, this.ramStartZ + sz, x + sx, .055, z + sz,
-        AMBER, .04, .65, false);
+        AMBER, .04, .65, false, 0, true);
     }
     const dust = this.kit.low ? 2 : 4;
     for (let i = 0; i < dust; i++) {
