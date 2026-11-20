@@ -116,9 +116,9 @@ export class BreacherPresentation implements AbilityPresentation {
       const lance = kit.fx.spawn(FxMode.Lance, x, z, .2);
       lance.angle = angle; lance.range = length; lance.inner = Math.min(.7, halfWidth); lance.h0 = .85; lance.color = AMBER; lance.intensity = 1.2;
       const wake = kit.fx.spawn(FxMode.Wake, x, z, kit.low ? .7 : 1.15);
-      wake.angle = angle; wake.range = length; wake.inner = Math.min(.55, halfWidth * .8); wake.h0 = .8; wake.color = AMBER;
+      wake.angle = angle; wake.range = length; wake.inner = Math.min(.55, halfWidth * .8); wake.h0 = .08; wake.color = AMBER;
       // A thin short-lived corona keeps the impact frame's bloom without a broad rectangle.
-      kit.beam(x, .85, z, endX, .85, endZ, 0xfff5e5, .06, .06, false);
+      kit.beam(x, .85, z, endX, .85, endZ, 0xfff5e5, .045, .033, false);
       kit.beam(x, .85, z, endX, .85, endZ, AMBER, .12, .16, false);
       kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x111b22, 12, angle, .62);
       kit.draw('spark', x + Math.cos(angle) * .7, .9, z + Math.sin(angle) * .7, 1.3, .32, 1, CORE, 1, 0, -angle);
@@ -127,7 +127,7 @@ export class BreacherPresentation implements AbilityPresentation {
       kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 18, length * .6, 5, .3);
       kit.camera(.92, angle);
       kit.anticipate(40, .06);
-      kit.exposureFlash(.95);
+
       for (let i = 1; i <= 4; i++) {
         const t = i / 5;
         kit.distort(x + Math.cos(angle) * length * t, z + Math.sin(angle) * length * t, 2, .004, .65, true);
@@ -346,15 +346,15 @@ export class BreacherPresentation implements AbilityPresentation {
     if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
     // Six hinged deck sectors lift from a common impact and settle quickly.
     // Dark bent seams and their cool cut edges remain beneath the debris.
-    const buckle = Math.max(0, 1 - p.age / .34), sectors = k.low ? 3 : 6;
+    const buckle = Math.max(0, 1 - p.age / .58), sectors = k.low ? 3 : 6;
     for (let i = 0; i < sectors && buckle > 0; i++) {
       const a = p.angle + i * TAU / sectors, c = Math.cos(a), s = Math.sin(a);
       const inner = p.size * .09, outer = p.size * (.34 + i % 2 * .055);
-      const bend = .06 + Math.sin(Math.min(1, p.age / .24) * Math.PI) * .22;
+      const bend = .06 + Math.sin(Math.min(1, p.age / .48) * Math.PI) * .48;
       k.ribbon(p.x + c * inner, .052, p.z + s * inner,
         p.x + c * outer, .052, p.z + s * outer, 0x101b22, .06, buckle * .85, false);
-      k.draw('shard', p.x + c * outer * .64, .048 + bend * .4, p.z + s * outer * .64,
-        p.size * .09, .022, (outer - inner) * .45, STEEL, buckle * .8,
+      k.draw('shard', p.x + c * outer * .64, .048 + bend * .75, p.z + s * outer * .64,
+        p.size * (.12 + i % 2 * .04), .075, (outer - inner) * .45, STEEL, buckle * .8,
         Math.PI / 2 - a, bend, 31);
       k.ribbon(p.x + c * inner - s * .07, .061, p.z + s * inner + c * .07,
         p.x + c * outer - s * .07, .061, p.z + s * outer + c * .07, 0x91a5ad, .012, buckle * .5, false);
@@ -390,16 +390,8 @@ export class BreacherPresentation implements AbilityPresentation {
       p.wallDone = true;
       this.railWallImpact(p, frame);
     }
-    if (p.age > .85) return;
-    if (p.age < 0) {
-      const rings = this.kit.low ? 3 : 5, shock = 1 - p.age / .36;
-      for (let i = 0; i < rings; i++) {
-        const distance = (.10 + i * (this.kit.low ? .32 : .19) + Math.sin(i * 2.73) * .025) * p.size, r = (.45 + i * .13) + p.age * (1.7 + i * .3);
-        this.kit.sprite('shockwave', p.x + nx * distance, .85, p.z + nz * distance,
-          r, r * (.85 + i * .12), p.age < .065 ? CORE : AMBER, shock * .7, i, 'vertical', Math.PI / 2 - p.angle);
-      }
-    }
-    const heat = (1 - p.age / .85) * .65, sideX = -nz, sideZ = nx, count = this.kit.low ? 2 : 4;
+    this.kit.sustain(p.age);
+    const heat = fade * .78, sideX = -nz, sideZ = nx, count = this.kit.low ? 2 : 4;
     for (let i = 0; i < count; i++) {
       const along = (.12 + i * .21 + Math.sin(i * 3.73) * .04) * p.size, px = p.x + nx * along, pz = p.z + nz * along;
       this.kit.ribbon(px - sideX * .12, .045, pz - sideZ * .12,

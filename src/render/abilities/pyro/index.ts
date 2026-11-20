@@ -149,7 +149,7 @@ class PyroPresentation implements AbilityPresentation {
         kit.flash(x + c * p.range * .6, z + s * p.range * .6, FIRE, 18, p.range, 3, .45);
         kit.distort(x + c * p.range * .5, z + s * p.range * .5, p.range * .55, .0055, .8, true);
         kit.camera(.24, p.angle);
-        kit.exposureFlash(.12);
+
         // Embers thrown forward through the cone (inside the arc), falling under gravity.
         for (let i = 0, n = kit.low ? 8 : 30; i < n; i++) {
           const v = authoredVariation(i * 1.37 + 2.1), a = p.angle + (authoredVariation(i * 2.71, 3) - .5) * p.arc * .8;
@@ -174,7 +174,7 @@ class PyroPresentation implements AbilityPresentation {
         // Hard burst: a short fireball volume inside the exact radius, then the pool takes over.
         const ball = kit.fx.spawn(FxMode.Fire, tx, tz, .45);
         ball.range = radius * .85; ball.arc = Math.PI * 2; ball.h0 = .5; ball.h1 = 1.4; ball.param = .25; ball.intensity = 1.1;
-        kit.exposureFlash(.12);
+
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
         kit.scar('soot', tx, tz, radius, SOOT, 10);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);

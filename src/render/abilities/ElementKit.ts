@@ -6,8 +6,8 @@ import type { GraphicsOptions } from '../graphicsOptions';
 import type { GraphicsTier } from '../FrameBudget';
 import type { LightPool } from '../lighting/LightPool';
 import type { DistortionField } from '../post/DistortionField';
-import type { AbilityElement } from '../../game/abilities/contract';
-import { ELEMENT_COLORS } from './types';
+import type { AbilityEvent, AbilityElement } from '../../game/abilities/contract';
+import { ELEMENT_COLORS, UNIT } from './types';
 import { EffectAtlas, EFFECT_TILES } from './EffectAtlas';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
 import { authoredVariation } from './GraphicLanguage';
@@ -176,6 +176,59 @@ export class ElementKit {
         const index = typeof tile === 'number' ? tile : EFFECT_TILES[tile];
         this.draw(plane === 'light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
             color, opacity, yaw, tilt, (plane === 'ground' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
+    }
+
+    private readonly contacts = Array.from({ length: 24 }, () => ({
+        age: 4, frames: 0, x: 0, z: 0, size: 1, angle: 0, element: 'kinetic' as AbilityElement,
+    }));
+    private nextContact = 0;
+
+    /** Rig owners supply the native footprint. A contact only marks its point of impact. */
+    contact(event: AbilityEvent, x: number, y: number): void {
+        if (event.phase !== 'impact' && event.phase !== 'dash-end') return;
+        const placed = event.phase === 'dash-end' || event.slot === 'power' ||
+            (event.ability === 'flashfire' && event.radius !== undefined && event.arcRadians === undefined);
+        const mark = this.contacts[this.nextContact++ % this.contacts.length];
+        mark.x = (placed ? event.targetX ?? x : x) / UNIT;
+        mark.z = (placed ? event.targetY ?? y : y) / UNIT;
+        mark.angle = event.angle ?? 0;
+        mark.element = event.element;
+        mark.age = mark.frames = 0;
+        mark.size = Math.min(2.4, Math.max(.55, (event.radius ?? 60) / UNIT * .55));
+        this.flash(mark.x, mark.z, ELEMENT_COLORS[event.element], 5, 2.6, 3, .32);
+    }
+
+    private drawContacts(dt: number): void {
+        for (const mark of this.contacts) {
+            if (mark.age >= 3) continue;
+            mark.age += dt;
+            const { age, x, z, size, angle, element } = mark;
+            const color = ELEMENT_COLORS[element];
+            this.sustain();
+            if (age < .051 && mark.frames < 3) {
+                this.sprite('impact', x, .16, z, .48, .32, 0xfff4df, this.flashIntensity, angle, 'light');
+                if (dt > 0) mark.frames++;
+            }
+            const fade = Math.max(0, 1 - age / 3) * Math.min(1, age * 9);
+            const tile = element === 'cryo' ? 'frost' : element === 'arc' ? 'scorch' : 'crack';
+            this.sprite(tile, x, .047, z, size, size * .78, color, fade * .82, angle, 'ground', 0, -angle);
+            for (let i = 0; i < (this.low ? 2 : 5); i++) {
+                const a = angle + i * 2.4, r = size * (.32 + i % 3 * .17);
+                const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+                if (element === 'cryo') {
+                    const h = (.18 + i % 3 * .11) * fade;
+                    this.draw('shard', px, h, pz, .066, h, .08, color, fade, a, .36);
+                } else if (element === 'pyro') {
+                    const rise = (age * .85 + i * .31) % 1;
+                    this.sprite('ember', px, .09 + rise * .84, pz, .065, .1, color, fade * (1 - rise), a, 'light');
+                } else if (element === 'kinetic') {
+                    this.sprite('dust', px, .16 + age * .36, pz, .18 + age * .11, .28, 0x998d7e, fade * .36, a);
+                } else {
+                    this.sprite('ember', px, .063, pz, .12, .09, color, fade, a, 'ground');
+                }
+            }
+        }
+        this.impact();
     }
 
     mote(kind: Primitive, x: number, y: number, z: number, vx: number, vy: number, vz: number, size: number, life: number, color: number): void {
@@ -499,6 +552,7 @@ export class ElementKit {
         this.ribbons.priorityWeight = 0;
         for (const kind in this.batches)
             this.batches[kind as Primitive].begin(this.reducedMotion ? 0 : this.time);
+        this.drawContacts(dt);
         let live = 0;
         for (const p of this.particles) {
             if (!p.live)
@@ -572,7 +626,7 @@ export class ElementKit {
             if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) continue;
             const b = this.batches.decal, before = b.mesh.count;
             b.priorityWeight = Math.max(0, Math.min(1, (p.age - .25) / .12));
-            b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind === 2 ? 2 + .1 * Math.max(0, 1 - p.age) : p.kind);
+            b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind === 2 ? 2 + .1 * Math.max(0, 1 - p.age / 3) : p.kind);
             this.instanceCount += b.mesh.count - before;
         }
     }
@@ -588,7 +642,7 @@ export class ElementKit {
             rings++; for (const p of this.beams)
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
-    clear(): void { this.statusOwners.clear(); for (const p of this.particles)
+    clear(): void { for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)

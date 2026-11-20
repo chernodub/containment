@@ -197,10 +197,10 @@ void main(){
  }else if(m<2.5){
   // Rail lance: hair-thin white core, sharp leading edge for ~2 frames.
   float s=abs(fxLocal.x),v=fxLocal.y;
-  float lead=clamp(age/.05,0.,1.);
+  float lead=clamp(age/.018,0.,1.);
   float reach=smoothstep(lead+.002,lead-.02,v);
   float headGlow=exp(-abs(v-lead)*40.)*(1.-step(1.,lead));
-  float life=1.-smoothstep(.03,.16,age);
+  float life=1.-smoothstep(.018,.045,age);
   float coreW=.06+.05*life;
   float core=1.-smoothstep(coreW*.3,coreW,s);
   float halo=exp(-s*s*9.)*.55;
@@ -398,8 +398,8 @@ void main(){
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
    float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
-   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.07)+vec3(1.,1.4,1.9)*pulse*.55;
-   alpha=inside*(.01+c.z*.01+crack*.08+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
+   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.24)+vec3(1.,1.4,1.9)*pulse*.55;
+   alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
    // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
@@ -411,11 +411,11 @@ void main(){
    float blister=(1.-smoothstep(.06,.24,c.x))*step(.6,c.z)*(.55+.45*sin(t*4.+c.z*31.));
    float flow=.75+.25*sin(t*3.+c.z*20.-r*2.);
    float heat=crack*reveal*(.5+.5*near)*flow;
-   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9+vec3(.8,.12,.015)*near*reveal*.75;
-   alpha=reveal*((.18+.28*near)*(1.-crack)+crack*.45);
+   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9;
+   alpha=reveal*(.025*(1.-crack)+crack*.76);
    // The activation flash fills the centre before the moving aura settles.
-   float pulse=smoothstep(0.,.06,age)*(1.-smoothstep(.14,.46,age));
-   float core=1.-smoothstep(R*.17,R*(.65+.13*n),r);
+   float pulse=smoothstep(0.,.06,age)*(1.-smoothstep(.05,.18,age));
+   float core=1.-smoothstep(R*.045,R*(.23+.04*n),r);
    emit+=vec3(1.45,.43,.09)*core*pulse;
    alpha+=core*pulse*.30;
    base=vec3(.025,.01,.006);
@@ -445,7 +445,8 @@ void main(){
   else snow=pow(max(0.,sin(u*73.-t*21.+floor(v*13.)*2.4)),12.)
    *pow(max(0.,sin(v*49.+u*4.-t*7.)),5.);
   float vertical=smoothstep(.12,.3,v)*(1.-smoothstep(.88,1.,v));
-  float mark=(ribbon*packet*.7+snow*.8)*vertical*fxParam;
+  float clearing=smoothstep(min(.62,age*.48),min(.62,age*.48)+.17,v);
+  float mark=(ribbon*packet*.7+snow*.8)*vertical*fxParam*clearing;
   alpha=min(.12,mark*.16);base=vec3(.025,.08,.13);
   emit=(fxColor*.22+vec3(.12))*mark*fxIntensity;
  }

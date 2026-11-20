@@ -57,7 +57,7 @@ class CryoPresentation implements AbilityPresentation {
       const frost = k.fx.spawn(FxMode.Frost, px, pz, 6.5);
       frost.range = radius; frost.h0 = .036; frost.color = ICE;
       k.draw('spark', px, .6, pz, 1.4, 1.4, 1, CORE, 1);
-      k.exposureFlash(.1);
+
       k.flash(px, pz, CORE, 15, Math.min(12, radius + 2), 4, .14);
       k.distort(px, pz, radius, -.005, .55);
       k.camera(.23);
