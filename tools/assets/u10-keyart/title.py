@@ -1,4 +1,4 @@
-"""TITLE15 cast in the KA12 breach. See docs/nextgen/TITLE15-REPORT.md.
+"""TITLE18 cast in the KA12 breach. See docs/nextgen/TITLE18-REPORT.md.
 Use --preview --study for a composition study or --actor-plates for delivery.
 """
 import sys,math,random
@@ -142,7 +142,7 @@ bpy.ops.object.text_add();sign=bpy.context.object;sign.name='Small bulkhead sten
 sign.rotation_euler=Matrix((right,V((0,0,1)),-forward)).transposed().to_euler();sign.data.materials.append(insulation);register(sign)
 # Creature staging: their source meshes stay untouched. Presentation materials suppress
 # broad shell fill while retaining the authored emission map for caste lanterns.
-def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
+def brood(file,rank,x,y,z,height,yaw=0,tilt=0,lean=0):
  before=set(bpy.data.objects)
  bpy.ops.import_scene.gltf(filepath=str(ROOT/f'public/assets/models/plain/{file}.glb'))
  obs=[o for o in bpy.data.objects if o not in before]
@@ -154,32 +154,25 @@ def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
    nodes=mat.node_tree.nodes
    links=mat.node_tree.links
    bs=next(n for n in nodes if n.type=='BSDF_PRINCIPLED')
-   # Strip the inherited ember albedo from shell and organs. The bone zones
-   # retain their atlas values while the emission map supplies family colour.
-   base_color=bs.inputs['Base Color']
-   albedo=base_color.links[0].from_socket
+   # Keep the painted bands under the breach key. A small atlas-coloured
+   # bounce keeps the turned-away plates legible without lifting black gaps.
+   albedo=bs.inputs['Base Color'].links[0].from_socket
    grade=nodes.new('ShaderNodeHueSaturation')
-   grade.inputs['Saturation'].default_value=.06
-   grade.inputs['Value'].default_value=.77
+   grade.inputs['Value'].default_value=.82
    links.new(albedo,grade.inputs['Color'])
-   links.new(grade.outputs['Color'],base_color)
-   bs.inputs['Roughness'].default_value=.46
+   links.new(grade.outputs['Color'],bs.inputs['Base Color'])
+   bs.inputs['Roughness'].default_value=.68
+   bs.inputs['Specular IOR Level'].default_value=.26
    glow=bs.inputs['Emission Color']
-   mask=glow.links[0].from_socket
-   tint=nodes.new('ShaderNodeMixRGB')
-   tint.inputs[1].default_value=(0,0,0,1)
-   tint.inputs[2].default_value=(*lantern,1)
-   links.new(tint.outputs[0],glow)
-   # Glow atlas channels encode family colours. Take their maximum so a red
-   # mask is as luminous as a green mask before assigning the title hue.
-   split=nodes.new('ShaderNodeSeparateColor')
-   links.new(mask,split.inputs[0])
-   rg=nodes.new('ShaderNodeMath');rg.operation='MAXIMUM'
-   rgb=nodes.new('ShaderNodeMath');rgb.operation='MAXIMUM'
-   links.new(split.outputs[0],rg.inputs[0]);links.new(split.outputs[1],rg.inputs[1])
-   links.new(rg.outputs[0],rgb.inputs[0]);links.new(split.outputs[2],rgb.inputs[1])
-   links.new(rgb.outputs[0],tint.inputs[0])
-   bs.inputs['Emission Strength'].default_value=0 if rank=='boss' else 9
+   lantern=glow.links[0].from_socket
+   fill=nodes.new('ShaderNodeVectorMath');fill.operation='SCALE'
+   links.new(albedo,fill.inputs[0]);fill.inputs['Scale'].default_value=.35
+   accent=nodes.new('ShaderNodeVectorMath');accent.operation='SCALE'
+   links.new(lantern,accent.inputs[0]);accent.inputs['Scale'].default_value=2.2
+   combined=nodes.new('ShaderNodeVectorMath');combined.operation='ADD'
+   links.new(fill.outputs[0],combined.inputs[0]);links.new(accent.outputs[0],combined.inputs[1])
+   links.new(combined.outputs[0],glow)
+   bs.inputs['Emission Strength'].default_value=1
  pts=[o.matrix_world@V(c) for o in ms if not o.hide_render for c in o.bound_box];lo=min(p.z for p in pts);hi=max(p.z for p in pts);cx=(min(p.x for p in pts)+max(p.x for p in pts))/2;cy=(min(p.y for p in pts)+max(p.y for p in pts))/2
  # glTF imports native animal forward along +X. Aim toward camera, slightly across frame.
  angle=math.atan2(-forward.y,-forward.x)+math.radians(yaw)
@@ -189,7 +182,7 @@ def brood(file,rank,lantern,x,y,z,height,yaw=0,tilt=0,lean=0):
   register(o,'midground')
  hidden.update(o for o in obs if o.hide_render)
  return obs
-warden=brood('tyrant','boss',(1,.85,.5),.17,-.40,.18,1.90,-18,lean=20)
+warden=brood('tyrant','boss',.17,-.40,.18,1.90,-18,lean=20)
 # Grazing bounce on the ram mask. Link it to the cast to preserve the wreck lighting.
 receivers=bpy.data.collections.new('Brood bounce receivers')
 for o in warden:
@@ -197,8 +190,8 @@ for o in warden:
 bounce=area_light('Ram mask bounce',P(-1.4,-2.3,2.2),170,1.2,(.70,.79,1),target=P(.2,-.4,1.1))
 bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
-crawler=brood('dretch','base',(1,.003,.33),-.46,-.82,2.20,.36,72,66,lean=12)
-stalker=brood('basilisk','base',(.24,.008,1),-.98,-.84,1.50,.48,-54,-62,lean=16)
+crawler=brood('dretch','base',-.46,-.82,2.20,.36,72,66,lean=12)
+stalker=brood('basilisk','base',-.98,-.84,1.50,.48,-54,-62,lean=16)
 for o in crawler+stalker:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
 # Backlighting makes hard shell rims, while the lit volume separates silhouettes.
