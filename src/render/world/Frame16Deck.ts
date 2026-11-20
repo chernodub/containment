@@ -16,8 +16,8 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
   }
   if (room.boundary) {
     c.clip('evenodd');
-    c.strokeStyle = 'rgba(9,15,17,.12)';
-    for (const width of [108, 84, 64, 46, 30, 16, 7]) {
+    c.strokeStyle = 'rgba(6,10,12,.16)';
+    for (const width of [142, 112, 86, 64, 46, 30, 16, 7]) {
       c.lineWidth = width;
       c.stroke();
     }
@@ -95,8 +95,8 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
           room.spawn.y + dy * .43 + ny * (offset + 35),
           source[0] - dx * .28 + nx * (offset - 24),
           source[1] - dy * .28 + ny * (offset - 24), source[0] + nx * offset, source[1] + ny * offset);
-        c.strokeStyle = 'rgba(22,29,31,.40)';
-        c.lineWidth = offset === 14 ? 6 : 3;
+        c.strokeStyle = 'rgba(12,18,19,.51)';
+        c.lineWidth = offset === 14 ? 7 : 3.5;
         c.stroke();
         c.setLineDash([19, 9, 6, 17]);
         c.strokeStyle = 'rgba(132,137,131,.27)';
@@ -155,5 +155,5 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     c.restore();
-  }, .016);
+  }, .0214);
 }
