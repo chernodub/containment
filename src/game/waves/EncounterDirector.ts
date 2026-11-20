@@ -46,7 +46,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const opening=options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
  if(opening&&node.depth>=3){
   const [beat]=source.splice(opening.index,1);
-  source.unshift(openingBeat(node.depth,opening.index,beat));
+  source.unshift(openingBeat(node.depth,opening.index,beat,mode==='story'));
  }
  // Resolve one readable interception before admitting its screen.
  if(node.depth===9||node.depth===13){
@@ -62,7 +62,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  if(extra)source.push(extra);
  const broodReserve=options.brood&&!source.some(beat=>beat.groups.some(group=>group.reinforcement))
   ?source.at(-1)?.groups.find(group=>!group.guardian&&!group.lesson&&!group.priority):undefined;
- const requisitionSpacing=node.depth===9&&options.junctions?.[7]==='salvage'?1.1:1;
+ const veteranLate=mode==='veteran'&&node.depth>=10;
+ const arrivalSpacing=node.depth===9&&options.junctions?.[7]==='salvage'?1.1:veteranLate?.58:1;
  let state=(options.seed^Math.imul(node.depth+1,0x9e3779b9))>>>0;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
@@ -78,23 +79,23 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const count=baseCount+(extraRanged?1:0)+(standardFinaleEscort?1:0);
    const reinforcement=group.reinforcement||group===broodReserve;
    for(let index=0;index<count;index++){
-    // Exchange only the final body, preserving the pack's original arrival times.
-    const rangedRelief=options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1&&index===count-1;
-    const family=rangedRelief?'spitter':group.family,role=rangedRelief?'ranged':group.role;
+    // Keep the roster size while interleaving ranged threats with the screen.
+    const rangedSupport=veteranLate&&group.family==='crawler'&&!group.lesson&&!group.priority&&index%6===5;
+    const family=rangedSupport?'spitter':group.family,role=rangedSupport?'ranged':group.role;
     const ordinal=schedule.length-start;
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*requisitionSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(12,6+Math.floor(node.depth/3)),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(veteranLate?15:12,6+Math.floor(node.depth/3)+(veteranLate?3:0)),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {

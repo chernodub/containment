@@ -9,7 +9,8 @@ import {generateRun} from '../../src/game/roguelike/run';
 import {restoreExpedition,completeExpeditionRoom,expeditionRewardOffers} from '../../src/game/roguelike/expedition';
 import {serializeCheckpoint,parseCheckpoint} from '../../src/game/roguelike/checkpoints';
 import {addMutation} from '../../src/game/roguelike/builds';
-import {canOccupyExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
+import {canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
+import {WEAPONS} from '../../src/game/combat/catalog';
 import {enemyShotRadius} from '../../src/game/combat/enemyContact';
 import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
@@ -108,6 +109,9 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   grantBoons(ids:MutationId[]){let build=game.expedition.build;for(const id of ids)if(!build.mutations.includes(id))build=addMutation(build,id);game.expedition=Object.freeze({...game.expedition,build});game.combat.setBuild(build);refresh();},
   spawn(type:StandardEnemyId,x:number,y:number,elite=false){const radius=ENEMIES[type]?.radius;if(!radius||!canOccupyExpedition(game.geometry,{x,y},radius)||Math.hypot(x-game.player.x,y-game.player.y)<radius+game.player.radius+12)return false;const result=game.enemies.spawn(type,x,y,elite);return result.spawned?result.enemy.id:false;},
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
+  botShotClear(x:number,y:number,from:{x:number;y:number}=game.player){
+    return canTraverseExpedition(game.geometry,from,{x,y},WEAPONS.rifle.projectileRadius);
+  },
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
   /** The runner verifies this build's shared policy before collecting a cohort. */
   get botNavigationVersion(){return BOT_NAVIGATION_VERSION;},

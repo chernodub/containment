@@ -1,3 +1,4 @@
+import { WEAPONS as weaponCatalog } from '../../../src/game/combat/catalog';
 import {combatPresentationHoldSeconds} from '../../../src/game/observation/combatPresentationClock';
 import {PresentationHold} from '../../../src/render/motion/PresentationHold';
 import {ENEMIES} from '../../../src/game/enemies/catalog';
@@ -17,7 +18,7 @@ import { createSystemPresentation } from '../../../src/render/abilities/system';
 import { CameraRig } from '../../../src/render/camera/CameraRig';
 import {COMBAT_VIEW_HEIGHT,combatFocusTarget} from '../../../src/render/camera/CombatFraming';
 import { roomFocus } from '../../../src/render/roomFraming';
-import { canOccupyExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
+import { canOccupyExpedition, canTraverseExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
 import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
 import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
@@ -239,7 +240,7 @@ export function runSimulation(options: SimOptions) {
     const recentDecisions: Array<Record<string, unknown>> = [];
     let progressSignature = '', lastProgressElapsed = 0;
     function snapshot() {
-        const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => hasClearExpeditionShot(game.geometry, from, { x, y });
+        const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => canTraverseExpedition(game.geometry, from, { x, y }, weaponCatalog.rifle.projectileRadius);
         const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
@@ -247,9 +248,11 @@ export function runSimulation(options: SimOptions) {
         const siege=game.siege,goal=siege&&siege.remainingMs>0?siege:nearest;
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
+        const lookAhead = waypoint && !enemies.some(e => e.visible && e.clear)
+            ? Math.max(20, Math.min(90, distance(waypoint, game.player))) : 90;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-            const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
+            const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * lookAhead, y = game.player.y + dy / len * lookAhead;
             let legal = true;
             for (let i = 1; i <= 6; i++)
                 if (!canOccupyExpedition(game.geometry, { x: game.player.x + (x - game.player.x) * i / 6, y: game.player.y + (y - game.player.y) * i / 6 }, game.player.radius))

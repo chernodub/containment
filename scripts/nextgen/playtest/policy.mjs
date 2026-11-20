@@ -247,7 +247,8 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     const ranged=visible.filter(e=>e.type==='spitter');
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
     if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
-    if (c.clear) score += 45;
+    // Keep firing lanes only while a perceived target can be engaged.
+    if (target && c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
   }
   return best ?? {dx: 0, dy: 0, x: s.player.x, y: s.player.y};
@@ -445,8 +446,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
         if (hasAmmo('rocket')) rocketTarget = contacts.find(enemy => {
           if (!enemy.clear || distance(enemy,s.player) <= 225) return false;
           if (enemy.pod || enemy.broodRemainingMs > 0) return true;
-          return enemy.role === 'flanker' && contacts.some(other =>
-            other.id !== enemy.id && other.clear && other.role === 'flanker' && distance(other, enemy) < 125);
+          return contacts.some(other =>
+            other.id !== enemy.id && other.clear && distance(other, enemy) < 110);
         });
         if (rocketTarget) desired = 'rocket';
         else if (target.armor >= 40 && range > 150 && ready('plasma')) desired = 'plasma';
