@@ -11,8 +11,16 @@ const add=(name,subjects,settings={})=>{plan[name]={width:640,height:360,span:3,
 const marine=(rig,pose)=>({kind:'marine',rig,weapon:rigKit[rig][5],pose});
 const pickup=id=>({kind:'pickup',id});
 const prop=name=>({kind:'prop',kit:'industrial',name});
+// SHADE15: large three-quarter portraits, each rig turned to show its own equipment in its own stance.
+const portraitPose={
+  breacher:{aim:Number(process.env.PB??2.2),pose:'ram',frame:.35},
+  cryo:{aim:Number(process.env.PC??-1.35),pose:'cryo-nova',frame:.30},
+  pyro:{aim:Number(process.env.PP??-3.1),pose:'flashfire',frame:.40},
+  arc:{aim:Number(process.env.PA??-1.5),pose:'overload',frame:.35},
+};
 for(const rig of Object.keys(rigKit)){
-  add('portrait-'+rig,[marine(rig)],{width:640,height:640,focus:[0,1.23,0],span:2.55,transparent:true});
+  const {aim,pose,frame}=portraitPose[rig];
+  add('portrait-'+rig,[{...marine(rig,pose),frame,aim}],{width:640,height:640,focus:[0,1.12,0],span:2.75,transparent:true});
 }
 const rewards={
   'reserve-thruster':['breacher',0],'slide-loader':['breacher',0],'tactical-salvage':['cryo',1],

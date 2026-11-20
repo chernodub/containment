@@ -40,44 +40,59 @@ if(style>6.5){
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5){
- // The union takes maximum coverage. Only the earliest strike in each
- // connected group contributes a leading edge.
- float fill=0.,sweep=0.,border=0.,primary=0.;
+ // Merge the capsule footprints before inking their perimeter. A group
+ // shares the longitudinal front of its earliest commitment.
+ float fill=0.,core=0.,key=0.,pulseInk=0.,laneBoundary=1e4;
  for(int i=0;i<57;i++){
   if(i>=warningCount)break;
   vec4 o=warningOrigin[i],sz=warningSize[i],tm=warningTime[i];
-  vec2 delta=warningWorld-o.xy,q=vec2(dot(delta,o.zw),dot(delta,vec2(-o.w,o.z)));
-  float radius=sz.x, span=radius;
+  vec2 delta=warningWorld-o.xy;
+  vec2 q=vec2(dot(delta,o.zw),dot(delta,vec2(-o.w,o.z)));
   bool lane=sz.w>.5&&sz.w<1.5;
-  vec2 relative=lane?vec2(q.x-clamp(q.x,0.,sz.y),q.y):q;
-  float distanceFromOrigin=length(relative);
-  float boundary=distanceFromOrigin-radius;
+  float radial=length(lane?vec2(q.x-clamp(q.x,0.,sz.y),q.y):q);
+  float boundary=radial-sz.x;
+  if(boundary>.14)continue;
   if(sz.w>1.5){
    float angle=abs(atan(q.y,q.x))-sz.z;
-   boundary=max(boundary,sin(clamp(angle,-1.5708,1.5708))*distanceFromOrigin);
+   boundary=max(boundary,sin(clamp(angle,-1.5708,1.5708))*radial);
   }
-  border=max(border,1.-smoothstep(.055,.115,abs(boundary)));
-  if(boundary>0.)continue;
-  float urgency=1.-smoothstep(.055,.30,tm.y);
-  fill=max(fill,mix(.025,mix(.24,.30,tm.z),urgency));
-  if(tm.w>1.5||i==primaryWarning){
-   if(lane)span=sz.y+2.*radius;
-   float distanceToEdge=abs((lane?q.x+radius:distanceFromOrigin)-tm.x*span);
-   float leadingEdge=1.-smoothstep(.022,.058,distanceToEdge);
-   if(i==primaryWarning){
-    float pulse=sin(3.14159*clamp(tm.y/.2,0.,1.));
-    primary=max(primary,(1.-smoothstep(.04,.11,-boundary))*(.87+.13*pulse*flashScale));
-   }
-   sweep=max(sweep,leadingEdge*urgency);
+  if(boundary>.14)continue;
+  int leader=int(tm.w);
+  bool primary=leader==primaryWarning || i==primaryWarning;
+  float pulse=primary ? sin(3.14159*clamp(warningTime[max(0,primaryWarning)].y/.2,0.,1.))*flashScale : 0.;
+  float advance=lane?smoothstep(0.,max(.08,sz.y+sz.x),q.x):smoothstep(0.,sz.x,radial);
+  if(boundary<=0.)fill=max(fill,.18*advance*warningFillScale);
+
+  if(lane){
+   laneBoundary=min(laneBoundary,boundary);
+   vec4 lead=warningOrigin[leader],extent=warningSize[leader];
+   float along=dot(warningWorld-lead.xy,lead.zw);
+   float front=mix(0.,extent.y+extent.x,clamp(warningTime[leader].x,.12,1.));
+   float edge=abs(along-front);
+   float hull=1.-smoothstep(-.02,.062,boundary);
+   key=max(key,hull*(1.-smoothstep(.075,.122,edge)));
+   float stroke=hull*(1.-smoothstep(.026+.010*pulse,.054+.010*pulse,edge));
+   core=max(core,stroke*(primary?.95:.75));
+   pulseInk=max(pulseInk,stroke*pulse);
+  }else{
+   float edge=abs(radial-sz.x);
+   float limit=1.-smoothstep(.005,.055,boundary);
+   key=max(key,max(.62*(1.-smoothstep(.055,.11,abs(boundary))),limit*(1.-smoothstep(.082,.13,edge))));
+   float stroke=limit*(1.-smoothstep(.026+.012*pulse,.065+.012*pulse,edge));
+   core=max(core,stroke*(primary?.98:.79));
+   pulseInk=max(pulseInk,stroke*pulse);
   }
  }
- alpha=max(fill*warningFillScale,sweep*(.48+.36*flashScale));
- color=mix(vec3(.89,.002,.014),vec3(1.65,.018,.044),sweep);
- float backing=border*.83;
- color=mix(vec3(.009,.004,.008),color,alpha/max(.001,alpha+backing*(1.-alpha)));
- alpha+=backing*(1.-alpha);
- color=mix(color,vec3(1.9,.22,.24),primary);
- alpha=max(alpha,primary);
+ // The union's muted perimeter survives even when the traveling front
+ // passes under the marine. Internal capsule edges are absent.
+ float hullDistance=abs(laneBoundary);
+ float hullInk=.54*(1.-smoothstep(.014,.039,hullDistance));
+ key=max(key,.88*(1.-smoothstep(.049,.098,hullDistance)));
+ float ink=max(fill,key*.94);
+ color=mix(vec3(.016,.005,.009),vec3(.78,.025,.041),fill/max(.001,fill+key));
+ color=mix(color,vec3(.98,.19,.22),hullInk);
+ color=mix(color,vec3(2.05,.32,.33)+pulseInk*vec3(.55,.25,.25),core);
+ alpha=max(ink,core);
 
 }
 else if(style>4.5){
@@ -127,7 +142,7 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
- private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,family:'',melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private warningFrustum:T.Frustum|undefined;private readonly warningBounds=new T.Sphere();
  /** Borrow the renderer's settled frustum; warning state and priority stay live. */
@@ -161,14 +176,14 @@ export class AttackEffects {
  }
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
- forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
+ forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active&&warning.shape.length!==-1)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
  private fields:Pulse[]=[];private fieldMesh:T.InstancedMesh;
  private fire:Particle[]=[];private fireMesh:T.InstancedMesh;private textures:T.Texture[]=[];
  private links:{start:T.Vector3;end:T.Vector3;age:number;frost:boolean}[]=[];
  private arcs:{start:T.Vector3;end:T.Vector3;age:number;seed:number;ball?:boolean}[]=[];
  private glow:Particle[]=[];private smoke:Particle[]=[];private debris:Particle[]=[];private decals:Particle[]=[];private pulses:Pulse[]=[];
  private glowMesh:T.InstancedMesh;private smokeMesh:T.InstancedMesh;private debrisMesh:T.InstancedMesh;private decalMesh:T.InstancedMesh;private pulseMesh:T.InstancedMesh;private slashMesh:T.InstancedMesh;private beamMesh:T.InstancedMesh;
- private readonly emptyPriorityTexture = new T.DataTexture(new Uint8Array(2),1,1,T.RGFormat);
+ private readonly emptyPriorityTexture = new T.DataTexture(new Uint8Array(4),1,1,T.RGBAFormat);
  private readonly maskedGround: T.ShaderMaterial[] = [];
  setGroundPriorityTexture(texture: T.Texture | undefined): void {
   for (const material of this.maskedGround) material.uniforms.abilityPriorityMap.value = texture ?? this.emptyPriorityTexture;
@@ -181,6 +196,7 @@ export class AttackEffects {
  private readonly warningOrigins=Array.from({length:57},()=>new T.Vector4());
  private readonly warningSizes=Array.from({length:57},()=>new T.Vector4());
  private readonly warningTimes=Array.from({length:57},()=>new T.Vector4());
+ private readonly warningFamilies:string[]=Array(57).fill('');
  private readonly warningParents=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
  private readonly unionCount={value:0};private readonly unionFillScale={value:1};
  private warningMinX=0;private warningMinZ=0;private warningMaxX=0;private warningMaxZ=0;private warningCoverage=0;
@@ -207,7 +223,7 @@ export class AttackEffects {
   this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+33,6);this.hostileWarningMesh.name='hostile-warning-union';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=true;(this.hostileWarningMesh.material as T.Material).forceSinglePass=true;
   Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{warningOrigin:{value:this.warningOrigins},warningSize:{value:this.warningSizes},warningTime:{value:this.warningTimes},warningCount:this.unionCount,primaryWarning:this.primaryWarning,warningFillScale:this.unionFillScale});
   this.emptyPriorityTexture.needsUpdate=true;
-  for (const mesh of [this.decalMesh,this.fieldMesh,this.pulseMesh,this.slashMesh,this.beamMesh]) {
+  for (const mesh of [this.decalMesh,this.fieldMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fireMesh,this.smokeMesh]) {
    const material=mesh.material as T.ShaderMaterial;
    bindPriorityMask(material,this.emptyPriorityTexture,undefined,true);
    this.maskedGround.push(material);
@@ -233,8 +249,9 @@ export class AttackEffects {
  beginPriorityActors(camera:T.Camera){this.priorityCamera=camera;}
  /** Retained caller API; no screen-space discs or approximate body cut-outs. */
  addPriorityActor(_x:number,_z:number,_radius:number,_height:number){}
- private queueWarning(x:number,z:number,radius:number,length:number,angle:number,arc:number,kind:number,progress:number,remaining:number,heavy:boolean,marineX:number,marineZ:number,marineRadius:number){
+ private queueWarning(x:number,z:number,radius:number,length:number,angle:number,arc:number,kind:number,progress:number,remaining:number,heavy:boolean,marineX:number,marineZ:number,marineRadius:number,family=""){
   const i=this.unionCount.value;if(i>=57||radius<=0)return;
+  this.warningFamilies[i]=family;
   this.warningOrigins[i].set(x,z,Math.cos(angle),Math.sin(angle));
   this.warningSizes[i].set(radius,length,arc,kind);this.warningTimes[i].set(progress,Math.max(0,remaining)/1000,heavy?1:0,0);this.unionCount.value++;
   const shape=this.warningMarineShape;
@@ -243,10 +260,11 @@ export class AttackEffects {
    meleeStrikeContains(shape,x,z,angle,marineX,marineZ,marineRadius);
   const previous=this.primaryWarning.value;
   if(hits&&(previous<0||remaining/1000<this.warningTimes[previous].y))this.primaryWarning.value=i;
-  const reach=radius+length+.12,minX=x-reach,maxX=x+reach,minZ=z-reach,maxZ=z+reach;
+  const reach=radius+.14,endX=x+(kind===1?Math.cos(angle)*length:0),endZ=z+(kind===1?Math.sin(angle)*length:0);
+  const minX=Math.min(x,endX)-reach,maxX=Math.max(x,endX)+reach,minZ=Math.min(z,endZ)-reach,maxZ=Math.max(z,endZ)+reach;
   this.warningMinX=Math.min(this.warningMinX,minX);this.warningMaxX=Math.max(this.warningMaxX,maxX);this.warningMinZ=Math.min(this.warningMinZ,minZ);this.warningMaxZ=Math.max(this.warningMaxZ,maxZ);
   // Conservative projected AABB × maximum fill alpha bounds total optical fill
-  // coverage to 2.5% of the viewport. Edges are deliberately outside this budget.
+  // coverage to 7% of the viewport. Edges are deliberately outside this budget.
   if(this.priorityCamera){let l=1,r=-1,t=1,b=-1;for(let k=0;k<4;k++){const p=this.priorityPoint.set(k&1?maxX:minX,.04,k&2?maxZ:minZ).project(this.priorityCamera);l=Math.min(l,p.x);r=Math.max(r,p.x);t=Math.min(t,p.y);b=Math.max(b,p.y);}
    const area=Math.max(0,Math.min(1,r)-Math.max(-1,l))*Math.max(0,Math.min(1,b)-Math.max(-1,t))*.25;
    const urgency=1-T.MathUtils.smoothstep(Math.max(0,remaining)/1000,.055,.30);
@@ -260,15 +278,29 @@ export class AttackEffects {
   for(let i=0;i<n;i++)for(let j=0;j<i;j++){
    const a=this.warningOrigins[i],b=this.warningOrigins[j],sa=this.warningSizes[i],sb=this.warningSizes[j];
    const la=sa.w>.5&&sa.w<1.5?sa.y:0,lb=sb.w>.5&&sb.w<1.5?sb.y:0;
+   if(!la||!lb||this.warningFamilies[i]!==this.warningFamilies[j]||a.z*b.z+a.w*b.w<.92)continue;
    const ax=a.x+a.z*la,az=a.y+a.w*la,bx=b.x+b.z*lb,bz=b.y+b.w*lb;
    // Conservative footprint AABB components catch crossing lanes whose far
    // endpoints differ. This changes hierarchy only, never a shape's clip.
    if(Math.max(a.x,ax)+sa.x<Math.min(b.x,bx)-sb.x||Math.max(b.x,bx)+sb.x<Math.min(a.x,ax)-sa.x||Math.max(a.y,az)+sa.x<Math.min(b.y,bz)-sb.x||Math.max(b.y,bz)+sb.x<Math.min(a.y,az)-sa.x)continue;
+   // Measure the lateral gap over the shared longitudinal interval. The
+   // broad-phase AABBs alone overjoin oblique rows across empty floor.
+   const dx=b.x-a.x,dz=b.y-a.y;
+   const start=dx*a.z+dz*a.w, alignment=b.z*a.z+b.w*a.w;
+   const end=start+lb*alignment;
+   const from=Math.max(0,start),to=Math.min(la,end),reach=sa.x+sb.x;
+   if(from>to+reach)continue;
+   const side=dz*a.z-dx*a.w,slope=(b.w*a.z-b.z*a.w)/alignment;
+   const sideFrom=side+(T.MathUtils.clamp(from,start,end)-start)*slope;
+   const sideTo=side+(T.MathUtils.clamp(to,start,end)-start)*slope;
+   if(sideFrom*sideTo>0&&Math.min(Math.abs(sideFrom),Math.abs(sideTo))>reach)continue;
    const ra=this.warningRoot(i),rb=this.warningRoot(j);if(ra===rb)continue;
    this.warningParents[rb]=ra;
    if(this.warningTimes[this.warningSoonest[rb]].y<this.warningTimes[this.warningSoonest[ra]].y)this.warningSoonest[ra]=this.warningSoonest[rb];
   }
-  for(let i=0;i<n;i++){const root=this.warningRoot(i);this.warningTimes[i].w=this.warningSoonest[root]===i?2:0;}
+  const primary=this.primaryWarning.value;
+  if(primary>=0)this.warningSoonest[this.warningRoot(primary)]=primary;
+  for(let i=0;i<n;i++)this.warningTimes[i].w=this.warningSoonest[this.warningRoot(i)];
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
  syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
@@ -276,6 +308,7 @@ export class AttackEffects {
    if(!warning.active)continue;
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
+   warning.family=enemy?.type??'';
    warning.heavy=!!enemy&&(enemy.type==='brute'||!!enemy.champion);
    if(warning.melee){
     if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
@@ -767,11 +800,11 @@ export class AttackEffects {
    this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);this.dummy.scale.setScalar(pulse.radius*(pulse.slash?.65+t*.35:.15+t*.85));this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*(this.warningNear(pulse.p.x,pulse.p.z,pulse.radius)?.20:.8));
   }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
-   if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius);
+   if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius,native.family);
   }
   if(this.bossWarning){const w=this.bossWarning;if(this.warningVisible(w.x,w.z,w.radius))this.queueWarning(w.x,w.z,w.radius,0,0,0,0,w.progress,(1-w.progress)*1000,true,marineX,marineZ,marineRadius);}
   this.groupWarnings();
-  this.unionFillScale.value=Math.min(1,.025/Math.max(.025,this.warningCoverage));
+  this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.unionCount.value?1:0);
 

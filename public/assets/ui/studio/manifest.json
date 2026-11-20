@@ -1,21 +1,24 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 143936,
+    "bytes": 166396,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.55,
+      "span": 2.75,
       "subjects": [
         {
           "kind": "marine",
           "rig": "breacher",
-          "weapon": "shotgun"
+          "weapon": "shotgun",
+          "pose": "ram",
+          "frame": 0.35,
+          "aim": 2.2
         }
       ],
       "focus": [
         0,
-        1.23,
+        1.12,
         0
       ],
       "transparent": true
@@ -23,21 +26,24 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 144151,
+    "bytes": 122093,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.55,
+      "span": 2.75,
       "subjects": [
         {
           "kind": "marine",
           "rig": "cryo",
-          "weapon": "rifle"
+          "weapon": "rifle",
+          "pose": "cryo-nova",
+          "frame": 0.3,
+          "aim": -1.35
         }
       ],
       "focus": [
         0,
-        1.23,
+        1.12,
         0
       ],
       "transparent": true
@@ -45,21 +51,24 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 160566,
+    "bytes": 181973,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.55,
+      "span": 2.75,
       "subjects": [
         {
           "kind": "marine",
           "rig": "pyro",
-          "weapon": "rocket"
+          "weapon": "rocket",
+          "pose": "flashfire",
+          "frame": 0.4,
+          "aim": -3.1
         }
       ],
       "focus": [
         0,
-        1.23,
+        1.12,
         0
       ],
       "transparent": true
@@ -67,21 +76,24 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 149080,
+    "bytes": 152522,
     "shot": {
       "width": 640,
       "height": 640,
-      "span": 2.55,
+      "span": 2.75,
       "subjects": [
         {
           "kind": "marine",
           "rig": "arc",
-          "weapon": "plasma"
+          "weapon": "plasma",
+          "pose": "overload",
+          "frame": 0.35,
+          "aim": -1.5
         }
       ],
       "focus": [
         0,
-        1.23,
+        1.12,
         0
       ],
       "transparent": true

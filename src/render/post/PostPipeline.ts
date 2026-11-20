@@ -6,7 +6,7 @@ import { INK_STRENGTHS } from './Ink';
 import { installGeometryClearPolicy } from './GeometryBuffer';
 import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } from '../lighting/GraphicSurface';
 import {
-  ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
+  ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DataTexture, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
   NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, RedFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
@@ -58,6 +58,20 @@ export class PostPipeline {
   get sceneDepthTexture(): DepthTexture | null { return this.resources?.scene.depthTexture ?? null; }
   /** VFX12: borrowed opaque classification excludes actor self-occlusion. */
   get sceneGeometryTexture() { return this.resources?.scene.textures[1] ?? null; }
+  private readonly outlineIds=new Uint8Array(256);
+  private readonly nextOutlineIds=new Uint8Array(256);
+  private readonly outlineTexture=Object.assign(new DataTexture(this.outlineIds,256,1,RedFormat),{needsUpdate:true});
+  beginCombatOutlines():void {this.nextOutlineIds.fill(0);}
+  markCombatOutline(actor:{userData:Record<string,unknown>}):void {
+    const id=actor.userData.containmentGeometryId;
+    if(typeof id==='number'&&id>0&&id<256)this.nextOutlineIds[id]=255;
+  }
+  finishCombatOutlines():void {
+    if(this.outlineIds.some((value,id)=>value!==this.nextOutlineIds[id])||this.outlineTexture.version===0){
+      this.outlineIds.set(this.nextOutlineIds);
+      this.outlineTexture.needsUpdate=true;
+    }
+  }
   private styleStrength:GraphicStrength='bold';
   /** Debug art review strengths share the shipping shader programs. */
   setStyleStrength(value:GraphicStrength):void {
@@ -204,6 +218,7 @@ export class PostPipeline {
   /** Releases all GPU resources; safe to repeat during context recovery. */
   dispose(): void {
     if (this.disposed) return;
+    this.outlineTexture.dispose();
     this.disposed = true;
     this.softParticleBinding?.release();this.softParticleBinding=undefined;
     this.releaseGeometryClear();
@@ -341,7 +356,7 @@ export class PostPipeline {
       waves: { value: this.distortion.waves }, shapes: { value: this.distortion.shapes }, time: { value: 0 },
     });
     const composite = this.material(compositeFragment, {
-      tGeometry:{value:scene.textures[1]},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStrength:{value:this.styleStrength==='bold'?1:this.styleStrength==='medium'?.5:0},inkStyle:{value:new Vector4().fromArray(INK_STRENGTHS[this.styleStrength])},
+      tGeometry:{value:scene.textures[1]},combatOutlineIds:{value:this.outlineTexture},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStrength:{value:this.styleStrength==='bold'?1:this.styleStrength==='medium'?.5:0},inkStyle:{value:new Vector4().fromArray(INK_STRENGTHS[this.styleStrength])},
       tScene: { value: scene.texture }, tDepth: { value: scene.depthTexture },
       tAO: { value: ao.texture }, tBloom: { value: bloomA.texture }, tDistortion: { value: distortion.texture },
       projectionInverse: { value: new Matrix4() }, cameraWorld: { value: new Matrix4() },

@@ -59,6 +59,11 @@ void main(){
  float dash=step(.36,fract(along*32.-boundaryTime*.35));
  float tick=step(.90,fract(along*8.-boundaryTime*.0875));
  float a=edge*max(dash*.56,tick)*ink.a*data.w;
+ // Hot boundaries share the ember cadence of the fuel, including on Low.
+ if(ink.r>ink.g*2.3&&ink.g>ink.b*1.6){
+  float ember=sin(along*402.1239)+.45*sin(along*703.7168);
+  a*=smoothstep(.40,.95,ember)*.68;
+ }
  if(cold.z>0.)a*=mix(.08,1.,smoothstep(cold.z*.94,cold.z,length(boundaryWorld-cold.xy)));
  if(a<.004)discard;
  gl_FragColor=vec4(mix(ink.rgb,vec3(.62,.91,1.),tick),a);

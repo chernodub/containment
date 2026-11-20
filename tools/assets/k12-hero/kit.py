@@ -583,6 +583,7 @@ def text_mesh(name, text, size, origin, normal, up, depth=.0006, collection=None
     curve.body = text; curve.size = size; curve.extrude = depth * .5
     curve.align_x = align; curve.align_y = 'CENTER'
     curve.space_character = 1.08
+    curve.resolution_u = 3   # SHADE15: game-LOD stencils stay cheap
     obj = bpy.data.objects.new(name, curve)
     link(obj, collection)
     p = Planar(origin, normal, up)

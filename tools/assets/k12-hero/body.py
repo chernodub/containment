@@ -399,6 +399,9 @@ class Suit:
         for side in ('R', 'L'):
             self.pauldron(rig, side, col)
         getattr(self, rig)(col)
+        # SHADE15: the title's big "07" on the large left pauldron, in the game mesh too (bakes into the atlas).
+        big = 'L' if rig != 'pyro' else 'R'
+        self.stamp(self.pauldron_caps[big], '07', self.pauldron_centre[big] + V((-.22 if big == 'L' else .22, -.02, .10)), .075, 'upper_arm.' + big)
         if self.high:
             # Rig code stencilled on the right pauldron cap.
             self.stamp(self.pauldron_caps['R'], {'breacher': 'BR-1', 'cryo': 'CR-2', 'pyro': 'PY-3', 'arc': 'AR-4'}[rig],
@@ -423,11 +426,11 @@ class Suit:
         proj = kit.Spherical(c, (sign, 0, 0), (0, 0, 1))   # lon: + toward back for R? computed below
         bone = 'upper_arm.' + side
         unit = 1 / (.17 * math.pi / 180)
-        big = rig == 'breacher' and side == 'L' or rig == 'pyro' and side == 'R'
-        scale = 1.18 if big else (.86 if rig == 'arc' else 1.0)
+        big = (side == 'L') != (rig == 'pyro')   # SHADE15: every rig carries the title's big pauldron
+        scale = 1.40 if big else (1.0 if rig == 'arc' else 1.15)   # SHADE15: one broad saturated shoulder plane
         def P(pts):
             return [(u * scale, v * scale) for u, v in pts]
-        role = 'hazard' if rig == 'breacher' and side == 'L' else col
+        role = col   # SHADE15: solid rig colour (the title's big pauldron), no hazard stripes
         cap = P([(-70, -8), (70, -8), (76, 34), (48, 74), (-48, 74), (-76, 34)])
         self.__dict__.setdefault('pauldron_caps', {}); self.__dict__.setdefault('pauldron_centre', {})
         self.pauldron_centre[side] = c

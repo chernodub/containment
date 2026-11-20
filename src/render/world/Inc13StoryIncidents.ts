@@ -80,7 +80,7 @@ const incidents:Record<string,Incident>={
     pieces(p){
       // The open suitcase has fallen lid-first; its striped sleeve is caught
       // on the lip. The seated rabbit's long ears survive reduction to 480px.
-      p.box(-32,6,49,43,10,31,0x977154,-.18);
+      p.box(-32,6,49,43,10,31,0x9a6a44,-.18);
       p.box(-33,11,49,36,1,24,0x4b5049,-.18);
       p.box(-36,17,32,42,26,4,0xa68b6b,-.18,-.08);
       p.face([[-49,12,39],[-27,14,43],[-21,12,58],[-34,14,63],[-49,12,59]],0x92afab);
@@ -89,8 +89,8 @@ const incidents:Record<string,Incident>={
       const plush=(x:number,h:number,z:number,w:number,y:number,d:number,color:number,tilt=0)=>{
         const g=new T.SphereGeometry(1,10,7);g.scale(w,y,d);g.rotateZ(tilt);p.add(g.translate(x,h,z),color);
       };
-      plush(9,10,65,9,11,7,0xb88961);plush(9,22,65,9,8,7,0xd0aa76);
-      plush(5,33,65,3.4,9,3,0xc5a172,.22);plush(14,32,65,3.5,8,3,0xb99470,-.32);
+      plush(9,10,65,9,11,7,0xd8ae80);plush(9,22,65,9,8,7,0xd0aa76);
+      plush(5,33,65,3.4,9,3,0xead4ad,.22);plush(14,32,65,3.5,8,3,0xdbc399,-.32);
       plush(9,20,71,5,4,3,0xe3cea1);plush(9,23,73,2,1.5,1.3,0x423a39);
       for(const x of [3,16])plush(x,4,71,5,4,6,0xba9574);
       // Drawer runners, an adult shoe, a child's shoe and a keepsake frame.
@@ -324,14 +324,14 @@ const incidents:Record<string,Incident>={
         const torn:Point3=[-36+dx,26+dy,29];
         const crown:Point3=[-29+dx,61+dy,15];
         const bend:Point3=[-54+dx,69+dy,-20];
-        p.rod(torn,crown,3.6,0x625568);
-        p.rod(crown,bend,3.2,0x706474);
-        p.rod(bend,wall,2.6,0x635669);
+        p.rod(torn,crown,3.6,0x887485);
+        p.rod(crown,bend,3.2,0x96858c);
+        p.rod(bend,wall,2.6,0x837787);
         p.face([torn,crown,bend,[-39+dx,51+dy,-5]],0x655766);
       }
       for(let i=0;i<6;i++){
         const x=-31+i*12;
-        p.face([[x,2,-10],[x+7,2,-10],[x+13,21+i%3*5,4],[x+8,25+i%3*5,6]],0x64686b);
+        p.face([[x,2,-10],[x+7,2,-10],[x+13,21+i%3*5,4],[x+8,25+i%3*5,6]],0x9aa7a6);
         p.rod([x+4,7,-7],[x+13,15,12],2.1,0x62435d);
       }
     },

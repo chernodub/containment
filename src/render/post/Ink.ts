@@ -10,6 +10,7 @@ uniform sampler2D tGeometry;
 uniform vec2 inkPixel;
 uniform float inkMode;
 uniform float inkStrength;
+uniform sampler2D combatOutlineIds;
 uniform vec4 inkStyle; // actor width, prop width, opacity, crease strength
 vec3 inkNormal(vec2 e) {
  e=e*2.0-1.0;vec3 n=vec3(e,1.0-abs(e.x)-abs(e.y));
@@ -17,8 +18,10 @@ vec3 inkNormal(vec2 e) {
  return normalize(n);
 }
 float inkBackdropLuma=1.0;
+float combatSilhouette=0.;
 float inkCoverage(vec2 uv, float depth, vec4 center) {
  inkBackdropLuma=1.0;
+ combatSilhouette=0.;
  center.w=floor(center.w+.5);
  float centerRegion=floor(center.w/8.0);center.w=mod(center.w,8.0);
  if(inkMode<.5||center.z<.5||center.w<.5||center.w>6.5||abs(center.z-floor(center.z+.5))>.01||abs(center.w-floor(center.w+.5))>.01)return 0.0;
@@ -48,6 +51,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   // and position reconstructions; major actor creases have their own kernel.
   if(actor) {
    edge=max(edge,different*surface);
+   combatSilhouette=max(combatSilhouette,different*surface);
    // Only contour fragments inspect adjacent scene radiance. A quiet light line
    // separates dark chitin from dark local scenery without lighting the floor.
    if(different*surface>.5)inkBackdropLuma=min(inkBackdropLuma,dot(texture2D(tScene,q).rgb,vec3(.2126,.7152,.0722)));
@@ -115,6 +119,12 @@ export const inkComposite = /* glsl */ `
   // Elite silhouettes carry a restrained bronze contour in addition to their crest.
   float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
   contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);
+  float hotSurface=smoothstep(.32,1.05,max(color.r,max(color.g,color.b)));
   color=mix(color,contour,line);
+  if(combatSilhouette>.01&&geometry.w>=3.&&geometry.w<=6.){
+   float committed=texture2D(combatOutlineIds,vec2((geometry.z+.5)/256.,.5)).r;
+   // Bright effects cannot erase the identified actor's silhouette.
+   color=mix(color,vec3(.80,.91,1.),combatSilhouette*max(committed*.62,step(abs(geometry.w-3.),.25)*(.33+.52*hotSurface)));
+  }
  }
 `;

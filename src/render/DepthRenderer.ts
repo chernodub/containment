@@ -602,6 +602,8 @@ export class DepthRenderer {
   const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight);if(bossWeight)hud.selectPrimaryContact(-1,bossFrame.x/UNIT,bossFrame.y/UNIT,3.4,this.queen?.height??4.5);/* I13: tall guardian anatomy must stay paired with the marine during brood/charge. */else{const guardian=enemies.find(e=>e.champion&&e.health>0&&Math.hypot(e.x-p.x,e.y-p.y)<12.5*UNIT);if(guardian)hud.selectPrimaryContact(guardian.id,guardian.x/UNIT,guardian.y/UNIT,guardian.radius/UNIT,this.cameraContactHeight(guardian.id));}hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   if(!hud.hasEngagement||bossWeight)this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
+  // WARN16 look-ahead precedes the existing room AABB and marine-envelope fit.
+  if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint);
   if(condition?.condition.id==='vent'&&condition.ventLive&&dt>0)this.cameraRig.setRumbleFloor(.19);
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
@@ -712,6 +714,13 @@ export class DepthRenderer {
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
+  // WARN16 uses the existing ink composite and the actor IDs in its opaque buffer.
+  this.post.beginCombatOutlines();
+  if(!menu)for(const enemy of enemies){
+   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleePhase==='windup'||enemy.meleePhase==='strike'))continue;
+   const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
+  }
+  this.post.finishCombatOutlines();
   try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }

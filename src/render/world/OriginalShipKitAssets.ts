@@ -187,6 +187,20 @@ function sourceEmitters(geometry: T.BufferGeometry): Emitter[] {
   return emitters;
 }
 
+/** The forward port corner of the lowest Freight container folded under load.
+ * Both shipping LODs and their captive bands use the same asset-space crease. */
+function crushFreightCorner(geometry: T.BufferGeometry): void {
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+    if (y > 1.02 || x >= -.18 || z <= .12) continue;
+    const crease = Math.min(1, (-.18 - x) / .40) * Math.min(1, (z - .12) / .32);
+    positions.setXYZ(i, x + .23 * crease, y * (1 - .53 * crease), z - .15 * crease);
+  }
+  // Retain the baked bevel normals. Recomputing them into the shipping
+  // normalized-byte attribute quantizes small bevel face areas to zero.
+}
+
 /** Build room-owned stock-PBR batches, preserving native origins and baked AO.
  * Source graphs, immutable source buffers and source materials remain untouched.
  * Dispose the returned group with disposeModel; retire borrowed sources separately. */
@@ -258,7 +272,11 @@ export function buildOriginalShipKit(
           }
           for (const name of Object.keys(geometry.attributes)) if (name !== 'position' && name !== 'normal' && !(name === 'uv' && sourceMaterial.normalMap)) geometry.deleteAttribute(name);
           geometry.setAttribute('color', new T.BufferAttribute(rgb, 4));
-          geometry.applyMatrix4(combined);
+          if (instance.asset === 'shifted-load') {
+            geometry.applyMatrix4(relative);
+            crushFreightCorner(geometry);
+            geometry.applyMatrix4(instance.matrix);
+          } else geometry.applyMatrix4(combined);
           if (floorCreep && template) {
             // Only owned output triangles are trimmed. Source buffers and native
             // floor/collision geometry remain untouched; no query mesh is created.
@@ -288,7 +306,7 @@ export function buildOriginalShipKit(
           if (!bucket) {
             const material = sourceMaterial.clone();
             if(rooted){
-              material.color.setHex(0x674957);material.roughness=.46;
+              material.color.setHex(0x97788e);material.roughness=.23;
               material.emissive.setHex(0x493244);material.emissiveIntensity=.21;
             }
             ownedMaterials.add(material); material.emissiveIntensity *= instance.emissionGain ?? 1; material.name = finish; material.vertexColors = true;

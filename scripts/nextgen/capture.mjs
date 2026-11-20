@@ -163,7 +163,7 @@ try{
    // Asset warm-up may consume random values asynchronously. Restart the visual
    // stream only after room preparation, before synchronous combat/VFX staging.
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
-   let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
+   let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status,family:scenario.combatFamily});
    if(scenario.combat&&scenario.textureWeapon)await page.evaluate(weapon=>{const d=window.__containmentDebug,g=d.game;g.switchWeapon(weapon);if(g.combat.snapshot.weaponId!==weapon)throw Error('Texture review weapon selection failed');const shots=g.stats.shotsFired;for(let frame=0;frame<120;frame++){d.step(1000/60);if(g.stats.shotsFired>shots&&d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player'))break;}if(g.stats.shotsFired===shots)throw Error('Texture review weapon never fired');d.refresh();},scenario.textureWeapon);
    if(scenario.kiting)staging=kitingRetries?await stageKitingBurst(scenario.burst?burst:1):await page.evaluate(stageKiting);
    if(hudInsets)await page.evaluate(insets=>{const d=window.__containmentDebug;if(typeof d.renderer.setHudInsets!=='function')throw Error('Frozen renderer has no setHudInsets API');d.renderer.setHudInsets(insets);d.refresh();},hudInsets);

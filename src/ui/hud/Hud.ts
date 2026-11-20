@@ -202,7 +202,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     };
     const statusActive = (target: number) => {
         const status = game.boonStatuses(target);
-        return status.burning || status.poisoned;
+        return status.burning || status.poisoned || (status.chillStacks >= 3 && game.expedition.build.mutations.includes('frostbite'));
     };
     const warningOverlaps = (left: number, top: number, right: number, bottom: number) =>
         renderer.warningObstructs(left, top, right, bottom);

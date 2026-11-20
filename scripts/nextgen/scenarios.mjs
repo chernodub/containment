@@ -166,6 +166,7 @@ export const SCENARIOS=[
   points.sort((a,b)=>a.y-b.y||Math.abs(a.x-g.geometry.bounds.width*.5)-Math.abs(b.x-g.geometry.bounds.width*.5));
   if(!points.length)throw Error('No legal far-edge density view');Object.assign(g.player,points[0]);d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});d.step(900);g.enemies.reset();d.refresh();
  }},
+ {id:'warn16-brute-heavy',room:'freight-hold',state:'playing',combat:true,combatFamily:'brute',burst:true,diagnosticOnly:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
  {id:'combat-heavy',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
  {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
  {id:'boss',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');candidates.sort((a,b)=>Math.hypot(a.x-q.x,a.y-q.y)-Math.hypot(b.x-q.x,b.y-q.y));Object.assign(d.game.player,candidates[0]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
@@ -361,7 +362,7 @@ SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-low'),id:'x2-calm-motion-lo
 
 // Local combat staging uses legal occupancy and clear shots, real enemy systems,
 // real weapons, real mutation triggers, and the unchanged gameplay camera.
-export function stageCombat({status=false}){
+export function stageCombat({status=false,family}){
  const d=window.__containmentDebug,g=d.game;d.invulnerable(true);g.enemies.reset();
  const {x:boundX=0,y:boundY=0,width,height}=g.geometry.bounds,candidates=[];
  for(let y=boundY+120;y<boundY+height-100;y+=80)for(let x=boundX+120;x<boundX+width-100;x+=80){
@@ -412,7 +413,7 @@ export function stageCombat({status=false}){
    const angle=shotLaneAngle??n*Math.PI/24,fx=Math.cos(angle),fy=Math.sin(angle);
    if(![32,64,96].every(radius=>d.canStand(g.player.x+fx*radius,g.player.y+fy*radius,16))||!d.clearShot(g.player.x+fx*120,g.player.y+fy*120))continue;
    for(const points of layouts){
-    const packed=points.filter(p=>{const dx=p.x-g.player.x,dy=p.y-g.player.y;return !(dx*fx+dy*fy>0&&dx*fx+dy*fy<320&&Math.abs(dx*fy-dy*fx)<reservedHalfWidth);}).slice(0,26);
+    const packed=points.filter(p=>{const dx=p.x-g.player.x,dy=p.y-g.player.y;return !(dx*fx+dy*fy>0&&dx*fx+dy*fy<320&&Math.abs(dx*fy-dy*fx)<reservedHalfWidth);}).slice(0,family?20:26);
     const score=packed.length*10000+packed.reduce((sum,p)=>sum+p.interior,0);if(score>bestScore){best=packed;bestScore=score;angleChoice=angle;}
    }
   }
@@ -422,7 +423,7 @@ export function stageCombat({status=false}){
  let staged=[],chosen=null,mostVisible=0,plasmaLaneProof=null;
  const place=points=>{
   g.enemies.reset();const placed=[];
-  for(const p of points){const id=d.spawn(placed.length%5===0?'spitter':'brute',p.x,p.y,placed.length%4===0);if(id){
+  for(const p of points){const id=d.spawn(family??(placed.length%5===0?'spitter':'brute'),p.x,p.y,placed.length%4===0);if(id){
    const actor=g.enemies.getSnapshot(id);
    if(!actor||!d.canStand(p.x,p.y,actor.radius)||!d.clearShot(p.x,p.y)||Math.hypot(p.x-g.player.x,p.y-g.player.y)<actor.radius+g.player.radius+12)throw Error('Heavy native spawn clearance failed');
    placed.push({...p,id,radius:actor.radius});
@@ -434,7 +435,7 @@ export function stageCombat({status=false}){
   for(let pass=0;pass<6&&placed.length;pass++){
    const actualPresentationMs=settlePresentation();visible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;
    packingTrials.push({player:{x:g.player.x,y:g.player.y},pass,staged:placed.length,visible,requestedPresentationMs:200,actualPresentationMs,simulationAdvancedMs:0});
-   if(visible>=24)break;
+   if(visible>=(family?20:24))break;
    if(pass<5){points=pack();placed=place(points);}
   }
   return {placed,visible};
@@ -445,7 +446,7 @@ export function stageCombat({status=false}){
   shotLaneAngle=null;Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:g.player.angle,autoAim:false});settlePresentation(36);
   const result=refine();staged=result.placed;const visible=result.visible;
   if(visible>mostVisible){mostVisible=visible;chosen={...center,shotLaneAngle,points:staged.map(p=>({...p}))};}
-  if(visible>=24)break;
+  if(visible>=(family?20:24))break;
  }
  // Recreate the best trial when the last spatial candidate was worse. Eighteen
  // initial visible bodies leave the unchanged twelve-per-frame combat gate room

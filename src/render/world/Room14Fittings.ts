@@ -1,3 +1,6 @@
+import {addFrame16Incidents} from './Frame16Incidents';
+import {addFrame16Deck} from './Frame16Deck';
+import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
@@ -33,6 +36,8 @@ const inserts:Record<string,Insert>={
 export function addRoom14Fittings(root:T.Group,id:string):void {
   const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS],insert=inserts[id];
   if(!plan||!insert)return;
+  addFrame16Incidents(root,id);
+  addFrame16Deck(root,ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES],plan.arena);
   const [kind,length,width,yaw,bays]=insert,parts:T.BufferGeometry[]=[];
   const plate=(x:number,z:number,w:number,d:number,bottom:number,top:number,tone:number)=>{
     const g=new T.BoxGeometry(w,top-bottom,d);
@@ -58,7 +63,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     // blocking footprint is visible even between individual loose pieces.
     const cover=INCIDENT_OBSTACLES[id][id==='passenger-vault'?1:0];
     const base=new T.Mesh(new T.BoxGeometry((cover.width-1.4)/32,.24,(cover.height-1.4)/32),
-      new T.MeshStandardMaterial({color:id==='passenger-vault'?0x687b83:0x6e5139,roughness:.82,metalness:.18}));
+      new T.MeshStandardMaterial({color:id==='passenger-vault'?0x687b83:0x253c4e,roughness:.82,metalness:.18}));
     base.name='room14-displaced-transport-base';
     base.position.set((cover.x+cover.width*.5)/32,.12,(cover.y+cover.height*.5)/32);
     base.receiveShadow=true;
@@ -76,6 +81,16 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   mesh.name='room14-'+kind;mesh.position.set(plan.arena.x/32,.0002,plan.arena.y/32+1.1);
   mesh.rotation.y=yaw;mesh.receiveShadow=true;root.add(mesh);
 
+  // Two restrained pools originate at actual diffusers already in the kit.
+  // The existing distance-ranked light pool owns their allocation and Low fallback.
+  const lamps=root.userData.lightFixtures as {x:number;z:number;color:number;nativeColor:boolean;gain:number}[]|undefined;
+  if(lamps?.length){
+    const distance=(p:{x:number;z:number})=>Math.hypot(p.x-plan.arena.x/32,p.z-plan.arena.y/32);
+    const sorted=[...lamps].sort((a,b)=>distance(a)-distance(b));
+    const work=sorted[0],consoleLamp=sorted.find(p=>Math.hypot(p.x-work.x,p.z-work.z)>3);
+    Object.assign(work,{color:0xebcc99,nativeColor:true,gain:.56});
+    if(consoleLamp)Object.assign(consoleLamp,{color:0x9bcad5,nativeColor:true,gain:.47});
+  }
   const source=roomValueProfile(id)?.landmark;
   if(!source)return;
   // Physical diffuser and protective back at the existing pooled practical.

@@ -28,6 +28,7 @@ const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {infested:.001,co
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
 export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[], valueStandard=true) {
   const valueProfile = roomValueProfile(templateId);
+  const deckGain = (roomDeckGain[templateId ?? ''] ?? 1) * (valueProfile ? .83 : 1);
   const mood = getEnvironmentMood(environment), seen = new Set<T.MeshStandardMaterial>();
   const legacyBounce=['cold-aisle','cryo-gallery','turbine-hall','power-conduits'].includes(templateId??'')?.006:0;
   const tint = new T.Color(deckTint[environment]),reactorDeck=templateId==='overload-floor'?new T.Color(0x46505a):reactorSteel;
@@ -63,7 +64,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         }
         applyFloorVariation(material, environment, practicalShapes);
       }
-      if(deckNames.has(material.name))material.color.multiplyScalar(roomDeckGain[templateId??'']??1);
+      if(deckNames.has(material.name))material.color.multiplyScalar(deckGain);
       if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xfffaf0);material.emissiveIntensity=7.5;applyHotFixtureSurface(material,hotCore);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {

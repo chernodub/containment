@@ -325,6 +325,8 @@ void main(){
   float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
   float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
   float channels=smoothstep(m>10.5?.56:.72,m>10.5?.74:.86,n+fine*.12);
+  float a=fxLocal.x*6.2831853;
+  if(m<10.5)rim*=smoothstep(.35,.70,fxNoise(vec2(cos(a),sin(a))*max(9.,R*4.)+fxSeed));
   float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
   float hot=channels*(.55+.35*fine)+boil*.7;
   float fade=fxParam;
@@ -460,6 +462,13 @@ void main(){
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
+ #ifdef HAS_ABILITY_PRIORITY_MASK
+ float coreCover=max(prioritySample.b,prioritySample.r);
+ if(groundSheet || m<.5 || m>14.5){
+   // Premultiplied emission must obey the same cap as coverage.
+   keep*=1.-.83*coreCover;
+ }
+ #endif
  // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
  keep*=fxYield;
  alpha=clamp(alpha*keep,0.,1.);emit*=keep;

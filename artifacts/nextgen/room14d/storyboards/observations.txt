@@ -1,5 +1,0 @@
-passenger-vault 202 samples 42 near-cover actor samples 0 inside
-freight-hold 349 samples 85 near-cover actor samples 0 inside
-relay-racks 506 samples 39 near-cover actor samples 0 inside
-swarm-junction 934 samples 188 near-cover actor samples 0 inside
-manual-control-chamber 817 samples 1335 near-cover actor samples 0 inside

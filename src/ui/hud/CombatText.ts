@@ -39,6 +39,7 @@ type Float = {
     fontSize: number;
     scale: number;
     accumulating: boolean;
+    ticks: number;
 };
 const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
@@ -68,7 +69,7 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -120,13 +121,13 @@ export class CombatText {
         if (killed) return;
         const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && sameTarget(p)) : undefined;
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
-        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && (periodic ? p.accumulating : !p.accumulating && p.source === source && p.status === status) && sameTarget(p));
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && (periodic ? p.ticks > 0 : p.ticks === 0 && p.source === source && p.status === status) && sameTarget(p));
         const merge = !!entry && entry.kind === kind && (periodic ? entry.accumulating : entry.source === source && entry.status === status && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS);
         const terminalTicks = lethal && !periodic
             ? this.pool.find(p => p.life > 0 && p.accumulating && sameTarget(p))?.amount ?? 0
             : 0;
         const total = (merge ? entry!.amount : 0) + amount + terminalTicks;
-        const priority = lethal ? 3 : critical || total >= 30 ? 2 : kind === 'damage' && !periodic ? 1 : 0;
+        const priority = lethal ? 3 : critical || total >= 30 ? 2 : kind === 'damage' ? 1 : 0;
         if (!entry) entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
             // Kills outrank substantial hits, which outrank routine ticks/chips.
@@ -151,6 +152,8 @@ export class CombatText {
         entry.target = target;
         entry.age = merge ? entry.age : 0;
         entry.life = .8;
+        entry.ticks = periodic ? (merge ? entry.ticks : 0) + 1 : 0;
+        entry.node.dataset.ticks = String(entry.ticks);
         entry.accumulating = kind === 'damage' && periodic && !lethal;
         entry.kind = kind;
         entry.status = color;
@@ -251,14 +254,14 @@ export class CombatText {
             // preserves each total while preventing cross-target text piles.
             const originX = x, originY = y;
             let placed = false;
-            for (let attempt = 0; attempt < 33; attempt++) {
+            for (let attempt = 0; attempt < 9; attempt++) {
                 const row = Math.floor((attempt + 1) / 3);
                 const side = attempt % 3;
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
                 y = Math.max(8, Math.min(h - p.height - 8, originY - row * (p.height + 6)));
                 if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) continue;
                 if (hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) continue;
-                if (this.renderer.warningObstructs(x,y,x+p.width,y+p.height)) continue;
+                if (this.renderer.warningObstructs(x-8,y-8,x+p.width+8,y+p.height+8)) continue;
                 let occupied = false;
                 for (const other of this.pool) {
                     if (!other.placed) continue;

@@ -1,4 +1,5 @@
 import {writeCombatViewport} from '../../game/observation/combatVisibility';
+import type { HostilePrioritySource } from '../abilities/PriorityMask';
 import {type DrawnMarineEnvelope} from './DrawnMarineEnvelope';
 import {MARINE_FRAME_MARGIN_CSS,MARINE_FRAMING_FLOOR,MARINE_ENVELOPE_POINTS,marineEnvelopePoint} from './MarineFramingEnvelope';
 import * as T from 'three';
@@ -99,6 +100,48 @@ export class HudCombatFraming {
     if(this.primary)return true;
     for(let n=0;n<this.count;n++)if(Math.hypot(this.contacts[n*5]-x,this.contacts[n*5+1]-z)<=5.5)return true;
     return false;
+  }
+
+  /** Raise the floor under the bottom strip without changing the final fit limits. */
+  biasBottomThreat(camera:Camera,x:number,z:number,enemies:readonly Contact[],source:HostilePrioritySource,out:T.Vector3,point:T.Vector3):void {
+    if(this.effective.bottom<=0)return;
+    let pressure=0;
+    const probe=(ex:number,ez:number,weight:number)=>{
+      const range=Math.hypot(ex-x,ez-z);
+      if(range>8)return;
+      point.set(ex,.04,ez).project(camera);
+      if(point.z>=1||Math.abs(point.x)>.48||point.y< -1.24)return;
+      const overlap=T.MathUtils.smoothstep(this.viewport.bottom+.18-point.y,0,.38);
+      pressure=Math.max(pressure,overlap*weight*(1-T.MathUtils.smoothstep(range,5,8)));
+    };
+    for(const enemy of enemies){
+      if((enemy.health??1)<=0)continue;
+      const committed=enemy.windupMs||enemy.chargeMs||enemy.meleePhase==='windup'||enemy.meleePhase==='strike';
+      probe(enemy.x/32,enemy.y/32,committed?1:.72);
+    }
+    source.forEachHostilePriority?.(warning=>{
+      const angle=warning.angle??0;
+      const reach=warning.shape==='line'||warning.shape==='wall' ? warning.length??0 : warning.radius??0;
+      probe(warning.x,warning.z,1);
+      if(warning.shape==='circle'||warning.shape==='shockwave'){
+        const basis=camera.matrixWorld.elements;
+        const length=Math.hypot(basis[4],basis[6]);
+        if(length>.001)probe(warning.x-basis[4]*reach/length,warning.z-basis[6]*reach/length,1);
+      }else{
+        probe(warning.x+Math.cos(angle)*reach,warning.z+Math.sin(angle)*reach,1);
+        if(warning.shape==='cone'){
+          const half=(warning.arc??0)/2;
+          probe(warning.x+Math.cos(angle-half)*reach,warning.z+Math.sin(angle-half)*reach,1);
+          probe(warning.x+Math.cos(angle+half)*reach,warning.z+Math.sin(angle+half)*reach,1);
+        }
+      }
+    });
+    const basis=camera.matrixWorld.elements;
+    const length=Math.hypot(basis[4],basis[6]);
+    if(length>.001){
+      out.x-=basis[4]*pressure*1.45/length;
+      out.z-=basis[6]*pressure*1.45/length;
+    }
   }
 
   /** Add bounded centroid/aim lead to the existing boss-aware focus target. */

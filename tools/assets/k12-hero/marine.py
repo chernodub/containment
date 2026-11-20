@@ -59,7 +59,7 @@ def build(joints, tails, high):
         suit.build_rig(rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
         for side in (-1, 1):
-            stripe = [(side * 10.5, 34), (side * 21, 30), (side * 23, -62), (side * 11, -70)]
+            stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
             obj = helmet.plate(f'{rig} crown stripe {side}', stripe, M.RIG_COLOUR[rig], helmet.top, .0262, .004, .002, 'plain', 2.5)
             helmet.parts.remove(obj); suit.groups[rig].append(obj)
     result = []

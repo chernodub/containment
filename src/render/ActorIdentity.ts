@@ -14,7 +14,7 @@ export const FAMILY_IDENTITY = Object.freeze({
   carrier: 0xb982c5,
   queen: 0x756b7d,
 });
-export const FAMILY_LANTERNS = Object.freeze({crawler:0xff276e, stalker:0x9570ff, spitter:0xa7ff42, brute:0xfff0a8, carrier:0xf85de7, queen:0xea42af});
+export const FAMILY_LANTERNS = Object.freeze({crawler:0xff276e, stalker:0x9570ff, spitter:0xa7ff42, brute:0xc8962a, carrier:0xf85de7, queen:0xea42af});
 export const ENEMY_BODY_COLORS = Object.freeze({crawler:0x43312b,brute:0x30232a,spitter:0x253229,stalker:0x292737,carrier:0x382b3b,queen:0x241c2a});
 export const RIG_ACCENTS = Object.freeze({breacher:0xffd063,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 

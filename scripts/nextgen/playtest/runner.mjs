@@ -174,7 +174,12 @@ async function shot(name,s,options={}) {
       const bounds={left:0,right:0,top:0,bottom:0};
       if(r.actorScreenBounds(-1,g.boss.snapshot.x,g.boss.snapshot.y,92,bounds))contacts.push({id:-1,type:'queen',selected:selected.includes(-1),bounds,insideUsable:bounds.left>=i.left&&bounds.right<=innerWidth-i.right&&bounds.top>=i.top&&bounds.bottom<=innerHeight-i.bottom});
     }
-    return{contacts,insets:{...i},marine:r.playerScreenBounds(g.player.radius),framing:r.combatFramingDiagnostics,roomFraming:r.roomCombatFraming?{...r.roomCombatFraming.diagnostics}:null};
+    const damageReceipts=Array.from(document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])'),node=>{
+      const rect=node.getBoundingClientRect();
+      return {target:node.dataset.target,source:node.dataset.source,element:node.dataset.element,total:Number(node.dataset.total),ticks:Number(node.dataset.ticks??0),
+        nearWarning:r.warningObstructs?.(rect.left-8,rect.top-8,rect.right+8,rect.bottom+8)??null};
+    });
+    return{contacts,damageReceipts,insets:{...i},marine:r.playerScreenBounds(g.player.radius),framing:r.combatFramingDiagnostics,roomFraming:r.roomCombatFraming?{...r.roomCombatFraming.diagnostics}:null};
   });
   await writeFile(resolve(out,`${name}.json`),JSON.stringify(s,null,2));
   try{samplePng(bytes);}catch(error){report.defects.push({kind:'black-frame',area:'render',severity:'high',evidence:file,error:String(error)});}

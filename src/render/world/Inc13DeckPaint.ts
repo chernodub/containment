@@ -52,8 +52,9 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   paint:(c:CanvasRenderingContext2D)=>void,height=.020):void {
   const [left,top,width,depth]=bounds;
   const canvas=document.createElement('canvas');
-  canvas.width=1024;canvas.height=Math.round(1024*depth/width);
-  const c=canvas.getContext('2d')!;
+  canvas.width=name==='frame16-deck-wear'?768:1024;canvas.height=Math.round(canvas.width*depth/width);
+  // Relief samples the painted bitmap immediately. Keep it on the CPU until upload.
+  const c=canvas.getContext('2d',{willReadFrequently:true})!;
   c.scale(canvas.width/width,canvas.height/depth);c.translate(-left,-top);paint(c);
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   const reliefMap=relief(canvas),normalMap=reliefMap.texture;
@@ -67,7 +68,7 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   material.addEventListener('dispose',()=>normalMap.dispose());
   material.userData.actorMaterial = true;
   material.addEventListener('dispose',()=>map.dispose());
-  const geometry=name.includes('swarm')?membraneGeometry(width/32,depth/32,reliefMap):new T.PlaneGeometry(width/32,depth/32);
+  const geometry=(name.includes('swarm')||name==='frame16-deck-wear')?membraneGeometry(width/32,depth/32,reliefMap):new T.PlaneGeometry(width/32,depth/32);
   const mesh=new T.Mesh(geometry.rotateX(-Math.PI/2),material);
   mesh.receiveShadow=true;mesh.name=name;mesh.position.set((left+width/2)/32,height,(top+depth/2)/32);root.add(mesh);
 }

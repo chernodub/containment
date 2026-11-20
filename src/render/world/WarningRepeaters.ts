@@ -31,6 +31,9 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  // Keep the first diagnostic face inside the HUD-safe window while kiting
  // along the right inspection lane; the second face protects the arena mark.
  if(id==='diagnostic-gallery')centers[0].x=plan.arena.x-96;
+ // Suspend the control-room record just to the above and to the right of the damaged workstation.
+ // The board's projection clears the bridge and remains on its approach.
+ if(id==='manual-control-chamber'&&centers.length>1)centers[1]={x:560,z:493+forward};
  const canonicalCenters=centers.length;
  // Repeat the same fatal record at the named workbays and exit, rather than
  // covering only the old spawn/arena crops. Lateral clearance keeps every

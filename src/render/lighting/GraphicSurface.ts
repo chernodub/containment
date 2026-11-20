@@ -138,8 +138,8 @@ const mapResponse = ShaderChunk.map_fragment
     // HERO14: three value groups. Saturated rig panels keep their hue; everything else is
     // either cool off-white plate or near-black gunmetal undersuit (never a warm midtone).
     bool rigPanel=marineMax-marineMin>.16&&marineMax>.18;
-    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.8)/max(.001,marineMax-marineMin*.8)*.58; // lit tops must not clip to white
-    else diffuseColor.rgb=marineValue>.30?vec3(.80,.85,.90):vec3(.035,.040,.047);
+    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin)/max(.001,marineMax-marineMin)*.74; // SHADE15: pure rig hue, one broad saturated plane
+    else diffuseColor.rgb=marineValue>.30?vec3(.74,.78,.82):vec3(.13,.14,.16); // SHADE15: dark slate undersuit, no black panels
   }
   // Family values replace the inherited photographic/material tint together;
   // a pale source multiply must not bleach graphite armor or a russet crawler.
@@ -200,7 +200,8 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         graphicRoughnessFloor = mix(graphicRoughnessFloor, .56, graphicSurfaceKind.x);
         roughnessFactor = mix(roughnessFactor, max(roughnessFactor, graphicRoughnessFloor), graphicEnabled);`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
-        float graphicSpecularGain = mix(1.0, graphicResponse.y, graphicEnabled);
+        // SHADE15: no clipped specular on characters (it read as blown highlights / pattern).
+        float graphicSpecularGain = mix(1.0, graphicResponse.y, graphicEnabled) * (1.0 - .92 * graphicSurfaceKind.x);
         reflectedLight.directSpecular *= graphicSpecularGain;
         reflectedLight.indirectSpecular *= graphicSpecularGain;
         float graphicShadowBand = 1.0 - smoothstep(.018, .11,
@@ -213,12 +214,13 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         vec3 graphicActorDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
         float graphicActorAlbedo = max(.008, dot(diffuseColor.rgb, vec3(.2126,.7152,.0722)));
         float graphicActorIncident = dot(graphicActorDiffuse, vec3(.2126,.7152,.0722)) / graphicActorAlbedo;
-        float graphicActorLight = .40 + .55 * smoothstep(.40,.44,graphicActorIncident)
-          + .60 * smoothstep(1.12,1.17,graphicActorIncident);
+        // SHADE15: characters get two soft bands (shadow ~62% of lit, short smooth terminator), no
+        // third highlight step; architecture keeps its own hard response elsewhere.
+        float graphicActorLight = .62 + .38 * smoothstep(.30,.62,graphicActorIncident);
         vec3 graphicActorHue = clamp(graphicActorDiffuse / max(.008,dot(graphicActorDiffuse,vec3(.2126,.7152,.0722))),vec3(.55),vec3(1.4));
         // Marine value steps are diffuse reflectance, not emission. Mostly neutral
         // incident hue preserves ivory/graphite and the saturated authored rig panels.
-        if(graphicMarine>.5){graphicActorLight=.78+.26*smoothstep(.40,.44,graphicActorIncident)+.22*smoothstep(1.12,1.17,graphicActorIncident);graphicActorHue=mix(vec3(1.),graphicActorHue,.08);}
+        if(graphicMarine>.5){graphicActorLight=.66+.34*smoothstep(.30,.62,graphicActorIncident);graphicActorHue=mix(vec3(1.),graphicActorHue,.08);}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
