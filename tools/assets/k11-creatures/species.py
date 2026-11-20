@@ -220,3 +220,41 @@ def blade(root, tip, edge_dir, width, thick, bone, *, hook=0.35, n=9, serrations
         out.append(RoundCone(base, base + ed * width * 0.55 - tang * width * 0.45, thick * 0.6, thick * 0.08,
                              zone=edge_zone, bone=bone, k=thick * 0.3))
     return out
+
+
+def rank_fins(c, r, R, bone, us, height, length, thick, *, zone=CREST, plate=180, sweep=0.35, bone_fn=None):
+    """CREATURE19 elite rank: tall standing fins along the dorsal line, raked back, so a regular and an elite
+    differ in outline (not only colour) from the high three-quarter camera."""
+    out = []
+    Rm = np.eye(3, dtype=np.float32) if R is None else np.asarray(R, np.float32)
+    fwd = normalize(Rm @ np.array([1, 0, 0], np.float32))
+    for i, u in enumerate(us):
+        p, n = ellipsoid_surface(c, r, R, u, 0.0)
+        h = height * (1.0 - 0.22 * abs(i - (len(us) - 1) / 2))
+        up = normalize(n + v3((0, 0, 1.0)) - fwd * sweep)
+        side = normalize(np.cross(up, fwd))
+        along = normalize(np.cross(side, up))
+        out.append(Plate(p + up * h * 0.42, (length, h * 0.55, thick), frame(along, side), thick * 0.7, rings=thick * 0.04,
+                         ring_count=2, lip=thick * 0.15, chip=thick * 0.1, zone=zone, bone=bone_fn(u) if bone_fn else bone,
+                         plate=plate + i))
+        out.append(RoundCone(p + up * h * 0.75 - along * length * 0.35, p + up * h * 1.02 - along * length * 0.95,
+                             thick * 0.9, thick * 0.12, zone=zone, bone=bone_fn(u) if bone_fn else bone, k=thick * 0.3))
+    return out
+
+
+def dorsal_blades(c, r, R, bone, us, length, width, thick, *, lift=0.3, zone=ARMOR, plate=170, bone_fn=None, rake=0.45):
+    """CREATURE19: hard, dark, angular dorsal plates with a sharp trailing spike (front low, rear raised)."""
+    out = []
+    Rm = np.eye(3, dtype=np.float32) if R is None else np.asarray(R, np.float32)
+    fwd = normalize(Rm @ np.array([1, 0, 0], np.float32))
+    for i, u in enumerate(us):
+        p, n = ellipsoid_surface(c, r, R, u, 0.0)
+        along = normalize(fwd - n * rake)
+        nn = normalize(np.cross(np.cross(along, n), along))
+        b = bone_fn(u) if bone_fn else bone
+        centre = p + n * lift
+        out.append(Plate(centre, (length, width, thick), frame(along, nn), thick * 0.8, rings=thick * 0.03, ring_count=2,
+                         lip=thick * 0.12, chip=thick * 0.08, zone=zone, bone=b, plate=plate + i))
+        out.append(RoundCone(centre - along * length * 0.45 + nn * thick * 0.4, centre - along * length * 1.25 + nn * length * 0.42,
+                             width * 0.32, width * 0.03, zone=zone, bone=b, k=thick * 0.2))
+    return out

@@ -108,7 +108,8 @@ export function alien(kind:string,elite=false):ActorModel{
   const fit=(footprintFits[rankKey]??1)*(regularBrute?collisionRadius/(28/32):1)*rankAdjustment;
   const rankHeight=originalCreatureRankHeight(kind,rankKey);
   const rankScale=regularBrute&&rankHeight>0?2.95/rankHeight:originalCreatureRankScale(kind,rankKey);
-  const verticalScale=regularBrute?rankScale*(elite?ELITE_BODY_SCALE:1):rankScale*rankAdjustment;
+  // CREATURE19: the Warden stands low and heavy (presentation only; collider, reach and span unchanged).
+  const verticalScale=(regularBrute?rankScale*(elite?ELITE_BODY_SCALE:1):rankScale*rankAdjustment)*(rank==='warden'?.86:1);
   r.assetRoot.scale.x=sourceScale.x*fit*jitter;r.assetRoot.scale.z=sourceScale.z*fit*jitter;
   // K11 boss tier: uniform rank scale; keep the feet on the deck by moving the asset origin, not the pooled body.
   r.assetRoot.scale.y=sourceScale.y*verticalScale*jitter;r.assetRoot.position.y=sourcePosition.y+groundY*(verticalScale*jitter-1);

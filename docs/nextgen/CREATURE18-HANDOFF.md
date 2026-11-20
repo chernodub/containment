@@ -105,3 +105,40 @@ Brute may come out lighter than intended. I did not re-render the title.
 - **Still weak:** the Stalker is still a mostly blade-coloured cool shape from above, so the mauve body shows mainly
   between the scythes. The death wipe was checked only in m9 strips (corpse fades start 18 s after death, outside the
   capture windows).
+
+## CREATURE19 — anatomy
+Base `4d3e6ab3`. All changes are sculpture geometry and bands in `tools/assets/k11-creatures/`, plus one presentation
+line in `models.ts`. Per-caste triangle targets are unchanged (base 7.6k/8.8k/9.5k/11.5k/11.0k, Warden 19.9k,
+Matron 21.0k), and colliders, reach and simulation are untouched.
+
+- **Brute** (`brute.py`): the head hangs forward and low (`HO` offset) out of a narrow dark neck, with a dark collar
+  ring and an underslung dark jaw plate. Its head plate is a light `lead` band, the lightest body plane. The hump
+  shingles and the dorsal row of hind shingles are now dark armour, and three angular dark `dorsal_blades` with
+  raised trailing spikes sit on top. The striking (right) arm is ×1.36 against 0.9, with a dark elbow spur.
+- **Stalker:** the thorax shingles and an enlarged head plate are in a light `lead` band. The right scythe is ×1.3 as
+  the striking one, and the slim off scythe angles away; tips are pulled in so the fit scale rises (0.237 → 0.243).
+- **Crawler:** the head shield is in the light `lead` band, the tail cap is dark, and the raptor blade tips are splayed
+  forward and outward. Forefoot separation is in the sculpture only; no motion clip or timing was changed.
+- **Elites** (`species.rank_fins`, heights in design z × aspect): elite/regular height is now +75 % (Crawler),
+  +28 % (Stalker), +33 % (Spitter), +28 % (Brute, gold crest fan beside the horn) and +27 % (Carrier, raked crest
+  over the shield). An earlier pass sized fins without the aspect and they were invisible; keep the `× a`.
+- **Warden:** a large forward helm, low dark pauldrons, and the horn crown in the `lead` band. `fitFootprint` draws
+  the Warden ×0.86 in height (low stance, presentation only).
+- **Matron pods:** not done. Budget went to the four families and the Warden; the swelling and opening outlines
+  are unchanged.
+
+Evidence: `artifacts/nextgen/c19-before{,-pairs,-bosses}` (frozen pre-change dist) vs `c19-final{,-pairs,-bosses}`.
+The elite-pair wrapper is `artifacts/nextgen/c19tools/cap.mjs` (final11 fixture, gitignored). Draw calls are identical
+in all 13 compared scenes; triangles are identical, or −30 in crowds. Breacher seed 1729, 4 rooms: 0 errors, program
+counts flat per room (`playtest/c19-playtest`).
+
+Pipeline: rebuilding a subset overwrites the other creature GLBs through `ship.sh`. Copy the other packed files
+aside and back rather than `git checkout`, which reverts uncommitted fresh builds. Never run `lod.mjs` alone.
+
+Still weak:
+1. The Brute's chest front is still a stack of rounded tan shingles when it faces the camera. The armour reads from
+   behind and the side. A harder chest needs the shingles replaced by fewer, larger angular plates (sdf `Plate` is a
+   dome lens; an angular plate primitive would help every family).
+2. The Stalker's light leading plane and the Crawler's forefoot separation are small at 480×270. The real fix is
+   the wind-up key poses in `tools/assets/m10-motion/`, which this pass did not touch.
+3. The Warden's helm and pauldrons help from behind, but at 2.3× it still reads as a big Brute from above.

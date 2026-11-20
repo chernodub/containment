@@ -24,7 +24,8 @@ BANDS = {   # CREATURE18: dark chitin, rust flesh, pale tan dorsal carapace (mid
 BAND_MAP = {"bone": "chitin", "tooth": "chitin"}   # legs, hooks and leg blades join the dark chitin
 # CREATURE18b: the abdomen mantle (plates 1-16), tail cap (20), thorax shingles (30-31) and head shield (40) form one
 # tan dorsal cap around the red lantern slit, so the top view is a mid-value body, walking or curled.
-PLATE_BAND = {p: "bone" for p in (*range(1, 17), 20, 30, 31, 40)}
+BANDS["lead"] = (0.82, 0.68, 0.48)   # CREATURE19: the head shield is the lightest plane; the tail cap stays dark
+PLATE_BAND = {**{p: "bone" for p in (*range(1, 17), 30, 31)}, 40: "lead"}
 PALETTE = {
     "shell": (0.20, 0.06, 0.02), "edge": (0.62, 0.40, 0.20), "membrane": (0.13, 0.026, 0.03),
     "sinew": (0.24, 0.05, 0.045), "claw": (0.020, 0.012, 0.010), "tooth": (0.70, 0.56, 0.36),
@@ -108,7 +109,8 @@ def build(sk):
             # raptorial scythe: crescent blade, cutting edge facing forward/inward
             shin = normalize(foot - knee)
             edge = v3((1.0, -0.35 * side, 0.6))
-            body.extend(A.blade(knee + shin * 0.04, foot + v3((0.02, 0, 0.03)), edge, 0.13 * heavy, 0.03 * heavy, lo, zone=BONE, edge_zone=BONE,
+            # CREATURE19: forefeet splay forward and outward so the two raptor blades separate from the head
+            body.extend(A.blade(knee + shin * 0.04, foot + v3((0.14, 0.16 * side, 0.03)), edge, 0.16 * heavy, 0.03 * heavy, lo, zone=BONE, edge_zone=BONE,
                                 hook=0.45, serrations=3))
         else:
             body.extend(A.limb(hip, knee, foot, 0.165, 0.125, 0.04, up, lo, seed=sum(map(ord, leg)) % 50,
@@ -117,7 +119,7 @@ def build(sk):
     # --- elite rank: bone crest + heavier shoulder plates --------------------
     elite = S.Sculpture("crawler-elite")
     # ATTACK16 elite: a forked, raised dorsal shell (two plates splayed up like a V), each carrying a tall pale fin
-    for side, scale in ((1, 1.25), (-1, 1.05)):
+    for side, scale in ((1, 1.6), (-1, 1.35)):   # CREATURE19: taller rank fins
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.0, 0.42 * side)
         lift = normalize(n + v3((0, 0.35 * side, 1.4)))
         elite.add(Plate(p + n * 0.12, (0.48 * scale, 0.3 * scale, 0.11), frame(v3((1, 0, 0.25)), lift), 0.065, rings=0.004, lip=0.015,
