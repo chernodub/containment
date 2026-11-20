@@ -23,7 +23,7 @@ function roomSection(template: RoomTemplate): string {
 
 export function routeVignette(template: RoomTemplate, key?: string): string {
   const detourArt = key==='salvage'?'cache':key;
-  if(detourArt&&['cache','medicine','armor','upgrade','warden-cache','capacitor','meltdown-capacitor','protected-passage'].includes(detourArt))
+  if(detourArt&&['cache','medicine','armor','upgrade','warden-cache','capacitor','meltdown-capacitor','protected-passage','plate-breaker','brood'].includes(detourArt))
     return studioImage(`route-${detourArt}`,'route-illustration');
   const service = key==='salvage'||key==='cache'?'upgrade':key==='medicine'?'medkit':key;
   if (service && SERVICE_IDS.includes(service as ServiceId)) {

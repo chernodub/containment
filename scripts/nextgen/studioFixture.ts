@@ -19,6 +19,8 @@ type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow
 type Subject = Mark & (
   {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
+  | {kind:'pod'; swollen?:boolean}
+  | {kind:'ordnance'; weapon:'plasma'|'rocket'; from:[number,number,number]}
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
   | {kind:'prop'; kit:keyof typeof KIT_URLS; name:string; tint?:number; glow?:number}
@@ -119,6 +121,55 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           if(subject.pose==='frozen')actor.setAffliction?.({chilled:true,frozen:true,burning:false,poisoned:false,shocked:false});
           for(let tick=0;tick<18;tick++)actor.animate(tick/60,0,subject.aim??-2);
           root=actor.root; disposable.push(()=>{actor.root.removeFromParent();pool.release(actor);});
+          break;
+        }
+        case 'pod': {
+          const pool=owner['actorPool'], actor=pool.take('brood-pod',false);
+          actor.setPodCountdown?.(160,subject.swollen?'swelling':'sealed');
+          root=actor.root;
+          disposable.push(()=>{root.removeFromParent();pool.release(actor);});
+          break;
+        }
+        case 'ordnance': {
+          const plasma=subject.weapon==='plasma';
+          const flash=new T.MeshBasicMaterial({color:plasma?0xc2ecff:0xffc174});
+          const wake=new T.MeshStandardMaterial({color:plasma?0x348bf3:0x705052,
+            emissive:plasma?0x369eff:0x873d33,emissiveIntensity:1.3});
+          const group=new T.Group();
+          const tail=new T.Vector3(...subject.from).sub(new T.Vector3(subject.x,subject.y,subject.z));
+          const streak=(start:T.Vector3,end:T.Vector3,tip:number,base:number,material:T.Material)=>{
+            const axis=new T.Vector3().subVectors(end,start);
+            const mesh=new T.Mesh(new T.CylinderGeometry(base,tip,axis.length(),8),material);
+            mesh.position.copy(start).lerp(end,.5);
+            mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),axis.normalize());
+            group.add(mesh);
+            disposable.push(()=>mesh.geometry.dispose());
+          };
+          if(plasma){
+            streak(new T.Vector3(),tail,.065,.01,wake);
+            streak(new T.Vector3(),tail.clone().multiplyScalar(.87),.03,.009,flash);
+            const sparks=[[-.31,.29,.18],[-.15,.16,.44],[.04,.36,.22],[.16,.14,.31],[-.29,-.12,.24],[.11,-.23,.37]];
+            for(const offset of sparks){
+              const end=new T.Vector3(...offset);
+              streak(end.clone().multiplyScalar(.28),end,.019,.005,flash);
+            }
+          }else{
+            const casing=new T.MeshStandardMaterial({color:0x705a51,metalness:.48,roughness:.45});
+            streak(new T.Vector3(),tail.clone().multiplyScalar(.16),.077,.077,casing);
+            streak(tail.clone().multiplyScalar(-.09),new T.Vector3(),.005,.077,casing);
+            streak(tail.clone().multiplyScalar(.16),tail.clone().multiplyScalar(.44),.055,.013,flash);
+            // Break the smoke silhouette into overlapping puffs that widen away from the nozzle.
+            for(let puff=0;puff<8;puff++){
+              const mesh=new T.Mesh(new T.IcosahedronGeometry(.052+puff*.012,1),wake);
+              mesh.position.copy(tail).multiplyScalar(.31+puff*.094);
+              mesh.position.y+=Math.sin(puff*1.8)*.042;
+              group.add(mesh);
+              disposable.push(()=>mesh.geometry.dispose());
+            }
+            disposable.push(()=>casing.dispose());
+          }
+          root=group;
+          disposable.push(()=>{flash.dispose();wake.dispose();});
           break;
         }
         case 'pickup':

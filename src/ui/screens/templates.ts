@@ -291,6 +291,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const inventory = game.combat.getRunResources();
         const direct = detour === 'direct';
         const salvage = detour === 'salvage';
+        const routeArt = firstJunction && detour ? (salvage ? 'brood' : 'plate-breaker') : vignette;
         const depth = game.node.depth;
         const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? 35 : 0));
         const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
@@ -308,7 +309,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const outcome = disabled ? (credits < 0 ? `Need ${-credits} CR` : 'Requires eligible augment')
           : `${Math.ceil(health)} HP · ${Math.ceil(armor)} armor · ${credits} CR${grenades !== inventory.grenades ? ` · ${grenades} grenades` : ''}`;
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
-          <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-visual">${routeVignette(room,routeArt)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
             <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>

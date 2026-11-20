@@ -114,6 +114,22 @@ const observer=(rig='breacher')=>({...marine(rig),x:-1.55,z:.42,aim:-.5});
 const crate=(mark={})=>kit('Prop_Crate',0x385965,{scale:.8,shadow:.85,...mark});
 const lamp=(glow,mark={})=>station('wall-switch',0x35494a,{scale:.72,glow,...mark});
 const light=(color,mark)=>({kind:'light',color,intensity:8,distance:2.1,...mark});
+const coolantGallery=L8_CAPTURE_API.plans['coolant-plant'].spaces.find(space=>space.name==='Port pump gallery').anchor;
+const guardianLane=roomLane('coolant-plant',coolantGallery.x,coolantGallery.y);
+add('route-plate-breaker',[
+  {kind:'enemy',family:'brute',champion:'warden',aim:1.9,x:.3,z:-.28,shadow:1.5},
+  {kind:'enemy',family:'brute',aim:1.7,x:1.85,z:.15,scale:.72,shadow:.78},
+  {kind:'ordnance',weapon:'plasma',from:[-2.92,.9,1.03],x:-.22,y:1.14,z:.27,shadow:0},
+  light(0x74baff,{x:-.48,y:1.38,z:.61,intensity:13,distance:3.3}),
+],{...guardianLane,span:4.12,focus:[0,.78,-.34]});
+add('route-brood',[
+  {kind:'enemy',family:'carrier',champion:'matron',aim:2.77,x:-.85,z:-.22,shadow:1.5},
+  {kind:'pod',x:.7,z:.72,shadow:.7},
+  {kind:'pod',swollen:true,x:1.61,z:.01,scale:1.15,shadow:.8},
+  {kind:'ordnance',weapon:'rocket',from:[3.08,.86,1.35],x:1.48,y:.59,z:.78,shadow:0},
+  light(0xff9a5d,{x:1.47,y:1.04,z:1.02,intensity:8,distance:3}),
+  light(0xf375a6,{x:.5,y:1.32,z:-.17,intensity:6,distance:3.1}),
+],{...guardianLane,span:4.12,focus:[.15,.72,-.22]});
 add('route-cache',[
   observer(),station('container-flat-open',0x8c925a,{x:.78,z:-.65,aim:Math.PI/2,scale:1.38,shadow:1.1}),
   station('container-wide',0x5c6b58,{x:1.64,z:-.61,scale:.52}),
