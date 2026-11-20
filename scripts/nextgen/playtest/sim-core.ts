@@ -345,7 +345,7 @@ export function runSimulation(options: SimOptions) {
                     if (!choice)
                         throw Error('No earned route');
                     const augment=augmentUpgrades?.(game.expedition.build).at(-1);
-                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile):undefined;
+                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile,game.expedition.run.runStructure?options.seed:undefined):undefined;
                     game.route(choice.id,augmentUpgrades&&game.node.depth===10&&(!augment||game.combat.snapshot.credits<180)?'direct':detour,augment);
                 }
                 feel.reset();

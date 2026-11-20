@@ -332,7 +332,7 @@ try {
               await page.locator('.route-briefing img').evaluateAll(async images=>{await Promise.allSettled(images.map(image=>image.decode()));});
               await shot(`junction-r${s.node.depth+2}`,await snapshot(),{animations:'disabled'});
             }
-            const preferred=chooseDetour(s.combat,s.node.depth,s.actions,report.profile);
+            const preferred=chooseDetour(s.combat,s.node.depth,s.actions,report.profile,s.run.runStructure?seed:undefined);
             const choice=s.actions.some(a=>a.detour===preferred&&!a.disabled)?preferred:'direct';
             await page.locator(`[data-detour="${choice}"]:not(:disabled):not([aria-disabled="true"])`).last().click();
           }

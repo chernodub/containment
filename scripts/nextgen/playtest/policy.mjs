@@ -163,7 +163,8 @@ export function chooseServicePurchase(available,combat,build={},run={}) {
   return priorities.find(id=>available.includes(id))??null;
 }
 // RUN15 run structure. Only score terms published on the route cards.
-export function chooseDetour(combat,depth,offers=[],profile='competent') {
+export function chooseDetour(combat,depth,offers=[],profile='competent',seed) {
+  if(depth===2&&Number.isInteger(seed))return seed%2?'salvage':'direct';
   const salvage=offers.find(offer=>offer.detour==='salvage'&&!offer.disabled);
   const direct=offers.find(offer=>offer.detour==='direct');
   const risk=offer=>Number(['dark','vent','conduit','brood'].includes(offer?.condition?.id))*2 + Number(/pincer|crossfire/i.test(offer?.variant??''));

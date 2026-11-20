@@ -491,7 +491,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const lessonDanger=game.enemies.snapshot.enemies.some(enemy=>enemy.meleePhase==='windup'||enemy.windupMs>0
             ||enemy.chargeMs>0||enemy.pod);
         const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
-            weaponLesson && !lessonDanger && 'weapon-lesson', suggest && situation.weapon==='pistol' && 'weapon', 'mastery', 'onboarding', 'objective'];
+            weaponLesson && !lessonDanger && 'weapon-lesson', suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {
             if (!candidate || !playing) continue;

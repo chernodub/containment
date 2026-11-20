@@ -240,6 +240,7 @@ export const SCENARIOS=[
   await d.gotoRoom('coolant-plant',{rig:'arc',runStructure:true});
   const g=d.game;
   g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'brood',junctions:{3:'salvage'}}};
+  d.presentation(true);
   g.enterRoom();
   d.refresh();
  }},
