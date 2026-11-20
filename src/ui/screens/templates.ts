@@ -1,3 +1,5 @@
+import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
+import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
@@ -330,14 +332,22 @@ export function buildIcons(game: DepthGame): string {
 
 }
 
+function pauseWeapons(game: DepthGame): string {
+  const {weaponId, magazine, reserve} = game.combat.snapshot;
+  const weapons = (Object.keys(WEAPON_JOBS) as WeaponId[]).map((id, index) =>
+    `<li aria-current="${id === weaponId}"><kbd>${index + 1}</kbd><span><strong>${WEAPONS[id].label}</strong>${WEAPON_JOBS[id]}</span></li>`
+  ).join('');
+  return `<section class="pause-weapons"><h3>${WEAPONS[weaponId].label} <b>${magazine} / ${Number.isFinite(reserve) ? reserve : '∞'}</b></h3><ul aria-label="Weapon modes">${weapons}</ul></section>`;
+}
+
 export function buildRecap(game: DepthGame): string {
   const rig=getAbilities(game)?.rig;
   return `<div class="build-recap">${rig?`<div class="loadout-rig" data-element="${RIG_CATALOG[rig].element}">${marinePortrait(rig)}<div><h3>${RIG_CATALOG[rig].name}</h3><p>Rig abilities</p></div></div>${abilityPreview(rig,game.expedition.build.mutations)}`:'<p class="screen-footnote">Standard marine loadout · weapon systems online.</p>'}${buildIcons(game)}</div>`;
 }
 
-export type PauseTab = 'resume'|'loadout'|'settings'|'controls';
+export type PauseTab = 'resume'|'loadout'|'weapons'|'settings'|'controls';
 export function pauseScreen(game: DepthGame, active: PauseTab, settings: string, graphicsLost: boolean): string {
-  return `<section class="panel pause-panel screen-enter">${tag(ROOM_TEMPLATES[game.node.templateId].name)}<div class="screen-heading"><h2>${graphicsLost?'Restoring graphics…':'Expedition paused.'}</h2><span class="paused-indicator">${icon('pause')} SIMULATION HELD</span></div><div class="pause-tabs" role="tablist" aria-label="Pause menu">${(['resume','loadout','settings','controls'] as const).map(tab=>`<button id="tab-${tab}" role="tab" data-tab="${tab}" data-pause-tab="${tab}" aria-selected="${active===tab}" aria-controls="pause-tabpanel" tabindex="${active===tab?'0':'-1'}">${tab}</button>`).join('')}</div><div id="pause-tabpanel" role="tabpanel" aria-labelledby="tab-${active}" tabindex="0">${active==='resume'?`<div class="resume-content">${marinePortrait(getAbilities(game)?.rig??'breacher','pause-marine')}<div class="resume-coordinate">${serial(game.node.depth+1)}<span>/ ${total(game)}<small>SECTORS</small></span></div><div><h3>${ROOM_TEMPLATES[game.node.templateId].name}</h3><p class="resume-run-state">${game.combat.snapshot.health} health · ${game.combat.snapshot.credits} credits · ${game.expedition.build.mutations.length} boons</p><p>${escapeHtml(game.storyRoom?game.storyStatus:'Return when you are ready.')}</p><p>${escapeHtml(game.storyRoom?.objective??'')}</p></div></div>${pauseRoomRecords(game)}`:active==='loadout'?buildRecap(game):active==='settings'?settings:controlsScreen()}</div><footer class="pause-footer"><button id="resume" class="primary" ${graphicsLost?'disabled':''}>Back to the fight ${arrow()}</button>${graphicsLost?'<button id="recover" class="secondary">Reload game</button>':''}<button id="menu" class="quiet">Return to title ${arrow()}</button><p class="save-note" role="status">${escapeHtml(game.checkpointNote)}</p></footer></section>`;
+  return `<section class="panel pause-panel screen-enter">${tag(ROOM_TEMPLATES[game.node.templateId].name)}<div class="screen-heading"><h2>${graphicsLost?'Restoring graphics…':'Expedition paused.'}</h2><span class="paused-indicator">${icon('pause')} SIMULATION HELD</span></div><div class="pause-tabs" role="tablist" aria-label="Pause menu">${(['resume','loadout','weapons','settings','controls'] as const).map(tab=>`<button id="tab-${tab}" role="tab" data-tab="${tab}" data-pause-tab="${tab}" aria-selected="${active===tab}" aria-controls="pause-tabpanel" tabindex="${active===tab?'0':'-1'}">${tab}</button>`).join('')}</div><div id="pause-tabpanel" role="tabpanel" aria-labelledby="tab-${active}" tabindex="0">${active==='resume'?`<div class="resume-content">${marinePortrait(getAbilities(game)?.rig??'breacher','pause-marine')}<div class="resume-coordinate">${serial(game.node.depth+1)}<span>/ ${total(game)}<small>SECTORS</small></span></div><div><h3>${ROOM_TEMPLATES[game.node.templateId].name}</h3><p class="resume-run-state">${game.combat.snapshot.health} health · ${game.combat.snapshot.credits} credits · ${game.expedition.build.mutations.length} boons</p><p>${escapeHtml(game.storyRoom?game.storyStatus:'Return when you are ready.')}</p><p>${escapeHtml(game.storyRoom?.objective??'')}</p></div></div>${pauseRoomRecords(game)}`:active==='loadout'?buildRecap(game):active==='weapons'?pauseWeapons(game):active==='settings'?settings:controlsScreen()}</div><footer class="pause-footer"><button id="resume" class="primary" ${graphicsLost?'disabled':''}>Back to the fight ${arrow()}</button>${graphicsLost?'<button id="recover" class="secondary">Reload game</button>':''}<button id="menu" class="quiet">Return to title ${arrow()}</button><p class="save-note" role="status">${escapeHtml(game.checkpointNote)}</p></footer></section>`;
 }
 
 /** Destruction is only ever dispatched from the visible, explicit consent button. */

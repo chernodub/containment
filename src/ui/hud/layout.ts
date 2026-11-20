@@ -112,7 +112,7 @@ export function finishHudOcclusion(): void {
         if (Math.abs(y - box.bottom) < distance) {side = 2; distance = Math.abs(y - box.bottom);}
         if (Math.abs(x - box.left) < distance) side = 3;
         const edgeX = side === 1 ? box.right : side === 3 ? box.left : x;
-        const edgeY = side === 0 ? box.top : side === 2 ? box.bottom : y;
+        const edgeY = group.element.id === 'action-bar' ? box.top - 15 : side === 0 ? box.top : side === 2 ? box.bottom : y;
         group.edge.style.left = `${edgeX}px`; group.edge.style.top = `${edgeY}px`;
         group.edge.style.setProperty('--hud-threat-angle', `${Math.atan2(group.threatY! - edgeY, group.threatX! - edgeX)}rad`);
         group.edge.hidden = false;

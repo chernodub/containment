@@ -26,6 +26,10 @@ type NextRenderer = DepthRenderer & {
   actorScreenBounds?: (id: number, x: number, y: number, radius: number, out: ScreenBox) => boolean;
 };
 
+export function setHudCoachedTarget(renderer: DepthRenderer, id: number | null): void {
+  renderer.hudCoachedTargetId = id;
+}
+
 export type HudInsets = Readonly<{top: number; right: number; bottom: number; left: number}>;
 const hudInsets = new WeakMap<DepthRenderer, HudInsets>();
 

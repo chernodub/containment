@@ -23,7 +23,7 @@ import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilitie
 import {setChip, effectChip} from '../boonChips';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds } from '../gameAdapter';
+import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudCoachedTarget, setHudInsets, projectWorld, projectActorBounds } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -94,12 +94,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
     denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
     (document.getElementById('app') ?? nodes.hud).append(denial);
-    let weaponInspect = 0, buildReveal = 0, denialLife = 0;
+    let buildReveal = 0, denialLife = 0;
     let pointerX = innerWidth * .64, pointerY = innerHeight * .48, pointerActive=false, pointerKnown=false, aimPointerX=0, aimPointerY=0, powerAim=false, deniedPlacementLife=0;
     const placement=createPlacementPreview(),deniedPlacement=createPlacementPreview(),deniedAim={x:0,y:0};
     let fighting = false;
     const refreshInspection = () => {
-        const expanded = !fighting || weaponInspect > 0;
+        const expanded = !fighting;
         const narrative = false;
         const reveal = buildReveal > 0;
         if (statusPanel.dataset.buildReveal !== String(reveal)) {statusPanel.dataset.buildReveal=String(reveal);layoutDirty=true;}
@@ -360,7 +360,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         nodes.hud.classList.toggle('low-health', low);
         text('vital-state', low ? 'CRITICAL' : s.health <= 50 ? 'DAMAGED' : 'NOMINAL');
         if (lastWeapon !== s.weaponId) {
-            weaponInspect=1.5;
             lastWeapon = s.weaponId;
             text('weapon-name', s.weaponId);
             nodes['current-weapon-icon'].innerHTML = icon(s.weaponId);
@@ -557,6 +556,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
+        setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
         targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
         if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;
@@ -585,11 +585,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             && 'weapon' in event && event.weapon === 'rifle') {
             plateHit = {id: event.targetId, until: game.elapsed + 3};
         }
-        const hitPoint = projectWorld(renderer, event.x, event.y, projected, .05);
-        const nearBoots = Math.hypot(event.x - game.player.x, event.y - game.player.y) <= 48;
-        const danger = hitPoint.visible && warningOverlaps(hitPoint.x - 6, hitPoint.y - 6, hitPoint.x + 6, hitPoint.y + 6);
-        const damage = nearBoots || danger ? undefined : event.damage;
-        combatText.effect({...event, damage, damageElement: getCombatDamageElement(game, event)});
+        combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
         onboarding.effect(event);
@@ -651,7 +647,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
         if (game.status === 'playing') encounterCues.tick(elapsed);
         for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
-        weaponInspect=Math.max(0,weaponInspect-elapsed);buildReveal=Math.max(0,buildReveal-elapsed);
+        buildReveal=Math.max(0,buildReveal-elapsed);
         denialLife=Math.max(0,denialLife-elapsed);deniedPlacementLife=Math.max(0,deniedPlacementLife-elapsed);
         if(!denialLife&&!denial.hidden){denial.hidden=true;setPlacementPreview(renderer,null);}
         refreshInspection();
@@ -693,7 +689,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const anchor = markedEnemy && projectWorld(renderer, markedEnemy.x, markedEnemy.y, projected, 1.5);
         onboarding.tick(elapsed, bounds, onboardingObstacles, anchor?.visible ? anchor : undefined);
         abilityHints.tick(bounds, true);
-        combatText.tick(elapsed, bounds, statusActive);
+        const committedBodies = [];
+        for (const enemy of game.enemies.snapshot.enemies) {
+            if (enemy.health <= 0 || !(enemy.pendingAttack || enemy.windupMs > 0 || enemy.chargeMs > 0 ||
+                enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike')) continue;
+            const body = {id: enemy.id, left: 0, right: 0, top: 0, bottom: 0};
+            if (projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) committedBodies.push(body);
+        }
+        combatText.tick(elapsed, bounds, statusActive, committedBodies);
         threats.tick(elapsed);
         toasts.tick(elapsed);
     };
