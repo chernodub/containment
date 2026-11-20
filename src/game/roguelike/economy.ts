@@ -5,7 +5,7 @@ export const DETOUR_DEPTHS = [2,6,10,14,17] as const;
 export type DetourChoice = 'direct'|'salvage';
 export const GUARDIAN_ROUTE_DEPTH = 12;
 export const GUARDIAN_ROUTES = {
- 'plate-breaker': {name:'Plate-breaker route', fight:'Warden escort', banner:'Armoured Warden escorts'},
+ 'plate-breaker': {name:'Plate-breaker route', fight:'Warden escort', banner:'Armoured Warden escort'},
  brood: {name:'Brood route', fight:'Matron interception', banner:'Matron intercepts'},
 } as const;
 export type GuardianRoute = keyof typeof GUARDIAN_ROUTES;
@@ -24,7 +24,7 @@ export function detourOffers(run:RunState){
  if(run.version!==3||!Object.hasOwn(DETOURS,depth))return [];
  if(depth===2&&run.runStructure)return [
   {id:'direct' as const,name:GUARDIAN_ROUTES['plate-breaker'].name,risk:'Coolant Plant · Break the armoured Warden escort with plasma.',reward:'+24 plasma rounds'},
-  {id:'salvage' as const,name:GUARDIAN_ROUTES.brood.name,risk:'Coolant Plant · Interrupt the Matron’s hatching brood with rockets.',reward:'+2 rockets'},
+  {id:'salvage' as const,name:GUARDIAN_ROUTES.brood.name,risk:'Coolant Plant · Interrupt the Matron’s hatching brood with rockets.',reward:'Up to 2 rockets'},
  ];
  const deal=DETOURS[depth as keyof typeof DETOURS];
  const protectedRoute = depth===2
