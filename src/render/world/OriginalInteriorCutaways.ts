@@ -25,7 +25,7 @@ function projectBox(minX:number,maxX:number,minY:number,maxY:number,minZ:number,
   }
 }
 
-function projectBody(body:Body,height:number,camera:T.Camera,point:T.Vector3,out:Float64Array,offset:number):void {
+export function projectBody(body:Body,height:number,camera:T.Camera,point:T.Vector3,out:Float64Array,offset:number):void {
   projectBox((body.x-body.radius)/32,(body.x+body.radius)/32,0,height,
     (body.y-body.radius)/32,(body.y+body.radius)/32,camera,point,out,offset);
   const m=camera.matrixWorld.elements;

@@ -119,12 +119,11 @@ export const inkComposite = /* glsl */ `
   // Elite silhouettes carry a restrained bronze contour in addition to their crest.
   float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
   contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);
-  float hotSurface=smoothstep(.32,1.05,max(color.r,max(color.g,color.b)));
   color=mix(color,contour,line);
   if(combatSilhouette>.01&&geometry.w>=3.&&geometry.w<=6.){
    float committed=texture2D(combatOutlineIds,vec2((geometry.z+.5)/256.,.5)).r;
    // Bright effects cannot erase the identified actor's silhouette.
-   color=mix(color,vec3(.80,.91,1.),combatSilhouette*max(committed*.62,step(abs(geometry.w-3.),.25)*(.33+.52*hotSurface)));
+   color=mix(color,vec3(.80,.91,1.),combatSilhouette*committed*.62*step(3.5,geometry.w));
   }
  }
 `;

@@ -1,5 +1,5 @@
 import {guardianStunIndicator} from './GuardianStunIndicator';
-import {weaponRigAccent} from './lighting/WeaponRigAccent';
+import {weaponTopEdge} from './lighting/WeaponTopEdge';
 import * as T from 'three';
 import {AuthoredMotionPlayer,AuthoredMarineMotion,AuthoredEnemyMotion} from './motion/AuthoredMotion';
 import {AnatomicalFrost} from './motion/AnatomicalFrost';
@@ -163,9 +163,8 @@ export function marine():ActorModel{
  // authored actions capture their original state (same path as pooled reset).
  r.reset();r.mixer.stopAllAction();
  const surface=actorSurface(r.materials,true),identity=marineIdentity(r.root),authoredPlayer=new AuthoredMotionPlayer(r.mixer,r.clips,r.assetRoot);
- const weaponRigColor={value:new T.Color(RIG_ACCENTS.breacher)};
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=authoredPlayer.available?undefined:r.action('shotgun_delta');
- const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);liftWeaponValue(gun.root);weaponRigAccent(gun.root,weaponRigColor);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
+ const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);liftWeaponValue(gun.root);weaponTopEdge(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
  const barrelForward=new T.Vector3(),desiredForward=new T.Vector3(),aimCorrection=new T.Quaternion(),handWorld=new T.Quaternion(),parentWorld=new T.Quaternion();
  const firingHand=r.assetRoot.getObjectByName('handR');let aimConstrained=true;
@@ -185,7 +184,7 @@ export function marine():ActorModel{
   socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
  };
  const motion=new MarineMotion(r.root,r.assetRoot),actionMotion=new MarineActionMotion(motion),authored=new AuthoredMarineMotion(authoredPlayer,motion);motion.authored=authoredPlayer.available;let aimPitch=0;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig(rig){identity.setRig(rig);weaponRigColor.value.setHex(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);surface.rig(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);},setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig(rig){identity.setRig(rig);surface.rig(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);},setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
   setMotionOptions(strength,reduced){motion.setOptions(strength,reduced);authored.setOptions(strength,reduced);},setAction:motion.setAction.bind(motion),poseDeath:authored.death.bind(authored),hit(strength=1,direction=0,heavy=false){motion.hit(strength,direction,heavy);authored.hit(strength,direction);},setDead(dead){aimConstrained=!dead;motion.setDead(dead);},motionEvent:actionMotion.event.bind(actionMotion),reset(){aimConstrained=true;authored.reset();actionMotion.reset();motion.reset();r.reset();pose?.play();if(pose)pose.paused=true;r.mixer.update(0);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   actionMotion.update(time);motion.begin(time,moving,aim,velocity?.x??Math.cos(aim)*moving*220,velocity?.y??Math.sin(aim)*moving*220);

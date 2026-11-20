@@ -60,7 +60,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     : new T.Vector3(4,3.2,6).normalize();
   camera.position.copy(center).addScaledVector(direction,12);
   camera.lookAt(center); camera.updateMatrixWorld();
-  const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,1.9);
+  const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,shot.framePortrait?.55:1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
   if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
@@ -291,7 +291,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         }
       });
       const size=bounds.getSize(new T.Vector2()),middle=bounds.getCenter(new T.Vector2());
-      const frameHeight=Math.max(size.y/.92,size.x/(aspect*.98));
+      const frameHeight=Math.max(size.y/.90,size.x/(aspect*.98));
       camera.left=middle.x-frameHeight*aspect/2;camera.right=middle.x+frameHeight*aspect/2;
       camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
       camera.updateProjectionMatrix();
