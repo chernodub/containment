@@ -324,7 +324,6 @@ export class AuthoredMarineMotion {
         const dt = this.previous === undefined ? 0 : T.MathUtils.clamp(time - this.previous, 0, .05);
         this.previous = time;
         this.hitAge += dt;
-        this.rifleContactAge += dt;
         this.fireAge += dt;
         this.burstRise *= Math.exp(-dt * 5.5);
         this.switchAge += dt;

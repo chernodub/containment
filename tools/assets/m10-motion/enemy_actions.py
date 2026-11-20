@@ -664,6 +664,24 @@ class Creature:
                     pull=between(arm_t,[(0,0),(.14,1),(.46,1),(.80,.2),(1,0)])
                     desired=arm['rest']+FWD*W*.40*pull-UP*H*.30*pull+UP*H*.18*math.sin(t*math.pi)
                     self.solve(arm,desired)
+        if self.family in ('brute','carrier') and action.startswith('m10-death-'):
+            # Land on the near shoulder. Keep the far pair spread beyond the
+            # mantle so their contact points survive the physics handoff.
+            fall=between(t,[(0,0),(.28,.08),(.57,.94),(.69,1),(1,1)])
+            self.rotate(self.center,FWD,.96*fall)
+            self.move(self.center,UP*H*.18*fall+SIDE*W*.08*fall)
+            self.rotate('head',UP,-.52*fall)
+            self.rotate('head',SIDE,-.38*fall)
+            for leg in self.legs:
+                i=leg['index']
+                side=1 if leg['rest'].dot(SIDE)>self.base_matrices[self.center].translation.dot(SIDE) else -1
+                land=leg['rest']+SIDE*W*side*.24+FWD*W*(.12 if i<2 else -.12)
+                targets[i]=targets.get(i,leg['rest']).lerp(land,fall)
+            for arm in self.arms:
+                side=arm['index']
+                tip=self.m[arm['bones'][-1]] @ arm['tip_local']
+                land=arm['rest']+SIDE*W*side*.29+FWD*W*(.27 if side<0 else -.13)
+                self.solve(arm,tip.lerp(land,fall))
         self.plant(targets)
         if action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
