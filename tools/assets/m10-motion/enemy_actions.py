@@ -273,13 +273,13 @@ class Creature:
         H,W=self.height,self.width
         if action=='m10-windup':
             keys=[(0, .10,-.20,.03, .01),(.29, .89,-.48,-.09,.28),
-                  (.63,.55,-.58,.58,.52), (1,.29,-.16,.96,.72)]
+                  (.63,.55,-.58,.58,.52), (1,.87,-.21,.65,.85)]
         elif action=='m10-strike':
             keys=[(0,.44,.71,-.17,-.48),(.28,.04,.82,-.64,-.83),
                   (.74,-.44,.62,-.90,-1),(1,-.52,.47,-.89,-.88)]
         else:
             keys=[(0,-.52,.47,-.89,-.88),(.24,-.61,.34,-.96,-1.12),
-                  (.49,-.35,.32,-.72,-.53),(.75,.03,.38,-.54,-.31),(1,.28,.14,-.25,0)]
+                  (.49,-.48,.69,-.72,-.82),(.75,.03,.38,-.54,-.31),(1,.28,.14,-.25,0)]
         side,forward,height,twist=[between(t,[(k[0],k[i]) for k in keys]) for i in range(1,5)]
         wind=action=='m10-windup'
         sunk=(.045+.13*math.sin(math.pi*t)) if wind else .24*min(1,abs(twist))
@@ -334,8 +334,8 @@ class Creature:
                 i=leg['index']
                 if i in (0,5):
                     lead=i==0
-                    targets[i]=leg['rest']+SIDE*W*(-.29 if lead else .10)*load
-                    targets[i]+=FWD*W*((-.23 if lead else .11)*load+(.42 if lead else .12)*reach)
+                    targets[i]=leg['rest']+SIDE*W*(-.66 if lead else .24)*load+SIDE*W*(-.29 if lead else .09)*reach
+                    targets[i]+=FWD*W*((-.23 if lead else .11)*load+(.62 if lead else .04)*reach)
                     targets[i]+=UP*H*((.88 if lead else .10)*load+.07*reach)
         else:
             self.rotate('spine2',SIDE,-.52*load+.27*reach)
@@ -378,7 +378,7 @@ class Creature:
             self.rotate('big_butt',SIDE,-.33*load+.22*bury)
             self.rotate('neck_lo',SIDE,-.45*load+.42*bury)
             self.rotate('chest',FWD,-.25*load-.36*bury)
-            self.rotate('chest',UP,-.34*pull)
+            self.rotate('chest',UP,-.55*pull)
         self.rotate('head',SIDE,.26*load+.39*bury)
         self.mouth(.65*load+.75*drive+.25*bury)
         head=self.m['head'].translation
@@ -390,8 +390,8 @@ class Creature:
                 self.rotate(arm['bones'][0],FWD,side*(.36*open_arm-.20*bury))
                 # Swing the wrist away from the crown before raising the edge.
                 sweep=between(t,[(0,.26),(.32,.35),(.64,-.16),(1,-.29)]) if wind else 0
-                ready=head+FWD*W*(sweep if lead else -.19)+SIDE*W*side*(.91 if lead else .22)+UP*H*(.54 if lead else -.07)
-                contact=head+FWD*W*(.86 if lead else .40)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
+                ready=head+FWD*W*(sweep if lead else .22)+SIDE*W*side*(1.13 if lead else .38)+UP*H*(.41 if lead else -.41)
+                contact=head+FWD*W*(1.02 if lead else .13)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
             elif brute:
                 ready=head-FWD*W*(.24 if lead else .11)+SIDE*W*side*(.61 if lead else .36)+UP*H*(.62 if lead else .12)
                 bed=self.base_matrices['head'].translation
