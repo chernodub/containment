@@ -1,6 +1,7 @@
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
+import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
 function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
@@ -15,8 +16,8 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
   }
   if (room.boundary) {
     c.clip('evenodd');
-    c.strokeStyle = 'rgba(9,17,22,.11)';
-    for (const width of [24, 14, 6]) {
+    c.strokeStyle = 'rgba(9,15,17,.12)';
+    for (const width of [108, 84, 64, 46, 30, 16, 7]) {
       c.lineWidth = width;
       c.stroke();
     }
@@ -24,7 +25,7 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
 
   const furniture = shipInteriorFurnishings(room).flatMap(item => item.colliders);
   for (const rect of [...room.obstacles, ...(room.incidentObstacles ?? []), ...furniture]) {
-    for (let spread = 20; spread >= 2; spread -= 3) {
+    for (let spread = 34; spread >= 2; spread -= 4) {
       c.fillStyle = ['diagnostic-gallery','crew-checkpoint','residential-gallery','relay-racks'].includes(room.id) ? 'rgba(9,14,18,.11)' : 'rgba(10,17,23,.065)';
       c.fillRect(rect.x - spread, rect.y - spread, rect.width + 2 * spread, rect.height + 2 * spread);
     }
@@ -79,6 +80,32 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     contactShadows(c, room);
+    // Scuffed wheel tracks taper toward the workshop light. Their bend is
+    // offset from the straight sightline so the marine stays on clear deck.
+    const source = roomValueProfile(room.id)?.landmark?.at;
+    if (source) {
+      const dx = source[0] - room.spawn.x, dy = source[1] - room.spawn.y;
+      const length = Math.max(1, Math.hypot(dx, dy));
+      const nx = -dy / length, ny = dx / length;
+      c.save();
+      for (const offset of [14, 26]) {
+        c.beginPath();
+        c.moveTo(room.spawn.x + nx * offset, room.spawn.y + ny * offset);
+        c.bezierCurveTo(room.spawn.x + dx * .43 + nx * (offset + 35),
+          room.spawn.y + dy * .43 + ny * (offset + 35),
+          source[0] - dx * .28 + nx * (offset - 24),
+          source[1] - dy * .28 + ny * (offset - 24), source[0] + nx * offset, source[1] + ny * offset);
+        c.strokeStyle = 'rgba(22,29,31,.40)';
+        c.lineWidth = offset === 14 ? 6 : 3;
+        c.stroke();
+        c.setLineDash([19, 9, 6, 17]);
+        c.strokeStyle = 'rgba(132,137,131,.27)';
+        c.lineWidth = 1.6;
+        c.stroke();
+        c.setLineDash([]);
+      }
+      c.restore();
+    }
     c.save();
     const scars:Record<string,number[][]>={
       'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
