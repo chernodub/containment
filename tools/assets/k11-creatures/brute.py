@@ -16,7 +16,8 @@ FAMILY = "brute"
 ASPECT = 1.8
 VOXEL = 0.024
 TRIS = {"body": 11500, "elite": 1600, "boss": 8400}
-RANK_SCALE = {"boss": 2.3}   # Brute Warden: uniform boss-tier scale applied by the loader
+RANK_SCALE = {"boss": 2.3, "elite": 1.12}
+RANK_PARTS = {"boss": ["body", "boss"]}   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 2.0
 PALETTE = {
@@ -45,6 +46,11 @@ def build(sk):
     body.extend(A.lantern(la + v3((0, 0, 0.08)), lb + v3((0, 0, 0.1)), 0.4, "chest", height=1.7, ribs=0.17))
     body.add(A.mass(z(0.1, 0, 2.55), (1.15, 0.95, 0.62 * a), frame((1, 0, 0.1)), bone=("blend", "chest", "tail", z(0.6, 0, 3), z(-0.8, 0, 2.3)),
                     zone=FLESH, k=0.45, lump=0.03, freq=1.2, seed=9))
+    # ATTACK16: a tall shoulder hump (height, not width) so the Brute reads as the heavy of the crowd
+    hump_c = chest_c + z(-0.35, 0, 0.95)
+    body.add(A.mass(hump_c, (1.05, 0.85, 0.75 * a), frame((1, 0, 0.35)), bone="chest", zone=MEMBRANE, k=0.45, lump=0.02, freq=1.4, seed=17))
+    body.extend(A.shingles(hump_c, v3((1.05, 0.85, 0.75 * a)), frame((1, 0, 0.35)), "chest", rows=2, phis=(0.0, 0.85), u0=0.45, u1=-0.35,
+                           size=(0.7, 0.62, 0.32), thickness=0.24, lift=0.35, rings=0.008, seed=90, plate0=90))
     # --- hind body --------------------------------------------------------------
     hind_c, hind_r, hind_R = z(-1.15, 0, 2.05), v3((1.95, 0.98, 0.62 * a)), frame((1, 0, 0.18))
     body.add(A.mass(hind_c, hind_r, hind_R, bone="tail", zone=MEMBRANE, k=0.35, lump=0.01, freq=1.5, seed=3))
@@ -81,7 +87,7 @@ def build(sk):
                                0.15 * heavy, rings=0.006, lip=0.05, chip=0.03, zone=CREST if j == 0 else SHELL,
                                bone=f"forearm.{side}", plate=70 + i * 2 + j + (s > 0) * 10, tint=1.1))
         body.add(Ellipsoid(wr, (0.4 * heavy,) * 3, zone=MEMBRANE, bone=("blend", f"forearm.{side}", f"claw.{side}", el, end), k=0.1))
-        body.extend(A.blade(wr + (end - wr) * 0.05, end + v3((0.2, 0.55 * s, 0.6)), v3((0.45, 1.0 * s, 0.6)), 0.8 * heavy, 0.17 * heavy,
+        body.extend(A.blade(wr + (end - wr) * 0.05, end + v3((0.75, 0.45 * s, 0.25)), v3((0.45, 1.0 * s, 0.6)), 1.0 * heavy, 0.18 * heavy,
                             f"claw.{side}", hook=0.5, serrations=4, zone=BONE, edge_zone=BONE))
         # tendon across the elbow
         body.add(S.Tube([sh + (el - sh) * 0.5 + v3((0.15, 0, -0.1)), el + v3((0.25, 0, -0.25)), el + (wr - el) * 0.3 + v3((0.2, 0, -0.1))],
@@ -101,14 +107,15 @@ def build(sk):
                                seed=len(leg) + s, tint=1.0, bend=0.2))
     # --- elite: crest spines along the chest crown, shoulder spikes -------------------
     elite = S.Sculpture("brute-elite")
-    for s_, side in ((-1, "r"), (1, "l")):
-        sh, el = sk.h(f"shoulder.{side}"), sk.h(f"forearm.{side}")
-        c = sh + (el - sh) * 0.25 + v3((0, 0.35 * s_, 0.55))
-        big = 1.4 if s_ > 0 else 0.9   # asymmetric: one overgrown pale pauldron
-        for i, (sz, off) in enumerate((((1.05 * big, 0.85 * big, 0.42), 0.0), ((0.8 * big, 0.65 * big, 0.34), 0.38))):
-            elite.add(Plate(c + v3((-0.3 * i, 0.12 * s_ * i, off)), sz, frame((1, 0, -0.2), (0.2, s_ * 0.9, 0.7)), 0.3 - 0.06 * i,
-                            rings=0.01, lip=0.07, chip=0.05, zone=BONE if s_ > 0 else CREST, bone=f"shoulder.{side}", plate=140 + i + 3 * (s_ > 0)))
-        elite.add(RoundCone(c + v3((-0.2, 0.3 * s_, 0.35)), c + v3((-0.9, 0.95 * s_, 1.25)), 0.2, 0.02, zone=TOOTH, bone=f"shoulder.{side}"))
+    # ATTACK16 elite: one overgrown pale shoulder-blade horn on the left (rank and the loaded side in one shape)
+    base = chest_c + z(-0.5, 0.95, 1.05)
+    elite.add(S.Tube(bezier(base, base + z(0.2, 0.35, 1.3), base + z(-0.9, 0.75, 2.4), base + z(-0.2, 1.05, 2.9), 10),
+                     [0.5 - 0.045 * j for j in range(11)], zone=BONE, bone="chest", k=0.18))
+    for t in (0.25, 0.5):
+        q = base + z(0.05, 0.35 * t * 2, 1.3 * t * 2)
+        elite.add(S.Torus(q, z(0, 0.3, 1.0), 0.42 - 0.12 * t, 0.08, zone=ARMOR, bone="chest", k=0.05))
+    elite.add(Plate(chest_c + z(-0.4, 0.9, 0.95), (0.9, 0.7, 0.35), frame((1, 0, -0.1), (0.1, 0.8, 0.7)), 0.25, rings=0.01, lip=0.06,
+                    chip=0.05, zone=CREST, bone="chest", plate=140))
     # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
     boss = S.Sculpture("brute-warden")
     # --- organic crown: grown horn/bone plates rising from the shoulders, asymmetric, one broken tine

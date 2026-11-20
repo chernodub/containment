@@ -16,6 +16,7 @@ FAMILY = "spitter"
 ASPECT = 3.0
 VOXEL = 0.03
 TRIS = {"body": 9500, "elite": 1400}
+RANK_SCALE = {"elite": 1.12}   # ATTACK16
 ATLAS = 1024
 GLOW_STRENGTH = 1.3
 PALETTE = {
@@ -123,6 +124,6 @@ def build(sk):
     # pale crest fin riding the main vessel (rank read from above)
     for i, x in enumerate((-0.9, -0.2, 0.5)):
         c = sac_c + v3((x, 0, (0.62 + 0.05 * i) * a))
-        elite.add(Plate(c, (0.42, 0.55 - 0.08 * abs(i - 1), 0.08), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.06, rings=0.005, lip=0.02,
+        elite.add(Plate(c + v3((0, 0, 0.35 * a)), (0.5, 1.05 - 0.15 * abs(i - 1), 0.1), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.07, rings=0.005, lip=0.02,
                         chip=0.02, zone=BONE, bone="spine" if x < 0 else "spine1", plate=90 + i))
     return {"body": body, "elite": elite}

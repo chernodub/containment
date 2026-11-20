@@ -19,7 +19,7 @@ FAMILY = "carrier"
 ASPECT = 2.7
 VOXEL = 0.075
 TRIS = {"body": 11000, "elite": 1500, "boss": 21000}
-RANK_SCALE = {"boss": 1.9}   # Carrier Matron (BOSS14): her own full body, scaled to the boss tier
+RANK_SCALE = {"boss": 1.9, "elite": 1.12}   # Carrier Matron (BOSS14): her own full body, scaled to the boss tier
 RANK_PARTS = {"boss": ["boss"]}   # the Matron rank is a complete skin, not base + addons   # Carrier Matron: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 1.0
@@ -117,6 +117,14 @@ def build(sk):
     p, n = A.ellipsoid_surface(th_c, th_r, th_R, 0.1, 0.0)
     elite.add(Plate(p + n * 0.55 + v3((0, 0.6, 0)), (3.0, 2.4, 1.0), frame(v3((1, 0, -0.05)), normalize(n + v3((0, 0.4, 0)))), 0.6, rings=0.025,
                     ring_count=5, lip=0.15, chip=0.1, zone=BONE, bone="body.001", plate=200))   # asymmetric pale shield
+    # ATTACK16: a second, visible brood cluster riding the other flank of the thorax
+    for j, (u, r) in enumerate(((0.3, 0.75), (0.0, 0.85), (-0.3, 0.7), (0.15, 0.6))):
+        q, n = A.ellipsoid_surface(th_c, th_r, th_R, u, -1.05)
+        c = q + n * (0.55 + 0.25 * j) + v3((0, 0, 0.25 * a * (j % 2)))
+        elite.add(Ellipsoid(c, (r * 1.2, r, r * a * 0.5), frame(v3((1, 0, 0.2)), n), zone=EYE, bone=bf(u), k=0.2))
+        GLOW_PODS.append((c, r * 0.6))
+    q, n = A.ellipsoid_surface(th_c, th_r, th_R, 0.0, -1.05)
+    elite.add(Ellipsoid(q + n * 0.35, (1.5, 1.0, 0.45 * a), frame(v3((1, 0, 0)), n), zone=FLESH, bone=bf(0.0), k=0.4))
     for s_ in (-1, 1):
         q = p + n * 0.9 + v3((2.0, 1.4 * s_, 0.2))
         elite.extend(A.hook([q, q + v3((0.8, 0.5 * s_, 0.9)), q + v3((1.6, 0.7 * s_, 1.0)), q + v3((2.2, 0.4 * s_, 0.6))],
