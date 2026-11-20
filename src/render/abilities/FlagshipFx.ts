@@ -497,17 +497,24 @@ void main(){
  // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
  if(coldOwner>=0 && coldCount>1){
   int overlaps=0;
+  vec4 own=coldAxes[coldOwner];
+  vec2 ownRel=fxWorld.xz-own.xy;
+  float ownAlong=clamp(dot(ownRel,own.zw)/max(.0001,dot(own.zw,own.zw)),0.,1.);
+  float ownEdge=length(ownRel-ownAlong*own.zw)-coldRadii[coldOwner];
   for(int i=0;i<${COLD_FIELD_LIMIT};i++){
    if(i>=coldCount)break;
    if(i==coldOwner)continue;
    vec4 axis=coldAxes[i];vec2 rel=fxWorld.xz-axis.xy;
    float along=clamp(dot(rel,axis.zw)/max(.0001,dot(axis.zw,axis.zw)),0.,1.);
-   if(length(rel-along*axis.zw)<coldRadii[i]-.035)overlaps++;
+   float edge=length(rel-along*axis.zw)-coldRadii[i];
+   // For coincident contours the earlier field draws the shared edge.
+   bool sharedEdge=abs(edge-ownEdge)<.035 && abs(ownEdge)<.18;
+   if(sharedEdge ? i<coldOwner : edge<-.035)overlaps++;
   }
   // Retain the exposed perimeter. Intersecting deposits share a faint interior.
   if(overlaps>0){
    // No inner shock rim where another field already owns the deck.
-   if(m>3.5 && m<4.5)discard;
+   if((m>3.5 && m<4.5) || abs(ownEdge)<.18)discard;
    keep*=overlaps>1?.06:.18;
    alpha=min(alpha,.18);
   }
