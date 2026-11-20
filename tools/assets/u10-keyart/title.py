@@ -184,6 +184,10 @@ def brood(file,rank,lantern_gain,x,y,z,height,yaw=0,tilt=0,lean=0):
  # glTF imports native animal forward along +X. Aim toward camera, slightly across frame.
  angle=math.atan2(-forward.y,-forward.x)+math.radians(yaw)
  mat=Matrix.Translation(P(x,y,z))@Matrix.Rotation(angle,4,'Z')@Matrix.Rotation(math.radians(lean),4,'Y')@Matrix.Rotation(math.radians(tilt),4,'X')@Matrix.Scale(height*1.5/(hi-lo),4)@Matrix.Translation((-cx,-cy,-lo))
+ if file=='dretch':
+  # Roll away from the lens about the body centre, opening the hooked silhouette.
+  pivot=V((cx,cy,(hi+lo)/2))
+  mat=mat@Matrix.Translation(pivot)@Matrix.Rotation(math.radians(-29),4,'X')@Matrix.Rotation(math.radians(16),4,'Z')@Matrix.Translation(-pivot)
  for o in obs:
   if o.parent not in obs:o.matrix_world=mat@o.matrix_world
   register(o,'midground')
@@ -197,8 +201,8 @@ for o in warden:
 bounce=area_light('Grazing breach rim',P(-1.9,.85,3.1),390,.60,(.94,.91,1),target=P(.2,-.4,1.1))
 bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
-crawler=brood('dretch','base',(3.2,.12,.12),-.46,-.82,2.20,.36,72,66,lean=12)
-stalker=brood('basilisk','base',(1.7,.55,5.4),-.98,-.84,1.50,.48,-54,-62,lean=16)
+crawler=brood('dretch','base',(5.8,.16,.12),-.46,-.82,2.20,.36,72,66,lean=12)
+stalker=brood('basilisk','base',(2.8,.70,8.2),-.98,-.84,1.50,.48,-54,-62,lean=16)
 for o in crawler+stalker:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
 # Backlighting makes hard shell rims, while the lit volume separates silhouettes.
@@ -221,6 +225,27 @@ B('Near deck fragment',2,-3,.03,.65,.4,.04,dark,'foreground')
 # Surface-aligned unit number on the existing posed shoulder, authoring scene only.
 bpy.context.view_layer.update()
 frame=cam.data.view_frame(scene=s)
+# The boss crown covers the tiny emissive region in its atlas. Expose a
+# segmented amber organ in the seam down the forehead, seated on the mesh.
+warden_skin=next(o for o in warden if o.type=='MESH' and not o.hide_render)
+skin=warden_skin.evaluated_get(bpy.context.evaluated_depsgraph_get())
+inv=skin.matrix_world.inverted()
+organ=material('Warden amber photophores',(1,.28,.018),.05,.38,5.2)
+for i in range(5):
+ u=(440+i*2.65)/960;v=1-(381-i*3.75)/540
+ q=V((min(p.x for p in frame)+u*(max(p.x for p in frame)-min(p.x for p in frame)),min(p.y for p in frame)+v*(max(p.y for p in frame)-min(p.y for p in frame)),frame[0].z))
+ direction=cam.matrix_world@q-cam.location
+ hit,point,normal,_=skin.ray_cast(inv@cam.location,inv.to_3x3()@direction)
+ if hit:
+  loc=skin.matrix_world@point
+  n=(inv.to_3x3().transposed()@normal).normalized()
+  bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=8,location=loc)
+  lobe=bpy.context.object;lobe.name='Forehead lantern rib';lobe.rotation_euler=n.to_track_quat('Z','Y').to_euler()
+  lobe.scale=(.058*(1-.08*abs(i-2)),.028,.016);lobe.data.materials.append(organ);register(lobe,'midground')
+  if i==2:
+   bpy.ops.object.light_add(type='POINT',location=loc+n*.10);spill=bpy.context.object
+   spill.name='Amber reflection in crown seam';spill.data.color=(1,.25,.035);spill.data.energy=3;spill.data.shadow_soft_size=.07
+   spill.light_linking.receiver_collection=receivers
 u,v=.825,.565
 q=V((min(p.x for p in frame)+(max(p.x for p in frame)-min(p.x for p in frame))*u,min(p.y for p in frame)+(max(p.y for p in frame)-min(p.y for p in frame))*v,frame[0].z))
 direction=(cam.matrix_world@q-cam.location).normalized()
