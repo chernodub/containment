@@ -1,3 +1,4 @@
+import {ARMORY_CENTER} from '../../game/world/armoryCarouselLayout';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 import {alignIncidentInstance,incidentTransform} from './Room14Mounts';
 import {room14Debris} from './Room14Debris';
@@ -221,7 +222,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             if(t.id==='passenger-vault')replacements.push({x:420/32,z:310/32,angle:0,scale:1,
                 width:200/32,depth:100/32,bottom:-.01,top:3.4});
             // Retire the old taller mast, not only geometry inside the new motor.
-            if(t.id==='armory')replacements.push({x:600/32,z:450/32,angle:0,scale:1,
+            if(t.id==='armory')replacements.push({x:ARMORY_CENTER.x/32,z:ARMORY_CENTER.y/32,angle:0,scale:1,
                 width:160/32,depth:160/32,bottom:-.01,top:5});
             const thin = (t.voids ?? []).flatMap(p => {
                 const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);

@@ -37,7 +37,34 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS],insert=inserts[id];
   if(!plan||!insert)return;
   addFrame16Incidents(root,id);
-  addFrame16Deck(root,ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES],plan.arena);
+  const room = ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES];
+  addFrame16Deck(root,room,plan.arena);
+  // A recessed diffuser follows the top of each original hull module.
+  // Keep the line outboard of the deck, with a short break at each joint.
+  const rim: number[] = [];
+  const hull = room.boundary ?? [];
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i], b = hull[(i + 1) % hull.length];
+    const dx = (b.x-a.x)/32, dz = (b.y-a.y)/32, length = Math.hypot(dx,dz);
+    if (length < .25) continue;
+    const tx = dx/length, tz = dz/length, y = (dx < 0 ? .65 : 1.20) + .006;
+    const point = (t:number, out:number) => [a.x/32+t*tx+out*tz, y, a.y/32+t*tz-out*tx];
+    const count = Math.ceil(length/4.1);
+    for (let j = 0; j < count; j++) {
+      const start = length*j/count+.08, end = length*(j+1)/count-.08;
+      const near = point(start,.18), far = point(end,.26);
+      rim.push(...near,...point(end,.18),...far,...near,...far,...point(start,.26));
+    }
+  }
+  if (rim.length) {
+    const geometry = new T.BufferGeometry();
+    geometry.setAttribute('position', new T.Float32BufferAttribute(rim,3));
+    const material = new T.MeshBasicMaterial({color:0x667577});
+    material.userData.actorMaterial = true;
+    const mesh = new T.Mesh(geometry,material);
+    mesh.name = 'hull-cap-diffusers';
+    root.add(mesh);
+  }
   const [kind,length,width,yaw,bays]=insert,parts:T.BufferGeometry[]=[];
   const plate=(x:number,z:number,w:number,d:number,bottom:number,top:number,tone:number)=>{
     const g=new T.BoxGeometry(w,top-bottom,d);
@@ -98,8 +125,11 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   fixture.name='room14-landmark-worklight';
   fixture.position.set(source.at[0]/32,source.height??3.8,source.at[1]/32);
   const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
+  const lens = new T.Color(source.color);
+  if (id === 'freight-hold') lens.multiplyScalar(.40);
+  if (['shielding-gate','breached-loading-bay','armory'].includes(id)) lens.multiplyScalar(.20);
   const diffuser=new T.Mesh(new T.BoxGeometry(.56,.066,.14),new T.MeshStandardMaterial({
-    color:source.color,emissive:source.color,emissiveIntensity:.65,roughness:.36
+    color:lens,emissive:lens,emissiveIntensity:.65,roughness:.36
   }));
   casing.material.userData.actorMaterial=true;diffuser.material.userData.actorMaterial=true;
   diffuser.position.set(0,-.057,.091);

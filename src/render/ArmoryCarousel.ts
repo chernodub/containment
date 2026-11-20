@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {industrialBoxGeometry,industrialCylinderGeometry,industrialStencil} from './world/IndustrialFormKit';
-import {ARMORY_COUNTER,ARMORY_CAROUSEL,ARMORY_COUNTER_START,ARMORY_COUNTER_END} from '../game/world/armoryCarouselLayout';
+import {ARMORY_CENTER,ARMORY_COUNTER,ARMORY_CAROUSEL,ARMORY_COUNTER_START,ARMORY_COUNTER_END} from '../game/world/armoryCarouselLayout';
 import type {Point} from '../game/roguelike/types';
 import {createStoredArmoryRifle} from './ArmoryBlockout';
 
@@ -19,7 +19,7 @@ export function armoryCarousel():T.Group{
   const g=new T.ExtrudeGeometry(shape,{depth:height-2*bevel,bevelEnabled:true,bevelOffset:-bevel,bevelSize:bevel,bevelThickness:bevel,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom+bevel,0);return add(name,g,m);
  };
  const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,industrialBoxGeometry(w,h,d,Math.min(w,h,d)>.045&&Math.max(w,h,d)>.18?Math.min(.065,Math.min(w,h,d)*.16):0),m,parent);p.position.set(x,y,z);return p;};
- const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,industrialCylinderGeometry(radius,height,.035,32),m);p.position.set(600/32,y,450/32);return p;};
+ const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,industrialCylinderGeometry(radius,height,.035,32),m);p.position.set(ARMORY_CENTER.x/32,y,ARMORY_CENTER.y/32);return p;};
  slab('horseshoe-solid',ARMORY_COUNTER,0,.14,graphite);
  const shellOutline=ARMORY_COUNTER.map(p=>{const dx=p.x-600,dz=p.y-450,r=Math.hypot(dx,dz),inset=r>255?-11:3;return{x:600+dx*(r+inset)/r,y:450+dz*(r+inset)/r};});
  slab('horseshoe-recessed-housing',shellOutline,.14,.90,graphite);
@@ -48,25 +48,25 @@ export function armoryCarousel():T.Group{
  slab('carousel-solid-geared-foot',ARMORY_CAROUSEL,0,1.02,graphite);
  cylinder('carousel-bearing',2.23,.12,1.08,edge);
  // Two slim machined races break the broad flat base without concealing its teeth.
- for(const [radius,y] of [[1.92,1.235],[2.05,1.238]] as const){const g=new T.TorusGeometry(radius,.018,6,64);g.rotateX(Math.PI/2);const race=add('carousel-bearing-race',g,pale);race.position.set(600/32,y,450/32);}
+ for(const [radius,y] of [[1.92,1.235],[2.05,1.238]] as const){const g=new T.TorusGeometry(radius,.018,6,64);g.rotateX(Math.PI/2);const race=add('carousel-bearing-race',g,pale);race.position.set(ARMORY_CENTER.x/32,y,ARMORY_CENTER.y/32);}
 
  cylinder('carousel-deck',2.12,.09,1.185,worktop);
  cylinder('carousel-spindle',.24,2.25,2.35,pale);
  cylinder('carousel-spindle-cap',.38,.14,3.545,edge);
  for(const y of [1.47,2.07,3.31])cylinder('spindle-machined-collar',.27,.065,y,graphite);
- box(root,'spindle-motor-inspection-recess',600/32+.231,2.62,450/32,.028,.67,.28,rubber);
- for(let slot=0;slot<6;slot++)box(root,'spindle-motor-cooling-fin',600/32+.251,2.37+slot*.095,450/32,.018,.025,.22,edge);
+ box(root,'spindle-motor-inspection-recess',ARMORY_CENTER.x/32+.231,2.62,ARMORY_CENTER.y/32,.028,.67,.28,rubber);
+ for(let slot=0;slot<6;slot++)box(root,'spindle-motor-cooling-fin',ARMORY_CENTER.x/32+.251,2.37+slot*.095,ARMORY_CENTER.y/32,.018,.025,.22,edge);
  for(let bolt=0;bolt<8;bolt++){
   const a=bolt*Math.PI/4,fastener=add('spindle-cap-fastener',new T.CylinderGeometry(.018,.018,.012,6),graphite);
-  fastener.position.set(600/32+Math.cos(a)*.3,3.622,450/32+Math.sin(a)*.3);
+  fastener.position.set(ARMORY_CENTER.x/32+Math.cos(a)*.3,3.622,ARMORY_CENTER.y/32+Math.sin(a)*.3);
  }
  for(let i=0;i<24;i++){
-  const a=i*Math.PI/12,g=new T.Group();g.position.set(600/32,0,450/32);g.rotation.y=-a;root.add(g);
+  const a=i*Math.PI/12,g=new T.Group();g.position.set(ARMORY_CENTER.x/32,0,ARMORY_CENTER.y/32);g.rotation.y=-a;root.add(g);
   box(g,'gear-tooth',2.38,1.11,0,.15,.18,.35,edge);
  }
  // The front/south sector is genuinely open above the solid geared base.
  for(const degrees of [150,190,230,270,310,350,390]){
-  const a=degrees*Math.PI/180,mount=new T.Group();mount.name='radial-weapon-mount';mount.position.set(600/32,0,450/32);mount.rotation.y=-a;root.add(mount);
+  const a=degrees*Math.PI/180,mount=new T.Group();mount.name='radial-weapon-mount';mount.position.set(ARMORY_CENTER.x/32,0,ARMORY_CENTER.y/32);mount.rotation.y=-a;root.add(mount);
   box(mount,'radial-spoke',.81,2.03,0,1.5,.10,.10,graphite);
   box(mount,'spindle-collar',.28,2.03,0,.16,.26,.20,edge);
   box(mount,'secured-clamp',1.55,2.03,0,.18,.38,.36,edge);
@@ -97,7 +97,7 @@ export function armoryCarousel():T.Group{
  }
  // Inset sector seams expose the secured deck's radial construction.
  for(const degrees of [30,90,150,210,270,330]){
-  const g=new T.Group();g.position.set(600/32,1.238,450/32);g.rotation.y=-degrees*Math.PI/180;root.add(g);
+  const g=new T.Group();g.position.set(ARMORY_CENTER.x/32,1.238,ARMORY_CENTER.y/32);g.rotation.y=-degrees*Math.PI/180;root.add(g);
   box(g,'carousel-sector-joint',1.35,0,0,1.28,.012,.035,rubber);
   box(g,'carousel-hazard-tab',1.84,.009,.09,.30,.014,.12,edge);
  }

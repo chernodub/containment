@@ -163,17 +163,13 @@ export function buildAct1InteriorInlay(
       break;
     }
     case 'breached-loading-bay': {
-      // A manufactured turning plate with four broad quadrant joints survives
-      // the hull breach. Everything is flush, including the quiet bearing ring.
-      arc(119,0,Math.PI*2,12,recess,.016);
-      arc(111,0,Math.PI*2,2,joint,.018);
-      for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]) {
-        const dx=Math.cos(angle),dy=Math.sin(angle);
-        strip(dx*42,dy*42,dx*104,dy*104,2.5,joint,.018);
-        strip(dx*123,dy*123,dx*137,dy*137,5,ink,.019);
+      // The impact ripped through the turntable. Only its far quadrant survives.
+      arc(119,.10,1.38,7,recess,.016);
+      arc(111,.14,1.32,2,joint,.018);
+      for(const offset of [-13,10]){
+        strip(-48+offset,-160,-12+offset,-38,5,recess,.017);
+        strip(-12+offset,-38,35+offset,44,3,joint,.018);
       }
-      polygon([[-26,-19],[26,-19],[34,-11],[34,11],[26,19],[-26,19],[-34,11],[-34,-11]],field,.018);
-      strip(-18,0,18,0,2,ink,.020);
       break;
     }
     case 'relay-racks': {

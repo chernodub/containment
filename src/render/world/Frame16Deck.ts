@@ -1,6 +1,7 @@
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
+import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
 function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
@@ -15,8 +16,8 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
   }
   if (room.boundary) {
     c.clip('evenodd');
-    c.strokeStyle = 'rgba(9,17,22,.11)';
-    for (const width of [24, 14, 6]) {
+    c.strokeStyle = 'rgba(6,10,12,.16)';
+    for (const width of [142, 112, 86, 64, 46, 30, 16, 7]) {
       c.lineWidth = width;
       c.stroke();
     }
@@ -24,7 +25,7 @@ function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
 
   const furniture = shipInteriorFurnishings(room).flatMap(item => item.colliders);
   for (const rect of [...room.obstacles, ...(room.incidentObstacles ?? []), ...furniture]) {
-    for (let spread = 20; spread >= 2; spread -= 3) {
+    for (let spread = 34; spread >= 2; spread -= 4) {
       c.fillStyle = ['diagnostic-gallery','crew-checkpoint','residential-gallery','relay-racks'].includes(room.id) ? 'rgba(9,14,18,.11)' : 'rgba(10,17,23,.065)';
       c.fillRect(rect.x - spread, rect.y - spread, rect.width + 2 * spread, rect.height + 2 * spread);
     }
@@ -79,6 +80,32 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     contactShadows(c, room);
+    // Scuffed wheel tracks taper toward the workshop light. Their bend is
+    // offset from the straight sightline so the marine stays on clear deck.
+    const source = roomValueProfile(room.id)?.landmark?.at;
+    if (source) {
+      const dx = source[0] - room.spawn.x, dy = source[1] - room.spawn.y;
+      const length = Math.max(1, Math.hypot(dx, dy));
+      const nx = -dy / length, ny = dx / length;
+      c.save();
+      for (const offset of [14, 26]) {
+        c.beginPath();
+        c.moveTo(room.spawn.x + nx * offset, room.spawn.y + ny * offset);
+        c.bezierCurveTo(room.spawn.x + dx * .43 + nx * (offset + 35),
+          room.spawn.y + dy * .43 + ny * (offset + 35),
+          source[0] - dx * .28 + nx * (offset - 24),
+          source[1] - dy * .28 + ny * (offset - 24), source[0] + nx * offset, source[1] + ny * offset);
+        c.strokeStyle = 'rgba(12,18,19,.51)';
+        c.lineWidth = offset === 14 ? 7 : 3.5;
+        c.stroke();
+        c.setLineDash([19, 9, 6, 17]);
+        c.strokeStyle = 'rgba(132,137,131,.27)';
+        c.lineWidth = 1.6;
+        c.stroke();
+        c.setLineDash([]);
+      }
+      c.restore();
+    }
     c.save();
     const scars:Record<string,number[][]>={
       'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
@@ -86,6 +113,22 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       'manual-control-chamber':[[462,573],[491,587],[508,611],[477,644]],
       'freight-hold':[[439,463],[424,478],[414,479],[395,493]],
     };
+    // An alternating three-toed trail leads out of the opening. Its tarry
+    // deposit thins as the creature crosses the surviving turning apron.
+    if (room.id === 'breached-loading-bay') {
+      for (let step = 0; step < 8; step++) {
+        c.save();
+        const side = step % 2 ? 1 : -1;
+        c.translate(549 + step * 5 + side * 14, 499 + step * 23);
+        c.rotate(-.23 + side * .18);
+        c.fillStyle = `rgba(30,42,39,${.83 - step * .053})`;
+        c.beginPath();
+        c.moveTo(-5,-7); c.lineTo(1,-10); c.lineTo(6,-4);
+        c.lineTo(10,9); c.lineTo(4,4); c.lineTo(2,13);
+        c.lineTo(-1,5); c.lineTo(-6,10); c.lineTo(-4,1);
+        c.closePath(); c.fill(); c.restore();
+      }
+    }
     const track=scars[room.id];
     if(track){
       for(const shift of [-3,3]){
@@ -112,5 +155,5 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     c.restore();
-  }, .016);
+  }, .0214);
 }
