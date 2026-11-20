@@ -154,24 +154,30 @@ def brood(file,rank,lantern_gain,x,y,z,height,yaw=0,tilt=0,lean=0):
    nodes=mat.node_tree.nodes
    links=mat.node_tree.links
    bs=next(n for n in nodes if n.type=='BSDF_PRINCIPLED')
-   # Keep the painted bands under the breach key. A small atlas-coloured
-   # bounce keeps the turned-away plates legible without lifting black gaps.
+   # Let only the breach-facing planes carry the family paint. A soft
+   # terminator follows the world-space shading normal over each plate.
    albedo=bs.inputs['Base Color'].links[0].from_socket
-   grade=nodes.new('ShaderNodeHueSaturation')
-   grade.inputs['Value'].default_value=.82
-   links.new(albedo,grade.inputs['Color'])
-   links.new(grade.outputs['Color'],bs.inputs['Base Color'])
-   bs.inputs['Roughness'].default_value=.68
-   bs.inputs['Specular IOR Level'].default_value=.26
+   normal=nodes.new('ShaderNodeNewGeometry').outputs['Normal']
+   incidence=nodes.new('ShaderNodeVectorMath');incidence.operation='DOT_PRODUCT'
+   links.new(normal,incidence.inputs[0])
+   incidence.inputs[1].default_value=(-right*.72+forward*.50+V((0,0,.65))).normalized()
+   terminator=nodes.new('ShaderNodeValToRGB')
+   terminator.color_ramp.interpolation='EASE'
+   for stop,pos in zip(terminator.color_ramp.elements,(.08,.63)):stop.position=pos
+   links.new(incidence.outputs['Value'],terminator.inputs[0])
+   paint=nodes.new('ShaderNodeMixRGB')
+   paint.inputs[1].default_value=(.009,.014,.023,1)
+   links.new(terminator.outputs[0],paint.inputs[0])
+   links.new(albedo,paint.inputs[2]);links.new(paint.outputs[0],bs.inputs['Base Color'])
+   bs.inputs['Roughness'].default_value=.42
+   bs.inputs['Specular IOR Level'].default_value=.32
    glow=bs.inputs['Emission Color']
    lantern=glow.links[0].from_socket
-   fill=nodes.new('ShaderNodeVectorMath');fill.operation='SCALE'
-   links.new(albedo,fill.inputs[0]);fill.inputs['Scale'].default_value=.35
    # Grade the mapped lantern separately so red and violet survive AgX.
    accent=nodes.new('ShaderNodeVectorMath');accent.operation='MULTIPLY'
    links.new(lantern,accent.inputs[0]);accent.inputs[1].default_value=lantern_gain
    combined=nodes.new('ShaderNodeVectorMath');combined.operation='ADD'
-   links.new(fill.outputs[0],combined.inputs[0]);links.new(accent.outputs[0],combined.inputs[1])
+   combined.inputs[0].default_value=(.009,.014,.023);links.new(accent.outputs[0],combined.inputs[1])
    links.new(combined.outputs[0],glow)
    bs.inputs['Emission Strength'].default_value=1
  pts=[o.matrix_world@V(c) for o in ms if not o.hide_render for c in o.bound_box];lo=min(p.z for p in pts);hi=max(p.z for p in pts);cx=(min(p.x for p in pts)+max(p.x for p in pts))/2;cy=(min(p.y for p in pts)+max(p.y for p in pts))/2
@@ -188,7 +194,7 @@ warden=brood('tyrant','boss',(2.2,2.2,2.2),.17,-.40,.18,1.90,-18,lean=20)
 receivers=bpy.data.collections.new('Brood bounce receivers')
 for o in warden:
  if o.type=='MESH' and not o.hide_render:receivers.objects.link(o)
-bounce=area_light('Ram mask bounce',P(-1.4,-2.3,2.2),170,1.2,(.70,.79,1),target=P(.2,-.4,1.1))
+bounce=area_light('Grazing breach rim',P(-1.9,.85,3.1),390,.60,(.94,.91,1),target=P(.2,-.4,1.1))
 bounce.light_linking.receiver_collection=receivers
 tube('Crawler buckled ceiling support',[P(-.85,.05,3.25),P(-.45,-.85,2.7),P(-.25,-.92,2.18)],.045,edge)
 crawler=brood('dretch','base',(3.2,.12,.12),-.46,-.82,2.20,.36,72,66,lean=12)
