@@ -1,7 +1,7 @@
 import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityLinkSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
-import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { ELEMENT_COLORS, UNIT, isContactJoint, type AbilityFrame, type AbilityPresentation } from '../types';
 import { FxMode, type FxSlot } from '../FlagshipFx';
 import { MarineTimeEcho } from './MarineTimeEcho';
 import { NativeMarineEchoes } from './NativeMarineEchoes';
@@ -168,7 +168,7 @@ class ArcPresentation implements AbilityPresentation {
       let joint = this.contactBones.get(root);
       if (joint === undefined) {
         joint = null;
-        root.traverse(node => { if (!joint && node.type === 'Bone' && /forearm|shin|_lower|calf/i.test(node.name)) joint = node; });
+        root.traverse(node => { if (!joint && isContactJoint(node)) joint = node; });
         this.contactBones.set(root, joint);
       }
       if (joint?.parent) {

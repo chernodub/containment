@@ -5,7 +5,7 @@ import type { AbilityElement, AbilityEvent } from '../../../game/abilities/contr
 import type { DepthGame } from '../../../DepthGame';
 import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import type { ElementKit } from '../ElementKit';
-import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { ELEMENT_COLORS, UNIT, isContactJoint, type AbilityFrame, type AbilityPresentation } from '../types';
 
 const FRIENDLY = 0x9fe8ff;
 const WHITE = 0xe8fbff;
@@ -155,7 +155,7 @@ class SystemPresentation implements AbilityPresentation {
       if (!joints) {
         const found: T.Object3D[] = [];
         actor.root.traverse(node => {
-          if (found.length < 4 && node.type === 'Bone' && /forearm|shin|_lower|calf/i.test(node.name)) found.push(node);
+          if (found.length < 4 && isContactJoint(node)) found.push(node);
         });
         this.frostJoints.set(actor.root, found);
         joints = found;
