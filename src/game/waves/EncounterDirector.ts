@@ -63,7 +63,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const broodReserve=options.brood&&!source.some(beat=>beat.groups.some(group=>group.reinforcement))
   ?source.at(-1)?.groups.find(group=>!group.guardian&&!group.lesson&&!group.priority):undefined;
  const veteranLate=mode==='veteran'&&node.depth>=10;
- const arrivalSpacing=node.depth===9&&options.junctions?.[7]==='salvage'?1.1:veteranLate?.58:1;
+ const standardFinalAct=mode==='standard'&&node.depth>=14;
+ const arrivalSpacing=node.depth===9&&options.junctions?.[7]==='salvage'?1.1:veteranLate?.58:standardFinalAct?DIFFICULTIES.standard.finalActArrivalSpacing:1;
  let state=(options.seed^Math.imul(node.depth+1,0x9e3779b9))>>>0;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
@@ -95,7 +96,9 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap:Math.min(veteranLate?15:12,6+Math.floor(node.depth/3)+(veteranLate?3:0)),schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
+ const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
+ const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
