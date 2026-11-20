@@ -24,6 +24,20 @@ import { DEFAULT_POST_MOOD, type PostMood } from './types';
 export type { PostMood } from './types';
 export type AmbientOcclusionAlgorithm = 'contact' | 'gtao';
 
+// Three's rejection threshold uses only the center and four axial taps.
+// Keep diagonal taps and the full edge search on the accepted path.
+const fxaaDiagonals = /(l\.ne = SampleLuminance[^\n]*\n\s*l\.nw = SampleLuminance[^\n]*\n\s*l\.se = SampleLuminance[^\n]*\n\s*l\.sw = SampleLuminance[^\n]*\n)/;
+const highAntialiasFragment = FXAAShader.fragmentShader
+  .replace(fxaaDiagonals, '')
+  .replace('float pixelBlend = DeterminePixelBlendFactor( luminance );', `
+    luminance.ne = SampleLuminance( tex2D, texSize, uv,  1.0,  1.0 );
+    luminance.nw = SampleLuminance( tex2D, texSize, uv, -1.0,  1.0 );
+    luminance.se = SampleLuminance( tex2D, texSize, uv,  1.0, -1.0 );
+    luminance.sw = SampleLuminance( tex2D, texSize, uv, -1.0, -1.0 );
+    float pixelBlend = DeterminePixelBlendFactor( luminance );`)
+  .replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );',
+    'gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>');
+
 type PostResources = {
   scene: WebGLRenderTarget;
   present: WebGLRenderTarget;
@@ -78,6 +92,8 @@ export class PostPipeline {
     this.styleStrength=value;setGraphicStrength(value);
     if(this.resources){this.resources.composite.uniforms.inkStyle.value.fromArray(INK_STRENGTHS[value]);this.resources.composite.uniforms.inkStrength.value=value==='bold'?1:value==='medium'?.5:0;}
   }
+  diagnosticFinalAA = true;
+  diagnosticSoftDepth = true;
   private options: GraphicsOptions = GRAPHICS_PRESETS.low;
   private tier: GraphicsTier = 'low';
   private mood: PostMood = DEFAULT_POST_MOOD;
@@ -191,7 +207,7 @@ export class PostPipeline {
     const warmTarget = this.target(1, 1);
     try {
       this.renderer.setRenderTarget(resources.scene);this.renderer.toneMapping=NoToneMapping;
-      if(this.tier==='high'&&this.softParticleBinding?.enabled()){this.softDepth.prepare(resources.scene);this.renderer.setRenderTarget(resources.scene);}
+      if(this.tier==='high'&&this.diagnosticSoftDepth&&this.softParticleBinding?.enabled()){this.softDepth.prepare(resources.scene);this.renderer.setRenderTarget(resources.scene);}
       await compile(this.scene,this.camera);
       if(this.disposed||this.resources!==resources)return;
       // Compile the actual screen color-space variants before the offscreen draw.
@@ -200,7 +216,7 @@ export class PostPipeline {
       const materials=this.tier==='low'?[resources.composite,resources.antialias]:[resources.occlusion,resources.gtao.material,resources.gtao.denoiseMaterial,resources.extract,resources.blur,resources.distort,resources.composite,resources.antialias];
       for (const material of materials) {
         if (this.disposed || this.resources !== resources) return;
-        this.renderer.setRenderTarget(material===resources.composite?resources.present:null);
+        this.renderer.setRenderTarget(material===resources.composite&&this.diagnosticFinalAA?resources.present:null);
         resources.triangle.material = material;
         await compile(resources.screenScene, resources.screenCamera);
       }
@@ -258,7 +274,7 @@ export class PostPipeline {
       this.camera.updateMatrixWorld();
       renderer.setRenderTarget(r.scene);
       this.softParticleBinding?.receive(null);
-      this.softDepth.begin(this.tier==='high'&&this.softParticleBinding?.enabled()?r.scene:null);
+      this.softDepth.begin(this.tier==='high'&&this.diagnosticSoftDepth&&this.softParticleBinding?.enabled()?r.scene:null);
       try{renderer.render(this.scene, this.camera);}finally{this.softDepth.end();}
       if (this.tier==='high'&&(this.options.ambientOcclusion || warm)) {
         if(warm||this.occlusionAlgorithm==='contact'){
@@ -306,8 +322,8 @@ export class PostPipeline {
       u.menuPresentation.value = this.menuPresentation ? 1 : 0;
       u.atmosphereEnabled.value = this.tier==='high'&&this.options.atmosphere ? 1 : 0;
       u.useAgX.value = this.agx ? 1 : 0;
-      this.draw(r.composite, r.present);
-      this.draw(r.antialias, output);
+      this.draw(r.composite, this.diagnosticFinalAA ? r.present : output);
+      if (this.diagnosticFinalAA) this.draw(r.antialias, output);
     } finally {
       renderer.toneMapping = originalMapping;
       renderer.toneMappingExposure = originalExposure;
@@ -335,7 +351,7 @@ export class PostPipeline {
     if (this.resources) return this.resources;
     const scene = this.target(1, 1, true);
     const present=this.target(1,1);present.texture.type=UnsignedByteType;present.texture.colorSpace=SRGBColorSpace;present.texture.name='Containment graded ink';
-    const antialias=this.material(this.tier==='low'?lowAntialiasFragment:FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
+    const antialias=this.material(this.tier==='low'?lowAntialiasFragment:highAntialiasFragment,UniformsUtils.clone(FXAAShader.uniforms));
     antialias.name=this.tier==='low'?'Containment final compact AA':'Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
     const ao = this.target(1, 1);
     // F11: only red is consumed after denoise; retain identical half-float precision.

@@ -201,3 +201,162 @@ The original heavy fixture stopped on both builds because its 28-unit packing es
 High still needs approximately 5 ms off the observed tail in most combinations. The unchanged 16.7 ms median and sustained 23–27 ms tail indicate repeated missed presentation intervals. Individual stalls make up a smaller share. Static shadows and missing gas demand on Arc rule out either as a common trigger in these trials. Pyro also has CPU p95 near or over 20 ms, so further GPU work alone may not resolve its worst intervals. The next attribution step would require a Metal trace that separates attachment stores at the marine color and soft-depth copies, opaque material shading, and transparent overdraw. WebGL pass queries on this backend cannot resolve those costs independently.
 
 [Preserved baseline](../../artifacts/nextgen/perf18/baseline/benchmark.json) · [Final trials](../../artifacts/nextgen/perf18/final/benchmark.json) · [Room preparation](../../artifacts/nextgen/perf18/rooms/rooms.json) · [Matched frames](../../artifacts/nextgen/perf18/pairs) · [Arc playtest](../../artifacts/nextgen/perf18/playtest-arc/report.json)
+
+## PERF19 ablation
+
+Measured on 81512bcb plus the benchmark controls at 1920×1080 on the same M1 Pro. Each feature used two pairs of 15-second trials, with a fresh staged fight and full High immediately before its ablation. Safety-interlock Pyro ran before Transmission Arc. The new frame summary excludes the interval that starts before measurement, uses nearest-rank p90/p95/p99, and counts strict >20 ms and >30 ms intervals. Savings below are percentage points of the frame distribution. Timing budgets are unchanged.
+
+AO, bloom and distortion used the validated graphics overrides. The other selectors are debug-only. Final AA bypasses the intermediate graded target. Soft depth leaves gas particles live with detached depth disabled. Atmosphere layers hides the atmosphere batch with grading and room lights intact. Half light pool admits four of nine dynamic lights using the existing priority policy. Contacts disables the soft actor-contact stamps. Silhouette disables the marine coverage copy and borrowed-skin overlay and the committed attacker outline, while retaining ordinary ink. Priority sampling leaves the CPU priority raster and live warnings in place. Floor residues hides combat floor decals, ability scars and procedural scorch, wake and crack surfaces. Conditions disables visual condition owners. The standard benchmark route does not enable run-structure conditions, so that row is a negative control. Adaptive 0.80 changes the diagnostic minimum only.
+
+
+### safety-interlock-station / pyro
+
+| Feature | Repeat | Full load | Full p90 / p95 / p99 ms | Full >20 / >30 | Ablated load | Ablated p90 / p95 / p99 ms | Ablated >20 / >30 | >20 saving (pp) |
+| --- | ---: | --- | --- | --- | --- | --- | --- | ---: |
+| ao | 1 | 1.58 → 2.39 | 25.10 / 26.00 / 41.80 | 19.19% / 3.81% | 2.39 → 2.26 | 25.10 / 26.00 / 41.50 | 20.87% / 3.70% | -1.69 |
+| bloom | 1 | 2.26 → 2.56 | 25.10 / 32.70 / 50.00 | 22.87% / 5.01% | 2.56 → 3.86 | 25.00 / 25.80 / 41.60 | 16.82% / 3.71% | +6.05 |
+| distortion | 1 | 3.86 → 3.56 | 25.00 / 25.70 / 50.00 | 18.23% / 3.43% | 3.56 → 3.47 | 25.00 / 25.40 / 43.20 | 16.56% / 3.26% | +1.67 |
+| finalAA | 1 | 3.47 → 3.40 | 25.10 / 26.30 / 48.70 | 21.92% / 4.47% | 3.40 → 3.25 | 25.00 / 25.70 / 48.90 | 16.32% / 3.39% | +5.60 |
+| softDepth | 1 | 3.25 → 2.83 | 25.00 / 25.90 / 49.30 | 20.75% / 3.75% | 2.83 → 2.30 | 25.00 / 25.80 / 41.80 | 17.17% / 3.67% | +3.58 |
+| atmosphereLayers | 1 | 2.30 → 2.32 | 25.00 / 25.70 / 41.70 | 16.58% / 2.87% | 2.32 → 2.54 | 25.00 / 26.50 / 43.30 | 19.73% / 4.80% | -3.15 |
+| halfLightPool | 1 | 2.54 → 2.39 | 25.00 / 26.10 / 42.00 | 16.93% / 4.23% | 2.39 → 2.58 | 18.00 / 24.90 / 33.40 | 6.21% / 1.34% | +10.72 |
+| contacts | 1 | 2.58 → 2.42 | 25.00 / 25.60 / 49.90 | 18.40% / 3.20% | 2.42 → 2.15 | 25.00 / 26.40 / 50.10 | 19.97% / 4.42% | -1.57 |
+| silhouette | 1 | 2.15 → 2.65 | 25.00 / 26.40 / 50.00 | 18.38% / 4.53% | 2.65 → 2.60 | 25.00 / 25.90 / 42.40 | 18.85% / 4.28% | -0.47 |
+| prioritySampling | 1 | 2.60 → 2.78 | 25.10 / 33.30 / 41.90 | 24.52% / 6.34% | 2.78 → 2.44 | 25.10 / 33.10 / 50.10 | 21.17% / 5.46% | +3.35 |
+| floorResidues | 1 | 2.44 → 2.11 | 25.10 / 33.00 / 50.00 | 23.98% / 5.31% | 2.11 → 2.49 | 25.00 / 25.80 / 49.20 | 19.24% / 4.35% | +4.74 |
+| conditions | 1 | 2.49 → 2.63 | 25.00 / 25.90 / 50.10 | 21.43% / 4.85% | 2.63 → 2.82 | 25.00 / 33.00 / 50.00 | 17.82% / 5.19% | +3.61 |
+| adaptive80 | 1 | 2.82 → 2.80 | 25.00 / 25.60 / 41.70 | 17.35% / 3.68% | 2.80 → 2.61 | 24.80 / 25.20 / 41.60 | 12.76% / 2.81% | +4.59 |
+| ao | 2 | 2.61 → 2.76 | 25.00 / 25.30 / 41.70 | 20.29% / 2.92% | 2.76 → 2.61 | 25.00 / 26.30 / 50.00 | 18.56% / 4.41% | +1.73 |
+| bloom | 2 | 2.61 → 2.27 | 25.00 / 26.00 / 41.70 | 18.35% / 3.54% | 2.27 → 2.56 | 25.10 / 31.90 / 42.60 | 20.27% / 5.03% | -1.92 |
+| distortion | 2 | 2.56 → 2.48 | 25.10 / 26.20 / 50.00 | 19.55% / 4.23% | 2.48 → 2.41 | 25.00 / 25.70 / 42.10 | 18.48% / 4.26% | +1.07 |
+| finalAA | 2 | 2.41 → 1.99 | 25.00 / 25.60 / 42.90 | 19.95% / 3.94% | 1.99 → 1.92 | 25.00 / 26.00 / 42.00 | 19.25% / 4.55% | +0.70 |
+| softDepth | 2 | 2.09 → 1.65 | 25.00 / 26.10 / 50.00 | 17.44% / 4.36% | 1.65 → 2.38 | 25.00 / 25.60 / 42.30 | 18.49% / 3.57% | -1.06 |
+| atmosphereLayers | 2 | 2.38 → 3.06 | 25.00 / 25.80 / 42.10 | 18.24% / 4.07% | 3.06 → 2.66 | 25.20 / 26.70 / 42.70 | 23.84% / 4.77% | -5.60 |
+| halfLightPool | 2 | 2.66 → 2.80 | 25.00 / 25.90 / 49.80 | 21.39% / 3.48% | 2.80 → 2.85 | 18.00 / 25.00 / 34.70 | 7.53% / 1.73% | +13.86 |
+| contacts | 2 | 2.85 → 3.20 | 25.00 / 25.50 / 49.90 | 17.84% / 2.86% | 3.20 → 2.78 | 25.10 / 25.80 / 41.70 | 20.24% / 3.86% | -2.40 |
+| silhouette | 2 | 2.78 → 2.45 | 25.10 / 26.10 / 41.70 | 20.42% / 4.11% | 2.45 → 2.31 | 25.00 / 25.90 / 41.70 | 16.84% / 4.38% | +3.58 |
+| prioritySampling | 2 | 2.31 → 2.29 | 25.00 / 26.10 / 50.00 | 16.69% / 4.60% | 2.29 → 2.28 | 25.00 / 25.90 / 49.90 | 18.44% / 3.85% | -1.75 |
+| floorResidues | 2 | 2.28 → 2.09 | 25.00 / 25.40 / 34.10 | 19.06% / 3.13% | 2.09 → 2.24 | 25.00 / 26.20 / 42.70 | 16.42% / 3.97% | +2.64 |
+| conditions | 2 | 2.24 → 2.21 | 25.00 / 25.80 / 50.00 | 19.34% / 3.05% | 2.21 → 2.71 | 25.00 / 26.60 / 50.00 | 21.94% / 4.85% | -2.60 |
+| adaptive80 | 2 | 2.71 → 2.57 | 25.00 / 26.30 / 50.00 | 20.29% / 4.41% | 2.57 → 2.59 | 24.90 / 25.00 / 43.60 | 13.04% / 2.05% | +7.25 |
+
+52 trials, 0 benchmark errors, 0 resource guard misses.
+
+### transmission-chamber / arc
+
+| Feature | Repeat | Full load | Full p90 / p95 / p99 ms | Full >20 / >30 | Ablated load | Ablated p90 / p95 / p99 ms | Ablated >20 / >30 | >20 saving (pp) |
+| --- | ---: | --- | --- | --- | --- | --- | --- | ---: |
+| ao | 1 | 2.54 → 2.56 | 17.60 / 18.00 / 26.10 | 3.28% / 0.61% | 2.56 → 2.04 | 17.50 / 18.20 / 25.20 | 3.20% / 0.49% | +0.08 |
+| bloom | 1 | 2.04 → 2.18 | 17.50 / 18.10 / 25.10 | 2.68% / 0.37% | 2.18 → 1.56 | 17.30 / 18.00 / 25.10 | 3.11% / 0.50% | -0.43 |
+| distortion | 1 | 1.56 → 1.81 | 17.80 / 24.80 / 32.90 | 5.26% / 1.10% | 1.81 → 1.75 | 17.20 / 17.90 / 25.30 | 3.16% / 0.85% | +2.10 |
+| finalAA | 1 | 1.75 → 2.18 | 17.60 / 18.10 / 33.30 | 4.66% / 1.35% | 2.18 → 2.31 | 17.40 / 18.00 / 26.30 | 3.55% / 0.98% | +1.10 |
+| softDepth | 1 | 2.31 → 2.08 | 17.60 / 18.30 / 25.40 | 3.66% / 0.73% | 2.08 → 2.25 | 17.50 / 18.10 / 25.80 | 4.16% / 0.98% | -0.50 |
+| atmosphereLayers | 1 | 2.25 → 1.96 | 17.50 / 18.20 / 26.30 | 4.15% / 0.98% | 1.96 → 2.05 | 17.50 / 18.10 / 25.70 | 2.92% / 0.49% | +1.23 |
+| halfLightPool | 1 | 2.05 → 2.02 | 17.50 / 18.10 / 25.10 | 2.45% / 0.73% | 2.02 → 1.59 | 17.20 / 17.90 / 25.00 | 2.16% / 0.72% | +0.28 |
+| contacts | 1 | 1.59 → 1.82 | 17.40 / 18.10 / 25.10 | 2.56% / 0.61% | 1.82 → 1.95 | 17.60 / 18.40 / 26.40 | 4.99% / 0.73% | -2.42 |
+| silhouette | 1 | 1.95 → 1.92 | 17.30 / 18.00 / 25.70 | 3.65% / 0.61% | 1.92 → 2.09 | 17.60 / 18.20 / 25.10 | 3.44% / 0.49% | +0.21 |
+| prioritySampling | 1 | 2.09 → 2.18 | 17.50 / 18.10 / 25.10 | 4.13% / 0.49% | 2.18 → 2.16 | 17.30 / 17.90 / 25.10 | 2.68% / 0.73% | +1.45 |
+| floorResidues | 1 | 2.16 → 1.91 | 17.80 / 18.20 / 26.10 | 4.02% / 0.85% | 1.91 → 2.09 | 17.50 / 18.20 / 25.70 | 3.76% / 0.61% | +0.26 |
+| conditions | 1 | 2.09 → 2.47 | 17.70 / 18.20 / 25.20 | 4.01% / 0.73% | 2.47 → 2.75 | 17.40 / 18.00 / 25.00 | 2.44% / 0.49% | +1.56 |
+| adaptive80 | 1 | 2.75 → 2.74 | 17.40 / 18.10 / 25.20 | 3.65% / 0.73% | 2.74 → 2.74 | 17.40 / 18.10 / 25.00 | 2.80% / 0.49% | +0.84 |
+| ao | 2 | 2.74 → 2.35 | 17.40 / 18.00 / 25.50 | 3.54% / 0.61% | 2.72 → 2.31 | 17.20 / 17.90 / 25.20 | 2.96% / 0.49% | +0.57 |
+| bloom | 2 | 2.31 → 2.15 | 17.40 / 17.90 / 25.30 | 3.41% / 0.49% | 2.22 → 1.87 | 17.50 / 18.10 / 25.10 | 3.48% / 0.37% | -0.08 |
+| distortion | 2 | 1.87 → 2.10 | 17.40 / 18.60 / 33.30 | 4.92% / 1.35% | 2.10 → 2.04 | 17.60 / 17.90 / 25.10 | 2.79% / 0.24% | +2.13 |
+| finalAA | 2 | 2.04 → 2.65 | 17.50 / 18.10 / 25.20 | 3.40% / 0.73% | 2.65 → 2.29 | 17.20 / 17.80 / 25.10 | 3.05% / 0.37% | +0.35 |
+| softDepth | 2 | 2.29 → 1.94 | 17.60 / 18.30 / 25.20 | 4.53% / 0.61% | 1.94 → 1.72 | 17.70 / 24.90 / 32.20 | 6.34% / 1.10% | -1.81 |
+| atmosphereLayers | 2 | 1.72 → 1.57 | 17.40 / 18.10 / 25.70 | 4.02% / 0.85% | 1.57 → 1.66 | 17.60 / 18.30 / 25.80 | 4.98% / 0.61% | -0.96 |
+| halfLightPool | 2 | 1.66 → 2.55 | 17.40 / 18.10 / 25.30 | 3.54% / 0.73% | 2.55 → 2.46 | 17.50 / 18.10 / 25.70 | 3.72% / 0.72% | -0.18 |
+| contacts | 2 | 2.46 → 2.68 | 17.10 / 18.20 / 25.10 | 4.14% / 0.61% | 2.68 → 2.61 | 17.30 / 18.00 / 25.10 | 3.04% / 0.61% | +1.10 |
+| silhouette | 2 | 2.61 → 2.35 | 17.60 / 18.30 / 26.10 | 4.74% / 0.73% | 2.35 → 2.50 | 17.30 / 17.90 / 25.00 | 1.60% / 0.37% | +3.15 |
+| prioritySampling | 2 | 2.50 → 3.21 | 17.40 / 18.10 / 25.10 | 3.28% / 0.61% | 3.21 → 2.95 | 17.60 / 18.10 / 25.60 | 3.66% / 0.49% | -0.37 |
+| floorResidues | 2 | 2.95 → 2.47 | 17.50 / 18.10 / 25.20 | 2.45% / 0.74% | 2.47 → 3.65 | 17.60 / 18.10 / 26.50 | 3.77% / 0.85% | -1.32 |
+| conditions | 2 | 3.65 → 3.38 | 17.50 / 18.10 / 25.30 | 3.78% / 0.49% | 3.38 → 2.88 | 17.50 / 18.20 / 25.30 | 4.28% / 0.86% | -0.50 |
+| adaptive80 | 2 | 2.88 → 2.65 | 17.50 / 18.00 / 25.10 | 3.28% / 0.61% | 2.65 → 2.44 | 17.40 / 18.20 / 25.80 | 3.43% / 0.98% | -0.14 |
+
+52 trials, 0 benchmark errors, 0 resource guard misses.
+
+### Active-condition follow-up
+
+The standard condition ablations above measured empty condition owners. A second pair of full and visual-only ablations in each room used native Overcharged Conduits, with the condition still active in simulation on both sides.
+
+| Room / rig | Seed | Repeat | Full load | Full p90 / p95 / p99 ms | Full >20 / >30 | Ablated load | Ablated p90 / p95 / p99 ms | Ablated >20 / >30 | >20 saving (pp) |
+| --- | ---: | ---: | --- | --- | --- | --- | --- | --- | ---: |
+| safety-interlock-station / pyro | 1731 | 1 | 1.55 → 2.00 | 25.00 / 26.00 / 42.50 | 18.56% / 3.40% | 1.92 → 1.86 | 25.00 / 32.40 / 50.00 | 20.21% / 5.35% | -1.65 |
+| safety-interlock-station / pyro | 1731 | 2 | 1.96 → 2.09 | 25.00 / 25.40 / 50.00 | 17.45% / 3.41% | 1.92 → 1.86 | 25.10 / 26.30 / 49.80 | 21.60% / 4.40% | -4.15 |
+| transmission-chamber / arc | 1729 | 1 | 1.96 → 1.77 | 17.90 / 24.70 / 26.30 | 5.84% / 0.85% | 1.79 → 2.09 | 17.80 / 23.50 / 26.60 | 5.10% / 0.85% | +0.74 |
+| transmission-chamber / arc | 1729 | 2 | 2.65 → 2.67 | 17.70 / 18.20 / 25.70 | 4.48% / 0.73% | 2.54 → 2.88 | 17.60 / 18.20 / 26.20 | 2.92% / 0.97% | +1.57 |
+
+Neither case supports removing condition visuals to meet the target. The apparent improvement in Transmission was below two percentage points.
+
+### Production selection
+
+The light ablation was the clear heavy-case win. Cutting the High local pool from nine to four reduced the Safety-interlock Pyro >20 ms tail by 10.72 and 13.86 percentage points. The production pool uses four slots with its existing effect-priority admission and replacement. Room practicals, key lights and the marine lamp keep their existing owners. High FXAA now checks axial contrast before reading the four diagonals. Edge pixels still take the original edge search and filtering. The full adaptive floor stays at 0.90. The 0.80 diagnostic alone still left 12.76–13.04% of intervals above 20 ms on Safety-interlock Pyro.
+
+Two 15-second screening trials each measured Safety-interlock Pyro at 6.85% and 6.72% above 20 ms, and Transmission Arc at 3.00% and 2.40%. Safety-interlock Pyro remained over 5%; its CPU p95 was 21.10–21.90 ms. The final matrix below uses three 15-second trials per combination. Load was printed before each trial and the runner waits when the one-minute load exceeds six.
+
+### PERF19 final matrix
+
+| Room | Rig | Tier | Repeat | Load | p90 / p95 / p99 ms | >20 / >30 | Scale floor | Draw peak | Compiles |
+| --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: |
+| safety-interlock-station | breacher | high | 1 | 1.42 → 1.70 | 18.30 / 25.00 / 42.70 | 9.36% / 2.62% | 0.900 | 269 | 0 |
+| safety-interlock-station | breacher | high | 2 | 1.70 → 1.85 | 17.50 / 24.90 / 41.70 | 5.90% / 1.60% | 0.900 | 260 | 0 |
+| safety-interlock-station | breacher | high | 3 | 1.85 → 2.56 | 18.10 / 25.00 / 41.70 | 9.49% / 2.87% | 0.900 | 265 | 0 |
+| safety-interlock-station | breacher | low | 1 | 2.56 → 2.75 | 17.60 / 18.50 / 41.60 | 4.83% / 1.69% | 1.000 | 257 | 0 |
+| safety-interlock-station | breacher | low | 2 | 2.75 → 2.87 | 17.20 / 18.20 / 41.60 | 4.22% / 1.57% | 1.000 | 252 | 0 |
+| safety-interlock-station | breacher | low | 3 | 2.87 → 2.87 | 17.60 / 18.30 / 50.00 | 4.35% / 1.45% | 1.000 | 254 | 0 |
+| safety-interlock-station | cryo | high | 1 | 2.87 → 3.34 | 17.90 / 24.90 / 33.20 | 7.02% / 1.09% | 0.900 | 284 | 0 |
+| safety-interlock-station | cryo | high | 2 | 3.34 → 3.05 | 17.70 / 18.20 / 33.30 | 4.38% / 1.09% | 0.900 | 283 | 0 |
+| safety-interlock-station | cryo | high | 3 | 3.05 → 3.25 | 17.50 / 18.30 / 33.50 | 4.89% / 1.59% | 0.900 | 284 | 0 |
+| safety-interlock-station | cryo | low | 1 | 3.25 → 2.79 | 17.40 / 18.10 / 25.90 | 2.72% / 0.83% | 1.000 | 272 | 0 |
+| safety-interlock-station | cryo | low | 2 | 2.79 → 2.67 | 17.20 / 17.90 / 26.30 | 1.78% / 0.83% | 1.000 | 272 | 0 |
+| safety-interlock-station | cryo | low | 3 | 2.67 → 2.09 | 17.30 / 18.00 / 33.30 | 2.86% / 1.07% | 1.000 | 269 | 0 |
+| safety-interlock-station | pyro | high | 1 | 2.09 → 2.08 | 24.50 / 25.00 / 33.30 | 10.78% / 1.38% | 0.900 | 301 | 0 |
+| safety-interlock-station | pyro | high | 2 | 2.08 → 2.45 | 18.10 / 25.00 / 33.40 | 9.28% / 2.35% | 0.900 | 302 | 0 |
+| safety-interlock-station | pyro | high | 3 | 2.45 → 2.20 | 18.10 / 25.00 / 34.20 | 7.77% / 2.10% | 0.900 | 309 | 0 |
+| safety-interlock-station | pyro | low | 1 | 2.20 → 2.55 | 17.60 / 18.20 / 33.30 | 3.92% / 1.31% | 1.000 | 289 | 0 |
+| safety-interlock-station | pyro | low | 2 | 2.55 → 2.67 | 17.40 / 18.20 / 32.70 | 3.67% / 1.07% | 1.000 | 279 | 0 |
+| safety-interlock-station | pyro | low | 3 | 2.67 → 3.04 | 17.60 / 18.20 / 25.10 | 2.96% / 0.71% | 1.000 | 273 | 0 |
+| safety-interlock-station | arc | high | 1 | 3.04 → 2.54 | 17.30 / 17.90 / 25.70 | 3.38% / 0.97% | 0.900 | 289 | 0 |
+| safety-interlock-station | arc | high | 2 | 2.54 → 2.48 | 17.40 / 17.90 / 25.00 | 2.04% / 0.48% | 0.900 | 293 | 0 |
+| safety-interlock-station | arc | high | 3 | 2.48 → 2.57 | 17.40 / 17.90 / 25.10 | 3.00% / 0.60% | 0.900 | 282 | 0 |
+| safety-interlock-station | arc | low | 1 | 2.57 → 2.40 | 17.30 / 18.00 / 25.00 | 2.56% / 0.35% | 1.000 | 278 | 0 |
+| safety-interlock-station | arc | low | 2 | 2.40 → 2.77 | 17.10 / 17.70 / 25.10 | 1.77% / 0.59% | 1.000 | 272 | 0 |
+| safety-interlock-station | arc | low | 3 | 2.77 → 2.52 | 17.10 / 18.10 / 25.10 | 1.65% / 0.71% | 1.000 | 278 | 0 |
+| transmission-chamber | breacher | high | 1 | 2.52 → 2.65 | 17.20 / 18.00 / 33.40 | 3.53% / 1.34% | 0.900 | 151 | 0 |
+| transmission-chamber | breacher | high | 2 | 2.65 → 2.51 | 17.60 / 18.30 / 33.30 | 4.87% / 1.46% | 0.900 | 156 | 0 |
+| transmission-chamber | breacher | high | 3 | 2.51 → 2.71 | 17.40 / 18.20 / 33.50 | 4.02% / 1.46% | 0.900 | 149 | 0 |
+| transmission-chamber | breacher | low | 1 | 2.71 → 2.72 | 17.30 / 18.10 / 33.30 | 2.63% / 1.07% | 1.000 | 137 | 0 |
+| transmission-chamber | breacher | low | 2 | 2.72 → 2.39 | 17.20 / 17.90 / 32.60 | 2.51% / 1.20% | 1.000 | 142 | 0 |
+| transmission-chamber | breacher | low | 3 | 2.39 → 2.07 | 17.00 / 17.70 / 33.20 | 1.79% / 1.08% | 1.000 | 138 | 0 |
+| transmission-chamber | cryo | high | 1 | 2.07 → 1.57 | 17.40 / 18.10 / 26.50 | 3.24% / 0.96% | 0.900 | 156 | 0 |
+| transmission-chamber | cryo | high | 2 | 1.57 → 1.69 | 17.20 / 17.80 / 25.00 | 2.17% / 0.48% | 0.900 | 157 | 0 |
+| transmission-chamber | cryo | high | 3 | 1.69 → 1.68 | 17.50 / 18.00 / 33.30 | 3.51% / 1.57% | 0.900 | 159 | 0 |
+| transmission-chamber | cryo | low | 1 | 1.68 → 2.37 | 17.20 / 17.80 / 25.00 | 1.65% / 0.47% | 1.000 | 147 | 0 |
+| transmission-chamber | cryo | low | 2 | 2.37 → 2.56 | 17.20 / 17.80 / 25.10 | 1.88% / 0.59% | 1.000 | 139 | 0 |
+| transmission-chamber | cryo | low | 3 | 2.56 → 2.63 | 17.30 / 18.00 / 25.00 | 2.24% / 0.71% | 1.000 | 141 | 0 |
+| transmission-chamber | pyro | high | 1 | 2.63 → 2.49 | 17.70 / 18.10 / 26.60 | 3.49% / 0.84% | 0.900 | 170 | 0 |
+| transmission-chamber | pyro | high | 2 | 2.49 → 2.03 | 17.40 / 18.20 / 25.10 | 2.65% / 0.84% | 0.900 | 171 | 0 |
+| transmission-chamber | pyro | high | 3 | 2.03 → 2.17 | 17.60 / 18.20 / 25.70 | 3.12% / 0.72% | 0.900 | 169 | 0 |
+| transmission-chamber | pyro | low | 1 | 2.17 → 1.94 | 17.00 / 17.60 / 25.00 | 1.76% / 0.35% | 1.000 | 154 | 0 |
+| transmission-chamber | pyro | low | 2 | 1.94 → 2.12 | 17.20 / 17.80 / 25.00 | 1.64% / 0.35% | 1.000 | 155 | 0 |
+| transmission-chamber | pyro | low | 3 | 2.12 → 2.50 | 17.10 / 17.70 / 24.90 | 1.41% / 0.47% | 1.000 | 160 | 0 |
+| transmission-chamber | arc | high | 1 | 2.50 → 2.41 | 17.20 / 18.10 / 25.10 | 2.88% / 0.60% | 0.900 | 167 | 0 |
+| transmission-chamber | arc | high | 2 | 2.41 → 2.11 | 17.20 / 18.00 / 26.00 | 3.00% / 0.96% | 0.900 | 166 | 0 |
+| transmission-chamber | arc | high | 3 | 2.11 → 2.55 | 17.10 / 17.80 / 25.10 | 2.64% / 0.48% | 0.900 | 169 | 0 |
+| transmission-chamber | arc | low | 1 | 2.55 → 2.44 | 17.00 / 17.90 / 25.00 | 1.53% / 0.23% | 1.000 | 155 | 0 |
+| transmission-chamber | arc | low | 2 | 2.44 → 3.16 | 17.50 / 18.20 / 25.10 | 3.17% / 0.47% | 1.000 | 155 | 0 |
+| transmission-chamber | arc | low | 3 | 3.16 → 3.56 | 17.30 / 18.00 / 25.00 | 2.12% / 0.35% | 1.000 | 155 | 0 |
+
+High median per-trial >20 share was 3.52%, median per-trial p95 was 18.20 ms, and 17 of 24 trials were below 5%.
+
+Low median per-trial >20 share was 2.37%, median per-trial p95 was 18.00 ms, and 24 of 24 trials were below 5%.
+
+### Visual review, campaign and remaining tail
+
+All 32 matched frames passed capture guards at 1920×1080 and are paired at native size and at 480×270 per panel. Eighteen pairs are byte-identical, including the Relay Racks crowd and heavy Communal Atrium. The active Pyro overlap has some weaker amber spill on nearby chitin and deck. Railbreaker and Overclock have slightly different launch highlights near the marine. Later Overdrive frames retain their aftermaths, and red warning edges, ink contours and the marine remain readable at both sizes. These fixtures cover matched gameplay framing and isolate visual changes with adaptive scaling disabled on both builds.
+
+The production build passed. Pyro cleared all four requested rooms on seed 1729 with zero errors. The final matrix peaked at 309 draws. Every trial held a 16.7 ms median, retained scale at or above 0.90, and had zero combat program creations or benchmark errors.
+
+Safety-interlock High remained over 5% in all Breacher and Pyro trials and one Cryo trial. Pyro finished at 7.77–10.78% and 25.0 ms p95, with 21.8–23.5 ms CPU p95. That CPU tail leaves room for additional gains even if GPU shading gets cheaper. The runs establish a reduction in repeated misses, with further work needed to close the heaviest case. Low's final 18.0 ms median p95 and 2.37% median late share compare with 17.9 ms and 1.94% in PERF18's longer trials. All final Low trials met the 5% target. The High light capacity and FXAA changes do not apply to Low.
+
+[Pyro ablations](../../artifacts/nextgen/perf19/ablation-pyro/benchmark.json) · [Arc ablations](../../artifacts/nextgen/perf19/ablation-arc/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf19/final/benchmark.json) · [Matched frames](../../artifacts/nextgen/perf19/pairs) · [Pyro playtest](../../artifacts/nextgen/perf19/playtest-pyro/report.json)

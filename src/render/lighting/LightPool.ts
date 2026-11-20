@@ -9,6 +9,7 @@ type Slot = { light: T.PointLight; age: number; duration: number; energy: number
 
 /** One High shader topology; zero-energy slots are rejected before local shading. */
 export const LIGHT_POOL_PREWARM_COUNTS = Object.freeze([9] as const);
+const HALF_PREWARM_COUNTS = Object.freeze([4] as const);
 const LOW_PREWARM_COUNTS = Object.freeze([2] as const);
 const DISABLED_PREWARM_COUNTS = Object.freeze([0] as const);
 
@@ -32,15 +33,15 @@ export class LightPool {
     this.setQuality(tier);
   }
   /** Quality selects the fixed visible count and the admission budget together. */
-  setQuality(tier: GraphicsTier, enabled = true) {
-    this.budget = enabled ? tier === 'high' ? this.allowedBudget(this.highBudget) : 2 : 0;
+  setQuality(tier: GraphicsTier, enabled = true, halfPool = false) {
+    this.budget = enabled ? tier === 'high' ? this.allowedBudget(halfPool ? Math.floor(this.highBudget / 2) : this.highBudget) : 2 : 0;
     for (let i = 0; i < this.slots.length; i++) {
       if (i >= this.budget) this.clear(this.slots[i]);
     }
     this.refreshVisibility();
   }
   get capacity() { return this.budget; }
-  get prewarmCounts(): readonly number[] { return this.budget === 0 ? DISABLED_PREWARM_COUNTS : this.budget === 2 ? LOW_PREWARM_COUNTS : this.highPrewarmCounts; }
+  get prewarmCounts(): readonly number[] { return this.budget === 0 ? DISABLED_PREWARM_COUNTS : this.budget === 2 ? LOW_PREWARM_COUNTS : this.budget === 4 ? HALF_PREWARM_COUNTS : this.highPrewarmCounts; }
   /** Temporarily expose first-N slots for renderer prewarming; null restores the tier count. */
   setPrewarmCount(count: number | null) {
     this.prewarmCount = count === null ? null : Math.min(this.budget, this.allowedBudget(count));

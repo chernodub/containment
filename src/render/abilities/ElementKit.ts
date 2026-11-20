@@ -326,6 +326,10 @@ export class ElementKit {
         p.width = radius;
         p.kind = 0;
     }
+    hideFloorResidues(): void {
+        this.batches.decal.mesh.visible = false;
+        this.fx.hideFloorResidues();
+    }
     /** Persistent shaped floor aftermath; half-length/half-width are exact bounds. */
     scar(kind: ScarKind, x: number, z: number, radius: number, color: number, life = 8, angle = 0, width = radius, arc = 1.28): void {
         this.decal(x, z, radius, color, life, -angle);

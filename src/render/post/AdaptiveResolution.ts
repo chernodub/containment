@@ -10,6 +10,8 @@ export class AdaptiveResolution {
   private active = false;
   private source: 'gpu' | 'frame' = 'frame';
 
+  minimumScale: number = RENDER_BUDGET.adaptiveMinScale;
+
   get scale(): number { return this.currentScale; }
   get enabled(): boolean { return this.active; }
   get snapshot() {
@@ -51,8 +53,8 @@ export class AdaptiveResolution {
     this.overloadSeconds = this.smoothedMs > high ? this.overloadSeconds + elapsed : 0;
     this.headroomSeconds = this.smoothedMs < low ? this.headroomSeconds + elapsed : 0;
     if (this.holdSeconds > 0) return this.currentScale;
-    if (this.overloadSeconds >= .25 && this.currentScale > RENDER_BUDGET.adaptiveMinScale) {
-      this.currentScale = Math.max(RENDER_BUDGET.adaptiveMinScale, Math.round((this.currentScale - .025) * 1000) / 1000);
+    if (this.overloadSeconds >= .25 && this.currentScale > this.minimumScale) {
+      this.currentScale = Math.max(this.minimumScale, Math.round((this.currentScale - .025) * 1000) / 1000);
       this.holdSeconds = .5;
       this.overloadSeconds = this.headroomSeconds = 0;
     } else if (this.headroomSeconds >= 5 && this.currentScale < RENDER_BUDGET.adaptiveMaxScale) {

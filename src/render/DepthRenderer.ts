@@ -65,7 +65,7 @@ import {ActorPool} from './ActorPool';
 import {PickupInstances} from './PickupInstances';
 import {batch} from './meshParts';
 import type {GraphicsTier} from './FrameBudget';
-import {GRAPHICS_PRESETS,resolveGraphicsOptions,type GraphicsOptions} from './graphicsOptions';
+import {GRAPHICS_PRESETS,resolveGraphicsAblation,resolveGraphicsOptions,type GraphicsAblation,type GraphicsOptions} from './graphicsOptions';
 import {EnvironmentMaterials} from './EnvironmentMaterials';
 import {setFloorLeaks} from './lighting/FloorVariation';
 import {addEnvironmentalStory,setEnvironmentalStoryOptions} from './world/EnvironmentalStory';
@@ -186,6 +186,18 @@ export class DepthRenderer {
  /** Native Start/Continue crosses the lazy gameplay asset boundary once. */
  beginGameplayPresentation(){this.gameplayPresentationStarted=true;}
  endGameplayPresentation(){this.gameplayPresentationStarted=false;this.kitDressing?.dispose();this.kitDressing=undefined;}
+ private graphicsAblation: GraphicsAblation | null = null;
+ /** Apply one validated debug-only change before preparing the measured room. */
+ setGraphicsAblation(value: unknown){
+  const ablation=resolveGraphicsAblation(value);
+  if(!ablation)throw Error("Unknown graphics ablation");
+  this.graphicsAblation=ablation;
+  this.post.diagnosticFinalAA=ablation!=="finalAA";
+  this.post.diagnosticSoftDepth=ablation!=="softDepth";
+  this.post.adaptive.minimumScale=ablation==="adaptive80"?.8:.9;
+  this.applyQuality();
+  this.queueRoomWarmup();
+ }
  get qualityTier(){return this.tier;}
  /** Current immutable settings; selecting a tier resets its overrides. */
  get graphicsOptions(){return this.options;}
@@ -196,7 +208,7 @@ export class DepthRenderer {
  setQuality(value:'high'|'low'='high'){
   const previous=this.options,wasLow=this.tier==='low';this.tier=value==='low'?'low':'high';this.options=GRAPHICS_PRESETS[this.tier];this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:10)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();if(this.materialWarmup&&(wasLow!==(this.tier==='low')||previous?.dynamicLights!==this.options.dynamicLights||previous?.shadows!==this.options.shadows||previous?.atmosphere!==this.options.atmosphere||(this.tier==='low'&&(previous?.inkOutlines==='off')!==(this.options.inkOutlines==='off'))))this.queueRoomWarmup();
  }
- private applyQuality(){this.pickupInstances?.setLow(this.tier==='low');this.renderer.shadowMap.enabled=this.tier!=='low'&&this.options.shadows!=='off';this.shadowsDirty=true;if(this.muzzle)this.muzzle.visible=this.options.dynamicLights;this.lighting?.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity*(this.motionQuery?.matches?.5:1),this.options.shadows);this.post?.setOptions(this.motionQuery?.matches?{...this.options,distortion:false,lensEffects:false}:this.options,this.tier);this.effects?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.interimAbilities?.setOptions?.(this.options,this.tier,!!this.motionQuery?.matches);this.afflictions?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.atmosphere?.setOptions(this.options,this.tier,!!this.motionQuery?.matches);this.backdrop?.setQuality(this.tier);this.player?.setFlashIntensity?.(this.options.flashIntensity);for(const actor of this.actors?.values()??[])actor.setFlashIntensity?.(this.options.flashIntensity);this.queen?.setFlashIntensity?.(this.options.flashIntensity);for(const corpse of this.corpses??[])corpse.model.setFlashIntensity?.(this.options.flashIntensity);setCeilingQuality(this.world,this.tier==='high');setOriginalShipKitQuality(this.world,this.tier==='high');setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);this.resize();}
+ private applyQuality(){this.pickupInstances?.setLow(this.tier==='low');this.renderer.shadowMap.enabled=this.tier!=='low'&&this.options.shadows!=='off';this.shadowsDirty=true;if(this.muzzle)this.muzzle.visible=this.options.dynamicLights;this.lighting?.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity*(this.motionQuery?.matches?.5:1),this.options.shadows,this.graphicsAblation==='halfLightPool');this.post?.setOptions(this.motionQuery?.matches?{...this.options,distortion:false,lensEffects:false}:this.options,this.tier);this.effects?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.interimAbilities?.setOptions?.(this.options,this.tier,!!this.motionQuery?.matches);this.afflictions?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.atmosphere?.setOptions(this.graphicsAblation==='atmosphereLayers'?{atmosphere:false}:this.options,this.tier,!!this.motionQuery?.matches);this.backdrop?.setQuality(this.tier);this.player?.setFlashIntensity?.(this.options.flashIntensity);for(const actor of this.actors?.values()??[])actor.setFlashIntensity?.(this.options.flashIntensity);this.queen?.setFlashIntensity?.(this.options.flashIntensity);for(const corpse of this.corpses??[])corpse.model.setFlashIntensity?.(this.options.flashIntensity);setCeilingQuality(this.world,this.tier==='high');setOriginalShipKitQuality(this.world,this.tier==='high');setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);this.resize();}
  resize(){
   this.canvasRect=this.canvas.getBoundingClientRect();
   const w=window.innerWidth,h=window.innerHeight,post=this.tier==='high';this.pixelRatio=Math.min(devicePixelRatio||1,post?1.5:1)*this.options.resolutionScale;
@@ -580,7 +592,7 @@ export class DepthRenderer {
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // RUN15 condition presentation consumes the room's deterministic state.
   const condition=menu?null:game.conditionState,blackout=condition?.condition.id==='dark';
-  this.conditionVisuals.update(condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
+  this.conditionVisuals.update(this.graphicsAblation==='conditions'?null:condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
   setRoomBlackout(blackout);
   this.lighting.setBlackout(blackout);
   this.scene.environmentIntensity=getEnvironmentMood(this.roomEnvironment).reflectionIntensity*(blackout?.12:1);
@@ -687,6 +699,7 @@ export class DepthRenderer {
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
   this.contacts.end();
+  this.contacts.mesh.visible=this.graphicsAblation!=='contacts';
   this.atmosphere.update(dt,this.camera);this.backdrop?.update(dt,this.focus);this.arena?.update(dt,this.options.flashIntensity,!!this.motionQuery?.matches);updateWorldDressing(this.world,this.time,!!this.motionQuery?.matches,this.camera,p,this.player.height,enemies,this.actors,this.hudFraming.viewport,this.roomCutawayTargets);updateExitSignal(this.exit,this.time,game.escortExitOpen||game.status==='reward'||game.status==='route',!!this.motionQuery?.matches);if(this.atmosphere?.root)this.atmosphere.root.visible=!menu&&this.tier==='high'&&this.options.atmosphere;
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
@@ -712,8 +725,17 @@ export class DepthRenderer {
   this.muzzleLife-=dt;this.muzzle.intensity=this.muzzleLife>0?6*Math.min(1,this.muzzleLife/.035)*this.options.flashIntensity*(this.motionQuery?.matches?.5:1):0;
   this.interimAbilities.kit?.ribbons.hudViewport.set(hud.viewport.left,hud.viewport.bottom,hud.viewport.right,hud.viewport.top);
   this.interimAbilities.updatePriority(this.camera);
-  this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture);
+  if(this.graphicsAblation==='prioritySampling')this.interimAbilities.root.traverse(object=>{
+   const material=(object as T.Mesh<T.BufferGeometry,T.ShaderMaterial>).material;
+   const sampling=material?.uniforms?.diagnosticPrioritySampling;
+   if(sampling)sampling.value=false;
+  });
+  this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
   this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies);
+  if(this.graphicsAblation==='floorResidues'){
+   this.effects.showFloorDecals(false);
+   this.interimAbilities.kit?.hideFloorResidues();
+  }
   let index=0;for(const b of game.bullets){if(b.kind==='hazard')continue;if(index>=320)break;if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;this.dummy.position.set(b.x/UNIT,b.kind==='grenade'?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.95,b.y/UNIT);this.dummy.rotation.set(0,Math.PI/2-b.request.angle,0);this.dummy.scale.set(.025,.025,b.request.weaponId==='rocket'?.35:.24);this.dummy.updateMatrix();this.bulletMesh.setMatrixAt(index,this.dummy.matrix);if(this.tier==='high'&&this.options.dynamicLights&&(b.request.weaponId==='plasma'||b.request.weaponId==='rocket')){let id=this.projectileLightIds.get(b);if(id===undefined){id=this.nextProjectileLight--;this.projectileLightIds.set(b,id);}const light=this.attachedLight;light.x=this.dummy.position.x;light.y=this.dummy.position.y;light.z=this.dummy.position.z;light.color=b.request.weaponId==='plasma'?0x9fe8ff:0xffb454;light.intensity=1.7;light.priority=1;this.lighting.pool.attach(id,light);light.y=1;}this.bulletMesh.setColorAt(index,this.bulletColor.setHex(b.request.weaponId==='plasma'?0x73eced:0xffd58f));index++;}this.bulletMesh.count=index;this.bulletMesh.instanceMatrix.needsUpdate=true;if(this.bulletMesh.instanceColor)this.bulletMesh.instanceColor.needsUpdate=true;
 
   this.pickupInstances?.update(visiblePickups,this.time);
@@ -727,14 +749,14 @@ export class DepthRenderer {
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
   // WARN16 uses the existing ink composite and the actor IDs in its opaque buffer.
   this.post.beginCombatOutlines();
-  if(!menu)for(const enemy of enemies){
+  if(!menu&&this.graphicsAblation!=='silhouette')for(const enemy of enemies){
    if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleePhase==='windup'||enemy.meleePhase==='strike'))continue;
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
   // MARINE17: compare opaque and effected marine pixels in the silhouette pass.
-  this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high');
-  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high'&&this.graphicsAblation!=='silhouette');
+  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
