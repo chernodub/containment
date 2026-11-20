@@ -109,3 +109,21 @@ Reflection capture dominated the sequential Overload Floor spike. These phase ti
 
 - The production type check and build passed. The fast native Pyro playtest on seed 1729 cleared all four requested rooms with zero errors. Its Awakening Bay readiness hold was 3.92 s. [Playtest report](../../artifacts/nextgen/playtest/perf17-finish/report.json)
 - Compared both requested fixtures against the frozen pre-change build at 1920×1080 and reviewed them at native size and 480×270. All four Relay Racks crowd frames were pixel-identical. The last two initial Pyro frames had different adaptive scales. With adaptive resolution disabled on both builds, seven of eight Pyro frames were pixel-identical. The last differed at 12 pixels by one channel value at most. The three optimizations are retained. [Relay Racks capture](../../artifacts/nextgen/perf17-finish-after/index.html) · [Fixed-resolution Pyro capture](../../artifacts/nextgen/perf17-fixed-after/index.html)
+
+## Lead measurement on a quiet machine (2026-11-20, head `b73e1137`)
+
+After the host restart nothing else was running (1-minute load 2.3–2.6 throughout). `npm run bench -- --label=wave17-quiet`:
+two rooms (the heaviest by draws, Safety-interlock Station, and Transmission Chamber), four rigs, High and Low, three
+20-second trials each = 48 trials, 1920×1080, Apple M1 Pro. `timingAcceptanceEligible: true`, no errors, no budget
+failures recorded by the tool for draws or compiles.
+
+| Tier | Frame p50 | Frame p95 (median / worst) | Trials with p95 ≤ 20 ms | Peak draws | Adaptive scale | Combat compiles |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| High | 16.7 ms in all 24 | 25.1 / 26.5 ms | 1 of 24 | 302 | 0.90 | 0 |
+| Low | 16.7 ms in all 24 | 18.0 / 25.0 ms | 23 of 24 | 286 | 1.00 | 0 |
+
+High holds 60 fps at the median but misses the 20 ms p95 budget by about 5 ms in both rooms and for every rig, with the
+adaptive resolution already at 0.9. CPU p95 is 19–21 ms; GPU timer p50 is 24–32 ms on High against 9–10 ms on Low, so
+the miss is GPU cost on High (post-processing, lights, soft depth), not simulation or draw count. Low meets the budget.
+This is the first certifiable measurement of the overhaul; the next step is a GPU-pass breakdown and a High-tier cut
+(PERF18).
