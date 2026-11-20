@@ -185,9 +185,10 @@ export class ElementKit {
 
     /** Rig owners supply the native footprint. A contact only marks its point of impact. */
     contact(event: AbilityEvent, x: number, y: number): void {
-        if (event.phase !== 'impact' && event.phase !== 'dash-end') return;
-        const placed = event.phase === 'dash-end' || event.slot === 'power' ||
-            (event.ability === 'flashfire' && event.radius !== undefined && event.arcRadians === undefined);
+        const launch = event.phase === 'dash-start';
+        if (!launch && event.phase !== 'impact' && event.phase !== 'dash-end') return;
+        const placed = !launch && (event.phase === 'dash-end' || event.slot === 'power' ||
+            (event.ability === 'flashfire' && event.radius !== undefined && event.arcRadians === undefined));
         const mark = this.contacts[this.nextContact++ % this.contacts.length];
         mark.x = (placed ? event.targetX ?? x : x) / UNIT;
         mark.z = (placed ? event.targetY ?? y : y) / UNIT;
@@ -195,7 +196,7 @@ export class ElementKit {
         mark.element = event.element;
         mark.age = mark.frames = 0;
         mark.size = Math.min(2.4, Math.max(.55, (event.radius ?? 60) / UNIT * .55));
-        this.flash(mark.x, mark.z, ELEMENT_COLORS[event.element], 5, 2.6, 3, .32);
+        this.flash(mark.x, mark.z, ELEMENT_COLORS[event.element], 10 + mark.size * 5, 3 + mark.size, 4, .16);
     }
 
     private drawContacts(dt: number): void {
@@ -206,7 +207,12 @@ export class ElementKit {
             const color = ELEMENT_COLORS[element];
             this.sustain();
             if (age < .051 && mark.frames < 3) {
-                this.sprite('impact', x, .16, z, .48, .32, 0xfff4df, this.flashIntensity, angle, 'light');
+                const extent = .42 + size * .39;
+                this.impact();
+                this.sprite('glow', x, .10, z, extent * 1.6, extent, color, .78 * this.flashIntensity, angle, 'ground');
+                this.sprite('glow', x, .36 + age * 5, z, extent * .58, extent, 0xfff1cf, this.flashIntensity, angle, 'light');
+                if (element === 'pyro') this.directedFlame(x, .12, z, extent * .55, extent * 2.3, angle, .42, angle, this.flashIntensity, true);
+                this.sustain();
                 if (dt > 0) mark.frames++;
             }
             const fade = Math.max(0, 1 - age / 3) * Math.min(1, age * 9);

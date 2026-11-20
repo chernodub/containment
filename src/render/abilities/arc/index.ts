@@ -1,7 +1,7 @@
 import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityLinkSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
-import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { ELEMENT_COLORS, UNIT, isContactJoint, type AbilityFrame, type AbilityPresentation } from '../types';
 import { FxMode, type FxSlot } from '../FlagshipFx';
 import { MarineTimeEcho } from './MarineTimeEcho';
 import { NativeMarineEchoes } from './NativeMarineEchoes';
@@ -12,7 +12,7 @@ const STEEL = 0x34414d;
 const TAU = Math.PI * 2;
 const NO_LINKS: readonly AbilityLinkSnapshot[] = [];
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
-type Discharge = { sx: number; sz: number; sy: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
+type Discharge = { sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
@@ -22,7 +22,7 @@ type Front = { live: boolean; x: number; z: number; radius: number; age: number;
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
-  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
+  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
@@ -39,6 +39,7 @@ class ArcPresentation implements AbilityPresentation {
   private readonly start = new Vector3();
   private readonly end = new Vector3();
   private muzzle?: Object3D;
+  private readonly contactBones = new WeakMap<Object3D, Object3D | null>();
   private nextDischarge = 0;
   private nextBlink = 0;
   private chainAt = -100;
@@ -160,7 +161,21 @@ class ArcPresentation implements AbilityPresentation {
     // The source and destination are immutable native link receipts.
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
-    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = 1.8; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
+    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
+    d.ty = .75; d.victimId = event.targetIds?.[0] ?? -1;
+    const id = event.targetIds?.[0], root = id === undefined ? undefined : k.statusActor(id)?.root;
+    if (root) {
+      let joint = this.contactBones.get(root);
+      if (joint === undefined) {
+        joint = null;
+        root.traverse(node => { if (!joint && isContactJoint(node)) joint = node; });
+        this.contactBones.set(root, joint);
+      }
+      if (joint?.parent) {
+        const tip = joint.matrixWorld.elements;
+        d.x = tip[12]; d.ty = tip[13]; d.z = tip[14];
+      }
+    }
   }
 
   update(frame: AbilityFrame): void {
@@ -206,14 +221,14 @@ class ArcPresentation implements AbilityPresentation {
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .55);
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .52;
-          arc.h0 = d.sy; arc.h1 = .75; arc.param = 3; arc.color = VIOLET; arc.intensity = 1.15;
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .80;
+          arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
             const bx = d.sx + dx * t - dz / length * side * .18;
             const bz = d.sz + dz * t + dx / length * side * .18;
-            k.beam(bx, d.sy + .13, bz, d.x, .75, d.z, VIOLET, .018, .18, true);
+            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, .018, .18, true);
           }
         }
         const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
@@ -224,12 +239,22 @@ class ArcPresentation implements AbilityPresentation {
       k.sustain(d.age - d.delay);
       const fade = 1 - (d.age - d.delay) / d.life;
       k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .36, false);
-      const contact = Math.max(0, 1 - (d.age - d.delay) / .033);
-      if (contact > 0 && d.contactFrames < 2) {
-        k.sprite('impact', d.x, .75, d.z, .65, .65, WHITE, contact * k.flashIntensity, d.seed, 'light');
+      const contact = d.age - d.delay < .051;
+      if (contact && d.contactFrames < 3) {
+        k.impact();
+        k.sprite('glow', d.x, d.ty, d.z, .76, .55, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
+        k.sustain(d.age - d.delay);
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');
+      if (d.victimId >= 0 && d.age - d.delay < .34) {
+        const actor = k.statusActor(d.victimId);
+        const joint = actor && this.contactBones.get(actor.root);
+        if (joint?.parent) {
+          const base = joint.parent.matrixWorld.elements, tip = joint.matrixWorld.elements;
+          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, .105, .82 * fade, false);
+        }
+      }
       if (d.age - d.delay > .28) continue;
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
@@ -458,7 +483,7 @@ class ArcPresentation implements AbilityPresentation {
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(this.overclockAge);
-      const opacity = fade * (1 - echo.age / .35) * .24;
+      const opacity = fade * (1 - echo.age / .35) * .085;
       if (echo.native) {
         this.nativeEchoes.draw(index, echo.x, echo.z, opacity, k.priorityWeight, k.time, k.low);
         if (!k.low || index === 0) {

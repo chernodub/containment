@@ -119,12 +119,12 @@ export class BreacherPresentation implements AbilityPresentation {
       wake.angle = angle; wake.range = length; wake.inner = Math.min(.55, halfWidth * .8); wake.h0 = .08; wake.color = AMBER;
       // A thin short-lived corona keeps the impact frame's bloom without a broad rectangle.
       kit.beam(x, .85, z, endX, .85, endZ, 0xfff5e5, .045, .033, false);
-      kit.beam(x, .85, z, endX, .85, endZ, AMBER, .12, .16, false);
+      kit.beam(x, .065, z, endX, .065, endZ, AMBER, .075, .14, false);
       kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x111b22, 12, angle, .62);
       kit.draw('spark', x + Math.cos(angle) * .7, .9, z + Math.sin(angle) * .7, 1.3, .32, 1, CORE, 1, 0, -angle);
       kit.burst(x, .85, z, 'kinetic', 20, 6.5, .5);
-      kit.flash(x, z, CORE, 36, 11, 6, .065);
-      kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 18, length * .6, 5, .3);
+      kit.flash(x, z, CORE, 24, 6, 6, .033);
+      kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 13, Math.min(7, length * .35), 5, .12);
       kit.camera(.92, angle);
       kit.anticipate(40, .06);
 
@@ -154,7 +154,7 @@ export class BreacherPresentation implements AbilityPresentation {
           const side = j % 2 ? 1 : -1, a = angle + side * (.5 + (j % 4) * .3);
           kit.mote('spark', tx, h, tz, Math.cos(a) * (3 + j % 3 * 2), 1 + j % 3, Math.sin(a) * (3 + j % 3 * 2), .03, .45 + j % 3 * .12, j % 3 ? AMBER : CORE);
         }
-        kit.flash(tx, tz, AMBER, 6, 3, 3, .14);
+        kit.flash(tx, tz, AMBER, 6, 3, 3, .033);
       }
       const count = this.kit.low ? 6 : 15;
       for (let i = 0; i < count; i++) {

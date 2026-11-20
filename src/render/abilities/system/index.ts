@@ -5,7 +5,7 @@ import type { AbilityElement, AbilityEvent } from '../../../game/abilities/contr
 import type { DepthGame } from '../../../DepthGame';
 import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import type { ElementKit } from '../ElementKit';
-import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { ELEMENT_COLORS, UNIT, isContactJoint, type AbilityFrame, type AbilityPresentation } from '../types';
 
 const FRIENDLY = 0x9fe8ff;
 const WHITE = 0xe8fbff;
@@ -15,7 +15,7 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
@@ -23,7 +23,7 @@ type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: b
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
   private readonly frostJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
@@ -72,9 +72,11 @@ class SystemPresentation implements AbilityPresentation {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
+      const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
       receipt ??= this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
+      if (newIgnition) { receipt.ignition = k.time; receipt.sourceX = x / UNIT; receipt.sourceZ = y / UNIT; }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
+      receipt.life = event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
     }
   }
 
@@ -153,22 +155,23 @@ class SystemPresentation implements AbilityPresentation {
       if (!joints) {
         const found: T.Object3D[] = [];
         actor.root.traverse(node => {
-          if (found.length < 4 && node.type === 'Bone' && /forearm|shin|_lower|calf/i.test(node.name)) found.push(node);
+          if (found.length < 4 && isContactJoint(node)) found.push(node);
         });
         this.frostJoints.set(actor.root, found);
         joints = found;
       }
       k.sustain();
       k.sprite('crack', x, .049, z, radius * 1.5, radius * 1.4, ELEMENT_COLORS.cryo, .62, enemy.id, 'ground');
+      k.impact();
       for (let i = 0; i < Math.min(joints.length, k.low ? 2 : 4); i++) {
         const m = joints[i].matrixWorld.elements;
-        k.draw('shard', m[12], m[13], m[14], .065, height * .13, .055, ELEMENT_COLORS.cryo, .72, i, .46);
+        k.draw('shard', m[12], m[13], m[14], .065, height * .10, .045, ELEMENT_COLORS.cryo, .52, i, .46);
       }
       k.impact();
     }
     if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
     else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
-    if (status?.burning) this.burning(x, z, radius, height, enemy.id);
+    if (status?.burning || receipt?.element === 'pyro') this.burning(x, z, radius, height, enemy.id, receipt?.element === 'pyro' ? receipt : undefined);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {
       if (!receipt.emitted && dt > 0) {
@@ -244,7 +247,7 @@ class SystemPresentation implements AbilityPresentation {
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
     // One low foot shell complements actor-owned frost without encasing anatomy.
-    this.kit.iceShell(x, z, radius, height, .13 + flash * .12);
+    this.kit.iceShell(x, z, radius * .84, height, .055 + flash * .06);
   }
 
   /** Chill stacks thicken the foot fringe; actor materials retain upper-body identity. */
@@ -259,14 +262,19 @@ class SystemPresentation implements AbilityPresentation {
     }
   }
 
-  private burning(x: number, z: number, radius: number, height: number, seed: number): void {
-    const k = this.kit, count = k.low ? 2 : 3;
-    for (let i = 0; i < count; i++) {
-      const angle = i * 2.399963 + seed * .64, f = .5 + Math.sin(seed * 3.71 + i * 2.7) ** 2 * .5;
-      // Two flank flames and a low hot root leave face and central body unobscured.
-      k.directedFlame(x + Math.cos(angle) * radius * .78, height * .08,
-        z + Math.sin(angle) * radius * .78, radius * (.26 + f * .12), height * (.55 + f * .3),
-        angle, .25, seed + i * 2.73, .55 + f * .18, i === 0);
+  private burning(x: number, z: number, radius: number, height: number, seed: number, receipt?: Receipt): void {
+    const k = this.kit, asymmetry = Math.sin(seed * 2.39996);
+    const travel = receipt ? Math.min(1, (k.time - receipt.ignition) / .38) : 1;
+    const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
+    for (let i = 0; i < (k.low ? 1 : 2); i++) {
+      const growth = Math.min(1, Math.max(0, .32 + travel * 2.4 - i * .8));
+      if (growth <= 0) continue;
+      const a = incoming + (asymmetry < 0 ? -1 : 1) * (travel * 1.9 - i * .85);
+      const end = a + .63 + asymmetry * .4, h = height * (.28 + .14 * i);
+      k.flowFlame(x + Math.cos(a) * radius * .84, h, z + Math.sin(a) * radius * .84,
+        x + Math.cos(end) * radius, h + height * (.3 + .18 * asymmetry + .22 * i) * growth,
+        z + Math.sin(end) * radius, radius * (.31 + .09 * asymmetry) * growth,
+        seed + i * 3.7, .86 * growth, i === 0 && travel < .35);
     }
   }
 

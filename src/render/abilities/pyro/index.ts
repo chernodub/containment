@@ -435,7 +435,7 @@ class PyroPresentation implements AbilityPresentation {
     // Two irregular depth layers share the exact native circular footprint.
     this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
     // VFX15: eight standing procedural tongues with height (one draw), growing in after the burst.
-    const grow = Math.min(1, Math.max(0, (elapsed - .05) / .3));
+    const grow = Math.min(1, Math.max(.44, elapsed / .18));
     this.surface(zone.id, 1, x, z, radius * .9, (zone.id * .371) % 1, 0, .03, 1.9, fade * grow * (.9 + .1 * Math.sin(kit.time * 7 + zone.id)), false, -1, FxMode.Tongues);
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
