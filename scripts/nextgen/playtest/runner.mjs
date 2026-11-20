@@ -244,9 +244,9 @@ try {
   browser=await chromium.launch({channel:'chromium',headless:!options.headed,args:['--no-sandbox','--enable-gpu','--ignore-gpu-blocklist',...(process.platform==='darwin'?['--use-angle=metal']:[])]});
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
-  page=await context.newPage();page.setDefaultTimeout(Number(options['startup-timeout-ms']??30000));listen(page);
+  page=await context.newPage();listen(page);
   await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}`);
-  await page.waitForFunction(()=>!!window.__containmentDebug);
+  await page.waitForFunction(()=>!!window.__containmentDebug,undefined,{timeout:Number(options['startup-timeout-ms']??20000)});
   await enableNative();
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
   if(resumed){
