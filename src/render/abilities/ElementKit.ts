@@ -185,9 +185,10 @@ export class ElementKit {
 
     /** Rig owners supply the native footprint. A contact only marks its point of impact. */
     contact(event: AbilityEvent, x: number, y: number): void {
-        if (event.phase !== 'impact' && event.phase !== 'dash-end') return;
-        const placed = event.phase === 'dash-end' || event.slot === 'power' ||
-            (event.ability === 'flashfire' && event.radius !== undefined && event.arcRadians === undefined);
+        const launch = event.phase === 'dash-start';
+        if (!launch && event.phase !== 'impact' && event.phase !== 'dash-end') return;
+        const placed = !launch && (event.phase === 'dash-end' || event.slot === 'power' ||
+            (event.ability === 'flashfire' && event.radius !== undefined && event.arcRadians === undefined));
         const mark = this.contacts[this.nextContact++ % this.contacts.length];
         mark.x = (placed ? event.targetX ?? x : x) / UNIT;
         mark.z = (placed ? event.targetY ?? y : y) / UNIT;
