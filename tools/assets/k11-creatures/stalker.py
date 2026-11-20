@@ -17,6 +17,7 @@ FAMILY = "stalker"
 ASPECT = 2.0
 VOXEL = 0.011
 TRIS = {"body": 8800, "elite": 1400}
+RANK_SCALE = {"elite": 1.12}   # ATTACK16: elites drawn ~12% larger than the regular (loader: base fit x rank scale)
 ATLAS = 1024
 GLOW_STRENGTH = 1.7
 PALETTE = {
@@ -90,9 +91,14 @@ def build(sk):
         fa = normalize(wr - el)
         body.add(Plate((el + wr) / 2 + v3((0, 0.03 * s, 0.06)), (float(np.linalg.norm(wr - el)) * 0.5, 0.09, 0.05),
                        frame(fa, (0, 0.3 * s, 1)), 0.04, rings=0.003, lip=0.01, zone=CREST, bone=f"arm_mid.{side}", plate=60 + s))
-        # scythes held with their flat faces up and edges outward: a wide crescent read from above
-        body.extend(A.blade(wr, end + (end - wr) * 0.35, v3((0.35, 1.0 * s, 0.25)), 0.3 * heavy,
-                            0.05 * heavy, f"claw.{side}", hook=0.55, serrations=4, zone=BONE, edge_zone=BONE))
+        # ATTACK16: long broad scythes folded back along the flanks, flat face up, edge outward, a dark gap
+        # to the body; at least as long as the body so the loaded limb is the largest light shape from above
+        root = wr + v3((0.05, 0.12 * s, 0.05 * a))
+        tip = v3((-1.1, 0.9 * s, 1.0 * a))
+        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), 0.36 * heavy, 0.055 * heavy, f"claw.{side}",
+                            hook=0.62, serrations=4, zone=BONE, edge_zone=BONE))
+        # a short dark hook at the wrist keeps the joint and claw read
+        body.add(RoundCone(wr, end + (wr - end) * 0.55, 0.07, 0.02, zone=CLAW, bone=f"claw.{side}", k=0.03))
         # flared shoulder hood: the pouncer's wide key silhouette
         hood_n = normalize(v3((0.1, 0.85 * s, 0.6)))
         body.add(Plate(up + v3((-0.05, 0.3 * s, 0.1 * a)), (0.42, 0.36, 0.12), frame(v3((1, 0, 0.25)), hood_n), 0.08,
@@ -109,8 +115,9 @@ def build(sk):
     elite = S.Sculpture("stalker-elite")
     # one overgrown right scythe: a second, larger bone blade fused along the arm
     wr, end, el = sk.h("claw.R"), sk.end("claw.R"), sk.h("arm_mid.R")
-    elite.extend(A.blade(el + (wr - el) * 0.3, end + (end - wr) * 0.55 + v3((0.2, -0.2, 0.15)), v3((0.3, -1.0, 0.4)), 0.4, 0.06,
-                         "arm_mid.R", hook=0.7, serrations=5, zone=BONE, edge_zone=BONE))
+    # ATTACK16 elite: one hugely exaggerated hooked scythe on the right, from the same striking joint
+    elite.extend(A.blade(wr + v3((0.05, -0.15, 0.08 * a)), v3((-1.6, -1.35, 0.95 * a)), v3((0.25, -1.0, 0.4)), 0.62, 0.07,
+                         "claw.R", hook=0.75, serrations=6, zone=BONE, edge_zone=BONE))
     pts, nrm = [], []
     for u in np.linspace(0.45, -0.5, 4):
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
