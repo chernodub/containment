@@ -11,12 +11,13 @@ const add=(name,subjects,settings={})=>{plan[name]={width:640,height:360,span:3,
 const marine=(rig,pose)=>({kind:'marine',rig,weapon:rigKit[rig][5],pose});
 const pickup=id=>({kind:'pickup',id});
 const prop=name=>({kind:'prop',kit:'industrial',name});
-// Face across the lens so the receiver and near-side rig hardware stay visible.
+// HERO19: present the dome shoulder and the visor to the lens, as the title does (left dome → face
+// screen-left; Pyro's right dome → face screen-right).
 const portraitPose={
-  breacher:{aim:-.65,pose:'',frame:0,span:2.10,rimColor:0xffd063},
-  cryo:{aim:-.58,pose:'',frame:0,span:2.13,rimColor:0x7fd6ff},
-  pyro:{aim:1.90,pose:'',frame:0,span:2.13,rimColor:0xff7a2e},
-  arc:{aim:-.54,pose:'',frame:0,span:2.17,rimColor:0xb79cff},
+  breacher:{aim:1.90,pose:'',frame:0,span:2.10,rimColor:0xffd063},
+  cryo:{aim:1.95,pose:'',frame:0,span:2.13,rimColor:0x7fd6ff},
+  pyro:{aim:-.62,pose:'',frame:0,span:2.13,rimColor:0xff7a2e},
+  arc:{aim:1.98,pose:'',frame:0,span:2.17,rimColor:0xb79cff},
 };
 for(const rig of Object.keys(rigKit)){
   const {aim,pose,frame,span,rimColor}=portraitPose[rig];
