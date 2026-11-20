@@ -1,4 +1,3 @@
-import {conditionChip} from '../conditionChip';
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
@@ -75,14 +74,13 @@ export function abilityPreview(rig: RigId, owned?: readonly string[]): string {
   }).join('')}</div>`;
 }
 
-export function rigScreen(selected: RigId, deliberate = false): string {
+export function rigScreen(selected: RigId, previous?: RigId): string {
   const rig = RIG_CATALOG[selected];
-  const customFirst = deliberate;
-  const quick = `<button id="recommended-loadout" class="${customFirst?'secondary':'primary'}">Quick start · Cryo ${arrow()}</button>`;
-  const equip = `<button id="equip-rig" class="${customFirst?'primary':'secondary'}">Equip ${rig.name} ${arrow()}</button>`;
+  const quick = `<button id="recommended-loadout" class="secondary">${previous ? `Repeat last rig · ${RIG_CATALOG[previous].name}` : 'Quick start · Cryo'} ${arrow()}</button>`;
+  const equip = `<button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button>`;
   return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
-    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p>${customFirst?equip+quick:quick+equip}</div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · RED: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
+    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p>${equip}${quick}</div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · RED: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
 }
 
 const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power','siege-plow':'power','fault-line':'tactical','ice-road':'power','meltdown-core':'overdrive','pilgrim-pylon':'power','live-wire':'tactical'};
@@ -285,30 +283,33 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const condition=getShipCondition(game,destination.depth,detour==='salvage');
         const variant=getRoomOpening(game,destination.depth,detour==='salvage');
         const consequence=run.runStructure?junctionConsequence(destination.depth,detour==='salvage'):undefined;
-        const visibleRisk=variant&&['Standard encounter','No extra enemies','Free'].includes(risk??'')?undefined:risk;
-        const encounter=destination.id.endsWith('r3-safe')?'Safer encounter':ROOM_KIND_LABELS[destination.kind];
-        const roomReward=destination.reward==='upgrade'?'Boon':destination.reward==='rare-upgrade'?'Rare boon':ROOM_REWARD_LABELS[destination.reward];
-        const visibleReward=variant&&deal==='Keep your current supplies'?undefined:(deal??roomReward);
-        const shortfall=Math.max(0,(cost??0)-game.combat.snapshot.credits);
-        const inventory=game.combat.getRunResources();
-        const earlyChoice=game.node.depth===2&&detour;
-        const health=earlyChoice&&detour==='direct'?Math.min(100,inventory.health+EARLY_LOCKER.health):inventory.health;
-        const grenades=earlyChoice&&detour==='direct'?Math.min(6,inventory.grenades+EARLY_LOCKER.grenades):inventory.grenades;
-        const credits=inventory.credits+(earlyChoice&&detour==='salvage'?EARLY_LOCKER.salvageCredits:0);
-        const unavailable=disabled?(shortfall?`Need ${shortfall} more credits`:'Requires an eligible installed augment'):undefined;
-        return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
+        const inventory = game.combat.getRunResources();
+        const direct = detour === 'direct';
+        const salvage = detour === 'salvage';
+        const depth = game.node.depth;
+        const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? 35 : 0));
+        const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
+        const grenades = Math.min(6, inventory.grenades + (direct && depth === 2 ? EARLY_LOCKER.grenades : salvage && depth === 6 ? 2 : 0));
+        const credits = inventory.credits + (salvage && depth === 2 ? EARLY_LOCKER.salvageCredits : 0) - (cost ?? 0);
+        const later = consequence ?? (salvage && (depth === 14 || depth === 17) ? deal : undefined);
+        const conditionTerms = condition && {
+          dark: 'Ambush damage / − hidden hostiles',
+          coolant: 'Stronger shoves / − slippery deck',
+          vent: 'Eject hostiles / − breach suction',
+          conduit: 'Longer Arc chains / − live wires',
+          brood: 'More credits, fewer arrivals / − crawler eggs',
+          sealed: 'Known breaches / − timed exit',
+        }[condition.id];
+        const outcome = disabled ? (credits < 0 ? `Need ${-credits} CR` : 'Requires eligible augment')
+          : `${Math.ceil(health)} HP · ${Math.ceil(armor)} armor · ${credits} CR${grenades !== inventory.grenades ? ` · ${grenades} grenades` : ''}`;
+        return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
-            ${variant?`<span class="route-option-subtitle">${escapeHtml(variant)}</span>`:''}
-            ${visibleRisk||!variant?`<span class="route-option-terms">${icon(destination.kind)} ${escapeHtml(visibleRisk??encounter)}</span>`:''}
-            ${condition?`<span class="route-condition">${conditionChip(condition)}<span>+ ${condition.upside}</span><span>− ${condition.downside}</span></span>`:''}
-            ${consequence?`<span class="route-option-terms">${escapeHtml(consequence)}</span>`:''}
-            ${earlyChoice?`<span class="route-option-terms">${Math.ceil(health)} HP · ${Math.ceil(inventory.armor)} armor · ${grenades} grenades · ${credits} CR</span>`:''}
-            ${visibleReward?`<span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(visibleReward)}</span>`:''}
+            <span class="route-option-terms" data-route-term="reward">${outcome}</span>
+            <span class="route-option-subtitle">${escapeHtml(variant ?? risk ?? ROOM_KIND_LABELS[destination.kind])}${condition ? ` <small class="condition-chip" title="${condition.name}">+ ${conditionTerms}</small>` : ''}</span>
           </span>
-          <span class="route-option-action">${unavailable??`Enter sector ${arrow()}`}</span>
-        </button>`;
+        </button>${later ? `<details class="route-later"><summary>Later</summary><p>${escapeHtml(later)}</p></details>` : ''}</div>`;
       }).join('')}
     </div>
   </section>`;

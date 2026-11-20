@@ -1,5 +1,4 @@
-import {ROCKET_ARM_DISTANCE, SHOTGUN_RANGE} from '../game/combat/catalog';
-import type {WeaponId} from '../game/combat/types';
+import {ROCKET_ARM_DISTANCE} from '../game/combat/catalog';
 import {deployableContact} from '../game/abilities/AbilitySystem';
 import type {DepthGame} from '../DepthGame';
 import type {DepthRenderer} from '../render/DepthRenderer';
@@ -536,25 +535,19 @@ export function getShipCondition(game: DepthGame, depth?: number, salvage?: bool
   return depth === undefined ? game.condition : game.conditionFor(depth, salvage);
 }
 
-/** The HUD teaches from the closest enemy in a clear lane. */
-export function getWeaponSituation(game: DepthGame): WeaponId | undefined {
+/** Situational offers use live targets and the native rocket arming distance. */
+export function getWeaponSituation(game: DepthGame, platedId?: number) {
   const combat = game.combat.snapshot;
-  if ((!combat.magazine || combat.weaponId==='plasma'&&combat.reloading) && combat.weaponId !== 'pistol') return 'pistol';
-  const enemies = game.enemies.snapshot.enemies;
-  let nearest: typeof enemies[number] | undefined;
-  let distance = 460;
-  for (const enemy of enemies) {
-    const range = Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y);
-    if (range < distance && enemy.health > 0 && hasClearExpeditionShot(game.geometry, game.player, enemy)) {
-      nearest = enemy;
-      distance = range;
-    }
-  }
-  if (!nearest) return;
-  if (distance >= ROCKET_ARM_DISTANCE + 38 &&
-      (nearest.pod || nearest.broodRemainingMs || nearest.role === 'flanker' && enemies.some(enemy => enemy.id !== nearest!.id && enemy.role === 'flanker' && Math.hypot(enemy.x-nearest!.x, enemy.y-nearest!.y)<112))) return 'rocket';
-  if (nearest.armor > 0) return 'plasma';
-  if (distance < SHOTGUN_RANGE && (nearest.type === 'crawler' || nearest.meleePhase === 'recovery')) return 'shotgun';
-  if (nearest.health <= (nearest.stunRemainingMs ? 34 : 31)) return 'pistol';
-  return 'rifle';
+  if (!combat.magazine && combat.weaponId !== 'pistol')
+    return {weapon: 'pistol' as const, text: '1 · Pistol while empty'};
+  const enemies = game.enemies.snapshot.enemies.filter(enemy => enemy.health > 0);
+  const plate = enemies.find(enemy => enemy.id === platedId && enemy.armor > 0);
+  if (plate && combat.weaponId === 'rifle')
+    return {weapon: 'plasma' as const, target: plate, text: '4 · Plasma breaks plate'};
+  const armed = enemies.filter(enemy => Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y) >= ROCKET_ARM_DISTANCE
+    && (enemy.pod || enemy.role === 'flanker') && hasClearExpeditionShot(game.geometry, game.player, enemy));
+  const pair = armed.find(enemy => armed.some(other => other !== enemy
+    && (enemy.pod ? other.pod : other.role === 'flanker') && Math.hypot(other.x - enemy.x, other.y - enemy.y) < 112));
+  if (pair && combat.weaponId !== 'rocket')
+    return {weapon: 'rocket' as const, target: pair, text: '5 · Rocket for the pair'};
 }

@@ -76,3 +76,8 @@
 
 #overlay .route-option-subtitle { font: 600 19px/1.15 var(--font-display); }
 #overlay .route-condition { display: grid; gap: 3px; margin-block: 4px; line-height: 1.25; }
+
+#overlay .route-choice {display: flex; flex-direction: column}
+#overlay .route-choice .route-option {width: 100%; flex: 1}
+#overlay .route-later {padding: 6px 12px; font-size: 13px}
+#overlay .route-option-subtitle .condition-chip {white-space: normal; vertical-align: middle}

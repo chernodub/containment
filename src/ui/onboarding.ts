@@ -106,6 +106,8 @@ export class ContextualOnboarding {
   }
 
 
+  get visible() { return !this.node.hidden; }
+
   get markedEnemyId(): number | null {
     if (this.node.hidden) return null;
     if (this.active === 'brute-punish') return this.recoveringBruteId;
@@ -257,7 +259,7 @@ export class ContextualOnboarding {
   }
 
   /** Clock is supplied by the application, so capture stepping remains exact. */
-  tick(dt: number, player: Bounds, threats: readonly Bounds[] = []): void {
+  tick(dt: number, player: Bounds, threats: readonly Bounds[] = [], actor?: {x:number; y:number}): void {
     if (this.disposed) return;
     if (this.node.hidden) {setPresentationObstacle('onboarding', null); return;}
     this.activeTime += dt;
@@ -281,10 +283,11 @@ export class ContextualOnboarding {
       this.originX = bar.left + this.host.clientLeft; this.originY = bar.top + this.host.clientTop;
     }
     const threatened = (left: number, top: number, width: number, height: number) => threats.some(box => left < box.right + 8 && left + width > box.left - 8 && top < box.bottom + 8 && top + height > box.top - 8);
-    let left = this.preferredLeft;
-    const top = this.preferredTop, width = this.promptWidth, height = this.promptHeight;
+    const width = this.promptWidth, height = this.promptHeight;
+    let left = actor ? Math.max(8, Math.min(innerWidth - width - 8, actor.x + 24)) : this.preferredLeft;
+    const top = actor ? Math.max(8, Math.min(innerHeight - height - 8, actor.y - height - 20)) : this.preferredTop;
     let blocked = hudObstructs(left, top, left + width, top + height) || threatened(left, top, width, height);
-    if (blocked) {
+    if (blocked && !actor) {
       // The layout already caches toast and chrome bounds. Try nearby horizontal
       // lanes without measuring or allocating, and return to the slot when clear.
       for (let attempt = 1; attempt <= 18; attempt++) {

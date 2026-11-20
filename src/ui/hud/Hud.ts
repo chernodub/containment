@@ -94,12 +94,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
     denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
     (document.getElementById('app') ?? nodes.hud).append(denial);
-    let weaponInspect = 0, buildReveal = 0, inspectObjective = false, denialLife = 0;
-    const inspectionKeys = new Set<string>();
+    let weaponInspect = 0, buildReveal = 0, denialLife = 0;
     let pointerX = innerWidth * .64, pointerY = innerHeight * .48, pointerActive=false, pointerKnown=false, aimPointerX=0, aimPointerY=0, powerAim=false, deniedPlacementLife=0;
     const placement=createPlacementPreview(),deniedPlacement=createPlacementPreview(),deniedAim={x:0,y:0};
+    let fighting = false;
     const refreshInspection = () => {
-        const expanded = weaponInspect > 0 || inspectObjective;
+        const expanded = !fighting || weaponInspect > 0;
         const narrative = false;
         const reveal = buildReveal > 0;
         if (statusPanel.dataset.buildReveal !== String(reveal)) {statusPanel.dataset.buildReveal=String(reveal);layoutDirty=true;}
@@ -108,16 +108,11 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     };
     const onKey = (event: KeyboardEvent) => {
         const target=event.target as HTMLElement | null;
-        if (event.type === 'keyup') {inspectionKeys.delete(event.code);if(event.code==='KeyF')powerAim=false;}
+        if (event.type === 'keyup' && event.code === 'KeyF') powerAim = false;
         if (game.status!=='playing' || target?.matches('input,textarea,select,[contenteditable=true]')) return;
         if(event.code==='KeyF'&&event.type==='keydown')powerAim=true;
-        if (['Tab','AltLeft','AltRight'].includes(event.code)) {
-            if(event.type==='keydown') inspectionKeys.add(event.code);
-            inspectObjective=inspectionKeys.size>0;refreshInspection();
-        }
-        if (event.type==='keydown' && /^Digit[1-5]$/.test(event.code)) {weaponInspect=1.5;refreshInspection();}
     };
-    const onBlur = () => {inspectionKeys.clear();inspectObjective=false;pointerActive=false;pointerKnown=false;powerAim=false;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);refreshInspection();};
+    const onBlur = () => {pointerActive=false;pointerKnown=false;powerAim=false;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);refreshInspection();};
     const onPointer = (event: PointerEvent) => {
         if(event.pointerType!=='mouse')return;pointerX=event.clientX;pointerY=event.clientY;
         pointerActive=event.target===renderer.canvas;
@@ -126,7 +121,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     document.addEventListener('keydown',onKey);document.addEventListener('keyup',onKey);
     document.addEventListener('pointermove',onPointer,{passive:true});window.addEventListener('blur',onBlur);window.addEventListener('resize',onBlur);
     const showDenial = (reason:string) => {
-        denialLife=.9;denial.textContent=reason;denial.hidden=false;
+        denialLife=.9;denial.textContent=reason;
         denial.style.left=`${Math.max(85,Math.min(innerWidth-85,pointerX))}px`;
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
@@ -163,9 +158,17 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     slots.find(entry => entry.slot === 'dash')!.node.append(dashActiveDial);
     const dashActiveRing = dashActiveDial.firstElementChild as SVGCircleElement;
     let health = 100, armor = 50, maxArmor = 50, hpGhost = 100, armorGhost = 50, hpDelay = 0, armorDelay = 0;
-    let situation: WeaponId | undefined, suggestion: WeaponId | undefined, suggestionUntil = 0;
+    let suggestionUntil = 0;
+    let plateHit: {id: number; until: number} | undefined;
+    let shownSituation: string | undefined;
     let suggestionClock = -1;
     const situationCount = new Map<WeaponId, number>();
+    for (const weapon of ['pistol', 'plasma', 'rocket'] as const) {
+        try {
+            const count = Number(storage?.getItem(`containment.weapon-lesson.${weapon}`));
+            if (Number.isInteger(count) && count >= 0 && count <= 3) situationCount.set(weapon, count);
+        } catch {}
+    }
     let lastWeapon = '', lastBuild = '__unbound__', buildSeen = false, lastCheckpoint = '', revision = game.roomRevision, disposed = false, wasPlaying = false;
     let roomPeak = 0, streak = 0, streakWindow = 0, streakCooldown = 0, killCursor = 0;
     const recentKills = new Int32Array(16).fill(-1);
@@ -222,6 +225,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         finishHudOcclusion();
     };
     const protect = () => Object.assign(bounds, renderer.playerScreenBounds(game.player.radius));
+    let lessonActive = false;
     let mastery: ReturnType<typeof getMasteryPreview> | null = null;
     const updateAbility = (entry: typeof slots[number], s: AbilitySlotSnapshot, snapshot: AbilitiesSnapshot) => {
         const definition = ABILITY_CATALOG[s.id];
@@ -245,7 +249,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             entry.node.dataset.state = state;
         setHudAttribute(entry.node,'data-flash',String(entry.flash>0));
         const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready&&!!mastery?.ignite.length);
-        const title = s.id==='glacier'&&mastering ? 'Shatter' : s.id==='flashfire'&&mastering ? `Detonate ${mastery?.ignite.length??0}` : definition.name;
+        const title = definition.name;
         if(entry.title.textContent!==title)entry.title.textContent=title;
         setHudAttribute(entry.node,'data-mastery',String(mastering));
         let value = 'READY';
@@ -258,7 +262,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         else if (overdrive)
             value = snapshot.overdrive.roomLimited && snapshot.overdrive.charge >= 1 ? 'NEXT ROOM' : snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
-            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'REPOSITION' : 'Unavailable';
+            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'BLOCKED' : 'Unavailable';
         const reason = state === 'cooling' && s.cooldownRemainingMs > 0 ? 'Recharging' : '';
         setHudAttribute(entry.node,'data-reason',reason);
         if(reason)setHudAttribute(entry.node,'data-state-label',reason);
@@ -318,8 +322,13 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const storyStatus = conciseStoryStatus(game.storyStatus);
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
+        fighting = playing && (game.enemies.activeCount > 0 || game.boss.snapshot.active);
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', [getRoomOpening(game), ((getAwakeningDrill(game)||game.augmentDrillActive||game.coverLessonActive) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '')].filter(Boolean).join(' · '));
+        const drill = getAwakeningDrill(game);
+        const lesson = !!drill || game.augmentDrillActive || game.coverLessonActive;
+        lessonActive = playing && lesson;
+        const objective = game.encounterObjective || cue || getRoomOpening(game)
+            || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '');
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -367,25 +376,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         weaponPanel.style.setProperty('--reload-progress', `${s.reloading ? clamp(1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs)) * 100 : 0}%`);
         text('reserve', `/ ${Number.isFinite(s.reserve) ? s.reserve : '∞'}${s.weaponId==='plasma'?` · HEAT ${Math.round(s.heatFraction * 100)}%`:''}`);
         if (game.elapsed < suggestionClock) {
-            situationCount.clear();
-            situation = suggestion = undefined;
-            suggestionUntil = 0;
+            shownSituation = undefined;
+            plateHit = undefined;
         }
         suggestionClock = game.elapsed;
-        const nextSituation = playing && preferences().masteryHints !== false ? getWeaponSituation(game) : undefined;
-        if (situation !== nextSituation) {
-            situation = nextSituation;
-            if (situation && (situationCount.get(situation) ?? 0) < 3) {
-                situationCount.set(situation, (situationCount.get(situation) ?? 0) + 1);
-                suggestion = situation;
-                suggestionUntil = game.elapsed + 1.55;
-            }
-        }
-        for (const button of weapons) button.classList.toggle('weapon-suggestion',
-            playing && suggestionUntil > game.elapsed && suggestion !== s.weaponId && button.dataset.weapon === suggestion);
-        text('reload-label', s.swapRemainingMs > 0 ? 'DRAWING' : !s.magazine && s.weaponId !== 'pistol'
-            ? (s.weaponId === 'plasma' && s.reloading ? 'VENTING · SWITCH TO 1' : 'SWITCH TO 1 · PISTOL')
-            : s.reloading ? (s.weaponId === 'plasma' ? (s.heatFraction >= 1 ? 'OVERHEATED · SWITCH TO 1' : 'VENTING') : 'RELOADING') : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
+        const situation = playing && preferences().masteryHints !== false
+            ? getWeaponSituation(game, plateHit && plateHit.until > game.elapsed ? plateHit.id : undefined) : undefined;
+        const suggestionKey = situation && `${situation.weapon}:${situation.target?.id ?? ''}`;
+        if (!suggestionKey) shownSituation = undefined;
+        const suggest = situation && (suggestionKey === shownSituation
+            ? suggestionUntil > game.elapsed : (situationCount.get(situation.weapon) ?? 0) < 3);
+        text('reload-label', s.swapRemainingMs > 0 ? 'DRAWING' : s.reloading
+            ? (s.weaponId === 'plasma' ? 'VENTING' : 'RELOADING') : !s.magazine ? 'EMPTY' : '');
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
         text('depth-label', `${(game.storyRoom?.environment ?? ACT_NAMES[Math.min(2, Math.floor(game.node.depth / 4))]).toUpperCase()} · ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)}`);
         text('room-name', ROOM_TEMPLATES[game.node.templateId].name);
@@ -479,9 +481,50 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
-        const drill = getAwakeningDrill(game);
-        skipDrill.hidden = !playing || (!drill && !game.augmentDrillActive);
-        onboarding.update(game, abilities, !abilityHints.visible, preferences().hints !== false);
+        skipDrill.hidden = !playing || !(drill && !drill.confirmation || game.augmentDrillTarget);
+        const lessonTarget = drill ? game.enemies.getSnapshot(drill.id)
+            : game.augmentDrillTarget ?? (game.coverLessonActive
+                ? game.enemies.snapshot.enemies.find(enemy => enemy.health > 0 && enemy.type === 'spitter') : undefined);
+        const interrupted = game.broodInterruption;
+        const matron = interrupted && game.enemies.getSnapshot(interrupted.id);
+        const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
+            suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
+        let prompt = '';
+        for (const candidate of prompts) {
+            if (!candidate || !playing) continue;
+            if (candidate === 'mastery' && !masteryHints.visible) continue;
+            if (candidate === 'onboarding') {
+                onboarding.update(game, abilities, !abilityHints.visible, preferences().hints !== false);
+                if (!onboarding.visible) continue;
+            }
+            prompt = candidate;
+            break;
+        }
+        if (prompt !== 'onboarding') onboarding.update(game, abilities, false, preferences().hints !== false);
+        masteryHints.suppress(prompt !== 'mastery');
+        denial.hidden = prompt !== 'denial';
+        if (prompt === 'weapon' && situation && shownSituation !== suggestionKey) {
+            shownSituation = suggestionKey;
+            suggestionUntil = game.elapsed + 2.2;
+            const count = (situationCount.get(situation.weapon) ?? 0) + 1;
+            situationCount.set(situation.weapon, count);
+            try { storage?.setItem(`containment.weapon-lesson.${situation.weapon}`, String(count)); } catch {}
+        }
+        const encounterTarget = game.enemies.snapshot.enemies.find(enemy => enemy.health > 0
+            && (enemy.champion === 'warden' && !!enemy.stunRemainingMs
+                || enemy.champion === 'matron' && !!enemy.broodRemainingMs || enemy.pod));
+        const target = prompt === 'lesson' ? lessonTarget : prompt === 'brood' ? matron
+            : prompt === 'weapon' ? situation?.target : prompt === 'objective' && !game.siege && !encounter.pincer ? encounterTarget : undefined;
+        const anchor = target && projectWorld(renderer, target.x, target.y, projected, prompt === 'brood' ? 2.65 : 1.4);
+        const anchored = anchor && (projected.visible || prompt === 'brood'
+            && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
+        const objectiveNode = nodes['room-objective'];
+        objectiveNode.classList.toggle('anchored-objective', !!anchored);
+        if (anchored) {
+            objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
+            objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
+        }
+        text('room-objective', prompt === 'weapon' ? situation?.text ?? '' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');
@@ -538,7 +581,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             warning.targetX = area.targetX ?? event.x; warning.targetY = area.targetY ?? event.y;
             warning.radius = area.radius ?? 32; warning.life = Math.max(.05, (event.durationMs ?? 650) / 1000);
         }
-        combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
+        if (event.type === 'hit' && event.contact === 'armor' && event.targetId !== undefined
+            && 'weapon' in event && event.weapon === 'rifle') {
+            plateHit = {id: event.targetId, until: game.elapsed + 3};
+        }
+        const hitPoint = projectWorld(renderer, event.x, event.y, projected, .05);
+        const nearBoots = Math.hypot(event.x - game.player.x, event.y - game.player.y) <= 48;
+        const danger = hitPoint.visible && warningOverlaps(hitPoint.x - 6, hitPoint.y - 6, hitPoint.x + 6, hitPoint.y + 6);
+        const damage = nearBoots || danger ? undefined : event.damage;
+        combatText.effect({...event, damage, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
         onboarding.effect(event);
@@ -578,7 +629,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     deniedPlacement.reason=cursorReason;deniedPlacementLife=.95;
                     setPlacementPreview(renderer,deniedPlacement);
                 }
-                if(reason==='blocked'&&entry.slot==='power')entry.denial='REPOSITION';
+                entry.denial = 'Unavailable';
                 showDenial(cursorReason);
                 entry.value.textContent = entry.denial;
             }
@@ -587,7 +638,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'true';
             }
             if (event.ability.phase === 'overdrive-ready')
-                toasts.show('Overdrive ready · V', event.ability.ability, 'reward', 'overdrive');
+                toasts.show('Overdrive ready', event.ability.ability, 'reward', 'overdrive');
             else if (entry.slot === 'overdrive' && (event.ability.phase === 'cast' || event.ability.phase === 'impact'))
                 toasts.dismiss('overdrive');
             const abilities = getAbilities(game);
@@ -612,13 +663,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
         }
         if (game.status !== 'playing') {
-            denial.hidden=true;denialLife=0;deniedPlacementLife=0;inspectObjective=false;powerAim=false;setPlacementPreview(renderer,null);
+            denial.hidden=true;denialLife=0;deniedPlacementLife=0;powerAim=false;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
             abilityHints.tick(bounds, false);
             return;
         }
-        if(deniedPlacementLife>0) setPlacementPreview(renderer,deniedPlacement);
+        if(lessonActive && !powerAim) setPlacementPreview(renderer,null);
+        else if(deniedPlacementLife>0) setPlacementPreview(renderer,deniedPlacement);
         else {
             const snapshot=getAbilities(game),power=snapshot?.slots?.power;
             const casting=snapshot?.slots&&(snapshot.slots.dash.castRemainingMs>0||snapshot.slots.tactical.castRemainingMs>0||snapshot.slots.power.castRemainingMs>0||snapshot.slots.overdrive.castRemainingMs>0);
@@ -635,8 +687,11 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('hp-lag', hpGhost / 100);
         width('armor-lag', armorGhost / Math.max(1, maxArmor));
         protect();
-        masteryHints.tick(renderer, game.status==='playing' ? mastery : null, preferences().masteryHints !== false, elapsed);
-        onboarding.tick(elapsed, bounds, onboardingObstacles);
+        masteryHints.tick(renderer, game.status==='playing' ? mastery : null, !lessonActive && preferences().masteryHints !== false, elapsed);
+        const marked = onboarding.markedEnemyId;
+        const markedEnemy = marked === null ? undefined : game.enemies.getSnapshot(marked);
+        const anchor = markedEnemy && projectWorld(renderer, markedEnemy.x, markedEnemy.y, projected, 1.5);
+        onboarding.tick(elapsed, bounds, onboardingObstacles, anchor?.visible ? anchor : undefined);
         abilityHints.tick(bounds, true);
         combatText.tick(elapsed, bounds, statusActive);
         threats.tick(elapsed);

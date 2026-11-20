@@ -24,7 +24,7 @@ export type AttackFeedback={
  shockwave?:(event:{position:T.Vector3;radius:number;strength:number;duration:number})=>void;
 };
 type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;direction?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
-type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
+type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean;arrival?:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 export const PRIORITY_ACTOR_LIMIT=130;
 const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;varying vec2 warningWorld;
@@ -303,9 +303,18 @@ export class AttackEffects {
   for(let i=0;i<n;i++)this.warningTimes[i].w=this.warningSoonest[this.warningRoot(i)];
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
- syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
+ syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry'], game?:DepthGame):void {
+  if (game) for (const enemy of enemies) {
+   if (!game.getEscortRetreat(enemy.id)) continue;
+   // A retreat can start while the earlier arrival ring is still on deck.
+   for (const pulse of this.pulses) {
+    if (pulse.arrival && Math.hypot(pulse.p.x - enemy.x / 32, pulse.p.z - enemy.y / 32) <= pulse.radius)
+     pulse.age = pulse.life;
+   }
+  }
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
+   if(game?.getEscortRetreat(warning.id)){warning.active=false;continue;}
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
    warning.family=enemy?.type??'';
@@ -351,13 +360,13 @@ export class AttackEffects {
   item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
   item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.direction=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
  }
- private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false){
+ private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false,arrival=false){
   if(this.pulses.length>=EFFECT_LIMITS.pulses){
    const friendly=this.pulses.findIndex(item=>!item.stable);
    if(friendly>=0)this.pulses.splice(friendly,1);
    else if(stable)this.pulses.shift();else return;
   }
-  this.pulses.push({p:p.clone(),color:new T.Color(color),radius,life,age:0,angle,slash,stable});
+  this.pulses.push({p:p.clone(),color:new T.Color(color),radius,life,age:0,angle,slash,stable,arrival});
  }
  shot(p:T.Vector3,angle:number,id:WeaponId){
   if(this.disposed)return;
@@ -438,7 +447,7 @@ export class AttackEffects {
    }
    p.y=.035;const life=(e.durationMs??650)/1000;
    // A warning always shows its complete hit radius, never an expanding approximation.
-   this.pulse(p,0xff2340,(e.radius??38)/32,life,0,false,true);
+   this.pulse(p,0xff2340,(e.radius??38)/32,life,0,false,true,true);
    if(e.targetX!==undefined&&e.targetY!==undefined){const target=new T.Vector3(e.targetX/32,.04,e.targetY/32);this.pulse(target,0xff2340,.8,life,0,false,true);const direction=target.clone().sub(p);for(let i=0;i<12;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p.clone().addScaledVector(direction,i/12),0xff2340,.07,life);}
    return;
   }

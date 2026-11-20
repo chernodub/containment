@@ -36,6 +36,10 @@ export class MasteryHints {
         } catch {}
     }
 
+    get visible() { return !this.callout.hidden; }
+
+    suppress(hidden: boolean) { this.layer.style.visibility = hidden ? 'hidden' : ''; }
+
     tick(renderer: DepthRenderer, preview: ReturnType<typeof getMasteryPreview> | null, enabled: boolean, dt: number) {
         this.enabled = enabled;
         this.callout.hidden = true;
@@ -73,7 +77,7 @@ export class MasteryHints {
         for (const target of preview.ignite) showMark('pyro',target,'◇',1.1);
         if (preview.crush) {
             showMark('kinetic',preview.crush,'',.1,preview.player);
-            showMark('kinetic',preview.crush,'Crush 68',.35);
+            showMark('kinetic',preview.crush,'◇',.35);
         }
         if (preview.dashOrigin) showMark('arc',preview.dashOrigin,'',.1,preview.player);
         if (preview.link) {
