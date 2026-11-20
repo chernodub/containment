@@ -1,3 +1,5 @@
+import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
+import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
@@ -332,7 +334,12 @@ export function buildIcons(game: DepthGame): string {
 
 export function buildRecap(game: DepthGame): string {
   const rig=getAbilities(game)?.rig;
-  return `<div class="build-recap">${rig?`<div class="loadout-rig" data-element="${RIG_CATALOG[rig].element}">${marinePortrait(rig)}<div><h3>${RIG_CATALOG[rig].name}</h3><p>Rig abilities</p></div></div>${abilityPreview(rig,game.expedition.build.mutations)}`:'<p class="screen-footnote">Standard marine loadout · weapon systems online.</p>'}${buildIcons(game)}</div>`;
+  const {weaponId, magazine, reserve} = game.combat.snapshot;
+  const weapons = (Object.keys(WEAPON_JOBS) as WeaponId[]).map((id, index) =>
+    `<li aria-current="${id === weaponId}"><kbd>${index + 1}</kbd><span><strong>${WEAPONS[id].label}</strong>${WEAPON_JOBS[id]}</span></li>`
+  ).join('');
+  const weaponTray = `<section class="pause-weapons"><h3>${WEAPONS[weaponId].label} <b>${magazine} / ${Number.isFinite(reserve) ? reserve : '∞'}</b></h3><ul aria-label="Weapon modes">${weapons}</ul></section>`;
+  return `<div class="build-recap">${rig?`<div class="loadout-rig" data-element="${RIG_CATALOG[rig].element}">${marinePortrait(rig)}<div><h3>${RIG_CATALOG[rig].name}</h3><p>Rig abilities</p></div></div>${abilityPreview(rig,game.expedition.build.mutations)}`:'<p class="screen-footnote">Standard marine loadout · weapon systems online.</p>'}${weaponTray}${buildIcons(game)}</div>`;
 }
 
 export type PauseTab = 'resume'|'loadout'|'settings'|'controls';

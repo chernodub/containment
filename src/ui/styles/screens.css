@@ -650,3 +650,11 @@
 .difficulty-panel{width:min(980px,94vw)}.difficulty-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.difficulty-cards button{min-height:160px;padding:24px;text-align:left;border:1px solid #7696a9;background:#101e29}.difficulty-cards button[aria-pressed=true]{border:2px solid #9fe8ff;background:#173143}.difficulty-cards b{display:block;font:600 30px var(--font-display);margin-bottom:12px}.difficulty-cards span{display:block;font-size:16px;line-height:1.4}.pause-difficulty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}.pause-difficulty b{text-transform:capitalize}
 
 .pause-difficulty button{padding:8px 14px}
+
+.pause-weapons {margin-block:12px}
+.pause-weapons h3 {margin:0 0 6px}
+.pause-weapons h3 b {background:#071118;padding:2px 6px;font-size:.8em}
+.pause-weapons ul {display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.pause-weapons li {display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid #9fe8ff2b}
+.pause-weapons li[aria-current=true] {border-color:var(--accent)}
+.pause-weapons strong {display:block}
