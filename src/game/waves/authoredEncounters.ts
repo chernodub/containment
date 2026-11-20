@@ -53,10 +53,12 @@ export const DETOUR_BEATS:Readonly<Partial<Record<number,AuthoredBeat>>>=Object.
  18:siege(3),
 });
 
-/** Story relief for the two maintenance rooms, preserving each room's tactical beats. */
+/** Story relief for maintenance and late flank rooms, preserving each room's tactical beats. */
 export const STORY_ENCOUNTER_OVERRIDES:Readonly<Partial<Record<number,readonly AuthoredBeat[]>>>=Object.freeze({
  12:Object.freeze([cross(4),withRules(priority(2,'warden',2),{lullMs:4000}),brokenPincer(4)]),
  13:Object.freeze([withRules(flank(3),{lullMs:4000}),brokenPincer(4),cross(4)]),
+ 16:Object.freeze([cross(4),priority(4),flank(3)]),
+ 18:Object.freeze([flank(3),priority(5,'warden',3),cross(6)]),
 });
 
 /** Names follow the authored beat order. A variant promotes one of the first

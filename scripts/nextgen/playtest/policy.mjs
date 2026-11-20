@@ -217,8 +217,8 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
   for (const c of s.candidates.filter(candidate=>candidate.legal)) {
     const velocity=candidateVelocity(s,c),seconds=Math.min(DECISION_MS/1000,distance(c,s.player)/speed);
     const next={x:s.player.x+velocity.x*seconds,y:s.player.y+velocity.y*seconds,radius};
-    // Unseen bodies must not make the marine hold stand-off at a navigation cell.
-    const spacingEnemies=target?s.enemies:visible;
+    // Blocked contacts behind cover must not override pursuit of a waypoint.
+    const spacingEnemies=target?s.enemies:visible.filter(enemy=>enemy.clear);
     const nearest = Math.min(800, ...spacingEnemies.map(e => distance(c, e)));
     // Swarmer reach is a lower safety bound, not an invitation to rush a firing
     // lane. Keep ordinary weapon stand-off when ranged enemies share the room.
