@@ -261,16 +261,16 @@ export class ContactShadows {
   geometry.setAttribute('contactInk',this.contactInk);
   material.vertexShader='attribute float contactInk; varying float ink;\n'+material.vertexShader.replace('indicatorUV=uv;','indicatorUV=uv; ink=contactInk;');
   material.fragmentShader='varying float ink;\n'+material.fragmentShader.replace(')*.4;',')*.22;').replace('  gl_FragColor',`
-  if(ink>.5 && ink<1.5){
+  if(ink>.5){
     color=vec3(.20,.29,.35);
     alpha=.16*(1.0-smoothstep(.04,.99,radius));
-  }else if(ink>1.5){
-    vec2 local=indicatorUV*2.0-1.0;
-    float facing=smoothstep(.35,.90,local.x);
-    float width=ink>1.5?.09:.06;
-    float ring=1.0-smoothstep(width*.35+facing*.025,width+facing*.025,abs(radius-.83));
-    color=ink>2.5?vec3(.88,.09,.14):vec3(.54,.75,.83);
-    alpha=ring*(ink>1.5?.78:.22);
+    if(ink>2.5){
+      float pixelDistance=abs(radius-.87)/max(length(vec2(dFdx(radius),dFdy(radius))),.0001);
+      float warning=(1.0-smoothstep(1.0,2.0,pixelDistance))*.68;
+      float total=warning+alpha*(1.0-warning);
+      color=mix(color,vec3(.88,.09,.14),warning/max(total,.001));
+      alpha=total;
+    }
   }
   gl_FragColor`);
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;

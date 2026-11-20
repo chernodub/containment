@@ -696,14 +696,14 @@ export class DepthRenderer {
   this.contacts.begin();
   if(!menu)useActorContactShadows(this.player.root);
   if(menu){this.contacts.add(TITLE_STAGE.marine.x,TITLE_STAGE.marine.z,.75);this.contacts.add(TITLE_STAGE.creature.x,TITLE_STAGE.creature.z,1.2);}else{
-   this.contacts.add(p.x/UNIT,p.y/UNIT,blackout?.88:.45,blackout?2:0,p.angle);
+   this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
    if(this.queen)this.contacts.add(q.x/UNIT,q.y/UNIT,1.95);
    for(const n of q.nests)this.contacts.add(n.x/UNIT,n.y/UNIT,.7);
    for(const e of enemies){
     const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
     const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
     const shooter=e.type==='spitter'&&!e.pod&&e.windupMs>0&&e.pendingAttack==='spit';
-    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact?1.25:1),contact?(shooter?3:1):0,contact?enemyMotionAim(e,p):0);
+    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact&&!shooter?1.25:1),contact?(shooter?3:1):0,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
@@ -768,7 +768,7 @@ export class DepthRenderer {
   this.post.finishCombatOutlines();
   // MARINE17: compare opaque and effected marine pixels in the silhouette pass.
   this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high'&&this.graphicsAblation!=='silhouette');
-  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
