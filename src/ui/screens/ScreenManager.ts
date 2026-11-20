@@ -371,8 +371,8 @@ export function createScreens(context: ScreenContext) {
     const shortcut=event.code ? /^Digit[1-9]$/.test(event.code) ? event.code.slice(-1) : event.code==='KeyR' ? 'r' : '' : event.key.toLowerCase();
     if(target?.getAttribute('role')==='tab'&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) {
       event.preventDefault();
-      const tabs: PauseTab[]=['resume','loadout','settings','controls'];
-      const index=event.key==='Home'?0:event.key==='End'?3:(tabs.indexOf(pauseTab)+(event.key==='ArrowRight'?1:3))%4;
+      const tabs: PauseTab[]=Array.from(root.querySelectorAll<HTMLButtonElement>('[data-pause-tab]'), button => button.dataset.pauseTab as PauseTab);
+      const index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(tabs.indexOf(pauseTab)+(event.key==='ArrowRight'?1:tabs.length-1))%tabs.length;
       setPauseTab(tabs[index],true); return;
     }
     if(status==='rig-select') {
