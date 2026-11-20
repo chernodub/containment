@@ -5,6 +5,7 @@ import type { Telegraph } from '../vfx/TelegraphBatch';
 
 /** Optional presentation accessor. Coordinates are renderer metres, never simulation units. */
 export interface HostilePrioritySource {
+  forEachShooterPriority?(visit: (x:number,y:number,z:number,angle:number)=>void): void;
   forEachHostilePriority?(visit: (shape: Readonly<Telegraph>) => void): void;
 }
 
@@ -30,7 +31,7 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
  float priority=${hostileOnly ? '0.' : 'max(prioritySample.r*.72,prioritySample.a*.97)'};
  gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-prioritySample.b));
  gl_FragColor.a*=1.-prioritySample.g;
- gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'};
+ gl_FragColor.a*=1.-priority*${attribute && attribute !== 'ribbonPriority' ? 'priorityWeight' : '1.'};
  if(gl_FragColor.a<.004)discard;
  #include <tonemapping_fragment>`);
 }
@@ -50,6 +51,10 @@ export class AbilityPriorityMask {
   private readonly point = new T.Vector3();
   private camera?: T.Camera;
   private disposed = false;
+  private readonly shooter = (x:number,y:number,z:number,angle:number) => {
+    this.segment(x,y,z,x+Math.cos(angle)*1.44,y,z+Math.sin(angle)*1.44,.6,0,false);
+    this.segment(x,y,z,x,y,z,.22,1);
+  };
   private readonly visit = (shape: Readonly<Telegraph>) => this.shape(shape);
 
   constructor() {
@@ -74,6 +79,8 @@ export class AbilityPriorityMask {
       const actor = actorFor?.(e.id);
       const height = actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15);
       this.actor(e.x / 32, e.y / 32, e.radius / 32 * .78, height);
+      if (e.type === 'spitter' && e.pendingAttack === 'spit' && e.windupMs > 0)
+        this.segment(e.x/32,0,e.y/32,e.x/32,height,e.y/32,.6,0,false);
       // Snapshot fallback also works while the world renderer evolves its warning accessor.
       if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
         const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
@@ -101,6 +108,7 @@ export class AbilityPriorityMask {
         x + Math.cos(a) * .35, .65, z + Math.sin(a) * .35, .35);
     }
     source?.forEachHostilePriority?.(this.visit);
+    source?.forEachShooterPriority?.(this.shooter);
     this.hasMask=true;
     // Camera and actor motion can quantize to the same mask, including paused frames.
     for(let i=0;i<this.raster.length;i++){
@@ -116,7 +124,7 @@ export class AbilityPriorityMask {
     this.segment(x, 0, z, x, height, z, radius, 0);
   }
 
-  private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1): void {
+  private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1, insetCaps = true): void {
     this.point.set(x, y, z).project(this.camera!);
     let px = (this.point.x * .5 + .5) * this.width, py = (this.point.y * .5 + .5) * this.height;
     this.point.set(x + radius, y, z).project(this.camera!);
@@ -127,7 +135,7 @@ export class AbilityPriorityMask {
     // Inset the centreline so the round caps end at the body bounds.
     // The added 0.93 texels include the 8 px margin and half the 12 px fade.
     const r = channel === 0 ? projectedRadius + .93 : Math.max(1.1, projectedRadius) + .35;
-    if (channel === 0) {
+    if (channel === 0 && insetCaps) {
       const inset = Math.min(.5, projectedRadius / Math.max(1e-6, Math.hypot(dx, dy)));
       px += dx * inset;
       py += dy * inset;

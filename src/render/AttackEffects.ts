@@ -186,6 +186,9 @@ export class AttackEffects {
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
  forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active&&warning.shape.length!==-1)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
+ forEachShooterPriority(visit:(x:number,y:number,z:number,angle:number)=>void):void {
+  for (const cue of this.shooters.values()) if (cue.fade<0) visit(cue.x,cue.y,cue.z,cue.angle);
+ }
  private fields:Pulse[]=[];private fieldMesh:T.InstancedMesh;
  private fire:Particle[]=[];private fireMesh:T.InstancedMesh;private textures:T.Texture[]=[];
  private links:{start:T.Vector3;end:T.Vector3;age:number;frost:boolean}[]=[];
