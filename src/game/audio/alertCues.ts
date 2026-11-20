@@ -1,4 +1,4 @@
-import type { CueRecipe } from './synthesis';
+import type { AudioBus, CueRecipe, SynthLayer } from './synthesis';
 
 function alert(id: string, notes: readonly number[], hostile = false, step = .085): CueRecipe {
   return {
@@ -13,16 +13,30 @@ function alert(id: string, notes: readonly number[], hostile = false, step = .08
   };
 }
 
+function signature(id: string, bus: AudioBus, duration: number, layers: readonly SynthLayer[]): CueRecipe {
+  return { id: `alert:${id}`, bus, family: 'stinger', duration, layers,
+    priority: bus === 'danger' ? 88 : 52, interval: .24, rms: bus === 'danger' ? .13 : .09 };
+}
+
 export const ALERTS = {
-  elite: alert('elite', [420, 420, 620], true),
-  warden: alert('warden', [220, 165, 110], true, .14),
-  matron: alert('matron', [280, 480, 280], true, .13),
+  elite: {...alert('elite', [420, 420, 620], true), bus: 'enemies'},
+  warden: signature('warden', 'enemies', .31, [
+    { wave: 'sine', frequency: 125, endFrequency: 58, gain: 1, duration: .11, attack: .005, decay: 5 },
+    { wave: 'sine', frequency: 105, endFrequency: 43, gain: 1, delay: .15, duration: .15, attack: .005, decay: 5 },
+  ]),
+  matron: signature('matron', 'enemies', .29, [
+    { wave: 'sine', frequency: 440, endFrequency: 1700, gain: 1, duration: .27, fm: 4, modRate: .29, am: .8, pulse: 23, attack: .009, decay: 1.8 },
+  ]),
   charge: alert('charge', [155, 275], true, .065),
-  exposed: alert('exposed', [720, 440, 230], true),
+  exposed: alert('exposed', [720, 440, 230]),
   pod: alert('pod', [960, 660], true),
-  hatch: alert('hatch', [290, 490, 760], true),
+  hatch: {...alert('hatch', [290, 490, 760], true), bus: 'enemies'},
   critical: alert('critical', [820, 550, 820], true),
-  armor: alert('armor', [970, 460], true, .055),
+  armor: signature('armor', 'danger', .105, [
+    { wave: 'noise', cutoff: 5100, highpass: true, gain: 1, duration: .045, attack: .002, decay: 7 },
+    { wave: 'pluck', frequency: 2770, endFrequency: 2310, gain: .85, duration: .10, attack: .002, decay: 6 },
+  ]),
+  ambush: alert('ambush', [580, 1160], false, .045),
   dark: alert('dark', [320, 145]),
   coolant: alert('coolant', [1200, 980]),
   vent: alert('vent', [420, 590, 420]),
@@ -35,8 +49,8 @@ export const ALERTS = {
   arc: alert('arc', [1470, 890, 1470], true, .055),
   release: alert('release', [180, 360, 540]),
   encounter: alert('encounter', [420, 620]),
-  flank: alert('flank', [520, 880], true),
-  crossfire: alert('crossfire', [880, 520, 880], true),
+  flank: {...alert('flank', [520, 880], true), bus: 'enemies'},
+  crossfire: {...alert('crossfire', [880, 520, 880], true), bus: 'enemies'},
   resolved: alert('resolved', [540, 720, 960]),
   pickup: alert('pickup', [880, 1320], false, .052),
 };

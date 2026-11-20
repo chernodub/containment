@@ -213,9 +213,11 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'explosion') this.explosion((effect.radius ?? 120) > 180 ? 'large-explosion' : (effect.radius ?? 120) < 80 ? 'small-explosion' : 'explosion', pan, distance);
     else if (effect.type === 'enemy-warning' || effect.type === 'enemy-attack') {
       const family = effect.family ?? (effect.id === -1 ? this.bossPhase === 1 ? 'queen' : `queen-phase-${this.bossPhase}` : 'crawler');
+      if (effect.type === 'enemy-warning' && effect.id === undefined) { this.playAlert('encounter', pan, distance); return; }
       this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs, cueSeed(`${family}:${effect.id ?? 0}:${effect.x}:${effect.y}`));
     }
     else if (effect.type === 'hurt') this.cue(impactRecipe('hurt'));
+    else if (effect.type === 'ambush') this.playAlert('ambush', pan, distance);
     else if (effect.type === 'pickup') this.playPickup();
     else if (effect.type === 'acid') this.enemy('spitter', 'attack', false, pan, distance);
     else if (effect.type === 'boon') {
@@ -227,7 +229,6 @@ export class AudioSystem implements GameAudioDirector {
     if (cue === 'death' || cue === 'victory' || cue === 'room-clear') { this.stopLoops(); this.stopHeartbeat(); }
     if (cue === 'death' || cue === 'victory') this.stopAmbience();
     this.cue(uiRecipe(cue));
-    if (cue === 'boss-intro' || cue === 'overdrive-ready') this.duck(.32, .65);
   }
   playPistol(): void { this.weapon('pistol'); }
   playRifle(): void { this.weapon('rifle'); }
@@ -342,7 +343,6 @@ export class AudioSystem implements GameAudioDirector {
     if(swarm&&voice)this.swarmVoices.push(voice);
     // Melee tells are entirely synthesized; the old common sample masked identity.
     if (voice&&phase==='death') this.sample('alien-impact.wav', .13, { bus: 'enemies', priority: 25, pan, distance, rate: .7 * Math.sqrt(this.hostileTimeScale) });
-    if (elite || family === 'queen') this.duck(.6, .22);
   }
   private handleAbility(event: AbilityEvent, pan: number, distance: number): void {
     if (event.phase === 'denied' || event.phase === 'ready' || event.phase === 'overdrive-ready') {
