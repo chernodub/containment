@@ -269,6 +269,7 @@ try {
   }
   }
   assert.equal((await snapshot()).run.seed,seed,'Native Start must honor diagnostic seed');
+  page.setDefaultTimeout(20000);
   assert.equal(await page.evaluate(()=>window.__containmentDebug.game.difficulty),difficulty,'Native start must honor selected difficulty');
   let previousSnapshot=null;const foundDefects=new Set();
   let loadingSince=null,loadingHost=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();

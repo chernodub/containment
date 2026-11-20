@@ -14,6 +14,20 @@ export const STANDARD_ENEMY_IDS = Object.freeze(
   ] as const satisfies readonly StandardEnemyId[],
 );
 
+export const ENEMY_FAMILY_SCALE: Readonly<Record<StandardEnemyId, number>> = Object.freeze({
+  crawler: 1.25,
+  stalker: 1.20,
+  spitter: 1.25,
+  carrier: 1.10,
+  brute: 1,
+});
+
+export const ELITE_BODY_SCALE = 1.30;
+
+export function enemyBodyRadius(type: StandardEnemyId, elite = false): number {
+  return ENEMIES[type].radius * ENEMY_FAMILY_SCALE[type] * (elite ? ELITE_BODY_SCALE : 1);
+}
+
 const enemy = (definition: EnemyDefinition): Readonly<EnemyDefinition> =>
   Object.freeze(definition);
 

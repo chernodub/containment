@@ -198,6 +198,7 @@ try{
    for(let frame=0;frame<count;frame++){
     if(scenario.roomTour)await page.evaluate(advanceRoomTour,frame);
     else if(scenario.kiting)await page.evaluate(advanceKiting,{frame,stepMs:frameStepMs});
+    else if(frame&&scenario.advanceFrame)await page.evaluate(scenario.advanceFrame,frame);
     else if(frame)await page.evaluate(ms=>window.__containmentDebug.step(ms),frameStepMs);
     if(scenario.titleArtTimeline) await page.evaluate(ms=>{
      const art=document.querySelector('.title-key-art');
@@ -323,12 +324,12 @@ try{
     }
     if(scenario.burst)burstFrames.push(bytes);
     const errors=manifest.errors.slice(errorStart);assert.equal(errors.length,0,JSON.stringify(errors));
-    manifest.shots.push({scenario:scenario.id,room:scenario.room??null,frame:scenario.burst?frame+1:null,file,presentationMs:frame*frameStepMs,simulationMs:Math.round(evidence.elapsed*1000),performance:evidence.performance,errors,pixels,staging,evidence});
+    manifest.shots.push({scenario:scenario.id,room:scenario.room??null,frame:scenario.burst?frame+1:null,file,presentationMs:scenario.advanceFrame?null:frame*frameStepMs,simulationMs:Math.round(evidence.elapsed*1000),performance:evidence.performance,errors,pixels,staging,evidence});
    }
    if(scenario.burst){
     const sprite=stitchPngFrames(burstFrames,spriteWidth),file=name+'-sprite.png';
     await writeFile(resolve(out,file),sprite.png);
-    const {png,...layout}=sprite;manifest.sprites.push({scenario:scenario.id,room:scenario.room??null,file,...layout,stepMs:frameStepMs,simulationMs:manifest.shots.filter(s=>s.scenario===scenario.id&&s.room===(scenario.room??null)).map(s=>s.simulationMs)});
+    const {png,...layout}=sprite;manifest.sprites.push({scenario:scenario.id,room:scenario.room??null,file,...layout,stepMs:scenario.advanceFrame?null:frameStepMs,simulationMs:manifest.shots.filter(s=>s.scenario===scenario.id&&s.room===(scenario.room??null)).map(s=>s.simulationMs)});
    }
    if(scenario.kiting)assert(projectiles&&muzzle,`${name}: kiting burst lacks real firing feedback`);
    if(scenario.combat)assert((scenario.status||projectiles)&&muzzle,`${name}: burst lacks player projectiles or muzzle flash`);

@@ -1,6 +1,6 @@
 /** Capture-only deformed bounds. Root collision cylinders do not enclose long
  * presentation lunges; measuring vertices keeps native strip crops honest. */
-function installDeformedBounds(){
+function installDeformedBounds(skinOnly=false){
   const d=window.__containmentDebug,r=d.renderer,proof=d.g5Proof;
   const ids=proof.actors?.map(a=>a.id)??[proof.enemyId];
   const models=[{id:'marine',model:r.player},...ids.filter(id=>Number.isInteger(id)).map(id=>({id,model:r.actors.get(id)}))];
@@ -12,7 +12,7 @@ function installDeformedBounds(){
       b.left=b.top=Infinity;b.right=b.bottom=-Infinity;
       if(!root)continue;root.updateWorldMatrix(true,true);
       root.traverseVisible(o=>{
-        if(!o.isMesh||!o.geometry?.attributes.position)return;
+        if(!o.isMesh||(skinOnly&&!o.isSkinnedMesh)||!o.geometry?.attributes.position)return;
         if(o.isSkinnedMesh)o.skeleton.update();
         for(let i=0;i<o.geometry.attributes.position.count;i++){
           o.getVertexPosition(i,point);point.applyMatrix4(o.matrixWorld).project(r.camera);
@@ -23,6 +23,59 @@ function installDeformedBounds(){
     }
     return bounds;
   }});
+}
+
+/** Matched ranks on the production follow camera, with projected skin bounds. */
+export function registerScale17Scenarios(scenarios) {
+  for(const family of ['crawler','stalker','spitter','carrier','brute']){
+    const source=scenarios.find(s=>s.id===`k11-calm-${family}`);
+    if(!source)continue;
+    const setup=source.setup.toString()
+      .replace("(family==='brute'||family==='carrier'?3:2)","2")
+      .replace('brute:28','brute:33');
+    scenarios.push({...source,id:`scale17-pair-${family}`,setup:new Function('room',`
+      return (async()=>{
+        await (${setup})(room);
+        const d=window.__containmentDebug;
+        d.g5Proof={actors:d.game.enemies.snapshot.enemies.map(({id,type,elite,radius,baseSpeed,meleeShape})=>({id,type,elite,radius,baseSpeed,meleeShape}))};
+        (${installDeformedBounds.toString()})(true);
+      })();
+    `)});
+    const calm=scenarios.find(s=>s.id===`value14-${family}-calm-crew-checkpoint`);
+    scenarios.push({...calm,id:`scale17-phases-${family}`,burst:true,frameCount:4,advanceFrame:frame=>{
+      const d=window.__containmentDebug;
+      const {enemyId,family}=d.g5Proof;
+      const phase=['approach','windup','strike','recovery'][frame];
+      if(frame===1&&family==='spitter'){
+        d.setInput({x:1,y:0,fire:false,angle:0,autoAim:false});d.step(120);
+        d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
+      }
+      for(let tick=0;tick<180;tick++){
+        const e=d.game.enemies.getSnapshot(enemyId);
+        if(e?.meleePhase===phase&&(phase==='strike'||e.meleeProgress>=.5)){
+          d.g5Proof.nativePhase={phase,progress:e.meleeProgress};
+          d.refresh();
+          return;
+        }
+        d.step(1000/60);
+      }
+      throw Error('Native attack did not reach '+phase);
+    }});
+  }
+  for(const room of ['relay-racks','swarm-junction','crew-checkpoint']){
+    const base=scenarios.find(s=>s.id===`value14-crowd-${room}`);
+    const setup=base.setup.toString()
+      .replace('58.01','86.31')
+      .replaceAll('d.canStand(x,y,28)','d.canStand(x,y,43)')
+      .replace('[[-28,0],[28,0],[0,-28],[0,28]]','[[-43,0],[43,0],[0,-43],[0,43]]')
+      .replace('slice(0,20)','slice(0,12)')
+      .replace('length===20','length===12')
+      .replace('length<20','length<12')
+      .replace(/const families=\[[^;]+;/,"const families=['crawler','crawler','stalker','stalker','spitter','spitter','carrier','carrier','brute','brute','crawler','crawler'];")
+      .replace('p.x,p.y,false),family:families[i]','p.x,p.y,i<10&&i%2===1),family:families[i],elite:i<10&&i%2===1')
+      .replace('requestedEnemies:20,requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2}','requestedEnemies:12,requestedFamilies:{crawler:4,brute:2,stalker:2,spitter:2,carrier:2}');
+    scenarios.push({...base,id:`scale17-crowd-${room}`,diagnosticOnly:true,setup:new Function(`return (${setup})();`)});
+  }
 }
 
 /** Real-room melee clocks: normal simulation earns each warning/strike/recovery. */

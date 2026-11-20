@@ -25,7 +25,7 @@ import {familyBonuses} from './game/roguelike/builds';
 import {CombatSystem,ProjectileHitTracker,calculateSplashDamage,type ProjectileRequest} from './game/combat/CombatSystem';
 import {EnemySystem,type EnemyEvent,type EnemySpawnOptions} from './game/enemies/EnemySystem';
 import {QueenBossSystem,type QueenBossEvent} from './game/enemies/QueenBossSystem';
-import {ENEMIES} from './game/enemies/catalog';
+import {ENEMIES,enemyBodyRadius} from './game/enemies/catalog';
 import type {StandardEnemyId} from './game/enemies/types';
 import {PickupSystem} from './game/pickups/PickupSystem';
 import {EncounterDirector,type EncounterEvent} from './game/waves/EncounterDirector';
@@ -294,7 +294,7 @@ export class DepthGame {
  private targetCache:MutationTarget[]|null=null;private targetSnapshot:unknown;
  targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
  private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={}){
-  const radius=guardianRadius(guardian,ENEMIES[type].radius),origin=options.podOrigin;
+  const radius=guardianRadius(guardian,enemyBodyRadius(type,elite)),origin=options.podOrigin;
   const podNeighbors=origin?this.enemies.snapshot.enemies:undefined;
   // I13 pod retries search the entire authored hatch annulus, never a remote breach.
   const tries=origin?73:25,baseAngle=origin?Math.atan2(y-origin.y,x-origin.x):0;
@@ -326,9 +326,9 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
- if(e.lesson){const distance=e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,ENEMIES[e.enemyId].radius)&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
+ if(e.lesson){const distance=e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
- this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,options:{role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:chosen.x,cueY:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
+ this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,options:{healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:chosen.x,cueY:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
  skipAwakeningDrill(){if(this.status!=='playing')return;if(this.rigDrill&&!this.rigDrill.won)this.finishRigDrill();else if(this.dodgeDrill&&!this.dodgeDrill.confirmation)this.clearRoom();}

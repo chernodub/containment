@@ -972,7 +972,7 @@ for (const rig of ['breacher', 'cryo', 'pyro', 'arc']) {
   })();`)});
  }
 }
-import {registerM10Scenarios,registerC10Scenarios} from './m10-scenarios.mjs';
+import {registerScale17Scenarios,registerM10Scenarios,registerC10Scenarios} from './m10-scenarios.mjs';
 registerM10Scenarios(SCENARIOS);
 registerC10Scenarios(SCENARIOS);
 
@@ -1003,6 +1003,7 @@ SCENARIOS.push({
 
 import {registerValue14Scenarios} from './value14-scenarios.mjs';
 registerValue14Scenarios(SCENARIOS);
+registerScale17Scenarios(SCENARIOS);
 
 import {propScenarios} from '../../tools/assets/props14/scenarios.mjs';
 SCENARIOS.push(...propScenarios);
