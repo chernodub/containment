@@ -110,6 +110,7 @@ export class ThreatIndicators {
     private readonly point: ScreenPoint = { x: 0, y: 0, visible: false };
     private readonly source: ScreenPoint = { x: 0, y: 0, visible: false };
     private readonly aim: ScreenPoint = {x: 0, y: 0, visible: false};
+    private readonly dock = document.getElementById('action-bar');
     private readonly edge: Point = { x: 0, y: 0 };
     private readonly bodyBounds = {left:0,top:0,right:0,bottom:0};
     private recentAttack = -1;
@@ -325,6 +326,7 @@ export class ThreatIndicators {
             marker.active = false;
             marker.node.hidden = true;
         }
+        const tray = this.dock?.getBoundingClientRect();
         // Place high-priority groups first, so lower-priority groups yield their edge space.
         for (let order = 0; order < THREAT_CAPACITY; order++) {
             let index = -1;
@@ -340,7 +342,9 @@ export class ThreatIndicators {
             for (let attempt = 0; attempt < 41; attempt++) {
                 const offset = attempt === 0 ? 0 : Math.ceil(attempt / 2) * .055 * (attempt % 2 ? 1 : -1), theta = candidate.edgeAngle + offset;
                 threatEdgePoint(this.width / 2, this.height / 2, theta, this.width, this.height, this.edge);
-                const px = this.edge.x, py = this.edge.y;
+                const px = this.edge.x;
+                const py = candidate.attacking && tray && px + radius >= tray.left && px - radius <= tray.right
+                    && this.edge.y + radius >= tray.top ? Math.min(this.edge.y, tray.top - radius - 8) : this.edge.y;
                 if (px - radius < 8 || py - radius < 8 || px + radius > this.width - 8 || py + radius > this.height - 8)
                     continue;
                 if (px + radius > bounds.left - 12 && px - radius < bounds.right + 12 && py + radius > bounds.top - 12 && py - radius < bounds.bottom + 12)

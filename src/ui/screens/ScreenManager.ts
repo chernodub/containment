@@ -66,12 +66,13 @@ export function createScreens(context: ScreenContext) {
   let dismissedRecord = '';
   let lessonSeen = false;
   let deliberateRig = false;
+  let previousRig: RigId | undefined;
   let selectedRig: RigId = 'breacher';
   try {
     const savedRig=storage?.getItem('containment.last-rig.v1');
-    if(RIG_IDS.includes(savedRig as RigId))selectedRig=savedRig as RigId;
+    if(RIG_IDS.includes(savedRig as RigId))selectedRig=previousRig=savedRig as RigId;
   } catch {}
-  const rememberRig=(rig:RigId)=>{try{storage?.setItem('containment.last-rig.v1',rig);}catch{}};
+  const rememberRig=(rig:RigId)=>{previousRig=rig;try{storage?.setItem('containment.last-rig.v1',rig);}catch{}};
   let pauseTab: PauseTab = 'resume';
   let legacyQuality: 'high'|'low' = 'high';
   let audioPreferences = loadAudioPreferences(storage);
@@ -170,12 +171,14 @@ export function createScreens(context: ScreenContext) {
     listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
     listen('retry-rig',()=>{playUiCue(audio,'confirm');start(false,true);});
     listen('recommended-loadout',()=>{
-      if(!chooseRig(game,'cryo'))return;
-      selectedRig='cryo';
-      rememberRig('cryo');
+      const rig = previousRig ?? 'cryo';
+      const repeat = previousRig !== undefined;
+      if(!chooseRig(game,rig))return;
+      selectedRig=rig;
+      rememberRig(rig);
       const offers=expeditionRewardOffers(game.expedition);
       const recommendation=offers.find(offer=>offer.id==='cryogenic')??offers.find(offer=>offer.family==='Recovery')??offers.find(offer=>offer.rarity==='common')??offers[0];
-      if(recommendation)game.chooseMutation(recommendation.id);
+      if(!repeat&&recommendation)game.chooseMutation(recommendation.id);
       playUiCue(audio,'rig-equip');
       syncScreen(true);
     });
@@ -293,7 +296,7 @@ export function createScreens(context: ScreenContext) {
     }
     else if(difficultyOpen) html=difficultyCards();
     else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation);
-    else if(status==='rig-select') html=secondary!.rigScreen(selectedRig,deliberateRig);
+    else if(status==='rig-select') html=secondary!.rigScreen(selectedRig,previousRig);
     else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
     else if(status==='route') html=game.node.templateId==='manual-control-chamber'?secondary!.destroyScreen():secondary!.routeScreen(game,selectedRoute);
@@ -381,12 +384,12 @@ export function createScreens(context: ScreenContext) {
         event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true,true);
       } else if(event.key==='Enter') {
         const focusedRig=target?.closest<HTMLButtonElement>('[data-rig]')?.dataset.rig as RigId|undefined;
-        if(focusedRig&&(!deliberateRig||focusedRig!==selectedRig)){
+        if(focusedRig&&focusedRig!==selectedRig){
           event.preventDefault();
           inspectRig(focusedRig,true,true);
         }else if(focusedRig||!target?.closest('button,summary')){
           event.preventDefault();
-          el(deliberateRig?'equip-rig':'recommended-loadout')?.click();
+          el('equip-rig')?.click();
         }
       }
       return;

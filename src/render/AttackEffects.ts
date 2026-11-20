@@ -303,9 +303,10 @@ export class AttackEffects {
   for(let i=0;i<n;i++)this.warningTimes[i].w=this.warningSoonest[this.warningRoot(i)];
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
- syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
+ syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry'], game?:DepthGame):void {
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
+   if(game?.getEscortRetreat(warning.id)){warning.active=false;continue;}
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
    warning.family=enemy?.type??'';

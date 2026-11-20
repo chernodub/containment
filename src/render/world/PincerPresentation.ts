@@ -223,6 +223,7 @@ export class PincerPresentation {
     this.broodSac.scale.set(interruption?.82:1.25,interruption ? .16+collapse**12 : 1.4,interruption?.82:1.25);
     this.broodSac.material=interruption?this.signal:this.warning;
     for(const pod of this.broodSplits)pod.visible=false;
+    const wither = Math.min(1, remaining / 1500);
     interruption?.pods.forEach((point,index)=>{
       const pod=this.broodSplits[index]??new T.Mesh(this.sac,this.shadow);
       if(!this.broodSplits[index]){
@@ -230,9 +231,9 @@ export class PincerPresentation {
         this.brood.add(pod);
       }
       pod.visible=true;
-      pod.position.set(point.x/unit,.4*collapse,point.y/unit);
-      pod.scale.setScalar(collapse);
-      pod.rotation.z=(1-collapse)*Math.PI/2;
+      pod.position.set(point.x/unit,.4*wither,point.y/unit);
+      pod.scale.setScalar(wither);
+      pod.rotation.z=(1-wither)*Math.PI/2;
     });
   }
 

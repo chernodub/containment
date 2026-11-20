@@ -25,6 +25,7 @@ export class HudCombatFraming {
   private height=1;
   private releaseReservationsOnNextLayout=false;
   // x,z,radius,height,score. Fixed slots avoid sorting/allocating live snapshots.
+  private readonly lowerContact = new T.Vector3();
   private readonly contacts=new Float64Array(CAPACITY*5);
   private count=0;
   private primary=false;
@@ -67,7 +68,7 @@ export class HudCombatFraming {
   }
 
   /** Nearby danger counts in every direction; farther contacts must be aimed at or attacking. */
-  selectContacts(x:number,z:number,angle:number,enemies:readonly Contact[],units=32,heightForContact?:(id:number)=>number):void {
+  selectContacts(x:number,z:number,angle:number,enemies:readonly Contact[],units=32,heightForContact?:(id:number)=>number,camera?:Camera):void {
     this.marineAngle=angle;this.primary=false;this.count=0;this.weight=0;this.centroidX=this.centroidZ=0;this.diagnostics.contacts=0;this.diagnostics.selectedIds.fill(-1);this.diagnostics.focusContactId=-1;this.diagnostics.focusedPair=false;this.diagnostics.fit=true;this.diagnostics.pullback=1;
     const ax=Math.cos(angle),az=Math.sin(angle);
     for(const e of enemies){
@@ -77,7 +78,10 @@ export class HudCombatFraming {
       const alignment=distance>.001?(dx*ax+dz*az)/distance:1;
       const attacking=!!e.pendingAttack||(e.windupMs??0)>0||(e.chargeMs??0)>0||e.meleePhase==='windup'||e.meleePhase==='strike';
       if(distance>5.5&&alignment<.20&&!attacking)continue;
-      const score=(attacking?8:1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
+      const foot = camera && distance <= 5.5
+        ? this.lowerContact.set(ex, 0, ez).project(camera) : undefined;
+      const below = foot && Math.abs(foot.x) < .55 && foot.y < this.viewport.bottom + .25;
+      const score=(below ? 16 : attacking ? 8 : 1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
       let index=this.count;
       if(index===CAPACITY){let weakest=0;for(let n=1;n<CAPACITY;n++)if(this.contacts[n*5+4]<this.contacts[weakest*5+4])weakest=n;if(score<=this.contacts[weakest*5+4])continue;index=weakest;}else this.count++;
       const p=index*5;this.contacts[p]=ex;this.contacts[p+1]=ez;this.contacts[p+2]=Math.max(.18,e.radius/units);this.contacts[p+3]=heightForContact&&e.id!==undefined?Math.max(.1,heightForContact(e.id)):2.65;this.contacts[p+4]=score;this.diagnostics.selectedIds[index]=e.id??-1;
@@ -106,18 +110,18 @@ export class HudCombatFraming {
   biasBottomThreat(camera:Camera,x:number,z:number,enemies:readonly Contact[],source:HostilePrioritySource,out:T.Vector3,point:T.Vector3):void {
     if(this.effective.bottom<=0)return;
     let pressure=0;
-    const probe=(ex:number,ez:number,weight:number)=>{
+    const probe=(ex:number,ez:number,weight:number,radius=0)=>{
       const range=Math.hypot(ex-x,ez-z);
       if(range>8)return;
       point.set(ex,.04,ez).project(camera);
       if(point.z>=1||Math.abs(point.x)>.48||point.y< -1.24)return;
-      const overlap=T.MathUtils.smoothstep(this.viewport.bottom+.18-point.y,0,.38);
+      const overlap=T.MathUtils.smoothstep(this.viewport.bottom+.27+radius-point.y,0,.38);
       pressure=Math.max(pressure,overlap*weight*(1-T.MathUtils.smoothstep(range,5,8)));
     };
     for(const enemy of enemies){
       if((enemy.health??1)<=0)continue;
       const committed=enemy.windupMs||enemy.chargeMs||enemy.meleePhase==='windup'||enemy.meleePhase==='strike';
-      probe(enemy.x/32,enemy.y/32,committed?1:.72);
+      probe(enemy.x/32,enemy.y/32,committed?1:.9,enemy.radius/160);
     }
     source.forEachHostilePriority?.(warning=>{
       const angle=warning.angle??0;
@@ -139,8 +143,8 @@ export class HudCombatFraming {
     const basis=camera.matrixWorld.elements;
     const length=Math.hypot(basis[4],basis[6]);
     if(length>.001){
-      out.x-=basis[4]*pressure*1.45/length;
-      out.z-=basis[6]*pressure*1.45/length;
+      out.x-=basis[4]*pressure*2.6/length;
+      out.z-=basis[6]*pressure*2.6/length;
     }
   }
 
