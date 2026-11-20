@@ -20,6 +20,11 @@ TRIS = {"body": 8800, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elites drawn ~12% larger than the regular (loader: base fit x rank scale)
 ATLAS = 1024
 GLOW_STRENGTH = 1.7
+BANDS = {   # CREATURE18: violet-black chitin, mauve flesh, cool grey scythes, violet lantern
+    "chitin": (0.075, 0.06, 0.10), "flesh": (0.48, 0.32, 0.52), "bone": (0.20, 0.20, 0.24),
+    "accent": (0.55, 0.22, 1.0), "eye": (0.75, 0.45, 1.0),
+}
+BAND_MAP = {"armor": "flesh", "membrane": "chitin"}   # shingles carry the mid band
 PALETTE = {
     "shell": (0.15, 0.06, 0.075), "edge": (0.62, 0.50, 0.55), "armor": (0.50, 0.40, 0.46), "membrane": (0.07, 0.018, 0.04),
     "sinew": (0.20, 0.05, 0.09), "claw": (0.018, 0.012, 0.016), "tooth": (0.66, 0.58, 0.55),

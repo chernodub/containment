@@ -17,6 +17,12 @@ VOXEL = 0.0065
 TRIS = {"body": 7600, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
+BANDS = {   # CREATURE18: dark chitin, rust flesh, pale tan dorsal carapace (mid mass at 480x270), red lantern
+    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.52, 0.42, 0.30),
+    "accent": (0.95, 0.10, 0.03), "eye": (1.0, 0.40, 0.08),
+}
+BAND_MAP = {"bone": "chitin", "tooth": "chitin"}   # legs, hooks and leg blades join the dark chitin
+PLATE_BAND = {p: "bone" for p in (40, 70, 71, 72, 73, 74, 75)}   # head shield + dorsal abdomen plates: the tan mid mass that keeps it off dark floors
 PALETTE = {
     "shell": (0.20, 0.06, 0.02), "edge": (0.62, 0.40, 0.20), "membrane": (0.13, 0.026, 0.03),
     "sinew": (0.24, 0.05, 0.045), "claw": (0.020, 0.012, 0.010), "tooth": (0.70, 0.56, 0.36),

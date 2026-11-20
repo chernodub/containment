@@ -23,6 +23,11 @@ RANK_SCALE = {"boss": 1.9, "elite": 1.12}   # Carrier Matron (BOSS14): her own f
 RANK_PARTS = {"boss": ["boss"]}   # the Matron rank is a complete skin, not base + addons   # Carrier Matron: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 1.0
+BANDS = {   # CREATURE18: dark plum chitin, plum flesh, grey-rose shield, magenta accent
+    "chitin": (0.09, 0.05, 0.08), "flesh": (0.54, 0.26, 0.40), "bone": (0.24, 0.22, 0.23),
+    "accent": (0.75, 0.06, 0.42), "eye": (1.0, 0.35, 0.75),
+}
+BAND_MAP = {"shell": "flesh"}   # thorax shingles carry the mid band
 PALETTE = {
     "shell": (0.13, 0.045, 0.06), "edge": (0.52, 0.38, 0.36), "membrane": (0.11, 0.025, 0.045),
     "sinew": (0.16, 0.03, 0.06), "claw": (0.02, 0.012, 0.016), "tooth": (0.7, 0.6, 0.5),
