@@ -44,12 +44,12 @@ export const PLAY16_SCENARIOS = ['staging','sealed','open'].map(phase => ({
 async function stagedConsequence(kind) {
   const d=window.__containmentDebug, game=d.game;
   const room=kind==='escort'?'communal-atrium':kind==='cover'?'passenger-vault'
-    :kind==='warden'?'armory':kind==='brood'?'swarm-junction':'awakening-bay';
+    :kind==='warden'?'armory':kind==='brood'||kind==='pods'?'swarm-junction':'awakening-bay';
   await d.gotoRoom(room,{rig:'cryo'});
   d.invulnerable(true);
   game.skipStory();
   d.setInput({x:0,y:0,fire:false,angle:null,autoAim:false});
-  if (kind==='cover'||kind==='escort'||kind==='brood') {
+  if (kind==='cover'||kind==='escort'||kind==='brood'||kind==='pods') {
     for(let i=0;i<1600;i++){
       const all=game.enemies.snapshot.enemies;
       const relevant=kind==='cover'?all.find(enemy=>enemy.type==='spitter'):kind==='escort'
@@ -67,6 +67,13 @@ async function stagedConsequence(kind) {
           }
           break;
         }
+        if(kind==='pods'&&all.filter(enemy=>enemy.podStage==='opening').length===2){
+          const point=[150,185,212].flatMap(distance=>[0,Math.PI,Math.PI/2,-Math.PI/2].map(angle=>({
+            x:relevant.x+Math.cos(angle)*distance,y:relevant.y+Math.sin(angle)*distance,
+          }))).find(position=>d.canStand(position.x,position.y,18));
+          if(point)Object.assign(game.player,point,{angle:Math.atan2(relevant.y-point.y,relevant.x-point.x)});
+          break;
+        }
         if(kind==='brood'&&relevant.broodRemainingMs>0){
           game.damage(relevant.id,150,undefined,'weapon',false);
           for(let frame=0;frame<9;frame++)d.stepSimulation(50);
@@ -82,7 +89,7 @@ async function stagedConsequence(kind) {
           }
           break;
         }
-      }else if(kind==='cover'||(kind==='escort'&&game.encounter.grammar!=='priority')||(kind==='brood'&&game.encounter.grammar!=='priority')){
+      }else if(kind==='cover'||(kind==='escort'&&game.encounter.grammar!=='priority')||((kind==='brood'||kind==='pods')&&game.encounter.grammar!=='priority')){
         for(const enemy of all)game.damage(enemy.id,10000,undefined,'weapon',false);
       }
       d.stepSimulation(50);
@@ -129,14 +136,14 @@ async function stagedConsequence(kind) {
   const enemies=game.enemies.snapshot.enemies;
   const consequence=kind==='cover'?enemies.some(enemy=>enemy.type==='spitter')&&game.encounterObjective.includes('line of sight')
     :kind==='escort'?enemies.some(enemy=>game.getEscortRetreat(enemy.id))
-    :kind==='brood'?game.broodInterruption:enemies.some(enemy=>enemy.wallStunAngle!==undefined);
+    :kind==='brood'?game.broodInterruption:kind==='pods'?enemies.filter(enemy=>enemy.podStage==='opening').length===2:enemies.some(enemy=>enemy.wallStunAngle!==undefined);
   if(!consequence)throw Error('Requested consequence did not occur: '+kind);
   d.step(0);
   d.settlePresentation(30);
   d.refresh();
 }
 
-PLAY16_SCENARIOS.push(...['escort','brood','cover','warden'].map(kind=>({
+PLAY16_SCENARIOS.push(...['escort','brood','cover','warden','pods'].map(kind=>({
   id:`play16-${kind}`, state:'playing', diagnosticOnly:true,
   setup:stagedConsequence,setupArgument:kind,
 })));

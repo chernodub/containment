@@ -244,7 +244,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (entry.node.dataset.state !== state)
             entry.node.dataset.state = state;
         setHudAttribute(entry.node,'data-flash',String(entry.flash>0));
-        const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready);
+        const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready&&!!mastery?.ignite.length);
         const title = s.id==='glacier'&&mastering ? 'Shatter' : s.id==='flashfire'&&mastering ? `Detonate ${mastery?.ignite.length??0}` : definition.name;
         if(entry.title.textContent!==title)entry.title.textContent=title;
         setHudAttribute(entry.node,'data-mastery',String(mastering));

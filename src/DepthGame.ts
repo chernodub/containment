@@ -321,7 +321,8 @@ export class DepthGame {
    this.stagedCover.add(lesson.cover);
    ({x,y}=lesson.shooter);
    const pickup=lesson.pickup;
-   this.pickups.spawn('armor',15,pickup.x,pickup.y);
+   if(this.node.depth<=2)this.pickups.spawn('armor',15,pickup.x,pickup.y);
+   else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
  if(e.lesson){const distance=e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,ENEMIES[e.enemyId].radius)&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
@@ -576,11 +577,11 @@ export class DepthGame {
    let departure=this.departures.get(enemy.id);
    if(!mode&&!departure)continue;
    if(!departure){
-    if(mode==='rush'&&this.cleanupElapsed<800){this.enemies.beginRush(enemy.id);continue;}
+    if(mode==='rush'&&live.length>1&&this.cleanupElapsed<300){this.enemies.beginRush(enemy.id);continue;}
     const breaches=this.openBreaches.length?this.openBreaches:this.geometry.breaches;
     const breach=breaches.reduce((best,point)=>
      Math.hypot(point.x-enemy.x,point.y-enemy.y)<Math.hypot(best.x-enemy.x,best.y-enemy.y)?point:best);
-    departure={ms:escort?2000:900,breach,escort};this.departures.set(enemy.id,departure);
+    departure={ms:escort?2000:550,breach,escort};this.departures.set(enemy.id,departure);
     if(escort)this.enemies.releaseChildReservation(enemy.id);
    }
    this.enemies.stagger(enemy.id,250);
