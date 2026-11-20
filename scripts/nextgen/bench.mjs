@@ -181,12 +181,20 @@ assert(/^[\w.-]+$/.test(label));
 const seconds=Number(option('seconds',20)), repeats=Number(option('repeat',3));
 assert(seconds>=1&&seconds<=120&&repeats>=1&&repeats<=10);
 const out=resolve(option('out',resolve('artifacts/nextgen',label))), dist=resolve(option('dist','dist'));
-const tiers=option('tiers','high,low').split(','), rigs=option('rigs','breacher,cryo,pyro,arc').split(',');
+const requestedAblation = option('ablation', '');
+const graphicsAblations = { ao: { ambientOcclusion: false }, bloom: { bloom: false }, distortion: { distortion: false } };
+const ablationFeatures = [...Object.keys(graphicsAblations), 'finalAA', 'softDepth', 'atmosphereLayers', 'halfLightPool', 'contacts', 'silhouette', 'prioritySampling', 'floorResidues', 'conditions', 'adaptive80'];
+const ablationSequence = requestedAblation === 'matrix' ? ablationFeatures.flatMap(feature => ['full', feature]) : [requestedAblation];
+if (requestedAblation) {
+ assert(!args.includes('--acceptance'), 'Ablation timings are diagnostic only');
+ assert(['matrix', 'full', ...ablationFeatures].includes(requestedAblation), 'Unknown ablation');
+}
+const tiers=option('tiers',requestedAblation?'high':'high,low').split(','), rigs=option('rigs','breacher,cryo,pyro,arc').split(',');
 const storyRooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build',...(args.includes('--breakdown')?['--','--sourcemap']:[])],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),cpuOnly:args.includes('--cpu-only'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={ablation:requestedAblation||null,distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!requestedAblation&&!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),cpuOnly:args.includes('--cpu-only'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
 const microSamples=Number(option('gpu-micro-samples',2));
 assert(!report.gpuMicro||(Number.isInteger(microSamples)&&microSamples>=2&&microSamples<=4),'--gpu-micro-samples must be2–4');
@@ -245,9 +253,17 @@ try{
   await writeFile(resolve(out,'room-ranking.json'),JSON.stringify(report.scan,null,2));
  }
  report.rooms=rooms;
- for(const room of (args.includes('--scan-only')?[]:rooms))for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++){
+ for(const room of (args.includes('--scan-only')?[]:rooms))for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++)for(const [ablationIndex,ablation] of ablationSequence.entries()){
   try {
-  const name=`${room}-${rig}-${tier}-${repeat}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
+  if (requestedAblation || args.includes('--report-load')) {
+   console.log(execFileSync('uptime',{encoding:'utf8'}).trim());
+   while (loadavg()[0] > 6) {
+    console.log('One-minute load above 6. Waiting 15 seconds.');
+    await new Promise(resolve=>setTimeout(resolve,15000));
+    console.log(execFileSync('uptime',{encoding:'utf8'}).trim());
+   }
+  }
+  const name=`${room}-${rig}-${tier}-${repeat}${ablation ? `-${ablationIndex}-${ablation}` : ''}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
   const profile=args.includes('--profile'),cdp=await page.context().newCDPSession(page);
   const audioContexts=new Map(),audioSamples=[];let audioError=null;
   {
@@ -258,6 +274,17 @@ try{
   try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
   await reset();
   if(args.includes('--fixed-resolution'))await page.evaluate(configureCaptureGraphics,{adaptiveResolution:false,resolutionScale:1});
+  if (graphicsAblations[ablation]) await page.evaluate(configureCaptureGraphics, graphicsAblations[ablation]);
+  else if (ablation && ablation !== 'full') {
+   await page.evaluate(value => {
+    const r = window.__containmentDebug.renderer;
+    const selectTier = r.setQuality.bind(r);
+    r.setQuality = tier => {
+     selectTier(tier);
+     if (tier === 'high') r.setGraphicsAblation(value);
+    };
+   }, ablation);
+  }
   // The actual Start handler owns audio.unlock(). A canvas click cannot unlock it.
   await page.locator('#start').click();
   await page.locator('[data-difficulty="standard"]').click();await page.locator('#difficulty-begin').click();
@@ -395,7 +422,7 @@ try{
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
    const retiredPodBatches=podBatches.filter(({mesh,root})=>!root.parent&&mesh.parent).length;
-   return {retiredPodBatches,initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   return {condition:g.conditionState?.condition.id??null,retiredPodBatches,initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),cpuOnly:args.includes('--cpu-only')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
@@ -410,6 +437,14 @@ try{
   await cdp.detach();
   const stats=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {min:s[0],p50:s[Math.floor((s.length-1)*.5)],p95:s[Math.ceil(s.length*.95)-1],max:s.at(-1),average:s.reduce((a,b)=>a+b,0)/s.length};};
   const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
+  const frameSamples=data.samples.frame.slice(1);
+  const sortedFrames=[...frameSamples].sort((a,b)=>a-b);
+  Object.assign(summary.frame, {
+   p90: sortedFrames[Math.ceil(frameSamples.length*.90)-1],
+   p99: sortedFrames[Math.ceil(frameSamples.length*.99)-1],
+   shareAbove20: frameSamples.filter(ms=>ms>20).length/frameSamples.length,
+   shareAbove30: frameSamples.filter(ms=>ms>30).length/frameSamples.length,
+  });
   // The first RAF interval begins before the measurement window; retain it raw, exclude it only from frame statistics.
   if(profile){summary.audioGraphCapacityPercent=stats(audioSamples.map(s=>s.renderCapacity));summary.audioCallbackIntervalMean=stats(audioSamples.map(s=>s.callbackIntervalMean));}
   summary.updateRender=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
@@ -417,11 +452,11 @@ try{
   summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]+data.samples.hud[i]));
   if(data.gpuPassTimings)for(const pass of data.gpuPassTimings.passes)pass.summaryMs=stats(pass.samplesMs);
   const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=20,highFrameP50:summary.frame.p50<=16.7,highFrameP95:summary.frame.p95<=20,lowFrameP50:summary.frame.p50<=16.7,adaptiveScale:summary.adaptiveScale.min>=.9&&summary.adaptiveScale.max<=1,draws:summary.draws.max<=330,headroomDraws:summary.draws.max<=330,programInventory:data.programInventory<=400,programs:data.programs===0};
-  const run={name,room,rig,tier,repeat,timingAcceptanceEligible:!report.gpuFlush&&!report.noSoftDepth,timingScope:report.noSoftDepth?'detached soft-depth disabled A/B diagnostic; ineligible for acceptance':report.gpuFlush?'intrusive gl.flush pass isolation; not production frame timing':'ordinary submission; optional asynchronous query instrumentation',nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
+  const run={name,ablation:ablation||null,ablationIndex,room,rig,tier,repeat,timingAcceptanceEligible:!ablation&&!report.gpuFlush&&!report.noSoftDepth,timingScope:ablation?'graphics ablation diagnostic':report.noSoftDepth?'detached soft-depth disabled A/B diagnostic; ineligible for acceptance':report.gpuFlush?'intrusive gl.flush pass isolation; not production frame timing':'ordinary submission; optional asynchronous query instrumentation',nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   run.cpuBreakdown=summarizeCpuClock(run);
   report.runs.push(run);
   if(args.includes('--breakdown'))await writeFile(resolve(out,name+'.md'),breakdownMarkdown(run));await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
-  console.log(`${name} (load1m ${before.load[0].toFixed(2)} → ${run.after.load[0].toFixed(2)}, ${before.cores} cores): frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
+  console.log(`${name} (load1m ${before.load[0].toFixed(2)} → ${run.after.load[0].toFixed(2)}, ${before.cores} cores): frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms, p90/p99 ${summary.frame.p90.toFixed(2)}/${summary.frame.p99.toFixed(2)}ms, >20/>30ms ${(100*summary.frame.shareAbove20).toFixed(2)}%/${(100*summary.frame.shareAbove30).toFixed(2)}%, CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   if(args.includes('--acceptance')){
    assert(!profile&&!report.auditCosts&&!report.gpuPasses&&!report.gpuFlush&&!report.noSoftDepth,'Acceptance requires ordinary production timing');
    const precision=value=>Math.round(value*10)/10;
@@ -437,7 +472,7 @@ try{
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
   assert.equal(data.finalLightInventory,data.sceneLightInventory,'Combat allocated new scene lights');assert.equal(data.finalInstanceMeshInventory+data.retiredPodBatches,data.instanceMeshInventory,'Combat allocated new instance meshes');
   if(!baseline&&!budget.programInventory)report.budgetFailures.push({scenario:name,metric:'programInventory',observed:data.programInventory,limit:400});
-  if(!baseline&&!budget.adaptiveScale)report.budgetFailures.push({scenario:name,metric:'adaptiveScale',observed:[summary.adaptiveScale.min,summary.adaptiveScale.max],limit:[.7,1]});
+  if(!baseline&&ablation!=='adaptive80'&&!budget.adaptiveScale)report.budgetFailures.push({scenario:name,metric:'adaptiveScale',observed:[summary.adaptiveScale.min,summary.adaptiveScale.max],limit:[.7,1]});
   if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});
   if(!baseline&&!budget.headroomDraws)report.budgetFailures.push({scenario:name,metric:'headroomDraws',observed:summary.draws.max,limit:330});
   assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
@@ -476,7 +511,7 @@ try{
   report.gpuBestOfN=Object.values(report.runs.reduce((groups,run)=>{const key=`${run.room}/${run.rig}/${run.tier}`;(groups[key]??={room:run.room,rig:run.rig,tier:run.tier,trials:[]}).trials.push(run);return groups;},{})).map(group=>{const sceneP50=run=>run.gpuPassTimings?.passes.find(pass=>pass.name==='sceneColor')?.summaryMs?.p50;const valid=group.trials.filter(run=>sceneP50(run)!==undefined);const selected=valid.sort((a,b)=>sceneP50(a)-sceneP50(b))[0];return {room:group.room,rig:group.rig,tier:group.tier,repeats:group.trials.length,timingAcceptanceEligible:!report.gpuFlush&&!report.noSoftDepth,selection:'lowest sceneColor GPU p50; same trial supplies frame/load/scale; stage percentiles are never added',selectedRun:selected?.name??null,frame:selected?.summary.frame??null,load:selected?{before:selected.before,after:selected.after}:null,adaptiveScale:selected?.summary.adaptiveScale??null,passes:selected?.gpuPassTimings.passes.map(({name,summaryMs,resolutions})=>({name,summaryMs,resolutions}))??[]};});
  }
  console.log('Timing columns are p50 / p95 / max milliseconds');
- console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frame:triple(r.summary.frame),update:triple(r.summary.update),render:triple(r.summary.render),hud:triple(r.summary.hud),audioSync:triple(r.summary.audio),cpu:triple(r.summary.cpu),gpu:triple(r.summary.gpu),adaptiveScale:triple(r.summary.adaptiveScale)})));
+ console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frame:triple(r.summary.frame),p90:r.summary.frame.p90,p99:r.summary.frame.p99,above20Pct:(100*r.summary.frame.shareAbove20).toFixed(2),above30Pct:(100*r.summary.frame.shareAbove30).toFixed(2),update:triple(r.summary.update),render:triple(r.summary.render),hud:triple(r.summary.hud),audioSync:triple(r.summary.audio),cpu:triple(r.summary.cpu),gpu:triple(r.summary.gpu),adaptiveScale:triple(r.summary.adaptiveScale)})));
  console.table(report.runs.map(r=>({scenario:r.name,draws:r.summary.draws.max,triangles:r.summary.triangles.max,lights:r.summary.lights.max,instances:r.summary.instances.max,programs:r.programInventory,compiles:r.programs,allocationBytesPerSecond:r.profiling?.sampledAllocationBytesPerSecond??'not sampled',gcMaxMs:r.profiling?Math.max(0,...r.profiling.gcPausesMs):'not traced'})));
  assert.equal(report.errors.length,0,report.errors.join('\n'));
  if(report.budgetFailures.length){console.error('Final resource budget misses:',JSON.stringify(report.budgetFailures));process.exitCode=2;}

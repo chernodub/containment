@@ -12,10 +12,11 @@ export interface HostilePrioritySource {
 export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture, attribute?: string, hostileOnly = false): void {
   if (material.uniforms.abilityPriorityMap) return;
   material.uniforms.abilityPriorityMap = { value: texture };
+  material.uniforms.diagnosticPrioritySampling = { value: true };
   material.vertexShader = `varying vec4 priorityClip;${attribute ? `attribute float ${attribute};varying float priorityWeight;` : ''}\n` + material.vertexShader;
   material.vertexShader = material.vertexShader.replace('void main(){', `void main(){${attribute ? `priorityWeight=${attribute};` : ''}`)
     .replace(/gl_Position\s*=\s*([^;]+);/, '$&priorityClip=gl_Position;');
-  material.fragmentShader = `uniform sampler2D abilityPriorityMap;varying vec4 priorityClip;${attribute ? 'varying float priorityWeight;' : ''}\n#define HAS_ABILITY_PRIORITY_MASK\nvec3 abilityPriority(){return texture2D(abilityPriorityMap,priorityClip.xy/max(.001,priorityClip.w)*.5+.5).rgb;}\n` + material.fragmentShader;
+  material.fragmentShader = `uniform sampler2D abilityPriorityMap;uniform bool diagnosticPrioritySampling;varying vec4 priorityClip;${attribute ? 'varying float priorityWeight;' : ''}\n#define HAS_ABILITY_PRIORITY_MASK\nvec3 abilityPriority(){if(!diagnosticPrioritySampling)return vec3(0.);return texture2D(abilityPriorityMap,priorityClip.xy/max(.001,priorityClip.w)*.5+.5).rgb;}\n` + material.fragmentShader;
   material.fragmentShader = material.fragmentShader.replace('void main(){', 'void main(){vec3 prioritySample=abilityPriority();')
     .replace('#include <tonemapping_fragment>', `
  float priority=${hostileOnly ? '0.' : 'prioritySample.r'};

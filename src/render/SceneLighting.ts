@@ -26,7 +26,7 @@ export class SceneLighting {
  readonly practicalShapes=Array.from({length:4},()=>new T.Vector4(1,0,1,3));
  readonly fixtures=Array.from({length:4},()=>new T.PointLight(0x9edcec,0,5.8,2));
  readonly blast=new T.PointLight(0xffc18a,0,7,2);
- readonly pool=new LightPool('high',9);
+ readonly pool=new LightPool('high',4);
  readonly lamp=new MarineLamp();
  mood:EnvironmentMood=getEnvironmentMood();
  staging:ReactorStaging|null=null;
@@ -46,10 +46,10 @@ export class SceneLighting {
   this.applyMood(0,0);
  }
  /** Settings changes may alter shader topology; updates and combat effects never do. */
- setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1,shadows:ShadowQuality='high'){
+ setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1,shadows:ShadowQuality='high',halfPool=false){
   this.tier=tier;this.shadowQuality=shadows;this.dynamicLights=dynamicLights;this.flashIntensity=Math.max(0,Math.min(1,flashIntensity));
   this.pool.setIntensityScale(this.flashIntensity);
-  this.key.castShadow=tier==='high'&&shadows!=='off';const size=shadows==='low'?512:1024;if(this.key.shadow.mapSize.x!==size){this.key.shadow.map?.dispose();this.key.shadow.map=null;this.key.shadow.mapSize.set(size,size);this.key.shadow.needsUpdate=true;}this.pool.setQuality(tier,tier==='high'&&dynamicLights);
+  this.key.castShadow=tier==='high'&&shadows!=='off';const size=shadows==='low'?512:1024;if(this.key.shadow.mapSize.x!==size){this.key.shadow.map?.dispose();this.key.shadow.map=null;this.key.shadow.mapSize.set(size,size);this.key.shadow.needsUpdate=true;}this.pool.setQuality(tier,tier==='high'&&dynamicLights,halfPool);
   this.blast.visible=dynamicLights;this.lamp.setQuality(tier==='high',atmosphere);
   if(!dynamicLights){this.blastLife=0;this.blast.intensity=0;}
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible){this.fixtures[i].intensity=0;this.practicalShapes[i].z=0;}}this.playerX=NaN;

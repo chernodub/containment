@@ -185,9 +185,13 @@ export class AttackEffects {
  private glowMesh:T.InstancedMesh;private smokeMesh:T.InstancedMesh;private debrisMesh:T.InstancedMesh;private decalMesh:T.InstancedMesh;private pulseMesh:T.InstancedMesh;private slashMesh:T.InstancedMesh;private beamMesh:T.InstancedMesh;
  private readonly emptyPriorityTexture = new T.DataTexture(new Uint8Array(4),1,1,T.RGBAFormat);
  private readonly maskedGround: T.ShaderMaterial[] = [];
- setGroundPriorityTexture(texture: T.Texture | undefined): void {
-  for (const material of this.maskedGround) material.uniforms.abilityPriorityMap.value = texture ?? this.emptyPriorityTexture;
+ setGroundPriorityTexture(texture: T.Texture | undefined, sample = true): void {
+  for (const material of this.maskedGround) {
+   material.uniforms.abilityPriorityMap.value = texture ?? this.emptyPriorityTexture;
+   material.uniforms.diagnosticPrioritySampling.value = sample;
+  }
  }
+ showFloorDecals(visible: boolean): void { this.decalMesh.visible = visible; }
  private hostileMesh:T.InstancedMesh;private hostileWarningMesh:T.InstancedMesh;private bossWarning:{x:number;z:number;radius:number;progress:number}|null=null;
  private readonly priorityViewport=new T.Vector2(1,1);
  private priorityCamera:T.Camera|undefined;private readonly priorityPoint=new T.Vector3();

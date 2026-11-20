@@ -664,6 +664,12 @@ export class FlagshipFx {
     return a * Math.min(1.5, Math.max(.2, slot.intensity));
   }
 
+  hideFloorResidues(): void {
+    for (const slot of this.slots) {
+      if (slot.mode === FxMode.Scorch || slot.mode === FxMode.Wake || slot.mode === FxMode.Crack) slot.mesh.visible = false;
+    }
+  }
+
   clear(): void { for (const slot of this.slots) { slot.live = false; slot.mesh.visible = false; } }
 
   dispose(): void {
