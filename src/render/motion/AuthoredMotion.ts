@@ -551,7 +551,7 @@ export class AuthoredEnemyMotion {
                 this.player.beginBatch();
                 this.player.clearUpper();
                 this.player.sample(base, progress, dt, .025);
-                this.player.overlay(elementClip || hit, elementClip ? this.contactPose(this.elementAge,false) : this.hitAge / durationHit, elementClip ? this.feedback * .60 : reactionWeight * .78);
+                this.player.overlay(elementClip || hit, elementClip ? this.contactPose(this.elementAge,false) : this.hitAge / durationHit, this.rifle && !elementClip ? reactionWeight * .78 : this.feedback * .60);
                 this.player.endBatch();
                 this.layered = true;
                 return true;
