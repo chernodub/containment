@@ -92,3 +92,9 @@
 
 #overlay .rig-example {width: min(180px, 42%); margin-bottom: 10px;}
 #overlay .rig-inspect > summary {cursor: pointer; padding: 10px 0;}
+/* With the full breakdown open the identity block gives up height so the whole panel fits 1080p. */
+#overlay .rig-panel:has(.rig-inspect[open]) .rig-identity {min-height:250px;height:250px;margin-bottom:8px;overflow:hidden;}
+#overlay .rig-panel:has(.rig-inspect[open]) .rig-portrait figcaption {display:none;}
+#overlay .rig-panel:has(.rig-inspect[open]) .rig-identity-copy h3 {font-size:40px;line-height:1;margin-bottom:6px;}
+#overlay .rig-panel:has(.rig-inspect[open]) .rig-example {display:none;}
+#overlay .rig-panel:has(.rig-inspect[open]) .rig-inspect > summary {padding:6px 0;}
