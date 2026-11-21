@@ -16,6 +16,7 @@ type Float = {
     x: number;
     y: number;
     target: number | undefined;
+    followThrow: boolean;
     amount: number;
     displayed: number;
     fromAmount: number;
@@ -57,7 +58,8 @@ export class CombatText {
     private motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     private reducedMotion = this.motion.matches;
     private onMotion = () => { this.reducedMotion = this.motion.matches; };
-    constructor(private host: HTMLElement, private renderer: DepthRenderer) {
+    constructor(private host: HTMLElement, private renderer: DepthRenderer,
+        private locateTarget: (id:number) => {x:number;y:number} | null) {
         this.motion.addEventListener('change', this.onMotion);
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < COMBAT_TEXT_CAPACITY; i++) {
@@ -71,7 +73,7 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, followThrow: false, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -91,18 +93,18 @@ export class CombatText {
             let unmatched = 0;
             for (const hit of this.pendingAbilityHits) {
                 if (event.targetIds!.includes(hit.targetId ?? hit.id ?? Infinity))
-                    this.showEffect(hit, event.phase === 'tick');
+                    this.showEffect(hit, event.phase === 'tick', event.ability === 'railbreaker');
                 else this.pendingAbilityHits[unmatched++] = hit;
             }
             this.pendingAbilityHits.length = unmatched;
         }
         this.showEffect(e);
     }
-    private showEffect(e: HudEffect, periodic = e.source === 'status'): void {
+    private showEffect(e: HudEffect, periodic = e.source === 'status', followThrow = false): void {
         const target = e.targetId ?? e.id;
         const element = e.source === 'weapon' ? 'weapon' : e.damageElement ?? e.element ?? (e.elements?.length === 1 ? e.elements[0] : undefined) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
         if ((e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
-            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '', periodic);
+            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '', periodic, followThrow);
         // Never invent damage totals for old events. Element labels acknowledge real status events.
         if (e.type === 'hit' && e.elements)
             for (const element of e.elements) {
@@ -113,7 +115,7 @@ export class CombatText {
         if (e.type === 'boon' && e.boon && statusLabels[e.boon])
             this.add(e.x, e.y, target, 0, 'status', e.boon, false);
     }
-    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false): void {
+    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false, followThrow = false): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (this.reduced && kind === 'status') return;
         const sameTarget = (p: Float) => target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<(kind === 'status'?72:25);
@@ -151,6 +153,7 @@ export class CombatText {
         entry.x = x;
         entry.y = y;
         entry.target = target;
+        entry.followThrow = followThrow;
         entry.age = merge ? entry.age : 0;
         entry.life = .8;
         entry.ticks = periodic ? (merge ? entry.ticks : 0) + 1 : 0;
@@ -222,6 +225,10 @@ export class CombatText {
                 p.node.hidden = true;
                 continue;
             }
+            if (p.followThrow && p.target !== undefined) {
+                const body = this.locateTarget(p.target);
+                if (body) { p.x = body.x; p.y = body.y; }
+            }
             const point = projectWorld(this.renderer, p.x, p.y, p.point, 1.2);
             if (!point.visible || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
                 p.node.hidden = true;
@@ -237,7 +244,7 @@ export class CombatText {
             p.width = Math.ceil(p.baseWidth * p.scale); p.height = Math.ceil(p.baseHeight * p.scale);
             p.node.style.fontSize = `${p.fontSize * p.scale}px`;
             p.node.style.setProperty('--actor-scale', String(p.scale));
-            const rise = this.reducedMotion ? 0 : 26 * (1 - Math.exp(-p.age * 6));
+            const rise = this.reducedMotion || p.followThrow ? 0 : 26 * (1 - Math.exp(-p.age * 6));
             let x = Math.max(8, Math.min(w - p.width - 8, point.x - p.width / 2));
             let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 48 : 0)));
             const attacker = threats.find(threat => threat.id === p.target);
