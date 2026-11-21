@@ -145,3 +145,11 @@ These replays used the same twelve seeds, bot policy and installed actor models.
 The controlled pre-token replay produced seven clears with the current models and policy. The historical eight-clear figure came from a different build and policy setup. Applied crush damage declined after tokens, but total Ram damage rose. Four of the six lethal hits were melee and two were Spitter projectiles. Both unadjusted totals and death-room evidence leave room for the higher strike pressure and differences in fight access to matter. The ready stance draws waiting targets into actionable lanes. That change alone brought Breacher back to the requested 8–10 clears, so this pass kept Ram and Bulwark at their existing values.
 
 The receipts are in `artifacts/nextgen/playtest/play24-ram-{1d943a1f,feb27ac0,cff8bf3b}/`.
+
+### PLAY24 verification
+
+Standard competent cleared 38 of 48 with zero stalls, up from 37 of 48 with zero stalls on `feb27ac0`. Breacher went from 6 to 10 of 12, Cryo from 11 to 10, Pyro from 9 to 8, and Arc from 11 to 10. Story novice cleared 23 of 24, with Breacher at 12 of 12 and Cryo at 11 of 12. All cohorts used the prescribed twelve seeds, two workers, and the same model files. The final Standard results are in `artifacts/nextgen/playtest/play24-ring-{arc,cryo,pyro}/` and `artifacts/nextgen/playtest/play24-ram-cff8bf3b/`. Story results are in `artifacts/nextgen/playtest/play24-story/`.
+
+The production build passed. Native Breacher 1729 started at a one-minute host load of 4.60 and cleared 20 sectors with zero errors or runner diagnostics. Of 647.5 simulated seconds with at least one live enemy, 165.1 seconds had no enemy inside the trace's conservative fighting view. The longest continuous gap was 5.3 seconds. Requiring both framing and a clear firing lane yielded 181.2 seconds without a target. These are interval totals from adjacent native trace samples, with room transitions and periods without live enemies excluded. Service Shaft Landing had the largest cumulative out-of-view total at 23.1 seconds. The ready-position search samples candidate points and does not guarantee continuous visibility from every legal player position.
+
+The native report and trace are in `artifacts/nextgen/playtest/play24-native-breacher/`.
