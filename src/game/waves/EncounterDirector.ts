@@ -280,9 +280,6 @@ export class EncounterDirector {
     let slots = Math.max(0, this.plan.concurrentCap - occupiedCount);
     while (slots>0 && this.dispatched < this.plan.totalSpawns) {
       const request = this.plan.schedule[this.dispatched];
-      if(request.reinforcement&&request.role==='flanker'&&request.breachId===this.closedFlankId){
-        this.dispatched++;this.canceledReinforcements++;continue;
-      }
       const cost=request.enemyId==='carrier'?4:1;
       if (request.atMs > this.elapsedMs||cost>slots) break;
       slots-=cost;batch.push(request);
@@ -341,7 +338,11 @@ export class EncounterDirector {
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
       const cost=request.enemyId==='carrier'?4:1;
       if(request.atMs>this.beatElapsedMs||cost>slots)break;
-      slots-=cost;batch.push(this.placeInterception(request,player));this.dispatched++;
+      const arrival=this.placeInterception(request,player);
+      if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
+      slots-=cost;batch.push(arrival);this.dispatched++;
     }
     return batch.length?Object.freeze(batch):EMPTY;
   }

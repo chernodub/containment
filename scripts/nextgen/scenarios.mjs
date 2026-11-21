@@ -295,6 +295,40 @@ export const SCENARIOS=[
    id:`beat-${kind}-fixture`,state:'playing',room:'awakening-bay',burst:true,required:['#presentation-beat'],
    setupArgument:kind,setup:async kind=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.presentation(true);d.presentationEvent({type:'beat',kind});d.refresh();},
  })),
+ {id:'play22-plate',state:'playing',room:'passenger-vault',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('passenger-vault',{rig:'arc',runStructure:true});
+  d.step(1450);d.refresh();
+ }},
+ {id:'play22-gate',state:'playing',room:'safety-interlock-station',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('safety-interlock-station',{rig:'arc',runStructure:true});
+  const director=d.game.director;
+  const index=director.plan.beats.findIndex(beat=>beat.consequence==='pincer');
+  if(index>=0){director.beatIndex=index;director.dispatched=director.plan.beats[index].start;}
+  d.refresh();
+ }},
+ {id:'play22-crossing',state:'playing',room:'overload-floor',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  const g=d.game, director=g.director;
+  const index=director.plan.beats.findIndex(beat=>beat.grammar==='siege');
+  if(index>=0){
+   director.beatIndex=index;director.dispatched=director.plan.beats[index].start;
+   g.siegeBeat=index;g.siegeRemainingMs=4000;
+   const bank=g.relayBanks[0];
+   if(bank){const p=g.siegePoint;Object.assign(g.player,{x:p.x*.55+bank.x*.45,y:p.y*.55+bank.y*.45});}
+  }
+  d.refresh();
+ }},
+ {id:'play22-death',state:'dead',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('diagnostic-gallery',{rig:'cryo'});
+  const g=d.game,{health,armor}=g.combat.snapshot;
+  g.combat.applyDamage(health+armor-1);
+  g.hurt(40,{x:g.player.x-80,y:g.player.y},{source:'enemy-contact',enemyFamily:'stalker'});
+  d.refresh();
+ }},
  {id:'play21-supply',state:'reward',phase:'reward',required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});

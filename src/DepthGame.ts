@@ -176,10 +176,19 @@ export class DepthGame {
   const pincer=this.encounter.pincer;
   if(this.node.templateId==='safety-interlock-station'&&pincer?.state==='staging'&&!this.director.closedFlank){
    const breaches=[...new Set(pincer.flankers.map(flank=>flank.breachId))];
-   return this.gatePads.slice(0,breaches.length).map((point,index)=>({...point,id:breaches[index],kind:'gate' as const,radius:28}));
+   const pads=this.gatePads.slice(0,breaches.length);
+   if(pads.length===2){
+    const [first,second]=breaches.map(id=>this.geometry.breaches.find(breach=>breach.id===id));
+    if(first&&second){
+     const distance=(a:{x:number;y:number},b:{x:number;y:number})=>Math.hypot(a.x-b.x,a.y-b.y);
+     if(distance(pads[0],first)+distance(pads[1],second)>distance(pads[0],second)+distance(pads[1],first))breaches.reverse();
+    }
+   }
+   return pads.map((point,index)=>({...point,id:breaches[index],kind:'gate' as const,radius:28}));
   }
   if(this.crossingRequired&&!this.relayBank)
-   return this.relayBanks.map((point,index)=>({...point,id:String(index),kind:'bank' as const,radius:68}));
+   return [...this.relayBanks.map((point,index)=>({...point,id:String(index),kind:'bank' as const,radius:68})),
+    {...this.siegePoint,id:'failed-bank',kind:'failed-bank' as const,radius:220}];
   return [];
  }
  get closedFlank(){return this.director.closedFlank;}
@@ -198,6 +207,7 @@ export class DepthGame {
  }
  private tickFloorObjectives(ms:number){
   for(const pad of this.floorControls){
+   if(pad.kind==='failed-bank')continue;
    if(Math.hypot(pad.x-this.player.x,pad.y-this.player.y)>pad.radius)continue;
    if(pad.kind==='gate'){
     if(this.director.closeFlank(pad.id))this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y});
@@ -476,7 +486,19 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
- if(e.lesson){const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
+ if(e.lesson){
+  const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
+  const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:[0,.5,-.5,1,-1];
+  const legal=offsets.map(offset=>{
+   const angle=this.player.angle+offset;
+   return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};
+  }).filter(point=>canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point));
+  const cover=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
+  const nearCover=e.lesson==='brute'?legal.find(point=>cover.some(rect=>
+   Math.hypot(Math.max(rect.x-point.x,0,point.x-rect.x-rect.width),Math.max(rect.y-point.y,0,point.y-rect.y-rect.height))<55)):undefined;
+  const point=nearCover??legal[0];
+  if(point)({x,y}=point);
+ }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
  this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,options:{openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:chosen.x,cueY:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
