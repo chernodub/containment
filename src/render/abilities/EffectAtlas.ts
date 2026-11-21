@@ -88,6 +88,14 @@ export const TEXTURED_FIRE_GLSL = `
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
   c=graphicCombustion(fire);
+ }else if(phase>=100.){
+  // Use the authored fire silhouette for flows aligned along a limb or a jet.
+  vec4 fire=effectGraphicSequence(0.,64.,19.,phase-100.,fireUv);
+  coverage=graphicCoverage(fire.a);
+  float heat=smoothstep(.19,.84,fire.r);
+  float core=smoothstep(.35,.72,ink.g)*(1.-smoothstep(.28,.92,fireUv.y));
+  c=mix(vec3(.58,.044,.004),vec3(2.4,.58,.027),heat);
+  c=mix(c,vec3(3.9,3.4,2.35),core*heat);
  }else{
   // The same three unequal tongues serve jets, fuel edges and suit exhaust.
   // Source alpha no longer decides the silhouette: broad photo-core islands
@@ -95,9 +103,8 @@ export const TEXTURED_FIRE_GLSL = `
   float t=fireUv.y;float seed=mod(phase,32.);
   float family=mod(floor(seed),3.);
   float clock=abilityTime*3.1;
-  float jet=step(100.,phase);
   float bend=(sin(t*5.7+seed-clock)*.13+sin(t*13.3-seed+clock*.7)*.045)*t;
-  float throat=mix(.73,.27,jet);
+  float throat=.73;
   float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.52+family*.13);
   float lobe=.80+.16*sin(t*(11.+family*2.7)-clock+seed)+.075*sin(t*27.+clock*.6+seed);
   float width=max(.008,envelope*lobe);

@@ -288,16 +288,16 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   private joints(root: T.Object3D): T.Object3D[] {
-      let joints = this.contactJoints.get(root);
-      if (!joints) {
-        const found: T.Object3D[] = [];
-        root.traverse(node => {
-          if (found.length < 4 && isContactJoint(node)) found.push(node);
-        });
-        this.contactJoints.set(root, found);
-        joints = found;
-      }
-      return joints;
+    let joints = this.contactJoints.get(root);
+    if (!joints) {
+      const found: T.Object3D[] = [];
+      root.traverse(node => {
+        if (found.length < 4 && isContactJoint(node)) found.push(node);
+      });
+      this.contactJoints.set(root, found);
+      joints = found;
+    }
+    return joints;
   }
 
   private stunned(x: number, z: number, radius: number, height: number, seed: number): void {

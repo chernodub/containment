@@ -526,7 +526,7 @@ export class AuthoredEnemyMotion {
         if (frozen) {
             if (this.visible && !winding && this.phase === 'approach') {
                 this.clearReaction();
-                this.player.sample('m10-run', .23, 0, 0);
+                this.player.sample('m10-run', .23, 1 / 60, 0);
             }
             return true;
         }

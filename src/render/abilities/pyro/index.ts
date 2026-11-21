@@ -279,7 +279,7 @@ class PyroPresentation implements AbilityPresentation {
     // Compact white-yellow muzzle core, only for the first beats.
     if (p.age < .2) {
       const k = 1 - p.age / .2;
-      kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .5 * k + .14, .36 * k + .1, 1, CORE, k);
+      kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .68 * k + .16, .46 * k + .12, 1, 0xfff9e9, k);
       kit.draw('spark', this.source.x + c * .4, this.source.y, this.source.z + s * .4, .5 * k, .14 * k, 1, 0xffd27a, .8 * k, 0, -p.angle);
     }
     kit.lightAt(p.lightId, p.x + c * p.range * .4, p.z + s * p.range * .4, FIRE, (14 + 18 * hot) * fade, Math.max(8, p.range * 1.2));
