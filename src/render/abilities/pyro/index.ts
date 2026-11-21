@@ -4,6 +4,7 @@ import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
 import { authoredVariation, impactBeat } from '../GraphicLanguage';
+import { POOL_FLAME_PHASE } from '../EffectAtlas';
 import { FxMode, type FxSlot } from '../FlagshipFx';
 
 const FIRE = 0xffa332;
@@ -465,11 +466,11 @@ class PyroPresentation implements AbilityPresentation {
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
       const height = (.55 + .22 * scatter + .08 * Math.sin(clock * 5 + seed)) * (1 - .67 * weight);
-      const width = (.30 + .15 * scatter) * (1 - .62 * weight);
+      const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
       kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
         nearSuit || i % 4 === 1 ? CORE : FIRE, fade * visibility, 0,
-        .14 * Math.sin(clock * 2.6 + seed), 100 + i * 2.3 + scatter);
+        .14 * Math.sin(clock * 2.6 + seed), POOL_FLAME_PHASE + i * 1.7 + scatter);
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }

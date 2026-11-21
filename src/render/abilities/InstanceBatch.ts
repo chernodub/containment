@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { EffectAtlas, FIRE_FAN_PHASE, EFFECT_ATLAS_GLSL, TEXTURED_FIRE_GLSL } from './EffectAtlas';
+import { EffectAtlas, FIRE_FAN_PHASE, POOL_FLAME_PHASE, EFFECT_ATLAS_GLSL, TEXTURED_FIRE_GLSL } from './EffectAtlas';
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
 
@@ -342,8 +342,15 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     }
     // Vapor and light use spherical billboards. Yaw-only cards collapse into
     // floor-like ribbons under the steep gameplay camera; fire remains upright.
-    if (this.camera && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
+    // Keep the foot of a small fuel flame planted as its card faces the camera.
+    const poolFlame = this.kind === 'flame' && variant >= POOL_FLAME_PHASE && variant < 200;
+    if (this.camera && (poolFlame || billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
       const cameraBasis = this.camera.matrixWorld.elements;
+      if (poolFlame) {
+        x += cameraBasis[4] * sy;
+        y += (cameraBasis[5] - 1) * sy;
+        z += cameraBasis[6] * sy;
+      }
       for (let axis = 0; axis < 3; axis++) {
         matrix[offset + axis] = (cameraBasis[axis] * a + cameraBasis[4 + axis] * b) * sx;
         matrix[offset + 4 + axis] = (-cameraBasis[axis] * b + cameraBasis[4 + axis] * a) * sy;

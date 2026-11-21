@@ -81,6 +81,7 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 `;
 
 /** Tapered original flame family; retained explosions still use their authored atlas. */
+export const POOL_FLAME_PHASE = 164;
 export const FIRE_FAN_PHASE = 500;
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
@@ -104,7 +105,7 @@ export const TEXTURED_FIRE_GLSL = `
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
   c=graphicCombustion(fire);
- }else if(phase>=100.){
+ }else if(phase>=100. && phase<${POOL_FLAME_PHASE}.){
   // Use the authored fire silhouette for flows aligned along a limb or a jet.
   vec4 fire=effectGraphicSequence(0.,64.,19.,phase-100.,fireUv);
   coverage=graphicCoverage(fire.a);
