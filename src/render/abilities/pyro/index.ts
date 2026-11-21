@@ -28,6 +28,7 @@ type Transient = {
   angle: number;
   radius: number;
   range: number;
+  targetIds?: readonly number[];
   arc: number;
 };
 
@@ -128,6 +129,7 @@ class PyroPresentation implements AbilityPresentation {
         const p = this.acquire('cone', x, z, 1.35);
         p.angle = event.angle ?? 0; p.range = (event.length ?? FAN_RANGE * UNIT) / UNIT;
         p.arc = event.arcRadians ?? FAN_ARC;
+        p.targetIds = event.targetIds;
         const c = Math.cos(p.angle), s = Math.sin(p.angle);
         const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 7);
         scorch.angle = p.angle; scorch.arc = p.arc; scorch.range = p.range; scorch.inner = .06; scorch.h0 = scorch.h1 = .034;
@@ -273,6 +275,17 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     if (fade > 0) {
       kit.sustain(p.age);
+      // A shoved target can move beyond the original cone while the impact is still visible.
+      // Carry a short tongue onto the struck body using only the native hit receipt.
+      if (p.targetIds) for (const id of p.targetIds) {
+        const actor = kit.statusActor(id);
+        if (!actor) continue;
+        const { x, z } = actor.root.position;
+        const incoming = Math.atan2(z - p.z, x - p.x);
+        const dx = Math.cos(incoming), dz = Math.sin(incoming);
+        kit.flowFlame(x - dx * .84, actor.height * .33, z - dz * .84,
+          x + dx * .20, actor.height * .79, z + dz * .20, .32, id, fade);
+      }
       kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
       kit.impact();
     }

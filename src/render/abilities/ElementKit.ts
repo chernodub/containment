@@ -376,41 +376,24 @@ export class ElementKit {
     liquidFire(x: number, z: number, radius: number, opacity = 1): void {
         this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
     }
-    /** Connected pressure core, broad overlapping lobes, then smaller broken tips. */
-    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1, height = .9, sourceX?: number, sourceZ?: number): void {
+    /** Overlapping atlas tongues follow rays from the native origin through the entire hit sector. */
+    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
+        height: number, sourceX: number, sourceZ: number): void {
         const c = Math.cos(angle), s = Math.sin(angle);
-        // Three unequal sections overlap by design, with one bright source.
-        const sections = this.low ? 2 : 3;
-        for (let i = 0; i < sections; i++) {
-            const start = i === 0 ? .025 : i === 1 ? .21 : .48;
-            const end = i === 0 ? .39 : i === 1 ? .73 : .91;
-            const width = radius * (i === 0 ? .055 : i === 1 ? .12 : .09);
-            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + c * radius * start,
-                height + i * .08, i === 0 && sourceZ !== undefined ? sourceZ : z + s * radius * start,
-                x + c * radius * end, height + .16 + i * .12, z + s * radius * end,
-                width, i * 7.31 + .71, opacity * (1 - i * .13), i === 0);
-        }
-        // Lobes connect to the core, rather than scattering similar-size stamps.
-        const lobes = this.low ? 2 : 6;
-        for (let i = 0; i < lobes; i++) {
-            const side = i % 2 ? -1 : 1, row = Math.floor(i / 2);
-            const variation = authoredVariation(3.71 + i * 2.17);
-            const spread = side * arc * (.16 + row * .075 + variation * .025);
-            const a = angle + spread, start = .18 + row * .11 + variation * .08, end = .60 + row * .12 + variation * .07;
-            const width = radius * (.12 - row * .018) * (.85 + variation * .23);
-            this.flowFlame(x + c * radius * start, height + .08, z + s * radius * start,
-                x + Math.cos(a) * radius * end, height + .24 + row * .08, z + Math.sin(a) * radius * end,
-                width, 3.71 + i * 2.17, opacity * (.81 - row * .1));
-        }
-        const fragments = this.low ? 2 : 6;
-        for (let i = 0; i < fragments; i++) {
-            const seed = i * 3.731 + .71, v = authoredVariation(seed);
-            const spread = (authoredVariation(seed, 2) - .5) * arc * .78;
-            const a = angle + spread, start = .75 + v * .06, end = .88 + v * .075;
-            this.flowFlame(x + Math.cos(a) * radius * start, height + .30 + v * .22,
-                z + Math.sin(a) * radius * start, x + Math.cos(a) * radius * end,
-                height + .42 + v * .3, z + Math.sin(a) * radius * end,
-                radius * (.027 + v * .019), seed + 15, opacity * (.42 + v * .16));
+        this.flowFlame(sourceX, height, sourceZ, x + c * radius * .44, height + .12,
+            z + s * radius * .44, radius * .084, .71, opacity, true);
+
+        const pairs = this.low ? 2 : 4;
+        const spacing = arc / (2 * pairs);
+        const width = radius * Math.sin(spacing) * .85;
+        // Submit both margins first so the shared screen-coverage cap preserves the silhouette.
+        for (let i = 0; i <= 2 * pairs; i++) {
+            const lane = (pairs - Math.floor(i / 2)) * (i % 2 ? -1 : 1);
+            const a = angle + lane * spacing, dx = Math.cos(a), dz = Math.sin(a);
+            const start = .09 + .08 * authoredVariation(i + .71);
+            this.flowFlame(x + dx * radius * start, height, z + dz * radius * start,
+                x + dx * radius, height + .26, z + dz * radius,
+                width, 4.71 + i * 7.13, opacity * .94);
         }
     }
 
