@@ -23,6 +23,18 @@ function lit(root:T.Group,p:IncidentPieces,id:string,x:number,z:number,lamps:Pin
 export function addLaneIncident(root:T.Group,id:string){
   const p=new IncidentPieces();
   switch(id){
+    case 'armory': {
+      // Seat the loading shoes on the visible imported carousel's upper hoop.
+      // Its 1.02 m bearing radius and 2.2 m height use a 1.65 / 1.3 placement.
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4,x=54*Math.cos(a),z=54*Math.sin(a);
+        p.box(x,92,z,17,4,11,0x455b61,-a);
+        p.box(x*.96,95,z*.96,12,3,10,0x2b3734,-a);
+        p.box(x*1.12,95,z*1.12,5,3,12,0x9eaa9d,-a);
+      }
+      p.finish(root,'carousel-handling-shoes',515,488,undefined,true);
+      break;
+    }
     case 'residential-gallery': {
       // A wall-folding supper table has landed on its side with two stools.
       p.box(0,20,0,72,5,46,0x80644e,-.20,1.05);
