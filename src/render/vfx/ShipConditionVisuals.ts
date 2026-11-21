@@ -89,14 +89,22 @@ export class ShipConditionVisuals {
     f.part(sx,.23,sz,.52,.14,.48,INK);
     const spillLength=Math.hypot(x-sx,z-sz), direction=Math.atan2(x-sx,z-sz);
     const along=(distance:number)=>[sx+Math.sin(direction)*distance,sz+Math.cos(direction)*distance];
+    // A recessed feed carries the first leak out from the wall valve.
+    // Its burst service coupling sits in the wet lane, visible from the pool.
+    const extension=i===0?Math.max(0,spillLength-r*.48):0;
+    if(extension>.1){
+     const [cx,cz]=along(extension/2);
+     f.part(cx,.016,cz,.45,.010,extension,INK,direction);
+     f.part(cx,.019,cz,.22,.004,extension,BRASS,direction);
+    }
     for(const [distance,width,length,color] of [[0,.62,.75,STEEL],[.38,.83,.13,BRASS],[.58,.67,.12,FROST]]){
-     const [cx,cz]=along(distance);
+     const [cx,cz]=along(extension+distance);
      f.part(cx,.52,cz,width,.48,length,color,direction,distance>.5?.13:0);
     }
-    const [mouthX,mouthZ]=along(.58);
+    const [mouthX,mouthZ]=along(extension+.58);
     f.part(mouthX,.29,mouthZ,.25,.49,.13,0x7ca9ad,direction,-.13,true);
-    const [midX,midZ]=along((spillLength+.58)/2);
-    f.part(midX,.014,midZ,.25,.009,Math.max(.1,spillLength-.58),0x587c80,direction);
+    const [midX,midZ]=along((spillLength+extension+.58)/2);
+    f.part(midX,.014,midZ,.25,.009,Math.max(.1,spillLength-extension-.58),0x587c80,direction);
     this.mist(mouthX,mouthZ,t,low);
    }else if(id==='conduit'){
     // The flush switch box terminates the bus at the simulated start of the lane.
