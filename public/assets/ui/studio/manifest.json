@@ -3487,11 +3487,11 @@
   },
   "route-workshop-ice-road": {
     "file": "route-workshop-ice-road.webp",
-    "bytes": 31224,
+    "bytes": 27838,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3.55,
+      "span": 3.92,
       "subjects": [
         {
           "kind": "marine",
@@ -3519,8 +3519,8 @@
       ],
       "focus": [
         -0.12,
-        0.69,
-        0
+        0.83,
+        -0.1
       ],
       "deployables": [],
       "zones": [
@@ -3777,11 +3777,11 @@
   },
   "route-workshop-live-wire": {
     "file": "route-workshop-live-wire.webp",
-    "bytes": 20984,
+    "bytes": 18780,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3.55,
+      "span": 3.92,
       "subjects": [
         {
           "kind": "marine",
@@ -3809,8 +3809,8 @@
       ],
       "focus": [
         -0.12,
-        0.69,
-        0
+        0.83,
+        -0.1
       ],
       "deployables": [],
       "zones": [],

@@ -150,8 +150,9 @@ add('route-capacitor',[supply('overdrive')],{frameSubject:true});
 add('route-meltdown-capacitor',[supply('overdrive'),light(0xff7435,{y:.7,z:.4})],{frameSubject:true});
 for(const name of ['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire']){
   const reward=plan['reward-'+name];
+  const reach=name==='ice-road'||name==='live-wire';
   plan['route-workshop-'+name]={
-    ...reward,span:3.55,focus:[-.12,.69,0],
+    ...reward,span:reach?3.92:3.55,focus:reach?[-.12,.83,-.10]:[-.12,.69,0],
     subjects:reward.subjects.map(subject=>subject.kind==='marine'?{...subject,scale:1.6}:subject),
   };
 }

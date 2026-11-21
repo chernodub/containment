@@ -31,3 +31,79 @@ Baseline `064f0acd`. The desktop baseline has 15 verified screens under `art21-b
 | Supply stop | `props14/{health,armor,ammo,medkit,grenade,reroll,upgrade,resuscitator}.png` | 300 px square prop cutouts sit over a separate CSS backdrop. Several small, similarly shaped supplies are difficult to identify at gallery scale. The eight old `service-*.webp` shots were dormant. |
 
 The route WebPs were rendered in-engine. Their softness came from the original capture, composition and display crop.
+
+### Rendering and payload
+
+The renders use the creature, marine, prop and room assets at `064f0acd`. The studio uses the production toon materials and full ink outlines at native pixel size, with adaptive resolution and lens blur disabled. Route art is 1120×476. Supply art is 560×224. Story cards select a first-dispatch subject from the native encounter plan when a run changes the opening. Older branches show their actual supply or medical reward, and the legacy reactor-vault route has its own Queen still.
+
+Re-render the route and supply catalog with the current shipped assets.
+
+```sh
+npm run studio -- '--only=^(route-|service-)'
+```
+
+The 55 WebPs total 706,328 bytes. The largest increase among the previously displayed route WebPs is 1.32×. Supply WebPs are smaller than their former PNGs. The studio updates the shot descriptions and encoded byte counts in `public/assets/ui/studio/manifest.json`.
+
+| File | Bytes |
+| --- | ---: |
+| `route-armor.webp` | 14,360 |
+| `route-armory.webp` | 13,250 |
+| `route-awakening-bay.webp` | 10,840 |
+| `route-breached-loading-bay.webp` | 15,238 |
+| `route-brood.webp` | 27,192 |
+| `route-cache.webp` | 10,170 |
+| `route-capacitor.webp` | 9,196 |
+| `route-communal-atrium.webp` | 10,242 |
+| `route-containment-annulus.webp` | 9,638 |
+| `route-coolant-plant.webp` | 14,442 |
+| `route-crew-checkpoint.webp` | 14,234 |
+| `route-diagnostic-gallery.webp` | 13,106 |
+| `route-freight-hold.webp` | 11,132 |
+| `route-infested-workshop.webp` | 8,502 |
+| `route-legacy-queen.webp` | 10,630 |
+| `route-locker.webp` | 13,176 |
+| `route-manual-control-chamber.webp` | 12,192 |
+| `route-medicine.webp` | 8,930 |
+| `route-meltdown-capacitor.webp` | 9,156 |
+| `route-overload-floor.webp` | 9,174 |
+| `route-passenger-vault.webp` | 11,106 |
+| `route-plate-breaker.webp` | 19,996 |
+| `route-protected-passage.webp` | 10,028 |
+| `route-relay-racks.webp` | 13,722 |
+| `route-residential-gallery.webp` | 14,906 |
+| `route-safety-interlock-station.webp` | 8,966 |
+| `route-service-shaft-landing.webp` | 15,704 |
+| `route-shielding-gate.webp` | 11,788 |
+| `route-swarm-junction.webp` | 14,546 |
+| `route-threat-brute.webp` | 10,032 |
+| `route-threat-carrier.webp` | 10,076 |
+| `route-threat-crawler.webp` | 8,654 |
+| `route-threat-matron.webp` | 10,480 |
+| `route-threat-spitter.webp` | 11,374 |
+| `route-threat-stalker.webp` | 12,854 |
+| `route-threat-warden.webp` | 11,488 |
+| `route-transmission-chamber.webp` | 11,834 |
+| `route-upgrade.webp` | 9,394 |
+| `route-warden-cache.webp` | 18,030 |
+| `route-workshop-ember-relay.webp` | 18,948 |
+| `route-workshop-fault-line.webp` | 26,382 |
+| `route-workshop-ice-road.webp` | 27,838 |
+| `route-workshop-live-wire.webp` | 18,780 |
+| `route-workshop-meltdown-core.webp` | 23,560 |
+| `route-workshop-pilgrim-pylon.webp` | 23,458 |
+| `route-workshop-shard-harvest.webp` | 20,404 |
+| `route-workshop-siege-plow.webp` | 19,216 |
+| `service-ammo.webp` | 6,262 |
+| `service-armor.webp` | 6,742 |
+| `service-grenade.webp` | 6,722 |
+| `service-heal.webp` | 4,694 |
+| `service-medkit.webp` | 5,792 |
+| `service-reroll.webp` | 5,184 |
+| `service-revive.webp` | 7,724 |
+| `service-upgrade.webp` | 4,844 |
+
+### Desktop review
+
+The 23 final views are collected under `artifacts/nextgen/art21-after/review-native/` at 1920×1080 and `review-480/` at 480×270. The capture runner stalled between screens in the first session. Fresh late-route and workshop batches completed the gallery, and a separate junction receipt records the final Ice Road framing.
+
+The native review caught two overlapping supply arrangements and two workshop poses that reached the frame edge. The final images separate the supplies and keep the Ice Road and Live Wire marines in frame. At 480×270 the requisition's standard approach reads as an enemy encounter, and the guardian and supply silhouettes are distinguishable before reading the titles.
