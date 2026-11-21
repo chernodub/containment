@@ -1,7 +1,7 @@
 """Place the three inked studio subjects in the existing breach composition."""
 from pathlib import Path
 import sys
-from PIL import Image
+from PIL import Image, ImageChops, ImageFilter
 
 raw = Path(sys.argv[1])
 layer = Image.new('RGBA', (2560, 1440))
@@ -9,8 +9,8 @@ layer = Image.new('RGBA', (2560, 1440))
 # The Warden rises through the lower crop; the two lunging bodies cross the gap.
 cast = [
     ('warden', 1260, 1130, 940, -5),
-    ('stalker', 925, 907, 312, -55),
-    ('crawler', 1063, 708, 297, 60),
+    ('stalker', 990, 865, 300, -55),
+    ('crawler', 1172, 669, 286, 55),
 ]
 # Match the foreground plate's shadow exposure. Hold the emissive peaks.
 levels = [(0, 3), (30, 9), (70, 26), (120, 62), (180, 128), (225, 207), (255, 247)]
@@ -29,6 +29,17 @@ for name, cx, cy, width, bank in cast:
     actor = actor.crop(actor.getbbox())
     height = round(width * actor.height / actor.width)
     actor = actor.resize((width, height), Image.Resampling.LANCZOS)
+    if name in ('crawler', 'stalker'):
+        # Expose only the inner lip of the shell to the cold breach light.
+        # The matte follows the hooked limbs and keeps open gaps transparent.
+        alpha = actor.getchannel('A')
+        interior = alpha.filter(ImageFilter.MinFilter(7))
+        edge = ImageChops.subtract(alpha, interior)
+        grazing = ImageChops.subtract(alpha, ImageChops.offset(alpha, 3, 2))
+        weight = ImageChops.add(edge.point(lambda v: v * .28), grazing.point(lambda v: v * .58))
+        reflected = ImageChops.screen(actor.convert('RGB'), Image.new('RGB', actor.size, (107, 125, 152)))
+        actor = Image.composite(reflected, actor.convert('RGB'), weight)
+        actor.putalpha(alpha)
     layer.alpha_composite(actor, (cx - width // 2, cy - height // 2))
 
 layer.save(raw / 'midground.png')

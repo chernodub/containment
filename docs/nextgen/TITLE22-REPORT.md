@@ -43,3 +43,25 @@ The plate-breaker WebP went from 19,996 to 16,706 bytes; brood went from 27,192 
 At desktop size I read the cast as one confrontation. The Warden’s split crown and the Crawler’s hooked limbs are sharper and more threatening than the shipped rounded silhouettes. The cyan visor and yellow shoulder still carry the broadest bright shapes. A final placement correction moved the Crawler off the last T in the title. The material difference is still visible up close: the marine has a gradual reflection across its shoulder, while the creature plates break into inked facets. At 480×270 the Stalker’s violet lantern holds up better than the small blades around its face.
 
 The final production build passed. Both desktop scenarios completed and produced their 1920×1080 captures and comparison strips.
+
+## TITLE23
+
+At 1920×1080 the pale bars above the breach are cable-tray rungs and overhead pressure lines. Camera-ray picks on the Blender stage identified the bright bent line as the separate ruptured pipe. The marks are baked into the background. The Crawler’s dark upper shell nearly meets the last T, while the Stalker’s left scythe and lower leg disappear against the dark left jamb. Both creatures are already below the letters in the reviewed capture. Low edge contrast and near-tangencies make them look cut off.
+
+Removed the ceiling service runs and ruptured pipe from the Cycles background. The folded aperture and corridor frames now carry the upper silhouette. Re-rendering the hull also cleaned up reflections from those runs inside the opening. The original studio cutouts keep the TITLE22 poses. The Crawler moves 109 pixels right and 39 up on the 2560 plate; the Stalker moves 65 right and 42 up. A narrow cool reflection follows the inside edge of their existing alpha mattes, strongest on the breach-facing rims. At native size the hook, left scythe and trailing leg have distinct edges. At 480×270 the Stalker’s narrowest points still depend on the rim for contrast.
+
+The midground has no depth-of-field or CSS blur. Banking uses bicubic interpolation on supersampled cutouts followed by a Lanczos reduction, as in TITLE22. The fog plate is transparent over the airborne creatures. The visible loss came primarily from the dark ink against the jamb. The marine, Warden placement, typography and menu layout retain their TITLE22 framing.
+
+To rebuild, use the TITLE22 studio cutouts from the original render above. The Blender stage requires the close-up hero source (`blender -b -P tools/assets/k12-hero/marine.py -- --hero` if absent). From the repository root:
+
+```sh
+blender -b --python-exit-code 1 -P tools/assets/u10-keyart/title.py -- --round=230 --background-only
+mkdir -p artifacts/nextgen/title23
+cp artifacts/nextgen/title22-final/{warden,crawler,stalker}.png artifacts/nextgen/title23/
+python tools/assets/u10-keyart/title22_composite.py artifacts/nextgen/title23
+python tools/assets/u10-keyart/title15_delivery.py artifacts/nextgen/title23 --keep-hero --background=artifacts/nextgen/ka12-title-review/round-230/background.png
+npm run build
+npm run capture -- --label=title23-after --scenarios=title
+```
+
+The build and 1920×1080 desktop capture passed. In `artifacts/nextgen/title23-after/`, `pair-1920.png` and `pair-480.png` compare TITLE22 on the left with TITLE23 on the right. Greyscale copies have the suffix `-grey`. All delivery filenames, dimensions and fallbacks are preserved. Total title image payload fell from 681,872 to 663,404 bytes (−2.71%).

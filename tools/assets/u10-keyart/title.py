@@ -124,12 +124,6 @@ for i in range(15):
  x=rng.uniform(-1.8,1.8);y=rng.uniform(-1,9);o=B('Fallen bent deck plate',x,y,.06,rng.uniform(.15,.55),rng.uniform(.2,.6),.04,steel);o.rotation_euler.rotate_axis('Z',rng.uniform(-1,1));o.rotation_euler.rotate_axis('X',rng.uniform(-.2,.2))
 for y in [9,12]:
  o=B('Collapsed rib',.3,y,1.7,3.8,.2,.2,edge);o.rotation_euler.rotate_axis('Y',.5)
-# Ceiling routes converge into the same opening, not across the logo field.
-for x in [-1.35,-.9,.9,1.35]:
- tube('Ceiling pressure line',[P(x*2,-6,3.8),P(x*1.3,-2,3.6),P(x,1,3.35),P(x,10,3.35)],.055,steel)
-for y in [-5,-3,-1,1,3,5,7]:
- B('Cable tray rung',1.45,y,3.36,.55,.07,.05,edge)
-for x in [1.25,1.4,1.55,1.7]:tube('Tray power bundle',[P(x,-6,3.4),P(x,-1,3.4),P(x,9,3.4)],.022,wire)
 # Ragged ends hang from the tear. Small hot tips and sparks are attached to them.
 for i,x in enumerate([-.95,.3,1.3]):
  z=2.5+i*.13;end=P(x+.15,-.25,z-.35)
@@ -226,8 +220,6 @@ def volume(name,x,y,z,size,density,p='background',noise=False):
  o=B(name,x,y,z,*size,m,p,0);o['volume']=True
 volume('Violet corridor atmosphere',0,5,1.9,(4.3,20,4),.012)
 volume('Ruptured line steam',1.2,-.5,2.9,(.7,2,.8),.09,'fog',True)
-# A broken line defines the source of that steam plume.
-tube('Ruptured pipe',[P(1.5,-3,3.1),P(1.5,-1,3.1),P(1.2,-.8,2.9)],.09,edge)
 # The foreground layer contains grounded debris, never the rejected right-edge tendrils.
 B('Near deck fragment',2,-3,.03,.65,.4,.04,dark,'foreground')
 # Surface-aligned unit number on the existing posed shoulder, authoring scene only.
@@ -267,10 +259,16 @@ for p,items in plates.items():
  for o in items:o['ka12Plate']=p
 s.render.film_transparent=False;s.render.filepath=str(OUT/'composition.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'stage.blend'))
-midground_only='--midground-only' in args
-if '--layers-only' not in args and '--actor-plates' not in args and not midground_only:bpy.ops.render.render(write_still=True)
-if '--layers' in args or '--actor-plates' in args or midground_only:
- for plate in (('midground',) if midground_only else ('midground','hero') if '--actor-plates' in args else plates):
+if '--background-only' in args:
+ render_plates=['background']
+elif '--midground-only' in args:
+ render_plates=['midground']
+elif '--actor-plates' in args:
+ render_plates=['midground','hero']
+else:
+ render_plates=list(plates) if '--layers' in args else []
+ if '--layers-only' not in args:bpy.ops.render.render(write_still=True)
+for plate in render_plates:
   # Pull focus for the breach insert; retain the foreground focus on other layers.
   cam.data.dof.focus_distance=(cam.location-(P(0,-.6,1.6) if plate=='midground' else focus)).length
   cam.data.dof.aperture_fstop=11 if plate=='midground' else 6

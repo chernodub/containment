@@ -7,6 +7,18 @@ raw = Path(sys.argv[1])
 ui = Path(__file__).resolve().parents[3] / 'public/assets/ui/u10'
 resize = Image.Resampling.LANCZOS
 size = (2560, 1440)
+background = next((Path(arg.split('=', 1)[1]) for arg in sys.argv[2:]
+                   if arg.startswith('--background=')), None)
+if background:
+    hull = Image.open(background).convert('RGB')
+    if hull.size != size:
+        raise ValueError(f'Background must be rendered at {size}')
+    for width in (2560, 1280):
+        plate = hull.resize((width, width * 9 // 16), resize)
+        plate.save(ui / f'background-{width}.webp', quality=86, method=6)
+        if width == 1280:
+            plate.quantize(colors=256, method=Image.Quantize.FASTOCTREE).save(
+                ui / 'background-1280.png', optimize=True)
 frame = Image.open(ui / 'background-2560.webp').convert('RGBA')
 
 for name in ('midground', 'hero', 'foreground', 'fog'):
