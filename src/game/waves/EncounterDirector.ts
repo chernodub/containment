@@ -1,4 +1,4 @@
-import type {EnemyCommitment} from '../enemies/EnemySystem';
+import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
 import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
@@ -210,10 +210,15 @@ export class EncounterDirector {
     });
   }
   canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>):boolean {
-    if(enemy.type!=='stalker'||enemy.role!=='flanker'||enemy.beat===undefined)return true;
-    const angle=Math.atan2(player.y-enemy.y,player.x-enemy.x);
+    const flanker=enemy.type==='stalker'&&enemy.role==='flanker'&&enemy.beat!==undefined;
+    if(enemy.beat===undefined||enemy.champion!==undefined)return true;
+    const angle=flanker?Math.atan2(player.y-enemy.y,player.x-enemy.x):0;
     for(const other of others){
-      if(other.id===enemy.id||other.type!=='stalker'||other.role!=='flanker'||other.beat!==enemy.beat)continue;
+      if(other.id===enemy.id||other.beat!==enemy.beat)continue;
+      if(other.champion==='warden'&&other.wallStunAngle!==undefined){
+        if((other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      }
+      if(!flanker||other.type!=='stalker'||other.role!=='flanker')continue;
       if((other.meleePhase==='windup'||other.meleePhase==='strike')&&Math.cos(angle-other.meleeAngle)<Math.SQRT1_2)return false;
     }
     return true;
