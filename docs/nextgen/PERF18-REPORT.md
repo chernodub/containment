@@ -360,3 +360,28 @@ The production build passed. Pyro cleared all four requested rooms on seed 1729 
 Safety-interlock High remained over 5% in all Breacher and Pyro trials and one Cryo trial. Pyro finished at 7.77–10.78% and 25.0 ms p95, with 21.8–23.5 ms CPU p95. That CPU tail leaves room for additional gains even if GPU shading gets cheaper. The runs establish a reduction in repeated misses, with further work needed to close the heaviest case. Low's final 18.0 ms median p95 and 2.37% median late share compare with 17.9 ms and 1.94% in PERF18's longer trials. All final Low trials met the 5% target. The High light capacity and FXAA changes do not apply to Low.
 
 [Pyro ablations](../../artifacts/nextgen/perf19/ablation-pyro/benchmark.json) · [Arc ablations](../../artifacts/nextgen/perf19/ablation-arc/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf19/final/benchmark.json) · [Matched frames](../../artifacts/nextgen/perf19/pairs) · [Pyro playtest](../../artifacts/nextgen/perf19/playtest-pyro/report.json)
+
+## PERF22
+
+### Attribution
+
+The baseline freezes 8500276f. All combat measurements use the M1 Pro at 1920×1080 with 15-second trials. Safety-interlock Pyro reproduced 7.48–9.58% frames over 20 ms. Safety-interlock Arc reproduced 6.08–9.09%. Two Transmission Low rows that crossed load 4 were repeated. The table shows full High immediately before each ablation. Savings are percentage points of the frame distribution.
+
+| Ablation | Pair | Full load | Full >20 ms | Off load | Off >20 ms | Saving (pp) |
+| --- | ---: | --- | ---: | --- | ---: | ---: |
+| surfacePaint | 1 | 3.39 → 2.68 | 9.23% | 2.68 → 2.66 | 10.98% | -1.76 |
+| inkWear | 1 | 2.66 → 2.46 | 9.02% | 2.46 → 2.42 | 9.17% | -0.15 |
+| prioritySampling | 1 | 2.42 → 2.40 | 10.89% | 2.40 → 2.44 | 9.27% | +1.61 |
+| flameSprites | 1 | 2.44 → 2.74 | 8.30% | 2.74 → 2.77 | 11.56% | -3.26 |
+| floorSkins | 1 | 2.77 → 2.94 | 10.12% | 2.94 → 2.36 | 9.12% | +1.00 |
+| surfacePaint | 2 | 2.36 → 2.17 | 7.69% | 2.17 → 2.33 | 10.06% | -2.37 |
+| inkWear | 2 | 2.33 → 2.72 | 12.68% | 2.72 → 3.31 | 9.99% | +2.69 |
+| prioritySampling | 2 | 3.31 → 3.21 | 13.47% | 3.21 → 4.44 | 9.51% | +3.96 (load miss) |
+| flameSprites | 2 | 3.80 → 3.53 | 13.98% | 3.53 → 3.59 | 8.30% | +5.67 |
+| floorSkins | 2 | 3.59 → 3.20 | 7.96% | 3.20 → 3.51 | 8.94% | -0.98 |
+| prioritySampling | 1 | 2.29 → 2.59 | 8.97% | 2.59 → 2.86 | 9.46% | -0.50 |
+| prioritySampling | 2 | 2.86 → 2.78 | 8.56% | 2.78 → 3.17 | 11.92% | -3.36 |
+
+Paint removal made the tail worse in both pairs. The ink-wear, flame-batch and floor-skin results changed sign. Mask sampling removal also changed sign across quiet repeats. It disables mask sampling and its alpha yield together, while keeping the CPU raster active, so the result includes any change in overdraw. Flame removal hides the instanced flame draw, leaving shared ember sparks and procedural floor fire active. Floor-skin removal targets the named deck wear, service lane and threshold overlays.
+
+Baseline High Safety-interlock Pyro update p95 was 10.6–13.0 ms, versus 5.6–6.1 ms for Arc. An instrumented Pyro run at load 2.84 → 2.44 found the most frequent application leaf samples in the polygon containment and traversal code. The minified profile was attributed by matching its generated offsets to the preserved bundle. Gameplay update time rose on Pyro in both tiers. The ablation pairs did not isolate a repeatable render saving, so the first production change targets redundant collision-query work without changing the predicates.

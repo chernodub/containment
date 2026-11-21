@@ -102,10 +102,12 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
     vec3 delta=viewPosition(q,texture2D(tDepth,q).x)-p;
     float bend=1.0-dot(normal,inkNormal(neighbor.xy));
     float major=smoothstep(.16,.40,bend)*smoothstep(.0015,.009,abs(dot(delta,normal)));
+    if(inkWear>.5){
     vec3 inkUp=vec3(cameraWorld[0][1],cameraWorld[1][1],cameraWorld[2][1]);
     float wearSide=inkWear*step(1.5,center.w)*step(center.w,2.5)*step(dot(delta,normal),-.0015)
      *step(dot(inkNormal(neighbor.xy),inkUp)+.15,dot(normal,inkUp));
     if(wearSide>.5){inkWearLine=max(inkWearLine,major*inkStrength);continue;}
+    }
     crease=max(crease,major*inkStrength);
    }
   }

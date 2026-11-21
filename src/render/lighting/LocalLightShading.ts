@@ -7,6 +7,7 @@ export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v14-room-blackout-surface22';
 /** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
 const surfacePaint={value:new Vector4(1,0,0,0)};
+export function setSurfacePaintDiagnostic(enabled:boolean):void{surfacePaint.value.y=enabled?0:1;}
 export function setSurfacePaintDetail(high:boolean):void{surfacePaint.value.x=high?1:0;}
 const installed = new WeakSet<MeshStandardMaterial>();
 const environmentGains = new WeakMap<MeshStandardMaterial, {value:number}>();
@@ -132,7 +133,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
       if(roomValue.z>0.0){
       float paintValue=1.0;
       #ifndef ROOM_FLOOR_SURFACE
-      {
+      if(surfacePaint.y<.5){
         // SURFACE22 painted value model for room architecture and props (never floors or actors:
         // only room surfaces carry roomValue.z). Few, large world-anchored value shapes.
         float paintH=roomWorld.y;

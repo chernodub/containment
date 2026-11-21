@@ -1,6 +1,6 @@
 import {FloorChoiceMarkers} from './markers/FloorChoiceMarkers';
 import { PincerPresentation } from './world/PincerPresentation';
-import {setRoomBlackout} from './lighting/LocalLightShading';
+import {setRoomBlackout,setSurfacePaintDiagnostic} from './lighting/LocalLightShading';
 import {ShipConditionVisuals} from './vfx/ShipConditionVisuals';
 import {CONDITION_LIGHT_RADIUS} from '../game/roguelike/shipConditions';
 import {showIncidentColliders} from './world/IncidentColliderDebug';
@@ -198,6 +198,8 @@ export class DepthRenderer {
   const ablation=resolveGraphicsAblation(value);
   if(!ablation)throw Error("Unknown graphics ablation");
   this.graphicsAblation=ablation;
+  setSurfacePaintDiagnostic(ablation!=="surfacePaint");
+  this.post.diagnosticInkWear=ablation!=="inkWear";
   this.post.diagnosticFinalAA=ablation!=="finalAA";
   this.post.diagnosticSoftDepth=ablation!=="softDepth";
   this.post.adaptive.minimumScale=ablation==="adaptive80"?.8:.9;
