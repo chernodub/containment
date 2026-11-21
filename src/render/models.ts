@@ -22,6 +22,7 @@ export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
  /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
  syncWeaponPose?:()=>void;
+ posePortrait?:()=>void;
  setDeathAge?:(seconds:number)=>void;
  setPodCountdown?:(remainingMs:number,stage?:import('../game/enemies/EnemySystem').PodStage)=>void;
  setPlateOpen?:(open:boolean)=>void;
@@ -201,7 +202,7 @@ export function marine():ActorModel{
   socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
  };
  const motion=new MarineMotion(r.root,r.assetRoot),actionMotion=new MarineActionMotion(motion),authored=new AuthoredMarineMotion(authoredPlayer,motion);motion.authored=authoredPlayer.available;let aimPitch=0;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig(rig){identity.setRig(rig);surface.rig(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);},setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,posePortrait(){authoredPlayer.clearUpper();authoredPlayer.snapNext();authoredPlayer.sample('m10-portrait-'+current.id,0,0);syncWeaponPose();},setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig(rig){identity.setRig(rig);surface.rig(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);},setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
   setMotionOptions(strength,reduced){motion.setOptions(strength,reduced);authored.setOptions(strength,reduced);},setAction:motion.setAction.bind(motion),poseDeath:authored.death.bind(authored),hit(strength=1,direction=0,heavy=false){motion.hit(strength,direction,heavy);authored.hit(strength,direction);},setDead(dead){aimConstrained=!dead;motion.setDead(dead);},motionEvent:actionMotion.event.bind(actionMotion),reset(){aimConstrained=true;authored.reset();actionMotion.reset();motion.reset();r.reset();pose?.play();if(pose)pose.paused=true;r.mixer.update(0);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   actionMotion.update(time);motion.begin(time,moving,aim,velocity?.x??Math.cos(aim)*moving*220,velocity?.y??Math.sin(aim)*moving*220);

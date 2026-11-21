@@ -430,9 +430,9 @@ CASTS = [
 # The stock settles below the visor on the firing side. Keep both
 # ankle targets stationary through the eleven-tick catch.
 SHOTGUN_CATCH = Pose(
-    5/60, firing_shoulder=(-.30, -.12, -.13), shoulder_turn=(-.58, -.38, .16),
-    pelvis=(-.42, -.19, -.32), spine=(-.72, -.48, -.20), ribs=(-.20, -.04, -.04),
-    head=(.31, .55, .06), left_delta=(-.23, -.12, -.13), right_delta=(-.18, -.33, -.24),
+    5/60, firing_shoulder=(.04, -.06, -.12), shoulder_turn=(-.58, -.38, .16),
+    pelvis=(-.42, -.19, -.32), spine=(-.46, -.34, -.15), ribs=(-.12, -.04, -.04),
+    head=(.31, .55, .06), left_delta=(-.23, -.12, -.13), right_delta=(-.72, -.18, -.15), right_pole=(-.58, -.85, 1.02),
     right_wrist=(-.28, -.025, 0), left_foot=(0, 0, 0), right_foot=(0, 0, 0),
 )
 
@@ -468,15 +468,15 @@ WEAPONS = [
     Clip("m10-fire-shotgun", [
         Pose(0),
         Pose(.02, firing_shoulder=(-0.217, 0.07, 0.07), shoulder_turn=(-0.429, -0.266, 0.163), pelvis=(-0.054, -0.023, -0.054), spine=(-0.281, -0.222, -0.118), ribs=(-0.296, 0.052, -0.052),
-             head=(0.178, -0.037, 0.03), left_delta=(-0.18, 0.081, 0.18), right_delta=(-0.18, -0.036, 0.216),
+             head=(0.178, -0.037, 0.03), left_delta=(-0.18, 0.081, 0.18), right_delta=(-.46, -.055, .045),
              right_wrist=(-.25, 0, 0), left_foot=(0, 0, 0), right_foot=(0, 0, 0)),
         SHOTGUN_CATCH, replace(SHOTGUN_CATCH, time=16/60),
         # Pull the fore-end to the hip, then send it back to battery.
-        Pose(.34, spine=(0.141, -0.104, 0.044), ribs=(0.089, -0.163, 0.052),
+        Pose(22/60, pelvis=(-.25, -.13, -.18), spine=(0.141, -0.104, 0.044), ribs=(0.089, -0.163, 0.052),
              left_delta=(-0.414, 0.068, -0.198), right_delta=(-0.045, -0.022, -0.099)),
-        Pose(.37, spine=(0.111, -0.081, 0.037), left_delta=(-0.468, 0.126, -0.234),
+        Pose(27/60, spine=(0.111, -0.081, 0.037), left_delta=(-0.468, 0.126, -0.234),
              left_pole=(-.32, 1.05, 1.04), right_delta=(0, 0, -0.081)),
-        Pose(.45, spine=(0.03, 0.067, -0.03), left_delta=(0.135, 0.025, 0.018),
+        Pose(.50, spine=(0.03, 0.067, -0.03), left_delta=(0.135, 0.025, 0.018),
              right_delta=(0.054, 0, 0.045)),
         Pose(.53), Pose(.58),
     ]),
@@ -497,19 +497,16 @@ WEAPONS = [
         Pose(0, pelvis=(0.035, 0, -0.077), spine=(0.248, 0.062, 0), right_knee=(.65,-.42,.46)),
         Pose(.02, firing_shoulder=(-0.147, 0.056, 0.07), shoulder_turn=(-0.419, -0.232, 0.139),pelvis=(-0.14, -0.021, -0.182), spine=(-0.31, -0.124, -0.093), ribs=(-0.31, 0.062, -0.062),
              head=(0.217, 0.039, 0.054), left_delta=(-0.139, 0.07, 0.139), right_delta=(-.16, -.12, -.04),
-             right_wrist=(-.20, 0, 0), left_foot=(.08, .08, 0), right_foot=(-.11, -.07, .085)),
-        Pose(.08, firing_shoulder=(-.34, .14, -.13), shoulder_turn=(-0.698, -0.357, 0.217),pelvis=(-0.406, -0.109, -0.266), spine=(-0.666, -0.279, -0.139), ribs=(-0.264, 0.109, -0.039),
-             head=(0.248, -0.046, 0.062), left_delta=(-.21, -.10, -.08), right_delta=(-.23, -.19, -.11),
-             right_wrist=(-.24, -.025, 0), left_foot=(.12, .10, 0), right_foot=(-.46, -.13, 0)),
-        Pose(.18, firing_shoulder=(-0.203, 0.049, 0.056), shoulder_turn=(-0.434, -0.202, 0.139),pelvis=(-0.154, -0.028, -0.196), spine=(-0.341, -0.093, -0.062), ribs=(-0.186, 0.054, -0.023),
-             left_delta=(-0.139, 0.124, 0.124), right_delta=(-.16, -.13, -.07), right_wrist=(-.17, 0, 0),
-             left_foot=(.10, .08, 0), right_foot=(-.46, -.13, 0)),
-        Pose(.23, pelvis=(0, 0, -0.119), spine=(0.054, 0.039, 0.023), ribs=(0.039, -0.016, 0.008),
-             left_delta=(0.016, 0.07, 0.016), right_delta=(0.008, -0.008, 0.016), right_wrist=(.015, .01, 0),
-             left_foot=(.065, .05, 0), right_foot=(-.19, -.065, .025)),
-        Pose(.30, pelvis=(0, 0, -0.084), spine=(0.186, 0.078, 0.039), ribs=(0.093, -0.039, 0.023),
-             left_delta=(0.046, 0.054, -0.031), right_delta=(0.039, 0, -0.039), right_wrist=(.06, .015, 0),
-             left_foot=(.035, .025, 0), right_foot=(-.04, -.025, 0)),
+             right_wrist=(-.20, 0, 0)),
+        Pose(.08, firing_shoulder=(-.22, .12, -.14), shoulder_turn=(-0.698, -0.357, 0.217),pelvis=(-0.406, -0.109, -0.266), spine=(-0.666, -0.279, -0.139), ribs=(-0.264, 0.109, -0.039),
+             head=(0.248, -0.046, 0.062), left_delta=(-.21, -.10, -.08), right_delta=(-.38, -.18, -.15),
+             right_wrist=(-.24, -.025, 0)),
+        Pose(12/60, firing_shoulder=(-0.203, 0.049, 0.056), shoulder_turn=(-0.434, -0.202, 0.139),pelvis=(-.27, -.08, -.22), spine=(-0.341, -0.093, -0.062), ribs=(-0.186, 0.054, -0.023),
+             left_delta=(-0.139, 0.124, 0.124), right_delta=(-.16, -.13, -.07), right_wrist=(-.17, 0, 0)),
+        Pose(17/60, pelvis=(0, 0, 0), spine=(0.054, 0.039, 0.023), ribs=(0.039, -0.016, 0.008),
+             left_delta=(0.016, 0.07, 0.016), right_delta=(0.008, -0.008, 0.016), right_wrist=(.015, .01, 0)),
+        Pose(.36, spine=(.08, .05, .025), ribs=(0.093, -0.039, 0.023),
+             left_delta=(0.046, 0.054, -0.031), right_delta=(0.039, 0, -0.039), right_wrist=(.06, .015, 0)),
         Pose(.48), Pose(.56),
     ], upper="lcannon_delta"),
     Clip("m10-switch", [
@@ -647,7 +644,25 @@ READY = [
 ]
 
 
-ALL_CLIPS = STANDARD + CASTS + WEAPONS + HITS + DEATHS + READY
+# Studio stills share the heavy weapon's forward, settled support. Hand
+# targets remain relative to each weapon's authored grip.
+def portrait(weapon, upper, turn, drop, lead):
+    stance = Pose(0, pelvis=(.12, .04, -.10), spine=(.17, turn, -.03),
+                  ribs=(-.10, -.05, .02), head=(-.23, -.12, .02),
+                  left_foot=(lead, .13, 0), right_foot=(-.22, -.16, 0),
+                  firing_shoulder=(.04, 0, -.065),
+                  right_delta=(.06, -.06, drop), left_delta=(.09, -.10, drop-.07))
+    return Clip("m10-portrait-"+weapon, [stance, replace(stance, time=.1)], upper=upper)
+
+
+PORTRAITS = [
+    portrait("shotgun", "shotgun_delta", -.20, -.29, .29),
+    portrait("rifle", "rifle_delta", -.14, -.24, .22),
+    portrait("rocket", "lcannon_delta", .20, -.28, .24),
+    portrait("plasma", "prifle_delta", -.24, -.26, .26),
+]
+
+ALL_CLIPS = PORTRAITS + STANDARD + CASTS + WEAPONS + HITS + DEATHS + READY
 
 
 class MarineAuthor:

@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 230002,
+    "bytes": 194907,
     "shot": {
       "width": 640,
       "height": 640,
@@ -13,8 +13,7 @@
           "weapon": "shotgun",
           "pose": "",
           "frame": 0,
-          "aim": 1.78,
-          "recoilTicks": 7
+          "aim": 1.29
         }
       ],
       "focus": [
@@ -24,17 +23,23 @@
       ],
       "rimColor": 16765027,
       "key": [
-        -4,
-        3,
-        3
+        2,
+        4,
+        5
       ],
+      "cameraDirection": [
+        4,
+        1.9,
+        6
+      ],
+      "card": true,
       "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 205673,
+    "bytes": 192113,
     "shot": {
       "width": 640,
       "height": 640,
@@ -46,8 +51,7 @@
           "weapon": "rifle",
           "pose": "",
           "frame": 0,
-          "aim": 1.84,
-          "recoilTicks": 3
+          "aim": 1.37
         }
       ],
       "focus": [
@@ -57,17 +61,23 @@
       ],
       "rimColor": 8378111,
       "key": [
-        -4,
-        3,
-        3
+        2,
+        4,
+        5
       ],
+      "cameraDirection": [
+        4,
+        1.9,
+        6
+      ],
+      "card": true,
       "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 311332,
+    "bytes": 261705,
     "shot": {
       "width": 640,
       "height": 640,
@@ -79,8 +89,7 @@
           "weapon": "rocket",
           "pose": "",
           "frame": 0,
-          "aim": -0.93,
-          "recoilTicks": 12
+          "aim": 0.09
         }
       ],
       "focus": [
@@ -90,17 +99,23 @@
       ],
       "rimColor": 16742958,
       "key": [
-        -4,
-        3,
-        3
+        2,
+        4,
+        5
       ],
+      "cameraDirection": [
+        4,
+        1.9,
+        6
+      ],
+      "card": true,
       "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 254895,
+    "bytes": 201140,
     "shot": {
       "width": 640,
       "height": 640,
@@ -112,8 +127,7 @@
           "weapon": "plasma",
           "pose": "",
           "frame": 0,
-          "aim": 1.87,
-          "recoilTicks": 6
+          "aim": 1.43
         }
       ],
       "focus": [
@@ -123,10 +137,16 @@
       ],
       "rimColor": 12033279,
       "key": [
-        -4,
-        3,
-        3
+        2,
+        4,
+        5
       ],
+      "cameraDirection": [
+        4,
+        1.9,
+        6
+      ],
+      "card": true,
       "framePortrait": true,
       "transparent": true
     }

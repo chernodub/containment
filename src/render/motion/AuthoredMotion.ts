@@ -373,10 +373,15 @@ export class AuthoredMarineMotion {
         this.recoil = recoil;
         const [kick, decay] = RECEIVER_KICK[weapon];
         // Keep the barrel seated in the shotgun catch until the pump begins.
-        const returnAge = weapon === 'shotgun' ? Math.max(0, this.fireAge - 16 / 60) : this.fireAge;
+        const heavy = weapon === 'shotgun' || weapon === 'rocket';
+        const releaseTick = weapon === 'shotgun' ? 16 : 5;
+        const levelTick = weapon === 'shotgun' ? 22 : 12;
+        const returnWeight = heavy
+            ? 1 - T.MathUtils.smoothstep(this.fireAge * 60, releaseTick, levelTick)
+            : Math.exp(-this.fireAge * decay);
         const rise = Math.min(1, (this.fireAge + 1 / 120) * 56);
         this.barrelLift = !reload && !this.motion.actionName ?
-            this.feedback * (kick * rise * Math.exp(-returnAge * decay) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
+            this.feedback * (kick * rise * returnWeight + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
         this.carryPitch = moving && this.fireAge > .18 && !reload && !this.motion.actionName
             ? .12 * Math.sin((this.gait - .14) * Math.PI * 2) * Math.min(1, speed / 220) * this.feedback : 0;
         if (!moving && this.transition === STOPS[direction] && !this.motion.actionName && !reload) {

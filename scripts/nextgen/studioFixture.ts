@@ -17,7 +17,7 @@ import {retireRoomModels} from '../../src/render/RoomModelCache';
 
 type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow?:number};
 type Subject = Mark & (
-  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; recoilTicks?:number; reload?:number; ghost?:boolean}
+  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId|'queen'; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pod'; swollen?:boolean}
   | {kind:'ordnance'; weapon:'plasma'|'rocket'; from:[number,number,number]}
@@ -76,7 +76,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     key.position.add(stage.position);key.target.position.copy(stage.position);
     rim.position.add(stage.position);rim.target.position.copy(stage.position);
     if(!shot.room)key.intensity=3.1;
-    rim.intensity=shot.room?.75:1.1;
+    rim.intensity=shot.framePortrait?2.1:shot.room?.75:1.1;
   }
   else if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,shot.framePortrait?.82:1.9));
   else if(shot.origin){
@@ -106,13 +106,13 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         case 'marine': {
           const actor=marine();
           actor.setRig?.(subject.rig); actor.equip?.(subject.weapon);
-          if(shot.framePortrait)actor.setAimPitch?.(-.15);
+          if(shot.framePortrait)actor.setAimPitch?.(-.30);
           actor.setMotionSeed?.(1729); actor.setMotionOptions?.(1,true);
           for(let tick=0;tick<30;tick++){
             actor.setAction?.(subject.pose??'',subject.frame??.55);
-            const recoil=subject.recoilTicks===undefined?0:Number(tick===29-subject.recoilTicks);
-            actor.animate(tick/60,0,subject.aim??.9,recoil,subject.reload??0);
+            actor.animate(tick/60,0,subject.aim??.9,0,subject.reload??0);
           }
+          if(shot.framePortrait)actor.posePortrait?.();
           actor.syncWeaponPose?.();
           root=actor.root;
           if(subject.ghost)root.traverse(object=>{
@@ -467,6 +467,14 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         for(let i=0;i<empty.length;i+=4){
           const difference=Math.max(Math.abs(empty[i]-foreground.data[i]),Math.abs(empty[i+1]-foreground.data[i+1]),Math.abs(empty[i+2]-foreground.data[i+2]));
           foreground.data[i+3]=Math.min(255,Math.max(0,difference-2)*24);
+        }
+      }
+      // Lift the studio print's plate whites while retaining the game ink.
+      if(shot.framePortrait){
+        for(let i=0;i<foreground.data.length;i+=4){
+          const peak=Math.max(foreground.data[i],foreground.data[i+1],foreground.data[i+2]);
+          const gain=1+.22*T.MathUtils.smoothstep(peak,38,176);
+          for(let c=0;c<3;c++)foreground.data[i+c]*=gain;
         }
       }
       ctx.putImageData(foreground,0,0);

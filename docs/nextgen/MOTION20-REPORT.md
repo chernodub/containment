@@ -137,3 +137,27 @@ The production build passed. In the fixed-resolution Crew Checkpoint benchmark, 
 The Breacher campaign cleared six rooms through Armory with zero errors in `artifacts/nextgen/playtest/motion22-final/report.json`. The runner returned status 1 for two room-load observations over its five-second threshold, in Passenger Vault and Residential Gallery, while capture work was running.
 
 The repeat without concurrent capture or benchmarking also cleared six rooms with zero errors. Its runner returned status 1 for slow loads in Awakening Bay, Passenger Vault and Residential Gallery. The receipt is `artifacts/nextgen/playtest/motion22-quiet/report.json`.
+
+## MOTION23
+
+The four portraits now use authored low-ready stances. Both soles are on the deck, the hips move forward toward the leading knee, and the grip drops below the visor. Breacher presents the shotgun across the front boot, Cryo carries the rifle a little higher, Pyro opens its stance to the right around the launcher, and Arc brings the plasma weapon across the opposite shoulder. Each uses the game's ink pass, an upper-front key, a rig-colour rim and a plate-white adjustment that keeps dark ink intact.
+
+The four stills ship as `public/assets/ui/studio/portrait-{breacher,cryo,pyro,arc}.png`. Under `artifacts/nextgen/motion23-ui/`, the eight native captures cover all four rigs, the collapsed selector, Inspect open, the Cryo death card and both pause views. `native-detail.png` keeps the original pixels and `screen-sheet.png` shows each screen at 480×270. The visor and rig colour survive the death thumbnail; its 07 numeral needs the larger selector view.
+
+Rebuild the authored poses, portraits and recoil with the existing tools.
+
+```sh
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/marine_actions.py -- --clips=m10-portrait-shotgun,m10-portrait-rifle,m10-portrait-rocket,m10-portrait-plasma,m10-fire-shotgun,m10-fire-rocket --install
+npm run studio -- --only=portrait-
+npm run build
+```
+
+Both heavy clips keep the rear ankle at its ready target from before the shot through the catch. The shotgun elbow folds and the stock closes on the shooting shoulder while the pelvis moves back and down. The pump then opens that space. The rocket braces on the grounded rear boot and brings the launcher down sooner. The shotgun muzzle levels at tick 22 and the hips return at tick 27. For the rocket those ticks are 12 and 17. Each delay is 83 ms.
+
+`artifacts/nextgen/motion23-overlays/heavy-cycle.png` shows ready, fired and recovering masks registered to the same camera at the actual 480×270 scale. The final column combines them in red, green and blue. The projected gap between the rear face of the weapon mesh and the firing shoulder joint was 5.8, 2.8 and 10.1 pixels for the shotgun and 5.8, 4.1 and 3.5 pixels for the rocket. The rear ankle moved less than 0.001 pixel through contact and the horizontal weapon heading stayed within 0.000001 radians of the input aim. The subtle contact is harder to distinguish on the rocket because the tube covers the shoulder.
+
+All fifteen `artifacts/nextgen/motion23-after/` motion strips completed with zero capture errors. `quarter.png` and `room-comparison.png` pair the new poses with MOTION22. The two live Crawler and Stalker fights in `scenes/` replayed the earlier native event lists exactly, including shot timing, aim angle, hits and deaths.
+
+The production build passed. The fixed-resolution, 300-tick Crew Checkpoint Breacher High benchmark retained 124 median, 133 p95 and 134 peak draws, 149 resident programs and zero combat compilations. Of the 37 draw samples, 36 matched exactly and one rose from 126 to 127. See `artifacts/nextgen/motion23-before/benchmark.json` and `motion23-final/benchmark.json`.
+
+The seed-1729 Breacher campaign cleared all six rooms through Armory with zero errors, zero defects and exit status 0. The receipt is `artifacts/nextgen/playtest/motion23-breacher/report.json`.

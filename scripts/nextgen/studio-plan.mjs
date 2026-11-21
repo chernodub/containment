@@ -14,15 +14,15 @@ const prop=name=>({kind:'prop',kit:'industrial',name});
 // HERO19: present the dome shoulder and the visor to the lens, as the title does (left dome → face
 // screen-left; Pyro's right dome → face screen-right).
 const portraitPose={
-  breacher:{aim:1.78,pose:'',frame:0,span:2.10,rimColor:0xffd063},
-  cryo:{aim:1.84,pose:'',frame:0,span:2.13,rimColor:0x7fd6ff},
-  pyro:{aim:-.93,pose:'',frame:0,span:2.13,rimColor:0xff7a2e},
-  arc:{aim:1.87,pose:'',frame:0,span:2.17,rimColor:0xb79cff},
+  breacher:{aim:1.29,pose:'',frame:0,span:2.10,rimColor:0xffd063},
+  cryo:{aim:1.37,pose:'',frame:0,span:2.13,rimColor:0x7fd6ff},
+  pyro:{aim:.09,pose:'',frame:0,span:2.13,rimColor:0xff7a2e},
+  arc:{aim:1.43,pose:'',frame:0,span:2.17,rimColor:0xb79cff},
 };
 for(const rig of Object.keys(rigKit)){
   const {aim,pose,frame,span,rimColor}=portraitPose[rig];
-  add('portrait-'+rig,[{...marine(rig,pose),frame,aim,recoilTicks:{breacher:7,cryo:3,pyro:12,arc:6}[rig]}],{
-    width:640,height:640,focus:[0,.99,0],span,rimColor,key:[-4,3,3],framePortrait:true,transparent:true,
+  add('portrait-'+rig,[{...marine(rig,pose),frame,aim}],{
+    width:640,height:640,focus:[0,.99,0],span,rimColor,key:[2,4,5],cameraDirection:[4,1.9,6],card:true,framePortrait:true,transparent:true,
   });
 }
 const rewards={
