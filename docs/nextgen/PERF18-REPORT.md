@@ -423,3 +423,13 @@ Both matrices used the same 15-second production command, with two repeats per r
 Transmission's warm hold was 10.7 ms longer in the single matched revisit. Both rooms retained the same program inventory and recorded zero combat compiles. This comparison does not establish a repeatable loading change.
 
 Safety-interlock Pyro still missed 7% in both repeats. Its CPU p95 improved from 21.1–22.3 ms to 19.4–19.9 ms, while its frame p95 remained about 25 ms. Transmission's four High trials came in below 5%. Low stayed under 2% in all eight final trials. The maximum after draw count was below 330, with zero combat compiles.
+
+### Native visual and campaign verification
+
+Both builds produced all 22 requested 1920×1080 frames with adaptive resolution held fixed. The Armory incident fixture stages the marine in a legal gap facing the carousel using the normal gameplay camera. The native side-by-sides and 480×270 panels show no visible change to the painted surfaces, floor markings, warning yield, or fire effects. Ten pairs are byte-identical. The other twelve differ by at most three decoded pixels per image. One Relay Racks pixel differs by ten channel values, and the other changed pixels differ by at most one.
+
+The production build passed. The native fast Pyro run on seed 1729 cleared twelve rooms with zero errors, through Safety-interlock Station. Its Safety-interlock hold was 922 ms at load 2.43 → 2.43.
+
+The remaining frame target is concentrated in Safety-interlock High. Pyro still exceeded 20 ms in 7.98% and 11.59% of frames, and one quiet Arc run reached 5.22%. High stayed at or above 0.90 adaptive scale and the final peak was 296 draws. The work reduced update cost without a reproducible Pyro frame-tail improvement in this room. Arc made no soft-depth copies, while Pyro demanded one on essentially every rendered frame. That establishes a workload difference, with no isolated timing attribution for the residual GPU cost.
+
+[Baseline matrix](../../artifacts/nextgen/perf22/before/benchmark.json) · [Ablations](../../artifacts/nextgen/perf22/ablation/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf22/after/benchmark.json) · [Matched native frames](../../artifacts/nextgen/perf22/pairs) · [Pyro campaign](../../artifacts/nextgen/perf22/playtest-pyro/report.json)

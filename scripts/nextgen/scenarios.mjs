@@ -153,6 +153,22 @@ export const SCENARIOS=[
  {id:'low-ammo',state:'playing',room:'armory',required:['.weapon-hud[data-ammo=low]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});for(let i=0;i<400&&d.game.combat.snapshot.magazine>Math.ceil(d.game.combat.snapshot.magazineCapacity*.2);i++)d.step(1000/60);d.setInput({fire:false});d.abilityFixture('breacher','ready');d.refresh();}},
  {id:'reload-fixture',state:'playing',room:'armory',required:['#reload-label'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});d.step(500);d.setInput({fire:false});d.game.reload();d.step(d.game.combat.snapshot.reloadDurationMs*.4);d.abilityFixture('arc','ready');d.refresh();}},
  {id:'combat-calm',rooms:true,state:'playing',nativePointerHover:'#pause',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room,room==='reactor-vault'?{version:2}:{});d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
+ {id:'incident-facing',rooms:true,state:'playing',diagnosticOnly:true,nativePointerHover:'#pause',setup:async room=>{
+  const d=window.__containmentDebug,g=d.game;
+  if(room!=='armory')throw Error('The incident-facing fixture is authored for Armory');
+  await d.gotoRoom(room);
+  d.invulnerable(true);
+  // Face the Armory carousel from a clear gap inside the issue counter.
+  const target={x:515,y:488};
+  const position=[{x:665,y:488},{x:515,y:638},{x:365,y:488}].find(p=>d.canStand(p.x,p.y,28));
+  if(!position)throw Error('Armory incident has no clear viewing position');
+  const facing=Math.atan2(target.y-position.y,target.x-position.x);
+  Object.assign(g.player,position,{vx:0,vy:0,angle:facing});
+  d.setInput({x:0,y:0,fire:false,angle:facing,autoAim:false});
+  g.enemies.reset();
+  d.settlePresentation(90);
+  d.refresh();
+ }},
  {id:'l8-arena-calm',rooms:true,state:'playing',phase:'combat',nativePointerHover:'#pause',setup:new Function('room',`return (async()=>{
   const d=window.__containmentDebug,g=d.game,arena=${JSON.stringify(L8_CAPTURE_ARENAS)}[room];await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;
   if(!arena||!d.canStand(arena.x,arena.y,144))throw Error('Declared arena calm is not legal in actual debug geometry');
