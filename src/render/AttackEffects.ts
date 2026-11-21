@@ -440,6 +440,24 @@ export class AttackEffects {
  event(e:GameEffect,deathCue:DeathCue='none',targetFamily?:string, frozenBody?:T.Vector3){
   if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
+  if(e.planReaction){
+   const start=new T.Vector3(e.x/32,.55,e.y/32);
+   const end=new T.Vector3((e.targetX??e.x)/32,.55,(e.targetY??e.y)/32);
+   for(let i=0;i<=7;i++){
+    const point=start.clone().lerp(end,i/7);
+    this.particle(this.glow,EFFECT_LIMITS.glow,point,0x8df9db,.13,.28+i*.035);
+   }
+   return;
+  }
+  if(e.selfBlast&&e.sourceX!==undefined&&e.sourceY!==undefined){
+   const out=new T.Vector3(e.x-e.sourceX,0,e.y-e.sourceY);
+   if(out.lengthSq()<.001)out.set(1,0,0);
+   out.normalize();
+   const from=new T.Vector3(e.x/32,.06,e.y/32);
+   const length=(e.selfBlast.radius-e.selfBlast.distance+12)/32;
+   for(let i=1;i<=5;i++)this.pulse(from.clone().addScaledVector(out,length*i/5),0xffbd68,i===5?.34:.09,1);
+  }
+
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
   if(e.type==='corpse'){this.death(e,p,deathCue,frozenBody);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));

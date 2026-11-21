@@ -662,3 +662,6 @@
 #overlay .route-supply {display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 16px; border:1px solid #446979; background:#101e28;}
 #overlay .route-supply p {margin:4px 0 0;}
 #overlay .route-supply button small {display:block;}
+#overlay .route-supply-heading {display:flex; align-items:center; gap:12px;}
+#overlay .route-supply-guardian {width:100px; height:58px; object-fit:contain;}
+#overlay .fatal-escape {color:#ffd27a; font-weight:600;}

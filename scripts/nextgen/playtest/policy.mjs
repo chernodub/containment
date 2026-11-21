@@ -342,6 +342,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
   const jitter = amount => (random() * 2 - 1) * amount;
   const warnings = new Map(), hazardWarnings = new Map(), history = [];
   const consumableNotices = new Map();
+  const plasmaAttempts = new Set();
+  let plasmaOpeningUntil = 0;
   let consumableState=(seed^0xba113)>>>0;
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
@@ -354,6 +356,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
       if (key !== roomKey) {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
+        plasmaAttempts.clear(); plasmaOpeningUntil = 0;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -428,21 +431,29 @@ export function createHumanPolicy(seed, profile = 'competent') {
         keys.splice(keys[0]==='e'?1:0,0,'Shift');
       }
       const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
-      const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
-      if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
-      // WEAPONS15 weapon selection.
       const ammo = s.resources?.ammo;
       const current = s.combat.weapon;
       const novice = profile === 'novice';
       const hasAmmo = id => ammo[id].magazine + ammo[id].reserve > 0;
+      const lessonTarget = novice ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
+      const platedTarget = !novice&&ammo&&hasAmmo('plasma') ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+        .sort((a,b)=>distance(a,s.player)-distance(b,s.player))[0] : undefined;
+      if(platedTarget&&!plasmaAttempts.has(platedTarget.id)&&ammo.plasma.magazine>0&&!s.reloadingWeapons?.includes('plasma')){
+        plasmaAttempts.add(platedTarget.id);
+        plasmaOpeningUntil=now+400;
+      }
+      const plasmaFirst=platedTarget&&(lessonTarget||now<plasmaOpeningUntil);
+      const actions = now >= nextInput ? timelyKeys.filter(key=>!plasmaFirst||!['q','f','v','g'].includes(key)).slice(0,1) : [];
+      if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
+      // WEAPONS15 weapon selection.
       const contacts = novice ? visible : perceived.enemies;
       const near = Math.min(Infinity, ...contacts.map(enemy => distance(enemy, s.player)));
       let desired = !ammo ? current
         : near < 180 && hasAmmo('shotgun') ? 'shotgun'
         : hasAmmo('rifle') ? 'rifle' : hasAmmo('plasma') ? 'plasma' : 'pistol';
       let rocketTarget;
-      if (ammo && target && !novice) {
-        const range = distance(target, s.player);
+      if (ammo && (target||platedTarget) && !novice) {
+        const range = target?distance(target, s.player):Infinity;
         const ready = id => ammo[id].magazine > 0 && !s.reloadingWeapons?.includes(id);
         if (hasAmmo('rocket')) rocketTarget = contacts.find(enemy => {
           if (!enemy.clear || distance(enemy,s.player) <= 225) return false;
@@ -450,19 +461,19 @@ export function createHumanPolicy(seed, profile = 'competent') {
           return contacts.some(other =>
             other.id !== enemy.id && other.clear && distance(other, enemy) < 110);
         });
-        if (rocketTarget) desired = 'rocket';
-        else if (target.armor >= 40 && range > 150 && ready('plasma')) desired = 'plasma';
-        else if (range > 145 && ready('pistol') &&
+        if (platedTarget) desired = 'plasma';
+        else if (rocketTarget) desired = 'rocket';
+        else if (target && range > 145 && ready('pistol') &&
           (s.reloadingWeapons?.includes(desired) ||
             (target.armor <= 0 && target.health <= 29 && near >= 145))) desired = 'pistol';
-        else if (range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
+        else if (target && range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
           ready('shotgun')) desired = 'shotgun';
       }
       if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
       const sidegrade = desired !== 'rifle' && desired !== 'shotgun';
       // Baseline selection already uses delayed positions, so only specialised
       // choices add a dwell before the existing input cadence admits a swap.
-      const switchReady = novice || !sidegrade || now - weaponNotice >= 250;
+      const switchReady = novice || !sidegrade || (plasmaFirst&&desired==='plasma') || now - weaponNotice >= 250;
       const weapon = !actions.length && (novice || !s.abilities.dashing) &&
         now >= nextInput && switchReady && now >= weaponHold ? desired : current;
       if (weapon !== current) {
@@ -470,6 +481,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
         weaponHold = now + (sidegrade && !novice ? 350 : 0);
       }
       if (weapon === 'rocket') target = rocketTarget ?? null;
+      if (weapon === 'plasma' && platedTarget) target = platedTarget;
       if (target) {
         const dx=target.x-s.player.x,dy=target.y-s.player.y;
         const screen=target.screen&&s.player.screen?{

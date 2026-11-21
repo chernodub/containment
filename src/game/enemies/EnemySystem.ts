@@ -61,6 +61,7 @@ export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x
   canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
+  wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
@@ -188,7 +189,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -261,6 +262,7 @@ export class EnemySystem {
   readonly #spatialEnemies = new Map<number, SpatialEnemy>();
   readonly #listeners = new Set<(event: EnemyEvent) => void>();
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
+  readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
   readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
@@ -291,6 +293,7 @@ export class EnemySystem {
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
+    this.#wardenOpeningAim=options.wardenOpeningAim;
     this.#canMove = options.canMove;
     this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
     this.#route = options.route;this.#canAttack=options.canAttack;this.#balance=options.balance??{health:1,damage:1,speed:1,eliteHealth:2,eliteDamage:2,specials:false};
@@ -424,7 +427,8 @@ export class EnemySystem {
     this.#cachedSnapshot=null;
    const e=this.#enemies.get(id);if(!e)return;
    // Promotion keeps the authored Warden opening after an ordinary elite received a longer initial delay.
-   if(kind==='warden'&&e.type==='brute'&&e.elite&&this.#balance.chargeInitialCooldownMs!==undefined)e.specialCooldownMs=1500;
+   if(kind==='warden'&&this.#wardenOpeningAim){e.firstWardenCharge=true;e.specialCooldownMs=0;}
+   else if(kind==='warden'&&e.type==='brute'&&e.elite&&this.#balance.chargeInitialCooldownMs!==undefined)e.specialCooldownMs=1500;
    if(kind==='matron'){this.#reservedCount-=e.reservedChildren;e.reservedChildren=0;}
    // I13 boss body tier: native contact and ordinary strike geometry match the authored rank.
    e.radius=BOSS_BODIES[kind].radius;e.meleeShape=guardianMeleeShape(kind,MELEE_ATTACKS[e.type].shape);e.controlResistant=true;e.priority=true;e.champion=kind;e.health=e.maxHealth=(kind==='warden'?760:1150)*(this.#balance.championHealth??1);e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=(kind==='warden'?28:24)*(this.#balance.championDamage??1);e.creditReward=kind==='warden'?100:150;
@@ -1085,8 +1089,12 @@ export class EnemySystem {
     if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
     if(enemy.openingVolley){const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
+     if(enemy.firstWardenCharge&&distance>240)return;
+     const openingAim=enemy.firstWardenCharge?this.#wardenOpeningAim?.(enemy,player):undefined;
+     if(enemy.firstWardenCharge&&!openingAim&&distance>200)return;
      const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
-     enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:windup}));return;
+     const aim=openingAim??player;enemy.firstWardenCharge=undefined;
+     enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=aim.x-enemy.x;enemy.lockY=aim.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:aim.x,targetY:aim.y,durationMs:windup}));return;
     }
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];

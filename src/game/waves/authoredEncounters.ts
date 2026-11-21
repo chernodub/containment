@@ -123,7 +123,9 @@ export function storyOpening(seed:number, depth:number, story:boolean, salvage=f
  let selected=0;
  for(let room=0;room<=depth;room++){
   const beats=storyBeats(room,story);
-  const choices=[0,1,2].filter(index=>room<3||beats[index].grammar!==previous);
+  // The final bank transfer closes the Overload Floor's encounter sequence.
+  const openingSlots=room===19?[0,1]:[0,1,2];
+  const choices=openingSlots.filter(index=>room<3||beats[index].grammar!==previous);
   const choseSalvage=room===depth?salvage:junctions?.[room]==='salvage';
   const alternate=choseSalvage&&choices.length>1?1:0;
   const roll=openingRoll(seed,room);

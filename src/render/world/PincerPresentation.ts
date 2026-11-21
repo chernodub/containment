@@ -194,17 +194,18 @@ export class PincerPresentation {
       const point = game.geometry.exitPoint;
       this.exit.position.set(point.x / unit, 0, point.y / unit);
     }
-    for (const gate of this.gates.values()) {
-      gate.shutter.position.y = pincer.state === 'open' ? .6 + Math.min(1.4, (pincer.elapsedMs - PINCER_WINDOW_MS) / 190)
+    for (const [id,gate] of this.gates) {
+      const locked=game.closedFlank===id;
+      gate.shutter.position.y = locked?0:pincer.state === 'open' ? .6 + Math.min(1.4, (pincer.elapsedMs - PINCER_WINDOW_MS) / 190)
         : pincer.state === 'sealed' ? Math.max(0, .6 - this.sealedSeconds * 9) : .6;
-      gate.shutter.visible = pincer.state !== 'open' || pincer.elapsedMs < PINCER_WINDOW_MS + 650;
+      gate.shutter.visible = locked||pincer.state !== 'open' || pincer.elapsedMs < PINCER_WINDOW_MS + 650;
       gate.countdown.visible = pincer.state === 'staging';
       gate.countdown.geometry.setDrawRange(0, Math.ceil(48 * pincer.remainingMs / PINCER_WINDOW_MS) * 6);
       const age = (PINCER_WINDOW_MS - pincer.remainingMs) / 1000;
       gate.silhouettes.forEach(({root,arrival}, i) => {
         const retreat = this.sealedSeconds * 3;
         const advance = Math.min(1,Math.max(0,(pincer.elapsedMs-arrival)/650));
-        root.visible = retreat < 1.6 && advance < 1;
+        root.visible = !locked&&retreat < 1.6 && advance < 1;
         root.position.set(-.64 - retreat + advance * 2, Math.sin(age * 8 + i) * .05,
           (i - (gate.silhouettes.length - 1) / 2) * .51);
       });

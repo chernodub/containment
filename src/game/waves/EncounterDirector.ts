@@ -201,6 +201,14 @@ export class EncounterDirector {
   private holdUntilMs=0;
   private skipReinforcements=false;
   private skippedReinforcementBeat=-1;
+  private closedFlankId:string|undefined;
+  get closedFlank(){return this.closedFlankId;}
+  closeFlank(breachId:string):boolean {
+    const pincer=this.snapshot.pincer;
+    if(this.closedFlankId||pincer?.state!=='staging'||!pincer.flankers.some(flank=>flank.breachId===breachId))return false;
+    this.closedFlankId=breachId;
+    return true;
+  }
   private currentPhase: EncounterPhase = 'idle';
   private elapsedMs = 0;
   private dispatched = 0;
@@ -330,7 +338,11 @@ export class EncounterDirector {
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
       const cost=request.enemyId==='carrier'?4:1;
       if(request.atMs>this.beatElapsedMs||cost>slots)break;
-      slots-=cost;batch.push(this.placeInterception(request,player));this.dispatched++;
+      const arrival=this.placeInterception(request,player);
+      if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
+      slots-=cost;batch.push(arrival);this.dispatched++;
     }
     return batch.length?Object.freeze(batch):EMPTY;
   }
@@ -360,6 +372,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.currentPhase = 'idle'; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

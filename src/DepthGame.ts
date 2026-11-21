@@ -1,3 +1,5 @@
+import {floorChoicePair} from './game/waves/FloorChoices';
+import {wardenOpeningAim,wardenOpeningSpawn} from './game/waves/WardenOpening';
 import {demonstratedAugment,RIG_DRILL_PROMPTS} from './game/waves/RigDrill';
 import {TRANSFORMATIVE_AUGMENT_IDS,type AugmentId} from './game/abilities/augmentCatalog';
 import {EARLY_LOCKER} from './game/roguelike/economy';
@@ -44,7 +46,7 @@ import {RoomConditionRuntime,onConditionZone} from './game/roguelike/RoomConditi
 import {shipCondition,isJunction,BROOD_HATCH_MS,CONDITION_LIGHT_RADIUS} from './game/roguelike/shipConditions';
 import {storyOpening} from './game/waves/authoredEncounters';
 import type {WeaponId} from './game/combat/types';
-export type GameEffect={selfBlast?:{distance:number;radius:number};incomingSource?:IncomingDamageOrigin['source'];encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'ability'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'ambush'|'enemy-attack'|'enemy-warning'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
+export type GameEffect={planReaction?:true;selfBlast?:{distance:number;radius:number};incomingSource?:IncomingDamageOrigin['source'];encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'ability'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'ambush'|'enemy-attack'|'enemy-warning'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
 export type GameInput={x:number;y:number;fire:boolean;angle:number|null;autoAim:boolean;aimPoint?:{x:number;y:number}|null};
 export type Bullet={sourceX?:number;sourceY?:number;visualMuzzle?:{x:number;y:number;z:number;distance:number};x:number;y:number;life:number;kind:'player'|'grenade'|'hazard';request:ProjectileRequest;tracker:ProjectileHitTracker;hitReceipt?:{hit:boolean}};
 export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number};
@@ -74,6 +76,17 @@ export class DepthGame {
  }
  get checkpointNote(){return this.checkpointWarning||(this.checkpointState==='saved'?'Checkpoint saved. Leaving a fight returns to the last saved choice or room boundary.':'No checkpoint saved yet. Complete a room to save progress.');}
  private discardCheckpoint(){this.suppressSave=true;this.checkpointState=clearCheckpoint(this.storage)?'none':this.storage?'clear-failed':'unavailable';}
+ private lastAbilityReady:Partial<Record<AbilitySlot,number>>={};
+ private abilitySampleAt=-Infinity;
+ private deathReadySlot:AbilitySlot|undefined;
+ get deathReadyAbility(){return this.status==='dead'?this.deathReadySlot:undefined;}
+ private sampleAbilityReadiness(){
+  this.abilitySampleAt=this.elapsed;
+  const slots=this.abilities.snapshot.slots;
+  if(!slots)return;
+  for(const slot of ['dash','tactical','power','overdrive'] as const)
+   if(slots[slot].ready)this.lastAbilityReady[slot]=this.elapsed;
+ }
  private platedLessonTarget:number|undefined;
  private promptedWeapons=0;
  private weaponLesson:{weapon:'plasma'|'rocket';target:number;until:number}|undefined;
@@ -108,7 +121,7 @@ export class DepthGame {
   const mode=this.difficulty,d=DIFFICULTIES[mode];
   const lateWindups=Math.round(d.windups*(1+(d.lateWindups-1)*latePressureProgress(this.node.depth,mode,this.expedition.run.version===3)))/d.windups;
   return {...d,lateWindups};
- },openingWindup:this.node.depth===0?1.5:1,lateDifficulty:this.node.depth>=10,canSeePlayer:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),launched:id=>this.mutations?.isLaunched(id)??false,immovables:()=>{const q=this.boss.snapshot;return q.active?[{x:q.x,y:q.y,radius:92,health:q.health},...q.nests.map(n=>({x:n.x,y:n.y,radius:28,health:n.health}))]:[];},balance:progressionFor(this.node),canCommit:(enemy,player,others)=>this.director.canCommit(enemy,player,others),canAttack:(a,b)=>(a.type==='spitter'?canTraverseExpedition(this.geometry,a,b,SPITTER_PROJECTILE_RADIUS):hasClearExpeditionShot(this.geometry,a,b))&&!this.abilities?.blocksMovement(a,b,0),canMove:c=>canTraverseExpedition(this.geometry,{x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius)&&!this.abilities?.blocksMovement({x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius),route:(e,p)=>this.navigation.waypoint(e,p,1)});}
+ },openingWindup:this.node.depth===0?1.5:1,lateDifficulty:this.node.depth>=10,canSeePlayer:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),launched:id=>this.mutations?.isLaunched(id)??false,immovables:()=>{const q=this.boss.snapshot;return q.active?[{x:q.x,y:q.y,radius:92,health:q.health},...q.nests.map(n=>({x:n.x,y:n.y,radius:28,health:n.health}))]:[];},balance:progressionFor(this.node),wardenOpeningAim:this.expedition.run.version===3?(enemy,player)=>wardenOpeningAim(this.geometry,enemy,player):undefined,canCommit:(enemy,player,others)=>this.director.canCommit(enemy,player,others),canAttack:(a,b)=>(a.type==='spitter'?canTraverseExpedition(this.geometry,a,b,SPITTER_PROJECTILE_RADIUS):hasClearExpeditionShot(this.geometry,a,b))&&!this.abilities?.blocksMovement(a,b,0),canMove:c=>canTraverseExpedition(this.geometry,{x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius)&&!this.abilities?.blocksMovement({x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius),route:(e,p)=>this.navigation.waypoint(e,p,1)});}
  private makeMutations(){return new MutationRuntime(this.combat,{player:()=>this.player,targets:()=>this.targets(),damage:(id,n,source)=>this.damage(id,n,undefined,source??'boon'),move:(id,x,y)=>this.shoveEnemy(id,x,y),moveCorpse:(t,x,y)=>{const m=this.moveCorpse(t,x,y);this.presentation.push({type:'sync-corpse',id:t.id,x:m.x,y:m.y});return m;},setSlow:(id,m)=>{if(id>0)this.enemies.setSlow(id,m);else if(id===-1)this.bossSlow=Math.max(.65,m);},launchCollision:(from,target,wall)=>{if(this.roomCondition?.slick(from)||this.roomCondition?.slick(target))this.damage(target.id,wall?12:6,undefined,'boon');},canAffect:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),boonEffect:(boon,x,y,targetX,targetY,radius,durationMs)=>this.presentation.push({type:'boon',boon,x,y,targetX,targetY,radius,durationMs}),wallSlam:(from,to,impulse)=>{const c=wallContact(this.geometry,from,to,from.radius);this.presentation.push({type:'wall-slam',x:c.x,y:c.y,wall:c.normal,targetId:from.id,vx:to.x-from.x,vy:to.y-from.y,impulse});},effect:(x,y,radius)=>this.presentation.push({type:'explosion',x,y,radius})});}
  private abilityPulseDamage=0;
  private makeAbilities(){return new AbilitySystem({roomDepth:()=>this.node.depth,enabled:()=>this.status==='playing',overdriveRoomLimit:()=>this.expedition.run.version===3&&this.node.depth!==9&&this.node.depth!==19?1:Infinity,placementRevision:()=>this.geometry,dashDistanceScale:p=>this.roomCondition?.slick(p)?1.5:1,chainThrough:(a,b)=>this.roomCondition?.condition.id==='conduit'&&this.roomCondition.zones.some(z=>onConditionZone(a,z)&&onConditionZone(b,z))||false,advance:ms=>this.mutations.update(ms),player:()=>this.player,targets:()=>this.targets(),visible:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),traverse:(a,b,r)=>canTraverseExpedition(this.geometry,a,b,r),movePlayer:(dx,dy)=>{const p=this.moveCorpse(this.player,dx,dy);this.player.x=p.x;this.player.y=p.y;},damage:(target,n)=>{const r=this.damage(target.id,n,undefined,'ability');this.abilityPulseDamage+=r.damage;if(r.died)this.mutations.kill(target,'direct');return r.died;},statuses:id=>this.mutations.statuses(id),consumeBurn:id=>this.mutations.consumeBurn(id),impede:t=>this.mutations.impedeWithFire(t),status:(t,k,n)=>this.mutations.applyAbilityStatus(t,k,n),launch:(t,x,y)=>this.mutations.launchAbility(t,x,y),arc:(t,others)=>this.mutations.abilityArc(t,others),has:id=>this.combat.hasMutation(id),upgraded:id=>this.expedition.build.augmentUpgrades?.includes(id)??false,reload:()=>{if(this.combat.instantReload())this.mutations.completedReload(this.player);},emit:(ability,x,y)=>{const measured=ability.targetIds&&['tick','impact','burst','link','dash-end'].includes(ability.phase);const totalDamage=measured?this.abilityPulseDamage:undefined;if(measured)this.abilityPulseDamage=0;this.observeRigDrill(ability);this.presentation.push({type:'ability',ability:totalDamage===undefined?ability:{...ability,totalDamage},x,y});}});}
@@ -155,7 +168,61 @@ export class DepthGame {
  private rememberExpedition(){try{this.storage?.setItem(CONTRACT_PROFILE_KEY,'1');}catch{}}
  private siegeBeat=-1;private siegeRemainingMs=12000;private siegePoint={x:0,y:0};
  private prepareSiegePoint(){this.navigation.prepare(this.geometry.playerSpawn,1);const exit=this.geometry.exitPoint;for(let ring=0;ring<=320;ring+=16){for(let i=0;i<(ring?24:1);i++){const angle=i*Math.PI/12,p={x:exit.x+Math.cos(angle)*ring,y:exit.y+Math.sin(angle)*ring};if(canOccupyExpedition(this.geometry,p,this.player.radius)&&this.navigation.reachable(p)){this.siegePoint=p;return;}}}this.siegePoint={...this.geometry.playerSpawn};}
- get siege(){const encounter=this.director?.snapshot;if(this.status!=='playing'||encounter?.grammar!=='siege'||(encounter.lullRemainingMs??0)>0)return null;return {beat:encounter.beat??0,x:this.siegePoint.x,y:this.siegePoint.y,radius:220,durationMs:12000,remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000};}
+ private gatePads:{x:number;y:number}[]=[];
+ private relayBanks:{x:number;y:number}[]=[];
+ private relayBank:{x:number;y:number}|undefined;
+ get floorControls(){
+  if(this.status!=='playing'&&this.status!=='paused')return [];
+  const pincer=this.encounter.pincer;
+  if(this.node.templateId==='safety-interlock-station'&&pincer?.state==='staging'&&!this.director.closedFlank){
+   const breaches=[...new Set(pincer.flankers.map(flank=>flank.breachId))];
+   const pads=this.gatePads.slice(0,breaches.length);
+   if(pads.length===2){
+    const [first,second]=breaches.map(id=>this.geometry.breaches.find(breach=>breach.id===id));
+    if(first&&second){
+     const distance=(a:{x:number;y:number},b:{x:number;y:number})=>Math.hypot(a.x-b.x,a.y-b.y);
+     if(distance(pads[0],first)+distance(pads[1],second)>distance(pads[0],second)+distance(pads[1],first))breaches.reverse();
+    }
+   }
+   return pads.map((point,index)=>({...point,id:breaches[index],kind:'gate' as const,radius:28}));
+  }
+  if(this.crossingRequired&&!this.relayBank)
+   return [...this.relayBanks.map((point,index)=>({...point,id:String(index),kind:'bank' as const,radius:68})),
+    {...this.siegePoint,id:'failed-bank',kind:'failed-bank' as const,radius:220}];
+  return [];
+ }
+ get closedFlank(){return this.director.closedFlank;}
+ private get crossingRequired(){
+  return this.node.templateId==='overload-floor'&&this.siegeBeat>=0&&this.siegeRemainingMs<=4000&&this.relayBanks.length>0
+   &&this.director.snapshot.grammar==='siege';
+ }
+ get siege(){
+  const encounter=this.director?.snapshot;
+  if(this.status!=='playing'||encounter?.grammar!=='siege'||(encounter.lullRemainingMs??0)>0)return null;
+  const crossing=this.crossingRequired;
+  const target=crossing?(this.relayBank??this.relayBanks.reduce((best,point)=>
+   Math.hypot(point.x-this.player.x,point.y-this.player.y)<Math.hypot(best.x-this.player.x,best.y-this.player.y)?point:best)):this.siegePoint;
+  return {beat:encounter.beat??0,x:target.x,y:target.y,radius:crossing?68:220,durationMs:12000,
+   remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000,crossing,choosing:crossing&&!this.relayBank};
+ }
+ private tickFloorObjectives(ms:number){
+  for(const pad of this.floorControls){
+   if(pad.kind==='failed-bank')continue;
+   if(Math.hypot(pad.x-this.player.x,pad.y-this.player.y)>pad.radius)continue;
+   if(pad.kind==='gate'){
+    if(this.director.closeFlank(pad.id))this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y});
+   }else this.relayBank=pad;
+   break;
+  }
+  const siege=this.siege;
+  if(!siege)return;
+  if(this.siegeBeat!==siege.beat){this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;this.relayBank=undefined;}
+  if(!siege.choosing&&Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius){
+   const floor=this.node.templateId==='overload-floor'&&this.relayBanks.length&&!this.relayBank?4000:0;
+   this.siegeRemainingMs=Math.max(floor,this.siegeRemainingMs-ms);
+  }
+ }
+
  get encounterGuardian(){
   return this.expedition.run.version===3
    ?this.director.plan.schedule.find(spawn=>spawn.guardian)?.guardian??null
@@ -172,7 +239,10 @@ export class DepthGame {
   this.newRun(undefined,{rig:build.rig,difficulty:this.difficulty,version:run.version,startingBoon:run.version===3?build.mutations[0]:undefined});
   return true;
  }
- private enterRoom(start=true){this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
+ private enterRoom(start=true){this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
+ this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
+ this.relayBanks=this.node.templateId==='overload-floor'?floorChoicePair(this.geometry,this.siegePoint,p=>this.navigation.reachable(p),304,496):[];
+ const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'&&this.node.depth===11&&this.combat.snapshot.health<50){
   const entrance=this.moveCorpse({...this.player,radius:14},48,0);
   this.pickups.spawn('health',35,entrance.x,entrance.y);
@@ -301,7 +371,7 @@ export class DepthGame {
   return !!this.coverLesson&&!this.coverLesson.learned&&this.enemies.snapshot.enemies.some(enemy=>enemy.type==='spitter');
  }
  get escortExitOpen(){return this.status==='playing'&&this.clearRequested&&[...this.departures.values()].some(departure=>departure.escort);}
- get encounterObjective(){if(this.status!=='playing')return '';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.coverLessonActive)return "Break the Spitter’s line of sight";if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const pincer=this.encounter.pincer;if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
+ get encounterObjective(){if(this.status!=='playing')return '';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.coverLessonActive)return "Break the Spitter’s line of sight";if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const pincer=this.encounter.pincer;if(this.floorControls.some(pad=>pad.kind==='gate'))return 'Step onto either control to seal that flank';if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.choosing)return 'Relay bank failing · Cross to either backup';if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
  private storySkipped=false;
  get storyPresentation(){return this.storySkipped?undefined:this.storyRoom?.story;}
  skipStory(){this.storySkipped=true;}
@@ -381,10 +451,14 @@ export class DepthGame {
    if(origin){const ringDistance=Math.hypot(p.x-origin.x,p.y-origin.y);if(ringDistance<BOSS_BODIES.matron.hatchRingMin||ringDistance>BOSS_BODIES.matron.hatchRingMax)continue;}
    // I13: rooted pods cannot separate themselves; reserve a clear native body circle.
    if(podNeighbors){let occupied=false;for(const neighbor of podNeighbors)if(Math.hypot(p.x-neighbor.x,p.y-neighbor.y)<radius+neighbor.radius+.5){occupied=true;break;}if(occupied)continue;}
-   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.lesson?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
+   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(guardian)this.enemies.promote(result.enemy.id,guardian);
-     if(this.node.depth===1&&options.lesson==='brute')this.platedLessonTarget=result.enemy.id;
+     if(this.node.templateId==='passenger-vault'&&options.lesson==='brute'){
+      this.platedLessonTarget=result.enemy.id;
+      this.enemies.stagger(result.enemy.id,3200);
+      this.startWeaponLesson('plasma',result.enemy.id);
+     }
     }
     return result.spawned;
    }
@@ -408,8 +482,24 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
- if(e.lesson){const distance=e.lesson==='brute'?155:e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
+ if(e.lesson){
+  const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
+  const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:[0,.5,-.5,1,-1];
+  const legal=offsets.map(offset=>{
+   const angle=this.player.angle+offset;
+   return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};
+  }).filter(point=>canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point));
+  const cover=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
+  const nearCover=e.lesson==='brute'?legal.find(point=>cover.some(rect=>
+   Math.hypot(Math.max(rect.x-point.x,0,point.x-rect.x-rect.width),Math.max(rect.y-point.y,0,point.y-rect.y-rect.height))<55)):undefined;
+  const point=nearCover??legal[0];
+  if(point)({x,y}=point);
+ }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
+  if(guardian==='warden'&&this.expedition.run.version===3){
+   const stage=wardenOpeningSpawn(this.geometry,this.player,Math.atan2(y-this.player.y,x-this.player.x),this.enemies.snapshot.enemies);
+   if(stage){x=stage.x;y=stage.y;}
+  }
  this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,options:{openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:chosen.x,cueY:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
@@ -499,7 +589,7 @@ export class DepthGame {
   else if(enemy.meleePhase==='approach'){drill.entered=false;drill.evaded=false;}
  }
  private clearRoom(){if(this.combat.snapshot.dead||this.expedition.run.phase!=='combat')return;this.dodgeDrill=null;this.collectLoot(true);if(this.condition?.id==='brood')this.awardCredits(Math.round(Math.max(0,this.combat.snapshot.credits-this.roomStartCredits)*.3));if(this.node.depth===7&&(this.expedition.run.guardianRoute||this.expedition.run.junctions?.[3]==='salvage'))this.awardCredits(35);if(this.node.depth===GUARDIAN_ROUTE_DEPTH&&this.expedition.run.guardianRoute){this.combat.restoreHealth(35);this.combat.restoreArmor(25);}if(this.difficulty==='story'&&this.node.depth===2)this.combat.restoreHealth(35);if(this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage'){if(this.node.depth===15)this.awardCredits(160);if(this.node.depth===18)this.abilities.addCharge(24000);}this.settleContract();this.expedition=completeExpeditionRoom(this.expedition,this.combat.getRunResources());this.bullets=[];this.pools=[];this.pending=[];this.enemies.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.player.moving=false;this.status=this.expedition.run.phase==='complete'?'complete':'reward';if(this.status==='complete'){this.rememberExpedition();if(this.storyRoom){this.combat.applyDamage(1000000);this.expedition=Object.freeze({...this.expedition,resources:this.combat.getRunResources()});this.presentation.push({type:'explosion',x:this.player.x,y:this.player.y,radius:900});}this.discardCheckpoint();}else this.save();}
- private enemyEvents(events:readonly EnemyEvent[]){for(const e of events){if(this.roomCondition?.condition.id==='dark'&&(e.type==='attack-warning'||e.type==='melee-warning'||e.type==='contact-attack'||e.type==='hazard-attack'))this.roomCondition.openedAttacks.add(e.enemyId);if(e.type==='death'){if(e.priority&&e.beat!==undefined)this.director.reportPriorityDefeated(e.beat);const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request')this.pending.push({type:e.enemyType,x:e.x,y:e.y,elite:e.elite,delay:450,options:{pod:e.pod,hatchMs:e.hatchMs,beat:e.beat,...(e.pod?{podOrigin:this.enemies.getSnapshot(e.sourceEnemyId)??{x:e.x,y:e.y}}:{})}});else if(e.type==='attack-warning'){if(e.enemyType==='carrier')this.broodPodsDestroyed=0;this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});}else if(e.type==='hazard-attack'){const angle=Math.atan2(e.targetY-e.sourceY,e.targetX-e.sourceX);this.presentation.push({type:'enemy-attack',id:e.enemyId,family:'spitter',x:e.sourceX,y:e.sourceY,angle});this.bullets.push({sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,life:ENEMY_ATTACK_SHAPES.spitterProjectileLife,kind:'hazard',request:{weaponId:'plasma',damage:e.damage,speed:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed,radius:SPITTER_PROJECTILE_RADIUS,angle,penetration:1,splashRadius:0,knockback:0},tracker:new ProjectileHitTracker(1)});}}}
+ private enemyEvents(events:readonly EnemyEvent[]){for(const e of events){if(this.roomCondition?.condition.id==='dark'&&(e.type==='attack-warning'||e.type==='melee-warning'||e.type==='contact-attack'||e.type==='hazard-attack'))this.roomCondition.openedAttacks.add(e.enemyId);if(e.type==='death'){if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};this.director.reportPriorityDefeated(e.beat);}const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request')this.pending.push({type:e.enemyType,x:e.x,y:e.y,elite:e.elite,delay:450,options:{pod:e.pod,hatchMs:e.hatchMs,beat:e.beat,...(e.pod?{podOrigin:this.enemies.getSnapshot(e.sourceEnemyId)??{x:e.x,y:e.y}}:{})}});else if(e.type==='attack-warning'){if(e.enemyType==='carrier')this.broodPodsDestroyed=0;this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});}else if(e.type==='hazard-attack'){const angle=Math.atan2(e.targetY-e.sourceY,e.targetX-e.sourceX);this.presentation.push({type:'enemy-attack',id:e.enemyId,family:'spitter',x:e.sourceX,y:e.sourceY,angle});this.bullets.push({sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,life:ENEMY_ATTACK_SHAPES.spitterProjectileLife,kind:'hazard',request:{weaponId:'plasma',damage:e.damage,speed:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed,radius:SPITTER_PROJECTILE_RADIUS,angle,penetration:1,splashRadius:0,knockback:0},tracker:new ProjectileHitTracker(1)});}}}
  private queenEvents(events:readonly QueenBossEvent[]){for(const e of events){if(e.type==='minion-spawn-request'&&this.enemies.activeCount+this.pending.length<20)this.pending.push({type:'crawler',x:e.x,y:e.y,elite:false,delay:650});else if(e.type==='area-attack'){this.presentation.push({type:'enemy-attack',id:-1,x:this.boss.snapshot.x,y:this.boss.snapshot.y});this.presentation.push({type:'acid',x:e.x,y:e.y,radius:e.radius});if(Math.hypot(this.player.x-e.x,this.player.y-e.y)<e.radius+16)this.hurt(e.damage,{x:e.x,y:e.y},{source:'boss-attack',enemyFamily:'queen'});this.pools.push({id:++this.poolId,x:e.x,y:e.y,radius:e.radius*.75,life:2,warning:0,damage:6,tick:.5});}else if(e.type==='nest-destroyed')this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:64});else if(e.type==='queen-defeated'){this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:240});this.encounterEvents(this.director.reportBossDefeated());}}}
  observeWeaponDamage?: (weapon: WeaponId, family: string, damage: number, lethal: boolean) => void;
  damage(id:number,amount:number,impulse?:{x:number;y:number},source:DamageSource='weapon',feedback=true,weapon?:WeaponId){const target=this.targets().find(t=>t.id===id),frozen=target?this.mutations.statuses(id).frozen:false;this.targetCache=null;let applied=false,died=false,absorbedByArmor=0,damage=0;
@@ -550,16 +640,21 @@ export class DepthGame {
   this.combat.restoreRunResources({...this.combat.getRunResources(),health:45});
   this.expedition=Object.freeze({...this.expedition,run:Object.freeze(run)});
   this.heavyHitGrace=2;this.presentation.push({type:'boon',boon:'shield',x:this.player.x,y:this.player.y});
- }if(this.combat.snapshot.dead){this.expedition=defeatExpedition(this.expedition);this.status='dead';this.rememberExpedition();this.player.moving=false;this.director.reportPlayerDefeated();this.bullets=[];this.pools=[];this.abilities.resetRoom();this.combat.setOverclock(false);this.discardCheckpoint();}}
+ }if(this.combat.snapshot.dead){
+ this.sampleAbilityReadiness();
+ this.deathReadySlot=(['dash','tactical','power','overdrive'] as const)
+  .find(slot=>this.elapsed-(this.lastAbilityReady[slot]??-Infinity)<=1);
+ this.expedition=defeatExpedition(this.expedition);this.status='dead';this.rememberExpedition();this.player.moving=false;this.director.reportPlayerDefeated();this.bullets=[];this.pools=[];this.abilities.resetRoom();this.combat.setOverclock(false);this.discardCheckpoint();}}
  reload(){if(this.status==='playing'){const before=this.combat.snapshot;this.combat.startReload();if(this.combat.snapshot.magazine>before.magazine)this.mutations.completedReload(this.player);}}
  heal(){if(this.status==='playing'&&this.combat.consumeMedkit())this.usedContractMedkit=true;}
  switchWeapon(id:WeaponId){if(this.status==='playing'){const before=this.combat.getRunResources().ammo[id].magazine;if(this.combat.switchWeapon(id)&&this.combat.snapshot.magazine>before)this.mutations.completedReload(this.player);this.syncOverclock();}}
  grenade(){if(this.status!=='playing')return;const r=this.combat.throwGrenade(this.player.angle);if(r)this.bullets.push({x:this.player.x,y:this.player.y,life:1.1,kind:'grenade',request:{...r,weaponId:'rocket',radius:7,penetration:1,mutationShotId:this.combat.nextMutationEventId('grenade')},tracker:new ProjectileHitTracker(1)});}
  private weaponImpactDamage(b:Bullet, id:number){
   const {weaponId,damage,precision}=b.request;
-  if(weaponId!=='pistol'&&weaponId!=='plasma')return damage;
+  if(weaponId!=='pistol'&&weaponId!=='plasma'&&weaponId!=='rifle')return damage;
   const enemy=this.enemies.getSnapshot(id);
   switch(weaponId){
+   case 'rifle':return enemy?.armor?Math.min(enemy.armor,damage*.42):damage;
    case 'pistol': {
     const recovering=enemy?.meleePhase==='recovery'||(enemy?.stunRemainingMs??0)>0;
     const finishing=recovering&&enemy&&enemy.armor===0&&enemy.health<=damage*2;
@@ -608,7 +703,13 @@ export class DepthGame {
    const contacts=this.targets().map(t=>{const radius=shotRadii.get(t.id)??t.radius;const previous=previousTargets.get(t.id)??t,mx=t.x-previous.x,my=t.y-previous.y;
     const start={x:from.x-previous.x-mx*i/steps,y:from.y-previous.y-my*i/steps},end={x:next.x-previous.x-mx*(i+1)/steps,y:next.y-previous.y-my*(i+1)/steps};
     return {t,entry:sweptCircle(start,end,{x:0,y:0},radius+b.request.radius)};}).filter(c=>c.entry!==null&&hasClearExpeditionShot(this.geometry,from,c.t)&&canTraverseExpedition(this.geometry,from,{x:from.x+(next.x-from.x)*c.entry,y:from.y+(next.y-from.y)*c.entry},b.request.radius)).sort((a,b)=>a.entry!-b.entry!);
-   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor)this.completeWeaponLesson(1);if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor)this.startWeaponLesson('plasma',t.id);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
+   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor){
+    this.completeWeaponLesson(1);
+    if(t.id===this.platedLessonTarget&&!r.died){
+     this.enemies.stagger(t.id,1100);
+     this.presentation.push({type:'boon',boon:'shield',x:t.x,y:t.y,targetId:t.id});
+    }
+   }if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor)this.startWeaponLesson('plasma',t.id);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
    if(!done&&wallBlocked){b.x=from.x;b.y=from.y;if(b.request.splashRadius)this.blast(b);else if(b.request.weaponId==='shotgun'){const c=wallContact(this.geometry,from,next,b.request.radius);this.presentation.push({type:'hit',x:c.x,y:c.y,angle:b.request.angle,weapon:'shotgun',shotId:b.request.mutationShotId,wall:c.normal});}else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;}
   }if(b.life<=0){if(b.kind==='grenade')this.blast(b);done=true;}if(done){const i=this.bullets.indexOf(b);if(i>=0)this.bullets.splice(i,1);}}
  }
@@ -626,10 +727,14 @@ export class DepthGame {
   return collapse&&remainingMs>0?{...collapse,remainingMs}:undefined;
  }
 
+ private lastPriorityPoint:{x:number;y:number}|undefined;
  private interruptBrood(id:number,beat:number|undefined){
   const reserve=this.director.reportBroodInterrupted(beat);
   const pods=this.enemies.snapshot.enemies.filter(enemy=>enemy.pod&&enemy.beat===beat&&beat!==undefined);
   this.broodCollapse={id,canceled:reserve+pods.length,pods};
+  const parent=this.enemies.getSnapshot(id),pod=pods[0];
+  if(parent)this.presentation.push({type:'boon',planReaction:true,x:parent.x,y:parent.y,
+   targetX:pod?.x??parent.x,targetY:pod?.y??parent.y});
   for(const pod of pods)this.enemies.remove(pod.id);
   this.pending=this.pending.filter(request=>!request.options?.pod||request.options.beat!==beat);
   this.enemies.stagger(id,1800);
@@ -653,14 +758,18 @@ export class DepthGame {
     }
     this.breakAnnounced=true;
    }else if(!this.breakAnnounced&&this.encounter.grammar==='priority'){
-    this.presentation.push({type:'boon',encounterCue:'escort-broken',x:this.player.x,y:this.player.y});
+    const first=live.filter(enemy=>!enemy.priority).sort((a,b)=>
+      Math.hypot(a.x-this.player.x,a.y-this.player.y)-Math.hypot(b.x-this.player.x,b.y-this.player.y))[0];
+    const from=this.lastPriorityPoint??this.player;
+    this.presentation.push({type:'boon',encounterCue:'escort-broken',planReaction:true,x:from.x,y:from.y,
+     targetX:first?.x??from.x,targetY:first?.y??from.y,targetId:first?.id});
     this.breakAnnounced=true;
    }
   }else this.breakAnnounced=false;
   const escort=this.director.objectiveBroken&&this.encounter.grammar==='priority';
   this.cleanupElapsed=mode?this.cleanupElapsed+ms:0;
   for(const enemy of live){
-   if(enemy.priority)continue;
+   if(enemy.priority||enemy.id===this.platedLessonTarget&&(enemy.stunRemainingMs??0)>0)continue;
    let departure=this.departures.get(enemy.id);
    if(!mode&&!departure)continue;
    if(!departure){
@@ -769,7 +878,7 @@ export class DepthGame {
   }
  }
 
- private updateStep(deltaMs:number,input:GameInput){if(this.status!=='playing')return;if(!Number.isFinite(deltaMs))return;const ms=Math.min(50,Math.max(0,deltaMs)),dt=ms/1000;const weaponOverclock=this.abilities.overclocked,hostileMs=this.abilities.hostileDelta(ms),hostileScale=ms?hostileMs/ms:1;this.presentation.update(ms);this.runStats.update(ms,this.expedition.run.currentNodeId);this.elapsed+=dt;this.heavyHitGrace=Math.max(0,this.heavyHitGrace-dt);this.hurtCooldown=Math.max(0,this.hurtCooldown-dt);const length=Math.max(1,Math.hypot(input.x,input.y));const speed=this.roomCondition?.marineStagger?0:220;this.roomCondition?.advance(ms);if(input.aimPoint!==undefined)this.aimPoint=input.aimPoint;this.abilities.setIntent(input.x,input.y,this.aimPoint);const frameX=this.player.x,frameY=this.player.y;const moved=this.conditionWalk(input.x/length*speed*this.abilities.moveSpeedMultiplier,input.y/length*speed*this.abilities.moveSpeedMultiplier,dt);this.player.vx=dt?(moved.x-this.player.x)/dt:0;this.player.vy=dt?(moved.y-this.player.y)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.player.x=moved.x;this.player.y=moved.y;const siege=this.siege;if(siege){if(this.siegeBeat!==siege.beat){this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;}if(Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius)this.siegeRemainingMs=Math.max(0,this.siegeRemainingMs-ms);}
+ private updateStep(deltaMs:number,input:GameInput){if(this.status!=='playing')return;if(!Number.isFinite(deltaMs))return;const ms=Math.min(50,Math.max(0,deltaMs)),dt=ms/1000;const weaponOverclock=this.abilities.overclocked,hostileMs=this.abilities.hostileDelta(ms),hostileScale=ms?hostileMs/ms:1;this.presentation.update(ms);this.runStats.update(ms,this.expedition.run.currentNodeId);this.elapsed+=dt;if(this.elapsed-this.abilitySampleAt>=.1)this.sampleAbilityReadiness();this.heavyHitGrace=Math.max(0,this.heavyHitGrace-dt);this.hurtCooldown=Math.max(0,this.hurtCooldown-dt);const length=Math.max(1,Math.hypot(input.x,input.y));const speed=this.roomCondition?.marineStagger?0:220;this.roomCondition?.advance(ms);if(input.aimPoint!==undefined)this.aimPoint=input.aimPoint;this.abilities.setIntent(input.x,input.y,this.aimPoint);const frameX=this.player.x,frameY=this.player.y;const moved=this.conditionWalk(input.x/length*speed*this.abilities.moveSpeedMultiplier,input.y/length*speed*this.abilities.moveSpeedMultiplier,dt);this.player.vx=dt?(moved.x-this.player.x)/dt:0;this.player.vy=dt?(moved.y-this.player.y)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.player.x=moved.x;this.player.y=moved.y;this.tickFloorObjectives(ms);
   if(input.angle!==null&&Number.isFinite(input.angle))this.player.angle=input.angle;else if(input.autoAim){const q=this.boss.snapshot,target=this.targets().filter(t=>(t.id!==-1||q.vulnerable)&&Math.hypot(t.x-this.player.x,t.y-this.player.y)<(this.condition?.id==='dark'?CONDITION_LIGHT_RADIUS:720)&&hasClearExpeditionShot(this.geometry,this.player,t)).sort((a,b)=>Math.hypot(a.x-this.player.x,a.y-this.player.y)-Math.hypot(b.x-this.player.x,b.y-this.player.y))[0];if(target)this.player.angle=Math.atan2(target.y-this.player.y,target.x-this.player.x);}
   this.feedbackBatch=true;try{this.abilities.update(ms);}finally{this.flushFeedback();}this.player.vx=dt?(this.player.x-frameX)/dt:0;this.player.vy=dt?(this.player.y-frameY)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.syncOverclock(weaponOverclock);if(this.status!=='playing')return;
   const reloadBefore=this.combat.snapshot;this.combat.regenerateReserves(ms);this.combat.update(ms,input.fire);if(reloadBefore.reloading&&!this.combat.snapshot.reloading&&this.combat.snapshot.magazine>reloadBefore.magazine)this.mutations.completedReload(this.player);if(input.fire){const shots=this.combat.fire(this.player.angle);if(shots.length){this.runStats.recordShot();const hitReceipt={hit:false};this.presentation.push({type:'shot',x:this.player.x,y:this.player.y,weapon:shots[0].weaponId,angle:this.player.angle});for(const request of shots)this.bullets.push({sourceX:this.player.x,sourceY:this.player.y,x:this.player.x,y:this.player.y,life:2,kind:'player',request,hitReceipt,tracker:new ProjectileHitTracker(request.penetration)});}}this.combat.reloadIfEmpty();
