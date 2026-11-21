@@ -163,10 +163,6 @@ class PyroPresentation implements AbilityPresentation {
         // Authoritative landing immediately retires matching in-flight canisters.
         for (const p of this.effects) if (p.live && p.kind === 'lob' && Math.hypot(p.tx - tx, p.tz - tz) < .02) p.live = false;
         kit.burst(tx, .25, tz, 'pyro', 36, 3.5, .65);
-        // Hard burst: a short fireball volume inside the exact radius, then the pool takes over.
-        const ball = kit.fx.spawn(FxMode.Fire, tx, tz, .45);
-        ball.range = radius * .85; ball.arc = Math.PI * 2; ball.h0 = .5; ball.h1 = 1.4; ball.param = .25; ball.intensity = 1.1;
-
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
         kit.scar('soot', tx, tz, radius, SOOT, 10);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);
@@ -177,6 +173,15 @@ class PyroPresentation implements AbilityPresentation {
       return;
     }
     if (event.ability === 'meltdown') {
+      if (event.phase === 'tick') {
+        kit.sustain();
+        kit.ring(x, z, (event.radius ?? 130) / UNIT, HOT, .22, true);
+        for (const id of event.targetIds ?? []) {
+          const actor = kit.statusActor(id);
+          if (actor) kit.mote('spark', actor.root.position.x, .14, actor.root.position.z, 0, .8, 0, .22, .2, CORE);
+        }
+        return;
+      }
       if (event.phase === 'impact' || event.phase === 'burst') {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
@@ -383,7 +388,14 @@ class PyroPresentation implements AbilityPresentation {
         if (!kit.low) kit.directedFlame(p.x + Math.cos(a) * r, h, p.z + Math.sin(a) * r,
           .14, .38 * fade, a, 1.5, i, fade * .6);
       }
-      kit.directedFlame(p.x, .12, p.z, .42 * fade, 2.2 * fade, 0, .15, 3, fade * .9, true);
+      for (let i = 0; i < 3; i++) {
+        const angle = i * 2.4 + .35, reach = p.radius * (.23 + .21 * t);
+        const x = p.x + Math.cos(angle) * reach, z = p.z + Math.sin(angle) * reach;
+        const height = (1.6 + i * .35) * (.8 + Math.sin(t * Math.PI) * .65);
+        kit.draw('flame', x, height * .55, z, (.65 + .2 * i) * fade, height * .5, 1,
+          CORE, fade, 0, Math.cos(angle) * .23, POOL_FLAME_PHASE + i * 7);
+        kit.sprite('glow', x, height * .3, z, .32 * fade, .44 * fade, CORE, fade, i, 'light');
+      }
     } else {
       // Meltdown activation vents upward at the backpack; no radial carpet of fires.
       kit.impact();
@@ -548,6 +560,11 @@ class PyroPresentation implements AbilityPresentation {
     kit.lightAt(zone.id, x, z, HOT, 16 * fade, 7, 3);
     if (emit) {
       kit.sustain(age);
+      for (let i = 0; i < (kit.low ? 1 : 3); i++) {
+        const turn = kit.time * 3.2 + i * 2.4, rad = .48 + i * .22;
+        kit.mote('spark', x + Math.cos(turn) * rad, .15, z + Math.sin(turn) * rad,
+          .18 * Math.cos(turn), 2.4 + i * .35, .18 * Math.sin(turn), .046, .92, HOT);
+      }
       // Bounded ember storm is attached to the moving suit, never a floor aura fill.
       for (let i = 0; i < (kit.low ? 1 : 3); i++) {
         const a = exhaustAngle + (i - 1) * .7, side = i - 1;

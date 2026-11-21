@@ -325,6 +325,10 @@ class SystemPresentation implements AbilityPresentation {
     if (receipt.age < .26) return;
     k.sustain();
     receipt.landed = true;
+    k.impact();
+    k.mote('spark', x, .18, z, 0, .42, 0, size * .50, .13, WHITE);
+    k.mote('spark', x, .11, z, -Math.cos(angle) * 2, .2, -Math.sin(angle) * 2,
+      size * .33, .19, 0xffda95);
     const halfLength = Math.min(size * .82, Math.hypot(dx, dz) * .5);
     if (halfLength > .04)
       k.scar('skid', x - Math.cos(angle) * halfLength, z - Math.sin(angle) * halfLength,

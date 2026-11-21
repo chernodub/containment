@@ -1,4 +1,5 @@
 import type {GameEffect} from '../../DepthGame';
+import type {ElementKit} from '../abilities/ElementKit';
 import type {ActorModel} from '../models';
 
 export type TargetElement = 'kinetic' | 'ice' | 'fire' | 'arc';
@@ -9,7 +10,7 @@ export class OverdriveReactions {
 
   reset() { this.overclock = false; }
 
-  event(effect: GameEffect, actors: ReadonlyMap<number,ActorModel>, corpses: readonly {id:number;model:ActorModel}[]) {
+  event(effect: GameEffect, actors: ReadonlyMap<number,ActorModel>, corpses: readonly {id:number;model:ActorModel}[], kit?: ElementKit) {
     const ability = effect.ability;
     if (ability?.ability === 'overclock') {
       if (ability.phase === 'impact') this.overclock = true;
@@ -22,8 +23,21 @@ export class OverdriveReactions {
       if (element) for (const id of ability.targetIds) {
         this.target(id, actors, corpses)?.reactToElement?.(element, ability.angle ?? 0);
       }
-    } else if (this.overclock && effect.weapon && effect.contact === 'damage' && effect.targetId !== undefined) {
-      this.target(effect.targetId, actors, corpses)?.reactToElement?.('arc',effect.angle ?? 0);
+    } else if (this.overclock && effect.weapon && (effect.contact === 'damage' || effect.contact === 'armor') && effect.targetId !== undefined) {
+      const actor = this.target(effect.targetId, actors, corpses);
+      const angle = effect.angle ?? 0;
+      actor?.reactToElement?.('arc',angle);
+      if (actor && kit) {
+        const {x,y,z}=actor.root.position, h=actor.height, dx=Math.cos(angle), dz=Math.sin(angle);
+        const jointY=y+h*.47;
+        kit.heavyBeam(x-dx*1.25,jointY+.14,z-dz*1.25,x,jointY,z,0xa693ff,.13,.16,true);
+        for (let side=-1; side<=1; side+=2) {
+          const tx=x-dx*.2-side*dz*.44, tz=z-dz*.2+side*dx*.44;
+          kit.beam(tx,jointY+h*.28,tz,x,jointY,z,0xa693ff,.13,.30,false);
+          kit.beam(tx,jointY+h*.28,tz,x,jointY,z,0xfff8ff,.047,.30,false);
+        }
+        kit.mote('spark',x,jointY,z,0,.25,0,.28,.11,0xfff8ff);
+      }
     }
   }
 

@@ -228,14 +228,17 @@ class ArcPresentation implements AbilityPresentation {
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .54;
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload ? 1.62 : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
+          if (d.overload) {
+            k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .14, .21, true);
+          }
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
             const bx = d.sx + dx * t - dz / length * side * .18;
             const bz = d.sz + dz * t + dx / length * side * .18;
-            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, .048, .18, true);
+            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, d.overload ? .144 : .048, .18, true);
           }
         }
         const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
@@ -269,14 +272,14 @@ class ArcPresentation implements AbilityPresentation {
           const x = root.x + jx / jointLength * radius * .24;
           const z = root.z + jz / jointLength * radius * .24;
           const y = root.y + Math.min(actor.height * .6, radius * 1.35);
-          const crest = y + radius * .42;
-          const power = Math.min(1, fade * 3);
+          const crest = y + radius * .68;
+          const power = Math.min(1, (d.life - (d.age - d.delay)) / .08);
           k.impact();
           for (let side = -1; side <= 1; side += 2) {
             const bx = x + (-dx * .12 - side * dz * .32) / length * radius;
             const bz = z + (-dz * .12 + side * dx * .32) / length * radius;
-            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .06, power, false);
-            k.boltCard(bx, crest, bz, x, y + .08, z, .048, d.seed + side, power, WHITE);
+            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .14, power, false);
+            k.boltCard(bx, crest, bz, x, y + .08, z, .092, d.seed + side, power, WHITE);
           }
           k.sprite('spark', x, y + .12, z, .16, .22, WHITE, power, d.seed, 'light');
           k.sustain(d.age - d.delay);
@@ -453,10 +456,10 @@ class ArcPresentation implements AbilityPresentation {
       this.end.set(g.player.x / UNIT + c * ez + s * ex, ey, g.player.y / UNIT + s * ez - c * ex);
     }
     const k = this.kit;
-    k.ribbon(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z, VIOLET, width, opacity, false);
+    k.ribbon(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z, VIOLET, width * 3, opacity, false);
     // Animated branches crawl over the same armor rails, rather than orbiting the suit.
     if (!k.low || sy > 1.4) k.boltCard(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z,
-      width * (k.low ? 2.8 : 3.4), sx * 7.1 + sy * 11.3, opacity * .8, WHITE);
+      width * (k.low ? 5.6 : 7.2), sx * 7.1 + sy * 11.3, opacity * .8, WHITE);
   }
 
   private overclock(frame: AbilityFrame, emit: boolean): void {

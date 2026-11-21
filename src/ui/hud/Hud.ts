@@ -126,7 +126,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.style.left=`${Math.max(85,Math.min(innerWidth-85,pointerX))}px`;
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
-    const combatText = new CombatText(el('combat-text'), renderer);
+    const combatText = new CombatText(el('combat-text'), renderer, id => game.enemies.getSnapshot(id));
     const encounterCues = new EncounterCues();
     const targetMarkers = new TargetMarkers(el('threat-indicators'));
     const siegeLabel = new SiegeLabel(el('threat-indicators'));
