@@ -65,25 +65,9 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     mesh.name = 'hull-cap-diffusers';
     root.add(mesh);
   }
-  const [kind,length,width,yaw,bays]=insert,parts:T.BufferGeometry[]=[];
-  const plate=(x:number,z:number,w:number,d:number,bottom:number,top:number,tone:number)=>{
-    const g=new T.BoxGeometry(w,top-bottom,d);
-    g.translate(x,(top+bottom)/2,z);
-    const c=new T.Color(tone),rgb=new Float32Array(g.attributes.position.count*3);
-    for(let i=0;i<rgb.length;i+=3)c.toArray(rgb,i);
-    g.setAttribute('color',new T.BufferAttribute(rgb,3));parts.push(g);
-  };
-  const pitch=length/bays;
-  if(kind!=='rails')plate(0,0,length,width,.001,.009,0x252b2e);
-  for(const side of [-1,1])plate(0,side*width*.48,length,.048,.009,.021,0x666967);
-  for(let i=0;i<bays;i++){
-    const x=-length*.5+(i+.5)*pitch;
-    if(kind==='rails')plate(x,0,.10,width,.004,.013,0x40484a);
-    else if(kind==='drain')plate(x,0,pitch*.37,width*.90,.009,.019,0x596265);
-    else {
-      plate(x,0,pitch-.038,width-.095,.010,.019,kind==='hatch'?0x535959:0x464f51);
-      plate(x,kind==='hatch'?width*.26:0,.15,.045,.019,.021,0x303637);
-    }
+  // These approaches expose the torn hull, torn guide or split duct directly.
+  if (!['shielding-gate','breached-loading-bay','swarm-junction'].includes(id)) {
+    addArenaInsert(root,plan.arena,insert);
   }
   if(id==='passenger-vault'||id==='freight-hold'){
     // The luggage and cargo spilled onto their transport bases. The broad
@@ -97,17 +81,6 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     base.material.userData.actorMaterial=true;
     root.add(base);
   }
-  const geometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
-  const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.26});
-  // The recessed machined faces sit between the named-space paint and wet decals.
-  material.polygonOffset=true;
-  material.polygonOffsetFactor=-3;
-  material.polygonOffsetUnits=-3;
-  material.userData.actorMaterial=true;
-  const mesh=new T.Mesh(geometry,material);
-  mesh.name='room14-'+kind;mesh.position.set(plan.arena.x/32,.0002,plan.arena.y/32+1.1);
-  mesh.rotation.y=yaw;mesh.receiveShadow=true;root.add(mesh);
-
   // Two restrained pools originate at actual diffusers already in the kit.
   // The existing distance-ranked light pool owns their allocation and Low fallback.
   const lamps=root.userData.lightFixtures as {x:number;z:number;color:number;nativeColor:boolean;gain:number}[]|undefined;
@@ -142,4 +115,38 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   louvres.forEach(g=>g.dispose());
   casing.geometry.dispose();post.dispose();shoe.dispose();casing.geometry=housing;
   fixture.add(casing,diffuser);root.add(fixture);
+}
+
+function addArenaInsert(root:T.Group,arena:{x:number;y:number},insert:Insert):void {
+  const [kind,length,width,yaw,bays]=insert,parts:T.BufferGeometry[]=[];
+  const plate=(x:number,z:number,w:number,d:number,bottom:number,top:number,tone:number)=>{
+    const g=new T.BoxGeometry(w,top-bottom,d);
+    g.translate(x,(top+bottom)/2,z);
+    const c=new T.Color(tone),rgb=new Float32Array(g.attributes.position.count*3);
+    for(let i=0;i<rgb.length;i+=3)c.toArray(rgb,i);
+    g.setAttribute('color',new T.BufferAttribute(rgb,3));parts.push(g);
+  };
+  const pitch=length/bays;
+  if(kind!=='rails')plate(0,0,length,width,.001,.009,0x252b2e);
+  for(const side of [-1,1])plate(0,side*width*.48,length,.048,.009,.021,0x666967);
+  for(let i=0;i<bays;i++){
+    const x=-length*.5+(i+.5)*pitch;
+    if(kind==='rails')plate(x,0,.10,width,.004,.013,0x40484a);
+    else if(kind==='drain')plate(x,0,pitch*.37,width*.90,.009,.019,0x596265);
+    else {
+      plate(x,0,pitch-.038,width-.095,.010,.019,kind==='hatch'?0x535959:0x464f51);
+      plate(x,kind==='hatch'?width*.26:0,.15,.045,.019,.021,0x303637);
+    }
+  }
+  const geometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
+  const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.26});
+  // The recessed machined faces sit between the named-space paint and wet decals.
+  material.polygonOffset=true;
+  material.polygonOffsetFactor=-3;
+  material.polygonOffsetUnits=-3;
+  material.userData.actorMaterial=true;
+  const mesh=new T.Mesh(geometry,material);
+  mesh.name='room14-'+kind;mesh.position.set(arena.x/32,.0002,arena.y/32+1.1);
+  mesh.rotation.y=yaw;mesh.receiveShadow=true;root.add(mesh);
+
 }

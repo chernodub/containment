@@ -52,7 +52,7 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   paint:(c:CanvasRenderingContext2D)=>void,height=.020):void {
   const [left,top,width,depth]=bounds;
   const canvas=document.createElement('canvas');
-  canvas.width=name==='frame16-deck-wear'?768:1024;canvas.height=Math.round(canvas.width*depth/width);
+  canvas.width=1024;canvas.height=Math.round(canvas.width*depth/width);
   // Relief samples the painted bitmap immediately. Keep it on the CPU until upload.
   const c=canvas.getContext('2d',{willReadFrequently:true})!;
   c.scale(canvas.width/width,canvas.height/depth);c.translate(-left,-top);paint(c);
