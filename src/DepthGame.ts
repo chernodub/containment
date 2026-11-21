@@ -7,7 +7,7 @@ import {segmentIntersectsRect} from './game/input/aimAssist';
 import {ROCKET_ARM_DISTANCE} from './game/combat/catalog';
 import {AWAKENING_DRILL} from './game/waves/authoredEncounters';
 import {BOSS_BODIES,guardianRadius} from './game/enemies/bossDefinitions';
-import {SERVICE_IDS,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
+import {SERVICE_IDS,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
 import {upgradeBuildAugment} from './game/roguelike/builds';
 import {markExpeditionAllocation,recordExpeditionPurchase} from './game/roguelike/expedition';
 import {DIFFICULTIES,difficultyId,incomingDamageLimit,latePressureProgress,type DifficultyId} from './game/difficulty';
@@ -205,6 +205,12 @@ export class DepthGame {
   if(purchase==='reroll')return this.expedition.run.version!==1&&(this.expedition.run.rerollTokens??0)<3;
   if(purchase==='upgrade')return availableAugmentUpgrades(this.expedition.build).some(id=>augment===undefined||id===augment);
   if(purchase==='revive')return !this.expedition.run.finaleRevive;
+  if(purchase==='route-ammo'){
+   const route=this.expedition.run.guardianRoute;
+   if(!route)return false;
+   const {reserve,maxReserve}=preview.mutationResources(GUARDIAN_SUPPLIES[route].weapon);
+   return reserve<maxReserve;
+  }
   const before=preview.getRunResources();preview.refillShopAmmo();const after=preview.getRunResources();return (Object.keys(before.ammo) as WeaponId[]).some(id=>after.ammo[id].reserve>before.ammo[id].reserve);
  }
  purchaseService(purchase:ServiceId,augment?:string){
@@ -214,6 +220,10 @@ export class DepthGame {
   if(purchase==='heal')this.combat.restoreHealth(35);
   else if(purchase==='armor')this.combat.restoreArmor(30);
   else if(purchase==='ammo')this.combat.refillShopAmmo();
+  else if(purchase==='route-ammo'&&this.expedition.run.guardianRoute){
+   const supply=GUARDIAN_SUPPLIES[this.expedition.run.guardianRoute];
+   this.combat.grantRouteAmmo(supply.weapon,supply.rounds);
+  }
   else if(purchase==='medkit')this.combat.restoreRunResources({...before,medkits:Math.min(6,before.medkits+1)});
   else if(purchase==='grenade')this.combat.addGrenades(2);
   else if(purchase==='upgrade')build=upgradeBuildAugment(build,upgrade!);

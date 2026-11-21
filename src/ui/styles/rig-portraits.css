@@ -89,3 +89,6 @@
  #overlay .debrief-rig .marine-portrait {width:68px;height:68px;}
  #overlay .debrief-build>.record-marine {width:64px;height:64px;margin-top:-8px;}
 }
+
+#overlay .rig-example {width: min(180px, 42%); margin-bottom: 10px;}
+#overlay .rig-inspect > summary {cursor: pointer; padding: 10px 0;}

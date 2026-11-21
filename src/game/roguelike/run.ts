@@ -1,6 +1,6 @@
 import type { RoomKind, RunGraph, RunNode, RunPhase, RunState, TemplateId } from './types';
 
-import {SERVICE_IDS,SERVICE_CATALOG,DETOUR_DEPTHS,type DetourChoice} from './economy';
+import {SERVICE_IDS,SERVICE_CATALOG,DETOUR_DEPTHS,GUARDIAN_SUPPLY_DEPTH,type DetourChoice} from './economy';
 import {isJunction} from './shipConditions';
 import {ROOM_STORY_ROUTE} from './storyRooms';
 export const RUN_LENGTH = 20;
@@ -168,6 +168,7 @@ export function isValidRunState(value: unknown): value is RunState {
   }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
+  if(record.service!==undefined&&(record.service as NonNullable<RunState['service']>).purchases.includes('route-ammo')&&(!record.guardianRoute||current.depth!==GUARDIAN_SUPPLY_DEPTH))return false;
   if(record.weaponLessons!==undefined&&(record.version!==3||![1,2,3].some(value=>value===record.weaponLessons)))return false;
   if(record.guardianRoute!==undefined){
     const junctions=record.junctions as RunState['junctions'];
