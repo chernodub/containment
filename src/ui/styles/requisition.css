@@ -76,26 +76,7 @@
   color: var(--service-color);
 }
 
-.service-art-shadow { fill: #050e13; }
-.service-art-guide { stroke: currentColor; opacity: .24; fill: none; }
-.service-art-body { fill: #24404d; stroke: currentColor; stroke-width: 1.5; }
-.service-art-face { fill: #38535e; stroke: currentColor; }
-.service-art-detail { fill: none; stroke: #c6d8df; opacity: .8; }
-.service-art-mark { fill: currentColor; }
-
-@media (max-width: 900px) {
-  #overlay .service-shop.requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-#overlay .panel.requisition-panel .room-record :is(.record-heading, button, p, small, summary),
-#overlay .panel.requisition-panel :is(.requisition-inventory,.requisition-footer p,.requisition-footer button) {
-  font-size: 14px;
-}
-
 #overlay img.service-illustration { object-fit: contain; background: #081820; }
-
-/* PROPS14: transparent prop renders sit on the card's own floor, not a flat backing. */
-#overlay img.service-illustration.service-prop { background: radial-gradient(ellipse at 50% 78%, #17313b 0%, #0b1c24 58%, #081820 100%); padding: 6px 0; }
 
 #overlay .requisition-item[data-purchase='heal'] { --service-color: #9bf4bb; }
 #overlay .requisition-item[data-purchase='medkit'] { --service-color: #a9d7f6; }
@@ -112,7 +93,7 @@
   position: absolute;
   inset: 50% auto auto 50%;
   width: auto;
-  height: calc(100% - 12px);
+  height: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;

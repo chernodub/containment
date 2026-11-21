@@ -21,7 +21,7 @@ import {contractFor, CONTRACT_ENDS} from '../../game/roguelike/contracts';
 import {junctionConsequence, runHeader} from '../../game/roguelike/shipConditions';
 import {routeVignette} from './routeVignettes';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats, getRoomOpening, getShipCondition} from '../gameAdapter';
+import {getAbilities, getRunStats, getRoomOpening, getRouteThreat, getShipCondition} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
@@ -284,14 +284,19 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
     <div class="route-briefing-grid">
       ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled,cost},index)=>{
         const firstJunction=run.runStructure&&destination.depth===3;
-        const room=ROOM_TEMPLATES[destination.templateId];
         const condition=getShipCondition(game,destination.depth,detour==='salvage');
         const variant=getRoomOpening(game,destination.depth,detour==='salvage');
         const consequence=run.runStructure?junctionConsequence(destination.depth,detour==='salvage'):undefined;
         const inventory = game.combat.getRunResources();
         const direct = detour === 'direct';
         const salvage = detour === 'salvage';
-        const routeArt = firstJunction && detour ? (salvage ? 'brood' : 'plate-breaker') : vignette;
+        const legacyArt = destination.kind==='medical' ? 'medicine'
+          : destination.kind==='armory' ? 'cache' : destination.kind==='boss' ? 'legacy-queen' : undefined;
+        const routeArt = firstJunction && detour ? (salvage ? 'brood' : 'plate-breaker')
+          : direct && game.node.depth===2 ? 'locker' : legacyArt ?? vignette;
+        const showOpening = !routeArt || routeArt==='protected-passage';
+        const threat = showOpening && (run.runStructure || game.difficulty==='story' || run.version!==3)
+          ? getRouteThreat(game,destination,salvage) : undefined;
         const depth = game.node.depth;
         const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? 35 : 0));
         const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
@@ -309,7 +314,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const outcome = disabled ? (credits < 0 ? `Need ${-credits} CR` : 'Requires eligible augment')
           : `${Math.ceil(health)} HP · ${Math.ceil(armor)} armor · ${credits} CR${grenades !== inventory.grenades ? ` · ${grenades} grenades` : ''}`;
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
-          <span class="route-option-visual">${routeVignette(room,routeArt)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-visual">${routeVignette(destination.templateId,routeArt,threat)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
             <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>

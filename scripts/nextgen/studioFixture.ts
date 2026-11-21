@@ -18,9 +18,10 @@ import {retireRoomModels} from '../../src/render/RoomModelCache';
 type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow?:number};
 type Subject = Mark & (
   {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
-  | {kind:'enemy'; family:StandardEnemyId; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
+  | {kind:'enemy'; family:StandardEnemyId|'queen'; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pod'; swollen?:boolean}
   | {kind:'ordnance'; weapon:'plasma'|'rocket'; from:[number,number,number]}
+  | {kind:'supply'; id:string}
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
   | {kind:'prop'; kit:keyof typeof KIT_URLS; name:string; tint?:number; glow?:number}
@@ -31,6 +32,7 @@ type Subject = Mark & (
 export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
+  card?:boolean; frameSubject?:boolean; webpQuality?:number;
   framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
@@ -41,6 +43,9 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const {renderer,scene}=owner;
   const post=owner['post'], abilities=owner['interimAbilities'];
   const postTime=post['time'];
+  const postOptions=post['options'], postTier=post['tier'], inkStrength=post['styleStrength'];
+  const finalAA=post.diagnosticFinalAA;
+  let supplyModels:T.Group|undefined;
   const size=renderer.getSize(new T.Vector2()), ratio=renderer.getPixelRatio();
   const original=new Map(scene.children.map(child=>[child,child.visible]));
   const background=scene.background, fog=scene.fog;
@@ -65,7 +70,14 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,shot.framePortrait?.55:1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
-  if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
+  if(shot.card){
+    stage.add(key,key.target,rim,rim.target,new T.HemisphereLight(0x788d9c,0x29303a,1.55));
+    key.position.add(stage.position);key.target.position.copy(stage.position);
+    rim.position.add(stage.position);rim.target.position.copy(stage.position);
+    if(!shot.room)key.intensity=3.1;
+    rim.intensity=shot.room?.75:1.1;
+  }
+  else if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
   else if(shot.origin){
     key.intensity=1.15;
     stage.add(key,key.target);
@@ -73,6 +85,13 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   let firstSubject:T.Object3D|undefined;
   let lessonCover:T.Object3D|undefined;
   try {
+    if(shot.card){
+      post.setOptions({...postOptions,inkOutlines:'full',stylizedShading:true,
+        resolutionScale:1,adaptiveResolution:false,bloom:false,lensEffects:false,distortion:false,atmosphere:false},postTier);
+      post.setStyleStrength('bold');
+      // The 2× card is already supersampled by the interface's downsampling.
+      post.diagnosticFinalAA=false;
+    }
     post['time']=0;
     post.distortion.clear();
     for(const subject of shot.subjects){
@@ -113,7 +132,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           const pool=owner['actorPool'],actor=pool.take(subject.family,false);
           actor.reset?.(); actor.setMotionSeed?.(1729); actor.setThreat?.(0,null,subject.champion,1);
           if(subject.pose==='attack'){
-            const shape=MELEE_ATTACKS[subject.family]?.shape;
+            const shape=subject.family==='queen'?undefined:MELEE_ATTACKS[subject.family]?.shape;
             actor.setAttackState?.('strike',subject.frame??.45,subject.aim??-2,shape);
             actor.attack?.();
           }
@@ -170,6 +189,35 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           }
           root=group;
           disposable.push(()=>{flash.dispose();wake.dispose();});
+          break;
+        }
+        case 'supply': {
+          if(!supplyModels){
+            supplyModels=await loadPickupModels(renderer);
+            const textures=new Set<T.Texture>();
+            const materials=new Set<T.Material>();
+            supplyModels.traverse(object=>{
+              if(!(object instanceof T.Mesh))return;
+              for(const material of Array.isArray(object.material)?object.material:[object.material]){
+                materials.add(material);
+                for(const value of Object.values(material))if(value instanceof T.Texture)textures.add(value);
+              }
+            });
+            const models=supplyModels;
+            disposable.push(()=>{
+              disposeModel(models);
+              for(const material of materials)material.dispose();
+              for(const texture of textures)texture.dispose();
+            });
+          }
+          const source=supplyModels.getObjectByName(subject.id);
+          if(!(source instanceof T.Mesh)||!(source.material instanceof T.MeshStandardMaterial))
+            throw Error('Missing studio supply '+subject.id);
+          const mesh=source.clone();
+          mesh.material=source.material.clone();
+          root=new T.Group();root.add(mesh);
+          root.rotation.y=subject.aim??0;
+          disposable.push(()=>mesh.material.dispose());
           break;
         }
         case 'pickup':
@@ -237,12 +285,15 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       }
       root.visible=true; stage.add(root);firstSubject??=root;
       if(shot.lesson==='blocked-shot'&&subject.kind==='prop')lessonCover=root;
-      registerGeometry(root,subject.kind==='marine'?GEOMETRY_CLASSES.marine:subject.kind==='enemy'?GEOMETRY_CLASSES.enemy:undefined);
+      registerGeometry(root,subject.kind==='marine'?GEOMETRY_CLASSES.marine:subject.kind==='enemy'?(shot.card&&(subject.champion||subject.family==='queen')?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy):undefined);
     }
     for(const child of original.keys()){
-      if(shot.room){if(child===owner['player'].root||[...owner['actors'].values()].some(actor=>actor.root===child))child.visible=false;}
+      if(shot.room){
+        if(shot.card&&(child===owner['atmosphere'].root||child instanceof T.Light))child.visible=false;
+        if(child===owner['player'].root||[...owner['actors'].values()].some(actor=>actor.root===child))child.visible=false;}
       else child.visible=false;
     }
+    if(shot.card)scene.fog=null;
     if(!shot.room){
       scene.background=new T.Color(shot.transparent?0:0x102a31);
       scene.fog=null;
@@ -252,6 +303,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       floor.rotation.x=-Math.PI/2;floor.position.y=-.035;
       stage.add(floor);registerGeometry(floor,GEOMETRY_CLASSES.floor);
       disposable.push(()=>{floor.geometry.dispose();floor.material.dispose();});
+
     }
     scene.add(stage);
     if(shot.lesson==='blocked-shot'&&lessonCover){
@@ -271,7 +323,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     }else if(shot.lesson){
       const attacker=shot.subjects.find(subject=>subject.kind==='enemy');
       const escape=shot.subjects.find(subject=>subject.kind==='marine');
-      if(attacker&&escape){
+      if(attacker&&escape&&attacker.family!=='queen'){
         const shape=MELEE_ATTACKS[attacker.family].shape;
         const x=(attacker.x??0)*32,y=(attacker.z??0)*32,angle=attacker.aim??0;
         const warningShape=attacker.champion==='warden'?{kind:'line' as const,range:145,width:44,halfAngle:0}:shape;
@@ -329,11 +381,11 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       }
     }
     renderer.setPixelRatio(1); renderer.setSize(shot.width,shot.height,false);
-    if(shot.framePortrait&&firstSubject){
+    if((shot.framePortrait||shot.frameSubject)&&firstSubject){
       stage.updateMatrixWorld(true);
       const bounds=new T.Box2(),point=new T.Vector3(),projected=new T.Vector2();
       firstSubject.traverseVisible(object=>{
-        if(!(object instanceof T.Mesh))return;
+        if(!(object instanceof T.Mesh)||object.name==='deck-contact')return;
         if(object instanceof T.SkinnedMesh)object.skeleton.update();
         const positions=object.geometry.getAttribute('position');
         for(let index=0;index<positions.count;index++){
@@ -342,17 +394,47 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         }
       });
       const size=bounds.getSize(new T.Vector2()),middle=bounds.getCenter(new T.Vector2());
-      const frameHeight=Math.max(size.y/.90,size.x/(aspect*.98));
+      const frameHeight=Math.max(size.y/(shot.frameSubject?.8:.9),size.x/(aspect*(shot.frameSubject?.78:.98)));
       camera.left=middle.x-frameHeight*aspect/2;camera.right=middle.x+frameHeight*aspect/2;
       camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
       camera.updateProjectionMatrix();
+    }
+    if(shot.card&&!shot.room){
+      // A small recess, rails and panel joints keep isolated subjects on a ship deck.
+      const deck=new T.Group();
+      const deckPlane=new T.Plane(new T.Vector3(0,1,0),.029);
+      const projectToDeck=(x:number,y:number)=>{
+        const start=new T.Vector3(x,y,-1).unproject(camera);
+        const direction=new T.Vector3(x,y,1).unproject(camera).sub(start).normalize();
+        return new T.Ray(start,direction).intersectPlane(deckPlane,new T.Vector3())!;
+      };
+      const joint=new T.MeshStandardMaterial({color:0x091519,roughness:1});
+      const lip=new T.MeshStandardMaterial({color:0x28424b,roughness:1});
+      const mark=(x:number,y:number,width:number,height:number,material:T.MeshStandardMaterial)=>{
+        const points=[projectToDeck(x,y),projectToDeck(x+width,y),
+          projectToDeck(x+width,y+height),projectToDeck(x,y+height)];
+        const geometry=new T.BufferGeometry().setFromPoints(points);
+        geometry.setIndex([0,1,2,0,2,3]);geometry.computeVertexNormals();
+        deck.add(new T.Mesh(geometry,material));
+        disposable.push(()=>geometry.dispose());
+      };
+      mark(-1.05,-.56,2.1,.046,joint);
+      mark(-1.05,-.51,2.1,.015,lip);
+      mark(-.76,-.5,.006,1.55,joint);
+      mark(.73,-1.05,.006,.55,joint);
+      for(const x of [-.93,.76]){
+        mark(x,-.41,.17,.16,joint);
+        for(let slat=0;slat<4;slat++)mark(x+.014+slat*.038,-.39,.013,.12,lip);
+      }
+      scene.add(deck);registerGeometry(deck,GEOMETRY_CLASSES.floor);
+      disposable.push(()=>{deck.removeFromParent();joint.dispose();lip.dispose();});
     }
     post.setCamera(camera); post.setSize(shot.width,shot.height,1);
     const output=document.createElement('canvas');
     output.width=shot.width; output.height=shot.height;
     const ctx=output.getContext('2d',{willReadFrequently:true})!;
     post.render(0); ctx.drawImage(renderer.domElement,0,0);
-    if(!shot.transparent&&!shot.room){
+    if(!shot.transparent&&(!shot.room||shot.card&&shot.subjects.some(subject=>subject.kind==='ordnance'))){
       const gradient=ctx.createRadialGradient(shot.width*.5,shot.height*.56,shot.height*.16,shot.width*.5,shot.height*.56,shot.width*.63);
       gradient.addColorStop(0,'transparent');gradient.addColorStop(1,'rgba(1,8,12,.69)');
       ctx.fillStyle=gradient;ctx.fillRect(0,0,shot.width,shot.height);
@@ -380,7 +462,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         ctx.restore();
       }
     }
-    return output.toDataURL(shot.transparent?'image/png':'image/webp',.88);
+    return output.toDataURL(shot.transparent?'image/png':'image/webp',shot.webpQuality??.88);
   } finally {
     abilities.clear();
     if(shot.boonEffects?.length)effects.clear();
@@ -389,6 +471,11 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     for(const [child,visible] of original)child.visible=visible;
     scene.background=background;scene.fog=fog;
     renderer.setPixelRatio(ratio);renderer.setSize(size.x,size.y,false);
+    if(shot.card){
+      post.setOptions(postOptions,postTier);
+      post.setStyleStrength(inkStrength);
+      post.diagnosticFinalAA=finalAA;
+    }
     post['time']=postTime;
     post.setCamera(owner.camera);post.setSize(size.x,size.y,ratio);
   }
