@@ -1,3 +1,4 @@
+import type {EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
 import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
@@ -207,6 +208,15 @@ export class EncounterDirector {
       if(beat.consequence==='pincer')this.pincerFlanks.set(index,Object.freeze(this.plan.schedule.slice(beat.start,beat.end)
         .filter(request=>request.reinforcement&&request.role==='flanker')));
     });
+  }
+  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>):boolean {
+    if(enemy.type!=='stalker'||enemy.role!=='flanker'||enemy.beat===undefined)return true;
+    const angle=Math.atan2(player.y-enemy.y,player.x-enemy.x);
+    for(const other of others){
+      if(other.id===enemy.id||other.type!=='stalker'||other.role!=='flanker'||other.beat!==enemy.beat)continue;
+      if((other.meleePhase==='windup'||other.meleePhase==='strike')&&Math.cos(angle-other.meleeAngle)<Math.SQRT1_2)return false;
+    }
+    return true;
   }
   get phase(): EncounterPhase { return this.currentPhase; }
   get currentWave(): number { return this.plan.wave; }
