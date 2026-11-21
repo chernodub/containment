@@ -1,18 +1,20 @@
 import * as T from 'three';
 import type {DepthGame} from '../../DepthGame';
 
+import {dashedRing} from './dashedRing';
+
 export class FloorChoiceMarkers {
  readonly root=new T.Group();
- private readonly geometry=new T.RingGeometry(.82,1,32);
+ private readonly geometry=dashedRing(.98,1,64);
  private readonly materials=[
-  new T.MeshBasicMaterial({color:0xffbf62,transparent:true,opacity:.75,depthWrite:false,side:T.DoubleSide}),
-  new T.MeshBasicMaterial({color:0x8debff,transparent:true,opacity:.72,depthWrite:false,side:T.DoubleSide}),
+  new T.MeshBasicMaterial({color:0xffbf62,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide}),
+  new T.MeshBasicMaterial({color:0x8debff,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide}),
  ];
- private readonly failedGeometry=new T.RingGeometry(.975,1,48);
- private readonly failed=new T.MeshBasicMaterial({color:0xff6553,transparent:true,opacity:.6,depthWrite:false,side:T.DoubleSide});
+ private readonly failedGeometry=dashedRing(.99,1,96);
+ private readonly failed=new T.MeshBasicMaterial({color:0xcd9766,transparent:true,opacity:.28,depthWrite:false,side:T.DoubleSide});
  private readonly pads=Array.from({length:3},()=>{
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
-  mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
+  mesh.renderOrder=-2;mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
  });
  private readonly arrowGeometry=new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute([
   -.22,0,-.12,.15,0,-.12,.15,0,.12,-.22,0,-.12,.15,0,.12,-.22,0,.12,
