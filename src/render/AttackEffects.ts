@@ -37,13 +37,13 @@ void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=v
 if(style>6.5){
  if(d>1.0)discard;
  if(vFrame<-.5){color=vec3(.006,.008,.009);alpha*=.88*(1.0-smoothstep(.75,1.0,d));}
- else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
+ else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.04,.14,abs(d-.32));color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(2.3,2.1,1.95),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5 && vFrame>.5){
  float shaft=(1.-smoothstep(.12,.43,abs(p.y)))*(1.-smoothstep(.77,1.,vUv.x));
  float organ=1.-smoothstep(.55,1.,length(vec2((vUv.x-.10)*9.,p.y)));
  float pulse=.72+.28*sin(vShape.x*7.85);
- color=vec3(1.65,.024,.055);
+ color=vec3(1.65,.018,.044);
  alpha*=max(shaft*.78,organ*pulse);
 }
 else if(style>5.5){
@@ -97,8 +97,8 @@ else if(style>5.5){
  key=max(key,.88*(1.-smoothstep(.049,.098,hullDistance)));
  float ink=max(fill,key*.94);
  color=mix(vec3(.016,.005,.009),vec3(.78,.025,.041),fill/max(.001,fill+key));
- color=mix(color,vec3(.98,.19,.22),hullInk);
- color=mix(color,vec3(2.05,.32,.33)+pulseInk*vec3(.55,.25,.25),core);
+ color=mix(color,vec3(1.65,.018,.044),hullInk);
+ color=mix(color,vec3(1.65,.018,.044)*(1.+.35*pulseInk),core);
  alpha=max(ink,core);
 
 }
@@ -187,7 +187,7 @@ export class AttackEffects {
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
  forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active&&warning.shape.length!==-1)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
  forEachShooterPriority(visit:(x:number,y:number,z:number,angle:number,id:number)=>void):void {
-  for (const [id,cue] of this.shooters) if (cue.fade<0) visit(cue.x,cue.y,cue.z,cue.angle,id);
+  for (const [id,cue] of this.shooters) visit(cue.x,cue.y,cue.z,cue.angle,id);
  }
  private fields:Pulse[]=[];private fieldMesh:T.InstancedMesh;
  private fire:Particle[]=[];private fireMesh:T.InstancedMesh;private textures:T.Texture[]=[];

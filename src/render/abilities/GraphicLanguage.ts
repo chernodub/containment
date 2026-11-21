@@ -93,7 +93,7 @@ export const GRAPHIC_FLAME_FRAGMENT = `
  if(coverage<.01)discard;
  float body=1.-smoothstep(.70,.74,contour);
  float hot=(1.-smoothstep(.15,.22,distance))*(1.-smoothstep(.20,.53,t));
- c=mix(vec3(.17,.007,.001),vec3(1.05,.105,.003),body);
+ c=mix(vec3(.17,.044,.002),vec3(1.05,.28,.007),body);
  c=mix(c,vec3(2.8,1.9,.34),hot*clamp(.55+ink.g,.55,1.));
  a*=coverage*(.90+.10*body)*(.35+.65*flash);
 `;
@@ -130,7 +130,7 @@ vec3 graphicCombustion(vec4 source){
  // White-hot pixels have no chroma; retain their core rather than mistaking them for soot.
  float flame=max(graphicBand(max(0.,source.r-source.b),.065),graphicBand(source.r,.86));
  float heat=clamp(source.g/max(.035,source.r)*.72+source.r*.28,0.,1.);
- vec3 value=mix(vec3(.025,.036,.044),vec3(1.05,.105,.003),flame);
+ vec3 value=mix(vec3(.025,.036,.044),vec3(1.05,.28,.007),flame);
  value=mix(value,vec3(2.15,.65,.055),flame*graphicBand(heat,.58));
  return mix(value,vec3(2.8,1.9,.34),flame*graphicBand(heat,.89));
 }

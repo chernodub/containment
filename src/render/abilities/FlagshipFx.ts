@@ -126,10 +126,10 @@ vec3 fxCells(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;vec2 id=i;
   vec2 o=vec2(fxHash(i+b),fxHash(i+b+17.31));vec2 r=b+o-f;float d=dot(r,r);
   if(d<d1){d2=d1;d1=d;id=i+b;}else if(d<d2)d2=d;}
  return vec3(sqrt(d1),sqrt(d2),fxHash(id+3.3));}
-// Blackbody-like ramp: smoke, dark red, orange, yellow, white (HDR for bloom).
+// Blackbody-like ramp: smoke, coal, amber, yellow, white (HDR for bloom).
 vec3 fxHeat(float t){
- vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.05,.008),smoothstep(.04,.24,t));
- c=mix(c,vec3(1.8,.3,.02),smoothstep(.2,.45,t));
+ vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.14,.008),smoothstep(.04,.24,t));
+ c=mix(c,vec3(1.8,.57,.02),smoothstep(.2,.45,t));
  c=mix(c,vec3(3.,1.35,.12),smoothstep(.45,.72,t));
  return mix(c,vec3(5.,4.2,2.8),smoothstep(.8,1.,t));
 }
@@ -210,7 +210,7 @@ void main(){
   float under=smoothstep(.42,.75,fxFbm(q*.7+7.7));
   float heat=exp(-age*1.0);float hot=exp(-age*4.);
   float on=smoothstep(.1,.25,age);
-  emit=(vec3(3.2,.75,.08)*speck*heat+vec3(.9,.16,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
+  emit=(vec3(3.2,1.2,.08)*speck*heat+vec3(.9,.3,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
   alpha=soot*.62*on*(1.-smoothstep(.55,1.,k));
   base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
@@ -359,7 +359,7 @@ void main(){
   alpha=edge*(soot*(m>10.5?1.:.27)+channels*.2*fireDetail+rim*.3)*fade;
   base=vec3(.004,.002,.001);
   // Pool edge stays orange-amber so it never reads as the hostile red warning.
-  vec3 flame=m>10.5?mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
+  vec3 flame=m>10.5?mix(vec3(.72,.19,.004),vec3(1.5,.43,.015),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
   flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
   emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity*fireDetail;
  }else if(m<9.5){
