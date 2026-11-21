@@ -71,7 +71,8 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
   }
   const count=Math.max(1,Math.ceil(length/3.0));for(let j=0;j<count;j++){const f=(j+.5)/count;beam('tray-cross-rib',a.x+dx*f,y+.055,a.z+dz*f,alongX?.018:.15,.018,alongX?.15:.018);}
  };
- const lampColor=id==='diagnostic-gallery'?0xb4dee5:id==='safety-interlock-station'?0xe5c99c:0xffad61;m.signal.color.setHex(lampColor);m.signal.emissive.setHex(lampColor);
+ const lampColor=id==='diagnostic-gallery'?0xb4dee5:id==='safety-interlock-station'?0xe5c99c:0x9bd6c2;m.signal.color.setHex(lampColor);m.signal.emissive.setHex(lampColor);
+ m.screen.emissive.setHex(lampColor);
  m.screen.transparent=true;m.screen.opacity=.96;m.screen.depthWrite=false;m.screen.vertexColors=true;
  // Manufactured service fronts occupy the actual sealed machine bays. Deep
  // drawer returns, cable sockets and restrained controls give each case a
