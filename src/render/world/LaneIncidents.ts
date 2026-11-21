@@ -126,7 +126,9 @@ export function addLaneIncident(root:T.Group,id:string){
       p.box(19,22,0,12,19,35,steel,.17);
       for(let i=0;i<5;i++){
         const a=i-2;
-        const stem:Pin[]=[[a*5,36,3],[a*8,24,22],[a*11,5,46],[19+a*8,3,77],[28+a*13,2,112],[60+a*10,2,145],[69+a*15,1,174]];
+        const stem:Pin[]=[[a*5,36,3],[a*8,24,22+i*3],[a*12,5,46+i*5],
+          [9+a*12+12*Math.sin(i*2),4,79-i*4],[32+a*17,3,108+i*5],
+          [51+a*16+16*Math.cos(i),2,138+i*5],[58+a*24,1,153+i*9]];
         for(let k=1;k<stem.length;k++){
           const [x,h,z]=stem[k-1],[u,y,v]=stem[k],w=8-k*.85;
           p.face([[x-w,h,z],[x,h+w,z],[u,y+w*.7,v],[u-w,y,v]],i%2?0x895373:0x653f60);
@@ -134,6 +136,14 @@ export function addLaneIncident(root:T.Group,id:string){
           if(k===4||k===5)p.rod([u,y+1,v],[u+a*13,y,v+15],1.8,0x825169);
         }
       }
+      // Blistered tissue bridges the veins in patches, leaving open deck between lobes.
+      for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-17,17,32,17,11,19],[12,10,46,19,8,24],
+        [-8,6,76,13,6,16],[34,6,99,20,8,24],[50,4,115,12,5,16],[72,3,146,12,5,18]]){
+        p.add(new T.IcosahedronGeometry(1,1).scale(w,h,d).rotateY(z*.03).translate(x,y,z),0xaa708a);
+        p.add(new T.IcosahedronGeometry(1,0).scale(w*.38,h*.35,d*.5).translate(x-w*.3,y+h*.78,z-d*.14),0xc99aa5);
+      }
+      p.face([[-31,6,57],[10,11,44],[27,5,78],[10,4,70],[-9,7,83]],0x8e627c);
+      p.face([[17,5,90],[47,8,100],[66,4,136],[48,5,118],[29,4,122]],0x98697e);
       lit(root,p,'split-mill-and-roots',577,319,[[-20,55,8]],0xcfb5cc);
       break;
     }
