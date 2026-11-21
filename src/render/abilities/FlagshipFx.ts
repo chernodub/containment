@@ -151,17 +151,21 @@ void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out flo
  // All pools sample the same deck coordinates, including at ownership seams.
  float ripple=fxNoise(p*2.3);
  float broad=fxNoise(p*.84);
- float d=distanceToEdge+.035+.21*broad+.065*ripple;
- float hot=smoothstep(.24,.71,broad+.21*(ripple-.5));
- float lip=(1.-smoothstep(.015,.072+.07*hot,abs(d)))*hot;
+ float grain=fxNoise(p*7.8);
+ float d=distanceToEdge+.12+.18*(broad-.5)+.14*(ripple-.5)+.105*(grain-.5);
+ // Hot fissures open through the black crust in short, uneven stretches.
+ float pockets=smoothstep(.32,.66,fxNoise(p*3.9+5.3)+.34*(grain-.5));
+ float hot=smoothstep(.28,.72,broad+.24*(ripple-.5));
+ float lip=(1.-smoothstep(.006,.025+.075*grain,abs(d)))*pockets*hot;
+ float cinders=(1.-smoothstep(.03,.17,abs(d+.12*grain)))*smoothstep(.60,.83,grain)*hot;
  float coal=1.-smoothstep(-.12,.02,d);
  // Isolated sections of an undulating coal seam, with broad stretches of dark char.
  float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
  float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.62,.80,fxNoise(p*.57-8.2))
               *smoothstep(.25,.65,-d);
  base=vec3(.018,.013,.009);
- alpha=.35*coal+.24*lip+.14*fissure;
- emit=mix(vec3(.56,.15,.009),vec3(1.9,.76,.06),ripple)*lip+vec3(.78,.23,.018)*fissure;
+ alpha=.35*coal+.24*lip+.17*cinders+.14*fissure;
+ emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(.78,.23,.018)*fissure;
 
 }
 void main(){
