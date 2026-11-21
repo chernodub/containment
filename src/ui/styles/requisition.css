@@ -130,3 +130,7 @@
   color: var(--service-color);
   font: 600 12px/1.2 var(--font-body);
 }
+
+#overlay .requisition-title-row {
+  display:flex;flex-wrap:wrap;align-items:baseline;column-gap:10px;row-gap:2px;
+}

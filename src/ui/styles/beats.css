@@ -1,7 +1,7 @@
 #presentation-beat {position:fixed;z-index:8;pointer-events:none;left:50%;top:19%;transform:translateX(-50%);width:min(650px,64vw);padding:20px 30px 20px 82px;border-left:3px solid var(--cyan);background:linear-gradient(90deg,#07131bf2,#07131bd9 78%,#07131b00);color:#e8fbff;animation:beat-arrive .18s ease-out both;}
 #presentation-beat .beat-glyph {position:absolute;left:22px;top:30px;color:var(--cyan)}
 #presentation-beat .beat-glyph svg {width:38px;height:38px}
-#presentation-beat .beat-eyebrow {display:block;font-size:11px;letter-spacing:.14em;color:#a8c8d6;margin-bottom:8px}
+#presentation-beat .beat-eyebrow {display:block;font-size:12px;letter-spacing:.14em;color:#a8c8d6;margin-bottom:8px}
 #presentation-beat strong {display:block;font:600 clamp(32px,3vw,55px)/1.05 var(--font-display);letter-spacing:.04em}
 #presentation-beat p {margin:10px 0 0;font-size:14px;color:#c4d8e1;line-height:1.4}
 #presentation-beat[data-beat='death'] {top:37%;border-color:#ff7956;background:linear-gradient(90deg,#25100ff5,#130f16df 78%,transparent)}

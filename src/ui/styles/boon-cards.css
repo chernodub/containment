@@ -3,16 +3,16 @@
 #overlay .choice-card .boon-benefit {font-family:var(--font-display);font-size:25px;line-height:1.15;font-weight:600;color:#f0f8fc;min-height:2.3em;margin:0 0 12px;text-wrap:balance;}
 #overlay .choice-card .boon-numbers {font-size:13px;line-height:1.45;color:var(--boon-color);font-variant-numeric:tabular-nums;min-height:2.9em;margin:0 0 20px;}
 #overlay .boon-card-footer {display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid #9fe8ff24;}
-#overlay .boon-card-footer .augment-target {border:0;background:none;margin:0;padding:0;flex:1;min-width:0;font-size:9px;}
+#overlay .boon-card-footer .augment-target {border:0;background:none;margin:0;padding:0;flex:1;min-width:0;font-size:12px;}
 #overlay .boon-card-footer .augment-target svg {width:23px;height:23px;flex-shrink:0;}
-#overlay .boon-card-footer .augment-target b {font-size:11px;}
-#overlay .boon-card-footer .family-progress {width:78px;flex-shrink:0;margin:0;padding:0;border:0;font-size:9px;}
-#overlay .boon-inspect-hint {display:block;font-size:10px;color:#a9beca;margin:14px 0 12px;}
-#overlay .boon-inspect-hint kbd {font-size:10px;min-width:0;padding:0 3px;}
+#overlay .boon-card-footer .augment-target b {font-size:12px;}
+#overlay .boon-card-footer .family-progress {width:78px;flex-shrink:0;margin:0;padding:0;border:0;font-size:12px;}
+#overlay .boon-inspect-hint {display:block;font-size:12px;color:#a9beca;margin:14px 0 12px;}
+#overlay .boon-inspect-hint kbd {font-size:12px;min-width:0;padding:0 3px;}
 #overlay .boon-inspect-detail {display:none;position:absolute;inset:0 0 43px;z-index:5;padding:22px;background:#0b1b27;border:1px solid var(--boon-color);box-shadow:0 10px 24px #0008;pointer-events:auto;text-align:left;overflow:auto;}
 #overlay .boon-inspect-detail .eyebrow {display:block;line-height:1.5;margin-bottom:20px;color:var(--boon-color);}
 #overlay .choice-card .boon-inspect-detail p {font-size:15px;line-height:1.55;margin-bottom:20px;}
-#overlay .boon-inspect-detail small {display:block;font-size:10px;color:#b5cbd5;margin-top:15px;}
+#overlay .boon-inspect-detail small {display:block;font-size:12px;color:#b5cbd5;margin-top:15px;}
 body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-inspect-detail,
 #overlay .choice-card[data-inspect='true'] .boon-inspect-detail {display:block;}
 @media (max-height:760px) {
@@ -20,7 +20,7 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
  #overlay .choice-card .boon-benefit {font-size:22px;min-height:2.3em;margin-bottom:10px;}
  #overlay .choice-card .boon-numbers {font-size:13px;min-height:2.9em;margin-bottom:14px;}
  #overlay .boon-card-footer {padding-top:10px;gap:6px;}
- #overlay .boon-inspect-hint {font-size:9px;margin:10px 0;}
+ #overlay .boon-inspect-hint {font-size:12px;margin:10px 0;}
  #overlay .boon-inspect-detail {padding:16px;bottom:38px;}
  #overlay .boon-inspect-detail .eyebrow {margin-bottom:14px;}
  #overlay .choice-card .boon-inspect-detail p {font-size:13px;margin-bottom:14px;}
@@ -33,7 +33,7 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 
 /* Effect has elemental hue; Set always has the same neutral, outlined badge. */
 .boon-chips {display:flex;flex-wrap:wrap;align-items:center;gap:5px;}
-.effect-chip,.set-chip {display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:3px 5px;border:1px solid;border-radius:3px;font-size:10px;line-height:1.25;font-weight:500;letter-spacing:0;text-transform:none;white-space:nowrap;}
+.effect-chip,.set-chip {display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:3px 5px;border:1px solid;border-radius:3px;font-size:12px;line-height:1.25;font-weight:500;letter-spacing:0;text-transform:none;white-space:nowrap;}
 .effect-chip {color:var(--effect-ink,#e8fbff);background:#10212c;border-color:var(--effect-ink,#e8fbff);}
 .effect-chip[data-effect=pyro] {--effect-ink:#ffad79;}.effect-chip[data-effect=cryo] {--effect-ink:#9bdfff;}.effect-chip[data-effect=arc] {--effect-ink:#c8b6ff;}.effect-chip[data-effect=kinetic] {--effect-ink:#ffd090;}.effect-chip[data-effect=recovery] {--effect-ink:#d7ffdb;}.effect-chip[data-effect=acid] {--effect-ink:#b2ed84;}
 #overlay .panel .set-chip,#hud .set-chip {color:#d1dbe1;background:#17232b;border-color:#82929c;font-weight:500;box-shadow:none;}
@@ -59,7 +59,7 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
  #overlay .panel.draft-panel .reward-footer {margin-top:10px;}
  #overlay .panel.draft-panel .reward-footer button {min-height:36px;}
  #overlay .panel .effect-set-lesson {padding:5px 10px;margin-bottom:9px;}
- #overlay .panel .effect-set-lesson p {font-size:11px;}
+ #overlay .panel .effect-set-lesson p {font-size:12px;}
  #overlay .panel.draft-panel:has(.room-record) .boon-path {display:none;}
  #overlay .panel.draft-panel:has(.room-record) .screen-heading .panel-intro {display:none;}
  #overlay .panel.draft-panel:has(.room-record) .boon-benefit {font-size:21px;margin-bottom:6px;}
@@ -70,15 +70,15 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .panel .owned-boon>.boon-chips {grid-column:1 / -1;justify-content:start;gap:3px;margin:0;}
 #overlay .panel .debrief-build .owned-boons {grid-template-columns:1fr;gap:5px;}
 #overlay .panel .debrief-build .owned-boon {min-height:0;padding:5px 7px;}
-#overlay .panel .debrief-build .owned-boon-name {font-size:11px;}
-#overlay .panel .debrief-build .owned-boon>.boon-chips .effect-chip,#overlay .panel .debrief-build .owned-boon>.boon-chips .set-chip {font-size:9px;padding:2px 4px;}
-@media(min-width:900px) and (max-height:760px) {#overlay .panel.pause-panel:has(.owned-boons) {padding:18px 28px;}#overlay .panel.pause-panel:has(.owned-boons)>.screen-heading h2 {font-size:36px;}#overlay .panel.pause-panel .build-summary-heading {margin-top:10px;}#overlay .panel.pause-panel .owned-boon>.boon-chips {flex-wrap:nowrap;}#overlay .panel.pause-panel .owned-boon .effect-chip,#overlay .panel.pause-panel .owned-boon .set-chip {font-size:9px;padding:2px 3px;}}
+#overlay .panel .debrief-build .owned-boon-name {font-size:12px;}
+#overlay .panel .debrief-build .owned-boon>.boon-chips .effect-chip,#overlay .panel .debrief-build .owned-boon>.boon-chips .set-chip {font-size:12px;padding:2px 4px;}
+@media(min-width:900px) and (max-height:760px) {#overlay .panel.pause-panel:has(.owned-boons) {padding:18px 28px;}#overlay .panel.pause-panel:has(.owned-boons)>.screen-heading h2 {font-size:36px;}#overlay .panel.pause-panel .build-summary-heading {margin-top:10px;}#overlay .panel.pause-panel .owned-boon>.boon-chips {flex-wrap:nowrap;}#overlay .panel.pause-panel .owned-boon .effect-chip,#overlay .panel.pause-panel .owned-boon .set-chip {font-size:12px;padding:2px 3px;}}
 /* Debrief keeps its telemetry hierarchy while each installed boon names both concepts. */
 #overlay .panel .debrief-build .owned-boon {grid-template-columns:18px minmax(0,1fr);padding:3px 5px;gap:2px 5px;}
 #overlay .panel .debrief-build .owned-boon>svg {width:18px;height:18px;grid-row:1 / 3;}
 #overlay .panel .debrief-build .owned-boon>.boon-chips {grid-column:2;flex-wrap:nowrap;}
-#overlay .panel .debrief-build .owned-boon-name {font-size:11px;line-height:1.1;}
-#overlay .panel .debrief-build .owned-boon>.boon-chips :is(.effect-chip,.set-chip) {padding:1px 3px;font-size:9px;}
+#overlay .panel .debrief-build .owned-boon-name {font-size:12px;line-height:1.1;}
+#overlay .panel .debrief-build .owned-boon>.boon-chips :is(.effect-chip,.set-chip) {padding:1px 3px;font-size:12px;}
 
 /* RW12: illustrated finds, with mechanics available through deliberate inspection. */
 #overlay .panel.draft-panel .choice-card {overflow:visible;padding:0 22px;min-height:0;border:1px solid color-mix(in srgb,var(--boon-color) 45%,#14232c);border-top:3px solid var(--boon-color);background:linear-gradient(165deg,#1c303b,#0b151d 72%);}
@@ -92,15 +92,15 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .draft-panel .boon-card-top .boon-emblem {width:28px;height:28px;background:#0a141cd9;padding:4px;}
 #overlay .draft-panel .boon-card-top .boon-rarity {background:#0a141ce8;padding:4px 6px;}
 #overlay .panel.draft-panel .boon-path {display:none;}
-#overlay .draft-panel .reward-taxonomy {display:block;font-size:9px;letter-spacing:.1em;color:var(--boon-color);margin-bottom:4px;}
+#overlay .draft-panel .reward-taxonomy {display:block;font-size:12px;letter-spacing:.1em;color:var(--boon-color);margin-bottom:4px;}
 #overlay .panel.draft-panel .choice-card h3 {font-size:17px;margin:0 0 7px;color:#becbd2;}
 #overlay .panel.draft-panel .boon-benefit {font-size:clamp(20px,1.7vw,28px);line-height:1.13;margin-bottom:10px;min-height:2.3em;}
 #overlay .panel.draft-panel .boon-numbers {font-size:12px;line-height:1.35;min-height:1.35em;margin-bottom:12px;}
 #overlay .draft-panel .boon-card-footer {padding-top:9px;}
-#overlay .draft-panel .boon-inspect-hint {font-size:9px;margin:9px 0;}
+#overlay .draft-panel .boon-inspect-hint {font-size:12px;margin:9px 0;}
 #overlay .draft-panel .boon-select {margin-left:-22px;margin-right:-22px;}
 #overlay .reward-diagram {display:block;margin:0 0 12px;padding:8px;background:#122734;}
-#overlay .reward-diagram small {display:block;font-size:10px;color:var(--boon-color);}
+#overlay .reward-diagram small {display:block;font-size:12px;color:var(--boon-color);}
 #overlay .reward-diagram .ability-vignette {height:90px;width:100%;margin:4px 0;}
 #overlay .panel .owned-boon {isolation:isolate;overflow:visible;min-height:66px;padding-left:65px;grid-template-columns:22px minmax(0,1fr);}
 #overlay .owned-boon>.reward-art-compact {position:absolute;inset:0 auto 0 0;width:58px;z-index:-1;overflow:hidden;background:#0a1821;}
@@ -114,10 +114,10 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 @media(prefers-reduced-motion:reduce) {#overlay .reward-art img {transition:none;}#overlay .draft-panel .choice-card:is(:hover,:focus-visible) .reward-art img {transform:none;}.reward-acquired {display:none;}}
 .reward-acquired img {display:block;width:100%;height:100%;object-fit:cover;}
 .reward-acquired .reward-art-grain {display:none;}
-@media(max-height:760px) {#overlay .panel.pause-panel .owned-boon {min-height:42px;padding:4px 6px 4px 48px;gap:2px 5px;}#overlay .pause-panel .owned-boon>.reward-art-compact {width:43px;}#overlay .pause-panel .owned-boon>.boon-chips {margin:0;}#overlay .pause-panel .owned-boon-name {font-size:11px;}}
+@media(max-height:760px) {#overlay .panel.pause-panel .owned-boon {min-height:42px;padding:4px 6px 4px 48px;gap:2px 5px;}#overlay .pause-panel .owned-boon>.reward-art-compact {width:43px;}#overlay .pause-panel .owned-boon>.boon-chips {margin:0;}#overlay .pause-panel .owned-boon-name {font-size:12px;}}
 #overlay .reward-combat-preview {display:grid;grid-template-columns:1fr 14px 1fr;gap:4px;align-items:center;color:var(--boon-color);border-top:1px solid #9fe8ff24;padding-top:5px;margin-top:auto;}
 #overlay .reward-combat-preview>span {min-width:0;}
-#overlay .reward-combat-preview small {display:block;font-size:8px;letter-spacing:.08em;color:#b3c9d2;}
+#overlay .reward-combat-preview small {display:block;font-size:12px;letter-spacing:.08em;color:#b3c9d2;}
 #overlay .reward-combat-preview .ability-vignette {display:block;width:100%;height:65px;margin:0;}
 #overlay .draft-panel .boon-inspect-hint {margin:8px 0;}
 #overlay .panel.draft-panel .boon-numbers {min-height:1.45em;margin-bottom:10px;}
@@ -138,7 +138,7 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .transformation-title {display:block;font-size:13px;line-height:1.2;}
 #overlay .transformation-preview .reward-combat-preview {border:0;padding-top:4px;}
 #overlay .transformation-preview .reward-combat-preview small {margin:0;text-transform:uppercase;}
-#overlay .transformation-loss {display:block;margin-top:4px;color:#d0dce2;font-size:11px;line-height:1.3;}
+#overlay .transformation-loss {display:block;margin-top:4px;color:#d0dce2;font-size:12px;line-height:1.3;}
 #overlay .transformation-loss b {color:#ffcf9e;}
 #overlay .draft-panel .transformation-preview + .boon-inspect-hint {margin-top:0;}
 #overlay :is(.boon-inspect-detail,.boon-tooltip) .transformation-preview {margin:0 0 10px;}
