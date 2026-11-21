@@ -11,7 +11,7 @@ export function difficultyId(value:unknown):DifficultyId{return value==='story'|
 /** Final per-contact ceilings include elite, depth and difficulty scaling. */
 export function incomingDamageLimit(mode:DifficultyId,family:string):number {
  const base:Record<string,number>={crawler:12,stalker:26,spitter:12,carrier:22,brute:42};
- return Math.min(45,(base[family]??45)*(mode==='story'?.7:mode==='veteran'?1.3:1));
+ return Math.min(45,(base[family]??45)*(family==='spitter'?1:1.1)*(mode==='story'?.7:mode==='veteran'?1.3:1));
 }
 
 /** Depth is zero-based. Veteran and legacy expeditions retain the original step. */
