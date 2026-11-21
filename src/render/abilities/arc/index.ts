@@ -258,17 +258,29 @@ class ArcPresentation implements AbilityPresentation {
       if (d.victimId >= 0 && d.age - d.delay < (d.terminal ? d.life : .34)) {
         const actor = k.statusActor(d.victimId);
         const joint = actor && this.contactBones.get(actor.root);
-        if (joint?.parent) {
-          const base = joint.parent.matrixWorld.elements, tip = joint.matrixWorld.elements;
-          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, d.terminal ? .16 : .115, .9 * fade, false);
-          if (d.terminal) {
-            const mx = (base[12] + tip[12]) * .5, my = (base[13] + tip[13]) * .5, mz = (base[14] + tip[14]) * .5;
-            const spread = actor!.height * .25;
-            for (let side = -1; side <= 1; side += 2) {
-              k.ribbon(base[12], base[13], base[14], mx + side * spread, my + spread, mz, VIOLET, .085, fade, false);
-              k.ribbon(mx + side * spread, my + spread, mz, tip[12], tip[13], tip[14], WHITE, .06, fade, false);
-            }
+        if (actor && d.terminal) {
+          const root = actor.root.position, h = actor.height;
+          const tip = joint?.matrixWorld.elements;
+          const dx = d.sx - root.x, dz = d.sz - root.z, length = Math.max(.001, Math.hypot(dx, dz));
+          const x = tip?.[12] ?? root.x + dx / length * h * .38;
+          const z = tip?.[14] ?? root.z + dz / length * h * .38;
+          const y = tip?.[13] ?? root.y + h * .44;
+          // The two tines climb out over the shell and meet at the struck limb.
+          // On a shell without an exposed joint, keep that contact on its incoming flank.
+          const crest = Math.max(y + .18, root.y + h * 1.08);
+          const power = Math.min(1, fade * 3);
+          k.impact();
+          for (let side = -1; side <= 1; side += 2) {
+            const bx = x + (dx - side * dz) / length * h * .43;
+            const bz = z + (dz + side * dx) / length * h * .43;
+            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .095, power, false);
+            k.boltCard(bx, crest, bz, x, y + .08, z, .095, d.seed + side, power, WHITE);
           }
+          k.sprite('spark', x, y + .12, z, .16, .22, WHITE, power, d.seed, 'light');
+          k.sustain(d.age - d.delay);
+        } else if (joint?.parent) {
+          const base = joint.parent.matrixWorld.elements, tip = joint.matrixWorld.elements;
+          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, .115, .9 * fade, false);
         }
       }
       if (d.age - d.delay > .28) continue;
