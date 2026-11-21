@@ -152,7 +152,7 @@ void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out flo
  float ripple=fxNoise(p*2.3);
  float broad=fxNoise(p*.84);
  float grain=fxNoise(p*7.8);
- float d=distanceToEdge+.12+.18*(broad-.5)+.14*(ripple-.5)+.105*(grain-.5);
+ float d=distanceToEdge+.32+.64*(broad-.5)+.14*(ripple-.5)+.105*(grain-.5);
  // Hot fissures open through the black crust in short, uneven stretches.
  float pockets=smoothstep(.32,.66,fxNoise(p*3.9+5.3)+.34*(grain-.5));
  float hot=smoothstep(.28,.72,broad+.24*(ripple-.5));
@@ -161,11 +161,11 @@ void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out flo
  float coal=1.-smoothstep(-.12,.02,d);
  // Isolated sections of an undulating coal seam, with broad stretches of dark char.
  float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
- float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.62,.80,fxNoise(p*.57-8.2))
+ float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.28,.64,fxNoise(p*.57-8.2))
               *smoothstep(.25,.65,-d);
  base=vec3(.018,.013,.009);
- alpha=.35*coal+.24*lip+.17*cinders+.14*fissure;
- emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(.78,.23,.018)*fissure;
+ alpha=(.22+.48*broad)*coal+.24*lip+.17*cinders+.14*fissure;
+ emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(1.35,.39,.018)*fissure;
 
 }
 void main(){
@@ -377,19 +377,6 @@ void main(){
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }else if(m<8.5){
   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
-  float flare=0.;
-  for(int i=0;i<3;i++){
-   float fi=float(i),a=fxSeed+fi*2.4;
-   vec2 center=fxOrigin.xz+vec2(cos(a),sin(a))*fxRange*(.22+.09*fi);
-   vec2 q=(fxWorld.xz-center)/fxRange;
-   float lobe=length(q*vec2(1.+.4*fi,1.5))+.11*(fxNoise(fxWorld.xz*2.+t*.5)-.5);
-   flare+= (1.-smoothstep(.055,.32,lobe))*(.47+.43*sin(t*3.1+fi*2.1));
-  }
-  #ifdef HAS_ABILITY_PRIORITY_MASK
-  flare*=1.-smoothstep(.08,.45,prioritySample.g);
-  #endif
-  emit+=vec3(1.65,.62,.045)*flare;
-  alpha+=flare*.44;
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
@@ -473,9 +460,10 @@ void main(){
   }else if(el<2.5){
    burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
    float flow=fxNoise(q*1.7+vec2(sin(t*2.+q.y),t*.9));
-   float heat=(.22+.52*(1.-smoothstep(.0,R,r)))*(.61+.39*flow);
-   emit+=vec3(1.55,.54,.032)*heat;
-   alpha+=heat*.42;
+   float heart=(1.-smoothstep(.32,1.48+.38*flow,r))*smoothstep(.24,.65,flow);
+   float shimmer=(1.-smoothstep(.03,.20,abs(r-R+.24+.23*flow)))*smoothstep(.35,.72,flow);
+   emit+=vec3(3.4,2.5,.83)*heart+vec3(.9,.41,.03)*shimmer;
+   alpha+=heart*.42+shimmer*.13;
    line=0.;
    // The activation flash fills the centre before the moving aura settles.
    float pulse=1.-smoothstep(.05,.18,age);
