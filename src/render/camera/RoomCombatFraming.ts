@@ -135,7 +135,7 @@ export class RoomCombatFraming {
         // exceeds the room allowance. Retrying that same pan cannot progress:
         // spend the available hero-size pullback before the next joint attempt.
         if(pass>0){camera.zoom=minimumZoom;camera.updateProjectionMatrix();}
-        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,minimumZoom,true);
+        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,minimumZoom,true,pass>0?MARINE_FRAME_MARGIN_CSS:undefined,pass>1);
         this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
         this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
         const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
@@ -152,12 +152,12 @@ export class RoomCombatFraming {
     // A remote target may need several metres of legal room-margin pan. Keep
     // advancing from the last rendered pose instead of restarting at the room's
     // zero-outside clamp each frame, then cap the actual presented movement.
-    // Nearby urgent fights retain their existing immediate final fit above.
-    if(remote&&!fresh&&engagement){
+    // Limit translation of the resolved nearby fit as well as remote progression.
+    if((remote||urgent)&&!fresh&&engagement){
       const baseX=camera.position.x,baseZ=camera.position.z,baseZoom=camera.zoom;
-      this.move(camera,focus,previousX-camera.position.x,previousZ-camera.position.z);
-      camera.zoom=previousZoom;camera.updateProjectionMatrix();
-      if(engagement.hasEngagement){
+      if(remote&&engagement.hasEngagement){
+        this.move(camera,focus,previousX-camera.position.x,previousZ-camera.position.z);
+        camera.zoom=previousZoom;camera.updateProjectionMatrix();
         engagement.refreshFit(camera,this.point);
         for(let padding=0;padding<1&&!engagement.diagnostics.fit;padding++){
           const edge=MARINE_FRAME_MARGIN_CSS;
@@ -208,7 +208,7 @@ export class RoomCombatFraming {
       outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
       engagement.refreshFit(camera,this.point);
       this.vx=this.vz=this.zoomVelocity=0;
-      this.remoteProgress=engagement.hasEngagement||distance>.001||Math.abs(candidateZoom-previousZoom)>.0001;
+      this.remoteProgress=remote&&(engagement.hasEngagement||distance>.001||Math.abs(candidateZoom-previousZoom)>.0001);
     }else this.remoteProgress=remote;
     // Final pose safety follows every room/remote clamp; perspective extents
     // are remeasured to convergence rather than spending the16px margin.
