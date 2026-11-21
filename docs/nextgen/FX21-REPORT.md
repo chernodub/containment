@@ -67,3 +67,23 @@ The revised gallery is `artifacts/nextgen/fx21-after2/`. In `review/windups-035-
 Removing the individual pool outlines saved one draw in the last four Pyro overlap frames. The other four matched the first pass. The new skid uses the existing decal material and pool. Shader preparation and the light inventory are unchanged.
 
 The production build passed. Both seed 1729 Pyro runs cleared their requested rooms (six and eleven) with zero errors and zero reported defects. The six-room run opened and closed each room with the same program count (161, 154, 149, 156, 155 and 155 respectively). Diagnostic Gallery held at 151. The Low and High Pyro benchmarks each recorded zero new combat programs and zero GL errors. The six-room report is in `artifacts/nextgen/playtest/fx21-after2-final-pyro/report.json`; the benchmark is in `artifacts/nextgen/fx21-after2-final-bench/benchmark.json`.
+
+## Standing fire and local wind-up clearance
+
+Napalm and Meltdown now place 18 flame tongues on High and nine on Low. Two thirds of the roots sit toward the edge. The others break up the interior while leaving the char and glowing cracks visible. Overlapping pools share standing fire where their fuel meets. Each tongue has its own flicker and drift, with a resting height of roughly 0.5–0.85 m. Facing the cards toward the gameplay camera while anchoring their feet keeps the tips visible from above. Embers rise between them. Meltdown adds a pale flame beside the marine's boots, and both burns request warm firelight through the existing priority pool.
+
+Each tongue checks its distance to the committed creature's body and striking limb. Its height, width and opacity change over 150 ms as the creature enters or leaves that space. At full suppression one tongue in three remains at one-third height. The shared mask protects the projected limb and head, while the status effect still carries the climbing ignition on the struck shell.
+
+The side-by-side sheet is `fx21-after3/review/resting-and-windups.png` under `artifacts/nextgen/`. Its first row compares Napalm frame 06. In the other three rows I could find 0, 1 and 1 winding-up creatures at 480×270 in each column. At 307.600 s the red lane ends at stalker 12 on the left. At 308.600 s the diagonal lane crosses the merged burn to stalker 14, whose head and leading limb remain visible while flames stand farther down the patch. The native frames and snapshots are in `playtest/fx21-after3-final-board/`. In Meltdown frame 03, separate upright tips remain visible around the marine.
+
+| Scene | FX20 peak draws | Standing fire peak draws | Resident programs |
+| --- | ---: | ---: | ---: |
+| Pyro overlap | 139 | 137 | 151 |
+| Arc overlap | 136 | 136 | 151 |
+| Cryo overlap | 135 | 135 | 151 |
+| Breacher overlap | 143 | 143 | 151 |
+| Napalm Charge | 123 | 122 | 158 |
+| Meltdown | 125 | 124 | 158 |
+
+The production build passed. The final capture manifest records 48 verified frames with zero errors or failures. The High and Low Pyro combat benchmarks each recorded zero new shader programs and zero GL errors (`fx21-after3-bench/benchmark.json`). The seed 1729 Pyro campaign cleared six rooms with zero errors and zero reported defects. Its program inventories matched at the start and end of every room (161, 154, 149, 156, 155 and 155). The campaign report is `playtest/fx21-after3-pyro/report.json`.
+The full-rate Diagnostic Gallery replay also cleared with zero errors and zero reported defects, opening and closing the fight with 151 resident programs.
