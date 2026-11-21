@@ -89,7 +89,7 @@ export function rigScreen(selected: RigId, previous?: RigId): string {
   const quick = previous ? `<button id="recommended-loadout" class="secondary">Repeat last rig · ${RIG_CATALOG[previous].name} ${arrow()}</button>` : '';
   const [exampleSlot,example]=RIG_EXAMPLES[selected];
   const equip = `<button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button>`;
-  return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
+  return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> browse · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
     <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${example}</p><div class="rig-example">${abilityVignette(ABILITY_CATALOG[rig.abilities[exampleSlot]])}</div>${equip}${quick}</div></div><details class="rig-inspect"><summary>Inspect all abilities</summary>${abilityPreview(selected)}<p class="screen-footnote rig-footnote">White marks the marine. Red marks enemies.</p></details></section>`;
 }
@@ -206,7 +206,7 @@ export function shopScreen(game: DepthGame): string {
     'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
   const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='revive'||game.node.depth===18&&run.version===3))
-    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
+    .flatMap<{id:Exclude<(typeof SERVICE_IDS)[number],'route-ammo'>;upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
     const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;

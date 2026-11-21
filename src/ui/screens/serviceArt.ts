@@ -4,7 +4,9 @@ import {studioImage} from '../studioArt';
 
 const useStudioArt = false;
 
-const objects: Record<Exclude<ServiceId,'revive'>, string> = {
+type IllustratedService = Exclude<ServiceId,'route-ammo'>;
+
+const objects: Record<Exclude<IllustratedService,'revive'>, string> = {
   heal: `<path class="service-art-body" d="M94 19h36l11 9v31l-11 10H94L83 59V28z"/>
     <path class="service-art-face" d="M92 35h40v18H92zM95 19v-7h32v7m-30 50v7h28v-7"/>
     <path class="service-art-mark" d="M106 36h10v6h6v6h-6v6h-10v-6h-6v-6h6z"/>
@@ -37,10 +39,10 @@ const objects: Record<Exclude<ServiceId,'revive'>, string> = {
 };
 
 /** PROPS14 illustrations: the same original models the player picks up, rendered with ink and banded shading. */
-const propArt: Record<ServiceId, string> = {heal:'health',armor:'armor',ammo:'ammo',medkit:'medkit',grenade:'grenade',reroll:'reroll',upgrade:'upgrade',revive:'resuscitator'};
+const propArt: Record<IllustratedService, string> = {heal:'health',armor:'armor',ammo:'ammo',medkit:'medkit',grenade:'grenade',reroll:'reroll',upgrade:'upgrade',revive:'resuscitator'};
 const propBase = `${import.meta.env.BASE_URL}assets/ui/props14/`;
 
-export function serviceArt(id: ServiceId): string {
+export function serviceArt(id: IllustratedService): string {
   if (useStudioArt) return studioImage(`service-${id}`, 'service-illustration', 448, 168);
   if (propArt[id]) return `<img class="service-illustration service-prop" src="${propBase}${propArt[id]}.png" width="300" height="300" alt="" loading="lazy" decoding="async">`;
   return `<svg class="service-illustration" viewBox="0 0 224 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
