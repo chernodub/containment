@@ -322,11 +322,13 @@ class SystemPresentation implements AbilityPresentation {
       k.sprite('impact', x, actor.height * .54, z, size * 1.45, size, WHITE,
         (1 - receipt.age / .1) * k.flashIntensity, receipt.id, 'light');
     }
-    k.sustain();
-    k.ribbon(receipt.railX, .055, receipt.railZ, x, .055, z, 0xc69e68, size * .14, .56, false);
     if (receipt.age < .26) return;
+    k.sustain();
     receipt.landed = true;
-    k.beam(receipt.railX, .055, receipt.railZ, x, .055, z, 0xa08466, size * .14, .75, false);
+    const halfLength = Math.min(size * .82, Math.hypot(dx, dz) * .5);
+    if (halfLength > .04)
+      k.scar('skid', x - Math.cos(angle) * halfLength, z - Math.sin(angle) * halfLength,
+        halfLength, 0xc2a17a, .85, angle, size * .18);
     for (let i = 0, count = k.low ? 5 : 10; i < count; i++) {
       const a = angle + i * Math.PI * 2 / count, c = Math.cos(a), s = Math.sin(a);
       k.mote('smoke', x + c * size * .36, .13, z + s * size * .36,

@@ -48,3 +48,22 @@ The sequential reruns on the same final build both exited successfully. Pyro and
 ## Remaining weaknesses
 
 Overlapping Napalm pools can look like interlocking gold circles. Their dark interiors expose the targets, but the continuous rims are smoother than a spreading fuel burn. Railbreaker's long perpendicular skids connect the two thrown brutes to the shot, but in a side-by-side landing they read as broad parallel stripes. Both are visible at 480×270 in the overlap and beam comparison sheets.
+
+## Overlapping burns and Railbreaker landings
+
+The circular Napalm and Meltdown surfaces share the minimum signed distance to all live burn discs. Each deck pixel is shaded by the deepest disc, with stable ownership for coincident boundaries. A hot edge can appear only at the outside of the merged patch. The renderer also omits the individual friendly circle outlines for these pools. World-space noise varies the width, position and brightness of the coal edge across disc boundaries. The centre has a few isolated glowing fissures. Short upright flames and embers sit along exposed edges and inside the burn. An enemy preparing or finishing its attack suppresses nearby embers and shortens the flames around it.
+
+Railbreaker leaves a tapered scrape at touchdown. Its length is limited to the shorter of the throw distance and roughly one body length. The scrape is strongest beside the body and fades back along the throw. The pooled decal stays at the landing while the dust clears. In frame 08 the two landing marks are visible at the brutes' feet against the wall.
+
+The revised gallery is `artifacts/nextgen/fx21-after2/`. In `review/windups-035-037-039.png` the columns show the baseline, first FX21 pass and revision. Each panel is 480×270. Frames 035, 037 and 039 match across all three builds at 306.650, 307.600 and 308.600 simulation seconds. The visible wind-up counts remain 0, 1 and 1. In 039 the red lane crosses the dark centre between the brute and the outlined stalker. The three interior gold arcs have disappeared. The sheets named `review/windup-035-native.png`, `review/windup-037-native.png` and `review/windup-039-native.png` preserve native pixels. The source storyboard is in `artifacts/nextgen/playtest/fx21-after2-board/`. The overlap and landing comparisons are `review/pyro-overlap.png` and `review/rail-landing.png`.
+
+| Eight-frame capture | Peak draws, first pass | Peak draws, revision | Programs on both builds |
+| --- | ---: | ---: | ---: |
+| Pyro overlap | 138 | 137 | 151 |
+| Napalm Charge | 123 | 122 | 158 |
+| Meltdown | 125 | 124 | 158 |
+| Railbreaker | 129 | 129 | 158 |
+
+Removing the individual pool outlines saved one draw in the last four Pyro overlap frames. The other four matched the first pass. The new skid uses the existing decal material and pool. Shader preparation and the light inventory are unchanged.
+
+The production build passed. Both seed 1729 Pyro runs cleared their requested rooms (six and eleven) with zero errors and zero reported defects. The six-room run opened and closed each room with the same program count (161, 154, 149, 156, 155 and 155 respectively). Diagnostic Gallery held at 151. The Low and High Pyro benchmarks each recorded zero new combat programs and zero GL errors. The six-room report is in `artifacts/nextgen/playtest/fx21-after2-final-pyro/report.json`; the benchmark is in `artifacts/nextgen/fx21-after2-final-bench/benchmark.json`.

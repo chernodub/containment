@@ -116,6 +116,12 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant==15.){
+  float along=uvLocal.x;
+  float edge=abs(p.y+sin(p.x*6.)*.09);
+  a*=smoothstep(.01,.82,along)*(1.-smoothstep(.82,1.,along))
+    *(1.-smoothstep(.16,.46+.36*along,edge))*(.48+.5*n);
+ }
  else if(variant>13.5){
   float ratio=max(.001,fract(phase)/.8);
   float cap=max(0.,(abs(p.x)-1.+ratio)/ratio);
