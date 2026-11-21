@@ -377,6 +377,19 @@ void main(){
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }else if(m<8.5){
   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+  float flare=0.;
+  for(int i=0;i<3;i++){
+   float fi=float(i),a=fxSeed+fi*2.4;
+   vec2 center=fxOrigin.xz+vec2(cos(a),sin(a))*fxRange*(.22+.09*fi);
+   vec2 q=(fxWorld.xz-center)/fxRange;
+   float lobe=length(q*vec2(1.+.4*fi,1.5))+.11*(fxNoise(fxWorld.xz*2.+t*.5)-.5);
+   flare+= (1.-smoothstep(.055,.32,lobe))*(.47+.43*sin(t*3.1+fi*2.1));
+  }
+  #ifdef HAS_ABILITY_PRIORITY_MASK
+  flare*=1.-smoothstep(.08,.45,prioritySample.g);
+  #endif
+  emit+=vec3(1.65,.62,.045)*flare;
+  alpha+=flare*.44;
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
