@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 import sdf as S
-from sdf import bezier, BONE, UNDER, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import AnglePlate, bezier, BONE, UNDER, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 from spitter import chain
 
@@ -27,6 +27,9 @@ BANDS = {   # CREATURE18: dark plum chitin, plum flesh, grey-rose shield, magent
     "chitin": (0.09, 0.05, 0.08), "flesh": (0.54, 0.26, 0.40), "bone": (0.24, 0.22, 0.23),
     "accent": (0.75, 0.06, 0.42), "eye": (1.0, 0.35, 0.75),
 }
+BANDS["lead"] = (0.72, 0.55, 0.64)    # CREATURE20: the Matron's pale face plate (which end is the head)
+BANDS["plate"] = (0.11, 0.05, 0.09)   # CREATURE20: dark angular thorax and abdominal segment armour
+PLATE_BAND = {400: "lead", **{i: "plate" for i in range(401, 460)}}
 BAND_MAP = {"shell": "flesh"}   # thorax shingles carry the mid band
 PALETTE = {
     "shell": (0.13, 0.045, 0.06), "edge": (0.52, 0.38, 0.36), "membrane": (0.11, 0.025, 0.045),
@@ -150,16 +153,24 @@ def matron(sk, a, z, bf):
     # --- heavy low thorax carried between the legs
     th_c, th_r, th_R = z(0.7, 0, 8.2), v3((3.3, 3.1, 2.0 * a)), frame((1, 0, 0.08))
     m.add(A.mass(th_c, th_r, th_R, bone=("blend", "body", "body.002", z(3, 0, 8.5), z(-1.5, 0, 8.8)), zone=MEMBRANE, lump=0.06, freq=0.6, seed=31))
-    m.extend(A.shingles(th_c, th_r, th_R, None, rows=3, phis=(0.0, 0.9, 1.6), u0=0.6, u1=-0.5, size=(1.6, 1.45, 0.7),
-                        thickness=0.5, lift=0.35, rings=0.02, bone_fn=bf, seed=32, plate0=1))
-    # --- small armoured head, low and forward
-    head_c = z(4.4, 0, 7.6)
-    m.add(Ellipsoid(z(3.0, 0, 8.0), (1.2, 1.4, 0.95 * a), zone=MEMBRANE, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.4))
-    m.add(A.mass(head_c, (1.25, 1.05, 0.7 * a), frame((1, 0, -0.35)), bone="head", k=0.35))
-    m.add(Plate(head_c + z(-0.1, 0, 0.55), (1.4, 1.15, 0.45), frame((1, 0, -0.45)), 0.36, rings=0.018, ring_count=3, lip=0.1,
-                chip=0.07, zone=BONE, bone="head", plate=40))
-    for side in ("R", "L"):
-        m.add(Ellipsoid(sk.h(f"eye_front.{side}") + z(-0.6, 0, -0.4), (0.22, 0.22, 0.22 * a), zone=EYE, bone="head"))
+    # CREATURE20: the thorax is a dark angular cuirass (three rows of faceted plates), clearly not the swollen sac
+    th_up = v3((0, 0, 1))
+    for i, u in enumerate((0.55, 0.1, -0.35)):
+        for j, phi in enumerate((0.0, 0.95, -0.95)):
+            p, n = A.ellipsoid_surface(th_c, th_r, th_R, u, phi)
+            fwd = normalize(th_R[:, 0] - n * float(th_R[:, 0] @ n))
+            m.add(AnglePlate(p + n * 0.2, frame(-fwd, n), 1.75, 1.7 if j == 0 else 1.45, 0.5, keel=0.4, rake=0.55, taper=0.7,
+                             lift=0.25, zone=ARMOR, bone=bf(u), plate=401 + i * 3 + j))
+    # --- a distinct head with a face end, forward of a narrow dark neck
+    head_c = z(5.1, 0, 7.4)
+    m.add(Ellipsoid(z(3.2, 0, 7.9), (1.1, 1.0, 0.6 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.3))
+    m.add(A.mass(head_c, (1.75, 1.45, 0.82 * a), frame((1, 0, -0.35)), bone="head", k=0.3))
+    m.add(AnglePlate(head_c + z(-0.2, 0, 0.62), frame((1, 0, -0.4)), 1.8, 1.4, 0.4, keel=0.4, rake=0.45, taper=0.6, lift=0.2,
+                     zone=ARMOR, bone="head", plate=420))   # dark crested carapace
+    m.add(AnglePlate(head_c + z(1.25, 0, -0.05), frame((0, 0, 1), (1, 0, -0.2)), 1.05, 1.0, 0.3, keel=0.3, rake=0.4, taper=0.55,
+                     zone=CREST, bone="head", plate=400))   # pale face plate on the front
+    for s_ in (-1, 1):
+        m.add(Ellipsoid(head_c + z(1.35, 0.75 * s_, 0.15), (0.34, 0.34, 0.34 * a), zone=EYE, bone="head"))
     for s_, side in ((-1, "R"), (1, "L")):
         p0, p1 = sk.h(f"mandible_low.{side}"), sk.h(f"mandible_low.001.{side}")
         e = sk.end(f"mandible_low.001.{side}")
@@ -187,6 +198,13 @@ def matron(sk, a, z, bf):
                  zone=FLESH, lump=0.05, freq=0.6, seed=34, k=1.0))   # the neck of the brood, fused onto the thorax
     m.extend(A.shingles(sc, sr, sR, None, rows=2, phis=(1.7, 2.2), u0=0.75, u1=0.35, size=(1.6, 1.4, 0.6), thickness=0.45,
                         lift=0.35, rings=0.02, bone_fn=lambda u: sac_bone, seed=35, plate0=20))
+    # CREATURE20: dark dorsal segment plates banding the swollen abdomen (tergites), plum skin bulging between them
+    for i, u in enumerate((0.66, 0.38, 0.1, -0.18, -0.46)):
+        for j, phi in enumerate((0.0, 0.62, -0.62)):
+            p, n = A.ellipsoid_surface(sc, sr, sR, u, phi)
+            fwd = normalize(sR[:, 0] - n * float(sR[:, 0] @ n))
+            m.add(AnglePlate(p + n * 0.2, frame(-fwd, n), 1.35, 3.0 if j == 0 else 2.3, 0.5, keel=0.4, rake=0.35, taper=0.85,
+                             lift=0.35, zone=ARMOR, bone=sac_bone, plate=430 + i * 3 + j))
     rng = np.random.default_rng(37)
     for u, phi, r in [(0.45, 0.1, 1.5), (0.1, -0.55, 1.7), (0.1, 0.65, 1.6), (-0.3, 0.0, 1.8), (-0.35, -1.1, 1.4),
                       (-0.3, 1.15, 1.5), (0.35, -1.25, 1.2), (0.4, 1.3, 1.25), (-0.65, -0.5, 1.3), (-0.65, 0.55, 1.3), (-0.05, 1.7, 1.1),
