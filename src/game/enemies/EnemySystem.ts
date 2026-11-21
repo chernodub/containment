@@ -1031,7 +1031,7 @@ export class EnemySystem {
     // Control releases the berth immediately. A resolved hit still owes its
     // remaining strike/recovery and full rest, without replaying that strike.
     const profile=MELEE_ATTACKS[enemy.type];
-    const recovery=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.84:1);
+    const recovery=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
     const stabilization=enemy.meleePhase==='windup'?120:enemy.meleeRemainingMs+
       (enemy.meleePhase==='strike'?recovery:0)+profile.cooldownMs;
     enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeRemainingMs=enemy.meleeDurationMs=0;enemy.meleeFacingLocked=false;
@@ -1068,11 +1068,11 @@ export class EnemySystem {
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         if(meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.12:1)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
-        enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.84:1);
+        enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
       }else{
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest;
         this.#yieldMeleeBerth(enemy);
