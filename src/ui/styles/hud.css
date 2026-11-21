@@ -578,3 +578,19 @@ body[data-state=playing] #world{cursor:none}
   line-height:1.05;
   text-align:center;
 }
+
+#hud #action-bar :is(.weapon-bank,[data-ability]) {transition:opacity 100ms ease-out}
+#hud #action-bar:has([data-dock-yield]) {background:transparent;border-color:transparent;box-shadow:none}
+#hud #action-bar [data-dock-yield] {opacity:.25}
+#hud #action-bar [data-dock-yield],
+#hud #action-bar [data-dock-yield] :is([data-hud-critical],kbd,.ability-icon,.dash-pips,#weapon-picker button) {
+  background:transparent;box-shadow:none;
+}
+#hud #action-bar [data-dock-yield] :is([data-hud-critical],kbd) {
+  paint-order:stroke fill;
+  -webkit-text-stroke:1.5px #071118;
+  text-shadow:0 0 2px #071118;
+}
+@media(prefers-reduced-motion:reduce) {
+  #hud #action-bar :is(.weapon-bank,[data-ability]) {transition:none}
+}

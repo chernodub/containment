@@ -89,6 +89,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         return { slot, node, icon: node.querySelector<HTMLElement>('.ability-icon')!, title: node.querySelector<HTMLElement>('.ability-title')!, value: node.querySelector<HTMLElement>('.ability-value')!, charges: node.querySelector<HTMLElement>('.ability-charges'), progress: node.querySelector<SVGCircleElement>('.dial-progress'), meter: node.querySelector<HTMLElement>('.overdrive-meter i'), pips: Array.from(node.querySelectorAll<HTMLElement>('.dash-pips i')), ability: '', denied: 0, denial: 'No charge', flash: 0 };
     });
     const weaponBank = document.querySelector<HTMLElement>('.weapon-bank')!;
+    const dockSegments = [weaponBank, ...slots.map(slot => slot.node)];
     const statusPanel = el('status-hud');
     const denial = document.createElement('aside');
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
@@ -209,6 +210,35 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     };
     const warningOverlaps = (left: number, top: number, right: number, bottom: number) =>
         renderer.warningObstructs(left, top, right, bottom);
+    const updateDockYield = (playing: boolean) => {
+        let nearest = Infinity;
+        let yielding = 0;
+        const rectangles = dockSegments.map(segment => segment.getBoundingClientRect());
+        if (playing && fighting) for (const enemy of game.enemies.snapshot.enemies) {
+            if (enemy.health <= 0 || enemy.alpha < .2 || !(enemy.pendingAttack || enemy.windupMs > 0 ||
+                enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike')) continue;
+            const distance = Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y);
+            if (distance >= nearest || !projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, actorBounds)) continue;
+            // Include the visible upper body and the forward portion of a committed melee pose.
+            const {left, right, top} = actorBounds;
+            let bottom = top + (actorBounds.bottom - top) * .7;
+            let limb: typeof projected | undefined;
+            if (enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike') {
+                const reach = Math.min(enemy.radius * 1.5, enemy.meleeShape.range);
+                limb = projectWorld(renderer, enemy.x + Math.cos(enemy.meleeAngle) * reach,
+                    enemy.y + Math.sin(enemy.meleeAngle) * reach, projected, .55);
+                bottom = Math.max(bottom, limb.y + 8);
+            }
+            let segments = 0;
+            for (const [index, rect] of rectangles.entries()) {
+                if (rect.width && rect.height && rect.left < (limb ? Math.max(right, limb.x + 8) : right) &&
+                    rect.right > (limb ? Math.min(left, limb.x - 8) : left) && rect.top < bottom && rect.bottom > top)
+                    segments |= 1 << index;
+            }
+            if (segments) {nearest = distance; yielding = segments;}
+        }
+        dockSegments.forEach((segment, index) => segment.toggleAttribute('data-dock-yield', Boolean(yielding & (1 << index))));
+    };
     const protectPanels = () => {
         onboardingObstacles.length = 0;
         beginHudOcclusion();
@@ -551,6 +581,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             positionHud();
             setHudInsets(renderer, getHudInsets());
             protectPanels();
+            updateDockYield(true);
             const flank = encounter.pincer;
             const flankLocations = flank?.state === 'staging'
                 ? game.geometry.breaches.filter(breach=>flank.flankers.some(enemy=>enemy.breachId===breach.id))
@@ -562,6 +593,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
         targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
         if (!playing && wasPlaying) {
+            updateDockYield(false);
             for (const warning of warnings) warning.life = 0;
             clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
             combatText.clear();
