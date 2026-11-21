@@ -266,15 +266,15 @@ class ArcPresentation implements AbilityPresentation {
           // fork to the native body envelope on the same side as the struck limb.
           const jx = tip ? tip[12] - root.x : dx, jz = tip ? tip[14] - root.z : dz;
           const jointLength = Math.max(.001, Math.hypot(jx, jz));
-          const x = root.x + jx / jointLength * radius * .77;
-          const z = root.z + jz / jointLength * radius * .77;
+          const x = root.x + jx / jointLength * radius * .24;
+          const z = root.z + jz / jointLength * radius * .24;
           const y = root.y + Math.min(actor.height * .6, radius * 1.35);
-          const crest = y + radius * .73;
+          const crest = y + radius * .42;
           const power = Math.min(1, fade * 3);
           k.impact();
           for (let side = -1; side <= 1; side += 2) {
-            const bx = x + (dx - side * dz) / length * radius * .42;
-            const bz = z + (dz + side * dx) / length * radius * .42;
+            const bx = x + (-dx * .12 - side * dz * .32) / length * radius;
+            const bz = z + (-dz * .12 + side * dx * .32) / length * radius;
             k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .06, power, false);
             k.boltCard(bx, crest, bz, x, y + .08, z, .048, d.seed + side, power, WHITE);
           }
