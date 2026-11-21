@@ -1089,8 +1089,11 @@ export class EnemySystem {
     if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
     if(enemy.openingVolley){const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
+     if(enemy.firstWardenCharge&&distance>240)return;
+     const openingAim=enemy.firstWardenCharge?this.#wardenOpeningAim?.(enemy,player):undefined;
+     if(enemy.firstWardenCharge&&!openingAim&&distance>200)return;
      const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
-     const aim=(enemy.firstWardenCharge?this.#wardenOpeningAim?.(enemy,player):undefined)??player;enemy.firstWardenCharge=undefined;
+     const aim=openingAim??player;enemy.firstWardenCharge=undefined;
      enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=aim.x-enemy.x;enemy.lockY=aim.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:aim.x,targetY:aim.y,durationMs:windup}));return;
     }
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;

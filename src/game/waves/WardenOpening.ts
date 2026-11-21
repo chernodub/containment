@@ -20,10 +20,13 @@ export function wardenOpeningAim(geometry:ExpeditionGeometry,warden:Point,marine
 }
 
 export function wardenOpeningSpawn(geometry:ExpeditionGeometry,marine:Point,heading:number,occupied:readonly (Point&{radius:number})[]):Point|undefined {
- for(const offset of [0,1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8]){
+ let nearby:Point|undefined;
+ for(const distance of [142,174,206])for(const offset of [0,1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8]){
   const angle=heading+offset*Math.PI/8;
-  const point={x:marine.x+Math.cos(angle)*142,y:marine.y+Math.sin(angle)*142};
-  if(canOccupyExpedition(geometry,point,radius)&&occupied.every(e=>Math.hypot(e.x-point.x,e.y-point.y)>e.radius+radius)
-    &&wardenOpeningAim(geometry,point,marine))return point;
+  const point={x:marine.x+Math.cos(angle)*distance,y:marine.y+Math.sin(angle)*distance};
+  if(!canOccupyExpedition(geometry,point,radius)||occupied.some(e=>Math.hypot(e.x-point.x,e.y-point.y)<=e.radius+radius))continue;
+  if(wardenOpeningAim(geometry,point,marine))return point;
+  if(!nearby&&canTraverseExpedition(geometry,marine,point,0))nearby=point;
  }
+ return nearby;
 }
