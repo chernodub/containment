@@ -301,6 +301,49 @@ class Plate(Prim):
         return d
 
 
+class AnglePlate(Prim):
+    """CREATURE20: a faceted armour plate with hard creases and a sharp trailing edge (convex, max of planes).
+
+    ``R`` columns: forward (growth), side, outward normal. ``length``/``width`` are half sizes at the widest
+    section, ``thick`` the flat base thickness, ``keel`` the extra ridge height along the centre line,
+    ``rake`` how far past ``length`` the trailing point extends backward, ``taper`` the front width fraction and
+    ``lift`` how much the trailing edge rises above the base plane (a raised, cutting back edge).
+    The top is two keel facets plus a wedge facet that thins the plate to an edge at the back.
+    """
+
+    def __init__(self, c, R, length, width, thick, keel=0.0, rake=0.6, taper=0.55, lift=0.0, **kw):
+        self.c = v3(c)
+        self.R = np.asarray(R, dtype=F)
+        self.L, self.W, self.T = float(length), float(width), float(thick)
+        self.keel, self.rake, self.taper, self.lift = float(keel), float(rake), float(taper), float(lift)
+        ext = np.abs(self.R) @ np.array([self.L * (1 + self.rake), self.W, self.T + self.keel + abs(self.lift)], dtype=F)
+        super().__init__(bounds=(self.c - ext, self.c + ext), **kw)
+
+    def field(self, P):
+        q = (P - self.c) @ self.R
+        x, y, z = q[:, 0], np.abs(q[:, 1]), q[:, 2]
+        L, W, T, H = self.L, self.W, self.T, self.T * 0.5 + self.keel
+        back = L * (1 + self.rake)
+        # the base plane rises toward the trailing tip so the back edge lifts off the body
+        lift = self.lift * np.clip(-x / back, 0, 1)
+        zz = z - lift
+
+        def plane(a, b, cz, off):   # a*x + b*|y| + cz*zz - off, normalised
+            return (a * x + b * y + cz * zz - off) / math.sqrt(a * a + b * b + cz * cz)
+
+        d = -zz - T * 0.5                                   # flat underside
+        d = np.maximum(d, x - L)                            # front edge
+        d = np.maximum(d, plane(W * (1 - self.taper) / L, 1.0, 0.0, W))   # front sides taper
+        d = np.maximum(d, plane(-W / back, 1.0, 0.0, W))    # trailing sides meet in a point
+        if self.keel > 0:                                   # two keel facets
+            d = np.maximum(d, plane(0.0, H / W, 1.0, H))
+        # wedge facet: full height at the front third, thinning to a sharp edge at the trailing point
+        x0 = L * 0.35
+        slope = (H + T * 0.5) / (x0 + back)
+        d = np.maximum(d, plane(-slope, 0.0, 1.0, H - slope * x0))
+        return d
+
+
 class Tube(Prim):
     """A polyline of round cones: horns, claws, tendons, curved spines."""
 
