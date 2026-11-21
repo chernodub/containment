@@ -70,11 +70,12 @@ Object.assign(shards,{
   boonEffects:[{type:'boon',boon:'shatter',x:0,y:0,radius:46},
     ...shardTargets.map(([x,z])=>({type:'boon',boon:'frost',x:0,y:0,targetX:x*32,targetY:z*32}))],
 });
-for(const [service,id] of Object.entries({heal:'health',medkit:'health',armor:'armor',ammo:'ammo',grenade:'grenade',reroll:'credits'})){
-  add('service-'+service,[pickup(id)],{width:448,height:168,span:id==='grenade'?.78:.52,focus:[0,.13,0]});
+const supply=id=>({kind:'supply',id,aim:.46});
+const serviceModels={heal:'health',medkit:'medkit',armor:'armor',ammo:'ammo',grenade:'grenade',
+  reroll:'reroll',upgrade:'upgrade',revive:'resuscitator'};
+for(const [service,id] of Object.entries(serviceModels)){
+  add('service-'+service,[supply(id)],{width:560,height:224,card:true,frameSubject:true,webpQuality:.84});
 }
-add('service-upgrade',[prop('Prop_Desk_Medium')],{width:448,height:168,span:1.78});
-add('service-revive',[prop('Prop_HealthPack_Tube')],{width:448,height:168,span:.54,focus:[0,.16,0]});
 for(const id of ['pistol','rifle','shotgun','plasma','rocket']){
   add('weapon-'+id,[{kind:'weapon',id}],{span:id==='pistol'?.56:.95,focus:[0,0,0]});
 }
@@ -101,18 +102,24 @@ const landmarks={
   'shielding-gate':'Scanner floor','containment-annulus':'East status ring','manual-control-chamber':'Authorization booth',
   'overload-floor':'Reaction feed threshold',
 };
+const opener=(family,champion)=>({kind:'enemy',family,champion,aim:2.3});
+add('route-legacy-queen',[opener('queen')],{frameSubject:true});
+for(const name of ['crawler','stalker','spitter','brute','carrier','warden','matron']){
+  const family=name==='warden'?'brute':name==='matron'?'carrier':name;
+  add('route-threat-'+name,[opener(family,name===family?undefined:name)],{frameSubject:true});
+}
+const nodes=L8_CAPTURE_API.generateRun(1729,3).nodes;
 for(const {id,arena} of L8_CAPTURE_ROOMS){
+  const node=nodes.find(node=>node.templateId===id);
+  const {enemyId,guardian}=L8_CAPTURE_API.createEncounterPlan({seed:1729,node,breachIds:['studio']}).schedule[0];
   const space=L8_CAPTURE_API.plans[id].spaces.find(space=>space.name===landmarks[id]);
-  const mark=id==='communal-atrium'?{x:650,y:375}:space?.anchor??arena;
-  add('route-'+id,[],{view:'gameplay',room:id,span:9,focus:[mark.x/32,.25,mark.y/32]});
+  const mark=space?.anchor??arena;
+  add('route-'+id,[opener(enemyId,guardian)],{
+    room:id,origin:[mark.x/32,mark.y/32],frameSubject:true,
+  });
 }
 const lane={view:'gameplay',span:4.7};
 const roomLane=(room,x,z)=>({...lane,room,origin:[x/32,z/32]});
-const kit=(name,tint,mark={})=>({...prop(name),tint,...mark});
-const station=(name,tint,mark={})=>({kind:'prop',kit:'station',name,tint,...mark});
-const observer=(rig='breacher')=>({...marine(rig),x:-1.55,z:.42,aim:-.5});
-const crate=(mark={})=>kit('Prop_Crate',0x385965,{scale:.8,shadow:.85,...mark});
-const lamp=(glow,mark={})=>station('wall-switch',0x35494a,{scale:.72,glow,...mark});
 const light=(color,mark)=>({kind:'light',color,intensity:8,distance:2.1,...mark});
 const coolantGallery=L8_CAPTURE_API.plans['coolant-plant'].spaces.find(space=>space.name==='Port pump gallery').anchor;
 const guardianLane=roomLane('coolant-plant',coolantGallery.x,coolantGallery.y);
@@ -121,67 +128,37 @@ add('route-plate-breaker',[
   {kind:'enemy',family:'brute',aim:1.7,x:1.85,z:.15,scale:.72,shadow:.78},
   {kind:'ordnance',weapon:'plasma',from:[-2.92,.9,1.03],x:-.22,y:1.14,z:.27,shadow:0},
   light(0x74baff,{x:-.48,y:1.38,z:.61,intensity:13,distance:3.3}),
-],{...guardianLane,span:4.12,focus:[0,.78,-.34]});
+],{...guardianLane,span:4.55,focus:[0,.82,-.34]});
 add('route-brood',[
-  {kind:'enemy',family:'carrier',champion:'matron',aim:2.77,x:-.85,z:-.22,shadow:1.5},
-  {kind:'pod',x:.7,z:.72,shadow:.7},
-  {kind:'pod',swollen:true,x:1.61,z:.01,scale:1.15,shadow:.8},
-  {kind:'ordnance',weapon:'rocket',from:[3.08,.86,1.35],x:1.48,y:.59,z:.78,shadow:0},
-  light(0xff9a5d,{x:1.47,y:1.04,z:1.02,intensity:8,distance:3}),
+  {kind:'enemy',family:'carrier',champion:'matron',aim:3.45,x:-.85,z:-.22,shadow:1.5},
+  {kind:'pod',x:.63,z:.86,shadow:.7},
+  {kind:'pod',swollen:true,x:2.04,z:-.17,scale:1.15,shadow:.8},
+  {kind:'ordnance',weapon:'rocket',from:[3.48,.86,1.35],x:1.93,y:.59,z:.63,shadow:0},
+  light(0xff9a5d,{x:1.93,y:1.04,z:.96,intensity:8,distance:3}),
   light(0xf375a6,{x:.5,y:1.32,z:-.17,intensity:6,distance:3.1}),
-],{...guardianLane,span:4.12,focus:[.15,.72,-.22]});
-add('route-cache',[
-  observer(),station('container-flat-open',0x8c925a,{x:.78,z:-.65,aim:Math.PI/2,scale:1.38,shadow:1.1}),
-  station('container-wide',0x5c6b58,{x:1.64,z:-.61,scale:.52}),
-  light(0xf7b53c,{x:.89,z:.3,y:.61}),
-  ...[[.4,.32],[.9,.57],[1.26,.27]].map(([x,z])=>({...pickup('credits'),x,z,scale:.85})),
-  lamp(0xb37c24,{x:.7,z:-.02,y:.29}),
-],roomLane('communal-atrium',765,487));
-add('route-armor',[
-  observer(),kit('Prop_Shelves_WideShort',0x3e6067,{x:.7,z:-.9,scale:.88,shadow:1}),
-  ...[-.02,.47,1].map(x=>({...pickup('armor'),x:x+.28,z:-.8,y:.42})),
-  crate({x:.46,z:.72,tint:0x72603e}),
-  {...pickup('grenade'),x:1.58,z:.6,scale:1.3},{...pickup('grenade'),x:1.84,z:1.18,scale:1.22},
-  light(0xa8c9f7,{x:1.58,z:.86,y:.73}),
-],roomLane('breached-loading-bay',600,680));
-add('route-medicine',[
-  observer('cryo'),station('computer-wide',0x396766,{x:.78,z:-.52,shadow:1}),
-  lamp(0x28ec91,{x:1.22,z:.12,y:1.05}),light(0x2af391,{x:1.25,z:.36,y:1.2}),
-  crate({x:.32,z:.48,tint:0x37645a}),
-  {...pickup('health'),x:1.58,z:.71,y:.14,scale:1.15},
-],roomLane('safety-interlock-station',640,730));
+],{...guardianLane,span:4.6,focus:[.15,.83,-.18]});
+add('route-cache',[supply('cache-open')],{frameSubject:true});
+add('route-locker',[{...supply('health'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.38,0]});
+add('route-armor',[{...supply('armor'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.32,0]});
+add('route-medicine',[supply('health')],{frameSubject:true});
 add('route-warden-cache',[
-  {kind:'enemy',family:'brute',champion:'warden',aim:.9,x:-.75,z:.24,shadow:1.5},
-  kit('Prop_Crate_Large',0x66513a,{x:1.45,z:.46,scale:.68,shadow:1}),
-  lamp(0xc98a27,{x:1.38,z:.72,y:.61}),
-],{...roomLane('swarm-junction',600,520),span:6.4});
-add('route-protected-passage',[
-  {...observer('pyro'),x:-.8,z:.5},
-  station('wall',0x667d87,{x:.85,z:-1.36,scale:1.55}),
-  ...[-.5,2.2].map(x=>station('wall-pillar',0x4b646d,{x,z:-1.36,scale:1.4})),
-  station('wall-detail',0x4a6268,{x:.85,z:-.98,y:.48,scale:.62}),
-  lamp(0x70ebc1,{x:1.82,z:-.91,y:.88}),
-  light(0x83efd3,{x:1.02,z:-.33,y:1.35,intensity:15,distance:4}),
-  light(0xc9e5ff,{x:-1.04,z:.42,y:1.56,intensity:12,distance:4}),
-],roomLane('manual-control-chamber',640,550));
-add('route-capacitor',[
-  observer('arc'),station('computer-system',0x435e75,{x:.94,z:-.33,shadow:1.2}),
-  lamp(0x56b6fd,{x:.99,z:-.13,y:.8}),
-  {kind:'ring',radius:1.18,color:0x75aefa,x:.94,z:-.33,y:.038},
-  {kind:'ring',radius:.95,color:0x87ceda,x:.94,z:-.33,y:.037},
-],roomLane('manual-control-chamber',640,550));
-add('route-meltdown-capacitor',[
-  observer('pyro'),station('computer-system',0x665449,{x:.94,z:-.88,shadow:1.2}),
-  lamp(0xff9b55,{x:.99,z:-.48,y:.8}),
-  light(0xff9149,{x:.94,z:-.28,y:1,intensity:14,distance:3}),
-  {kind:'ring',radius:.69,color:0xffb061,x:.94,z:.20,y:.052},
-  {kind:'glyph',name:'meltdown',color:0xffc485,x:.94,z:.20,y:.055,scale:1.12},
-],roomLane('manual-control-chamber',640,550));
+  {kind:'enemy',family:'brute',champion:'warden',aim:2.12,x:-.7,z:.18,shadow:1.5},
+  {...supply('cache-closed'),x:1.53,z:.21,shadow:.72},
+],{...roomLane('swarm-junction',600,520),span:4.25,focus:[.05,.85,-.2]});
+add('route-protected-passage',[opener('brute')],{frameSubject:true});
+add('route-capacitor',[supply('overdrive')],{frameSubject:true});
+add('route-meltdown-capacitor',[supply('overdrive'),light(0xff7435,{y:.7,z:.4})],{frameSubject:true});
 for(const name of ['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire']){
   const reward=plan['reward-'+name];
-  const subjects=[...reward.subjects,kit('Prop_Desk_Medium',0x243c43,{x:.6,z:-1.38,scale:.74,shadow:1.1}),
-    station('computer',0x345850,{x:.57,z:-1.43,y:.71,scale:.5}),lamp(0x438f89,{x:.99,z:-1.37,y:.76})];
-  plan['route-workshop-'+name]={...reward,subjects,...roomLane('diagnostic-gallery',620,563),span:5.35};
+  const reach=name==='ice-road'||name==='live-wire';
+  plan['route-workshop-'+name]={
+    ...reward,span:reach?3.92:3.55,focus:reach?[-.12,.83,-.10]:[-.12,.69,0],
+    subjects:reward.subjects.map(subject=>subject.kind==='marine'?{...subject,scale:1.6}:subject),
+  };
 }
-add('route-upgrade',[observer(),kit('Prop_Desk_Medium',0x495f66,{x:.6,z:-.8,shadow:1.1}),station('computer',0x487379,{x:.77,z:-.8,y:.73})],roomLane('diagnostic-gallery',620,563));
+add('route-upgrade',[supply('upgrade')],{frameSubject:true});
+for(const [name,shot] of Object.entries(plan)){
+  if(!name.startsWith('route-'))continue;
+  Object.assign(shot,{width:1120,height:476,card:true,view:'gameplay',webpQuality:.79});
+}
 export default plan;

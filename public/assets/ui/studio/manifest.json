@@ -2128,159 +2128,154 @@
   },
   "service-heal": {
     "file": "service-heal.webp",
-    "bytes": 3932,
+    "bytes": 4694,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.52,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "health"
+          "kind": "supply",
+          "id": "health",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-medkit": {
     "file": "service-medkit.webp",
-    "bytes": 3932,
+    "bytes": 5792,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.52,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "health"
+          "kind": "supply",
+          "id": "medkit",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-armor": {
     "file": "service-armor.webp",
-    "bytes": 4058,
+    "bytes": 6742,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.52,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "armor"
+          "kind": "supply",
+          "id": "armor",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-ammo": {
     "file": "service-ammo.webp",
-    "bytes": 4760,
+    "bytes": 6262,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.52,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "ammo"
+          "kind": "supply",
+          "id": "ammo",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-grenade": {
     "file": "service-grenade.webp",
-    "bytes": 3254,
+    "bytes": 6722,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.78,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "grenade"
+          "kind": "supply",
+          "id": "grenade",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-reroll": {
     "file": "service-reroll.webp",
-    "bytes": 4490,
+    "bytes": 5184,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.52,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "pickup",
-          "id": "credits"
+          "kind": "supply",
+          "id": "reroll",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.13,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-upgrade": {
     "file": "service-upgrade.webp",
-    "bytes": 4310,
+    "bytes": 4844,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 1.78,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium"
+          "kind": "supply",
+          "id": "upgrade",
+          "aim": 0.46
         }
-      ]
+      ],
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "service-revive": {
     "file": "service-revive.webp",
-    "bytes": 1976,
+    "bytes": 7724,
     "shot": {
-      "width": 448,
-      "height": 168,
-      "span": 0.54,
+      "width": 560,
+      "height": 224,
+      "span": 3,
       "subjects": [
         {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_HealthPack_Tube"
+          "kind": "supply",
+          "id": "resuscitator",
+          "aim": 0.46
         }
       ],
-      "focus": [
-        0,
-        0.16,
-        0
-      ]
+      "card": true,
+      "frameSubject": true,
+      "webpQuality": 0.84
     }
   },
   "weapon-pistol": {
@@ -2611,628 +2606,602 @@
   },
   "route-awakening-bay": {
     "file": "route-awakening-bay.webp",
-    "bytes": 25434,
+    "bytes": 10840,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
       "room": "awakening-bay",
-      "focus": [
+      "origin": [
         20,
-        0.25,
         13.75
-      ]
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 32354,
+    "bytes": 11106,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "aim": 2.3
+        }
+      ],
       "room": "passenger-vault",
-      "focus": [
+      "origin": [
         18.75,
-        0.25,
         13.75
-      ]
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   },
   "route-residential-gallery": {
     "file": "route-residential-gallery.webp",
-    "bytes": 22630,
+    "bytes": 14906,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "stalker",
+          "aim": 2.3
+        }
+      ],
       "room": "residential-gallery",
-      "focus": [
+      "origin": [
         5,
-        0.25,
         15
-      ]
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   },
   "route-communal-atrium": {
     "file": "route-communal-atrium.webp",
-    "bytes": 30052,
+    "bytes": 10242,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
       "room": "communal-atrium",
-      "focus": [
-        20.3125,
-        0.25,
-        11.71875
-      ]
+      "origin": [
+        10.5,
+        13.75
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   },
   "route-crew-checkpoint": {
     "file": "route-crew-checkpoint.webp",
-    "bytes": 16490,
+    "bytes": 14234,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
       "room": "crew-checkpoint",
-      "focus": [
+      "origin": [
         14.0625,
-        0.25,
         13.75
-      ]
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 19638,
+    "bytes": 13250,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "armory",
-      "focus": [
-        18.75,
-        0.25,
-        23.125
-      ]
-    }
-  },
-  "route-freight-hold": {
-    "file": "route-freight-hold.webp",
-    "bytes": 20094,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "freight-hold",
-      "focus": [
-        9.9375,
-        0.25,
-        18.25
-      ]
-    }
-  },
-  "route-breached-loading-bay": {
-    "file": "route-breached-loading-bay.webp",
-    "bytes": 17342,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "breached-loading-bay",
-      "focus": [
-        18.75,
-        0.25,
-        21.25
-      ]
-    }
-  },
-  "route-relay-racks": {
-    "file": "route-relay-racks.webp",
-    "bytes": 23758,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "relay-racks",
-      "focus": [
-        20,
-        0.25,
-        26.25
-      ]
-    }
-  },
-  "route-transmission-chamber": {
-    "file": "route-transmission-chamber.webp",
-    "bytes": 31272,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "transmission-chamber",
-      "focus": [
-        26.25,
-        0.25,
-        6.875
-      ]
-    }
-  },
-  "route-diagnostic-gallery": {
-    "file": "route-diagnostic-gallery.webp",
-    "bytes": 21544,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "focus": [
-        11.25,
-        0.25,
-        7.1875
-      ]
-    }
-  },
-  "route-safety-interlock-station": {
-    "file": "route-safety-interlock-station.webp",
-    "bytes": 33374,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "safety-interlock-station",
-      "focus": [
-        20,
-        0.25,
-        15
-      ]
-    }
-  },
-  "route-coolant-plant": {
-    "file": "route-coolant-plant.webp",
-    "bytes": 20722,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "coolant-plant",
-      "focus": [
-        13.4375,
-        0.25,
-        15
-      ]
-    }
-  },
-  "route-service-shaft-landing": {
-    "file": "route-service-shaft-landing.webp",
-    "bytes": 27336,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "service-shaft-landing",
-      "focus": [
-        5.3125,
-        0.25,
-        13.75
-      ]
-    }
-  },
-  "route-infested-workshop": {
-    "file": "route-infested-workshop.webp",
-    "bytes": 32872,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "infested-workshop",
-      "focus": [
-        13,
-        0.25,
-        7.1875
-      ]
-    }
-  },
-  "route-swarm-junction": {
-    "file": "route-swarm-junction.webp",
-    "bytes": 28888,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "swarm-junction",
-      "focus": [
-        18.75,
-        0.25,
-        16.25
-      ]
-    }
-  },
-  "route-shielding-gate": {
-    "file": "route-shielding-gate.webp",
-    "bytes": 14758,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "shielding-gate",
-      "focus": [
-        22,
-        0.25,
-        15
-      ]
-    }
-  },
-  "route-containment-annulus": {
-    "file": "route-containment-annulus.webp",
-    "bytes": 18828,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "containment-annulus",
-      "focus": [
-        36.25,
-        0.25,
-        16.25
-      ]
-    }
-  },
-  "route-manual-control-chamber": {
-    "file": "route-manual-control-chamber.webp",
-    "bytes": 26516,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "manual-control-chamber",
-      "focus": [
-        20,
-        0.25,
-        5.625
-      ]
-    }
-  },
-  "route-overload-floor": {
-    "file": "route-overload-floor.webp",
-    "bytes": 33070,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 9,
-      "subjects": [],
-      "view": "gameplay",
-      "room": "overload-floor",
-      "focus": [
-        21.875,
-        0.25,
-        9.0625
-      ]
-    }
-  },
-  "route-cache": {
-    "file": "route-cache.webp",
-    "bytes": 29184,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "breacher",
-          "weapon": "shotgun",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "container-flat-open",
-          "tint": 9212506,
-          "x": 0.78,
-          "z": -0.65,
-          "aim": 1.5707963267948966,
-          "scale": 1.38,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "container-wide",
-          "tint": 6056792,
-          "x": 1.64,
-          "z": -0.61,
-          "scale": 0.52
-        },
-        {
-          "kind": "light",
-          "color": 16233788,
-          "intensity": 8,
-          "distance": 2.1,
-          "x": 0.89,
-          "z": 0.3,
-          "y": 0.61
-        },
-        {
-          "kind": "pickup",
-          "id": "credits",
-          "x": 0.4,
-          "z": 0.32,
-          "scale": 0.85
-        },
-        {
-          "kind": "pickup",
-          "id": "credits",
-          "x": 0.9,
-          "z": 0.57,
-          "scale": 0.85
-        },
-        {
-          "kind": "pickup",
-          "id": "credits",
-          "x": 1.26,
-          "z": 0.27,
-          "scale": 0.85
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 11762724,
-          "x": 0.7,
-          "z": -0.02,
-          "y": 0.29
-        }
-      ],
-      "view": "gameplay",
-      "room": "communal-atrium",
-      "origin": [
-        23.90625,
-        15.21875
-      ]
-    }
-  },
-  "route-armor": {
-    "file": "route-armor.webp",
-    "bytes": 14748,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "breacher",
-          "weapon": "shotgun",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Shelves_WideShort",
-          "tint": 4087911,
-          "x": 0.7,
-          "z": -0.9,
-          "scale": 0.88,
-          "shadow": 1
-        },
-        {
-          "kind": "pickup",
-          "id": "armor",
-          "x": 0.26,
-          "z": -0.8,
-          "y": 0.42
-        },
-        {
-          "kind": "pickup",
-          "id": "armor",
-          "x": 0.75,
-          "z": -0.8,
-          "y": 0.42
-        },
-        {
-          "kind": "pickup",
-          "id": "armor",
-          "x": 1.28,
-          "z": -0.8,
-          "y": 0.42
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Crate",
-          "tint": 7495742,
-          "scale": 0.8,
-          "shadow": 0.85,
-          "x": 0.46,
-          "z": 0.72
-        },
-        {
-          "kind": "pickup",
-          "id": "grenade",
-          "x": 1.58,
-          "z": 0.6,
-          "scale": 1.3
-        },
-        {
-          "kind": "pickup",
-          "id": "grenade",
-          "x": 1.84,
-          "z": 1.18,
-          "scale": 1.22
-        },
-        {
-          "kind": "light",
-          "color": 11061751,
-          "intensity": 8,
-          "distance": 2.1,
-          "x": 1.58,
-          "z": 0.86,
-          "y": 0.73
-        }
-      ],
-      "view": "gameplay",
-      "room": "breached-loading-bay",
-      "origin": [
-        18.75,
-        21.25
-      ]
-    }
-  },
-  "route-medicine": {
-    "file": "route-medicine.webp",
-    "bytes": 28416,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "cryo",
-          "weapon": "rifle",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer-wide",
-          "tint": 3762022,
-          "x": 0.78,
-          "z": -0.52,
-          "shadow": 1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 2682001,
-          "x": 1.22,
-          "z": 0.12,
-          "y": 1.05
-        },
-        {
-          "kind": "light",
-          "color": 2814865,
-          "intensity": 8,
-          "distance": 2.1,
-          "x": 1.25,
-          "z": 0.36,
-          "y": 1.2
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Crate",
-          "tint": 3630170,
-          "scale": 0.8,
-          "shadow": 0.85,
-          "x": 0.32,
-          "z": 0.48
-        },
-        {
-          "kind": "pickup",
-          "id": "health",
-          "x": 1.58,
-          "z": 0.71,
-          "y": 0.14,
-          "scale": 1.15
-        }
-      ],
-      "view": "gameplay",
-      "room": "safety-interlock-station",
-      "origin": [
-        20,
-        22.8125
-      ]
-    }
-  },
-  "route-warden-cache": {
-    "file": "route-warden-cache.webp",
-    "bytes": 24262,
-    "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 6.4,
+      "width": 1120,
+      "height": 476,
+      "span": 3,
       "subjects": [
         {
           "kind": "enemy",
           "family": "brute",
           "champion": "warden",
-          "aim": 0.9,
-          "x": -0.75,
-          "z": 0.24,
+          "aim": 2.3
+        }
+      ],
+      "room": "armory",
+      "origin": [
+        18.75,
+        23.125
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-freight-hold": {
+    "file": "route-freight-hold.webp",
+    "bytes": 11132,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "room": "freight-hold",
+      "origin": [
+        9.9375,
+        18.25
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-breached-loading-bay": {
+    "file": "route-breached-loading-bay.webp",
+    "bytes": 15238,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "aim": 2.3
+        }
+      ],
+      "room": "breached-loading-bay",
+      "origin": [
+        18.75,
+        21.25
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-relay-racks": {
+    "file": "route-relay-racks.webp",
+    "bytes": 13722,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
+      "room": "relay-racks",
+      "origin": [
+        20,
+        26.25
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-transmission-chamber": {
+    "file": "route-transmission-chamber.webp",
+    "bytes": 11834,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
+      "room": "transmission-chamber",
+      "origin": [
+        26.25,
+        6.875
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-diagnostic-gallery": {
+    "file": "route-diagnostic-gallery.webp",
+    "bytes": 13106,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "aim": 2.3
+        }
+      ],
+      "room": "diagnostic-gallery",
+      "origin": [
+        11.25,
+        7.1875
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-safety-interlock-station": {
+    "file": "route-safety-interlock-station.webp",
+    "bytes": 8966,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "room": "safety-interlock-station",
+      "origin": [
+        20,
+        15
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-coolant-plant": {
+    "file": "route-coolant-plant.webp",
+    "bytes": 14442,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
+      "room": "coolant-plant",
+      "origin": [
+        13.4375,
+        15
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-service-shaft-landing": {
+    "file": "route-service-shaft-landing.webp",
+    "bytes": 15704,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "stalker",
+          "aim": 2.3
+        }
+      ],
+      "room": "service-shaft-landing",
+      "origin": [
+        5.3125,
+        13.75
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-infested-workshop": {
+    "file": "route-infested-workshop.webp",
+    "bytes": 8502,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "room": "infested-workshop",
+      "origin": [
+        13,
+        7.1875
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-swarm-junction": {
+    "file": "route-swarm-junction.webp",
+    "bytes": 14546,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "champion": "matron",
+          "aim": 2.3
+        }
+      ],
+      "room": "swarm-junction",
+      "origin": [
+        18.75,
+        16.25
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-shielding-gate": {
+    "file": "route-shielding-gate.webp",
+    "bytes": 11788,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
+      "room": "shielding-gate",
+      "origin": [
+        22,
+        15
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-containment-annulus": {
+    "file": "route-containment-annulus.webp",
+    "bytes": 9638,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "room": "containment-annulus",
+      "origin": [
+        36.25,
+        16.25
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-manual-control-chamber": {
+    "file": "route-manual-control-chamber.webp",
+    "bytes": 12192,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "aim": 2.3
+        }
+      ],
+      "room": "manual-control-chamber",
+      "origin": [
+        20,
+        5.625
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-overload-floor": {
+    "file": "route-overload-floor.webp",
+    "bytes": 9174,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "room": "overload-floor",
+      "origin": [
+        21.875,
+        9.0625
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-cache": {
+    "file": "route-cache.webp",
+    "bytes": 10170,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "supply",
+          "id": "cache-open",
+          "aim": 0.46
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-armor": {
+    "file": "route-armor.webp",
+    "bytes": 14360,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 2.25,
+      "subjects": [
+        {
+          "kind": "supply",
+          "id": "armor",
+          "aim": 0.46,
+          "x": -0.85
+        },
+        {
+          "kind": "supply",
+          "id": "grenade",
+          "aim": 0.46,
+          "x": 0.78,
+          "z": 0.14
+        }
+      ],
+      "focus": [
+        0,
+        0.32,
+        0
+      ],
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-medicine": {
+    "file": "route-medicine.webp",
+    "bytes": 8930,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "supply",
+          "id": "health",
+          "aim": 0.46
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-warden-cache": {
+    "file": "route-warden-cache.webp",
+    "bytes": 18030,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 4.25,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "champion": "warden",
+          "aim": 2.12,
+          "x": -0.7,
+          "z": 0.18,
           "shadow": 1.5
         },
         {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Crate_Large",
-          "tint": 6705466,
-          "x": 1.45,
-          "z": 0.46,
-          "scale": 0.68,
-          "shadow": 1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 13208103,
-          "x": 1.38,
-          "z": 0.72,
-          "y": 0.61
+          "kind": "supply",
+          "id": "cache-closed",
+          "aim": 0.46,
+          "x": 1.53,
+          "z": 0.21,
+          "shadow": 0.72
         }
       ],
       "view": "gameplay",
@@ -3240,77 +3209,43 @@
       "origin": [
         18.75,
         16.25
-      ]
+      ],
+      "focus": [
+        0.05,
+        0.85,
+        -0.2
+      ],
+      "card": true,
+      "webpQuality": 0.79
     }
   },
   "route-capacitor": {
     "file": "route-capacitor.webp",
-    "bytes": 12400,
+    "bytes": 9196,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
+      "width": 1120,
+      "height": 476,
+      "span": 3,
       "subjects": [
         {
-          "kind": "marine",
-          "rig": "arc",
-          "weapon": "plasma",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer-system",
-          "tint": 4415093,
-          "x": 0.94,
-          "z": -0.33,
-          "shadow": 1.2
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 5682941,
-          "x": 0.99,
-          "z": -0.13,
-          "y": 0.8
-        },
-        {
-          "kind": "ring",
-          "radius": 1.18,
-          "color": 7712506,
-          "x": 0.94,
-          "z": -0.33,
-          "y": 0.038
-        },
-        {
-          "kind": "ring",
-          "radius": 0.95,
-          "color": 8900314,
-          "x": 0.94,
-          "z": -0.33,
-          "y": 0.037
+          "kind": "supply",
+          "id": "overdrive",
+          "aim": 0.46
         }
       ],
+      "frameSubject": true,
+      "card": true,
       "view": "gameplay",
-      "room": "manual-control-chamber",
-      "origin": [
-        20,
-        17.1875
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-siege-plow": {
     "file": "route-workshop-siege-plow.webp",
-    "bytes": 16918,
+    "bytes": 19216,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3318,7 +3253,8 @@
           "weapon": "shotgun",
           "pose": "bulwark",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3333,42 +3269,11 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [
@@ -3406,21 +3311,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-fault-line": {
     "file": "route-workshop-fault-line.webp",
-    "bytes": 19942,
+    "bytes": 26382,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3428,7 +3330,8 @@
           "weapon": "shotgun",
           "pose": "seismic-slam",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3443,42 +3346,11 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [],
@@ -3515,21 +3387,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-shard-harvest": {
     "file": "route-workshop-shard-harvest.webp",
-    "bytes": 17528,
+    "bytes": 20404,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3537,7 +3406,8 @@
           "weapon": "rifle",
           "pose": "cryo-nova",
           "x": -2.15,
-          "aim": 0.2
+          "aim": 0.2,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3566,42 +3436,11 @@
           "pose": "hit",
           "x": 1.8,
           "z": 1.3
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [],
@@ -3641,21 +3480,18 @@
           "targetY": 41.6
         }
       ],
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-ice-road": {
     "file": "route-workshop-ice-road.webp",
-    "bytes": 21108,
+    "bytes": 27838,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.92,
       "subjects": [
         {
           "kind": "marine",
@@ -3663,7 +3499,8 @@
           "weapon": "rifle",
           "pose": "glacier",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3678,43 +3515,12 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
-        0
+        -0.12,
+        0.83,
+        -0.1
       ],
       "deployables": [],
       "zones": [
@@ -3750,21 +3556,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-ember-relay": {
     "file": "route-workshop-ember-relay.webp",
-    "bytes": 15956,
+    "bytes": 18948,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3772,7 +3575,8 @@
           "weapon": "rocket",
           "pose": "flashfire",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3787,42 +3591,11 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [],
@@ -3844,21 +3617,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-meltdown-core": {
     "file": "route-workshop-meltdown-core.webp",
-    "bytes": 20314,
+    "bytes": 23560,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3866,7 +3636,8 @@
           "weapon": "rocket",
           "pose": "meltdown",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3881,42 +3652,11 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [],
@@ -3953,21 +3693,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-pilgrim-pylon": {
     "file": "route-workshop-pilgrim-pylon.webp",
-    "bytes": 18994,
+    "bytes": 23458,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.55,
       "subjects": [
         {
           "kind": "marine",
@@ -3975,7 +3712,8 @@
           "weapon": "plasma",
           "pose": "tesla-pylon",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -3990,42 +3728,11 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
+        -0.12,
+        0.69,
         0
       ],
       "deployables": [
@@ -4063,21 +3770,18 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-workshop-live-wire": {
     "file": "route-workshop-live-wire.webp",
-    "bytes": 16026,
+    "bytes": 18780,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 5.35,
+      "width": 1120,
+      "height": 476,
+      "span": 3.92,
       "subjects": [
         {
           "kind": "marine",
@@ -4085,7 +3789,8 @@
           "weapon": "plasma",
           "pose": "overload",
           "x": -1.25,
-          "aim": 0.12
+          "aim": 0.12,
+          "scale": 1.6
         },
         {
           "kind": "enemy",
@@ -4100,43 +3805,12 @@
           "pose": "hit",
           "x": 1.65,
           "z": 0.45
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 2374723,
-          "x": 0.6,
-          "z": -1.38,
-          "scale": 0.74,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 3430480,
-          "x": 0.57,
-          "z": -1.43,
-          "y": 0.71,
-          "scale": 0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 4427657,
-          "x": 0.99,
-          "z": -1.37,
-          "y": 0.76
         }
       ],
       "focus": [
-        -0.18,
-        0.68,
-        0
+        -0.12,
+        0.83,
+        -0.1
       ],
       "deployables": [],
       "zones": [],
@@ -4167,226 +3841,86 @@
         "durationMs": 700,
         "maxTargets": 3
       },
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-upgrade": {
     "file": "route-upgrade.webp",
-    "bytes": 12288,
+    "bytes": 9394,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
+      "width": 1120,
+      "height": 476,
+      "span": 3,
       "subjects": [
         {
-          "kind": "marine",
-          "rig": "breacher",
-          "weapon": "shotgun",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "industrial",
-          "name": "Prop_Desk_Medium",
-          "tint": 4808550,
-          "x": 0.6,
-          "z": -0.8,
-          "shadow": 1.1
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer",
-          "tint": 4748153,
-          "x": 0.77,
-          "z": -0.8,
-          "y": 0.73
+          "kind": "supply",
+          "id": "upgrade",
+          "aim": 0.46
         }
       ],
+      "frameSubject": true,
+      "card": true,
       "view": "gameplay",
-      "room": "diagnostic-gallery",
-      "origin": [
-        19.375,
-        17.59375
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 13220,
+    "bytes": 10028,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
+      "width": 1120,
+      "height": 476,
+      "span": 3,
       "subjects": [
         {
-          "kind": "marine",
-          "rig": "pyro",
-          "weapon": "rocket",
-          "x": -0.8,
-          "z": 0.5,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall",
-          "tint": 6716807,
-          "x": 0.85,
-          "z": -1.36,
-          "scale": 1.55
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-pillar",
-          "tint": 4940909,
-          "x": -0.5,
-          "z": -1.36,
-          "scale": 1.4
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-pillar",
-          "tint": 4940909,
-          "x": 2.2,
-          "z": -1.36,
-          "scale": 1.4
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-detail",
-          "tint": 4874856,
-          "x": 0.85,
-          "z": -0.98,
-          "y": 0.48,
-          "scale": 0.62
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 7400385,
-          "x": 1.82,
-          "z": -0.91,
-          "y": 0.88
-        },
-        {
-          "kind": "light",
-          "color": 8646611,
-          "intensity": 15,
-          "distance": 4,
-          "x": 1.02,
-          "z": -0.33,
-          "y": 1.35
-        },
-        {
-          "kind": "light",
-          "color": 13231615,
-          "intensity": 12,
-          "distance": 4,
-          "x": -1.04,
-          "z": 0.42,
-          "y": 1.56
+          "kind": "enemy",
+          "family": "brute",
+          "aim": 2.3
         }
       ],
+      "frameSubject": true,
+      "card": true,
       "view": "gameplay",
-      "room": "manual-control-chamber",
-      "origin": [
-        20,
-        17.1875
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-meltdown-capacitor": {
     "file": "route-meltdown-capacitor.webp",
-    "bytes": 12250,
+    "bytes": 9156,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.7,
+      "width": 1120,
+      "height": 476,
+      "span": 3,
       "subjects": [
         {
-          "kind": "marine",
-          "rig": "pyro",
-          "weapon": "rocket",
-          "x": -1.55,
-          "z": 0.42,
-          "aim": -0.5
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "computer-system",
-          "tint": 6706249,
-          "x": 0.94,
-          "z": -0.88,
-          "shadow": 1.2
-        },
-        {
-          "kind": "prop",
-          "kit": "station",
-          "name": "wall-switch",
-          "tint": 3492170,
-          "scale": 0.72,
-          "glow": 16751445,
-          "x": 0.99,
-          "z": -0.48,
-          "y": 0.8
+          "kind": "supply",
+          "id": "overdrive",
+          "aim": 0.46
         },
         {
           "kind": "light",
-          "color": 16748873,
-          "intensity": 14,
-          "distance": 3,
-          "x": 0.94,
-          "z": -0.28,
-          "y": 1
-        },
-        {
-          "kind": "ring",
-          "radius": 0.69,
-          "color": 16756833,
-          "x": 0.94,
-          "z": 0.2,
-          "y": 0.052
-        },
-        {
-          "kind": "glyph",
-          "name": "meltdown",
-          "color": 16761989,
-          "x": 0.94,
-          "z": 0.2,
-          "y": 0.055,
-          "scale": 1.12
+          "color": 16741429,
+          "intensity": 8,
+          "distance": 2.1,
+          "y": 0.7,
+          "z": 0.4
         }
       ],
+      "frameSubject": true,
+      "card": true,
       "view": "gameplay",
-      "room": "manual-control-chamber",
-      "origin": [
-        20,
-        17.1875
-      ]
+      "webpQuality": 0.79
     }
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 19504,
+    "bytes": 19996,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.12,
+      "width": 1120,
+      "height": 476,
+      "span": 4.55,
       "subjects": [
         {
           "kind": "enemy",
@@ -4437,39 +3971,41 @@
       ],
       "focus": [
         0,
-        0.78,
+        0.82,
         -0.34
-      ]
+      ],
+      "card": true,
+      "webpQuality": 0.79
     }
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 25448,
+    "bytes": 27192,
     "shot": {
-      "width": 640,
-      "height": 360,
-      "span": 4.12,
+      "width": 1120,
+      "height": 476,
+      "span": 4.6,
       "subjects": [
         {
           "kind": "enemy",
           "family": "carrier",
           "champion": "matron",
-          "aim": 2.77,
+          "aim": 3.45,
           "x": -0.85,
           "z": -0.22,
           "shadow": 1.5
         },
         {
           "kind": "pod",
-          "x": 0.7,
-          "z": 0.72,
+          "x": 0.63,
+          "z": 0.86,
           "shadow": 0.7
         },
         {
           "kind": "pod",
           "swollen": true,
-          "x": 1.61,
-          "z": 0.01,
+          "x": 2.04,
+          "z": -0.17,
           "scale": 1.15,
           "shadow": 0.8
         },
@@ -4477,13 +4013,13 @@
           "kind": "ordnance",
           "weapon": "rocket",
           "from": [
-            3.08,
+            3.48,
             0.86,
             1.35
           ],
-          "x": 1.48,
+          "x": 1.93,
           "y": 0.59,
-          "z": 0.78,
+          "z": 0.63,
           "shadow": 0
         },
         {
@@ -4491,9 +4027,9 @@
           "color": 16751197,
           "intensity": 8,
           "distance": 3,
-          "x": 1.47,
+          "x": 1.93,
           "y": 1.04,
-          "z": 1.02
+          "z": 0.96
         },
         {
           "kind": "light",
@@ -4513,9 +4049,205 @@
       ],
       "focus": [
         0.15,
-        0.72,
-        -0.22
-      ]
+        0.83,
+        -0.18
+      ],
+      "card": true,
+      "webpQuality": 0.79
+    }
+  },
+  "route-legacy-queen": {
+    "file": "route-legacy-queen.webp",
+    "bytes": 10630,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "queen",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-crawler": {
+    "file": "route-threat-crawler.webp",
+    "bytes": 8654,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-stalker": {
+    "file": "route-threat-stalker.webp",
+    "bytes": 12854,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "stalker",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-spitter": {
+    "file": "route-threat-spitter.webp",
+    "bytes": 11374,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-brute": {
+    "file": "route-threat-brute.webp",
+    "bytes": 10032,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-carrier": {
+    "file": "route-threat-carrier.webp",
+    "bytes": 10076,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-warden": {
+    "file": "route-threat-warden.webp",
+    "bytes": 11488,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "brute",
+          "champion": "warden",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-threat-matron": {
+    "file": "route-threat-matron.webp",
+    "bytes": 10480,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 3,
+      "subjects": [
+        {
+          "kind": "enemy",
+          "family": "carrier",
+          "champion": "matron",
+          "aim": 2.3
+        }
+      ],
+      "frameSubject": true,
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
+    }
+  },
+  "route-locker": {
+    "file": "route-locker.webp",
+    "bytes": 13176,
+    "shot": {
+      "width": 1120,
+      "height": 476,
+      "span": 2.25,
+      "subjects": [
+        {
+          "kind": "supply",
+          "id": "health",
+          "aim": 0.46,
+          "x": -0.85
+        },
+        {
+          "kind": "supply",
+          "id": "grenade",
+          "aim": 0.46,
+          "x": 0.78,
+          "z": 0.14
+        }
+      ],
+      "focus": [
+        0,
+        0.38,
+        0
+      ],
+      "card": true,
+      "view": "gameplay",
+      "webpQuality": 0.79
     }
   }
 }

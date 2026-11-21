@@ -1,3 +1,5 @@
+import {createEncounterPlan} from '../game/waves/EncounterDirector';
+import type {RunNode} from '../game/roguelike/types';
 import type {AlertCue} from '../game/audio/alertCues';
 import type {EnemySnapshot} from '../game/enemies/EnemySystem';
 import {ROCKET_ARM_DISTANCE} from '../game/combat/catalog';
@@ -577,6 +579,18 @@ export function getMasteryPreview(game: DepthGame) {
 
 export function getRoomOpening(game: DepthGame, depth?: number, salvage?: boolean) {
   return game.openingName(depth, salvage);
+}
+
+/** Pick a subject from the actual first dispatch, including seeded and guardian-route openings. */
+export function getRouteThreat(game: DepthGame, destination: RunNode, salvage: boolean) {
+  if(destination.kind!=='combat'&&destination.kind!=='elite')return undefined;
+  const {run}=game.expedition;
+  const opening=createEncounterPlan({
+    seed:run.seed,node:destination,difficulty:game.difficulty,runStructure:run.runStructure,
+    guardianRoute:run.guardianRoute,junctions:salvage?{...run.junctions,[destination.depth]:'salvage'}:run.junctions,
+    salvage,breachIds:['preview'],
+  }).schedule[0];
+  return opening?.guardian??opening?.enemyId;
 }
 
 export function getShipCondition(game: DepthGame, depth?: number, salvage?: boolean) {

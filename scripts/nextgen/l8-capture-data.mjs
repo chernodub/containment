@@ -13,6 +13,7 @@ async function bundle(){
   const entry=resolve(out,'entry.ts');
   await writeFile(entry,`export {SHIP_ARCHITECTURE_PLANS as plans} from '${resolve(root,'src/game/roguelike/shipArchitectureLayouts.ts')}';
 export {ROOM_TEMPLATES as templates} from '${resolve(root,'src/game/roguelike/roomTemplates.ts')}';
+export {createEncounterPlan} from '${resolve(root,'src/game/waves/EncounterDirector.ts')}';
 export {generateRun} from '${resolve(root,'src/game/roguelike/run.ts')}';
 export {createRoomTemplateGeometry as geometry,canOccupyExpedition as occupy,canTraverseExpedition as traverse,hasClearExpeditionShot as shot} from '${resolve(root,'src/game/world/expeditionGeometry.ts')}';`);
   await build({configFile:false,publicDir:false,logLevel:'error',build:{ssr:entry,outDir:out,emptyOutDir:false,rollupOptions:{output:{entryFileNames:'data.mjs'}}}});
