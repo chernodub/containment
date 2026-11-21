@@ -74,3 +74,40 @@ The world-space shoe traces cover ticks 20–53 of forward, strafe and backward 
 I count a readable cyan visor in **six of eight** facings across the idle, run and rifle rows in `motion20-visor-final/sheet.png` (0°, 45°, 90°, 135°, 180° and 315°). The full face is clearest from the front. At 225° and 270° the dome and rear shell leave only temple marks, and at 315° the visor reads mainly by its curved edge. In the Breacher selector portrait the lens remains just above the stock, looking along the barrel.
 
 The other weak read is the pistol at 480×270. The wrist and short muzzle kick are visible over successive frames, but the pistol hand and receiver occupy only a few pixels. The shotgun rock and the rocket's rear step carry much farther across the silhouette.
+
+## MOTION21
+
+On a hard stop the right boot reaches its mark, the leading knee bends under the moving hips, and the barrel dips as the collar drops. The pistol loads the elbow and shoulder. The rifle turns the shooting shoulder around the hip and counterturns the head. The shotgun rocks farther back, catches the receiver below the visor and holds the catch from tick 5 to tick 12 (117 ms) before pumping. Plasma presses into a deeper diagonal brace. The rocket steps the rear boot 39 cm back while bringing the tube down and outboard.
+
+### Silhouettes at fighting distance
+
+Local evidence is under `artifacts/nextgen/motion21-review/`. The file `amplitude-silhouettes.png` contains all ten pairs of idle, mid-run, brake, rifle and shotgun. The frame numbers are 1, 15, 11, 2 and 3 respectively. Each pair uses the same viewport coordinates. The three dots follow the head joint, right upper arm origin and firing hand. The dedicated diagnostic omits muzzle effects and ejecta. `before-silhouettes.png` records the same drawings on the integration build. `amplitude-room.png` compares six consecutive room frames at their original 480×270 pixel scale.
+
+In the brake, the hips travel 4.4 screen pixels forward from the last running sample, up from 2.2. The leading knee travels 9.3 pixels, up from 2.5. At pistol impact the shoulder moves 6.5 pixels relative to the hip, up from 2.7. For the rifle this shoulder excursion grows from 9.7 to 14.8 pixels. The shotgun is distinguished by its low stock and sustained rearward weight across successive frames. Idle and mid-run remain the closest upper-body pair, with the carried receiver tipping up as the shoulder passes the head.
+
+Rebake just the changed animation takes with the existing Blender scripts.
+
+```sh
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/marine_locomotion.py -- --stops-only --install
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/marine_actions.py -- --clips=m10-fire-pistol,m10-fire-rifle,m10-fire-shotgun,m10-fire-plasma,m10-fire-rocket --install
+```
+
+### Visor in a bright pool
+
+A 26 mm matte strip follows the lower lip of the cyan lens and curves up toward both temples. It shares the body atlas and adds 156 triangles, bringing the heaviest body-plus-rig combination to 24,206. Both shipped marine GLBs are byte-identical and contain four 1024×1024 PNG textures. The four selector portraits were rendered again with the updated helmet.
+
+The bright-pool comparison is `artifacts/nextgen/motion21-facings/bright-pool.png`. Both builds use the same Containment Annulus mark (496, 496) under four point lights. The new lower line separates cyan glass from the lit chin most clearly at 45°, 90° and 135°. In the idle, run and rifle rows of `sheet.png`, six facings show the visor, counting the narrow curve at 315°. At 225° and 270° the rear shell and dome still hide the face. Synchronous WebGL shader compilation was used for the final facing study after local parallel preparation stalled.
+
+For the model, run the HERO19 handoff’s Blender bake, marine-only meshopt and marine-only shadow LOD steps. Between meshopt and the shadow LOD run `node tools/assets/t12-textures/resize-embedded.mjs public/assets/models/marine.glb public/assets/models/marine.glb 1024`. Copy the finished GLB to `public/assets/models/plain/marine.glb`, then run `npm run build` and `node scripts/nextgen/studio.mjs --only=portrait-`.
+
+### Game-camera verification
+
+All fifteen strips completed with zero capture errors in `artifacts/nextgen/motion21-after/`. In `quarter.png` the six MOTION20 samples on the left match the six MOTION21 samples on the right. The `quarter/` folder pairs all thirty frames per action. The `comparison/` sheets preserve the 480×270 room frames, and `room-comparison.png` crops the brake and all five weapons directly from those frames. The pistol now draws the shoulder and elbow back together. Its barrel remains the smallest and hardest to see under muzzle flash. The shotgun holds its low catch long enough to see the stock pass below the head; the rifle shoulder snaps back and immediately begins returning.
+
+The two live rifle fights are `scenes/pack-crawler.webp` and `scenes/pack-stalker.webp`. Their JSON records match MOTION20 byte for byte, including shot time, angle, hits, movement and deaths. The Crawler fight records four shots and three hits; the Stalker fight records three shots and two hits. Each ends with a kill.
+
+The matched Crew Checkpoint Breacher High benchmark recorded 124 median, 133 p95 and 134 peak draws in both builds, with 147 resident programs and zero mid-fight compiles. Across 37 sampled submissions, three differed by one draw, with the adaptive scale at 0.900–0.925 before and 1.000 after. The results are in `motion21-bench-before/benchmark.json` and `motion21-bench-after/benchmark.json` under the local evidence root. These CPU-only captures measure submissions.
+
+The final production build passed. The six-room seed-1729 Breacher run cleared Armory with zero errors and zero defects (`artifacts/nextgen/playtest/breacher-1729/report.json`). An earlier run alongside the captures also cleared all six rooms with zero errors and flagged one Passenger Vault room-load delay. The repeat recorded 2.48 seconds for that room.
+
+Repeating both 300-tick segments at fixed 1.0 resolution reproduced the median, p95, peak, program inventory and zero compile counts. Of the 37 draw samples, 35 matched exactly and two increased by one. The visible marine inventory still contained three meshes (body, Breacher rig and shotgun). Only the body gained triangles. The fixed-resolution receipts are `motion21-fixed-before/benchmark.json` and `motion21-fixed-after/benchmark.json`.

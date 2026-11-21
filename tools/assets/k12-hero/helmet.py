@@ -148,6 +148,15 @@ class Helmet:
             line = kit.surface_path(self.bvh, self.front, [(u, v - 1.6) for u, v in top], .0035, closed=False)
             strip = kit.ribbon('helmet hud strip', line, .0016, .0008, closed=False, collection=self.col)
             self.add(strip, 'glow')
+        if self.option == 1:
+            # A matte return under the lens provides a dark facing cue even
+            # when the upward-facing visor and the brow both catch a practical.
+            sill = [(-125, 29), (-99, 13), (-78, 1), (-56, -7), (-29, -13),
+                    (0, -16), (29, -13), (56, -7), (78, 1), (99, 13), (125, 29)]
+            path = kit.surface_path(self.bvh, self.front, sill, .031, closed=False,
+                                    samples=42 if self.high else 20)
+            self.add(kit.ribbon('lower visor sill', path, .026, .004, closed=False,
+                                collection=self.col), 'marking')
         self.visor_outline = outline
 
     def brow(self, o):

@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 209214,
+    "bytes": 209834,
     "shot": {
       "width": 640,
       "height": 640,
@@ -34,7 +34,7 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 197947,
+    "bytes": 198850,
     "shot": {
       "width": 640,
       "height": 640,
@@ -67,7 +67,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 308009,
+    "bytes": 308530,
     "shot": {
       "width": 640,
       "height": 640,
@@ -100,7 +100,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 239830,
+    "bytes": 240453,
     "shot": {
       "width": 640,
       "height": 640,

@@ -26,8 +26,8 @@ const FIRES: Record<string, string> = {
 // The wrist constraint consumes this pitch after the mixer. Keep its return
 // inside the shot interval so a rifle burst has distinct impacts.
 const RECEIVER_KICK: Record<string, readonly [number, number]> = {
-    pistol: [.21, 19], rifle: [.17, 32], shotgun: [.29, 15],
-    plasma: [.055, 12], rocket: [.23, 13],
+    pistol: [.39, 14], rifle: [.31, 24], shotgun: [.46, 14],
+    plasma: [.11, 11], rocket: [.39, 12],
 };
 const DEATHS: Record<DeathCue, string> = { none: 'm10-death-none', frost: 'm10-death-frost', burn: 'm10-death-burn', arc: 'm10-death-arc', acid: 'm10-death-acid' };
 const directionIndex = (direction: number, aim: number) => ((Math.round((direction - aim + Math.PI) / (Math.PI / 2)) % 4) + 4) % 4;
@@ -372,11 +372,17 @@ export class AuthoredMarineMotion {
         this.motion.rifleLoad = weapon === 'rifle' ? this.burstRise / .075 : 0;
         this.recoil = recoil;
         const [kick, decay] = RECEIVER_KICK[weapon];
+        // Keep the barrel seated in the shotgun catch until the pump begins.
+        const returnAge = weapon === 'shotgun' ? Math.max(0, this.fireAge - .18) : this.fireAge;
         const rise = Math.min(1, (this.fireAge + 1 / 120) * 56);
         this.barrelLift = !reload && !this.motion.actionName ?
-            this.feedback * (kick * rise * Math.exp(-this.fireAge * decay) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
+            this.feedback * (kick * rise * Math.exp(-returnAge * decay) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
         this.carryPitch = moving && this.fireAge > .18 && !reload && !this.motion.actionName
-            ? .065 * Math.sin((this.gait - .14) * Math.PI * 2) * Math.min(1, speed / 220) * this.feedback : 0;
+            ? .12 * Math.sin((this.gait - .14) * Math.PI * 2) * Math.min(1, speed / 220) * this.feedback : 0;
+        if (!moving && this.transition === STOPS[direction] && !this.motion.actionName && !reload) {
+            const p = Math.min(1, this.transitionAge / Math.max(this.player.duration(this.transition), 1/60));
+            this.carryPitch = -.43 * Math.sin(p * Math.PI) ** 2 * this.feedback;
+        }
         const cast = CASTS[this.motion.actionName];
         if (cast && this.player.has(cast)) {
             const phase = this.motion.actionNormalized;

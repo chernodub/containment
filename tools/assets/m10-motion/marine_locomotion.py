@@ -210,8 +210,8 @@ class MarineFootRig:
         dip = -.075 + crouch * .22 + .72 * load
         angle = math.radians(direction)
         lean = -.215 * math.cos(angle) + .045 * (load - .5)
-        self.torso(dip * weight, beat * (rotation + .25) * weight, lean * weight - .15 * brake * math.cos(angle),
-            beat * (.45 + .17 * abs(math.sin(angle))) * weight, phase, .21 * math.sin(angle) * weight - .14 * brake)
+        self.torso(dip * weight, beat * (rotation + .25) * weight, lean * weight - .30 * brake * math.cos(angle),
+            beat * (.45 + .17 * abs(math.sin(angle))) * weight, phase, .21 * math.sin(angle) * weight - .24 * brake)
         for side in ('L', 'R'):
             displacement, pitch, yaw, planted = foot_path(direction, side, phase, self.source_speed)
             self.control(side, displacement * weight, pitch * weight, yaw * weight,
@@ -237,12 +237,16 @@ class MarineFootRig:
             hips = self.armature.pose.bones['hips']
             matrix = hips.matrix.copy()
             travel = FORWARD * math.cos(math.radians(direction)) + RIGHT * math.sin(math.radians(direction))
-            matrix.translation += (travel * .85 - UP * 1.45 - RIGHT * .36) * settle
+            matrix.translation += (travel * 1.75 - UP * 2.85 - RIGHT * .62) * settle
             hips.matrix = matrix
             # The final braking plant widens by a small amount before settling.
             for side in ('L', 'R'):
-                displacement, pitch, yaw, _ = foot_path(direction, side, .12 + progress * .34, self.source_speed)
-                displacement = displacement * amount + RIGHT * ((-1 if side == 'R' else 1) * .32 * math.sin(math.pi * progress))
+                plant_phase = .04 if side == 'R' else .12 + progress * .34
+                displacement, pitch, yaw, _ = foot_path(direction, side, plant_phase, self.source_speed)
+                if side == 'R':
+                    displacement *= 1 - smooth((progress - .45) / .55)
+                else:
+                    displacement = displacement * amount + RIGHT * .32 * math.sin(math.pi * progress)
                 self.control(side, displacement, pitch * amount, yaw * amount)
             return
         # The old lead shoe stays planted for the first third of the reversal;
@@ -278,7 +282,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, default=ROOT / 'public/assets/models/marine.glb')
     parser.add_argument('--out', type=Path, default=ROOT / 'tools/assets/m10-motion/.build/marine-locomotion-motion.glb')
-    parser.add_argument('--cycles-only', action='store_true')
+    subset = parser.add_mutually_exclusive_group()
+    subset.add_argument('--cycles-only', action='store_true')
+    subset.add_argument('--stops-only', action='store_true')
     parser.add_argument('--install', action='store_true')
     parser.add_argument('--directions', default=','.join(map(str, GAITS)))
     args = parser.parse_args(argv)
@@ -347,11 +353,13 @@ def build(common, args):
         print('M10 authored', name, 'seconds', frames / FPS, 'keys', frames + 1, flush=True)
 
     directions = [int(d) for d in args.directions.split(',')]
-    for direction in directions:
-        record(f'm10-run-{direction}', CYCLE_SECONDS,
-            lambda progress, direction=direction: rig.pose_cycle(direction, progress % 1))
+    if not args.stops_only:
+        for direction in directions:
+            record(f'm10-run-{direction}', CYCLE_SECONDS,
+                lambda progress, direction=direction: rig.pose_cycle(direction, progress % 1))
     if not args.cycles_only:
-        for kind, seconds in (('start', .20), ('stop', .26), ('reversal', .45)):
+        transitions = (('stop', .26),) if args.stops_only else (('start', .20), ('stop', .26), ('reversal', .45))
+        for kind, seconds in transitions:
             for direction in directions:
                 record(f'm10-{kind}-{direction}', seconds,
                     lambda progress, direction=direction, kind=kind:
