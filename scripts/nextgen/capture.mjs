@@ -108,7 +108,10 @@ function criticalContrast() {
  return [...document.querySelectorAll('[data-hud-critical],[data-obscures-threat=true] [data-ability][data-state=ready] .ability-icon')].filter(n=>n.getClientRects().length&&(n.textContent.trim()||n.matches('.ability-icon'))).map(n=>{
   const style=getComputedStyle(n),fg=rgb(style.color),bg=rgb(style.backgroundColor),a=lum(fg),b=lum(bg);
   let opacity=1;for(let node=n;node;node=node.parentElement)opacity*=Number(getComputedStyle(node).opacity);
-  return {name:n.id||n.textContent.trim()||`${n.closest('[data-ability]').dataset.ability} ready glyph`,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),backingAlpha:bg[3]??1,opacity,faded:n.closest('[data-obscures-threat=true]')!==null,dockYield:n.closest('[data-dock-yield]')!==null};
+  const dockSegment=n.closest('#action-bar .weapon-bank,#action-bar [data-ability]');
+  const dockYield=!!dockSegment&&(dockSegment.hasAttribute('data-dock-yield')||
+    dockSegment.getAnimations().some(animation=>animation.transitionProperty==='opacity'));
+  return {name:n.id||n.textContent.trim()||`${n.closest('[data-ability]').dataset.ability} ready glyph`,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),backingAlpha:bg[3]??1,opacity,faded:n.closest('[data-obscures-threat=true]')!==null,dockYield};
  });
 }
 function installDrawAudit(){
