@@ -7,10 +7,9 @@ const prompt = {
     cryo: 'F — shatter for 100',
     pyro: 'Detonate',
     kinetic: 'Shift — Ram into Bulwark',
-    arc: 'Link ends here',
 };
 type RigColor = keyof typeof prompt;
-type MarkColor = RigColor | 'bonus';
+type MarkColor = RigColor | 'arc' | 'bonus';
 type Point = {x: number; y: number};
 
 export class MasteryHints {
@@ -85,7 +84,7 @@ export class MasteryHints {
             showMark('arc',preview.link,'◆',.45);
         }
         const opportunities: [RigColor, Point | undefined][] = [
-            ['cryo',preview.shatter], ['pyro',preview.ignite[0]], ['kinetic',preview.crush], ['arc',preview.link??undefined],
+            ['cryo',preview.shatter], ['pyro',preview.ignite[0]], ['kinetic',preview.crush],
         ];
         if (!enabled) {this.remaining=0; return;}
         for (const [rig, point] of opportunities) {
@@ -111,8 +110,7 @@ export class MasteryHints {
         const rig: RigColor | undefined =
             event.phase === 'burst' && event.ability === 'glacier' && event.deliberate ? 'cryo' :
             event.phase === 'burst' && event.ability === 'flashfire' ? 'pyro' :
-            event.phase === 'burst' && event.ability === 'ram' ? 'kinetic' :
-            event.phase === 'link' && (event.ability === 'overload' || event.ability === 'static-step') ? 'arc' : undefined;
+            event.phase === 'burst' && event.ability === 'ram' ? 'kinetic' : undefined;
         if (!rig) return;
         this.seen.add(rig);
         try {this.storage?.setItem(`containment.mastery.${rig}`, 'learned');} catch {}

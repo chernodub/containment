@@ -81,6 +81,7 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 `;
 
 /** Tapered original flame family; retained explosions still use their authored atlas. */
+export const POOL_FLAME_PHASE = 164;
 export const FIRE_FAN_PHASE = 500;
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
@@ -99,18 +100,18 @@ export const TEXTURED_FIRE_GLSL = `
   float edge=1.-smoothstep(.88,1.,abs(theta));
   float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
   coverage=graphicCoverage(fire.a)*edge*tip*smoothstep(.055,.16,t);
-  c=mix(vec3(.72,.052,.003),vec3(2.15,.56,.038),fire.g);
+  c=mix(vec3(.72,.18,.006),vec3(2.15,.78,.048),fire.g);
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
   c=graphicCombustion(fire);
- }else if(phase>=100.){
+ }else if(phase>=100. && phase<${POOL_FLAME_PHASE}.){
   // Use the authored fire silhouette for flows aligned along a limb or a jet.
   vec4 fire=effectGraphicSequence(0.,64.,19.,phase-100.,fireUv);
   coverage=graphicCoverage(fire.a);
   float heat=smoothstep(.19,.84,fire.r);
   float core=smoothstep(.35,.72,ink.g)*(1.-smoothstep(.28,.92,fireUv.y));
-  c=mix(vec3(.58,.044,.004),vec3(2.4,.58,.027),heat);
+  c=mix(vec3(.58,.15,.004),vec3(2.4,.88,.045),heat);
   c=mix(c,vec3(3.9,3.4,2.35),core*heat);
  }else{
   // The same three unequal tongues serve jets, fuel edges and suit exhaust.
@@ -142,7 +143,7 @@ export const TEXTURED_FIRE_GLSL = `
   float spine=abs(signedSide-sin(t*10.-clock+seed)*.065);
   float inner=(1.-smoothstep(.10,.31,spine))*(1.-smoothstep(.12,.63,t));
   float core=inner*smoothstep(.30,.65,ink.g);
-  c=mix(vec3(.018,.009,.005),vec3(.95,.068,.002),body);
+  c=mix(vec3(.018,.009,.005),vec3(.95,.24,.006),body);
   c=mix(c,vec3(2.15,.65,.055),inner*.64);
   coverage*=mix(.78,1.,smoothstep(.40,.90,side));
   c=mix(c,vec3(2.8,1.9,.34),core);

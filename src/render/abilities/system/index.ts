@@ -78,9 +78,11 @@ class SystemPresentation implements AbilityPresentation {
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
         const position = k.statusActor(id)?.root.position;
-        receipt.railX = position?.x ?? x / UNIT;
-        receipt.railZ = position?.z ?? y / UNIT;
         receipt.railAngle = event.angle ?? 0;
+        const c = Math.cos(receipt.railAngle), s = Math.sin(receipt.railAngle);
+        const along = position ? (position.x - x / UNIT) * c + (position.z - y / UNIT) * s : 0;
+        receipt.railX = x / UNIT + c * along;
+        receipt.railZ = y / UNIT + s * along;
         receipt.landed = false;
       }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
@@ -275,16 +277,12 @@ class SystemPresentation implements AbilityPresentation {
     const travel = k.reducedMotion ? .55 : (phase * 1.65) % 1;
     const pulse = receipt ? Math.max(0, 1 - receipt.age / .18) : 0;
     const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
-    for (let i = 0; i < (k.low ? 1 : 2); i++) {
-      const growth = Math.min(1, Math.max(0, .32 + travel * 2.4 - i * .8));
-      if (growth <= 0) continue;
-      const a = incoming + (asymmetry < 0 ? -1 : 1) * (travel * 1.9 - i * .85);
-      const end = a + .63 + asymmetry * .4, h = height * (.12 + .54 * travel + .09 * i);
-      k.flowFlame(x + Math.cos(a) * radius * .68, h, z + Math.sin(a) * radius * .68,
-        x + Math.cos(end) * radius, h + height * (.3 + .18 * asymmetry + .22 * i) * growth,
-        z + Math.sin(end) * radius, radius * (.31 + .09 * asymmetry) * growth,
-        seed + i * 3.7, .76 * growth + .22 * pulse, i === 0 && pulse > .45);
-    }
+    const growth = .68 + .32 * travel;
+    const a = incoming + (asymmetry < 0 ? -1 : 1) * travel * 1.9;
+    const end = a + .63 + asymmetry * .4, h = height * (.18 + .56 * travel);
+    k.flowFlame(x + Math.cos(a) * radius * .8, h, z + Math.sin(a) * radius * .8,
+      x + Math.cos(end) * radius, h + height * (.36 + .12 * asymmetry) * growth,
+      z + Math.sin(end) * radius, radius * .38 * growth, seed, .81 + .19 * pulse, pulse > .45);
   }
 
   private joints(root: T.Object3D): T.Object3D[] {
@@ -314,15 +312,23 @@ class SystemPresentation implements AbilityPresentation {
 
   private railLanding(receipt: Receipt): void {
     const k = this.kit, actor = k.statusActor(receipt.id);
-    if (!actor || receipt.age < .26) return;
-    receipt.landed = true;
+    if (!actor) return;
     const {x, z} = actor.root.position;
     const dx = x - receipt.railX, dz = z - receipt.railZ;
     const angle = Math.hypot(dx, dz) > .04 ? Math.atan2(dz, dx) : receipt.railAngle;
     const size = Math.min(1.3, Math.max(.45, actor.height * .56));
+    if (receipt.age < .1) {
+      k.impact();
+      k.sprite('impact', x, actor.height * .54, z, size * 1.45, size, WHITE,
+        (1 - receipt.age / .1) * k.flashIntensity, receipt.id, 'light');
+    }
+    if (receipt.age < .26) return;
     k.sustain();
-    k.beam(x - Math.cos(angle) * size, .045, z - Math.sin(angle) * size,
-      x, .046, z, 0x796d5d, size * .12, .52, false);
+    receipt.landed = true;
+    const halfLength = Math.min(size * .82, Math.hypot(dx, dz) * .5);
+    if (halfLength > .04)
+      k.scar('skid', x - Math.cos(angle) * halfLength, z - Math.sin(angle) * halfLength,
+        halfLength, 0xc2a17a, .85, angle, size * .18);
     for (let i = 0, count = k.low ? 5 : 10; i < count; i++) {
       const a = angle + i * Math.PI * 2 / count, c = Math.cos(a), s = Math.sin(a);
       k.mote('smoke', x + c * size * .36, .13, z + s * size * .36,

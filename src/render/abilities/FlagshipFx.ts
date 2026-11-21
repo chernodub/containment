@@ -107,9 +107,12 @@ void main(){
 }`;
 
 const COLD_FIELD_LIMIT = 8;
+const BURN_FIELD_LIMIT = 32; // Maximum retained FlagshipFx slots.
 const fragment = `
 uniform vec4 coldAxes[${COLD_FIELD_LIMIT}];
 uniform float coldRadii[${COLD_FIELD_LIMIT}];
+uniform vec3 burnDiscs[${BURN_FIELD_LIMIT}];
+uniform int burnCount;uniform int burnOwner;
 uniform int coldCount;uniform int coldOwner;
 uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
 uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
@@ -126,12 +129,44 @@ vec3 fxCells(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;vec2 id=i;
   vec2 o=vec2(fxHash(i+b),fxHash(i+b+17.31));vec2 r=b+o-f;float d=dot(r,r);
   if(d<d1){d2=d1;d1=d;id=i+b;}else if(d<d2)d2=d;}
  return vec3(sqrt(d1),sqrt(d2),fxHash(id+3.3));}
-// Blackbody-like ramp: smoke, dark red, orange, yellow, white (HDR for bloom).
+// Blackbody-like ramp: smoke, coal, amber, yellow, white (HDR for bloom).
 vec3 fxHeat(float t){
- vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.05,.008),smoothstep(.04,.24,t));
- c=mix(c,vec3(1.8,.3,.02),smoothstep(.2,.45,t));
+ vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.14,.008),smoothstep(.04,.24,t));
+ c=mix(c,vec3(1.8,.57,.02),smoothstep(.2,.45,t));
  c=mix(c,vec3(3.,1.35,.12),smoothstep(.45,.72,t));
  return mix(c,vec3(5.,4.2,2.8),smoothstep(.8,1.,t));
+}
+// The deepest disc owns each point. Coincident boundaries have one stable owner.
+float burnDistance(vec2 p){
+ float nearest=1e6;int owner=-1;
+ for(int i=0;i<${BURN_FIELD_LIMIT};i++){
+  if(i>=burnCount)break;
+  float distanceToDisc=length(p-burnDiscs[i].xy)-burnDiscs[i].z;
+  if(distanceToDisc<nearest){nearest=distanceToDisc;owner=i;}
+ }
+ if(owner!=burnOwner)discard;
+ return nearest;
+}
+void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
+ // All pools sample the same deck coordinates, including at ownership seams.
+ float ripple=fxNoise(p*2.3);
+ float broad=fxNoise(p*.84);
+ float grain=fxNoise(p*7.8);
+ float d=distanceToEdge+.12+.18*(broad-.5)+.14*(ripple-.5)+.105*(grain-.5);
+ // Hot fissures open through the black crust in short, uneven stretches.
+ float pockets=smoothstep(.32,.66,fxNoise(p*3.9+5.3)+.34*(grain-.5));
+ float hot=smoothstep(.28,.72,broad+.24*(ripple-.5));
+ float lip=(1.-smoothstep(.006,.025+.075*grain,abs(d)))*pockets*hot;
+ float cinders=(1.-smoothstep(.03,.17,abs(d+.12*grain)))*smoothstep(.60,.83,grain)*hot;
+ float coal=1.-smoothstep(-.12,.02,d);
+ // Isolated sections of an undulating coal seam, with broad stretches of dark char.
+ float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
+ float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.62,.80,fxNoise(p*.57-8.2))
+              *smoothstep(.25,.65,-d);
+ base=vec3(.018,.013,.009);
+ alpha=.35*coal+.24*lip+.17*cinders+.14*fissure;
+ emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(.78,.23,.018)*fissure;
+
 }
 void main(){
  float m=fxMode;vec3 emit=vec3(0.);float alpha=0.;vec3 base=vec3(0.);
@@ -210,18 +245,18 @@ void main(){
   float under=smoothstep(.42,.75,fxFbm(q*.7+7.7));
   float heat=exp(-age*1.0);float hot=exp(-age*4.);
   float on=smoothstep(.1,.25,age);
-  emit=(vec3(3.2,.75,.08)*speck*heat+vec3(.9,.16,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
+  emit=(vec3(3.2,1.2,.08)*speck*heat+vec3(.9,.3,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
   alpha=soot*.62*on*(1.-smoothstep(.55,1.,k));
   base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
  }else if(m<2.5){
-  // Rail lance: hair-thin white core, sharp leading edge for ~2 frames.
+  // Rail lance: white-hot spine with a brief leading flash.
   float s=abs(fxLocal.x),v=fxLocal.y;
   float lead=clamp(age/.018,0.,1.);
   float reach=smoothstep(lead+.002,lead-.02,v);
   float headGlow=exp(-abs(v-lead)*40.)*(1.-step(1.,lead));
-  float life=1.-smoothstep(.016,.033,age);
-  float coreW=.06+.05*life;
+  float life=1.-smoothstep(.045,.16,age);
+  float coreW=.18+.15*life;
   float core=1.-smoothstep(coreW*.3,coreW,s);
   float halo=exp(-s*s*9.)*.55;
   float flick=.85+.15*fxNoise(vec2(v*40.-t*60.,fxSeed));
@@ -253,7 +288,11 @@ void main(){
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
    emit=(vec3(1.45)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
    alpha=(bolt*.22+fork*.08+halo*.06)*gate;
-  }else{emit=hot*i0*fxIntensity;alpha=i0*.12;}
+  }else{
+   float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
+   emit=(hot*i0+vec3(3.,2.85,2.6)*core)*fxIntensity;
+   alpha=i0*.12+core*.62;
+  }
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
@@ -336,32 +375,22 @@ void main(){
   alpha=mark*.62*fade;
   base=vec3(.008,.011,.014);
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
- }else if(m<8.5||(m>10.5&&m<11.5)){
-  // Opaque soot counter-layer and flowing fuel share the exact native disc.
+ }else if(m<8.5){
+  burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+  alpha*=fxParam;emit*=fxParam*fxIntensity;
+ }else if(m>10.5&&m<11.5){
+  // A continuous coal bed and one broad hot lip leave the deck readable.
   float r=fxLocal.y,R=fxRange;
-  vec2 q=(fxWorld.xz-fxOrigin.xz)*2.2;
-  float n=fxFbm(q+vec2(t*.65,-t*.9)+fxSeed);
-  float fine=fxNoise(q*5.+vec2(-t*2.,t*3.));
-  float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
-  float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
-  float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
-  float channels=smoothstep(m>10.5?.56:.72,m>10.5?.74:.86,n+fine*.12);
-  float a=fxLocal.x*6.2831853;
-  if(m<10.5)rim*=smoothstep(.35,.70,fxNoise(vec2(cos(a),sin(a))*max(9.,R*4.)+fxSeed));
-  float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
-  float hot=channels*(.55+.35*fine)+boil*.7;
-  float fade=fxParam;
-  // Pool (m 8): soft irregular soot underlay rather than an opaque disc; strips keep the dense film.
-  float soot=m>10.5?.94:(.42+.3*fxFbm(q*.5+7.))*(1.-smoothstep(R*.55,R,r)*.35);
-  float islands=smoothstep(.39,.66,n+.08*fine)*(.58+.42*smoothstep(R*.22,R*.68,r));
-  float fireDetail=m>10.5?1.:max(rim,islands);
-  if(m<10.5)channels=max(channels,islands*.8);
-  alpha=edge*(soot*(m>10.5?1.:.27)+channels*.2*fireDetail+rim*.3)*fade;
-  base=vec3(.004,.002,.001);
-  // Pool edge stays orange-amber so it never reads as the hostile red warning.
-  vec3 flame=m>10.5?mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
-  flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
-  emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity*fireDetail;
+  float strip=length(vec2(fxLocal.x*fxInner,max(max(-r,r-R),0.)))/max(.001,fxInner);
+  float radial=strip;
+  vec2 q=(fxWorld.xz-fxOrigin.xz)*.65;
+  float curl=fxNoise(q+fxSeed);
+  float edge=1.-smoothstep(.91,.995,radial);
+  float lip=1.-smoothstep(.018,.082,abs(radial-(.86+.06*curl)));
+  float heat=lip*(.48+.40*curl);
+  base=vec3(.016,.013,.009);
+  alpha=(.39*edge+.27*lip)*fxParam;
+  emit=vec3(1.54,.63,.058)*heat*fxParam*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -429,17 +458,8 @@ void main(){
    alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
-   // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
-   float spread=R*(1.-exp(-age*4.))*(.55+.5*fxFbm(vec2(a*1.6,age*.3)+fxSeed));
-   float reveal=1.-smoothstep(spread-.5,spread,r);
-   vec3 c=fxCells(q*1.25+vec2(fxFbm(q*1.1+3.)*1.3));
-   float crack=1.-smoothstep(0.,.08+.07*n,c.y-c.x);
-   float near=1.-smoothstep(.3,R*.7,r);
-   float blister=(1.-smoothstep(.06,.24,c.x))*step(.6,c.z)*(.55+.45*sin(t*4.+c.z*31.));
-   float flow=.75+.25*sin(t*3.+c.z*20.-r*2.);
-   float heat=crack*reveal*(.5+.5*near)*flow;
-   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9;
-   alpha=reveal*(.025*(1.-crack)+crack*.76);
+   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+   line=0.;
    // The activation flash fills the centre before the moving aura settles.
    float pulse=1.-smoothstep(.05,.18,age);
    float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
@@ -479,7 +499,7 @@ void main(){
  }
  #ifdef HAS_ABILITY_PRIORITY_MASK
  // Ground sheets keep a flat, quiet tint underneath the warning.
- bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5&&fxArc>1.5&&fxArc<2.5);
+ bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
   float warning=prioritySample.g;
   float coverage=step(.004,alpha+dot(emit,vec3(.333)));
@@ -543,6 +563,8 @@ export class FlagshipFx {
   private readonly geometry = new T.PlaneGeometry(1, 1, 40, 24);
   private readonly coldAxes = Array.from({ length: COLD_FIELD_LIMIT }, () => new T.Vector4());
   private readonly coldRadii = new Float32Array(COLD_FIELD_LIMIT);
+  private readonly burnDiscs = Array.from({length: BURN_FIELD_LIMIT}, () => new T.Vector3());
+  private readonly burnSlots: FxSlot[] = [];
   private readonly coldSlots: FxSlot[] = [];
   private cursor = 0;
   private time = 0;
@@ -554,6 +576,7 @@ export class FlagshipFx {
     for (let i = 0; i < capacity; i++) {
       const material = new T.ShaderMaterial({
         uniforms: {
+          burnDiscs: { value: this.burnDiscs }, burnCount: { value: 0 }, burnOwner: { value: -1 },
           coldAxes: { value: this.coldAxes }, coldRadii: { value: this.coldRadii }, coldCount: { value: 0 }, coldOwner: { value: -1 },
           fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
           fxOrigin: { value: new T.Vector3() }, fxMuzzle: { value: new T.Vector3() }, fxAngle: { value: 0 }, fxArc: { value: 1 },
@@ -612,8 +635,14 @@ export class FlagshipFx {
     for (const slot of this.slots) if (slot.live && this.sustained(slot)) area += this.area(slot);
     const fields = this.coldSlots;
     fields.length = 0;
+    this.burnSlots.length = 0;
     for (const slot of this.slots) {
-      if (!slot.live || fields.length >= COLD_FIELD_LIMIT) continue;
+      if (!slot.live) continue;
+      if (slot.mode === FxMode.Fuel || slot.mode === FxMode.Climax && slot.arc === 2) {
+        this.burnDiscs[this.burnSlots.length].set(slot.x, slot.z, slot.range);
+        this.burnSlots.push(slot);
+      }
+      if (fields.length >= COLD_FIELD_LIMIT) continue;
       const strip = slot.mode === FxMode.FrostStrip;
       if (!strip && slot.mode !== FxMode.Frost && !(slot.mode === FxMode.Climax && slot.arc === 1)) continue;
       const i = fields.length;
@@ -634,6 +663,7 @@ export class FlagshipFx {
           if (f.x === slot.x && f.z === slot.z && f.range === slot.range) { owner = i; break; }
         }
       }
+      u.burnOwner.value = this.burnSlots.indexOf(slot); u.burnCount.value = this.burnSlots.length;
       u.coldOwner.value = owner; u.coldCount.value = fields.length;
       u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
       u.fxSeed.value = slot.seed; (u.fxOrigin.value as T.Vector3).set(slot.x, slot.y, slot.z);

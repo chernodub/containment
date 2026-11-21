@@ -226,7 +226,8 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 slot.start.position.set(x, .04, z);
                 slot.start.scale.set(zone.radius / UNIT, zone.radius / UNIT, 1);
                 slot.start.visible = true;
-                this.circleFootprint(x, z, zone.radius / UNIT, COLORS[zone.element]);
+                if (!this.ownsZonePresentation || zone.element !== 'pyro')
+                    this.circleFootprint(x, z, zone.radius / UNIT, COLORS[zone.element]);
             }
             else {
                 const ex = zone.x2 / UNIT, ez = zone.y2 / UNIT, length = Math.hypot(ex - x, ez - z), angle = Math.atan2(ez - z, ex - x), radius = zone.width / UNIT / 2;

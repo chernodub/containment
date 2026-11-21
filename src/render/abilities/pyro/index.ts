@@ -4,6 +4,7 @@ import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
 import { authoredVariation, impactBeat } from '../GraphicLanguage';
+import { POOL_FLAME_PHASE } from '../EffectAtlas';
 import { FxMode, type FxSlot } from '../FlagshipFx';
 
 const FIRE = 0xffa332;
@@ -39,6 +40,9 @@ class PyroPresentation implements AbilityPresentation {
     angle: 0, radius: 0, range: 0, arc: 0,
   }));
   private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, seed: -1, slot: undefined as FxSlot | undefined }));
+  private readonly burnYield = Array.from({ length: 32 }, () => ({
+    zone: -1, seen: false, weight: new Float32Array(18),
+  }));
   private next = 0;
 
   /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
@@ -201,6 +205,10 @@ class PyroPresentation implements AbilityPresentation {
     this.kit.impact();
     if (this.disposed || !frame.visible) return;
     const kit = this.kit, dt = Math.max(0, frame.dt);
+    for (const pool of this.burnYield) {
+      if (!pool.seen) pool.zone = -1;
+      pool.seen = false;
+    }
     for (const surface of this.surfaces) surface.seen = false;
     this.emission += dt; this.shimmer += dt;
     const emit = dt > 0 && this.emission >= (kit.low ? .15 : .065);
@@ -420,15 +428,51 @@ class PyroPresentation implements AbilityPresentation {
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
-    const pockets = kit.low ? 3 : 7;
+    const meltdown = zone.ability === 'meltdown';
+    const pockets = kit.low ? 9 : 18;
+    const clock = kit.reducedMotion ? 0 : kit.time;
+    let pool = this.burnYield.find(entry => entry.zone === zone.id);
+    if (!pool) {
+      pool = this.burnYield.find(entry => entry.zone === -1);
+      if (pool) { pool.zone = zone.id; pool.weight.fill(0); }
+    }
+    if (pool) pool.seen = true;
     for (let i = 0; i < pockets; i++) {
-      const angle = zone.id * .71 + i * 2.39996;
-      const reach = radius * (.24 + .58 * i / pockets);
-      const px = x + Math.cos(angle) * reach, pz = z + Math.sin(angle) * reach;
-      kit.directedFlame(px, .06, pz, .25 + .06 * (i % 3), .78 + .32 * (i % 4),
-        angle, .16, zone.id + i * 1.37, fade * .87, i === 0);
-      if (emit && i === Math.floor(kit.time * 11) % pockets)
-        kit.mote('spark', px, .65, pz, .12, 2, .08, .042, .65, CORE);
+      const seed = zone.id * .71 + i * 2.39996;
+      const interior = i % 3 === 0;
+      const nearSuit = meltdown && i === 0;
+      const scatter = authoredVariation(seed);
+      const reach = nearSuit ? .78 : radius * (interior ? .24 + .42 * scatter : .70 + .25 * scatter);
+      const angle = seed + .12 * Math.sin(seed * 3.2);
+      const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
+      const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
+      // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
+      if (frame.snapshot?.zones.some(other => other.id < zone.id && other.element === 'pyro' &&
+          other.shape === 'circle' && Math.hypot(px - other.x / UNIT, pz - other.y / UNIT) < other.radius / UNIT)) continue;
+      let target = 0;
+      if (frame.game) for (const enemy of frame.game.enemies.snapshot.enemies) {
+        if (enemy.health <= 0 || (enemy.meleePhase === 'approach' && enemy.windupMs <= 0 && enemy.chargeMs <= 0)) continue;
+        const dx = px - enemy.x / UNIT, dz = pz - enemy.y / UNIT;
+        const charge = enemy.pendingAttack === 'charge' || enemy.chargeMs > 0;
+        const facing = enemy.meleePhase !== 'approach' ? enemy.meleeAngle :
+          Math.atan2(charge ? enemy.lockY : enemy.lockY - enemy.y, charge ? enemy.lockX : enemy.lockX - enemy.x);
+        const c = Math.cos(facing), s = Math.sin(facing);
+        const along = Math.max(0, Math.min(enemy.radius / UNIT + .38, dx * c + dz * s));
+        const clearance = Math.min(Math.hypot(dx, dz) - enemy.radius / UNIT, Math.hypot(dx - along * c, dz - along * s));
+        target = Math.max(target, Math.min(1, (1.22 - clearance) / .4));
+      }
+      const previous = pool?.weight[i] ?? target;
+      const step = Math.max(0, frame.dt) / .15;
+      const weight = previous + Math.min(step, Math.max(-step, target - previous));
+      if (pool) pool.weight[i] = weight;
+      const height = (.55 + .22 * scatter + .08 * Math.sin(clock * 5 + seed)) * (1 - .67 * weight);
+      const width = (.22 + .13 * scatter) * (1 - .62 * weight);
+      const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
+      kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
+        nearSuit || i % 4 === 1 ? CORE : FIRE, fade * visibility, 0,
+        .14 * Math.sin(clock * 2.6 + seed), POOL_FLAME_PHASE + i * 1.7 + scatter);
+      if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
+        kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
@@ -441,19 +485,16 @@ class PyroPresentation implements AbilityPresentation {
       return;
     }
     kit.sustain(elapsed);
-    // Two irregular depth layers share the exact native circular footprint.
+    // One charred footprint; the upright atlas flames above carry its height.
     this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
-    // VFX15: eight standing procedural tongues with height (one draw), growing in after the burst.
-    const grow = Math.min(1, Math.max(.44, elapsed / .18));
-    this.surface(zone.id, 1, x, z, radius * .9, (zone.id * .371) % 1, 0, .03, 1.9, fade * grow * (.9 + .1 * Math.sin(kit.time * 7 + zone.id)), false, -1, FxMode.Tongues);
     // A single loose smoke column rises from the hottest interior fuel pocket.
-    for (let i = 0; i < (kit.low ? 1 : 4); i++) {
+    for (let i = 0; i < (kit.low ? 1 : 2); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;
       kit.draw('smoke', x + Math.sin(i * 2.4 + rise) * radius * .14, 1 + rise * 2.1,
         z + Math.cos(i * 2.4 + rise) * radius * .12,
         .45 + rise * .65, .55 + rise * .5, 1, SOOT, (.3 - rise * .09) * fade);
     }
-    kit.lightAt(zone.id, x, z, FIRE, 12 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
+    kit.lightAt(zone.id, x, z, FIRE, 16 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
     if (shimmer) kit.distort(x, z, radius, .003 * fade, .9, true);
     if (emit && !kit.low) kit.mote('spark', x, .2, z, .08, 1.4, .04, .035, .9, CORE);
   }
@@ -504,7 +545,7 @@ class PyroPresentation implements AbilityPresentation {
         x + c * .04 - s * side * .29, 1.42, z + s * .04 + c * side * .29, CORE, .025, .84 * fade, false);
     }
     kit.grade(.65 * fade);
-    kit.lightAt(zone.id, x, z, FIRE, 10 * fade, 7, 3);
+    kit.lightAt(zone.id, x, z, HOT, 16 * fade, 7, 3);
     if (emit) {
       kit.sustain(age);
       // Bounded ember storm is attached to the moving suit, never a floor aura fill.
@@ -519,6 +560,7 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    for (const pool of this.burnYield) { pool.zone = -1; pool.seen = false; }
     for (const surface of this.surfaces) { if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;

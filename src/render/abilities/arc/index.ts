@@ -12,7 +12,7 @@ const STEEL = 0x34414d;
 const TAU = Math.PI * 2;
 const NO_LINKS: readonly AbilityLinkSnapshot[] = [];
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
-type Discharge = { overload: boolean; sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
+type Discharge = { terminal: boolean; overload: boolean; sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
@@ -22,7 +22,7 @@ type Front = { live: boolean; x: number; z: number; radius: number; age: number;
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
-  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ overload: false, sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
+  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ terminal: false, overload: false, sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
@@ -96,6 +96,11 @@ class ArcPresentation implements AbilityPresentation {
         this.chainAt = k.time;
         this.strike(event, px, pz, Math.min(7, this.chainHop++) * .095);
       } else if (event.phase === 'impact') {
+        const last = this.discharges[(this.nextDischarge + this.discharges.length - 1) % this.discharges.length];
+        if (last.live && last.age === 0 && last.victimId === event.targetIds?.[event.targetIds.length - 1]) {
+          last.terminal = true;
+          last.life = .57;
+        }
         k.flash(px, pz, WHITE, 10, 5, 4, .12);
         k.camera(.24);
       }
@@ -161,6 +166,7 @@ class ArcPresentation implements AbilityPresentation {
     // The source and destination are immutable native link receipts.
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
+    d.terminal = false;
     d.overload = event.ability === 'overload';
     d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = d.overload ? .38 : 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
     d.ty = .75; d.victimId = event.targetIds?.[0] ?? -1;
@@ -222,14 +228,14 @@ class ArcPresentation implements AbilityPresentation {
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .42;
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
             const bx = d.sx + dx * t - dz / length * side * .18;
             const bz = d.sz + dz * t + dx / length * side * .18;
-            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, .018, .18, true);
+            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, .048, .18, true);
           }
         }
         const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
@@ -249,12 +255,34 @@ class ArcPresentation implements AbilityPresentation {
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');
-      if (d.victimId >= 0 && d.age - d.delay < .34) {
+      if (d.victimId >= 0 && d.age - d.delay < (d.terminal ? d.life : .34)) {
         const actor = k.statusActor(d.victimId);
         const joint = actor && this.contactBones.get(actor.root);
-        if (joint?.parent) {
+        if (actor && d.terminal) {
+          const root = actor.root.position, tip = joint?.matrixWorld.elements;
+          const radius = (frame.game?.enemies.snapshot.enemies.find(e => e.id === d.victimId)?.radius ?? 24) / UNIT;
+          const dx = d.sx - root.x, dz = d.sz - root.z, length = Math.max(.001, Math.hypot(dx, dz));
+          // Some attachment bones extend well outside the visible shell. Fit the
+          // fork to the native body envelope on the same side as the struck limb.
+          const jx = tip ? tip[12] - root.x : dx, jz = tip ? tip[14] - root.z : dz;
+          const jointLength = Math.max(.001, Math.hypot(jx, jz));
+          const x = root.x + jx / jointLength * radius * .24;
+          const z = root.z + jz / jointLength * radius * .24;
+          const y = root.y + Math.min(actor.height * .6, radius * 1.35);
+          const crest = y + radius * .42;
+          const power = Math.min(1, fade * 3);
+          k.impact();
+          for (let side = -1; side <= 1; side += 2) {
+            const bx = x + (-dx * .12 - side * dz * .32) / length * radius;
+            const bz = z + (-dz * .12 + side * dx * .32) / length * radius;
+            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .06, power, false);
+            k.boltCard(bx, crest, bz, x, y + .08, z, .048, d.seed + side, power, WHITE);
+          }
+          k.sprite('spark', x, y + .12, z, .16, .22, WHITE, power, d.seed, 'light');
+          k.sustain(d.age - d.delay);
+        } else if (joint?.parent) {
           const base = joint.parent.matrixWorld.elements, tip = joint.matrixWorld.elements;
-          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, .105, .82 * fade, false);
+          k.ribbon(base[12], base[13], base[14], tip[12], tip[13], tip[14], 0xb8caff, .115, .9 * fade, false);
         }
       }
       if (d.age - d.delay > .28) continue;

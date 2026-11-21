@@ -12,6 +12,8 @@ export interface HostilePrioritySource {
 // Distances are measured in mask texels. Interpolate distance before evaluating coverage.
 // Capping the green-channel distance here yields about 70% coverage at its smoothstep.
 const SHOOTER_DISTANCE_CAP = .082;
+// The shared danger channel ramps to 65% suppression around a committed limb.
+const WINDUP_DISTANCE_CAP = .061;
 const DISTANCE_RANGE = 1.5;
 
 /** Shared shader hook; all materials are patched before renderer preparation. */
@@ -81,6 +83,16 @@ export class AbilityPriorityMask {
       const actor = actorFor?.(e.id);
       const height = actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15);
       this.actor(e.x / 32, e.y / 32, e.radius / 32 * .78, height);
+      const melee = e.meleePhase !== 'approach';
+      if (melee || e.windupMs > 0 || e.chargeMs > 0) {
+        const x = e.x / 32, z = e.y / 32;
+        const charge = e.pendingAttack === 'charge' || e.chargeMs > 0;
+        const angle = melee ? e.meleeAngle : Math.atan2(charge ? e.lockY : e.lockY - e.y, charge ? e.lockX : e.lockX - e.x);
+        const reach = e.radius / 32 + .38;
+        this.segment(x, .05, z, x, height * .78, z, .97, 1, WINDUP_DISTANCE_CAP);
+        this.segment(x, height * .55, z, x + Math.cos(angle) * reach, height * .42,
+          z + Math.sin(angle) * reach, .94, 1, WINDUP_DISTANCE_CAP);
+      }
       if (e.type === 'spitter' && e.pendingAttack === 'spit' && e.windupMs > 0)
         this.segment(e.x/32,0,e.y/32,e.x/32,height,e.y/32,.6,1,SHOOTER_DISTANCE_CAP);
       // Snapshot fallback also works while the world renderer evolves its warning accessor.
@@ -106,6 +118,7 @@ export class AbilityPriorityMask {
     for (const b of game.bullets) {
       if (b.kind !== 'hazard') continue;
       const x = b.x / 32, z = b.y / 32, a = b.request.angle;
+      this.segment(x, .65, z, x, .65, z, 1, 1, .01);
       this.segment(x - Math.cos(a) * .6, .65, z - Math.sin(a) * .6,
         x + Math.cos(a) * .35, .65, z + Math.sin(a) * .35, .35);
     }
@@ -195,24 +208,30 @@ export class AbilityPriorityMask {
       bottom = Math.min(bottom, y);
       top = Math.max(top, y);
     }
-    const x0 = Math.max(0, Math.floor(left - DISTANCE_RANGE));
-    const x1 = Math.min(this.width, Math.ceil(right + DISTANCE_RANGE));
+    // A half-strength shoulder around the exact warning contour limits nearby bloom.
+    this.point.set(s.x, .04, s.z).project(camera);
+    const originX = this.point.x;
+    this.point.set(s.x + 1, .04, s.z).project(camera);
+    const shoulder = channel === 1 ? Math.abs(this.point.x - originX) * this.width * .5 : 0;
+    const extent = DISTANCE_RANGE + shoulder;
+    const x0 = Math.max(0, Math.floor(left - extent));
+    const x1 = Math.min(this.width, Math.ceil(right + extent));
     if (x0 >= x1) return;
-    const y0 = Math.max(0, Math.floor(bottom - DISTANCE_RANGE));
-    const y1 = Math.min(this.height, Math.ceil(top + DISTANCE_RANGE));
+    const y0 = Math.max(0, Math.floor(bottom - extent));
+    const y1 = Math.min(this.height, Math.ceil(top + extent));
     const crossings = this.crossings;
     for (let y = y0; y < y1; y++) {
       const row = y + .5;
       crossings.length = 0;
-      this.edgeDistanceSquared.fill(DISTANCE_RANGE ** 2, x0, x1);
+      this.edgeDistanceSquared.fill(extent ** 2, x0, x1);
       for (let i = 0, j = count - 1; i < count; j = i++) {
         const ax = this.polygon[j * 2], ay = this.polygon[j * 2 + 1];
         const bx = this.polygon[i * 2], by = this.polygon[i * 2 + 1];
         const dx = bx - ax, dy = by - ay;
         if ((ay > row) !== (by > row)) crossings.push(ax + (row - ay) * dx / dy);
-        if (row < Math.min(ay, by) - DISTANCE_RANGE || row > Math.max(ay, by) + DISTANCE_RANGE) continue;
-        const start = Math.max(x0, Math.floor(Math.min(ax, bx) - DISTANCE_RANGE));
-        const end = Math.min(x1, Math.ceil(Math.max(ax, bx) + DISTANCE_RANGE));
+        if (row < Math.min(ay, by) - extent || row > Math.max(ay, by) + extent) continue;
+        const start = Math.max(x0, Math.floor(Math.min(ax, bx) - extent));
+        const end = Math.min(x1, Math.ceil(Math.max(ax, bx) + extent));
         const inverseLengthSquared = 1 / Math.max(1e-6, dx * dx + dy * dy);
         const ry = row - ay;
         for (let x = start; x < end; x++) {
@@ -227,7 +246,8 @@ export class AbilityPriorityMask {
       for (let x = x0; x < x1; x++) {
         while (crossing < crossings.length && crossings[crossing] <= x + .5) crossing++;
         const distance = Math.sqrt(this.edgeDistanceSquared[x]);
-        this.writeDistance(x, y, channel, crossing % 2 ? distance : -distance);
+        const signed = crossing % 2 ? distance : -distance;
+        this.writeDistance(x, y, channel, Math.max(signed, Math.min(.01, signed + shoulder)));
       }
     }
   }
