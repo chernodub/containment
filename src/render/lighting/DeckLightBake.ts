@@ -34,7 +34,8 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
   };
   const lamp = roomValueProfile(t.id)?.landmark;
   const sourceX = (lamp?.at[0] ?? 0)/32, sourceZ = (lamp?.at[1] ?? 0)/32;
-  const aim = Math.atan2(pools[0].x-sourceX,pools[0].y-sourceZ);
+  const arena=pools[0];
+  const aim = arena ? Math.atan2(arena.x-sourceX,arena.y-sourceZ) : 0;
   const sin = Math.sin(aim), cos = Math.cos(aim);
   const size = 256, pixels = new Uint8Array(size * size * 4);
   for (let row = 0; row < size; row++) for (let column = 0; column < size; column++) {
@@ -55,7 +56,7 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
     const across=(x-sourceX)*cos-(z-sourceZ)*sin;
     const spread=.34+Math.max(0,along)*.22;
     const u=across/spread;
-    const aperture=lamp ? smooth(0,.20,along)*(1-smooth(2.7,5.8,along))*
+    const aperture=lamp && arena ? smooth(0,.20,along)*(1-smooth(2.7,5.8,along))*
       (1-smooth(.82,1.05,Math.abs(u)))*(.22+.78*smooth(.035,.13,Math.abs(Math.abs(u)-.34))) : 0;
     const index = (row * size + column) * 4;
     pixels[index] = Math.round(pool * 255); pixels[index + 1] = Math.round(smooth(.1, 1.7, nearest) * 255);
