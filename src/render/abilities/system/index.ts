@@ -275,16 +275,12 @@ class SystemPresentation implements AbilityPresentation {
     const travel = k.reducedMotion ? .55 : (phase * 1.65) % 1;
     const pulse = receipt ? Math.max(0, 1 - receipt.age / .18) : 0;
     const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
-    for (let i = 0; i < (k.low ? 1 : 2); i++) {
-      const growth = Math.min(1, Math.max(0, .32 + travel * 2.4 - i * .8));
-      if (growth <= 0) continue;
-      const a = incoming + (asymmetry < 0 ? -1 : 1) * (travel * 1.9 - i * .85);
-      const end = a + .63 + asymmetry * .4, h = height * (.12 + .54 * travel + .09 * i);
-      k.flowFlame(x + Math.cos(a) * radius * .68, h, z + Math.sin(a) * radius * .68,
-        x + Math.cos(end) * radius, h + height * (.3 + .18 * asymmetry + .22 * i) * growth,
-        z + Math.sin(end) * radius, radius * (.31 + .09 * asymmetry) * growth,
-        seed + i * 3.7, .76 * growth + .22 * pulse, i === 0 && pulse > .45);
-    }
+    const growth = .68 + .32 * travel;
+    const a = incoming + (asymmetry < 0 ? -1 : 1) * travel * 1.9;
+    const end = a + .63 + asymmetry * .4, h = height * (.18 + .56 * travel);
+    k.flowFlame(x + Math.cos(a) * radius * .8, h, z + Math.sin(a) * radius * .8,
+      x + Math.cos(end) * radius, h + height * (.36 + .12 * asymmetry) * growth,
+      z + Math.sin(end) * radius, radius * .38 * growth, seed, .81 + .19 * pulse, pulse > .45);
   }
 
   private joints(root: T.Object3D): T.Object3D[] {

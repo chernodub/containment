@@ -337,31 +337,18 @@ void main(){
   base=vec3(.008,.011,.014);
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }else if(m<8.5||(m>10.5&&m<11.5)){
-  // Opaque soot counter-layer and flowing fuel share the exact native disc.
+  // A continuous coal bed and one broad hot lip leave the deck readable.
   float r=fxLocal.y,R=fxRange;
-  vec2 q=(fxWorld.xz-fxOrigin.xz)*2.2;
-  float n=fxFbm(q+vec2(t*.65,-t*.9)+fxSeed);
-  float fine=fxNoise(q*5.+vec2(-t*2.,t*3.));
-  float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
-  float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
-  float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
-  float channels=smoothstep(m>10.5?.56:.72,m>10.5?.74:.86,n+fine*.12);
-  float a=fxLocal.x*6.2831853;
-  if(m<10.5)rim*=smoothstep(.35,.70,fxNoise(vec2(cos(a),sin(a))*max(9.,R*4.)+fxSeed));
-  float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
-  float hot=channels*(.55+.35*fine)+boil*.7;
-  float fade=fxParam;
-  // Pool (m 8): soft irregular soot underlay rather than an opaque disc; strips keep the dense film.
-  float soot=m>10.5?.94:(.42+.3*fxFbm(q*.5+7.))*(1.-smoothstep(R*.55,R,r)*.35);
-  float islands=smoothstep(.39,.66,n+.08*fine)*(.58+.42*smoothstep(R*.22,R*.68,r));
-  float fireDetail=m>10.5?1.:max(rim,islands);
-  if(m<10.5)channels=max(channels,islands*.8);
-  alpha=edge*(soot*(m>10.5?1.:.27)+channels*.2*fireDetail+rim*.3)*fade;
-  base=vec3(.004,.002,.001);
-  // Pool edge stays orange-amber so it never reads as the hostile red warning.
-  vec3 flame=m>10.5?mix(vec3(.72,.19,.004),vec3(1.5,.43,.015),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
-  flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
-  emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity*fireDetail;
+  float strip=length(vec2(fxLocal.x*fxInner,max(max(-r,r-R),0.)))/max(.001,fxInner);
+  float radial=m>10.5?strip:r/max(.01,R);
+  vec2 q=(fxWorld.xz-fxOrigin.xz)*.65;
+  float curl=fxNoise(q+fxSeed);
+  float edge=1.-smoothstep(.91,.995,radial);
+  float lip=1.-smoothstep(.018,.082,abs(radial-(.86+.06*curl)));
+  float heat=lip*(.48+.40*curl);
+  base=vec3(.016,.013,.009);
+  alpha=(.39*edge+.27*lip)*fxParam;
+  emit=vec3(1.54,.63,.058)*heat*fxParam*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -429,17 +416,12 @@ void main(){
    alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
-   // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
-   float spread=R*(1.-exp(-age*4.))*(.55+.5*fxFbm(vec2(a*1.6,age*.3)+fxSeed));
-   float reveal=1.-smoothstep(spread-.5,spread,r);
-   vec3 c=fxCells(q*1.25+vec2(fxFbm(q*1.1+3.)*1.3));
-   float crack=1.-smoothstep(0.,.08+.07*n,c.y-c.x);
-   float near=1.-smoothstep(.3,R*.7,r);
-   float blister=(1.-smoothstep(.06,.24,c.x))*step(.6,c.z)*(.55+.45*sin(t*4.+c.z*31.));
-   float flow=.75+.25*sin(t*3.+c.z*20.-r*2.);
-   float heat=crack*reveal*(.5+.5*near)*flow;
-   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9;
-   alpha=reveal*(.025*(1.-crack)+crack*.76);
+   // The hot lip rolls around a broad spent centre.
+   float radial=r/max(.01,R);
+   float lip=1.-smoothstep(.017,.072,abs(radial-(.89+.055*n)));
+   float coal=1.-smoothstep(.92,1.,radial);
+   emit=vec3(1.64,.72,.075)*lip*(.47+.42*n);
+   alpha=.29*coal+.26*lip;
    // The activation flash fills the centre before the moving aura settles.
    float pulse=1.-smoothstep(.05,.18,age);
    float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);

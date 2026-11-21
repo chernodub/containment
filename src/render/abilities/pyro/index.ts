@@ -420,10 +420,10 @@ class PyroPresentation implements AbilityPresentation {
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
-    const pockets = kit.low ? 3 : 7;
+    const pockets = kit.low ? 2 : 3;
     for (let i = 0; i < pockets; i++) {
       const angle = zone.id * .71 + i * 2.39996;
-      const reach = radius * (.24 + .58 * i / pockets);
+      const reach = radius * (.6 + .22 * i / pockets);
       const px = x + Math.cos(angle) * reach, pz = z + Math.sin(angle) * reach;
       kit.directedFlame(px, .06, pz, .25 + .06 * (i % 3), .78 + .32 * (i % 4),
         angle, .16, zone.id + i * 1.37, fade * .87, i === 0);
@@ -441,13 +441,10 @@ class PyroPresentation implements AbilityPresentation {
       return;
     }
     kit.sustain(elapsed);
-    // Two irregular depth layers share the exact native circular footprint.
+    // One charred footprint; the upright atlas flames above carry its height.
     this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
-    // VFX15: eight standing procedural tongues with height (one draw), growing in after the burst.
-    const grow = Math.min(1, Math.max(.44, elapsed / .18));
-    this.surface(zone.id, 1, x, z, radius * .9, (zone.id * .371) % 1, 0, .03, 1.9, fade * grow * (.9 + .1 * Math.sin(kit.time * 7 + zone.id)), false, -1, FxMode.Tongues);
     // A single loose smoke column rises from the hottest interior fuel pocket.
-    for (let i = 0; i < (kit.low ? 1 : 4); i++) {
+    for (let i = 0; i < (kit.low ? 1 : 2); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;
       kit.draw('smoke', x + Math.sin(i * 2.4 + rise) * radius * .14, 1 + rise * 2.1,
         z + Math.cos(i * 2.4 + rise) * radius * .12,
