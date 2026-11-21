@@ -14,7 +14,24 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
   mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],unit:number){
+ private readonly arrowGeometry=new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute([
+  -.22,0,-.12,.15,0,-.12,.15,0,.12,-.22,0,-.12,.15,0,.12,-.22,0,.12,
+  .08,0,-.28,.55,0,0,.08,0,.28,
+ ],3));
+ private readonly arrows=this.pads.slice(0,2).map(()=>{
+  const mesh=new T.Mesh(this.arrowGeometry,this.materials[0]);
+  mesh.visible=false;this.root.add(mesh);return mesh;
+ });
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number){
+  this.arrows.forEach((arrow,index)=>{
+   const choice=choices[index];
+   const breach=choice?.kind==='gate'&&breaches.find(point=>point.id===choice.id);
+   arrow.visible=!!breach;
+   if(!breach)return;
+   arrow.position.set(choice.x/unit,.05,choice.y/unit);
+   arrow.rotation.y=-Math.atan2(breach.y-choice.y,breach.x-choice.x);
+   arrow.scale.setScalar(choice.radius/unit);
+  });
   this.pads.forEach((mesh,index)=>{
    const choice=choices[index];
    mesh.visible=!!choice;
@@ -25,5 +42,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.geometry.dispose();this.failedGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.geometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }
