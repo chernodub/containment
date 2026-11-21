@@ -439,6 +439,14 @@ export class AttackEffects {
  event(e:GameEffect,deathCue:DeathCue='none',targetFamily?:string, frozenBody?:T.Vector3){
   if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
+  if(e.planReaction){
+   const start=new T.Vector3(e.x/32,.55,e.y/32);
+   const end=new T.Vector3((e.targetX??e.x)/32,.55,(e.targetY??e.y)/32);
+   for(let i=0;i<=7;i++){
+    const point=start.clone().lerp(end,i/7);
+    this.particle(this.glow,EFFECT_LIMITS.glow,point,0x8df9db,.13,.28+i*.035);
+   }
+  }
   if(e.selfBlast&&e.sourceX!==undefined&&e.sourceY!==undefined){
    const out=new T.Vector3(e.x-e.sourceX,0,e.y-e.sourceY);
    if(out.lengthSq()<.001)out.set(1,0,0);

@@ -586,6 +586,14 @@ export class DepthRenderer {
   let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
   if(!targetModel&&effect.targetId!==undefined)for(const corpse of this.corpses)if(corpse.id===effect.targetId){targetModel=corpse.model;break;}
   // The killing weapon receipt can follow the corpse receipt within one native tick.
+  if(effect.planReaction){
+   const marine=new T.Vector3().setFromMatrixPosition(this.player.root.matrixWorld);
+   const actual=new T.Vector3(x,.1,z);
+   if(actual.distanceTo(marine)>7){
+    const near=marine.clone().add(actual.sub(marine).normalize().multiplyScalar(2.5));
+    this.effects.event({type:'boon',boon:'shield',x:near.x*UNIT,y:near.z*UNIT,radius:20});
+   }
+  }
   if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
   if(effect.type==='corpse'&&this.corpses[this.corpses.length-1]?.pendingEffect===effect)return;
   this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
