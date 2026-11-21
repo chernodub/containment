@@ -84,7 +84,7 @@ def build(sk):
     GLOW_PODS.append((p - n * 0.6, 0.9))
     # --- head ---------------------------------------------------------------------------
     head_c = z(4.9, 0, 8.6)
-    body.add(Ellipsoid(z(3.2, 0, 8.9), (1.4, 1.7, 1.2 * a), zone=MEMBRANE, bone=("blend", "body", "head", z(2.5, 0, 9), z(4.5, 0, 8.6)), k=0.5))
+    body.add(Ellipsoid(z(3.2, 0, 8.9), (1.1, 1.3, 0.9 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.5, 0, 9), z(4.5, 0, 8.6)), k=0.4))   # CREATURE21: dark neck
     body.add(A.mass(head_c, (1.7, 1.5, 1.0 * a), frame((1, 0, -0.35)), bone="head", k=0.5))
     body.add(Plate(head_c + z(-0.2, 0, 0.75), (1.9, 1.6, 0.6), frame((1, 0, -0.4)), 0.45, rings=0.02, ring_count=3,
                    lip=0.12, chip=0.08, zone=CREST, bone="head", plate=50))
@@ -93,6 +93,8 @@ def build(sk):
         for side in ("R", "L"):
             body.add(Ellipsoid(sk.h(f"{eye}.{side}"), (0.28, 0.28, 0.28 * a), zone=EYE, bone="head"))
     body.add(Ellipsoid(z(6.4, 0, 7.6), (0.7, 0.8, 0.45 * a), op="sub", zone=CAVITY, k=0.2))
+    body.add(AnglePlate(head_c + z(1.45, 0, 0.15), frame(v3((0, 0, 1)), v3((1, 0, -0.25))), 0.9, 1.0, 0.25, keel=0.25, rake=0.4, taper=0.55,
+                        zone=CREST, bone="head", plate=400))   # CREATURE21: pale forward face plane
     for s, side in ((-1, "R"), (1, "L")):
         for m in ("up", "low"):
             p0, p1 = sk.h(f"mandible_{m}.{side}"), sk.h(f"mandible_{m}.001.{side}")
@@ -127,6 +129,7 @@ def build(sk):
                     ring_count=5, lip=0.15, chip=0.1, zone=BONE, bone="body.001", plate=200))   # asymmetric pale shield
     # CREATURE19 elite: a tall raked crest along the thorax so the elite outline differs from above
     elite.extend(A.rank_fins(th_c, th_r, th_R, None, (0.5, 0.1, -0.3), 3.4 * a, 1.2, 0.32, bone_fn=bf, plate=180))   # height in design z (x aspect)
+    elite.extend(A.rank_mantle(bb_c, bb_r, bb_R, None, 0.15, bone_fn=lambda u: sac_bone))   # CREATURE21
     # ATTACK16: a second, visible brood cluster riding the other flank of the thorax
     for j, (u, r) in enumerate(((0.3, 0.75), (0.0, 0.85), (-0.3, 0.7), (0.15, 0.6))):
         q, n = A.ellipsoid_surface(th_c, th_r, th_R, u, -1.05)
@@ -162,15 +165,15 @@ def matron(sk, a, z, bf):
             m.add(AnglePlate(p + n * 0.2, frame(-fwd, n), 1.75, 1.7 if j == 0 else 1.45, 0.5, keel=0.4, rake=0.55, taper=0.7,
                              lift=0.25, zone=ARMOR, bone=bf(u), plate=401 + i * 3 + j))
     # --- a distinct head with a face end, forward of a narrow dark neck
-    head_c = z(5.1, 0, 7.4)
-    m.add(Ellipsoid(z(3.2, 0, 7.9), (1.1, 1.0, 0.6 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.3))
+    head_c = z(7.2, 0, 10.6)   # CREATURE21: raised and pushed forward so it shows above the front legs from the camera
+    m.add(Ellipsoid(z(5.2, 0, 9.6), (2.2, 1.0, 0.6 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.3))
     m.add(A.mass(head_c, (1.75, 1.45, 0.82 * a), frame((1, 0, -0.35)), bone="head", k=0.3))
     m.add(AnglePlate(head_c + z(-0.2, 0, 0.62), frame((1, 0, -0.4)), 1.8, 1.4, 0.4, keel=0.4, rake=0.45, taper=0.6, lift=0.2,
                      zone=ARMOR, bone="head", plate=420))   # dark crested carapace
-    m.add(AnglePlate(head_c + z(1.25, 0, -0.05), frame((0, 0, 1), (1, 0, -0.2)), 1.05, 1.0, 0.3, keel=0.3, rake=0.4, taper=0.55,
+    m.add(AnglePlate(head_c + z(1.35, 0, -0.05), frame((0, 0, 1), (1, 0, -0.2)), 1.3, 1.2, 0.32, keel=0.3, rake=0.4, taper=0.55,
                      zone=CREST, bone="head", plate=400))   # pale face plate on the front
     for s_ in (-1, 1):
-        m.add(Ellipsoid(head_c + z(1.35, 0.75 * s_, 0.15), (0.34, 0.34, 0.34 * a), zone=EYE, bone="head"))
+        m.add(Ellipsoid(head_c + z(1.4, 0.8 * s_, 0.25), (0.46, 0.46, 0.46 * a), zone=EYE, bone="head"))
     for s_, side in ((-1, "R"), (1, "L")):
         p0, p1 = sk.h(f"mandible_low.{side}"), sk.h(f"mandible_low.001.{side}")
         e = sk.end(f"mandible_low.001.{side}")

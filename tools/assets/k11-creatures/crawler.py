@@ -59,7 +59,7 @@ def build(sk):
     ab_bone = lambda u: ("blend", chest, tail, (0.0, 0, 0.9), (-0.9, 0, 1.0))
     body.extend(A.shingles(ab_c, ab_r, ab_R, None, rows=4, phis=(0.80, 1.45), u0=0.62, u1=-0.62,   # CREATURE18b: wider dorsal cap
                            size=(0.25, 0.26, 0.11), thickness=0.055, lift=0.38, rings=0.0025, grow=-0.18,
-                           bone_fn=ab_bone, seed=10, plate0=1))
+                           bone_fn=ab_bone, seed=10, plate0=1, angular=True))
     # tail cap plate
     p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, -0.88, 0.0)
     body.add(Plate(p + n * 0.01, (0.17, 0.2, 0.09), frame(normalize(-ab_R[:, 0]), n), 0.045, rings=0.006,
@@ -71,7 +71,7 @@ def build(sk):
 
     # --- thorax mantle and prow head -----------------------------------------
     body.extend(A.shingles(thorax_c, thorax_r, frame((1, 0, -0.15)), chest, rows=2, phis=(0.0,), u0=0.15, u1=-0.45,
-                           size=(0.21, 0.24, 0.09), thickness=0.05, lift=0.4, rings=0.0025, seed=30, plate0=30))
+                           size=(0.21, 0.24, 0.09), thickness=0.05, lift=0.4, rings=0.0025, seed=30, plate0=30, angular=True))
     head_c = v3((0.40, 0.0, 0.46 * sk.aspect))
     body.add(A.mass(head_c, (0.13, 0.16, 0.09 * sk.aspect), frame((1, 0, -0.35)), bone=chest, k=0.05))
     prow_F = frame((1, 0, -0.42))
@@ -119,7 +119,7 @@ def build(sk):
     # --- elite rank: bone crest + heavier shoulder plates --------------------
     elite = S.Sculpture("crawler-elite")
     # ATTACK16 elite: a forked, raised dorsal shell (two plates splayed up like a V), each carrying a tall pale fin
-    for side, scale in ((1, 1.6), (-1, 1.35)):   # CREATURE19: taller rank fins
+    for side, scale in ((1, 1.9), (-1, 1.6)):   # CREATURE19: taller rank fins
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.0, 0.42 * side)
         lift = normalize(n + v3((0, 0.35 * side, 1.4)))
         elite.add(Plate(p + n * 0.12, (0.48 * scale, 0.3 * scale, 0.11), frame(v3((1, 0, 0.25)), lift), 0.065, rings=0.004, lip=0.015,
@@ -129,6 +129,7 @@ def build(sk):
             a0 = base + v3((dx, 0, 0))
             elite.add(Plate(a0 + v3((0, 0.12 * side, h * 0.5)), (0.17, h * 0.55, 0.035), frame(v3((1, 0, 0.6)), v3((0, 1, 0.25 * side))), 0.028,
                             rings=0.003, lip=0.01, chip=0.012, zone=BONE, bone=ab_bone(0), plate=70 + i + 3 * (side > 0)))
+    elite.extend(A.rank_mantle(thorax_c, thorax_r, frame((1, 0, -0.15)), chest, -0.1, scale=1.25))   # CREATURE21
     # second lantern bulging from the thorax
     p, n = A.ellipsoid_surface(thorax_c, thorax_r, frame((1, 0, -0.15)), -0.15, 0.0)
     elite.extend(A.lantern(p - v3((0.12, 0, 0)), p + v3((0.12, 0, 0)), 0.1, chest, height=1.5, ribs=0.045))

@@ -184,3 +184,51 @@ Still weak:
    lifting the head is a FEEL19/pod decision.
 2. Only the chest, arms and bosses use `AnglePlate`. The Brute's hind flanks and the other families still use
    rounded `Plate` shingles, so the Brute's back half and the Stalker/Spitter shells keep the softer domed look.
+
+## CREATURE21 — faces, angular shells, rim, readable elites
+Base `064f0acd`. Rigs, bone names, clips, FEEL19 poses and pods, colliders and timings are unchanged. Per-caste
+triangle targets are unchanged.
+
+- **Faces:**
+  - Brute: the jaw plate (55) is larger and in the light `lead` band, and the brow (50) is now umber, so the jaw is
+    the light face plane, with a stronger contour than the slate blade.
+  - Warden: its jaw (329) is in the `lead` band, and two ochre eyes glow on the helm front. The head reads in the
+    charge wind-up by its eyes; in the wall slump the head drops and the eyes hide.
+  - Stalker: a dark neck (`plate=500` → chitin) and a pale forward snout plate (31).
+  - Carrier: a dark neck and a pale forward face plate (400).
+  - Matron: her head is raised and pushed forward to `z(7.2, 0, 10.6)` with a long dark neck, a larger pale face and
+    bigger magenta eyes. From above, a pale face with a glowing eye now shows at the front of the thorax. The orange
+    disc seen in brood frames is the brood telegraph, not the clutch; the pods were not touched, and the pod stages
+    still split and open (`c21-final-bosses/*pod-opening*`).
+- **Angular shells:** `species.shingles(..., angular=True)` emits `AnglePlate` shingles. They are used on the Stalker
+  (torso and abdomen), Crawler (abdomen and thorax), Spitter (trunk) and the Brute's hind flanks. The leading plates
+  keep their `lead` bands.
+- **Rim** (`ActorSurface`, alien key `actor-surface-v15-creature21`): the creature rim is broader (exponent 3.0),
+  0.10 stronger and cooler (85 % toward `(.55,.78,1.0)`). The marine is unchanged. Programs are identical in number,
+  and warm-up prepares the new key.
+- **Elites:**
+  - Paler rank gold (0.90,0.76,0.42), and emissive seams on rank-part creases (lit in the family lantern hue at
+    runtime).
+  - Crests are about 20–25 % taller. Vertical fins read edge-on from this camera, so the decisive change is
+    `species.rank_mantle`: one broad pale faceted plate over each elite's back. The Spitter gets two flank mantles
+    beside its lime gland instead, and the Stalker one on the abdomen and one on the thorax.
+  - At 480×270 the Carrier, Brute, Crawler and Stalker elites now show a pale back in colour and greyscale. The
+    Spitter's flank mantles are faint.
+
+Evidence: `artifacts/nextgen/c21-before{,-pairs}` (frozen `064f0acd` dist) vs `c21-final{,-pairs}`, `c21-final-pairs2`
+(Stalker/Spitter after the mantle pass) and `c21-final-bosses`. The `c21-before-bosses` run rendered black (captured
+while Blender saturated the machine), so the boss before is `c20-final-bosses`, captured from the same assets.
+
+Measured:
+- Draw calls are identical in the crowds, all five attacks and the elite pairs. The Stalker pair's 80 → 81 is the
+  same one-draw capture variance seen in CREATURE20.
+- Crowd triangles fell by 7,958 because every creature file now ships a low LOD sibling.
+- Boss program counters are flat and identical (0/20/36/52).
+- Breacher seed 1729, 4 rooms: 0 errors, programs flat per room (`playtest/c21-playtest`).
+
+Still weak:
+1. The Warden's head disappears in the wall slump: the FEEL19 pose drops it under the helm and pauldrons, so
+   the eyes hide. A brighter crown edge or eyes on the helm top would carry it.
+2. The Spitter elite's pale flank mantles are faint at 480×270. It still reads mostly by its taller gland and size.
+   Amber-floor rooms (Freight Hold, Residential Gallery) were not captured in this pass, so the rim on warm floors
+   was judged only on Crew Checkpoint and Relay Racks.

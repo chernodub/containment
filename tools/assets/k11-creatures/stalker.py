@@ -25,7 +25,7 @@ BANDS = {   # CREATURE18: violet-black chitin, mauve flesh, cool grey scythes, v
     "accent": (0.55, 0.22, 1.0), "eye": (0.75, 0.45, 1.0),
 }
 BANDS["lead"] = (0.66, 0.56, 0.72)   # CREATURE19: broad light plane on the leading shell (facing in shadow)
-PLATE_BAND = {1: "lead", 2: "lead", 30: "lead"}
+PLATE_BAND = {1: "lead", 2: "lead", 30: "lead", 31: "lead", 500: "chitin"}
 BAND_MAP = {"armor": "flesh"}   # CREATURE18b: shingles and membrane body both carry the mauve mid band
 PALETTE = {
     "shell": (0.15, 0.06, 0.075), "edge": (0.62, 0.50, 0.55), "armor": (0.50, 0.40, 0.46), "membrane": (0.07, 0.018, 0.04),
@@ -43,12 +43,12 @@ def build(sk):
     # --- thorax and neck --------------------------------------------------------
     body.add(A.mass(z(0.05, 0, 1.47), (0.44, 0.32, 0.21 * a), frame((1, 0, 0.2)), bone="torso", zone=MEMBRANE, lump=0.004, freq=4))
     body.extend(A.shingles(z(0.05, 0, 1.47), (0.44, 0.32, 0.21 * a), frame((1, 0, 0.2)), "torso", rows=2, phis=(0.0,),
-                           u0=0.35, u1=-0.4, size=(0.3, 0.32, 0.1), zone=ARMOR, thickness=0.06, lift=0.4, rings=0.004, seed=5, plate0=1))
+                           u0=0.35, u1=-0.4, size=(0.3, 0.32, 0.1), zone=ARMOR, thickness=0.06, lift=0.4, rings=0.004, seed=5, plate0=1, angular=True))
     chest_a, chest_b = sk.h("chest"), sk.h("neck_lo")
     body.add(RoundCone(chest_a, chest_b, 0.17, 0.14, zone=MEMBRANE, bone="chest", k=0.08))
     nl, nh, hd = sk.h("neck_lo"), sk.h("neck_hi"), sk.h("head")
-    body.add(RoundCone(nl, nh, 0.13, 0.11, zone=MEMBRANE, bone="neck_lo", k=0.06))
-    body.add(RoundCone(nh, hd, 0.11, 0.1, zone=MEMBRANE, bone="neck_hi", k=0.05))
+    body.add(RoundCone(nl, nh, 0.11, 0.09, zone=MEMBRANE, bone="neck_lo", k=0.05, plate=500))   # CREATURE21: dark neck break
+    body.add(RoundCone(nh, hd, 0.09, 0.085, zone=MEMBRANE, bone="neck_hi", k=0.04, plate=500))
     for t, bone, ab in ((0.3, "chest", (chest_a, chest_b)), (0.5, "neck_lo", (nl, nh)), (0.5, "neck_hi", (nh, hd))):
         p0, p1 = v3(ab[0]), v3(ab[1])
         c = p0 + (p1 - p0) * t
@@ -63,7 +63,10 @@ def build(sk):
     body.add(Plate(head_c + v3((-0.03, 0, 0.13 * a)), (0.46, 0.27, 0.11), frame(hdir, (0, 0, 1)), 0.05, rings=0.004,
                    lip=0.012, chip=0.01, zone=CREST, bone="head", plate=30))
     body.add(RoundCone(head_c + v3((-0.25, 0, 0.18 * a)), head_c + hdir * 0.3 + v3((0, 0, 0.04)), 0.03, 0.008, zone=CREST, bone="head", k=0.03))
-    body.extend(A.eyes(head_c + hdir * 0.12 + v3((0, 0, 0.02 * a)), hdir, 0.09, 3, 0.022, "head", spread=0.8))
+    body.extend(A.eyes(head_c + hdir * 0.12 + v3((0, 0, 0.02 * a)), hdir, 0.09, 3, 0.03, "head", spread=0.8))
+    # CREATURE21: one forward-facing pale face plane at the snout
+    body.add(S.AnglePlate(head_c + hdir * 0.27 + v3((0, 0, 0.02 * a)), frame(v3((0, 0, 1)), hdir), 0.13, 0.15, 0.05, keel=0.04,
+                          rake=0.5, taper=0.55, zone=CREST, bone="head", plate=31))
     for s, side in ((-1, "R"), (1, "L")):
         m0, m1 = sk.h(f"mandible.{side}"), sk.end(f"mandible.{side}")
         body.extend(A.hook([m0, m0 + (m1 - m0) * 0.4 + v3((0.05, 0.06 * s, 0)), m1 + v3((0.05, 0.03 * s, 0)), m1 + v3((0.02, -0.06 * s, -0.04))],
@@ -74,7 +77,7 @@ def build(sk):
                     zone=MEMBRANE, k=0.12, lump=0.004, freq=4))
     bf = lambda u: ("blend", "big_butt", "mid_butt", z(-0.3, 0, 1.6), z(-1.25, 0, 1.75))
     body.extend(A.shingles(ab_c, ab_r, ab_R, None, rows=4, phis=(0.95, 1.65), u0=0.6, u1=-0.62, size=(0.26, 0.24, 0.1), zone=ARMOR,
-                           thickness=0.06, lift=0.38, rings=0.003, grow=-0.2, bone_fn=bf, seed=50, plate0=40))
+                           thickness=0.06, lift=0.38, rings=0.003, grow=-0.2, bone_fn=bf, seed=50, plate0=40, angular=True))
     la, _ = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.5, 0.0)
     lb, _ = A.ellipsoid_surface(ab_c, ab_r, ab_R, -0.62, 0.0)
     body.extend(A.lantern(la + v3((0, 0, 0.02)), lb + v3((0, 0, 0.06)), 0.19, bf(0), height=1.7, ribs=0.06))
@@ -131,5 +134,7 @@ def build(sk):
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
         pts.append(p + n * 0.05)
         nrm.append(n)
-    elite.extend(A.crest_spines(pts, nrm, 0.8 * a, 0.085, lambda p: bf(0), sweep=(-1, 0, 0.3)))   # CREATURE19: tall rank crest
+    elite.extend(A.crest_spines(pts, nrm, 1.0 * a, 0.1, lambda p: bf(0), sweep=(-1, 0, 0.3)))   # CREATURE19: tall rank crest
+    elite.extend(A.rank_mantle(ab_c, ab_r, ab_R, None, 0.0, scale=1.45, bone_fn=lambda u: bf(u)))   # CREATURE21
+    elite.extend(A.rank_mantle(z(0.05, 0, 1.47), v3((0.44, 0.32, 0.21 * a)), frame((1, 0, 0.2)), "torso", 0.1, scale=1.3, plate=191))
     return {"body": body, "elite": elite}

@@ -8,7 +8,7 @@ right one heavier), a long armoured hind body on four pillar legs.
 import numpy as np
 
 import sdf as S
-from sdf import AnglePlate, bezier, BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import AnglePlate, bezier, EYE, BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "tyrant"
@@ -28,7 +28,7 @@ BANDS["lead"] = (0.80, 0.55, 0.32)
 BANDS["plate"] = (0.30, 0.16, 0.09)   # CREATURE20: dark umber angular chest/arm armour over the ochre body   # CREATURE19: the head plate is the lightest body plane (which end is the head)
 BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}
 # dorsal shingle row (hump 90/93, hind 20/23/26/29) joins the dark armour: a hard spine over ochre flanks
-PLATE_BAND = {**{i: "plate" for i in range(300, 335)}, 50: "lead", **{160 + i: "lead" for i in range(8)}, **{i: "chitin" for i in (*range(90, 96), 20, 23, 26, 29)}}   # CREATURE19: the whole hump is dark armour   # top-view plates carry the mid band, gaps go dark
+PLATE_BAND = {**{i: "plate" for i in range(300, 335)}, 50: "plate", 55: "lead", 329: "lead", **{160 + i: "lead" for i in range(8)}, **{i: "chitin" for i in (*range(90, 96), 20, 23, 26, 29)}}   # CREATURE19: the whole hump is dark armour   # top-view plates carry the mid band, gaps go dark
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),
@@ -74,7 +74,7 @@ def build(sk):
     body.add(Ellipsoid(z(-0.35, 0, 2.85), (0.8, 0.85, 0.45 * a), zone=MEMBRANE,
                        bone=("blend", "tail", "chest", z(-0.9, 0, 2.5), z(0.3, 0, 3.4)), k=0.3))
     body.extend(A.shingles(hind_c, hind_r, hind_R, "tail", rows=4, phis=(0.0, 1.0), u0=0.5, u1=-0.78,
-                           size=(0.68, 0.62, 0.3), thickness=0.22, lift=0.4, rings=0.006, grow=-0.25, seed=60, plate0=20))
+                           size=(0.68, 0.62, 0.3), thickness=0.22, lift=0.4, rings=0.006, grow=-0.25, seed=60, plate0=20, angular=True))
     # CREATURE19: three hard, dark, angular dorsal plates with raised sharp trailing spikes over the ochre body
     body.extend(A.dorsal_blades(hump_c, v3((1.05, 0.85, 0.75 * a)), frame((1, 0, 0.35)), "chest", (0.15,), 1.35, 0.85, 0.18,
                                 lift=0.45, plate=170))
@@ -88,8 +88,8 @@ def build(sk):
     # dark armoured collar ring between shoulders and head
     body.add(S.Torus(z(0.98, 0, 4.02), (1, 0, -0.2), 0.42, 0.13, zone=ARMOR, bone=("blend", "chest", "head", z(0.4, 0, 4.0), z(1.3, 0, 4.2)), k=0.04))
     # heavy dark jaw: an underslung mandible plate jutting past the brow
-    body.add(AnglePlate(head_c + z(0.35, 0, -0.32), frame((-1, 0, 0.55), (0, 0, -1)), 0.75, 0.62, 0.2, keel=0.18, rake=0.6,
-                        taper=0.6, zone=ARMOR, bone="jaw", plate=55))   # trailing point forward: a jutting jaw
+    body.add(AnglePlate(head_c + z(0.45, 0, -0.3), frame((-1, 0, 0.55), (0, 0, -1)), 1.0, 0.85, 0.26, keel=0.25, rake=0.6,
+                        taper=0.6, zone=ARMOR, bone="jaw", plate=55))   # CREATURE21: the jaw is the light face plane   # trailing point forward: a jutting jaw
     body.add(AnglePlate(head_c + z(0.05, 0, 0.3), frame((1, 0, -0.45)), 0.85, 0.66, 0.2, keel=0.2, rake=0.35, taper=0.4,
                         lift=0.1, zone=CREST, bone="head", plate=50))
     body.add(RoundCone(z(0.95, 0, 4.55) + HO, z(2.05, 0, 4.0) + HO, 0.09, 0.05, zone=CREST, bone="head", k=0.06))
@@ -160,6 +160,7 @@ def build(sk):
     wr_r, end_r = sk.h("claw.r"), sk.end("claw.r")
     elite.extend(A.blade(wr_r + (end_r - wr_r) * 0.2, end_r + v3((1.55, -0.75, 0.3)), v3((0.45, -1.0, 0.6)), 1.15, 0.2, "claw.r",
                          hook=0.55, serrations=5, zone=BONE, edge_zone=BONE))
+    elite.extend(A.rank_mantle(hind_c, hind_r, hind_R, "tail", 0.15))   # CREATURE21: broad pale rank mantle
     # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
     boss = S.Sculpture("brute-warden")
     # --- organic crown: grown horn/bone plates rising from the shoulders, asymmetric, one broken tine
@@ -208,6 +209,8 @@ def build(sk):
                             1.35, 0.55, 0.26, keel=0.16, rake=0.9, taper=0.5, zone=CREST, bone="head", plate=166 + (s_ > 0)))
     boss.add(AnglePlate(head_c + z(1.05, 0, -0.6), frame((-1, 0, 0.25), (0, 0, -1)), 1.6, 1.05, 0.36, keel=0.28, rake=0.75, taper=0.75,
                         zone=ARMOR, bone="jaw", plate=329))
+    for s_ in (-1, 1):   # CREATURE21: the Warden's ochre eyes glow on the helm front, above the light jaw
+        boss.add(Ellipsoid(head_c + z(1.55, 0.72 * s_, 0.12), (0.3, 0.3, 0.3 * a), zone=EYE, bone="head"))
     for s_ in (-1, 1):
         side_ = "r" if s_ < 0 else "l"
         sh_ = sk.h(f"shoulder.{side_}")

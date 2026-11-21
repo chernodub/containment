@@ -94,7 +94,7 @@ def tertiary(high, sculpture, seed=0):
 BAND_OF = {S.SHELL: "chitin", S.UNDER: "chitin", S.CLAW: "chitin", S.ARMOR: "chitin", S.CREST: "chitin",
            S.CAVITY: "chitin", S.MEMBRANE: "flesh", S.FLESH: "flesh", S.SINEW: "flesh", S.BONE: "bone",
            S.TOOTH: "bone", S.ORGAN: "accent", S.EYE: "accent"}
-ELITE_GOLD = (0.70, 0.50, 0.14)
+ELITE_GOLD = (0.90, 0.76, 0.42)   # CREATURE21: paler rank crest (still below the marine plates)
 
 
 def colorize_bands(high, sculpture):
@@ -138,6 +138,9 @@ def colorize_bands(high, sculpture):
     for key in ("organ", "eye"):
         sel = zone == (S.ORGAN if key == "organ" else S.EYE)
         glow[sel] = np.asarray(M.GLOW[key], np.float32) * (0.75 + 0.25 * np.clip(1 - concave[sel], 0, 1))[:, None]
+    if elite:   # CREATURE21: emissive seams along the rank crest's creases and edges (family lantern hue at runtime)
+        seam = hard & (S.smoothstep(0.6, 1.6, cv) > 0.3)
+        glow[seam] = np.maximum(glow[seam], np.asarray(M.GLOW["organ"], np.float32) * 0.55)
     ones = np.ones((len(co), 1), np.float32)
     K.write_color(high, "glow", np.hstack([glow, ones]))
     K.write_color(high, "base", np.hstack([np.clip(base, 0, 1), ones]))

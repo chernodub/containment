@@ -36,7 +36,7 @@ def mass(c, r, R=None, bone=None, zone=SHELL, k=0.0, lump=0.0, freq=6.0, seed=0,
 
 def shingles(c, r, R, bone, rows, *, phis=(0.42,), u0=0.75, u1=-0.85, size=(0.26, 0.2, 0.08),
              thickness=0.04, lift=0.25, rings=0.008, tint=1.0, zone=SHELL, grow=0.0, seed=0, bone_fn=None,
-             plate0=1, k=0.0):
+             plate0=1, k=0.0, angular=False):
     """Overlapping roof-tile plates over an ellipsoid mass, front plates on top.
 
     ``phis``: plate columns (radians from the dorsal line; mirrored if non-zero).
@@ -58,9 +58,14 @@ def shingles(c, r, R, bone, rows, *, phis=(0.42,), u0=0.75, u1=-0.85, size=(0.26
                 sz = v3(size) * scale
                 centre = p + n * (thickness * lift) - fwd * sz[0] * 0.15
                 b = bone_fn(u) if bone_fn else bone
-                out.append(Plate(centre, sz, F, thickness * scale, rings=rings, ring_count=4, lip=thickness * 0.25,
-                                 chip=thickness * 0.35, seed=seed + plate_id, zone=zone, bone=b, tint=tint * (1 - 0.04 * i),
-                                 plate=plate_id, k=k))
+                if angular:   # CREATURE21: faceted shell with a hard trailing edge instead of a domed lens
+                    out.append(S.AnglePlate(centre, F, sz[0] * 1.05, sz[1], thickness * scale * 0.9, keel=thickness * scale * 0.7,
+                                            rake=0.55, taper=0.6, lift=thickness * scale * 0.45, zone=zone, bone=b,
+                                            tint=tint * (1 - 0.04 * i), plate=plate_id, k=k))
+                else:
+                    out.append(Plate(centre, sz, F, thickness * scale, rings=rings, ring_count=4, lip=thickness * 0.25,
+                                     chip=thickness * 0.35, seed=seed + plate_id, zone=zone, bone=b, tint=tint * (1 - 0.04 * i),
+                                     plate=plate_id, k=k))
                 plate_id += 1
     return out
 
@@ -230,7 +235,7 @@ def rank_fins(c, r, R, bone, us, height, length, thick, *, zone=CREST, plate=180
     fwd = normalize(Rm @ np.array([1, 0, 0], np.float32))
     for i, u in enumerate(us):
         p, n = ellipsoid_surface(c, r, R, u, 0.0)
-        h = height * (1.0 - 0.22 * abs(i - (len(us) - 1) / 2))
+        h = height * 1.25 * (1.0 - 0.22 * abs(i - (len(us) - 1) / 2))   # CREATURE21: taller rank crest
         up = normalize(n + v3((0, 0, 1.0)) - fwd * sweep)
         side = normalize(np.cross(up, fwd))
         along = normalize(np.cross(side, up))
@@ -258,3 +263,16 @@ def dorsal_blades(c, r, R, bone, us, length, width, thick, *, lift=0.3, zone=ARM
         out.append(RoundCone(centre - along * length * 0.45 + nn * thick * 0.4, centre - along * length * 1.25 + nn * length * 0.42,
                              width * 0.32, width * 0.03, zone=zone, bone=b, k=thick * 0.2))
     return out
+
+
+def rank_mantle(c, r, R, bone, u=0.0, *, scale=1.0, plate=190, bone_fn=None, phi=0.0):
+    """CREATURE21 elite rank: one broad pale faceted plate over the back. The camera looks almost straight down,
+    so the rank needs area seen from above (a lit mantle), not only height (fins read edge-on)."""
+    c, r = v3(c), v3(r)
+    Rm = np.eye(3, dtype=np.float32) if R is None else np.asarray(R, np.float32)
+    p, n = ellipsoid_surface(c, r, R, u, phi)
+    fwd = normalize(Rm @ np.array([1, 0, 0], np.float32))
+    fwd = normalize(fwd - n * float(fwd @ n))
+    b = bone_fn(u) if bone_fn else bone
+    return [S.AnglePlate(p + n * r[2] * 0.14, frame(-fwd, n), r[0] * 0.78 * scale, r[1] * 0.9 * scale, r[2] * 0.14,
+                         keel=r[2] * 0.16, rake=0.45, taper=0.7, lift=r[2] * 0.12, zone=CREST, bone=b, plate=plate)]

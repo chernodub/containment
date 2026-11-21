@@ -65,7 +65,7 @@ ${friendly?'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*ac
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the marine (no per-panel light cuts; soft bands live in GraphicSurface).\nfloat marineChroma=smoothstep(.15,.35,max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b)));reflectedLight.directDiffuse*=mix(1.0,.72,marineChroma);float marineAlbedoLuma=max(.01,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));reflectedLight.directDiffuse=mix(diffuseColor.rgb*dot(reflectedLight.directDiffuse,vec3(.2126,.7152,.0722))/marineAlbedoLuma,reflectedLight.directDiffuse,.025);reflectedLight.indirectDiffuse=mix(diffuseColor.rgb*dot(reflectedLight.indirectDiffuse,vec3(.2126,.7152,.0722))/marineAlbedoLuma,reflectedLight.indirectDiffuse,.025);reflectedLight.directSpecular=vec3(dot(reflectedLight.directSpecular,vec3(.2126,.7152,.0722)))*.35;reflectedLight.indirectSpecular=vec3(dot(reflectedLight.indirectSpecular,vec3(.2126,.7152,.0722)))*.35;' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*actorStageLight*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),4.2);
+float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
 ${friendly ? `// SHADE15: one even self-light over the whole suit.
 totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;` : `vec3 creatureUp=viewMatrix[1].xyz;
 float dorsal=smoothstep(.25,.82,dot(nonPerturbedNormal,creatureUp));
@@ -80,9 +80,9 @@ totalEmissiveRadiance=actorLanternColor*lanternPeak*actorHierarchy.z*(1.0+actorR
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(${friendly?'actorDissolve,actorDissolve+.045,ash':'0.0,.03,ash'}):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
-totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.50,.72,1.0),.6)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.20,.185,.17)*actorHitCard;// CREATURE18b: a mid lift that keeps lanterns and family colour, a step under the marine'}`);
+totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.10+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.20,.185,.17)*actorHitCard;// CREATURE18b: a mid lift that keeps lanterns and family colour, a step under the marine'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v13-hero19:marine' : 'actor-surface-v14-creature18b:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v13-hero19:marine' : 'actor-surface-v15-creature21:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

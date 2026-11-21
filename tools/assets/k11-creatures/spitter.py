@@ -69,7 +69,7 @@ def build(sk):
     trunk_c, trunk_r, trunk_R = z(0.2, 0, 3.35), v3((2.1, 1.05, 0.72 * a)), frame((1, 0, 0.1))
     bf = lambda u: "bum" if u < -0.35 else ("spine" if u < 0.1 else ("spine1" if u < 0.55 else "spine2"))
     body.extend(A.shingles(trunk_c, trunk_r, trunk_R, None, rows=4, phis=(1.25, 1.95), u0=0.7, u1=-0.7,
-                           size=(0.78, 0.6, 0.3), thickness=0.2, lift=0.35, rings=0.01, bone_fn=bf, seed=20, plate0=1))
+                           size=(0.78, 0.6, 0.3), thickness=0.2, lift=0.35, rings=0.01, bone_fn=bf, seed=20, plate0=1, angular=True))
     # --- the acid vessel ------------------------------------------------------------
     sac_c = z(-0.15, 0, 4.3)
     sac = Ellipsoid(sac_c, (1.55, 0.95, 0.66 * a), frame((1, 0, 0.12)), zone=ORGAN, bone=("blend", "bum", "spine1", z(-1.2, 0, 4), z(1.0, 0, 4)))
@@ -129,6 +129,8 @@ def build(sk):
     # pale crest fin riding the main vessel (rank read from above)
     for i, x in enumerate((-0.9, -0.2, 0.5)):
         c = sac_c + v3((x, 0, (0.62 + 0.05 * i) * a))
-        elite.add(Plate(c + v3((0, 0, 0.75 * a)), (0.62, (1.8 - 0.25 * abs(i - 1)) * 0.5 * a, 0.12), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.08, rings=0.005, lip=0.02,   # CREATURE19: tall fins
+        elite.add(Plate(c + v3((0, 0, 0.75 * a)), (0.62, (1.8 - 0.25 * abs(i - 1)) * 0.62 * a, 0.12), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.08, rings=0.005, lip=0.02,   # CREATURE19: tall fins
                         chip=0.02, zone=BONE, bone="spine" if x < 0 else "spine1", plate=90 + i))
+    for ph in (1.15, -1.15):   # CREATURE21: pale flank mantles beside the lime gland (seen from above)
+        elite.extend(A.rank_mantle(trunk_c, trunk_r, trunk_R, None, 0.05, scale=0.75, bone_fn=bf, phi=ph))
     return {"body": body, "elite": elite}
