@@ -441,3 +441,18 @@ Breacher seed 7 ran the baseline and optimized collision routines on the same in
 The questioned totals match the PLAY22 column in the historical report. The authoritative rerun pins game source to `8500276f` and reads the matching actor models. Between PLAY22's `b72b4341` and `8500276f`, the Spitter and Carrier GLBs changed, while the simulator and game source stayed the same. The headless observer reads actor dimensions from those files and uses them for HUD contact framing and pointer hit proxies. Changing only the model input to the older revision in a scratch copy of the runner restored Breacher seeds 256 and 4096 from 11 clears to 20 on the same `8500276f` game code. The observed height inputs changed from 1.72805 to 1.72663 for Spitter and 2.36983 to 2.35819 for Carrier. This reproduces an outcome difference independently of the collision optimization.
 
 [Historical model replay](../../artifacts/nextgen/perf22/exact/old-model.log) · [Actor metrics](../../artifacts/nextgen/perf22/exact/model-metrics.json) · [PLAY22 cohort](PLAY22-REPORT.md)
+
+### Full-cohort collision parity
+
+The temporary dual-call harness compared the return values from the checked-in fast path and the `8500276f` functions for every observed query. The stock runner separately ran the pinned baseline. Both used twelve Standard competent seeds per rig, the same policy and the same current model inputs. All 48 run reports match on gameplay fields, including per-room records, weapon use, deaths and final state. The compared fields exclude wall-clock duration and source provenance.
+
+The harness recorded zero mismatches in 333,869,786 comparisons. This includes 193,922,155 polygon sweeps, 36,258,751 point-occupancy queries, 82,493,358 traversal queries and 21,195,522 line-of-sight queries. Each comparison calls both implementations with the same input objects, including shared endpoint identity for point sweeps. The harness stays outside tracked source. The collision fast path is retained as measured.
+
+| Rig | Completed on both builds | Clears before each death, in seed order |
+| --- | ---: | --- |
+| Breacher | 6/12 | 18, 18, 11, 19, 11, 18 |
+| Cryo | 11/12 | 13 |
+| Pyro | 10/12 | 14, 10 |
+| Arc | 11/12 | 15 |
+
+[Parity totals](../../artifacts/nextgen/perf22/exact/parity.json) · [Pinned baseline](../../artifacts/nextgen/playtest/perf22-exact-base/summary.json) · [Dual-call cohort](../../artifacts/nextgen/playtest/perf22-search-diff/summary.json)
