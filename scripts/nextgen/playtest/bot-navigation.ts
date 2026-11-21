@@ -122,7 +122,7 @@ class FineGrid {
       const nextCost = cost(next);
       if (nextCost + .001 < bestCost) {bestCost = nextCost; best = probe;}
     }
-    return best;
+    return best ?? (distance(origin, result) > 4 ? result : null);
   }
 }
 
@@ -130,7 +130,8 @@ class FineGrid {
 export function botWaypoint(game: BotGame, target: Point): Point | null {
   const origin = {...game.player, radius: 16};
   const ordinary = game.navigation.waypoint(origin, target, 1);
-  if (!ordinary || distance(ordinary, origin) > USEFUL_DISTANCE) return ordinary;
+  if (!ordinary || distance(ordinary, origin) > USEFUL_DISTANCE
+    && canTraverseExpedition(game.geometry, origin, ordinary, origin.radius)) return ordinary;
   let observer = observers.get(game.geometry);
   if (!observer) {
     observer = {standard: new FacilityNavigation(game.geometry, CLEARANCE), fine: []};
@@ -144,5 +145,21 @@ export function botWaypoint(game: BotGame, target: Point): Point | null {
     const waypoint = observer.fine[index].waypoint(origin, target);
     if (waypoint) return waypoint;
   }
-  return ordinary;
+  return ordinary&&canTraverseExpedition(game.geometry,origin,ordinary,origin.radius)?ordinary:null;
+}
+
+/** Shorten only blocked pursuit probes. A legal straight approach retains the normal look-ahead. */
+export function botPursuitLookAhead(game: BotGame, waypoint:Point, normal:number):number {
+  const {player,geometry}=game;
+  const distanceToWaypoint=distance(player,waypoint);
+  if(distanceToWaypoint<normal)return Math.max(8,distanceToWaypoint);
+  const approach=Math.atan2(waypoint.y-player.y,waypoint.x-player.x);
+  for(const length of [normal,48,24,12]){
+    for(const offset of [0,Math.PI/4,-Math.PI/4]){
+      const angle=Math.round((approach+offset)/(Math.PI/4))*(Math.PI/4);
+      const end={x:player.x+Math.cos(angle)*length,y:player.y+Math.sin(angle)*length};
+      if(canTraverseExpedition(geometry,player,end,player.radius))return length;
+    }
+  }
+  return 12;
 }

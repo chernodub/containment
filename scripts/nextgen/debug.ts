@@ -15,7 +15,7 @@ import {enemyShotRadius} from '../../src/game/combat/enemyContact';
 import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
-import {BOT_NAVIGATION_VERSION,botWaypoint as observeBotWaypoint} from './playtest/bot-navigation';
+import {BOT_NAVIGATION_VERSION,botPursuitLookAhead,botWaypoint as observeBotWaypoint} from './playtest/bot-navigation';
 import {observeAbilityAims, type AimEnemy} from './playtest/ability-aim';
 import {BOT_POLICY_VERSION} from './playtest/bot-navigation-version.mjs';
 import {I5_ENCOUNTER_TUNING_ENABLED} from '../../src/game/roguelike/i5Tuning';
@@ -126,6 +126,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   get encounterTuningEnabled(){return I5_ENCOUNTER_TUNING_ENABLED;},
   get encounterGuardian(){return game.encounterGuardian;},
   /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
+  botPursuitLookAhead(target:{x:number;y:number}){return botPursuitLookAhead(game,target,90);},
   botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){

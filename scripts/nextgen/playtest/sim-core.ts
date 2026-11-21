@@ -25,7 +25,7 @@ import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
 import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
-import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
+import {botPursuitLookAhead,botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
 const TICK = 1000 / 60;
@@ -250,7 +250,7 @@ export function runSimulation(options: SimOptions) {
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
         const lookAhead = waypoint && !enemies.some(e => e.visible && e.clear)
-            ? Math.max(20, Math.min(90, distance(waypoint, game.player))) : 90;
+            ? botPursuitLookAhead(game,waypoint,90) : 90;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * lookAhead, y = game.player.y + dy / len * lookAhead;
@@ -403,7 +403,7 @@ export function runSimulation(options: SimOptions) {
         }
         if (target) screen = weaponScreen;
         input = readInput();
-        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible })), screen: { ...screen } });
+        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, objective: game.encounterObjective, siege: game.siege, encounter: game.encounter, remaining: game.encounterRemaining, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible, meleePhase: e.meleePhase, pendingAttack: e.pendingAttack, chargeMs: e.chargeMs })), screen: { ...screen } });
         advance(decision.stepMs);
         const progressStats = game.stats;
         const signature = `${Math.ceil((game.siege?.remainingMs??0)/1000)}:${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
@@ -422,7 +422,7 @@ export function runSimulation(options: SimOptions) {
     report.stats = game.stats;
     const finalState = snapshot();
     report.final = {...finalState, node: {...game.node}, status: game.status, phase: game.expedition.run.phase,
-        elapsed: game.elapsed, remaining: game.encounterRemaining, stats: game.stats, resources: game.combat.getRunResources(),
+        elapsed: game.elapsed, objective: game.encounterObjective, encounter: game.encounter, remaining: game.encounterRemaining, stats: game.stats, resources: game.combat.getRunResources(),
         reason: report.finalReason ?? report.outcome,
         noCombatProgressSeconds: game.elapsed - lastProgressElapsed,
         noCombatProgressOver45s: game.elapsed - lastProgressElapsed > 45,

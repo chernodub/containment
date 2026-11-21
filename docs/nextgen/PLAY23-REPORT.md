@@ -97,3 +97,20 @@ The native runner samples combat at 100 ms intervals. The sampled melee count in
 ## What remains weak
 
 Standard exceeded its requested clear ceiling by one. Both native rigs chose the near exposed bank, so the far covered route has staged capture evidence and still lacks a native choice in these two campaigns. The ranged slot releases when the shot fires and the shooter starts repositioning. The measurable wind-up limits and coverage come from two competent bot runs on one seed. Human recognition of the cue during sustained fire remains unmeasured.
+
+## Overload Floor stall investigation
+
+The traced reproduction at `ef4e8333` stalled with 19 clears after 45.1 simulated seconds without combat progress. The marine ended at approximately (702, 289), in the reaction-feed threshold. For 447 of 450 sampled inputs in the last 45 seconds the bot stood still, and for the other three it tried moving left. It never fired. The bot's waypoint was (496, 272), but its westward movement probe collided with the deck geometry.
+
+Five enemies were live. A Carrier at (375, 305), Brutes at (420, 496) and (374, 434), and Crawlers at (464, 457) and (471, 492) were all in approach with blocked shots. None held an attack token. The HUD said “Remove the brood leader before reinforcements” throughout the final 450 sampled decisions. The remaining count of 31 comprised the five live enemies, three child slots reserved by the Carrier, and 23 undispatched enemies in later beats. There were zero pending spawn slots and zero undispatched enemies in the active priority beat. No siege or bank was active. The remaining live enemies had to be reached before the relay beat. The pinned trace with these fields is `artifacts/nextgen/playtest/play23-stall-detail/breacher-512.json`.
+
+The three older result files have final snapshots and recent decisions. They lack full traces. Breacher 7 had two live enemies out of 28 remaining, Arc 11 had 12 out of 40, and Breacher 137 had 12 out of 46. Each marine stopped beside the same threshold, chose zero movement with no firing target, and had a blocked westward probe toward the reported waypoint. All three had no active siege and their live enemies were in approach.
+
+
+The marine could leave the threshold by rounding the reactor. A person remaining in the same blind pocket could see the same standstill, and the old objective gave little guidance about where to go. This was a bot navigation stall. There was no attack-token holder or relay activation blocking progress.
+
+The shared bot navigator now checks that it can walk directly to a long waypoint before using it. If that segment is blocked, it uses its finer navigation grid and shorter movement probes near corners. Simulation and native play use the same recovery. Overload Floor now says “Sweep around the reactor to reach the remaining attackers” when active enemies are all out of the firing lane outside a siege. Attack and relay rules are unchanged.
+
+Breacher 512, Arc 11, and Breacher 137 each cleared 20 sectors. Breacher 7 died in sector 16. The four twelve-seed Standard competent cohorts completed with zero stalls and 37 of 48 clears. Breacher cleared 6 of 12, Cryo 11, Pyro 9, and Arc 11. The measured results are under `artifacts/nextgen/playtest/play23-unstuck-{breacher,cryo,pyro,arc}/`. The separate 512 and 137 results are under `play23-unstuck-512` and `play23-unstuck-extra` in the same parent directory.
+
+The production build passed. Native Breacher 1729 cleared all 20 sectors with zero errors and zero runner diagnostics. Its report and trace are in `artifacts/nextgen/playtest/play23-unstuck-native/`.
