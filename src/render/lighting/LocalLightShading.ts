@@ -145,16 +145,17 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         // (a) top planes a clear step above sides; (b) sides darken toward the deck.
         // Pale finishes are already near the actor range; their top step comes mostly from darker sides.
         float paintAlbedo=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-        float paintLift=.62*(1.0-.75*smoothstep(.30,.70,paintAlbedo));
+        float paintLift=.55*(1.0-.8*smoothstep(.25,.60,paintAlbedo));
         paintValue=(1.0-.22*paintSide*paintContrast)*(1.0+paintLift*paintTop*paintContrast);
         paintValue*=1.0-.58*paintSide*(1.0-smoothstep(.0,.75,paintH));
         // Surfaces already lit toward the actor range take no lift, and a bright landmark comes down
         // a step under the actors: its paint carries the modelling, not raw exposure.
         float paintLit=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular+reflectedLight.indirectSpecular,vec3(.2126,.7152,.0722));
-        float paintHot=smoothstep(.12,.55,paintLit);
+        float paintHot=smoothstep(.08,.45,paintLit);
         paintValue=mix(paintValue,min(paintValue,1.0),paintHot);
         paintValue*=1.0-.32*max(paintLandmark,.7*paintTop)*paintHot;
-        paintValue*=1.0-.22*paintTop*paintHot*smoothstep(.45,.80,paintAlbedo);
+        // Pale, already-lit finishes never approach the actors: fight frames keep marine > creatures > landmark.
+        paintValue*=1.0-(.22*paintTop+.20)*paintHot*smoothstep(.30,.70,paintAlbedo);
         float paintPanel=1.0;
         if(surfacePaint.x>.5&&paintRaised>0.0){
           // (d) two-tone panelling: large running-bond cells per face axis, hashed to two tones.
