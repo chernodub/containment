@@ -166,7 +166,13 @@ class SystemPresentation implements AbilityPresentation {
       k.impact();
       for (let i = 0; i < Math.min(joints.length, k.low ? 2 : 4); i++) {
         const m = joints[i].matrixWorld.elements;
-        k.draw('shard', m[12], m[13], m[14], .065, height * .10, .045, ELEMENT_COLORS.cryo, .52, i, .46);
+        k.draw('shard', m[12], m[13], m[14], .09, height * .17, .065, ELEMENT_COLORS.cryo, .78, i, .46);
+      }
+      for (let i = 0; i < (k.low ? 2 : 4); i++) {
+        const t = k.reducedMotion ? .55 : (k.time * 1.6 + i * .31 + enemy.id * .13) % 1;
+        const a = enemy.id + i * 2.4;
+        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * .42 * (1 - t * t),
+          z + Math.sin(a) * radius * .8, .037, .063, .035, WHITE, Math.sin(t * Math.PI) * .78, a);
       }
       k.impact();
     }
@@ -248,7 +254,7 @@ class SystemPresentation implements AbilityPresentation {
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
     // One low foot shell complements actor-owned frost without encasing anatomy.
-    this.kit.iceShell(x, z, radius * .84, height, .055 + flash * .06);
+    this.kit.iceShell(x, z, radius * .84, height, .19 + flash * .09);
   }
 
   /** Chill stacks thicken the foot fringe; actor materials retain upper-body identity. */

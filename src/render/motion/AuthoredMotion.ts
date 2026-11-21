@@ -524,7 +524,10 @@ export class AuthoredEnemyMotion {
         this.previous = time;
         this.facing = aim;
         if (frozen) {
-            if (this.exposedIce && this.visible) this.player.sample('m10-death-frost', this.contactPose(this.elementAge,true), 1/60, .018, this.feedback);
+            if (this.visible && !winding && this.phase === 'approach') {
+                this.clearReaction();
+                this.player.sample('m10-run', .23, 0, 0);
+            }
             return true;
         }
         this.age += dt;

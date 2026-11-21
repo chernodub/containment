@@ -436,11 +436,11 @@ export class AttackEffects {
    }
   }
  }
- event(e:GameEffect,deathCue:DeathCue='none',targetFamily?:string){
+ event(e:GameEffect,deathCue:DeathCue='none',targetFamily?:string, frozenBody?:T.Vector3){
   if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
-  if(e.type==='corpse'){this.death(e,p,deathCue);return;}
+  if(e.type==='corpse'){this.death(e,p,deathCue,frozenBody);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
    const blocked=e.contact!=='damage',heavy=e.weapon==='shotgun'||e.weapon==='rocket'||!!e.lethal;
@@ -616,7 +616,7 @@ export class AttackEffects {
   }
  }
  /** Family-sized fragments follow the killing impulse, leaving the body readable. */
- private death(e:GameEffect,p:T.Vector3,cue:DeathCue){
+ private death(e:GameEffect,p:T.Vector3,cue:DeathCue,frozenBody?:T.Vector3){
   if(cue==='none')cue=e.elements?.includes('ice')?'frost':e.elements?.includes('fire')?'burn':e.elements?.includes('poison')?'acid':'none';
   const large=e.family==='brute'||e.family==='carrier';
   const baseCount=e.family===undefined||large?10:e.family==='spitter'?7:5;
@@ -628,10 +628,15 @@ export class AttackEffects {
   const color=cue==='frost'?0xa3eaf3:cue==='burn'?0xd98643:cue==='arc'?0xc6baff:cue==='acid'?0x79aa58:FAMILY_IDENTITY[e.family as keyof typeof FAMILY_IDENTITY]??0x7d8868;
   const reduced=this.options.reducedMotion?.45:1;
   p.y=e.family==='brute'?.55:e.family==='spitter'?.8:.4;
+  if(cue==='frost' && frozenBody)p.copy(frozenBody);
   for(let i=0;i<count;i++){
    const trailing=highImpulse&&i>=baseCount;
    const angle=trailing?direction+(i-baseCount-1)*.16:speed>.001?direction+(i-(baseCount-1)/2)*.37:i*Math.PI*2/baseCount;
    const v=new T.Vector3((Math.cos(angle)*.7+Math.cos(direction)*momentum)*reduced,(trailing?.35:cue==='frost'?.8:cue==='burn'?.35:1.1)*reduced, (Math.sin(angle)*.7+Math.sin(direction)*momentum)*reduced);
+   if(cue==='frost'){
+    const a=i*2.39996;
+    v.set(Math.cos(a)*2.7,.65+i%3*.45,Math.sin(a)*2.7).multiplyScalar(reduced);
+   }
    this.particle(this.debris,EFFECT_LIMITS.debris,p,color,cue==='frost'?.065:.025+(i%3)*.008,(cue==='frost'?.55:cue==='burn'?.35:.48)+(trailing?.12:0),v,9.8,cue==='frost'?2.6:1.7);
   }
   if(cue==='burn'){

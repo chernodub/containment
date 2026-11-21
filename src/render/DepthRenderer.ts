@@ -678,7 +678,10 @@ export class DepthRenderer {
   this.ragdolls.update(dt,p.x/UNIT,p.y/UNIT);if(this.ragdolls.has(-2147483648))this.player.syncWeaponPose?.(); // M10 falling hand keeps weapon socket
   for(const c of this.corpses){
    if(c.pendingEffect && (c.model.corpseEffectReady?.(c.age) ?? true)){
-    this.effects.event(c.pendingEffect,c.model.root.userData.motionDeathCue??'none');
+    const cue=c.model.root.userData.motionDeathCue??'none';
+    const origin=cue==='frost'?c.model.body.getWorldPosition(this.actorPoseBounds.center):undefined;
+    if(origin)origin.y=Math.max(origin.y,c.model.root.position.y+c.model.height*.42);
+    this.effects.event(c.pendingEffect,cue,undefined,origin);
     c.pendingEffect=undefined;
    }
    if(c.model.root.userData.broodPod && !c.podFall && c.age<.18 && game.broodInterruption){
