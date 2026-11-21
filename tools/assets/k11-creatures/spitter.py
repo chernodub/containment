@@ -132,5 +132,5 @@ def build(sk):
         elite.add(Plate(c + v3((0, 0, 0.75 * a)), (0.62, (1.8 - 0.25 * abs(i - 1)) * 0.62 * a, 0.12), frame(v3((1, 0, 0.3)), v3((0, 1, 0))), 0.08, rings=0.005, lip=0.02,   # CREATURE19: tall fins
                         chip=0.02, zone=BONE, bone="spine" if x < 0 else "spine1", plate=90 + i))
     for ph in (1.15, -1.15):   # CREATURE21: pale flank mantles beside the lime gland (seen from above)
-        elite.extend(A.rank_mantle(trunk_c, trunk_r, trunk_R, None, 0.05, scale=0.75, bone_fn=bf, phi=ph))
+        elite.extend(A.rank_mantle(trunk_c, trunk_r, trunk_R, None, 0.05, scale=1.15, bone_fn=bf, phi=ph * 0.9))   # CREATURE22
     return {"body": body, "elite": elite}

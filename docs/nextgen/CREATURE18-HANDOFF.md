@@ -232,3 +232,47 @@ Still weak:
 2. The Spitter elite's pale flank mantles are faint at 480×270. It still reads mostly by its taller gland and size.
    Amber-floor rooms (Freight Hold, Residential Gallery) were not captured in this pass, so the rim on warm floors
    was judged only on Crew Checkpoint and Relay Racks.
+
+## CREATURE22 — attack poses, Matron carapace
+Base `0b97db74`. Clip durations and key frames, bone names, colliders, reach and simulation are unchanged.
+
+- **Poses** (`tools/assets/m10-motion/enemy_actions.py`, wind-ups re-authored with
+  `blender -b -P tools/assets/m10-motion/enemy_actions.py -- --families=crawler,stalker,brute --clips=m10-windup`):
+  - Stalker: the neck and head thrust forward 0.30 W; the loaded scythe's shoulder rolls out (0.80) and its wrist is
+    drawn back and wide (1.38 W out, lower), opening a dark gap to the torso. The off wrist stays braced forward and low.
+  - Crawler: the striking foreleg is drawn wide (1.2 W) and back instead of high over the head; the head moves forward.
+  - Brute (also the Warden's charge wind-up, which samples the same clip by anticipation): the cleaver loads wide and
+    high (1.25 W out, 0.82 H up) with a gap under the arm; the head pitches down and forward. In the isolated strips
+    (`c22-final-motion2/*-attack.png`) the cleaver ends the load out to the side, clear of the crown.
+  - Wall stun (`--clips=m10-wall-stun`): the helm rests forward with less head drop, so the pale crown plates show from
+    above.
+  - Matron pod release: a new Carrier clip `m10-brood` (0.6 s: arched abdomen, lowered head, braced legs), sampled in
+    `models.ts` while her brood timer runs (presentation only).
+- **Matron mesh** (21,000 triangles): the sac skin is dark carapace, seven rows of segment plates sit clear of the
+  lumpy mass across the top and flanks, and the egg bulges are glowing sacs between them. From above it reads as a
+  dark ribbed abdomen with pink lights, not a pink cone. The FEEL19 pod stages still play
+  (`c22-final-matron/*pod-opening*`).
+- **Spitter elite:** flank mantles 1.15×. Still faint at 480×270.
+- **Brute death:** in the live boss room with ink on (`c22-final-bosses/*warden*-death.png`), the body falls as an
+  opaque shape with its limbs spread. The "pale smear" came from the isolated m9 strip, which renders without room
+  ink. No death change was needed.
+
+Evidence: `c22-before{,-pairs,-bosses,-matron,-motion}` (frozen `0b97db74` dist) vs
+`c22-final{,-pairs,-warden,-matron,-motion,-motion2}`. Run `i13-native.mjs` with one boss per invocation: with both
+cases in one run, the Matron frames came out as identical black 44 KB images on both builds.
+
+Measured:
+- Draws and triangles are identical in all three crowds and all five attacks. Three elite pairs show the recurring
+  80 → 81 draw, +2 triangle capture variance (reproduced at 81 on both builds in CREATURE20).
+- Per-caste triangle targets are unchanged.
+- Boss program counters are flat per case.
+- Breacher seed 1729, 4 rooms: 0 errors, programs flat per room (161/154/149/156).
+
+Still weak:
+1. The pose changes are real in the clip strips but modest in the shipped fixtures. The mixed Relay crowd fixture
+   holds its creatures in approach, not wind-up, so its frame cannot show whether the attacking end reads. The
+   Warden's captured charge frame is early in the anticipation, so it looks like before. The next pass needs a crowd
+   fixture with several creatures mid-wind-up, and larger key changes on the Stalker blade's own roll axis (the IK
+   moves the wrist, while the blade still points up).
+2. The Spitter elite remains faint at 480×270. Its lime gland dominates the silhouette, and the pale flank mantles sit
+   below it.

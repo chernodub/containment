@@ -272,8 +272,9 @@ class Creature:
         # centre can move around a planted blade without taking it along.
         H,W=self.height,self.width
         if action=='m10-windup':
-            keys=[(0, .10,-.20,.03, .01),(.29, .89,-.48,-.09,.28),
-                  (.63,.55,-.58,.58,.52), (1,.87,-.21,.65,.85)]
+            # CREATURE22: the cleaver loads wide and high, clear of the crown, leaving a dark gap under the arm
+            keys=[(0, .10,-.20,.03, .01),(.29, .95,-.48,-.02,.28),
+                  (.63,.95,-.50,.70,.52), (1,1.25,-.12,.82,.85)]
         elif action=='m10-strike':
             keys=[(0,.44,.71,-.17,-.48),(.28,.04,.82,-.64,-.83),
                   (.74,-.44,.62,-.90,-1),(1,-.52,.47,-.89,-.88)]
@@ -289,6 +290,10 @@ class Creature:
         self.move(self.center,-UP*H*sunk+SIDE*W*.055*twist)
         self.rotate('head',UP,-.60*twist)
         self.rotate('head',SIDE,.62*max(0,-twist))
+        if wind:   # CREATURE22: jaw forward and low under the raised cleaver
+            jaw=smooth(min(1,t/.6))
+            self.rotate('head',SIDE,.45*jaw)
+            self.move('head',FWD*W*.18*jaw-UP*H*.06*jaw)
         head=self.base_matrices['head'].translation
         for arm in self.arms:
             if arm['index']<0:
@@ -336,9 +341,11 @@ class Creature:
                 i=leg['index']
                 if i in (0,5):
                     lead=i==0
-                    targets[i]=leg['rest']+SIDE*W*(-.66 if lead else .24)*load+SIDE*W*(-.29 if lead else .09)*reach
-                    targets[i]+=FWD*W*((-.23 if lead else .11)*load+(.62 if lead else .04)*reach)
-                    targets[i]+=UP*H*((.88 if lead else .10)*load+.07*reach)
+                    # CREATURE22: the striking foreleg is drawn wide and back (a gap beside the shield), not over the head
+                    targets[i]=leg['rest']+SIDE*W*(-1.2 if lead else .24)*load+SIDE*W*(-.29 if lead else .09)*reach
+                    targets[i]+=FWD*W*((-.34 if lead else .14)*load+(.62 if lead else .04)*reach)
+                    targets[i]+=UP*H*((.55 if lead else .06)*load+.07*reach)
+            if load>0:self.move('head',FWD*W*.10*load)
         else:
             self.rotate('spine2',SIDE,-.52*load+.27*reach)
             self.rotate('head',SIDE,-.23*load)
@@ -375,6 +382,9 @@ class Creature:
         self.rotate(self.center,FWD,(-.20 if brute else .19)*load-.22*bury)
         self.move(self.center,-UP*H*((.23 if stalker else .12)*load+.18*bury)
                   -FWD*W*.043*load)
+        if stalker and wind:   # CREATURE22: head and leading plate thrust forward clear of the body
+            self.move('neck_hi',FWD*W*.30*load)
+            self.rotate('neck_lo',SIDE,.30*load)
         if stalker:
             self.squash(self.center,1-.20*load-.08*drive,1+.10*load,1-.09*load+.19*drive)
             self.rotate('big_butt',SIDE,-.33*load+.22*bury)
@@ -389,10 +399,11 @@ class Creature:
             lead=side<0
             if stalker:
                 if lead:arm=self.loaded_blade
-                self.rotate(arm['bones'][0],FWD,side*(.36*open_arm-.20*bury))
+                self.rotate(arm['bones'][0],FWD,side*((.80 if lead else .36)*open_arm-.20*bury))   # CREATURE22: loaded shoulder rolls out
                 # Swing the wrist away from the crown before raising the edge.
-                sweep=between(t,[(0,.26),(.32,.35),(.64,-.16),(1,-.29)]) if wind else 0
-                ready=head+FWD*W*(sweep if lead else .22)+SIDE*W*side*(1.13 if lead else .38)+UP*H*(.41 if lead else -.41)
+                sweep=between(t,[(0,.26),(.32,.30),(.64,-.30),(1,-.46)]) if wind else 0
+                # CREATURE22: the striking scythe is drawn back and wide, a dark gap between it and the torso
+                ready=head+FWD*W*(sweep if lead else .22)+SIDE*W*side*(1.38 if lead else .38)+UP*H*(.30 if lead else -.41)
                 contact=head+FWD*W*(1.02 if lead else .13)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
             elif brute:
                 ready=head-FWD*W*(.24 if lead else .11)+SIDE*W*side*(.61 if lead else .36)+UP*H*(.62 if lead else .12)
@@ -507,9 +518,11 @@ class Creature:
                     desired=arm['rest']+UP*H*.12+FWD*W*.09*math.sin(phase+arm['index']*math.pi/2)
                     self.solve(arm,desired)
         elif action=='m10-wall-stun':
-            self.move(self.center,-UP*H*.22)
-            self.rotate(self.center,SIDE,.32)
-            self.rotate('head',SIDE,.49)
+            # CREATURE22: the helm rests forward against the wall, crown up and visible from above
+            self.move(self.center,-UP*H*.18)
+            self.rotate(self.center,SIDE,.22)
+            self.rotate('head',SIDE,.12)
+            self.move('head',FWD*W*.12)
             head=self.base_matrices['head'].translation
             deck=min(leg['rest'].dot(UP) for leg in self.legs)
             for arm in self.arms:
@@ -520,6 +533,16 @@ class Creature:
             if self.family=='brute':self.cleaver(action,t,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
             else:self.commitment(action,t,targets)
+        elif self.family=='carrier' and action=='m10-brood':
+            # CREATURE22 Matron pod release: abdomen arches up, head lowers, legs brace wide
+            arch=between(t,[(0,0),(.35,1),(.8,1),(1,.85)])
+            self.rotate('tail',SIDE,.38*arch)
+            self.rotate('body.002',SIDE,.16*arch)
+            self.rotate('head',SIDE,.42*arch)
+            self.move(self.center,-UP*H*.08*arch)
+            for leg in self.legs:
+                i=leg['index'];side=-1 if i%2==0 else 1
+                targets[i]=leg['rest']+SIDE*W*side*.10*arch
         elif self.family=='carrier' and action=='m10-stagger':
             tip=between(t,[(0,0),(.12,.82),(.28,1),(.49,.91),(.73,.61),(.89,-.10),(1,0)])
             step=between(t,[(0,0),(.18,0),(.37,1),(.65,.85),(1,0)])
@@ -703,12 +726,15 @@ DURATIONS = {
     'm10-death-kinetic':.40,
     'm10-spawn':1.1,
 }
+FAMILY_CLIPS = {'carrier': {'m10-brood': .6}}   # CREATURE22: family-only clips
 
 
 def author(family, patterns=None):
     arm=import_rig(family)
     creature=Creature(arm,family)
     takes = {name: seconds for name,seconds in DURATIONS.items() if not patterns or any(fnmatchcase(name,p) for p in patterns)}
+    for name,seconds in FAMILY_CLIPS.get(family,{}).items():
+        if not patterns or any(fnmatchcase(name,p) for p in patterns):takes[name]=seconds
     if family=='brute' and (not patterns or any(fnmatchcase('m10-wall-stun',p) for p in patterns)):
         takes['m10-wall-stun']=.10
     if family in ('stalker','crawler','brute','carrier','spitter'):

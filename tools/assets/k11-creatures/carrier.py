@@ -196,25 +196,26 @@ def matron(sk, a, z, bf):
     # --- the brood: a huge swollen sac rising behind, veined, holding glowing shapes, with hatch vents
     sc, sr, sR = z(-5.6, 0, 11.6), v3((5.2, 4.5, 3.9 * a)), frame((1, 0, 0.45))
     sac_bone = ("blend", "tail", "tip", z(-2.0, 0, 10.0), z(-8.5, 0, 12.0))
-    m.add(A.mass(sc, sr, sR, bone=sac_bone, zone=MEMBRANE, lump=0.12, freq=0.45, seed=33, k=1.2))
+    m.add(A.mass(sc, sr, sR, bone=sac_bone, zone=ARMOR, lump=0.12, freq=0.45, seed=33, k=1.2))   # CREATURE22: opaque dark carapace
     m.add(A.mass(z(-2.6, 0, 9.2), (2.6, 2.8, 1.6 * a), None, bone=("blend", "body.002", "tail", z(-1.2, 0, 9), z(-3.5, 0, 10)),
                  zone=FLESH, lump=0.05, freq=0.6, seed=34, k=1.0))   # the neck of the brood, fused onto the thorax
     m.extend(A.shingles(sc, sr, sR, None, rows=2, phis=(1.7, 2.2), u0=0.75, u1=0.35, size=(1.6, 1.4, 0.6), thickness=0.45,
                         lift=0.35, rings=0.02, bone_fn=lambda u: sac_bone, seed=35, plate0=20))
     # CREATURE20: dark dorsal segment plates banding the swollen abdomen (tergites), plum skin bulging between them
-    for i, u in enumerate((0.66, 0.38, 0.1, -0.18, -0.46)):
-        for j, phi in enumerate((0.0, 0.62, -0.62)):
+    # CREATURE22: an opaque ribbed carapace: seven segment rows across the top and flanks, plum gaps between them
+    for i, u in enumerate((0.74, 0.52, 0.3, 0.08, -0.14, -0.36, -0.58)):
+        for j, phi in enumerate((0.0, 0.62, -0.62, 1.2, -1.2)):
             p, n = A.ellipsoid_surface(sc, sr, sR, u, phi)
             fwd = normalize(sR[:, 0] - n * float(sR[:, 0] @ n))
-            m.add(AnglePlate(p + n * 0.2, frame(-fwd, n), 1.35, 3.0 if j == 0 else 2.3, 0.5, keel=0.4, rake=0.35, taper=0.85,
-                             lift=0.35, zone=ARMOR, bone=sac_bone, plate=430 + i * 3 + j))
+            m.add(AnglePlate(p + n * 0.7, frame(-fwd, n), 1.05, 3.0 if j == 0 else 2.4, 0.5, keel=0.4, rake=0.35, taper=0.85,
+                             lift=0.35, zone=ARMOR, bone=sac_bone, plate=402 + i * 5 + j))
     rng = np.random.default_rng(37)
     for u, phi, r in [(0.45, 0.1, 1.5), (0.1, -0.55, 1.7), (0.1, 0.65, 1.6), (-0.3, 0.0, 1.8), (-0.35, -1.1, 1.4),
                       (-0.3, 1.15, 1.5), (0.35, -1.25, 1.2), (0.4, 1.3, 1.25), (-0.65, -0.5, 1.3), (-0.65, 0.55, 1.3), (-0.05, 1.7, 1.1),
                       (-0.05, -1.75, 1.1)]:
         p, n = A.ellipsoid_surface(sc, sr, sR, u, phi)
         c = p - n * r * 0.55
-        m.add(Ellipsoid(c, (r * 1.25, r, r * 1.05), frame(normalize(v3(rng.normal(size=3)) + n * 2), n), zone=MEMBRANE, bone=sac_bone, k=0.5))
+        m.add(Ellipsoid(c, (r * 1.25, r, r * 1.05), frame(normalize(v3(rng.normal(size=3)) + n * 2), n), zone=EYE, bone=sac_bone, k=0.5))   # glowing egg sacs
         MATRON_PODS.append((c, r * 0.62))
     for k in range(14):   # veins crawling over the sac
         u0, u1 = rng.uniform(0.3, 0.8), rng.uniform(-0.8, -0.2)
