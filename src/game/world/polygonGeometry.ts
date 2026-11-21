@@ -1,6 +1,24 @@
 import type {Point} from '../roguelike/types';
 export type PolygonTopology=Readonly<{boundary?:readonly Point[];voids?:readonly (readonly Point[])[]}>;
 const EPS=1e-8,EDGE_MARGIN=1e-4;
+type VoidBounds = Readonly<{minX:number;maxX:number;minY:number;maxY:number}>;
+const voidBoundsCache = new WeakMap<NonNullable<PolygonTopology['voids']>, readonly VoidBounds[] | null>();
+
+function getVoidBounds(voids: NonNullable<PolygonTopology['voids']>): readonly VoidBounds[] | null {
+ const cached = voidBoundsCache.get(voids);
+ if(cached!==undefined)return cached;
+ const immutable=Object.isFrozen(voids)&&voids.every(polygon=>Object.isFrozen(polygon)&&polygon.every(Object.isFrozen));
+ const bounds=immutable?voids.map(polygon=>{
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const p of polygon){
+   minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);
+   minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);
+  }
+  return {minX,maxX,minY,maxY};
+ }):null;
+ voidBoundsCache.set(voids,bounds);
+ return bounds;
+}
 function pointSegmentDistanceSquared(p:Point,a:Point,b:Point):number {
  const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy;
  const t=length?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/length)):0;
@@ -41,9 +59,17 @@ export function clearPolygonTopology(topology:PolygonTopology,from:Point,to:Poin
  if(!Number.isFinite(from.x)||!Number.isFinite(from.y)||!Number.isFinite(to.x)||!Number.isFinite(to.y)||!Number.isFinite(radius)||radius<0)return false;
  const same=from===to,boundary=topology.boundary,voids=topology.voids;
  if(boundary&&(!inside(from,boundary)||!same&&!inside(to,boundary)))return false;
- if(voids)for(const polygon of voids)if(inside(from,polygon)||!same&&inside(to,polygon))return false;
  const margin=radius+EDGE_MARGIN,minX=Math.min(from.x,to.x)-margin,maxX=Math.max(from.x,to.x)+margin,minY=Math.min(from.y,to.y)-margin,maxY=Math.max(from.y,to.y)+margin;
  if(boundary&&!clearEdges(boundary,from,to,radius,minX,maxX,minY,maxY))return false;
- if(voids)for(const polygon of voids)if(!clearEdges(polygon,from,to,radius,minX,maxX,minY,maxY))return false;
+ if(voids?.length){
+  const bounds=getVoidBounds(voids);
+  for(let i=0;i<voids.length;i++){
+   const box=bounds?.[i];
+   // The padded swept box also contains the endpoints' edge tolerance.
+   if(box&&(box.maxX<minX||box.minX>maxX||box.maxY<minY||box.minY>maxY))continue;
+   const polygon=voids[i];
+   if(inside(from,polygon)||!same&&inside(to,polygon)||!clearEdges(polygon,from,to,radius,minX,maxX,minY,maxY))return false;
+  }
+ }
  return true;
 }
