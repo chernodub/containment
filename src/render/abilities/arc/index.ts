@@ -259,22 +259,24 @@ class ArcPresentation implements AbilityPresentation {
         const actor = k.statusActor(d.victimId);
         const joint = actor && this.contactBones.get(actor.root);
         if (actor && d.terminal) {
-          const root = actor.root.position, h = actor.height;
-          const tip = joint?.matrixWorld.elements;
+          const root = actor.root.position, tip = joint?.matrixWorld.elements;
+          const radius = (frame.game?.enemies.snapshot.enemies.find(e => e.id === d.victimId)?.radius ?? 24) / UNIT;
           const dx = d.sx - root.x, dz = d.sz - root.z, length = Math.max(.001, Math.hypot(dx, dz));
-          const x = tip?.[12] ?? root.x + dx / length * h * .38;
-          const z = tip?.[14] ?? root.z + dz / length * h * .38;
-          const y = tip?.[13] ?? root.y + h * .44;
-          // The two tines climb out over the shell and meet at the struck limb.
-          // On a shell without an exposed joint, keep that contact on its incoming flank.
-          const crest = Math.max(y + .18, root.y + h * 1.08);
+          // Some attachment bones extend well outside the visible shell. Fit the
+          // fork to the native body envelope on the same side as the struck limb.
+          const jx = tip ? tip[12] - root.x : dx, jz = tip ? tip[14] - root.z : dz;
+          const jointLength = Math.max(.001, Math.hypot(jx, jz));
+          const x = root.x + jx / jointLength * radius * .77;
+          const z = root.z + jz / jointLength * radius * .77;
+          const y = root.y + Math.min(actor.height * .6, radius * 1.35);
+          const crest = y + radius * .73;
           const power = Math.min(1, fade * 3);
           k.impact();
           for (let side = -1; side <= 1; side += 2) {
-            const bx = x + (dx - side * dz) / length * h * .43;
-            const bz = z + (dz + side * dx) / length * h * .43;
-            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .095, power, false);
-            k.boltCard(bx, crest, bz, x, y + .08, z, .095, d.seed + side, power, WHITE);
+            const bx = x + (dx - side * dz) / length * radius * .42;
+            const bz = z + (dz + side * dx) / length * radius * .42;
+            k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .06, power, false);
+            k.boltCard(bx, crest, bz, x, y + .08, z, .048, d.seed + side, power, WHITE);
           }
           k.sprite('spark', x, y + .12, z, .16, .22, WHITE, power, d.seed, 'light');
           k.sustain(d.age - d.delay);
