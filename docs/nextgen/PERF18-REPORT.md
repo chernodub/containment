@@ -360,3 +360,130 @@ The production build passed. Pyro cleared all four requested rooms on seed 1729 
 Safety-interlock High remained over 5% in all Breacher and Pyro trials and one Cryo trial. Pyro finished at 7.77–10.78% and 25.0 ms p95, with 21.8–23.5 ms CPU p95. That CPU tail leaves room for additional gains even if GPU shading gets cheaper. The runs establish a reduction in repeated misses, with further work needed to close the heaviest case. Low's final 18.0 ms median p95 and 2.37% median late share compare with 17.9 ms and 1.94% in PERF18's longer trials. All final Low trials met the 5% target. The High light capacity and FXAA changes do not apply to Low.
 
 [Pyro ablations](../../artifacts/nextgen/perf19/ablation-pyro/benchmark.json) · [Arc ablations](../../artifacts/nextgen/perf19/ablation-arc/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf19/final/benchmark.json) · [Matched frames](../../artifacts/nextgen/perf19/pairs) · [Pyro playtest](../../artifacts/nextgen/perf19/playtest-pyro/report.json)
+
+## PERF22
+
+### Attribution
+
+The baseline freezes 8500276f. All combat measurements use the M1 Pro at 1920×1080 with 15-second trials. Safety-interlock Pyro reproduced 7.48–9.58% frames over 20 ms. Safety-interlock Arc reproduced 6.08–9.09%. Two Transmission Low rows that crossed load 4 were repeated. The table shows full High immediately before each ablation. Savings are percentage points of the frame distribution.
+
+| Ablation | Pair | Full load | Full >20 ms | Off load | Off >20 ms | Saving (pp) |
+| --- | ---: | --- | ---: | --- | ---: | ---: |
+| surfacePaint | 1 | 3.39 → 2.68 | 9.23% | 2.68 → 2.66 | 10.98% | -1.76 |
+| inkWear | 1 | 2.66 → 2.46 | 9.02% | 2.46 → 2.42 | 9.17% | -0.15 |
+| prioritySampling | 1 | 2.42 → 2.40 | 10.89% | 2.40 → 2.44 | 9.27% | +1.61 |
+| flameSprites | 1 | 2.44 → 2.74 | 8.30% | 2.74 → 2.77 | 11.56% | -3.26 |
+| floorSkins | 1 | 2.77 → 2.94 | 10.12% | 2.94 → 2.36 | 9.12% | +1.00 |
+| surfacePaint | 2 | 2.36 → 2.17 | 7.69% | 2.17 → 2.33 | 10.06% | -2.37 |
+| inkWear | 2 | 2.33 → 2.72 | 12.68% | 2.72 → 3.31 | 9.99% | +2.69 |
+| prioritySampling | 2 | 3.31 → 3.21 | 13.47% | 3.21 → 4.44 | 9.51% | +3.96 (load miss) |
+| flameSprites | 2 | 3.80 → 3.53 | 13.98% | 3.53 → 3.59 | 8.30% | +5.67 |
+| floorSkins | 2 | 3.59 → 3.20 | 7.96% | 3.20 → 3.51 | 8.94% | -0.98 |
+| prioritySampling | 1 | 2.29 → 2.59 | 8.97% | 2.59 → 2.86 | 9.46% | -0.50 |
+| prioritySampling | 2 | 2.86 → 2.78 | 8.56% | 2.78 → 3.17 | 11.92% | -3.36 |
+
+Paint removal made the tail worse in both pairs. The ink-wear, flame-batch and floor-skin results changed sign. Mask sampling removal also changed sign across quiet repeats. It disables mask sampling and its alpha yield together, while keeping the CPU raster active, so the result includes any change in overdraw. Flame removal hides the instanced flame draw, leaving shared ember sparks and procedural floor fire active. Floor-skin removal targets the named deck wear, service lane and threshold overlays.
+
+Baseline High Safety-interlock Pyro update p95 was 10.6–13.0 ms, versus 5.6–6.1 ms for Arc. An instrumented Pyro run at load 2.84 → 2.44 found the most frequent application leaf samples in the polygon containment and traversal code. The minified profile was attributed by matching its generated offsets to the preserved bundle. Gameplay update time rose on Pyro in both tiers. The ablation pairs did not isolate a repeatable render saving, so the first production change targets redundant collision-query work without changing the predicates.
+
+### Changes
+
+Traversal now checks continuous polygon clearance once instead of separately checking polygon clearance at each endpoint and again for the sweep. A swept bounding box rejects distant rectangular blockers before their existing exact endpoint, slab and corner tests. Immutable void polygons also reuse their bounds to reject disjoint sweeps before containment or edge work. Mutable topology still uses the exact polygon path. These queries preserve continuous concave geometry, endpoint clearance and tangency without changing collision shapes.
+
+In two isolated Safety-interlock Pyro screening trials, the traversal change alone measured 8.35% and 8.97% above 20 ms at loads 2.34 → 2.11 and 2.11 → 2.02. With the void bounds added, the same two observations were 8.26% and 7.15% at loads 2.22 → 1.99 and 1.99 → 2.09. CPU p95 fell from 20.20–20.90 ms to 19.10–20.10 ms in these separate live runs.
+
+### Final combat and warm preparation
+
+Both matrices used the same 15-second production command, with two repeats per room, rig and tier. The final table substitutes quiet reruns for the two baseline Transmission Arc Low rows and the after Safety-interlock Arc High second row that exceeded load 4. The original measurements remain in the raw logs. Draws are peaks and compiles are combat program creations.
+
+| Room | Rig | Tier | Repeat | Before load | Before >20 | Before p95 ms | Before update p95 | Before draws / compiles | After load | After >20 | After p95 ms | After update p95 | After draws / compiles |
+| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| safety-interlock-station | pyro | high | 1 | 2.18 → 3.02 | 9.58% | 25.00 | 13.00 | 306 / 0 | 1.89 → 2.10 | 7.98% | 25.00 | 6.90 | 296 / 0 |
+| safety-interlock-station | pyro | high | 2 | 3.02 → 2.99 | 7.48% | 25.00 | 10.60 | 297 / 0 | 2.10 → 2.76 | 11.59% | 25.10 | 7.60 | 292 / 0 |
+| safety-interlock-station | pyro | low | 1 | 2.99 → 2.43 | 3.70% | 18.10 | 10.80 | 285 / 0 | 2.76 → 3.23 | 1.67% | 17.70 | 3.70 | 290 / 0 |
+| safety-interlock-station | pyro | low | 2 | 2.43 → 2.43 | 3.49% | 18.00 | 10.50 | 289 / 0 | 3.23 → 2.72 | 1.44% | 18.00 | 4.20 | 296 / 0 |
+| safety-interlock-station | arc | high | 1 | 2.43 → 2.80 | 6.08% | 25.00 | 5.60 | 279 / 0 | 2.72 → 2.67 | 4.51% | 18.30 | 2.50 | 288 / 0 |
+| safety-interlock-station | arc | high | 2 | 2.80 → 2.84 | 9.09% | 25.00 | 6.10 | 304 / 0 | 1.84 → 2.32 | 5.22% | 23.60 | 2.30 | 292 / 0 |
+| safety-interlock-station | arc | low | 1 | 2.84 → 2.97 | 2.25% | 17.80 | 6.10 | 279 / 0 | 3.51 → 3.17 | 1.69% | 17.80 | 2.60 | 275 / 0 |
+| safety-interlock-station | arc | low | 2 | 2.97 → 2.36 | 2.01% | 18.00 | 6.10 | 282 / 0 | 3.17 → 2.86 | 1.55% | 17.70 | 2.50 | 279 / 0 |
+| transmission-chamber | pyro | high | 1 | 2.36 → 2.26 | 5.11% | 23.50 | 11.40 | 165 / 0 | 2.86 → 3.14 | 4.64% | 18.20 | 8.80 | 166 / 0 |
+| transmission-chamber | pyro | high | 2 | 2.26 → 2.80 | 7.19% | 24.90 | 8.90 | 164 / 0 | 3.14 → 2.92 | 3.49% | 18.10 | 9.50 | 169 / 0 |
+| transmission-chamber | pyro | low | 1 | 2.80 → 2.42 | 1.57% | 17.90 | 12.10 | 149 / 0 | 2.92 → 2.53 | 1.32% | 17.80 | 11.60 | 146 / 0 |
+| transmission-chamber | pyro | low | 2 | 2.42 → 2.72 | 1.44% | 18.00 | 10.80 | 149 / 0 | 2.53 → 2.36 | 1.44% | 17.70 | 11.70 | 152 / 0 |
+| transmission-chamber | arc | high | 1 | 2.72 → 3.87 | 5.35% | 24.70 | 4.00 | 161 / 0 | 2.36 → 2.29 | 3.84% | 18.20 | 2.60 | 160 / 0 |
+| transmission-chamber | arc | high | 2 | 3.87 → 3.66 | 4.10% | 18.20 | 3.80 | 161 / 0 | 2.29 → 1.97 | 4.83% | 18.50 | 3.40 | 163 / 0 |
+| transmission-chamber | arc | low | 1 | 2.88 → 2.96 | 2.04% | 17.90 | 3.70 | 149 / 0 | 1.97 → 2.20 | 1.56% | 17.70 | 2.60 | 149 / 0 |
+| transmission-chamber | arc | low | 2 | 2.96 → 2.91 | 2.04% | 17.90 | 3.90 | 149 / 0 | 2.20 → 2.03 | 1.80% | 18.20 | 2.80 | 149 / 0 |
+
+| Warm revisit | Before load | Before hold | After load | After hold |
+| --- | --- | ---: | --- | ---: |
+| Safety-interlock Station | 2.41 → 2.37 | 1,176.9 ms | 1.95 → 1.95 | 1,174.4 ms |
+| Transmission Chamber | 2.37 → 2.37 | 1,240.6 ms | 1.95 → 1.95 | 1,251.3 ms |
+
+Transmission's warm hold was 10.7 ms longer in the single matched revisit. Both rooms retained the same program inventory and recorded zero combat compiles. This comparison does not establish a repeatable loading change.
+
+Safety-interlock Pyro still missed 7% in both repeats. Its CPU p95 improved from 21.1–22.3 ms to 19.4–19.9 ms, while its frame p95 remained about 25 ms. Transmission's four High trials came in below 5%. Low stayed under 2% in all eight final trials. The maximum after draw count was below 330, with zero combat compiles.
+
+### Native visual and campaign verification
+
+Both builds produced all 22 requested 1920×1080 frames with adaptive resolution held fixed. The Armory incident fixture stages the marine in a legal gap facing the carousel using the normal gameplay camera. The native side-by-sides and 480×270 panels show no visible change to the painted surfaces, floor markings, warning yield, or fire effects. Ten pairs are byte-identical. The other twelve differ by at most three decoded pixels per image. One Relay Racks pixel differs by ten channel values, and the other changed pixels differ by at most one.
+
+The production build passed. The native fast Pyro run on seed 1729 cleared twelve rooms with zero errors, through Safety-interlock Station. Its Safety-interlock hold was 922 ms at load 2.43 → 2.43.
+
+The remaining frame target is concentrated in Safety-interlock High. Pyro still exceeded 20 ms in 7.98% and 11.59% of frames, and one quiet Arc run reached 5.22%. High stayed at or above 0.90 adaptive scale and the final peak was 296 draws. The work reduced update cost without a reproducible Pyro frame-tail improvement in this room. Arc made no soft-depth copies, while Pyro demanded one on essentially every rendered frame. That establishes a workload difference, with no isolated timing attribution for the residual GPU cost.
+
+[Baseline matrix](../../artifacts/nextgen/perf22/before/benchmark.json) · [Ablations](../../artifacts/nextgen/perf22/ablation/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf22/after/benchmark.json) · [Matched native frames](../../artifacts/nextgen/perf22/pairs) · [Pyro campaign](../../artifacts/nextgen/perf22/playtest-pyro/report.json)
+
+### Exactness follow-up and baseline provenance
+
+Breacher seed 7 ran the baseline and optimized collision routines on the same inputs. It found zero differences in 7,149,109 calls. Both builds finish that seed with 18 clears. There is no differing collision input to report from that run.
+
+The questioned totals match the PLAY22 column in the historical report. The authoritative rerun pins game source to `8500276f` and reads the matching actor models. Between PLAY22's `b72b4341` and `8500276f`, the Spitter and Carrier GLBs changed, while the simulator and game source stayed the same. The headless observer reads actor dimensions from those files and uses them for HUD contact framing and pointer hit proxies. Changing only the model input to the older revision in a scratch copy of the runner restored Breacher seeds 256 and 4096 from 11 clears to 20 on the same `8500276f` game code. The observed height inputs changed from 1.72805 to 1.72663 for Spitter and 2.36983 to 2.35819 for Carrier. This reproduces an outcome difference independently of the collision optimization.
+
+[Historical model replay](../../artifacts/nextgen/perf22/exact/old-model.log) · [Actor metrics](../../artifacts/nextgen/perf22/exact/model-metrics.json) · [PLAY22 cohort](PLAY22-REPORT.md)
+
+### Full-cohort collision parity
+
+The temporary dual-call harness compared the return values from the checked-in fast path and the `8500276f` functions for every observed query. The stock runner separately ran the pinned baseline. Both used twelve Standard competent seeds per rig, the same policy and the same current model inputs. All 48 run reports match on gameplay fields, including per-room records, weapon use, deaths and final state. The compared fields exclude wall-clock duration and source provenance.
+
+The harness recorded zero mismatches in 333,869,786 comparisons. This includes 193,922,155 polygon sweeps, 36,258,751 point-occupancy queries, 82,493,358 traversal queries and 21,195,522 line-of-sight queries. Each comparison calls both implementations with the same input objects, including shared endpoint identity for point sweeps. The harness stays outside tracked source. The collision fast path is retained as measured.
+
+| Rig | Completed on both builds | Clears before each death, in seed order |
+| --- | ---: | --- |
+| Breacher | 6/12 | 18, 18, 11, 19, 11, 18 |
+| Cryo | 11/12 | 13 |
+| Pyro | 10/12 | 14, 10 |
+| Arc | 11/12 | 15 |
+
+[Parity totals](../../artifacts/nextgen/perf22/exact/parity.json) · [Pinned baseline](../../artifacts/nextgen/playtest/perf22-exact-base/summary.json) · [Dual-call cohort](../../artifacts/nextgen/playtest/perf22-search-diff/summary.json)
+
+### Quiet remeasurement of the verified fast path
+
+The 16 after trials use a new production build with the verified collision code and the same 1920×1080, 15-second benchmark settings. The baseline column uses the original quiet PERF22 baseline, including its two quiet Low replacements. One new Transmission Pyro Low trial finished at load 7.62 and was replaced by its quiet rerun. The table records one-minute load at both ends of each accepted measurement.
+
+| Room | Rig | Tier | Repeat | Before load | Before >20 | Before p95 ms | Before update p95 | Before draws / compiles | After load | After >20 | After p95 ms | After update p95 | After draws / compiles |
+| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| safety-interlock-station | pyro | high | 1 | 2.18 → 3.02 | 9.58% | 25.00 | 13.00 | 306 / 0 | 2.03 → 2.37 | 10.09% | 25.00 | 9.80 | 300 / 0 |
+| safety-interlock-station | pyro | high | 2 | 3.02 → 2.99 | 7.48% | 25.00 | 10.60 | 297 / 0 | 2.37 → 2.20 | 8.77% | 25.00 | 4.40 | 301 / 0 |
+| safety-interlock-station | pyro | low | 1 | 2.99 → 2.43 | 3.70% | 18.10 | 10.80 | 285 / 0 | 2.20 → 2.57 | 1.79% | 17.90 | 3.50 | 295 / 0 |
+| safety-interlock-station | pyro | low | 2 | 2.43 → 2.43 | 3.49% | 18.00 | 10.50 | 289 / 0 | 2.57 → 2.61 | 1.80% | 17.90 | 8.70 | 281 / 0 |
+| safety-interlock-station | arc | high | 1 | 2.43 → 2.80 | 6.08% | 25.00 | 5.60 | 279 / 0 | 2.61 → 3.48 | 7.73% | 25.00 | 2.60 | 303 / 0 |
+| safety-interlock-station | arc | high | 2 | 2.80 → 2.84 | 9.09% | 25.00 | 6.10 | 304 / 0 | 3.48 → 3.05 | 6.71% | 24.90 | 2.40 | 279 / 0 |
+| safety-interlock-station | arc | low | 1 | 2.84 → 2.97 | 2.25% | 17.80 | 6.10 | 279 / 0 | 3.05 → 3.14 | 1.66% | 18.00 | 2.60 | 282 / 0 |
+| safety-interlock-station | arc | low | 2 | 2.97 → 2.36 | 2.01% | 18.00 | 6.10 | 282 / 0 | 3.14 → 2.85 | 1.90% | 17.70 | 3.40 | 275 / 0 |
+| transmission-chamber | pyro | high | 1 | 2.36 → 2.26 | 5.11% | 23.50 | 11.40 | 165 / 0 | 2.85 → 2.96 | 6.78% | 24.90 | 8.90 | 176 / 0 |
+| transmission-chamber | pyro | high | 2 | 2.26 → 2.80 | 7.19% | 24.90 | 8.90 | 164 / 0 | 2.96 → 2.87 | 6.24% | 24.80 | 7.30 | 172 / 0 |
+| transmission-chamber | pyro | low | 1 | 2.80 → 2.42 | 1.57% | 17.90 | 12.10 | 149 / 0 | 2.87 → 3.05 | 2.03% | 18.20 | 12.20 | 156 / 0 |
+| transmission-chamber | pyro | low | 2 | 2.42 → 2.72 | 1.44% | 18.00 | 10.80 | 149 / 0 | 3.14 → 3.27 | 36.04% | 33.80 | 12.50 | 146 / 0 |
+| transmission-chamber | arc | high | 1 | 2.72 → 3.87 | 5.35% | 24.70 | 4.00 | 161 / 0 | 3.58 → 3.15 | 3.84% | 18.20 | 3.60 | 163 / 0 |
+| transmission-chamber | arc | high | 2 | 3.87 → 3.66 | 4.10% | 18.20 | 3.80 | 161 / 0 | 3.15 → 2.86 | 2.60% | 18.10 | 2.80 | 161 / 0 |
+| transmission-chamber | arc | low | 1 | 2.88 → 2.96 | 2.04% | 17.90 | 3.70 | 149 / 0 | 2.86 → 3.27 | 1.68% | 18.00 | 2.40 | 149 / 0 |
+| transmission-chamber | arc | low | 2 | 2.96 → 2.91 | 2.04% | 17.90 | 3.90 | 149 / 0 | 3.27 → 2.80 | 1.80% | 17.90 | 3.80 | 149 / 0 |
+
+The first Low replacement passed the load cutoff but produced a 36.04% tail at load 3.14 → 3.27. It stays in the table. Two confirmation trials on the same build measured 1.46% at 2.80 → 2.65 and 1.20% at 2.65 → 3.32, both at 17.70 ms p95. The isolated result did not reproduce and its cause is unresolved. The final matrix peaked at 303 draws and had zero combat compiles.
+
+The build passed, and the repeated fast native Pyro run on seed 1729 cleared all twelve rooms with zero errors. Safety-interlock Pyro still records 8.77–10.09% of frames above 20 ms and 25.0 ms frame p95, despite update p95 dropping from 10.6–13.0 ms to 4.4–9.8 ms. Frame p50 held at 16.7 ms and the combat program count stayed flat. Safety-interlock Arc and Transmission Pyro also missed the late-share goal in this rerun.
+
+The remaining Safety-interlock Pyro pattern is consistent with expensive High GPU rendering at the adaptive floor of 0.90. At the two loads in the table, the combined main-thread p95 was 20.8 and 18.8 ms while raw GPU query medians were 49.26 and 47.49 ms. The GPU values reflect queue scheduling as well as execution and cannot isolate fill, soft-depth copies, or another individual pass. The quiet ablations did not justify removing any of the reviewed art. The cheapest next candidate is a lower High internal-resolution floor in this room class during sustained misses. That would trade some sharpness and needs its own matched screenshots and timing run. Accepting this room's residual tail preserves the current presentation.
+
+[Exact-path remeasurement](../../artifacts/nextgen/perf22/exact/final/benchmark.json) · [Quiet Low replacement](../../artifacts/nextgen/perf22/exact/final-low-retry/benchmark.json) · [Low confirmation trials](../../artifacts/nextgen/perf22/exact/final-low-check/benchmark.json) · [Repeated Pyro campaign](../../artifacts/nextgen/playtest/perf22-exact-pyro/report.json)

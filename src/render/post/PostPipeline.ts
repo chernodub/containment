@@ -93,6 +93,7 @@ export class PostPipeline {
     this.styleStrength=value;setGraphicStrength(value);
     if(this.resources){this.resources.composite.uniforms.inkStyle.value.fromArray(INK_STRENGTHS[value]);this.resources.composite.uniforms.inkStrength.value=value==='bold'?1:value==='medium'?.5:0;}
   }
+  diagnosticInkWear = true;
   diagnosticFinalAA = true;
   diagnosticSoftDepth = true;
   private options: GraphicsOptions = GRAPHICS_PRESETS.low;
@@ -315,7 +316,7 @@ export class PostPipeline {
       u.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       u.cameraWorld.value.copy(this.camera.matrixWorld);
       u.time.value = this.time;
-      u.inkWear.value=this.tier==='high'?1:0;
+      u.inkWear.value=this.tier==='high'&&this.diagnosticInkWear?1:0;
       u.inkMode.value=this.options.inkOutlines==='off'?0:this.options.inkOutlines==='silhouette'?1:2;
       u.aoEnabled.value = this.tier==='high'&&this.options.ambientOcclusion ? 1 : 0;
       u.bloomEnabled.value = this.tier==='high'&&this.options.bloom ? 1 : 0;

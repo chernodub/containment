@@ -52,15 +52,21 @@ export function createRoomTemplateGeometry(template:RoomTemplate,nodeId:string):
 
 export function canOccupyExpedition(geometry: ExpeditionGeometry, point: Point, radius: number): boolean {
   if (!Number.isFinite(point.x)||!Number.isFinite(point.y)||!Number.isFinite(radius)||radius < 0) return false;
+  if (!fitsBounds(geometry.bounds, point, radius)) return false;
   if (!clearPolygonTopology(geometry,point,point,radius)) return false;
-  const bounds = geometry.bounds;
-  if (point.x - radius < bounds.x || point.y - radius < bounds.y
-    || point.x + radius > bounds.x + bounds.width || point.y + radius > bounds.y + bounds.height) return false;
-  for(const rect of geometry.blockers){
-    const dx = point.x - Math.max(rect.x, Math.min(rect.x + rect.width, point.x));
-    const dy = point.y - Math.max(rect.y, Math.min(rect.y + rect.height, point.y));
-    if(radius===0?dx===0&&dy===0:dx*dx+dy*dy<radius*radius)return false;
-  }return true;
+  const radiusSquared = radius * radius;
+  return geometry.blockers.every(rect => !overlapsBlocker(point, rect, radius, radiusSquared));
+}
+
+function fitsBounds(bounds: Rect, point: Point, radius: number): boolean {
+  return point.x - radius >= bounds.x && point.y - radius >= bounds.y
+    && point.x + radius <= bounds.x + bounds.width && point.y + radius <= bounds.y + bounds.height;
+}
+
+function overlapsBlocker(point: Point, rect: Rect, radius: number, radiusSquared: number): boolean {
+  const dx = point.x - Math.max(rect.x, Math.min(rect.x + rect.width, point.x));
+  const dy = point.y - Math.max(rect.y, Math.min(rect.y + rect.height, point.y));
+  return radius === 0 ? dx === 0 && dy === 0 : dx * dx + dy * dy < radiusSquared;
 }
 
 export function hasClearExpeditionShot(geometry: ExpeditionGeometry, from: Point, to: Point): boolean {
@@ -73,22 +79,28 @@ export function hasClearExpeditionShot(geometry: ExpeditionGeometry, from: Point
 }
 
 export function canTraverseExpedition(geometry: ExpeditionGeometry, from: Point, to: Point, radius: number): boolean {
-  return canOccupyExpedition(geometry,from,radius) && canOccupyExpedition(geometry,to,radius)
-    && clearPolygonTopology(geometry,from,to,radius)
-    && geometry.blockers.every(rect => {
-      if (segmentIntersectsRect(from, to, rect)) return false;
-      // Endpoints are clear above. For a disjoint segment and rectangle, the
-      // remaining closest pair is a rectangle corner projected onto the segment.
-      // Unlike square AABB expansion, this preserves rounded corners and tangency.
-      const dx = to.x - from.x, dy = to.y - from.y, lengthSquared = dx * dx + dy * dy;
-      for (let corner = 0; corner < 4; corner++) {
-        const x = rect.x + (corner % 2) * rect.width;
-        const y = rect.y + Math.floor(corner / 2) * rect.height;
-        const t = lengthSquared ? Math.max(0, Math.min(1, ((x - from.x) * dx + (y - from.y) * dy) / lengthSquared)) : 0;
-        if ((x - from.x - t * dx) ** 2 + (y - from.y - t * dy) ** 2 < radius * radius) return false;
-      }
-      return true;
-    });
+  if (!fitsBounds(geometry.bounds, from, radius) || !fitsBounds(geometry.bounds, to, radius)) return false;
+  // The continuous polygon query already checks both endpoints and includes
+  // their distances to each nearby edge.
+  if (!clearPolygonTopology(geometry, from, to, radius)) return false;
+  const minX = Math.min(from.x, to.x) - radius, maxX = Math.max(from.x, to.x) + radius;
+  const minY = Math.min(from.y, to.y) - radius, maxY = Math.max(from.y, to.y) + radius;
+  const dx = to.x - from.x, dy = to.y - from.y, lengthSquared = dx * dx + dy * dy;
+  const radiusSquared = radius * radius;
+  for (const rect of geometry.blockers) {
+    if (rect.x + rect.width < minX || rect.x > maxX || rect.y + rect.height < minY || rect.y > maxY) continue;
+    if (overlapsBlocker(from, rect, radius, radiusSquared) || overlapsBlocker(to, rect, radius, radiusSquared)
+      || segmentIntersectsRect(from, to, rect)) return false;
+    // With clear endpoints, the remaining closest pair is a rectangle corner
+    // projected onto the sweep. This preserves rounded corners and tangency.
+    for (let corner = 0; corner < 4; corner++) {
+      const x = rect.x + (corner % 2) * rect.width;
+      const y = rect.y + Math.floor(corner / 2) * rect.height;
+      const t = lengthSquared ? Math.max(0, Math.min(1, ((x - from.x) * dx + (y - from.y) * dy) / lengthSquared)) : 0;
+      if ((x - from.x - t * dx) ** 2 + (y - from.y - t * dy) ** 2 < radiusSquared) return false;
+    }
+  }
+  return true;
 }
 
 export function expeditionTemplate(node: RunNode): RoomTemplate {

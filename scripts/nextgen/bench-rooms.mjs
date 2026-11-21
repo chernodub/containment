@@ -12,6 +12,7 @@ const args = process.argv.slice(2);
 const option = (name, fallback) => args.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
 const allRooms = ['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor','reactor-vault'];
 const rooms = option('rooms', allRooms.join(',')).split(',');
+const loadLimit = Number(option('load-limit', '0'));
 assert(rooms.every(r => allRooms.includes(r)), 'Unknown room');
 const label = option('label', 'p1-rooms');
 assert(/^[\w.-]+$/.test(label));
@@ -96,6 +97,14 @@ try {
         },allRooms[allRooms.indexOf(room)-1]);
       }
       const visitingAgain=mode==='revisit'&&report.rows.some(row=>row.mode==='revisit-prime'&&row.room===room);
+      if (loadLimit > 0) {
+        console.log(execFileSync('uptime', {encoding:'utf8'}).trim());
+        while (loadavg()[0] > loadLimit) {
+          console.log(`One-minute load above ${loadLimit}. Waiting 15 seconds.`);
+          await new Promise(resolve => setTimeout(resolve, 15000));
+          console.log(execFileSync('uptime', {encoding:'utf8'}).trim());
+        }
+      }
       const before = host();
       const row = await page.evaluate(async ({room,mode}) => {
         const d=window.__containmentDebug,r=d.renderer,a=window.__roomAudit;

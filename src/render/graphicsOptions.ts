@@ -11,7 +11,7 @@ import type { GraphicsTier } from './FrameBudget';
 export type ShadowQuality = 'off' | 'low' | 'high';
 export type InkOutlines = 'off' | 'silhouette' | 'full';
 
-export const GRAPHICS_ABLATIONS = ['finalAA', 'softDepth', 'atmosphereLayers', 'halfLightPool', 'contacts', 'silhouette', 'prioritySampling', 'floorResidues', 'conditions', 'adaptive80'] as const;
+export const GRAPHICS_ABLATIONS = ['finalAA', 'softDepth', 'atmosphereLayers', 'halfLightPool', 'contacts', 'silhouette', 'prioritySampling', 'floorResidues', 'conditions', 'adaptive80', 'surfacePaint', 'inkWear'] as const;
 export type GraphicsAblation = typeof GRAPHICS_ABLATIONS[number];
 
 /** Debug-only measurement selector. Never part of persisted player settings. */

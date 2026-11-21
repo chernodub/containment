@@ -184,10 +184,13 @@ const out=resolve(option('out',resolve('artifacts/nextgen',label))), dist=resolv
 const requestedAblation = option('ablation', '');
 const graphicsAblations = { ao: { ambientOcclusion: false }, bloom: { bloom: false }, distortion: { distortion: false } };
 const ablationFeatures = [...Object.keys(graphicsAblations), 'finalAA', 'softDepth', 'atmosphereLayers', 'halfLightPool', 'contacts', 'silhouette', 'prioritySampling', 'floorResidues', 'conditions', 'adaptive80'];
-const ablationSequence = requestedAblation === 'matrix' ? ablationFeatures.flatMap(feature => ['full', feature]) : [requestedAblation];
+const surfaceAblations = ['surfacePaint', 'inkWear', 'prioritySampling', 'flameSprites', 'floorSkins'];
+const loadLimit = Number(option('load-limit', '6'));
+assert(Number.isFinite(loadLimit) && loadLimit > 0);
+const ablationSequence = requestedAblation === 'surface-matrix' ? surfaceAblations.flatMap(feature => ['full', feature]) : requestedAblation === 'matrix' ? ablationFeatures.flatMap(feature => ['full', feature]) : args.includes('--paired-ablation') ? ['full', requestedAblation] : [requestedAblation];
 if (requestedAblation) {
  assert(!args.includes('--acceptance'), 'Ablation timings are diagnostic only');
- assert(['matrix', 'full', ...ablationFeatures].includes(requestedAblation), 'Unknown ablation');
+ assert(['matrix', 'surface-matrix', 'full', ...ablationFeatures, ...surfaceAblations].includes(requestedAblation), 'Unknown ablation');
 }
 const tiers=option('tiers',requestedAblation?'high':'high,low').split(','), rigs=option('rigs','breacher,cryo,pyro,arc').split(',');
 const storyRooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
@@ -257,8 +260,8 @@ try{
   try {
   if (requestedAblation || args.includes('--report-load')) {
    console.log(execFileSync('uptime',{encoding:'utf8'}).trim());
-   while (loadavg()[0] > 6) {
-    console.log('One-minute load above 6. Waiting 15 seconds.');
+   while (loadavg()[0] > loadLimit) {
+    console.log(`One-minute load above ${loadLimit}. Waiting 15 seconds.`);
     await new Promise(resolve=>setTimeout(resolve,15000));
     console.log(execFileSync('uptime',{encoding:'utf8'}).trim());
    }
@@ -275,7 +278,7 @@ try{
   await reset();
   if(args.includes('--fixed-resolution'))await page.evaluate(configureCaptureGraphics,{adaptiveResolution:false,resolutionScale:1});
   if (graphicsAblations[ablation]) await page.evaluate(configureCaptureGraphics, graphicsAblations[ablation]);
-  else if (ablation && ablation !== 'full') {
+  else if (ablation && !['full', 'flameSprites', 'floorSkins'].includes(ablation)) {
    await page.evaluate(value => {
     const r = window.__containmentDebug.renderer;
     const selectTier = r.setQuality.bind(r);
@@ -291,6 +294,15 @@ try{
   await page.waitForTimeout(500);
   await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true,conditionSeed});
 
+  if (ablation === 'flameSprites' || ablation === 'floorSkins') await page.evaluate(value => {
+   const r = window.__containmentDebug.renderer;
+   if (value === 'flameSprites') {
+    r.interimAbilities.kit.batches.flame.mesh.layers.disable(0);
+   } else {
+    const skins = new Set(['frame16-deck-wear', 'e10-service-lane-decks', 'e10-threshold-trims']);
+    r.world.traverse(object => { if (skins.has(object.name)) object.layers.disable(0); });
+   }
+  }, ablation);
   if(report.noSoftDepth)await page.evaluate(installNoSoftDepthDiagnostic);
   assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
   await cdp.send('Performance.enable');
