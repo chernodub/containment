@@ -433,3 +433,11 @@ The production build passed. The native fast Pyro run on seed 1729 cleared twelv
 The remaining frame target is concentrated in Safety-interlock High. Pyro still exceeded 20 ms in 7.98% and 11.59% of frames, and one quiet Arc run reached 5.22%. High stayed at or above 0.90 adaptive scale and the final peak was 296 draws. The work reduced update cost without a reproducible Pyro frame-tail improvement in this room. Arc made no soft-depth copies, while Pyro demanded one on essentially every rendered frame. That establishes a workload difference, with no isolated timing attribution for the residual GPU cost.
 
 [Baseline matrix](../../artifacts/nextgen/perf22/before/benchmark.json) · [Ablations](../../artifacts/nextgen/perf22/ablation/benchmark.json) · [Final matrix](../../artifacts/nextgen/perf22/after/benchmark.json) · [Matched native frames](../../artifacts/nextgen/perf22/pairs) · [Pyro campaign](../../artifacts/nextgen/perf22/playtest-pyro/report.json)
+
+### Exactness follow-up and baseline provenance
+
+Breacher seed 7 ran the baseline and optimized collision routines on the same inputs. It found zero differences in 7,149,109 calls. Both builds finish that seed with 18 clears. There is no differing collision input to report from that run.
+
+The questioned totals match the PLAY22 column in the historical report. The authoritative rerun pins game source to `8500276f` and reads the matching actor models. Between PLAY22's `b72b4341` and `8500276f`, the Spitter and Carrier GLBs changed, while the simulator and game source stayed the same. The headless observer reads actor dimensions from those files and uses them for HUD contact framing and pointer hit proxies. Changing only the model input to the older revision in a scratch copy of the runner restored Breacher seeds 256 and 4096 from 11 clears to 20 on the same `8500276f` game code. The observed height inputs changed from 1.72805 to 1.72663 for Spitter and 2.36983 to 2.35819 for Carrier. This reproduces an outcome difference independently of the collision optimization.
+
+[Historical model replay](../../artifacts/nextgen/perf22/exact/old-model.log) · [Actor metrics](../../artifacts/nextgen/perf22/exact/model-metrics.json) · [PLAY22 cohort](PLAY22-REPORT.md)
