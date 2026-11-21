@@ -41,6 +41,7 @@ export class PincerPresentation {
       new T.Mesh(this.block, this.metal),
       new T.Mesh(this.ring, this.warning),
       new T.Mesh(this.body, this.shadow),
+      new T.Mesh(this.body, this.signal),
       new T.Mesh(this.ring, this.track),
     );
     register(variants);

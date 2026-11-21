@@ -167,6 +167,7 @@ export class AttackEffects {
  warningNear(x:number,z:number,padding=.8):boolean{
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
+   if(warning.brooding && Math.hypot(x-warning.secondPod.x,z-warning.secondPod.z)<=(warning.secondPod.radius??0)+padding)return true;
    const w=warning.shape,dx=x-w.x,dz=z-w.z,angle=w.angle??0;
    const reach=Math.max(w.radius??0,w.length??0)+(w.width??0)*.5+padding;
    if(Math.abs(dx)>reach||Math.abs(dz)>reach)continue;
