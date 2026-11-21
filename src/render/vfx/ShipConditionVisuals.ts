@@ -46,6 +46,16 @@ export class ShipConditionVisuals {
    if(state&&game){
     const points=state.condition.id==='dark'?game.geometry.breaches:state.condition.id==='coolant'?state.zones:[];
     this.mounts=points.map(p=>conditionMount(p,game.geometry,this.unit));
+    if(state.condition.id==='coolant'){
+     for(const [index,patch] of this.patches.entries()){
+      const otherZones=state.zones.filter((_,i)=>i!==index);
+      patch.material.uniforms.neighbours.value.forEach((v:T.Vector3,i:number)=>{
+       const other=otherZones[i];
+       if(other)v.set(other.x/this.unit,other.y/this.unit,other.radius/this.unit);
+       else v.set(0,0,-1);
+      });
+     }
+    }
    }
    this.nextSkid=0;
    this.live=false;this.unlockedAt=-1;for(const t of this.tracks)t.t=-Infinity;this.previous=state;}

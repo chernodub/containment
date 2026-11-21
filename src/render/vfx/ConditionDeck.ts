@@ -6,7 +6,8 @@ import type {ConditionZone} from '../../game/roguelike/RoomConditionRuntime';
 /** x is across the fitting; y follows its long axis. Both are in metres. */
 export function conditionDeck(){
  return new T.ShaderMaterial({transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5,uniforms:{
-  size:{value:new T.Vector2()},lamp:{value:new T.Vector2()},kind:{value:0},charge:{value:0},clock:{value:0}
+  size:{value:new T.Vector2()},lamp:{value:new T.Vector2()},kind:{value:0},charge:{value:0},clock:{value:0},
+  neighbours:{value:[new T.Vector3(0,0,-1),new T.Vector3(0,0,-1)]}
  },vertexShader:`
  varying vec2 coord,world;
  void main(){
@@ -16,6 +17,7 @@ export function conditionDeck(){
    gl_Position=projectionMatrix*viewMatrix*p;
  }`,fragmentShader:`
  uniform vec2 size,lamp;
+ uniform vec3 neighbours[2];
  uniform float kind,charge,clock;
  varying vec2 coord,world;
  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -29,9 +31,15 @@ export function conditionDeck(){
  float grain=noise(world*3.7),cloud=noise(world*.85);
  vec3 c;float a;
  if(kind<.5){
-   float shore=d+.36*cloud+.17*grain;
+   // Each wet fragment belongs to its closest spill. The shared world-space
+   // shoreline and glints are continuous where the physical slicks join.
+   for(int i=0;i<2;i++){
+    vec3 zone=neighbours[i];
+    if(zone.z>0. && distance(world,zone.xy)-zone.z<d)discard;
+   }
+   float shore=d+.12+.50*cloud+.37*noise(world*.48)+.12*grain;
    mask*=1.-smoothstep(-.08,.06,shore);
-   float rim=exp(-abs(shore+.09)*12.)*cloud;
+   float rim=exp(-abs(shore+.09)*9.)*grain*cloud;
    vec2 cell=world*1.55,base=floor(cell),offset=fract(cell);
    float first=9.,second=9.;
    for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
