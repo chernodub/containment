@@ -12,6 +12,8 @@ export interface HostilePrioritySource {
 // Distances are measured in mask texels. Interpolate distance before evaluating coverage.
 // Capping the green-channel distance here yields about 70% coverage at its smoothstep.
 const SHOOTER_DISTANCE_CAP = .082;
+// The shared danger channel ramps to 65% suppression around a committed limb.
+const WINDUP_DISTANCE_CAP = .061;
 const DISTANCE_RANGE = 1.5;
 
 /** Shared shader hook; all materials are patched before renderer preparation. */
@@ -81,6 +83,16 @@ export class AbilityPriorityMask {
       const actor = actorFor?.(e.id);
       const height = actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15);
       this.actor(e.x / 32, e.y / 32, e.radius / 32 * .78, height);
+      const melee = e.meleePhase !== 'approach';
+      if (melee || e.windupMs > 0 || e.chargeMs > 0) {
+        const x = e.x / 32, z = e.y / 32;
+        const charge = e.pendingAttack === 'charge' || e.chargeMs > 0;
+        const angle = melee ? e.meleeAngle : Math.atan2(charge ? e.lockY : e.lockY - e.y, charge ? e.lockX : e.lockX - e.x);
+        const reach = e.radius / 32 + .38;
+        this.segment(x, .05, z, x, height * .78, z, .97, 1, WINDUP_DISTANCE_CAP);
+        this.segment(x, height * .55, z, x + Math.cos(angle) * reach, height * .42,
+          z + Math.sin(angle) * reach, .94, 1, WINDUP_DISTANCE_CAP);
+      }
       if (e.type === 'spitter' && e.pendingAttack === 'spit' && e.windupMs > 0)
         this.segment(e.x/32,0,e.y/32,e.x/32,height,e.y/32,.6,1,SHOOTER_DISTANCE_CAP);
       // Snapshot fallback also works while the world renderer evolves its warning accessor.

@@ -479,7 +479,7 @@ void main(){
  }
  #ifdef HAS_ABILITY_PRIORITY_MASK
  // Ground sheets keep a flat, quiet tint underneath the warning.
- bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5&&fxArc>1.5&&fxArc<2.5);
+ bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
   float warning=prioritySample.g;
   float coverage=step(.004,alpha+dot(emit,vec3(.333)));
