@@ -23,7 +23,7 @@ export class OverdriveReactions {
       if (element) for (const id of ability.targetIds) {
         this.target(id, actors, corpses)?.reactToElement?.(element, ability.angle ?? 0);
       }
-    } else if (this.overclock && effect.weapon && effect.contact === 'damage' && effect.targetId !== undefined) {
+    } else if (this.overclock && effect.weapon && (effect.contact === 'damage' || effect.contact === 'armor') && effect.targetId !== undefined) {
       const actor = this.target(effect.targetId, actors, corpses);
       const angle = effect.angle ?? 0;
       actor?.reactToElement?.('arc',angle);
