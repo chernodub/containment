@@ -63,7 +63,7 @@ class FineGrid {
         : !canTraverseExpedition(this.geometry, point, candidate, CLEARANCE)) continue;
       best = id; score = separation;
     }
-    return best ?? (distance(origin, result) > 4 ? result : null);
+    return best;
   }
 
   waypoint(origin: Point, target: Point): Point | null {
