@@ -566,7 +566,7 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
-  this.overdriveReactions.event(effect,this.actors,this.corpses);
+  this.overdriveReactions.event(effect,this.actors,this.corpses,this.interimAbilities.kit ?? undefined);
   const hold=combatPresentationHoldSeconds(effect);if(hold)this.presentationHold?.request(hold,this.options.screenShake,!!this.motionQuery?.matches);
   if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
