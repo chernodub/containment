@@ -384,7 +384,11 @@ export class DepthGame {
    if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.lesson?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(guardian)this.enemies.promote(result.enemy.id,guardian);
-     if(this.node.depth===1&&options.lesson==='brute')this.platedLessonTarget=result.enemy.id;
+     if(this.node.templateId==='passenger-vault'&&options.lesson==='brute'){
+      this.platedLessonTarget=result.enemy.id;
+      this.enemies.stagger(result.enemy.id,3200);
+      this.startWeaponLesson('plasma',result.enemy.id);
+     }
     }
     return result.spawned;
    }
@@ -408,7 +412,7 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
- if(e.lesson){const distance=e.lesson==='brute'?155:e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
+ if(e.lesson){const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;for(const offset of [0,.5,-.5,1,-1]){const angle=this.player.angle+offset,point={x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point)){x=point.x;y=point.y;break;}}}
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
  this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,options:{openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:chosen.x,cueY:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
@@ -608,7 +612,13 @@ export class DepthGame {
    const contacts=this.targets().map(t=>{const radius=shotRadii.get(t.id)??t.radius;const previous=previousTargets.get(t.id)??t,mx=t.x-previous.x,my=t.y-previous.y;
     const start={x:from.x-previous.x-mx*i/steps,y:from.y-previous.y-my*i/steps},end={x:next.x-previous.x-mx*(i+1)/steps,y:next.y-previous.y-my*(i+1)/steps};
     return {t,entry:sweptCircle(start,end,{x:0,y:0},radius+b.request.radius)};}).filter(c=>c.entry!==null&&hasClearExpeditionShot(this.geometry,from,c.t)&&canTraverseExpedition(this.geometry,from,{x:from.x+(next.x-from.x)*c.entry,y:from.y+(next.y-from.y)*c.entry},b.request.radius)).sort((a,b)=>a.entry!-b.entry!);
-   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor)this.completeWeaponLesson(1);if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor)this.startWeaponLesson('plasma',t.id);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
+   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor){
+    this.completeWeaponLesson(1);
+    if(t.id===this.platedLessonTarget&&!r.died){
+     this.enemies.stagger(t.id,1100);
+     this.presentation.push({type:'boon',boon:'shield',x:t.x,y:t.y,targetId:t.id});
+    }
+   }if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor)this.startWeaponLesson('plasma',t.id);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
    if(!done&&wallBlocked){b.x=from.x;b.y=from.y;if(b.request.splashRadius)this.blast(b);else if(b.request.weaponId==='shotgun'){const c=wallContact(this.geometry,from,next,b.request.radius);this.presentation.push({type:'hit',x:c.x,y:c.y,angle:b.request.angle,weapon:'shotgun',shotId:b.request.mutationShotId,wall:c.normal});}else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;}
   }if(b.life<=0){if(b.kind==='grenade')this.blast(b);done=true;}if(done){const i=this.bullets.indexOf(b);if(i>=0)this.bullets.splice(i,1);}}
  }
