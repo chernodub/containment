@@ -236,7 +236,7 @@ export class ThreatIndicators {
         const score = (shotCharge >= 0 ? 2000000 : attacking ? 1000000 : tactical === 'arrival' ? 10000 : 0) - distance + rank[kind] * 5;
         let candidate: Candidate | undefined;
         for (const existing of this.candidates)
-            if (existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
+            if (shotCharge<0 && existing.shotCharge<0 && existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
                 candidate = existing;
                 break;
             }
@@ -300,12 +300,8 @@ export class ThreatIndicators {
             const flight = !bullets && this.inFlight(enemy, player), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike' || !!enemy.pendingAttack || flight;
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
             const winding = enemy.type === 'spitter' && enemy.pendingAttack === 'spit' && enemy.windupMs > 0;
-            const dx = enemy.lockX - enemy.x, dy = enemy.lockY - enemy.y;
-            const length = Math.hypot(dx, dy);
-            const toward = winding && length > 0 && dx * (player.x - enemy.x) + dy * (player.y - enemy.y) > 0 &&
-                Math.abs(dx * (player.y - enemy.y) - dy * (player.x - enemy.x)) < length * 70;
             this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0,
-                toward ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '');
+                winding ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '');
         }
         if (bullets) for (let i = 0; i < bullets.length; i++) {
             const bullet = bullets[i];
@@ -373,9 +369,9 @@ export class ThreatIndicators {
             marker.radius = radius;
             marker.active = true;
             marker.node.hidden = false;
-            marker.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
+            marker.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${candidate.attacking ? scale : scale*.78})`;
             marker.node.style.setProperty('--bearing', `${candidate.shotCharge >= 0 ? candidate.shotAngle : candidate.angle}rad`);
-            marker.node.style.setProperty('--threat-opacity', String(candidate.attacking || candidate.approaching ? .88 + near * .12 : .32 + near * .12));
+            marker.node.style.setProperty('--threat-opacity', String(candidate.attacking ? .88 + near * .12 : .5));
             marker.node.dataset.kind = candidate.kind;
             marker.node.dataset.elite = String(rank[candidate.kind] >= 2);
             marker.node.dataset.attacking = String(candidate.attacking);
@@ -389,7 +385,7 @@ export class ThreatIndicators {
             const shot = candidate.shotCharge >= 0;
             marker.node.dataset.rangedShot = String(shot);
             marker.node.dataset.tactical = candidate.tactical;
-            marker.glyph.setAttribute('d', shot ? 'M16 3l13 13-13 13L3 16zM16 9v9m0 4v2' : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
+            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H32` : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
             marker.node.style.setProperty('--shot-strength', String(shot ? .7 + candidate.shotCharge * .3 - (candidate.inFlight ? 0 : Math.sin(candidate.shotCharge * Math.PI * 2) ** 2 * .14) : 1));
             const count = -candidate.count;
             marker.count.hidden = count <= 1;
