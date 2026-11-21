@@ -279,15 +279,15 @@ void main(){
   float i0=(strand*seg+trail)*fade*breakup*appear;
   vec3 hot=mix(vec3(2.2,1.9,1.5),fxColor*1.6,smoothstep(0.,.35,k));
   if(fxParam>2.5){
-   float jitter=(fxNoise(vec2(along*4.,floor(t*18.)+fxSeed))-.5)*.8;
-   float bolt=1.-smoothstep(.065,.19,abs(s-jitter));
+   float jitter=(fxNoise(vec2(along*3.,floor(t*18.)+fxSeed))-.5)*.48;
+   float bolt=1.-smoothstep(.23,.38,abs(s-jitter));
    float body=1.-smoothstep(.16,.54,abs(s-jitter));
    float delta=s-jitter;
    float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(vec3(1.45)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
-   alpha=(bolt*.22+fork*.08+halo*.06)*gate;
+   emit=(vec3(6.2,5.9,5.6)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   alpha=(bolt*.82+fork*.25+halo*.07)*gate;
   }else{
    float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
    emit=(hot*i0+vec3(3.,2.85,2.6)*core)*fxIntensity;
@@ -454,9 +454,9 @@ void main(){
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
    float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
-   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.24)+vec3(1.,1.4,1.9)*pulse*.55;
+   emit=vec3(.5,.82,1.15)*(wall*crisp*.14+fern*.45+crack*inside*.35)+vec3(1.,1.4,1.9)*pulse*.55;
    alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
-   base=vec3(.72,.88,.97);
+   base=vec3(.11,.19,.24);
   }else if(el<2.5){
    burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
    float flow=fxNoise(q*1.7+vec2(sin(t*2.+q.y),t*.9));

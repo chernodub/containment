@@ -231,7 +231,7 @@ class ArcPresentation implements AbilityPresentation {
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload ? 1.62 : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           if (d.overload) {
-            k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .14, .21, true);
+            k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .38, .23, true);
           }
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
