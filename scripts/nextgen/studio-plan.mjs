@@ -121,22 +121,20 @@ for(const {id,arena} of L8_CAPTURE_ROOMS){
 const lane={view:'gameplay',span:4.7};
 const roomLane=(room,x,z)=>({...lane,room,origin:[x/32,z/32]});
 const light=(color,mark)=>({kind:'light',color,intensity:8,distance:2.1,...mark});
-const coolantGallery=L8_CAPTURE_API.plans['coolant-plant'].spaces.find(space=>space.name==='Port pump gallery').anchor;
-const guardianLane=roomLane('coolant-plant',coolantGallery.x,coolantGallery.y);
+// First-junction cards share the isolated studio ground; the projectile points
+// back to the guarded plate or clutch without a second full-size silhouette.
 add('route-plate-breaker',[
-  {kind:'enemy',family:'brute',champion:'warden',aim:1.9,x:.3,z:-.28,shadow:1.5},
-  {kind:'enemy',family:'brute',aim:1.7,x:1.85,z:.15,scale:.72,shadow:.78},
-  {kind:'ordnance',weapon:'plasma',from:[-2.92,.9,1.03],x:-.22,y:1.14,z:.27,shadow:0},
-  light(0x74baff,{x:-.48,y:1.38,z:.61,intensity:13,distance:3.3}),
-],{...guardianLane,span:4.55,focus:[0,.82,-.34]});
+  {kind:'enemy',family:'brute',champion:'warden',pose:'attack',frame:.4,aim:1.38,x:.35,z:-.12},
+  {kind:'ordnance',weapon:'plasma',from:[-3.0,.46,1.04],x:-.38,y:.91,z:.94},
+  light(0x74baff,{x:-.45,y:1.30,z:.64,intensity:5,distance:1.85}),
+],{span:4.0,focus:[0,1.24,0],cameraDirection:[0,.56,1]});
 add('route-brood',[
-  {kind:'enemy',family:'carrier',champion:'matron',aim:3.45,x:-.85,z:-.22,shadow:1.5},
-  {kind:'pod',x:.63,z:.86,shadow:.7},
-  {kind:'pod',swollen:true,x:2.04,z:-.17,scale:1.15,shadow:.8},
-  {kind:'ordnance',weapon:'rocket',from:[3.48,.86,1.35],x:1.93,y:.59,z:.63,shadow:0},
-  light(0xff9a5d,{x:1.93,y:1.04,z:.96,intensity:8,distance:3}),
-  light(0xf375a6,{x:.5,y:1.32,z:-.17,intensity:6,distance:3.1}),
-],{...guardianLane,span:4.6,focus:[.15,.83,-.18]});
+  {kind:'enemy',family:'carrier',champion:'matron',aim:.63,x:-.5,z:-.18},
+  {kind:'pod',x:.7,z:.45,scale:.55,shadow:.33},
+  {kind:'pod',swollen:true,x:1.25,z:.36,scale:.68,shadow:.38},
+  {kind:'ordnance',weapon:'rocket',from:[3.5,1.92,.75],x:1.65,y:1.05,z:.53},
+  light(0xff9a5d,{x:1.55,y:.89,z:.56,intensity:2,distance:1.8}),
+],{span:4.58,focus:[0,1.65,0],cameraDirection:[0,1.05,1]});
 add('route-cache',[supply('cache-open')],{frameSubject:true});
 add('route-locker',[{...supply('health'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.38,0]});
 add('route-armor',[{...supply('armor'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.32,0]});

@@ -4,11 +4,13 @@ import {resolve,extname,sep} from 'node:path';
 import {chromium} from 'playwright';
 import plan from './studio-plan.mjs';
 
-const [argument]=process.argv.slice(2);
+const args=process.argv.slice(2);
+const argument=args.find(arg=>!arg.startsWith('--out='));
+const directory=args.find(arg=>arg.startsWith('--out='))?.slice(6);
 const filter=argument?.startsWith('--only=')?new RegExp(argument.slice(7)):null;
 const description=filter?undefined:argument;
 const shots=description?JSON.parse(await readFile(description,'utf8')):plan;
-const dist=resolve('dist'), out=resolve('public/assets/ui/studio',description?'custom':'.');
+const dist=resolve('dist'), out=directory?resolve(directory):resolve('public/assets/ui/studio',description?'custom':'.');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png'};
 const server=createServer(async(req,res)=>{
   try{
@@ -33,7 +35,7 @@ try{
   await page.waitForFunction(()=>!!window.__containmentDebug);
   let room;
   await mkdir(out,{recursive:true});
-  const manifest=filter?JSON.parse(await readFile(resolve(out,'manifest.json'),'utf8')):{};
+  const manifest=filter&&!directory?JSON.parse(await readFile(resolve(out,'manifest.json'),'utf8')):{};
   const entries=Object.entries(shots).filter(([name])=>!filter||filter.test(name));
   for(const [name,shot] of entries){
     if(!/^[a-z0-9-]+$/.test(name))throw Error(`Invalid shot name ${name}`);

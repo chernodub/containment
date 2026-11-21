@@ -1,0 +1,105 @@
+{
+  "warden": {
+    "width": 2800,
+    "height": 2800,
+    "span": 4,
+    "subjects": [
+      {
+        "kind": "enemy",
+        "family": "brute",
+        "aim": 2.15,
+        "pose": "attack",
+        "frame": 0.27,
+        "champion": "warden"
+      }
+    ],
+    "card": true,
+    "transparent": true,
+    "frameSubject": true,
+    "breachLight": true,
+    "cameraDirection": [
+      0,
+      0.62,
+      1
+    ],
+    "key": [
+      -4,
+      3,
+      0
+    ],
+    "rim": [
+      -2,
+      4,
+      -4
+    ],
+    "rimColor": 12109823
+  },
+  "crawler": {
+    "width": 1060,
+    "height": 1060,
+    "span": 4,
+    "subjects": [
+      {
+        "kind": "enemy",
+        "family": "crawler",
+        "aim": 0.52,
+        "pose": "attack",
+        "frame": 0.4
+      }
+    ],
+    "card": true,
+    "transparent": true,
+    "frameSubject": true,
+    "breachLight": true,
+    "cameraDirection": [
+      0,
+      0.48,
+      1
+    ],
+    "key": [
+      -4,
+      3,
+      0
+    ],
+    "rim": [
+      -2,
+      4,
+      -4
+    ],
+    "rimColor": 12109823
+  },
+  "stalker": {
+    "width": 1080,
+    "height": 1080,
+    "span": 4,
+    "subjects": [
+      {
+        "kind": "enemy",
+        "family": "stalker",
+        "aim": 4.62,
+        "pose": "attack",
+        "frame": 0.44
+      }
+    ],
+    "card": true,
+    "transparent": true,
+    "frameSubject": true,
+    "breachLight": true,
+    "cameraDirection": [
+      0,
+      0.36,
+      1
+    ],
+    "key": [
+      -4,
+      3,
+      0
+    ],
+    "rim": [
+      -2,
+      4,
+      -4
+    ],
+    "rimColor": 12109823
+  }
+}

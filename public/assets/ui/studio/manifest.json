@@ -3916,143 +3916,124 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 19996,
+    "bytes": 16706,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 4.55,
+      "span": 4,
       "subjects": [
         {
           "kind": "enemy",
           "family": "brute",
           "champion": "warden",
-          "aim": 1.9,
-          "x": 0.3,
-          "z": -0.28,
-          "shadow": 1.5
-        },
-        {
-          "kind": "enemy",
-          "family": "brute",
-          "aim": 1.7,
-          "x": 1.85,
-          "z": 0.15,
-          "scale": 0.72,
-          "shadow": 0.78
+          "pose": "attack",
+          "frame": 0.4,
+          "aim": 1.38,
+          "x": 0.35,
+          "z": -0.12
         },
         {
           "kind": "ordnance",
           "weapon": "plasma",
           "from": [
-            -2.92,
-            0.9,
-            1.03
+            -3,
+            0.46,
+            1.04
           ],
-          "x": -0.22,
-          "y": 1.14,
-          "z": 0.27,
-          "shadow": 0
+          "x": -0.38,
+          "y": 0.91,
+          "z": 0.94
         },
         {
           "kind": "light",
           "color": 7650047,
-          "intensity": 13,
-          "distance": 3.3,
-          "x": -0.48,
-          "y": 1.38,
-          "z": 0.61
+          "intensity": 5,
+          "distance": 1.85,
+          "x": -0.45,
+          "y": 1.3,
+          "z": 0.64
         }
-      ],
-      "view": "gameplay",
-      "room": "coolant-plant",
-      "origin": [
-        13.4375,
-        15
       ],
       "focus": [
         0,
-        0.82,
-        -0.34
+        1.24,
+        0
+      ],
+      "cameraDirection": [
+        0,
+        0.56,
+        1
       ],
       "card": true,
+      "view": "gameplay",
       "webpQuality": 0.79
     }
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 27192,
+    "bytes": 15448,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 4.6,
+      "span": 4.58,
       "subjects": [
         {
           "kind": "enemy",
           "family": "carrier",
           "champion": "matron",
-          "aim": 3.45,
-          "x": -0.85,
-          "z": -0.22,
-          "shadow": 1.5
+          "aim": 0.63,
+          "x": -0.5,
+          "z": -0.18
         },
         {
           "kind": "pod",
-          "x": 0.63,
-          "z": 0.86,
-          "shadow": 0.7
+          "x": 0.7,
+          "z": 0.45,
+          "scale": 0.55,
+          "shadow": 0.33
         },
         {
           "kind": "pod",
           "swollen": true,
-          "x": 2.04,
-          "z": -0.17,
-          "scale": 1.15,
-          "shadow": 0.8
+          "x": 1.25,
+          "z": 0.36,
+          "scale": 0.68,
+          "shadow": 0.38
         },
         {
           "kind": "ordnance",
           "weapon": "rocket",
           "from": [
-            3.48,
-            0.86,
-            1.35
+            3.5,
+            1.92,
+            0.75
           ],
-          "x": 1.93,
-          "y": 0.59,
-          "z": 0.63,
-          "shadow": 0
+          "x": 1.65,
+          "y": 1.05,
+          "z": 0.53
         },
         {
           "kind": "light",
           "color": 16751197,
-          "intensity": 8,
-          "distance": 3,
-          "x": 1.93,
-          "y": 1.04,
-          "z": 0.96
-        },
-        {
-          "kind": "light",
-          "color": 15955366,
-          "intensity": 6,
-          "distance": 3.1,
-          "x": 0.5,
-          "y": 1.32,
-          "z": -0.17
+          "intensity": 2,
+          "distance": 1.8,
+          "x": 1.55,
+          "y": 0.89,
+          "z": 0.56
         }
       ],
-      "view": "gameplay",
-      "room": "coolant-plant",
-      "origin": [
-        13.4375,
-        15
-      ],
       "focus": [
-        0.15,
-        0.83,
-        -0.18
+        0,
+        1.65,
+        0
+      ],
+      "cameraDirection": [
+        0,
+        1.05,
+        1
       ],
       "card": true,
+      "view": "gameplay",
       "webpQuality": 0.79
     }
   },

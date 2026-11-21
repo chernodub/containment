@@ -32,6 +32,7 @@ type Subject = Mark & (
 export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
+  cameraDirection?:[number,number,number]; breachLight?:boolean;
   card?:boolean; frameSubject?:boolean; webpQuality?:number;
   framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
@@ -62,7 +63,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const center=new T.Vector3(...(shot.focus??[0,.6,0])).add(stage.position);
   const aspect=shot.width/shot.height;
   const camera=new T.OrthographicCamera(-shot.span*aspect/2,shot.span*aspect/2,shot.span/2,-shot.span/2,.05,150);
-  const direction=shot.view==='gameplay'
+  const direction=shot.cameraDirection?new T.Vector3(...shot.cameraDirection).normalize():shot.view==='gameplay'
     ? new T.Vector3(0,1,.72).normalize()
     : new T.Vector3(4,3.2,6).normalize();
   camera.position.copy(center).addScaledVector(direction,12);
@@ -81,6 +82,11 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   else if(shot.origin){
     key.intensity=1.15;
     stage.add(key,key.target);
+  }
+  if(shot.breachLight){
+    key.intensity=.58;
+    rim.intensity=3.4;
+    stage.traverse(child=>{if(child instanceof T.HemisphereLight)child.intensity=.20;});
   }
   let firstSubject:T.Object3D|undefined;
   let lessonCover:T.Object3D|undefined;
@@ -135,10 +141,12 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             const shape=subject.family==='queen'?undefined:MELEE_ATTACKS[subject.family]?.shape;
             actor.setAttackState?.('strike',subject.frame??.45,subject.aim??-2,shape);
             actor.attack?.();
+            if(shot.breachLight&&subject.champion==='warden')actor.setEmissionRegion?.('warden-ram',.32);
           }
           if(subject.pose==='hit')actor.hit?.(.85,subject.aim??-2,true);
           if(subject.pose==='frozen')actor.setAffliction?.({chilled:true,frozen:true,burning:false,poisoned:false,shocked:false});
           for(let tick=0;tick<18;tick++)actor.animate(tick/60,0,subject.aim??-2);
+          if(shot.breachLight)actor.setStageLight?.(.58);
           root=actor.root; disposable.push(()=>{actor.root.removeFromParent();pool.release(actor);});
           break;
         }
@@ -153,7 +161,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           const plasma=subject.weapon==='plasma';
           const flash=new T.MeshBasicMaterial({color:plasma?0xc2ecff:0xffc174});
           const wake=new T.MeshStandardMaterial({color:plasma?0x348bf3:0x705052,
-            emissive:plasma?0x369eff:0x873d33,emissiveIntensity:1.3});
+            emissive:plasma?0x369eff:0x403b40,emissiveIntensity:plasma?1.3:.48});
           const group=new T.Group();
           const tail=new T.Vector3(...subject.from).sub(new T.Vector3(subject.x,subject.y,subject.z));
           const streak=(start:T.Vector3,end:T.Vector3,tip:number,base:number,material:T.Material)=>{
@@ -170,17 +178,17 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             const sparks=[[-.31,.29,.18],[-.15,.16,.44],[.04,.36,.22],[.16,.14,.31],[-.29,-.12,.24],[.11,-.23,.37]];
             for(const offset of sparks){
               const end=new T.Vector3(...offset);
-              streak(end.clone().multiplyScalar(.28),end,.019,.005,flash);
+              streak(end.clone().multiplyScalar(.16),end.multiplyScalar(1.2),.03,.007,flash);
             }
           }else{
-            const casing=new T.MeshStandardMaterial({color:0x705a51,metalness:.48,roughness:.45});
-            streak(new T.Vector3(),tail.clone().multiplyScalar(.16),.077,.077,casing);
-            streak(tail.clone().multiplyScalar(-.09),new T.Vector3(),.005,.077,casing);
-            streak(tail.clone().multiplyScalar(.16),tail.clone().multiplyScalar(.44),.055,.013,flash);
+            const casing=new T.MeshStandardMaterial({color:0xa8b4bf,metalness:.25,roughness:.45});
+            streak(new T.Vector3(),tail.clone().multiplyScalar(.22),.115,.115,casing);
+            streak(tail.clone().multiplyScalar(-.12),new T.Vector3(),.006,.115,casing);
+            streak(tail.clone().multiplyScalar(.22),tail.clone().multiplyScalar(.51),.088,.018,flash);
             // Break the smoke silhouette into overlapping puffs that widen away from the nozzle.
             for(let puff=0;puff<8;puff++){
-              const mesh=new T.Mesh(new T.IcosahedronGeometry(.052+puff*.012,1),wake);
-              mesh.position.copy(tail).multiplyScalar(.31+puff*.094);
+              const mesh=new T.Mesh(new T.IcosahedronGeometry(.069+puff*.012,1),wake);
+              mesh.position.copy(tail).multiplyScalar(.49+puff*.068);
               mesh.position.y+=Math.sin(puff*1.8)*.042;
               group.add(mesh);
               disposable.push(()=>mesh.geometry.dispose());
@@ -399,7 +407,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
       camera.updateProjectionMatrix();
     }
-    if(shot.card&&!shot.room){
+    if(shot.card&&!shot.room&&!shot.transparent){
       // A small recess, rails and panel joints keep isolated subjects on a ship deck.
       const deck=new T.Group();
       const deckPlane=new T.Plane(new T.Vector3(0,1,0),.029);
@@ -441,12 +449,24 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     }
     if(shot.transparent){
       const foreground=ctx.getImageData(0,0,shot.width,shot.height);
-      stage.visible=false; abilities.root.visible=false;
-      post.render(0); ctx.drawImage(renderer.domElement,0,0);
-      const empty=ctx.getImageData(0,0,shot.width,shot.height).data;
-      for(let i=0;i<empty.length;i+=4){
-        const difference=Math.max(Math.abs(empty[i]-foreground.data[i]),Math.abs(empty[i+1]-foreground.data[i+1]),Math.abs(empty[i+2]-foreground.data[i+2]));
-        foreground.data[i+3]=Math.min(255,Math.max(0,difference-2)*24);
+      if(shot.breachLight){
+        // Two mattes preserve the ink and the nearly black shell interiors.
+        scene.background=new T.Color(0xffffff);
+        post.render(0);ctx.drawImage(renderer.domElement,0,0);
+        const white=ctx.getImageData(0,0,shot.width,shot.height).data;
+        const backdrop=Math.max(1,white[0]-foreground.data[0]);
+        for(let i=0;i<white.length;i+=4){
+          const alpha=Math.max(0,Math.min(1,1-(white[i]-foreground.data[i])/backdrop));
+          foreground.data[i+3]=Math.round(255*alpha);
+        }
+      }else{
+        stage.visible=false; abilities.root.visible=false;
+        post.render(0); ctx.drawImage(renderer.domElement,0,0);
+        const empty=ctx.getImageData(0,0,shot.width,shot.height).data;
+        for(let i=0;i<empty.length;i+=4){
+          const difference=Math.max(Math.abs(empty[i]-foreground.data[i]),Math.abs(empty[i+1]-foreground.data[i+1]),Math.abs(empty[i+2]-foreground.data[i+2]));
+          foreground.data[i+3]=Math.min(255,Math.max(0,difference-2)*24);
+        }
       }
       ctx.putImageData(foreground,0,0);
       if(shot.framePortrait&&firstSubject){
