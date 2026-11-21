@@ -64,7 +64,8 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   'armory': profile({
     landmark:{at:[485,540],color:0xe6efff,radius:5.5,body:.6,spill:.04,keyGain:.82,height:1.35},
     fixturesAt:[[600, 450], [180, 380], [1020, 380]],
-    floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    // SURFACE22: grey room floor brought down to the dark-ship range; props keep their lit top planes.
+    floor:{lit:.29,unlit:.15,edge:.08},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xcdd7e9,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
@@ -176,7 +177,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     landmark:{at:[681,356],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.88,height:2.9},
     // Scanner arch inspection lamps and guard-gallery ceiling fixture.
     fixturesAt:[[364,200],[364,680],[1000,440]],
-    floor:{lit:.25,unlit:.11,edge:.055}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
+    floor:{lit:.20,unlit:.09,edge:.045}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
     wall:{value:.42,saturation:.55}, floorSaturation:.45, tint:0xd8e2f0,
     fixtures:.2, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
   }),
@@ -208,12 +209,15 @@ export const ROOM_VALUE_FIELD = Array.from({length:4},()=>({value:new T.Vector4(
 export const ROOM_LANDMARK = {value:new T.Vector4()};
 export const ROOM_LANDMARK_COLOR = {value:new T.Color(0)};
 export const ROOM_LANDMARK_GAINS = {value:new T.Vector2()};
+/** SURFACE22: world height (m) of the landmark's lit accent trim. */
+export const ROOM_LANDMARK_TRIM = {value:.32};
 export const ROOM_VALUE_EXIT = {value: new T.Vector4(0, 0, 1, 0)};
 export function setRoomValueField(pools: readonly {x:number; z:number}[], exitX: number, exitZ: number, profile?: RoomValueProfile): void {
   const landmark=profile?.landmark;
   ROOM_LANDMARK.value.set((landmark?.at[0]??0)/32,(landmark?.at[1]??0)/32,landmark?.radius??1,landmark?1:0);
   ROOM_LANDMARK_COLOR.value.setHex(landmark?.color??0);
   ROOM_LANDMARK_GAINS.value.set(landmark?.body??0,landmark?.spill??0);
+  ROOM_LANDMARK_TRIM.value=Math.max(.24,Math.min(1.1,(landmark?.height??.9)*.42));
   ROOM_VALUE_FIELD.forEach(({value:pool}, i) => {
     const source = pools[i], lane = i > 0 ? profile?.perimeter.lane ?? .55 : 1;
     if (!profile) pool.set(0, 0, 1e4, 2e4);

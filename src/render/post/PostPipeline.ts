@@ -5,6 +5,7 @@ import { GpuFrameTimer } from './GpuProfiler';
 import { INK_STRENGTHS } from './Ink';
 import { installGeometryClearPolicy } from './GeometryBuffer';
 import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } from '../lighting/GraphicSurface';
+import { setSurfacePaintDetail } from '../lighting/LocalLightShading';
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DataTexture, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
@@ -147,6 +148,7 @@ export class PostPipeline {
     resized ||= previousScale!==this.adaptive.scale;
     this.gpuTimer?.setEnabled(tier==='high'&&options.adaptiveResolution);
     setGraphicShadingEnabled(options.stylizedShading);
+    setSurfacePaintDetail(tier==='high');
     this.distortion.setEnabled(tier === 'high' && options.distortion);
     if (tier === 'low' && options.inkOutlines === 'off') this.releaseResources();
     else if (resized && this.resources) this.resizeResources();
@@ -313,6 +315,7 @@ export class PostPipeline {
       u.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       u.cameraWorld.value.copy(this.camera.matrixWorld);
       u.time.value = this.time;
+      u.inkWear.value=this.tier==='high'?1:0;
       u.inkMode.value=this.options.inkOutlines==='off'?0:this.options.inkOutlines==='silhouette'?1:2;
       u.aoEnabled.value = this.tier==='high'&&this.options.ambientOcclusion ? 1 : 0;
       u.bloomEnabled.value = this.tier==='high'&&this.options.bloom ? 1 : 0;
@@ -372,7 +375,7 @@ export class PostPipeline {
       waves: { value: this.distortion.waves }, shapes: { value: this.distortion.shapes }, time: { value: 0 },
     });
     const composite = this.material(compositeFragment, {
-      tGeometry:{value:scene.textures[1]},combatOutlineIds:{value:this.outlineTexture},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStrength:{value:this.styleStrength==='bold'?1:this.styleStrength==='medium'?.5:0},inkStyle:{value:new Vector4().fromArray(INK_STRENGTHS[this.styleStrength])},
+      tGeometry:{value:scene.textures[1]},combatOutlineIds:{value:this.outlineTexture},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStrength:{value:this.styleStrength==='bold'?1:this.styleStrength==='medium'?.5:0},inkStyle:{value:new Vector4().fromArray(INK_STRENGTHS[this.styleStrength])},inkWear:{value:0},
       tScene: { value: scene.texture }, tDepth: { value: scene.depthTexture },
       tAO: { value: ao.texture }, tBloom: { value: bloomA.texture }, tDistortion: { value: distortion.texture },
       projectionInverse: { value: new Matrix4() }, cameraWorld: { value: new Matrix4() },
