@@ -2,6 +2,7 @@ import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
 import {roomValueProfile} from '../lighting/RoomValueStandard';
+import {paintServiceDeck} from './ServiceDeckMarkings';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
 function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
@@ -80,6 +81,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     contactShadows(c, room);
+    paintServiceDeck(c, room, arena);
     // Scuffed wheel tracks taper toward the workshop light. Their bend is
     // offset from the straight sightline so the marine stays on clear deck.
     const source = roomValueProfile(room.id)?.landmark?.at;
