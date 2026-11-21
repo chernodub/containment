@@ -1,3 +1,4 @@
+import {addLaneIncident} from './LaneIncidents';
 import {addFrame16Incidents} from './Frame16Incidents';
 import {addFrame16Deck} from './Frame16Deck';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
@@ -37,6 +38,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS],insert=inserts[id];
   if(!plan||!insert)return;
   addFrame16Incidents(root,id);
+  addLaneIncident(root,id);
   const room = ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES];
   addFrame16Deck(root,room,plan.arena);
   // A recessed diffuser follows the top of each original hull module.

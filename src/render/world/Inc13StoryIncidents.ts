@@ -43,10 +43,10 @@ export class IncidentPieces {
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
     g.computeVertexNormals();this.add(g,color);
   }
-  finish(root:T.Group,id:string,x:number,z:number,finish?:T.Material):T.Mesh {
+  finish(root:T.Group,id:string,x:number,z:number,finish?:T.Material,cutParts=false):T.Mesh {
     const geometry=mergeGeometries(this.parts,false)!;
     // Cut individual parts so a low trailing strip cannot hide a distant raised hinge.
-    if(['passenger-vault','ejected-leaf','folded-rib','torn-pallet'].includes(id)){
+    if(cutParts||['passenger-vault','ejected-leaf','folded-rib','torn-pallet'].includes(id)){
       let start=0;
       geometry.userData.cutawayRanges=this.parts.map(part=>{
         part.computeBoundingBox();
