@@ -1,6 +1,6 @@
 import type { RoomKind, RunGraph, RunNode, RunPhase, RunState, TemplateId } from './types';
 
-import {SERVICE_IDS,SERVICE_CATALOG,DETOUR_DEPTHS,type DetourChoice} from './economy';
+import {SERVICE_IDS,SERVICE_CATALOG,DETOUR_DEPTHS,GUARDIAN_SUPPLY_DEPTH,type DetourChoice} from './economy';
 import {isJunction} from './shipConditions';
 import {ROOM_STORY_ROUTE} from './storyRooms';
 export const RUN_LENGTH = 20;
@@ -148,7 +148,7 @@ export function isValidRunState(value: unknown): value is RunState {
   if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','guardianRoute','weaponLessons','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
   if(record.runStructure!==undefined&&(record.runStructure!==1||record.version!==3))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
-  if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>10||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
+  if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>11||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
   if(record.detour!==undefined){const q=record.detour as RunState['detour'];if(record.version!==3||!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='choice,depth'||!Number.isInteger(q.depth)||!DETOUR_DEPTHS.some(d=>d+1===q.depth)||!['direct','salvage'].includes(q.choice))return false;}
   if(record.draftRoll!==undefined&&(record.version===1||!Number.isInteger(record.draftRoll)||Number(record.draftRoll)<0||Number(record.draftRoll)>2))return false;
   if ((record.version !== 1 && record.version !== 2 && record.version !== 3) || !isSeed(record.seed) || typeof record.currentNodeId !== 'string') return false;
@@ -168,6 +168,7 @@ export function isValidRunState(value: unknown): value is RunState {
   }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
   if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
+  if(record.service!==undefined&&(record.service as NonNullable<RunState['service']>).purchases.includes('route-ammo')&&(!record.guardianRoute||current.depth!==GUARDIAN_SUPPLY_DEPTH))return false;
   if(record.weaponLessons!==undefined&&(record.version!==3||![1,2,3].some(value=>value===record.weaponLessons)))return false;
   if(record.guardianRoute!==undefined){
     const junctions=record.junctions as RunState['junctions'];

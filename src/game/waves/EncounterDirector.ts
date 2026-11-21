@@ -1,3 +1,4 @@
+import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
 import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
@@ -50,6 +51,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  if(opening&&node.depth>=3){
   const [beat]=source.splice(opening.index,1);
   source.unshift(openingBeat(node.depth,opening.index,beat,mode==='story'));
+ }
+ const coverOpening=node.templateId==='transmission-chamber';
+ if(coverOpening){
+  const index=source.findIndex(beat=>beat.grammar==='siege');
+  if(index>0)source.unshift(...source.splice(index,1));
+  source[0]={...source[0],label:'Use the relay receiver as cover'};
  }
  const route=node.depth===GUARDIAN_ROUTE_DEPTH?options.guardianRoute:undefined;
  if(route){
@@ -108,7 +115,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(coverOpening&&beatIndex===0&&ordinal>0?2450:0),wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
@@ -117,7 +124,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:coverOpening?'Use the relay receiver as cover':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
@@ -207,6 +214,20 @@ export class EncounterDirector {
       if(beat.consequence==='pincer')this.pincerFlanks.set(index,Object.freeze(this.plan.schedule.slice(beat.start,beat.end)
         .filter(request=>request.reinforcement&&request.role==='flanker')));
     });
+  }
+  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>):boolean {
+    const flanker=enemy.type==='stalker'&&enemy.role==='flanker'&&enemy.beat!==undefined;
+    if(enemy.beat===undefined||enemy.champion!==undefined)return true;
+    const angle=flanker?Math.atan2(player.y-enemy.y,player.x-enemy.x):0;
+    for(const other of others){
+      if(other.id===enemy.id||other.beat!==enemy.beat)continue;
+      if(other.champion==='warden'&&other.wallStunAngle!==undefined){
+        if((other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      }
+      if(!flanker||other.type!=='stalker'||other.role!=='flanker')continue;
+      if((other.meleePhase==='windup'||other.meleePhase==='strike')&&Math.cos(angle-other.meleeAngle)<Math.SQRT1_2)return false;
+    }
+    return true;
   }
   get phase(): EncounterPhase { return this.currentPhase; }
   get currentWave(): number { return this.plan.wave; }

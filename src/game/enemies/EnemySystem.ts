@@ -54,13 +54,14 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
+  canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
   canMove?: (context: CollisionSteeringContext) => boolean;
@@ -161,6 +162,10 @@ export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?
   meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 }>;
 
+export const WARDEN_WALL_STUN_MS=1500;
+
+export type EnemyCommitment = Pick<EnemySnapshot,'id'|'type'|'role'|'beat'|'meleePhase'|'meleeAngle'|'x'|'y'|'champion'|'stunRemainingMs'|'wallStunAngle'|'meleeShape'>;
+
 export type EnemySystemSnapshot = Readonly<{
   activeCount: number;
   reservedCount: number;
@@ -183,7 +188,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -256,6 +261,7 @@ export class EnemySystem {
   readonly #spatialEnemies = new Map<number, SpatialEnemy>();
   readonly #listeners = new Set<(event: EnemyEvent) => void>();
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
+  readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
   readonly #engagement = new Engagement();
@@ -284,6 +290,7 @@ export class EnemySystem {
     if(options.difficulty)this.#difficulty=options.difficulty;
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
+    this.#canCommit=options.canCommit;
     this.#canMove = options.canMove;
     this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
     this.#route = options.route;this.#canAttack=options.canAttack;this.#balance=options.balance??{health:1,damage:1,speed:1,eliteHealth:2,eliteDamage:2,specials:false};
@@ -366,7 +373,7 @@ export class EnemySystem {
     const reservedChildren =
       type === 'carrier' ? Math.min(CARRIER_CHILD_CAP, availableReservations) : 0;
     const state: EnemyState = {
-      role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
+      openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
       id: this.#nextId++,
       type,
       elite: elite === true,
@@ -947,7 +954,7 @@ export class EnemySystem {
     }else this.#slide.delete(enemy.id);
     if (movementX === 0 && movementY === 0) return;
 
-    if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.wallStunAngle=Math.atan2(movementY,movementX);enemy.chargeMs=0;enemy.stunRemainingMs=1500;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
+    if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.wallStunAngle=Math.atan2(movementY,movementX);enemy.chargeMs=0;enemy.stunRemainingMs=WARDEN_WALL_STUN_MS;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
     const candidates = [
       { x: enemy.x + movementX, y: enemy.y + movementY },
       { x: enemy.x + movementX, y: enemy.y },
@@ -999,6 +1006,7 @@ export class EnemySystem {
   #holdReadyContact(enemy:EnemyState,player:EnemyPlayerState):void {
     if(enemy.meleePhase!=='approach'||enemy.windupMs>0||enemy.chargeMs>0||!enemy.attackSlot||enemy.contactCooldownRemainingMs>0||this.#meleeStartGapMs>0)return;
     const profile=MELEE_ATTACKS[enemy.type];
+    if(this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
     if((profile.heavy?this.#heavyMeleeActive>=1:this.#smallMeleeActive>=this.#windups)||Math.hypot(enemy.x-player.x,enemy.y-player.y)>enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)+.5||this.#canAttack?.(enemy,player)===false)return;
     enemy.targetX=enemy.x;enemy.targetY=enemy.y;enemy.velocityX=enemy.velocityY=0;
     enemy.yieldMs=0;enemy.decisionCooldownRemainingMs=0;
@@ -1074,7 +1082,8 @@ export class EnemySystem {
   ): void {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     const playerRadius = player.radius ?? DEFAULT_PLAYER_RADIUS;
-    if(enemy.windupMs>0||enemy.meleePhase!=='approach')return;
+    if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
+    if(enemy.openingVolley){const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
      const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
      enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:windup}));return;
@@ -1100,7 +1109,7 @@ export class EnemySystem {
       distance <= SPITTER_ATTACK_MAX_RANGE &&
       enemy.rangedCooldownRemainingMs === 0 && this.#canAttack?.(enemy,player)!==false
     ) {
-      if(this.#balance.specials){enemy.windupMs=this.#spitWindupMs;enemy.pendingAttack='spit';enemy.lockX=player.x;enemy.lockY=player.y;enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:this.#spitWindupMs}));return;}
+      if(this.#balance.specials){this.#windUpSpit(enemy,player,events);return;}
       events.push(
         freezeEvent({
           type: 'hazard-attack',
@@ -1115,6 +1124,16 @@ export class EnemySystem {
       );
       this.#beginReposition(enemy,player);enemy.rangedCooldownRemainingMs = ENEMIES.spitter.attackCooldownMs;
     }
+  }
+
+  #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
+    enemy.windupMs=this.#spitWindupMs;
+    enemy.pendingAttack='spit';
+    enemy.lockX=target.x;enemy.lockY=target.y;
+    enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;
+    enemy.velocityX=enemy.velocityY=0;
+    events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,
+      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs:this.#spitWindupMs}));
   }
 
   #applyKnockback(

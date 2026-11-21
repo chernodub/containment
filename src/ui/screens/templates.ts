@@ -1,7 +1,7 @@
 import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
 import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
-import {GUARDIAN_ROUTES} from "../../game/roguelike/economy";
+import {GUARDIAN_ROUTES,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
@@ -77,13 +77,21 @@ export function abilityPreview(rig: RigId, owned?: readonly string[]): string {
   }).join('')}</div>`;
 }
 
+const RIG_EXAMPLES = {
+  breacher: ['dash', 'Ram a pursuer into your barricade.'],
+  cryo: ['tactical', 'Freeze a pack with Cryo Nova and shoot while it is still.'],
+  pyro: ['tactical', 'Sweep Flashfire across a crowded approach.'],
+  arc: ['tactical', 'Chain Overload through a cluster of pursuers.'],
+} as const;
+
 export function rigScreen(selected: RigId, previous?: RigId): string {
   const rig = RIG_CATALOG[selected];
   const quick = previous ? `<button id="recommended-loadout" class="secondary">Repeat last rig · ${RIG_CATALOG[previous].name} ${arrow()}</button>` : '';
+  const [exampleSlot,example]=RIG_EXAMPLES[selected];
   const equip = `<button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button>`;
-  return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
+  return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> browse · <kbd>1–4</kbd> select · <kbd>Enter</kbd> confirm</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
-    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p>${equip}${quick}</div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · RED: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
+    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${example}</p><div class="rig-example">${abilityVignette(ABILITY_CATALOG[rig.abilities[exampleSlot]])}</div>${equip}${quick}</div></div><details class="rig-inspect"><summary>Inspect all abilities</summary>${abilityPreview(selected)}<p class="screen-footnote rig-footnote">White marks the marine. Red marks enemies.</p></details></section>`;
 }
 
 const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power','siege-plow':'power','fault-line':'tactical','ice-road':'power','meltdown-core':'overdrive','pilgrim-pylon':'power','live-wire':'tactical'};
@@ -195,8 +203,9 @@ export function shopScreen(game: DepthGame): string {
     reroll: 'Bank one free boon reroll.',
     upgrade: 'Improve an installed augment.',
     revive: SERVICE_CATALOG.revive.description,
+    'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
-  const cards=SERVICE_IDS.filter(id=>id!=='revive'||game.node.depth===18&&run.version===3)
+  const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='revive'||game.node.depth===18&&run.version===3))
     .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
@@ -218,12 +227,25 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
+  const route=game.node.depth===GUARDIAN_SUPPLY_DEPTH?run.guardianRoute:undefined;
+  const supply=route?GUARDIAN_SUPPLIES[route]:undefined;
+  const supplyCost=serviceCost('route-ammo',game.node.depth);
+  const supplyStock=serviceStock(run,'route-ammo');
+  const supplyEnabled=game.canPurchaseService('route-ammo');
+  const supplyStatus=!supplyStock?'Sold out':resources.credits<supplyCost?`Need ${supplyCost-resources.credits} more credits`:supplyEnabled?`+${supply?.rounds} reserve`:'Ammunition full';
+  const routeSupply=route&&supply?`<section class="route-supply">
+    <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
+    <button id="purchase-route-ammo" data-purchase="route-ammo" class="secondary" ${supplyEnabled?'':'disabled'}>
+      ${supply.name} · ${supplyCost} CR <small>${supplyStatus}</small>
+    </button>
+  </section>`:'';
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
     <header class="requisition-header">
       <div>${tag(`SECTOR ${serial(game.node.depth+1)}`)}<h2 id="requisition-title">Supply stop</h2>${contractPayout(game)}</div>
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
+    ${routeSupply}
     <div class="service-shop requisition-grid" role="group" aria-label="Supplies for purchase">${cards}</div>
     <footer class="requisition-footer">
       <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
@@ -392,7 +414,7 @@ export function resultsScreen(game: DepthGame): string {
   const uses=ABILITY_SLOTS.reduce((sum,slot)=>sum+stats.abilityUses[slot],0);
   const damage=Object.values(stats.damageDealt).reduce((sum,value)=>sum+value,0);
   const cell=(id:string,value:string,label:string,detail='')=>`<div data-stat="${id}"><b>${value}</b><span>${label}</span>${detail?`<small class="stat-detail">${detail}</small>`:''}</div>`;
-  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}">${complete?completionEnding(game):`<header class="debrief-heading"><div>${tag('EXPEDITION LOST')}<h2>Mission lost.</h2></div><div class="debrief-rig" data-element="${rig?RIG_CATALOG[rig].element:'kinetic'}">${marinePortrait(rig??'breacher')}<span>${rig?RIG_CATALOG[rig].name:'MARINE'}<small>COMBAT RECORD</small></span></div></header>${incomingDamageReport(game,stats)}${retryLesson(game)}`}${resultsRunRecord(game)}<details class="result-details"><summary>${complete?'View expedition statistics':'Damage dealt & expedition build'}</summary><div class="result-stats hero-stats">${cell('rooms',`${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small>`,'SECTORS CLEARED')}${cell('kills',format(stats.kills.total),'HOSTILES ELIMINATED')}${cell('time',time,'COMBAT TIME')}${cell('damage',format(damage),'DAMAGE DEALT')}</div><div class="debrief-body"><div class="debrief-telemetry"><section class="damage-summary"><div class="telemetry-heading">${tag('DAMAGE COMPOSITION')}<span>${format(damage)} TOTAL</span></div><p class="damage-source-note">Totals by source · statuses and boons may mix elements.</p><div class="damage-source-bar" role="img" aria-label="${Object.entries(stats.damageDealt).map(([source,value])=>`${source} ${format(value)}`).join(', ')}">${Object.entries(stats.damageDealt).filter(([,value])=>value>0).map(([source,value])=>`<i data-damage-source="${source}" style="flex:${value/damage};min-width:3%"></i>`).join('')}</div><div class="damage-source-legend">${Object.entries(stats.damageDealt).map(([source,value])=>cell(source,format(value),source.toUpperCase())).join('')}</div></section><details class="combat-ledger"><summary>Combat and economy details</summary><div class="secondary-stat-groups"><section><h3>Combat</h3><div class="result-secondary">${cell('accuracy',stats.shotsFired?`${Math.round(stats.shotsHit/stats.shotsFired*100)}%`:'—','ACCURACY')}${cell('shots',format(stats.shotsFired),'SHOTS FIRED',`${format(stats.shotsHit)} confirmed hits`)}${cell('taken',format(stats.damageTaken),'DAMAGE TAKEN')}${cell('multi-kill',format(stats.highestMultiKill),'BEST MULTI-KILL')}</div></section><section><h3>Rig & economy</h3><div class="result-secondary">${cell('uses',format(uses),'ABILITY USES',ABILITY_SLOTS.map(slot=>`${ABILITY_KEYS[slot]} ${stats.abilityUses[slot]}`).join(' · '))}${cell('overdrives',format(stats.overdrivesUsed),'OVERDRIVES')}${cell('credits',format(stats.creditsEarned),'CREDITS EARNED')}${cell('boons',String(game.expedition.build.mutations.length),'BOONS')}</div></section></div></details></div><aside class="debrief-build">${marinePortrait(rig??'breacher','record-marine')}<div class="telemetry-heading">${tag('EXPEDITION BUILD')}<span>${game.expedition.build.mutations.length} INSTALLED</span></div>${rig?`<div class="result-ability-icons" aria-label="Equipped abilities">${ABILITY_SLOTS.map(slot=>{const a=ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];return `<span tabindex="0" title="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}" aria-label="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}">${icon(a.id)}<kbd>${ABILITY_KEYS[slot]}</kbd></span>`;}).join('')}</div>`:''}${buildIcons(game)}</aside></div></details><div class="result-actions">${complete?'':'<button id="retry-rig" class="primary">Retry — same rig</button>'}<button id="start" class="${complete?'primary':'secondary'}">${complete?'Play again':'Choose new loadout'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
+  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}">${complete?completionEnding(game):`<header class="debrief-heading"><div>${tag('EXPEDITION LOST')}<h2>Mission lost.</h2></div><div class="debrief-rig" data-element="${rig?RIG_CATALOG[rig].element:'kinetic'}">${marinePortrait(rig??'breacher')}<span>${rig?RIG_CATALOG[rig].name:'MARINE'}<small>COMBAT RECORD</small></span></div></header>${incomingDamageReport(game,stats)}${retryLesson(game)}`}${resultsRunRecord(game)}<details class="result-details"><summary>${complete?'View expedition statistics':'Damage dealt & expedition build'}</summary><div class="result-stats hero-stats">${cell('rooms',`${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small>`,'SECTORS CLEARED')}${cell('kills',format(stats.kills.total),'HOSTILES ELIMINATED')}${cell('time',time,'COMBAT TIME')}${cell('damage',format(damage),'DAMAGE DEALT')}</div><div class="debrief-body"><div class="debrief-telemetry"><section class="damage-summary"><div class="telemetry-heading">${tag('DAMAGE COMPOSITION')}<span>${format(damage)} TOTAL</span></div><p class="damage-source-note">Totals by source · statuses and boons may mix elements.</p><div class="damage-source-bar" role="img" aria-label="${Object.entries(stats.damageDealt).map(([source,value])=>`${source} ${format(value)}`).join(', ')}">${Object.entries(stats.damageDealt).filter(([,value])=>value>0).map(([source,value])=>`<i data-damage-source="${source}" style="flex:${value/damage};min-width:3%"></i>`).join('')}</div><div class="damage-source-legend">${Object.entries(stats.damageDealt).map(([source,value])=>cell(source,format(value),source.toUpperCase())).join('')}</div></section><details class="combat-ledger"><summary>Combat and economy details</summary><div class="secondary-stat-groups"><section><h3>Combat</h3><div class="result-secondary">${cell('accuracy',stats.shotsFired?`${Math.round(stats.shotsHit/stats.shotsFired*100)}%`:'—','ACCURACY')}${cell('shots',format(stats.shotsFired),'SHOTS FIRED',`${format(stats.shotsHit)} confirmed hits`)}${cell('taken',format(stats.damageTaken),'DAMAGE TAKEN',stats.selfBlastDamage?`${format(stats.selfBlastDamage)} from your own blast`:'')}${cell('multi-kill',format(stats.highestMultiKill),'BEST MULTI-KILL')}</div></section><section><h3>Rig & economy</h3><div class="result-secondary">${cell('uses',format(uses),'ABILITY USES',ABILITY_SLOTS.map(slot=>`${ABILITY_KEYS[slot]} ${stats.abilityUses[slot]}`).join(' · '))}${cell('overdrives',format(stats.overdrivesUsed),'OVERDRIVES')}${cell('credits',format(stats.creditsEarned),'CREDITS EARNED')}${cell('boons',String(game.expedition.build.mutations.length),'BOONS')}</div></section></div></details></div><aside class="debrief-build">${marinePortrait(rig??'breacher','record-marine')}<div class="telemetry-heading">${tag('EXPEDITION BUILD')}<span>${game.expedition.build.mutations.length} INSTALLED</span></div>${rig?`<div class="result-ability-icons" aria-label="Equipped abilities">${ABILITY_SLOTS.map(slot=>{const a=ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];return `<span tabindex="0" title="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}" aria-label="${escapeHtml(`${a.name}. ${playerFacingText(a.description)}`)}">${icon(a.id)}<kbd>${ABILITY_KEYS[slot]}</kbd></span>`;}).join('')}</div>`:''}${buildIcons(game)}</aside></div></details><div class="result-actions">${complete?'':'<button id="retry-rig" class="primary">Retry — same rig</button>'}<button id="start" class="${complete?'primary':'secondary'}">${complete?'Play again':'Choose new loadout'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
 }
 
 /** Recovery templates keep system messaging consistent when the bootstrap needs them. */

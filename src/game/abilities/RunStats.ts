@@ -4,7 +4,7 @@ import {generateRun} from '../roguelike/run';
 import type {RunState} from '../roguelike/types';
 
 export type DamageSource = 'weapon' | 'ability' | 'status' | 'boon';
-export type IncomingDamageSource = 'enemy-contact' | 'enemy-charge' | 'enemy-projectile' | 'acid-pool' | 'boss-attack' | 'scripted' | 'unknown';
+export type IncomingDamageSource = 'enemy-contact' | 'enemy-charge' | 'enemy-projectile' | 'acid-pool' | 'boss-attack' | 'self-blast' | 'scripted' | 'unknown';
 export type IncomingDamageOrigin = Readonly<{source: IncomingDamageSource; enemyFamily?: EnemyId}>;
 /** Actual armor/health lost, with the authoritative simulation clock and run-node id. */
 export type IncomingDamageReceipt = IncomingDamageOrigin & Readonly<{amount: number; room: string; atMs: number}>;
@@ -22,6 +22,7 @@ export type RunStatsSnapshot = Readonly<{
   /** Absent only in historical saves/fixtures; runtime snapshots always supply these defaults. */
   lastDamage?: IncomingDamageReceipt | null;
   recentDamage?: readonly IncomingDamageReceipt[];
+  selfBlastDamage?: number;
 }>;
 
 /** Persistence limits bound counters, room maps, and the rolling kill queue. */
@@ -29,7 +30,7 @@ export const RUN_STATS_LIMITS = Object.freeze({ counter: 1_000_000_000, timeMs: 
 export const INCOMING_DAMAGE_WINDOW_MS = 5000;
 export const INCOMING_DAMAGE_CAPACITY = 32;
 const FAMILIES = ['crawler', 'brute', 'spitter', 'stalker', 'carrier', 'queen'] as const;
-const INCOMING_SOURCES: readonly IncomingDamageSource[] = ['enemy-contact', 'enemy-charge', 'enemy-projectile', 'acid-pool', 'boss-attack', 'scripted', 'unknown'];
+const INCOMING_SOURCES: readonly IncomingDamageSource[] = ['enemy-contact', 'enemy-charge', 'enemy-projectile', 'acid-pool', 'boss-attack', 'self-blast', 'scripted', 'unknown'];
 const SOURCES = ['weapon', 'ability', 'status', 'boon'] as const;
 const SLOTS = ['dash', 'tactical', 'power', 'overdrive'] as const;
 const KEYS = ['kills', 'damageDealt', 'damageTaken', 'shotsFired', 'shotsHit', 'abilityUses', 'overdrivesUsed', 'highestMultiKill', 'roomTimeMs', 'creditsEarned'];
@@ -51,8 +52,11 @@ function validIncoming(value: unknown): value is IncomingDamageReceipt {
 /** Strict exact-schema validation; optional run context also checks timer membership and resume capacity. */
 export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value is RunStatsSnapshot {
   try {
-    if (!(exact(value, KEYS) || exact(value, [...KEYS, 'lastDamage', 'recentDamage'])) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
+    if(!plain(value))return false;
+    const keys=Object.hasOwn(value,'selfBlastDamage')?[...KEYS,'selfBlastDamage']:KEYS;
+    if (!(exact(value, keys) || exact(value, [...keys, 'lastDamage', 'recentDamage'])) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
     if (!['damageTaken', 'shotsFired', 'shotsHit', 'overdrivesUsed', 'creditsEarned'].every(key => bounded(value[key], RUN_STATS_LIMITS.counter, key !== 'damageTaken'))) return false;
+    if (Object.hasOwn(value,'selfBlastDamage')&&!bounded(value.selfBlastDamage,Number(value.damageTaken)))return false;
     if (Number(value.shotsHit) > Number(value.shotsFired) || (value.kills.total > 0 && Number(value.highestMultiKill) < 1)) return false;
     if (Number(value.overdrivesUsed) !== value.abilityUses.overdrive || !bounded(value.highestMultiKill, RUN_STATS_LIMITS.multiKill, true) || Number(value.highestMultiKill) > value.kills.total) return false;
     if (!plain(value.roomTimeMs)) return false;
@@ -94,6 +98,7 @@ type MutableStats = {
   highestMultiKill: number;
   roomTimeMs: Record<string, number>;
   creditsEarned: number;
+  selfBlastDamage?: number;
   lastDamage: IncomingDamageReceipt | null;
   recentDamage: IncomingDamageReceipt[];
 };
@@ -198,6 +203,10 @@ export class RunStats {
   recordDamageTaken(amount: number, origin: IncomingDamageOrigin = {source: 'unknown'}): void {
     if (!Number.isFinite(amount) || amount <= 0) return;
     this.add('damageTaken', amount);
+    if(origin.source==='self-blast'){
+      this.value.selfBlastDamage=increment(this.value.selfBlastDamage??0,amount);
+      this.cached=null;
+    }
     if (!this.room) return;
     this.pruneIncoming();
     const receipt: IncomingDamageReceipt = {
