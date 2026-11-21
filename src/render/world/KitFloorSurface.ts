@@ -12,7 +12,7 @@ export type KitFloorProof={idea:string;coverage:number;triangles:number;features
 /** Floor-only albedo calibration after the saved all20 density value audit. */
 export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
  'awakening-bay':.48,'passenger-vault':.40,'transmission-chamber':.64,
- 'crew-checkpoint':.48,'armory':.68,'breached-loading-bay':.60,
+ 'crew-checkpoint':.36,'armory':.68,'breached-loading-bay':.60,
  'shielding-gate':.38,'overload-floor':.78,
  'manual-control-chamber':.64,'diagnostic-gallery':.80,
  'infested-workshop':.85,'swarm-junction':.80,
