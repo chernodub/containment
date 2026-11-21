@@ -5,16 +5,19 @@ import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
 import type { ActorModel } from '../models';
 import { registerOriginalInteriorCutaways, updateOriginalInteriorCutaways, type InteriorCutaway } from './OriginalInteriorCutaways';
 
+import { dashedRing } from '../markers/dashedRing';
+
 export class PincerPresentation {
   readonly root = new T.Group();
   private readonly block = new T.BoxGeometry();
   private readonly body = new T.ConeGeometry(.26, .7, 5);
   private readonly sac = new T.SphereGeometry(.5,12,8);
-  private readonly ring = new T.RingGeometry(.68, .82, 48);
+  private readonly ring = dashedRing(.795, .82, 64);
   private readonly metal = new T.MeshBasicMaterial({ color: 0x535e65 });
   private readonly warning = new T.MeshBasicMaterial({ color: 0xffb354, side: T.DoubleSide });
   private readonly shadow = new T.MeshBasicMaterial({ color: 0x301b22 });
   private readonly signal = new T.MeshBasicMaterial({ color: 0x63eee2, side: T.DoubleSide });
+  private readonly track = new T.MeshBasicMaterial({color:0x63cbbb,transparent:true,opacity:.30,depthWrite:false});
   private readonly exit = new T.Group();
   private readonly gates = new Map<string, {
     root: T.Group;
@@ -38,7 +41,7 @@ export class PincerPresentation {
       new T.Mesh(this.block, this.metal),
       new T.Mesh(this.ring, this.warning),
       new T.Mesh(this.body, this.shadow),
-      new T.Mesh(this.ring, this.signal),
+      new T.Mesh(this.ring, this.track),
     );
     register(variants);
   }
@@ -148,7 +151,8 @@ export class PincerPresentation {
     this.root.add(this.exit,this.brood);
     this.brood.add(this.broodSac);
     for (let i = 0; i < 3; i++) {
-      const light = new T.Mesh(this.ring, this.signal);
+      const light = new T.Mesh(this.ring, this.track);
+      light.renderOrder = -2;
       light.rotation.x = -Math.PI / 2;
       light.position.y = .12;
       light.scale.setScalar(1 + i * .37);
@@ -304,6 +308,6 @@ export class PincerPresentation {
   dispose() {
     this.root.removeFromParent();
     for (const gate of this.gates.values()) gate.countdown.geometry.dispose();
-    for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal]) resource.dispose();
+    for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal, this.track]) resource.dispose();
   }
 }
