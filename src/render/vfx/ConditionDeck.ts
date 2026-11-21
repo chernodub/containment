@@ -6,7 +6,8 @@ import type {ConditionZone} from '../../game/roguelike/RoomConditionRuntime';
 /** x is across the fitting; y follows its long axis. Both are in metres. */
 export function conditionDeck(){
  return new T.ShaderMaterial({transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5,uniforms:{
-  size:{value:new T.Vector2()},lamp:{value:new T.Vector2()},kind:{value:0},charge:{value:0},clock:{value:0}
+  size:{value:new T.Vector2()},lamp:{value:new T.Vector2()},kind:{value:0},charge:{value:0},clock:{value:0},
+  neighbours:{value:[new T.Vector3(0,0,-1),new T.Vector3(0,0,-1)]}
  },vertexShader:`
  varying vec2 coord,world;
  void main(){
@@ -16,6 +17,7 @@ export function conditionDeck(){
    gl_Position=projectionMatrix*viewMatrix*p;
  }`,fragmentShader:`
  uniform vec2 size,lamp;
+ uniform vec3 neighbours[2];
  uniform float kind,charge,clock;
  varying vec2 coord,world;
  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -29,7 +31,15 @@ export function conditionDeck(){
  float grain=noise(world*3.7),cloud=noise(world*.85);
  vec3 c;float a;
  if(kind<.5){
-   float rim=1.-smoothstep(.02,.08+.32*cloud,-d);
+   // Each wet fragment belongs to its closest spill. The shared world-space
+   // shoreline and glints are continuous where the physical slicks join.
+   for(int i=0;i<2;i++){
+    vec3 zone=neighbours[i];
+    if(zone.z>0. && distance(world,zone.xy)-zone.z<d)discard;
+   }
+   float shore=d+.12+.50*cloud+.37*noise(world*.48)+.12*grain;
+   mask*=1.-smoothstep(-.08,.06,shore);
+   float rim=exp(-abs(shore+.09)*9.)*grain*cloud;
    vec2 cell=world*1.55,base=floor(cell),offset=fract(cell);
    float first=9.,second=9.;
    for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
@@ -39,15 +49,15 @@ export function conditionDeck(){
    }
    float seam=(second-first)*1.6;
    float frost=(1.-smoothstep(.012,.05,seam))*(.25+.75*grain);
-   float shine=exp(-abs(length((world-lamp)*vec2(.77,1.4))-1.65-cloud*.5)*3.);
+   float shine=exp(-abs(world.x-lamp.x+.35*(world.y-lamp.y)+cloud*.6)*2.)*exp(-abs(world.y-lamp.y)*.33);
    c=mix(vec3(.035,.105,.13),vec3(.40,.68,.74),clamp(rim*.70+frost*.29*cloud+shine*.58,0.,1.));
-   a=.18+.26*cloud+.11*rim;
+   a=.22+.25*cloud+.08*rim;
  }else if(kind<1.5){
-   float rail=1.-smoothstep(.055,.13,abs(abs(coord.x)-.53));
-   float clampBand=step(.85,fract(p.y*1.5));
+   float rail=1.-smoothstep(.055,.13,abs(coord.x+.16));
+   float cable=1.-smoothstep(.02,.06,abs(coord.x-.13-.022*sin(p.y*1.8)));
    float wave=charge<1.?exp(-abs(coord.y-(charge*2.-1.))*7.)*charge:1.;
    float arc=(1.-smoothstep(.015,.085,abs(coord.x-.28*(noise(vec2(p.y*3.8,floor(clock*13.)))*2.-1.))))*step(1.,charge);
-   c=mix(vec3(.048,.049,.061),vec3(.28,.26,.32),max(rail,clampBand*.5));
+   c=mix(vec3(.048,.049,.061),vec3(.28,.26,.32),max(rail,cable*.64));
    c+=vec3(.59,.55,.72)*(rail*(.12+wave*.52)+arc);
    a=.80;
  }else{

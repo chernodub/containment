@@ -176,7 +176,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     landmark:{at:[681,356],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.88,height:2.9},
     // Scanner arch inspection lamps and guard-gallery ceiling fixture.
     fixturesAt:[[364,200],[364,680],[1000,440]],
-    floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
+    floor:{lit:.25,unlit:.11,edge:.055}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
     wall:{value:.42,saturation:.55}, floorSaturation:.45, tint:0xd8e2f0,
     fixtures:.2, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
   }),

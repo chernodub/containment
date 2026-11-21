@@ -65,6 +65,59 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     mesh.name = 'hull-cap-diffusers';
     root.add(mesh);
   }
+  // These approaches expose the torn hull, torn guide or split duct directly.
+  if (!['shielding-gate','breached-loading-bay','swarm-junction'].includes(id)) {
+    addArenaInsert(root,plan.arena,insert);
+  }
+  if(id==='passenger-vault'||id==='freight-hold'){
+    // The luggage and cargo spilled onto their transport bases. The broad
+    // blocking footprint is visible even between individual loose pieces.
+    const cover=INCIDENT_OBSTACLES[id][id==='passenger-vault'?1:0];
+    const base=new T.Mesh(new T.BoxGeometry((cover.width-1.4)/32,.24,(cover.height-1.4)/32),
+      new T.MeshStandardMaterial({color:id==='passenger-vault'?0x687b83:0x253c4e,roughness:.82,metalness:.18}));
+    base.name='room14-displaced-transport-base';
+    base.position.set((cover.x+cover.width*.5)/32,.12,(cover.y+cover.height*.5)/32);
+    base.receiveShadow=true;
+    base.material.userData.actorMaterial=true;
+    root.add(base);
+  }
+  // Two restrained pools originate at actual diffusers already in the kit.
+  // The existing distance-ranked light pool owns their allocation and Low fallback.
+  const lamps=root.userData.lightFixtures as {x:number;z:number;color:number;nativeColor:boolean;gain:number}[]|undefined;
+  if(lamps?.length){
+    const distance=(p:{x:number;z:number})=>Math.hypot(p.x-plan.arena.x/32,p.z-plan.arena.y/32);
+    const sorted=[...lamps].sort((a,b)=>distance(a)-distance(b));
+    const work=sorted[0],consoleLamp=sorted.find(p=>Math.hypot(p.x-work.x,p.z-work.z)>3);
+    Object.assign(work,{color:0xebcc99,nativeColor:true,gain:.56});
+    if(consoleLamp)Object.assign(consoleLamp,{color:0x9bcad5,nativeColor:true,gain:.47});
+  }
+  const source=roomValueProfile(id)?.landmark;
+  if(!source)return;
+  // Physical diffuser and protective back at the existing pooled practical.
+  const fixture=new T.Group();
+  fixture.name='room14-landmark-worklight';
+  fixture.rotation.y=Math.atan2(plan.arena.x-source.at[0],plan.arena.y-source.at[1]);
+  fixture.position.set(source.at[0]/32,source.height??3.8,source.at[1]/32);
+  const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
+  const lens = new T.Color(source.color);
+  if (id === 'freight-hold') lens.multiplyScalar(.40);
+  if (['shielding-gate','breached-loading-bay','armory'].includes(id)) lens.multiplyScalar(.20);
+  const diffuser=new T.Mesh(new T.BoxGeometry(.56,.066,.14),new T.MeshStandardMaterial({
+    color:lens,emissive:lens,emissiveIntensity:.65,roughness:.36
+  }));
+  casing.material.userData.actorMaterial=true;diffuser.material.userData.actorMaterial=true;
+  diffuser.position.set(0,-.057,.091);
+  const mastHeight=Math.max(.72,fixture.position.y);
+  const post=new T.BoxGeometry(.075,mastHeight,.075).translate(-.30,-mastHeight*.5,0);
+  const shoe=new T.BoxGeometry(.25,.08,.29).translate(-.3,-mastHeight+.04,0);
+  const louvres=[-.12,.12].map(x=>new T.BoxGeometry(.025,.10,.19).translate(x,-.056,.11));
+  const housing=mergeGeometries([casing.geometry,post,shoe,...louvres])!;
+  louvres.forEach(g=>g.dispose());
+  casing.geometry.dispose();post.dispose();shoe.dispose();casing.geometry=housing;
+  fixture.add(casing,diffuser);root.add(fixture);
+}
+
+function addArenaInsert(root:T.Group,arena:{x:number;y:number},insert:Insert):void {
   const [kind,length,width,yaw,bays]=insert,parts:T.BufferGeometry[]=[];
   const plate=(x:number,z:number,w:number,d:number,bottom:number,top:number,tone:number)=>{
     const g=new T.BoxGeometry(w,top-bottom,d);
@@ -85,18 +138,6 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
       plate(x,kind==='hatch'?width*.26:0,.15,.045,.019,.021,0x303637);
     }
   }
-  if(id==='passenger-vault'||id==='freight-hold'){
-    // The luggage and cargo spilled onto their transport bases. The broad
-    // blocking footprint is visible even between individual loose pieces.
-    const cover=INCIDENT_OBSTACLES[id][id==='passenger-vault'?1:0];
-    const base=new T.Mesh(new T.BoxGeometry((cover.width-1.4)/32,.24,(cover.height-1.4)/32),
-      new T.MeshStandardMaterial({color:id==='passenger-vault'?0x687b83:0x253c4e,roughness:.82,metalness:.18}));
-    base.name='room14-displaced-transport-base';
-    base.position.set((cover.x+cover.width*.5)/32,.12,(cover.y+cover.height*.5)/32);
-    base.receiveShadow=true;
-    base.material.userData.actorMaterial=true;
-    root.add(base);
-  }
   const geometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
   const material=new T.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.26});
   // The recessed machined faces sit between the named-space paint and wet decals.
@@ -105,38 +146,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   material.polygonOffsetUnits=-3;
   material.userData.actorMaterial=true;
   const mesh=new T.Mesh(geometry,material);
-  mesh.name='room14-'+kind;mesh.position.set(plan.arena.x/32,.0002,plan.arena.y/32+1.1);
+  mesh.name='room14-'+kind;mesh.position.set(arena.x/32,.0002,arena.y/32+1.1);
   mesh.rotation.y=yaw;mesh.receiveShadow=true;root.add(mesh);
 
-  // Two restrained pools originate at actual diffusers already in the kit.
-  // The existing distance-ranked light pool owns their allocation and Low fallback.
-  const lamps=root.userData.lightFixtures as {x:number;z:number;color:number;nativeColor:boolean;gain:number}[]|undefined;
-  if(lamps?.length){
-    const distance=(p:{x:number;z:number})=>Math.hypot(p.x-plan.arena.x/32,p.z-plan.arena.y/32);
-    const sorted=[...lamps].sort((a,b)=>distance(a)-distance(b));
-    const work=sorted[0],consoleLamp=sorted.find(p=>Math.hypot(p.x-work.x,p.z-work.z)>3);
-    Object.assign(work,{color:0xebcc99,nativeColor:true,gain:.56});
-    if(consoleLamp)Object.assign(consoleLamp,{color:0x9bcad5,nativeColor:true,gain:.47});
-  }
-  const source=roomValueProfile(id)?.landmark;
-  if(!source)return;
-  // Physical diffuser and protective back at the existing pooled practical.
-  const fixture=new T.Group();
-  fixture.name='room14-landmark-worklight';
-  fixture.position.set(source.at[0]/32,source.height??3.8,source.at[1]/32);
-  const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
-  const lens = new T.Color(source.color);
-  if (id === 'freight-hold') lens.multiplyScalar(.40);
-  if (['shielding-gate','breached-loading-bay','armory'].includes(id)) lens.multiplyScalar(.20);
-  const diffuser=new T.Mesh(new T.BoxGeometry(.56,.066,.14),new T.MeshStandardMaterial({
-    color:lens,emissive:lens,emissiveIntensity:.65,roughness:.36
-  }));
-  casing.material.userData.actorMaterial=true;diffuser.material.userData.actorMaterial=true;
-  diffuser.position.set(0,-.057,.091);
-  const mastHeight=Math.max(.72,fixture.position.y);
-  const post=new T.BoxGeometry(.075,mastHeight,.075).translate(-.30,-mastHeight*.5,0);
-  const shoe=new T.BoxGeometry(.25,.08,.29).translate(-.3,-mastHeight+.04,0);
-  const housing=mergeGeometries([casing.geometry,post,shoe])!;
-  casing.geometry.dispose();post.dispose();shoe.dispose();casing.geometry=housing;
-  fixture.add(casing,diffuser);root.add(fixture);
 }

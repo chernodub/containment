@@ -2,6 +2,7 @@ import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
 import {roomValueProfile} from '../lighting/RoomValueStandard';
+import {paintServiceDeck} from './ServiceDeckMarkings';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
 function contactShadows(c: CanvasRenderingContext2D, room: RoomTemplate): void {
@@ -80,6 +81,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     contactShadows(c, room);
+    paintServiceDeck(c, room, arena);
     // Scuffed wheel tracks taper toward the workshop light. Their bend is
     // offset from the straight sightline so the marine stays on clear deck.
     const source = roomValueProfile(room.id)?.landmark?.at;
@@ -111,7 +113,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
       'shielding-gate':[[425,340],[446,366],[493,390],[532,397]],
       'manual-control-chamber':[[462,573],[491,587],[508,611],[477,644]],
-      'freight-hold':[[439,463],[424,478],[414,479],[395,493]],
     };
     // An alternating three-toed trail leads out of the opening. Its tarry
     // deposit thins as the creature crosses the surviving turning apron.
@@ -128,6 +129,35 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
         c.lineTo(-1,5); c.lineTo(-6,10); c.lineTo(-4,1);
         c.closePath(); c.fill(); c.restore();
       }
+    }
+    // Continue the physical assemblies in shallow, hull-clipped deck relief.
+    const plate=(path:string,color:string)=>{c.fillStyle=color;c.fill(new Path2D(path));};
+    if(room.id==='shielding-gate'){
+      plate('M409 475 L491 469 546 451 655 461 731 472 731 490 646 478 545 469 494 486 409 493Z','#475760');
+      plate('M411 479 L491 473 545 455 638 463 638 469 546 462 492 480 411 487Z','#939e9e');
+      plate('M649 464 L707 469 693 474 731 480 727 486 659 475Z','#85949b');
+      // Three separated, creased pieces of door skin still share a shear line.
+      for(const [x,y,angle] of [[495,483,-.18],[550,467,.09],[614,470,.15]]){
+        c.save();c.translate(x,y);c.rotate(angle);
+        plate('M0 -11 L42 -12 53 -5 45 -2 51 6 23 10 0 7Z','#74818a');
+        plate('M0 4 L26 4 48 -3 46 2 23 10 0 7Z','#a4aba4');
+        for(const px of [5,31]){c.fillStyle='#354349';c.fillRect(px,-8,4,3);}
+        c.restore();
+      }
+    }else if(room.id==='breached-loading-bay'){
+      plate('M589 624 L607 630 639 680 658 706 655 716 643 711 649 724 627 702 605 665Z','#81959a');
+      plate('M607 630 L640 675 658 706 644 696 626 675Z','#abb5ad');
+      plate('M612 650 L624 664 619 664Z M628 681 L638 692 633 692Z','#394649');
+      plate('M573 552 Q570 602 592 651 T631 731 L620 720 Q588 685 584 655 T570 570Z','rgba(33,40,36,.66)');
+    }else if(room.id==='freight-hold'){
+      // The torn corner travelled northwest from the tow lane to the pallet.
+      plate('M492 477 Q544 511 600 568 T768 686 L772 689 Q669 625 600 576 T490 483Z','#524e44');
+      c.save();c.translate(550,531);c.rotate(.48);
+      plate('M-22 -13 L17 -13 24 -6 24 12 -22 12Z','#949489');
+      plate('M-16 -8 L17 -8 17 7 -16 7Z','#354247');
+      plate('M-12 -3 L13 -3 13 1 -12 1Z','#a5a799');
+      c.fillStyle='#999b90';c.font='bold 14px Barlow, sans-serif';c.fillText('TIE 7',-18,28);
+      c.restore();
     }
     const track=scars[room.id];
     if(track){

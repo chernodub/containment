@@ -46,6 +46,16 @@ export class ShipConditionVisuals {
    if(state&&game){
     const points=state.condition.id==='dark'?game.geometry.breaches:state.condition.id==='coolant'?state.zones:[];
     this.mounts=points.map(p=>conditionMount(p,game.geometry,this.unit));
+    if(state.condition.id==='coolant'){
+     for(const [index,patch] of this.patches.entries()){
+      const otherZones=state.zones.filter((_,i)=>i!==index);
+      patch.material.uniforms.neighbours.value.forEach((v:T.Vector3,i:number)=>{
+       const other=otherZones[i];
+       if(other)v.set(other.x/this.unit,other.y/this.unit,other.radius/this.unit);
+       else v.set(0,0,-1);
+      });
+     }
+    }
    }
    this.nextSkid=0;
    this.live=false;this.unlockedAt=-1;for(const t of this.tracks)t.t=-Infinity;this.previous=state;}
@@ -59,7 +69,7 @@ export class ShipConditionVisuals {
    if(id==='coolant'||id==='conduit'||id==='brood'){
     const patch=this.patches[i],uniforms=patch.material.uniforms;
     const size=id==='brood'?r*2.8:r;
-    patch.visible=true;patch.position.set(x+dx/2,.022,z+dz/2);
+    patch.visible=true;patch.position.set(x+dx/2,.0218,z+dz/2);
     patch.rotation.y=a;patch.scale.set(size,1,size+len/2);
     uniforms.size.value.set(size,size+len/2);uniforms.lamp.value.set(px,pz);
     uniforms.kind.value=id==='coolant'?0:id==='conduit'?1:2;
@@ -78,16 +88,32 @@ export class ShipConditionVisuals {
     f.part(sx,.49,sz,.49,.12,.52,FROST);
     f.part(sx,.23,sz,.52,.14,.48,INK);
     const spillLength=Math.hypot(x-sx,z-sz), direction=Math.atan2(x-sx,z-sz);
-    f.part(sx,.56,sz,.78,.27,.48,STEEL,direction);
-    f.part(sx,.3,sz,.38,.55,.15,FROST,direction,0,true);
-    f.part((sx+x)/2,.014,(sz+z)/2,.36,.012,spillLength,0x5f949b,direction);
-    const ripple=reduced?.46:(t*.55)%1;
-    f.part(sx+(x-sx)*ripple,.020,sz+(z-sz)*ripple,.27,.003,.24,0x95b8bc,direction);
-    this.mist(sx,sz,t,low);
-   }else if(id==='conduit'){
-    for(const side of [-1,1]){
-     f.part(x+dx/2+Math.cos(a)*r*.78*side,.012,z+dz/2-Math.sin(a)*r*.78*side,.065,.019,len,STEEL,a);
+    const along=(distance:number)=>[sx+Math.sin(direction)*distance,sz+Math.cos(direction)*distance];
+    // A recessed feed carries the first leak out from the wall valve.
+    // Its burst service coupling sits in the wet lane, visible from the pool.
+    const extension=i===0?Math.max(0,spillLength-r*.48):0;
+    if(extension>.1){
+     const [cx,cz]=along(extension/2);
+     f.part(cx,.016,cz,.45,.010,extension,INK,direction);
+     f.part(cx,.019,cz,.22,.004,extension,BRASS,direction);
     }
+    for(const [distance,width,length,color] of [[0,.62,.75,STEEL],[.38,.83,.13,BRASS],[.58,.67,.12,FROST]]){
+     const [cx,cz]=along(extension+distance);
+     f.part(cx,.52,cz,width,.48,length,color,direction,distance>.5?.13:0);
+    }
+    const [mouthX,mouthZ]=along(extension+.58);
+    f.part(mouthX,.29,mouthZ,.25,.49,.13,0x7ca9ad,direction,-.13,true);
+    const [midX,midZ]=along((spillLength+extension+.58)/2);
+    f.part(midX,.014,midZ,.25,.009,Math.max(.1,spillLength-extension-.58),0x587c80,direction);
+    this.mist(mouthX,mouthZ,t,low);
+   }else if(id==='conduit'){
+    // The flush switch box terminates the bus at the simulated start of the lane.
+    f.part(x,.065,z,1.52,.13,1.06,INK,a);
+    f.part(x,.145,z,1.36,.06,.93,STEEL,a);
+    for(const side of [-1,0,1]){
+     f.part(x+side*.36*Math.cos(a),.20,z-side*.36*Math.sin(a),.21,.075,.59,side?BRASS:FROST,a);
+    }
+    f.part(x+dx/2,.012,z+dz/2,.11,.015,len,STEEL,a);
     if(state.conduitLive){
      if(!this.live&&!reduced)lights?.flash({x:x+dx/2,z:z+dz/2,y:.34,color:0xd6cced,intensity:3,distance:3,duration:.14,priority:1});
      for(let j=0;j<(low?2:5);j++){
@@ -152,13 +178,20 @@ export class ShipConditionVisuals {
  private shutter(x:number,z:number,a:number,r:number,open:number,seconds:number,low:boolean){
   const part=(s:number,y:number,d:number,w:number,h:number,l:number,color:number,roll=0,lit=false)=>
    this.fittings.part(x+s*Math.cos(a)+d*Math.sin(a),y,z-s*Math.sin(a)+d*Math.cos(a),w,h,l,color,a,roll,lit);
+  const release=Math.min(1,open*3);
+  const leafOpen=Math.max(0,(open-1/3)*1.5);
+  // A telescoping bolt retracts into the left keeper before the panels separate.
+  part(-r*.83,1.50,-.06,.48,.32,.59,INK);
+  part(r*.83,1.50,-.06,.46,.32,.57,INK);
+  part(-release*r*.82,1.53,-.06,r*(1.74-1.59*release),.17,.27,BRASS);
+  part(r*(.75-1.60*release),1.63,-.06,.24,.05,.31,FROST);
   for(const side of [-1,1]){
    part(side*r,.77,0,.23,1.54,.55,STEEL);
-   for(const y of [.48,1.03])part(side*r*(.47+open),y,.22,r*.99,.16,.14,BRASS);
+   for(const y of [.48,1.03])part(side*r*(.47+leafOpen),y,.22,r*.99,.16,.14,BRASS);
    const slats=low?3:5,pitch=1.3/slats;
-   for(let j=0;j<slats;j++)part(side*r*(.50+open),.06+(j+.5)*pitch,0,r*.95,pitch-.055,.34,j%2?0x35434c:0x53616a);
-   part(side*r*(.50+open),1.39,0,r*.97,.12,.40,BRASS);
-   for(const face of [-1,1])part(side*r*(.50+open),.75,face*.182,.14,.67,.035,BRASS,-side*.52);
+   for(let j=0;j<slats;j++)part(side*r*(.50+leafOpen),.06+(j+.5)*pitch,0,r*.95,pitch-.055,.34,j%2?0x35434c:0x53616a);
+   part(side*r*(.50+leafOpen),1.39,0,r*.97,.12,.40,BRASS);
+   for(const face of [-1,1])part(side*r*(.50+leafOpen),.75,face*.182,.14,.67,.035,BRASS,-side*.52);
   }
   // The readout sits horizontally on the jamb; its glyphs face the fixed deck camera.
   const panelX=x+r*Math.cos(a),panelZ=z-r*Math.sin(a);

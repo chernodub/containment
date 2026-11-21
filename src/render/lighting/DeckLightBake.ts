@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { shipEnvironment } from '../ShipEnvironments';
+import {roomValueProfile} from './RoomValueStandard';
 import type { RoomTemplate } from '../../game/roguelike/types';
 
 type Bake = { key:string; pixels:Uint8Array; bounds:T.Vector4 };
@@ -8,11 +8,11 @@ const bakes = new WeakMap<RoomTemplate,Bake>();
 /** Bake stable fixture falloff and construction proximity once at room build.
  * RG stores key-pool coverage and soft enclosure occlusion. No realtime lights,
  * scene queries or combat work; Low uses the identical 256² light field. */
-export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], services: readonly {x:number;z:number;width:number;depth:number}[] = [], exitGain = .8): { texture: T.DataTexture; bounds: T.Vector4 } {
-  const key=JSON.stringify([pools.map(pool=>pool.toArray()),services,exitGain]);
+export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], exitGain = .8): { texture: T.DataTexture; bounds: T.Vector4 } {
+  const key=JSON.stringify([pools.map(pool=>pool.toArray()),exitGain]);
   let bake=bakes.get(t);
   if(bake?.key!==key){
-    bake={key,...buildDeckLighting(t,pools,services,exitGain)};
+    bake={key,...buildDeckLighting(t,pools,exitGain)};
     bakes.set(t,bake);
   }
   const texture = new T.DataTexture(bake.pixels, 256, 256, T.RGBAFormat);
@@ -21,7 +21,7 @@ export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], s
   return {texture, bounds:bake.bounds.clone()};
 }
 
-function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],services:readonly {x:number;z:number;width:number;depth:number}[],exitGain:number) {
+function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:number) {
   const hull = t.boundary ?? [{x: 0, y: 0}, {x: t.width, y: 0}, {x: t.width, y: t.height}, {x: 0, y: t.height}];
   const xs = hull.map(p => p.x / 32), zs = hull.map(p => p.y / 32);
   const x0 = Math.min(...xs), z0 = Math.min(...zs), width = Math.max(...xs) - x0, depth = Math.max(...zs) - z0;
@@ -32,12 +32,15 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],services:re
   const smooth = (lo: number, hi: number, value: number) => {
     const a = Math.max(0, Math.min(1, (value - lo) / (hi - lo))); return a * a * (3 - 2 * a);
   };
-  const environment=shipEnvironment(t.id);
-  const accentGain=environment==='containment'?.72:environment==='maintenance'||environment==='communications'?.32:.14;
+  const lamp = roomValueProfile(t.id)?.landmark;
+  const sourceX = (lamp?.at[0] ?? 0)/32, sourceZ = (lamp?.at[1] ?? 0)/32;
+  const arena=pools[0];
+  const aim = arena ? Math.atan2(arena.x-sourceX,arena.y-sourceZ) : 0;
+  const sin = Math.sin(aim), cos = Math.cos(aim);
   const size = 256, pixels = new Uint8Array(size * size * 4);
   for (let row = 0; row < size; row++) for (let column = 0; column < size; column++) {
     const x = x0 + (column + .5) / size * width, z = z0 + (row + .5) / size * depth;
-    let pool = 0, nearest = Infinity, accent = 0, status = 0;
+    let pool = 0, nearest = Infinity;
     for (const source of pools) {
       if (source.z < 1) continue;
       pool = Math.max(pool, (1 - smooth(.22, 1.45, Math.abs(x - source.x) / source.z)) * (1 - smooth(.16, 1.35, Math.abs(z - source.y) / source.w)));
@@ -47,21 +50,17 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],services:re
       const f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
       nearest = Math.min(nearest, Math.hypot(x - ax - dx * f, z - az - dz * f));
     }
-    for(const service of services){
-      const dx=Math.max(0,Math.abs(x-service.x/32)-service.width*.5),dz=Math.max(0,Math.abs(z-service.z/32)-service.depth*.5);
-      accent=Math.max(accent,(1-smooth(.05,1.15,Math.hypot(dx,dz)))*accentGain);
-    }
-    if(environment==='containment'){
-      const source=pools[0];
-      accent=Math.max(accent,(1-smooth(.2,1.6,Math.hypot((x-source.x)/2.5,(z-source.y-2.4)/1.8)))*.88);
-    }
-    if(['containment','communications','maintenance'].includes(environment??''))for(const source of pools){
-      if(source.z<1)continue;
-      for(const side of [-1,1])status=Math.max(status,1-smooth(.1,1.05,Math.hypot(x-source.x-side*1.56,z-source.y-2.4)));
-    }
+    // A fixed cut-off hood casts three panes of light from the visible
+    // landmark post. The same room-space field is filtered on both tiers.
+    const along=(x-sourceX)*sin+(z-sourceZ)*cos;
+    const across=(x-sourceX)*cos-(z-sourceZ)*sin;
+    const spread=.34+Math.max(0,along)*.22;
+    const u=across/spread;
+    const aperture=lamp && arena ? smooth(0,.20,along)*(1-smooth(2.7,5.8,along))*
+      (1-smooth(.82,1.05,Math.abs(u)))*(.22+.78*smooth(.035,.13,Math.abs(Math.abs(u)-.34))) : 0;
     const index = (row * size + column) * 4;
     pixels[index] = Math.round(pool * 255); pixels[index + 1] = Math.round(smooth(.1, 1.7, nearest) * 255);
-    pixels[index + 2] = Math.round(accent*255); pixels[index + 3] = Math.round(status*255);
+    pixels[index + 2] = Math.round(aperture*255); pixels[index + 3] = 255;
   }
   return {pixels, bounds: new T.Vector4(x0, z0, width, depth)};
 }

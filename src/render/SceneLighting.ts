@@ -117,7 +117,7 @@ export class SceneLighting {
   });
  }
  private landmarkFixture():Fixture|undefined {
-  const source=this.tier==='high'?this.valueProfile?.landmark:undefined;
+  const source=this.tier==='high'||this.blackout?this.valueProfile?.landmark:undefined;
   return source?{x:source.at[0]/32,z:source.at[1]/32,y:source.height??3.8,color:source.keyColor??source.color,nativeColor:true,gain:source.keyGain??1.4,distance:source.radius*2,poolWidth:source.radius,poolDepth:source.radius*1.6,poolStyle:0}:undefined;
  }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
@@ -182,16 +182,17 @@ export class SceneLighting {
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
    const climax=this.mood.environment==='reactor'&&!!this.staging&&!this.bossArena;if(climax&&i>0){light.color.setHex(0xff3018);light.distance=4.2;}
    const failed=((this.mood.environment==='habitation'&&i===1)||light.userData.humanFailed)?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
-   light.intensity=this.blackout?0:(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain*(this.valueProfile?.practicals??1))*(light.userData.fixtureGain??1)*(1+(animated*failed-1)*this.flashIntensity);
+   const reserve=this.blackout?(i===0&&(this.staging||this.valueProfile?.landmark) ? .12 : 0):1;
+   light.intensity=reserve*(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain*(this.valueProfile?.practicals??1))*(light.userData.fixtureGain??1)*(1+(animated*failed-1)*this.flashIntensity);
   }
  }
  setBlackout(active:boolean){
   if(this.blackout===active)return;
-  this.blackout=active;
+  this.blackout=active;this.playerX=this.playerZ=NaN;
   this.applyMood(this.width,this.height);
   this.lamp.setBlackout(active);
   if(active){
-   for(const light of [this.ambient,this.key,this.fill,this.rim])light.intensity*=.08;
+   for(const light of [this.ambient,this.key,this.fill,this.rim])light.intensity*=.17;
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */
