@@ -63,6 +63,9 @@ export class PincerPresentation {
       model.body.rotation.x += .10;
       this.cutAwayCrown(model, game, camera, marineHeight);
     }
+    if (enemy.champion === 'matron' && enemy.broodRemainingMs) {
+      model.setEmissionRegion?.('matron-vents', .72 + 1.8 * (1 - enemy.broodRemainingMs / 1000));
+    }
     if (enemy.podStage !== 'opening') return;
     const parent = game.enemies.snapshot.enemies.find(actor => actor.champion === 'matron');
     const angle = parent ? Math.atan2(parent.y - enemy.y, parent.x - enemy.x) : 0;
@@ -241,11 +244,7 @@ export class PincerPresentation {
     if(!matron.broodRemainingMs&&!interruption)return;
     this.brood.visible=true;
     const remaining=interruption?.remainingMs??0;
-    this.broodSac.position.set(matron.x/unit,2.45,matron.y/unit);
-    this.broodSac.rotation.set(0,0,Math.PI);
-    const collapse=Math.min(1,remaining/1800);
-    this.broodSac.scale.set(interruption?.82:1.25,interruption ? .16+collapse**12 : 1.4,interruption?.82:1.25);
-    this.broodSac.material=interruption?this.signal:this.warning;
+    this.broodSac.visible=false;
     for(const pod of this.broodSplits)pod.visible=false;
     const wither = Math.min(1, remaining / 1500);
     this.collapsedPods.forEach((point,index)=>{
