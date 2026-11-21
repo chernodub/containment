@@ -130,13 +130,6 @@ export function paintServiceDeck(c:Brush,room:RoomTemplate,arena:Point):void {
       if(cx < -pitch || cy < -pitch || cx>room.width+pitch || cy>room.height+pitch)continue;
       c.save();c.translate(x,y);
       c.globalAlpha=.85;bay(c,room.id,pitch);
-      // Registration is rolled into the plates and worn where carts pass.
-      // One quiet bay label per room: the stencil must never compete with an actor.
-      if(row===0&&col===0){
-        c.globalAlpha=.28;c.fillStyle='#a8aea2';c.font='bold 19px Barlow, sans-serif';
-        c.fillText(label,8,96);
-        c.globalAlpha=.4;band(c,29,74,2,22,bed);band(c,66,74,2,22,bed);
-      }
       c.globalAlpha=.35;
       for(let i=0;i<5;i++){
         const xx=13+((i*47+Math.abs(row*17+col*31))%163);
@@ -145,5 +138,35 @@ export function paintServiceDeck(c:Brush,room:RoomTemplate,arena:Point):void {
       c.restore();
     }
   }
+  c.save();
+  c.translate(-44,38);
+  c.shadowColor='rgba(13,19,20,.8)';c.shadowOffsetY=2;c.shadowBlur=3;
+  c.globalAlpha=.72;
+  switch(room.id){
+    case 'awakening-bay': case 'coolant-plant': case 'passenger-vault': case 'infested-workshop':
+      // A dark irregular wet margin feeds the slots of the drain.
+      c.beginPath();c.moveTo(-30,3);c.bezierCurveTo(-18,-14,12,-4,31,-9);
+      c.bezierCurveTo(43,-4,20,4,15,8);c.bezierCurveTo(-4,14,-23,9,-30,3);
+      c.fillStyle='#394c4d';c.fill();grate(c,-20,4,39,10,3);break;
+    case 'relay-racks': case 'manual-control-chamber': case 'transmission-chamber':
+    case 'diagnostic-gallery': case 'swarm-junction': case 'safety-interlock-station':
+      for(const v of [0,5,10])line(c,[-46,v-8,-19,v-8,-1,v+3,20,v+5,41,v-4],3.5,'#445053');
+      band(c,-20,-10,5,15,lip);band(c,17,7,5,12,bed);break;
+    case 'armory': case 'containment-annulus': case 'overload-floor': case 'crew-checkpoint':
+      for(let k=0;k<4;k++)line(c,[-18,3+k*2,-4,4+k*3,15+k*5,k-3],4-k*.5,'#393e3b');
+      grate(c,-33,-11,22,26,-3);break;
+    default:
+      // Fallen slats overlap and cast short contact shadows on the plate.
+      for(const [x,y,w,a] of [[-16,0,31,.17],[8,9,24,-.4],[-23,13,13,.6]]){
+        c.save();c.translate(x,y);c.rotate(a);band(c,0,0,w,6,bed);band(c,1,0,w*.7,1.8,lip);c.restore();
+      }
+  }
+  c.restore();
+  c.restore();
+  // Print the registration on the approach to the exit, facing along the room.
+  const dx=arena.x-room.exit.x,dy=arena.y-room.exit.y,length=Math.max(1,Math.hypot(dx,dy));
+  c.save();c.translate(room.exit.x+dx/length*85,room.exit.y+dy/length*85);
+  c.rotate(yaw);c.globalAlpha=.28;c.fillStyle='#a8aea2';c.font='bold 19px Barlow, sans-serif';
+  c.textAlign='center';c.fillText(label,0,0);
   c.restore();
 }
