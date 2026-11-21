@@ -15,7 +15,7 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
@@ -23,7 +23,7 @@ type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: b
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
   private readonly contactJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
@@ -75,8 +75,16 @@ class SystemPresentation implements AbilityPresentation {
       const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
       receipt ??= this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
       if (newIgnition) { receipt.ignition = k.time; receipt.sourceX = x / UNIT; receipt.sourceZ = y / UNIT; }
+      receipt.rail = event.ability === 'railbreaker';
+      if (receipt.rail) {
+        const position = k.statusActor(id)?.root.position;
+        receipt.railX = position?.x ?? x / UNIT;
+        receipt.railZ = position?.z ?? y / UNIT;
+        receipt.railAngle = event.angle ?? 0;
+        receipt.landed = false;
+      }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
+      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
     }
   }
 
@@ -97,6 +105,7 @@ class SystemPresentation implements AbilityPresentation {
     for (const receipt of this.receipts) {
       if (!receipt.live) continue;
       receipt.age += dt;
+      if (receipt.rail && !receipt.landed) this.railLanding(receipt);
       if (receipt.age >= receipt.life) receipt.live = false;
     }
     const snapshot = frame.snapshot;
@@ -295,6 +304,25 @@ class SystemPresentation implements AbilityPresentation {
     k.ribbon(ax, ay, az, bx, by, bz, ELEMENT_COLORS.arc, .065, flicker, false);
     k.ribbon(ax, ay + .02, az, bx, by + .02, bz, WHITE, .019, flicker, false);
     k.draw('spark', bx, by, bz, .08, .09, 1, WHITE, flicker);
+  }
+
+  private railLanding(receipt: Receipt): void {
+    const k = this.kit, actor = k.statusActor(receipt.id);
+    if (!actor || receipt.age < .26) return;
+    receipt.landed = true;
+    const {x, z} = actor.root.position;
+    const dx = x - receipt.railX, dz = z - receipt.railZ;
+    const angle = Math.hypot(dx, dz) > .04 ? Math.atan2(dz, dx) : receipt.railAngle;
+    const size = Math.min(1.3, Math.max(.45, actor.height * .56));
+    k.sustain();
+    k.beam(x - Math.cos(angle) * size, .045, z - Math.sin(angle) * size,
+      x, .046, z, 0x796d5d, size * .12, .52, false);
+    for (let i = 0, count = k.low ? 5 : 10; i < count; i++) {
+      const a = angle + i * Math.PI * 2 / count, c = Math.cos(a), s = Math.sin(a);
+      k.mote('smoke', x + c * size * .36, .13, z + s * size * .36,
+        c * 1.7, .46, s * 1.7, size * .26, .42, 0xc2b197);
+    }
+    k.impact();
   }
 
   private launched(enemy: StruckTarget, radius: number, height: number, receipt: Receipt): void {

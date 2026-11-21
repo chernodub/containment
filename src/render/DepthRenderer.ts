@@ -180,7 +180,7 @@ export class DepthRenderer {
   this.post=new PostPipeline(this.renderer,this.scene,this.camera);this.post.setOptions(this.options,this.tier);
   // V2: public pooled feedback services, constructed before shader preparation.
   this.interimAbilities.setHostilePrioritySource(this.effects);
-  this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id),lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
+  this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id)??this.corpses.find(c=>c.id===id)?.model,lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
   // Boss telegraphs share the prepared hostile priority batch.
   this.scene.add(this.warning);this.warning.visible=false;
   this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.9);this.menuMarine.setAimPitch?.(TITLE_STAGE.marine.aimPitch);this.menuAlien.root.scale.set(1.95,1.22,1.95);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.68);});this.menuAlien.setStageLight?.(.55);styleTitleActor(this.menuMarine.root,true);styleTitleActor(this.menuAlien.root,false);this.scene.add(this.menuActors);
