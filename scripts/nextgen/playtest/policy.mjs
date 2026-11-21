@@ -414,6 +414,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const keys = chooseActions(perceived);
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player),keys);
       movement=conditionMovement;
+      if(s.gate&&distance(s.player,s.gate)<=s.gate.radius&&!escape)movement={dx:0,dy:0};
       if(profile==='novice') {
         const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
         for(const key of consumableNotices.keys())if(!eligible.has(key))consumableNotices.delete(key);
