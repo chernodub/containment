@@ -25,7 +25,7 @@ class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
   private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
-  private readonly frostJoints = new WeakMap<T.Object3D, T.Object3D[]>();
+  private readonly contactJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
   private receiptCursor = 0;
   private ghostClock = 0;
@@ -151,15 +151,7 @@ class SystemPresentation implements AbilityPresentation {
     }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
     if (status?.frozen && actor) {
-      let joints = this.frostJoints.get(actor.root);
-      if (!joints) {
-        const found: T.Object3D[] = [];
-        actor.root.traverse(node => {
-          if (found.length < 4 && isContactJoint(node)) found.push(node);
-        });
-        this.frostJoints.set(actor.root, found);
-        joints = found;
-      }
+      const joints = this.joints(actor.root);
       k.sustain();
       k.sprite('crack', x, .049, z, radius * 1.5, radius * 1.4, ELEMENT_COLORS.cryo, .62, enemy.id, 'ground');
       k.impact();
@@ -280,19 +272,29 @@ class SystemPresentation implements AbilityPresentation {
     }
   }
 
-  private stunned(x: number, z: number, radius: number, height: number, seed: number): void {
-    const k = this.kit, count = k.low ? 2 : 4, strike = k.reducedMotion ? 0 : Math.floor(k.time * 12);
-    for (let i = 0; i < count; i++) {
-      const a = seed * .73 + i * 2.39996323, r = radius * .86;
-      const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r, h = height * (.3 + i % 3 * .22);
-      k.draw('spark', px, h, pz, .045, .08 + Math.sin(seed + strike) ** 2 * .035, .03,
-        i % 2 ? WHITE : ELEMENT_COLORS.arc, .7);
-      if (!k.low) {
-        const b = a + .6 + Math.sin(seed + strike + i) * .12;
-        k.ribbon(px, h, pz, x + Math.cos(b) * r, h + height * .24, z + Math.sin(b) * r,
-          ELEMENT_COLORS.arc, .016, .6, true);
+  private joints(root: T.Object3D): T.Object3D[] {
+      let joints = this.contactJoints.get(root);
+      if (!joints) {
+        const found: T.Object3D[] = [];
+        root.traverse(node => {
+          if (found.length < 4 && isContactJoint(node)) found.push(node);
+        });
+        this.contactJoints.set(root, found);
+        joints = found;
       }
-    }
+      return joints;
+  }
+
+  private stunned(x: number, z: number, radius: number, height: number, seed: number): void {
+    const k = this.kit, actor = k.statusActor(seed);
+    const joint = actor && this.joints(actor.root)[0];
+    const tip = joint?.matrixWorld.elements, base = joint?.parent?.matrixWorld.elements;
+    const ax = base?.[12] ?? x, ay = base?.[13] ?? height * .58, az = base?.[14] ?? z;
+    const bx = tip?.[12] ?? x + radius * .72, by = tip?.[13] ?? height * .26, bz = tip?.[14] ?? z;
+    const flicker = k.reducedMotion ? .8 : .66 + .26 * Math.sin(k.time * 23 + seed);
+    k.ribbon(ax, ay, az, bx, by, bz, ELEMENT_COLORS.arc, .065, flicker, false);
+    k.ribbon(ax, ay + .02, az, bx, by + .02, bz, WHITE, .019, flicker, false);
+    k.draw('spark', bx, by, bz, .08, .09, 1, WHITE, flicker);
   }
 
   private launched(enemy: StruckTarget, radius: number, height: number, receipt: Receipt): void {
