@@ -8,6 +8,7 @@ export class FloorChoiceMarkers {
   new T.MeshBasicMaterial({color:0xffbf62,transparent:true,opacity:.75,depthWrite:false,side:T.DoubleSide}),
   new T.MeshBasicMaterial({color:0x8debff,transparent:true,opacity:.72,depthWrite:false,side:T.DoubleSide}),
  ];
+ private readonly failedGeometry=new T.RingGeometry(.975,1,48);
  private readonly failed=new T.MeshBasicMaterial({color:0xff6553,transparent:true,opacity:.6,depthWrite:false,side:T.DoubleSide});
  private readonly pads=Array.from({length:3},()=>{
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
@@ -18,10 +19,11 @@ export class FloorChoiceMarkers {
    const choice=choices[index];
    mesh.visible=!!choice;
    if(!choice)return;
+   mesh.geometry=choice.kind==='failed-bank'?this.failedGeometry:this.geometry;
    mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'?0:1];
    mesh.position.set(choice.x/unit,.04,choice.y/unit);
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.geometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.geometry.dispose();this.failedGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }

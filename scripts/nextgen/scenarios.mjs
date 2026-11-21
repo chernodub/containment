@@ -300,6 +300,20 @@ export const SCENARIOS=[
   await d.gotoRoom('passenger-vault',{rig:'arc',runStructure:true});
   d.step(1450);d.refresh();
  }},
+ {id:'play22-plate-break',state:'playing',room:'passenger-vault',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('passenger-vault',{rig:'arc',runStructure:true});
+  d.step(1450);
+  const g=d.game,brute=g.enemies.snapshot.enemies.find(enemy=>enemy.type==='brute');
+  if(brute){
+   g.switchWeapon('plasma');
+   const angle=Math.atan2(brute.y-g.player.y,brute.x-g.player.x);
+   d.setInput({fire:true,angle,autoAim:false});
+   for(let i=0;i<90&&(g.enemies.getSnapshot(brute.id)?.armor??0)>0;i++)d.step(1000/60);
+   d.setInput({fire:false});d.step(70);
+  }
+  d.refresh();
+ }},
  {id:'play22-gate',state:'playing',room:'safety-interlock-station',setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('safety-interlock-station',{rig:'arc',runStructure:true});
@@ -317,7 +331,7 @@ export const SCENARIOS=[
    director.beatIndex=index;director.dispatched=director.plan.beats[index].start;
    g.siegeBeat=index;g.siegeRemainingMs=4000;
    const bank=g.relayBanks[0];
-   if(bank){const p=g.siegePoint;Object.assign(g.player,{x:p.x*.55+bank.x*.45,y:p.y*.55+bank.y*.45});}
+   if(bank){const p=g.siegePoint,x=p.x*.55+bank.x*.45,y=p.y*.55+bank.y*.45; if(d.canStand(x,y,g.player.radius))Object.assign(g.player,{x,y});}
   }
   d.refresh();
  }},
