@@ -276,3 +276,55 @@ Still weak:
    moves the wrist, while the blade still points up).
 2. The Spitter elite remains faint at 480×270. Its lime gland dominates the silhouette, and the pale flank mantles sit
    below it.
+
+## CREATURE23 — direction in the loaded pose, value cap, flat bakes
+Base `1d943a1f`. Clip durations and event timing, bone names, colliders, reach and simulation are unchanged.
+Triangle targets are unchanged.
+
+- **Loaded poses** (`enemy_actions.py`; all five wind-ups re-authored, plus the Brute's `m10-wall-stun` and the
+  Carrier's `m10-brood`): the leading element now projects forward and low toward the victim, with a deck gap behind
+  it, instead of rising over the body. On screen, height reads as "up", not "at me".
+  - Brute: the cleaver loads beside the jaw. Body yaw during the load is cut to 35 %, the edge roll toward the camera
+    to 35 %, and the cleaver tip pitches forward.
+  - Stalker: the scythe tip is ahead of the head, slightly wide and low.
+  - Crawler: the hook is beside the jaw, low.
+  - Carrier: the hooked limb comes forward.
+  - Spitter: no turn-away yaw, and the neck thrusts forward.
+  - Wall slump: the crown tips up above the shoulder line.
+  - Matron: `m10-brood` lifts the carapace further. Since `12e00c7f` it is held at 0.6 for the whole brood window.
+- **Value cap** (`ActorSurface`, alien key `v16`): the creature's lit, non-emissive output is capped at luma 0.24
+  in `opaque_fragment`. Lanterns, rim and the hit card are exempt. The marine's cool back-rim rises 0.045 → 0.085
+  (a uniform; no new program).
+- **Bakes** (`build.py` band painter): no per-plate value step, convex edge lift 0.22 → 0.12, crease darkening
+  0.22 → 0.10, AO fold 0.74 + 0.26·ao → 0.88 + 0.12·ao, and a darker Crawler tan.
+- **"Mottled texture" claim:** confirmed at native size in a live room before acting. The Brute showed alternating
+  small dark and ochre lumps with pale specks, from the bake's per-plate steps, edge lifts and crease darkening across
+  many small plates, and it survived to the screen. It was not only a reduction artefact. The flattened bakes read
+  more evenly at native size. At 480×270 the families still separate mostly by hue, because the shapes are small.
+
+Evidence: `artifacts/nextgen/c23tools/cap.mjs` reproduces the final14 `windups/` fixtures (`loaded-<family>` and
+`loaded-crowd-<room>`). Captures: `c23-before-windups` vs `c23-final-windups` (and `c23-final-brute`), `c23-before`
+vs `c23-final` (standard crowds), and `c23-before-{warden,matron}` vs `c23-final2-{warden,matron}` (one boss per
+run). Playtest: `playtest/c23-playtest-final`.
+
+Measured:
+- Draw calls are identical in every compared frame: crowds 122–125/97/83, loaded families 75–78, loaded crowds
+  125/83.
+- Crowd triangles −2,998, with family loaded frames identical.
+- Boss program counters are flat and identical (0/17).
+- Breacher seed 1729, 4 rooms: 0 errors, programs flat per room (163/156/151/158).
+
+What reads now: in the single-family loaded frames, the Crawler's jaw and body point at the marine, the Carrier's
+hooked limb angles at him instead of straight up, the Brute's cleaver points forward and down from the shoulder
+instead of standing over its head as a sail, and the Stalker's scythe lies flatter toward the victim. In the
+reproduced wind-up crowds at 480×270 the change is barely visible.
+
+Still weak:
+1. The crowd reductions: at 480×270 with several creatures loaded, direction is still carried mostly by the red
+   warning. Individual loads point the right way, but limbs are 3–6 px. A stronger cue needs either a larger leading
+   element or a runtime lean (body translation toward the victim) during the late wind-up.
+2. The value cap did not measurably lower the Crawler pressed against the marine (luma 175–180 against the marine's
+   178–185 in both builds). Its brightness comes from paths the cap leaves alone (rim, hit card, emissive) or the cap
+   is applied before GraphicSurface's band pass. The marine remains the brightest shape overall, but this case needs
+   a per-pixel probe. The Matron's brood arch also barely shows: the `tail` rotation axis may not be the pitch axis,
+   so check `m10-brood` in the m9 strip.

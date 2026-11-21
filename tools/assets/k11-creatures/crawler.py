@@ -18,7 +18,7 @@ TRIS = {"body": 7600, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
 BANDS = {   # CREATURE18: dark chitin, rust flesh, pale tan dorsal carapace (mid mass at 480x270), red lantern
-    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.58, 0.46, 0.32),
+    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.50, 0.40, 0.28),
     "accent": (0.95, 0.10, 0.03), "eye": (1.0, 0.40, 0.08),
 }
 BAND_MAP = {"bone": "chitin", "tooth": "chitin"}   # legs, hooks and leg blades join the dark chitin

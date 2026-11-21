@@ -128,12 +128,12 @@ def colorize_bands(high, sculpture):
         base[hard] = ELITE_GOLD
         chitin &= ~hard
     # one quiet plate step so shingles stay legible without becoming camouflage
-    base[chitin] *= (0.94 + 0.12 * ((plate[chitin] * 2654435761) % 997 / 997.0))[:, None]
+    # CREATURE23: no per-plate value step: three flat values per material (dark plate, mid flesh, one lit edge)
     convex = S.smoothstep(0.9, 2.2, cv)
     concave = S.smoothstep(0.6, 1.8, -cv)
-    lift = np.where(chitin, 0.22, np.where(bands == "bone", 0.10, 0.0))
+    lift = np.where(chitin, 0.12, np.where(bands == "bone", 0.06, 0.0))
     base = base + (np.minimum(base * 2.2 + 0.03, 1.0) - base) * (convex * lift)[:, None]
-    base *= (1 - 0.22 * concave)[:, None]
+    base *= (1 - 0.10 * concave)[:, None]
     glow = np.zeros((len(co), 3), np.float32)
     for key in ("organ", "eye"):
         sel = zone == (S.ORGAN if key == "organ" else S.EYE)
@@ -261,7 +261,7 @@ glow = K.image_np(images["glow"])
 normal = K.image_np(images["normal"])
 # Bake AO into the albedo (actors draw without an AO sampler on the flat path).
 if hasattr(M, "BANDS"):   # CREATURE18: light occlusion only, so crevices do not turn the mid band to mud
-    base[..., :3] *= 0.74 + 0.26 * ao[..., :3]
+    base[..., :3] *= 0.88 + 0.12 * ao[..., :3]   # CREATURE23: flatter fold
 else:
     base[..., :3] *= (0.42 + 0.58 * ao[..., :3]) ** 1.15
 paths = {kind: BAKES / f"{M.FAMILY}-{kind}.png" for kind in ("base", "normal", "glow")}

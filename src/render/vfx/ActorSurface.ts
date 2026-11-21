@@ -9,7 +9,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
   const rimColor = { value: new T.Color(friendly ? 0x8fd2ff : elite ? 0xc1d8e5 : 0x91b9d1) };
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
-  const rimStrength = { value: friendly ? .045 : elite ? .24 : .19 };
+  const rimStrength = { value: friendly ? .085 : elite ? .24 : .19 };   // CREATURE23: a faint cool back-rim on the marine in crowds
   // LIGHT13 hierarchy: marine = brightest, most saturated figure (self-lit plates,
   // rig colour on top-facing armour, hot visor); creatures = dark masses with a
   // cool rim and hot lanterns. x: body value / plate lift, y: rig crown, z: emissive gain.
@@ -64,6 +64,12 @@ ${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.r
 ${friendly?'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.35);':'// CREATURE18: a short flat hit card (no lit gradient, no fade smear); ink and silhouette stay.\nfloat actorHitCard=step(.25,actorFlash)*actorFlashIntensity;// above the .22 elemental-hold capdiffuseColor.rgb*=1.0-.55*actorHitCard;'}`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the marine (no per-panel light cuts; soft bands live in GraphicSurface).\nfloat marineChroma=smoothstep(.15,.35,max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b)));reflectedLight.directDiffuse*=mix(1.0,.72,marineChroma);float marineAlbedoLuma=max(.01,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));reflectedLight.directDiffuse=mix(diffuseColor.rgb*dot(reflectedLight.directDiffuse,vec3(.2126,.7152,.0722))/marineAlbedoLuma,reflectedLight.directDiffuse,.025);reflectedLight.indirectDiffuse=mix(diffuseColor.rgb*dot(reflectedLight.indirectDiffuse,vec3(.2126,.7152,.0722))/marineAlbedoLuma,reflectedLight.indirectDiffuse,.025);reflectedLight.directSpecular=vec3(dot(reflectedLight.directSpecular,vec3(.2126,.7152,.0722)))*.35;reflectedLight.indirectSpecular=vec3(dot(reflectedLight.indirectSpecular,vec3(.2126,.7152,.0722)))*.35;' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*actorStageLight*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
+        .replace('#include <opaque_fragment>', `${friendly?'':`// CREATURE23: cap the lit (non-emissive) creature value at ~70% of the marine's plates, so the marine
+// stays the brightest shape in a crowd even inside his own light pool; lanterns, rim and hit card are emissive and exempt.
+vec3 creatureLit=max(outgoingLight-totalEmissiveRadiance,vec3(0.));
+float creatureLitLuma=dot(creatureLit,vec3(.2126,.7152,.0722));
+outgoingLight=creatureLit*min(1.0,.24/max(creatureLitLuma,1e-4))+totalEmissiveRadiance;`}
+#include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
 ${friendly ? `// SHADE15: one even self-light over the whole suit.
@@ -87,7 +93,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.10+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.20,.185,.17)*actorHitCard;// CREATURE18b: a mid lift that keeps lanterns and family colour, a step under the marine'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v15-creature21:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v16-creature23:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
