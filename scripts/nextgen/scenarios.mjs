@@ -295,6 +295,40 @@ export const SCENARIOS=[
    id:`beat-${kind}-fixture`,state:'playing',room:'awakening-bay',burst:true,required:['#presentation-beat'],
    setupArgument:kind,setup:async kind=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.presentation(true);d.presentationEvent({type:'beat',kind});d.refresh();},
  })),
+ {id:'play23-crowd',state:'playing',room:'swarm-junction',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('swarm-junction',{rig:'arc',runStructure:true});
+  const g=d.game;
+  d.invulnerable(true);
+  for(let i=0;i<8;i++){
+   const angle=i*Math.PI/4,x=g.player.x+Math.cos(angle)*108,y=g.player.y+Math.sin(angle)*108;
+   if(d.canStand(x,y,25))g.enemies.spawn(i%2?'crawler':'stalker',x,y);
+  }
+  d.step(680);d.refresh();
+ }},
+ {id:'play23-edge',state:'playing',room:'safety-interlock-station',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('safety-interlock-station',{rig:'arc',runStructure:true});
+  d.refresh();
+  const g=d.game,p=g.player;
+  for(let i=0;i<24;i++){
+   const angle=i*Math.PI/12,x=p.x+Math.cos(angle)*365,y=p.y+Math.sin(angle)*365;
+   if(!d.canStand(x,y,24)||d.renderer.visible(x,y)||!d.botShotClear(x,y))continue;
+   g.enemies.spawn('spitter',x,y,false,{openingVolley:{x:p.x,y:p.y}});
+   break;
+  }
+  d.step(220);d.refresh();
+ }},
+ ...[0,1].map(index=>({id:`play23-bank-${index}`,state:'playing',room:'overload-floor',setupArgument:index,setup:async index=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  const g=d.game,director=g.director,beat=director.plan.beats.findIndex(b=>b.grammar==='siege');
+  director.beatIndex=beat;director.dispatched=director.plan.beats[beat].start;
+  g.siegeBeat=beat;g.siegeRemainingMs=4000;
+  const bank=g.relayBanks[index];
+  if(bank){Object.assign(g.player,bank);d.step(34);}
+  d.refresh();
+ }})),
  {id:'play22-plate',state:'playing',room:'passenger-vault',setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('passenger-vault',{rig:'arc',runStructure:true});
