@@ -131,10 +131,11 @@ export function paintServiceDeck(c:Brush,room:RoomTemplate,arena:Point):void {
       c.save();c.translate(x,y);
       c.globalAlpha=.85;bay(c,room.id,pitch);
       // Registration is rolled into the plates and worn where carts pass.
-      if((row+col)%2===0){
-        c.globalAlpha=.57;c.fillStyle='#a8aea2';c.font='bold 28px Barlow, sans-serif';
+      // One quiet bay label per room: the stencil must never compete with an actor.
+      if(row===0&&col===0){
+        c.globalAlpha=.28;c.fillStyle='#a8aea2';c.font='bold 19px Barlow, sans-serif';
         c.fillText(label,8,96);
-        c.globalAlpha=.63;band(c,29,70,2,28,bed);band(c,66,70,2,28,bed);
+        c.globalAlpha=.4;band(c,29,74,2,22,bed);band(c,66,74,2,22,bed);
       }
       c.globalAlpha=.35;
       for(let i=0;i<5;i++){
