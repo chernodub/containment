@@ -148,11 +148,21 @@ float burnDistance(vec2 p){
  return nearest;
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
- float lip=1.-smoothstep(.025,.18,abs(distanceToEdge+.12));
- float coal=1.-smoothstep(-.14,0.,distanceToEdge);
- base=vec3(.016,.013,.009);
- alpha=.39*coal+.24*lip;
- emit=vec3(1.54,.63,.058)*lip*.7;
+ // All pools sample the same deck coordinates, including at ownership seams.
+ float ripple=fxNoise(p*2.3);
+ float broad=fxNoise(p*.84);
+ float d=distanceToEdge+.035+.21*broad+.065*ripple;
+ float hot=smoothstep(.24,.71,broad+.21*(ripple-.5));
+ float lip=(1.-smoothstep(.015,.072+.07*hot,abs(d)))*hot;
+ float coal=1.-smoothstep(-.12,.02,d);
+ // Isolated sections of an undulating coal seam, with broad stretches of dark char.
+ float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
+ float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.62,.80,fxNoise(p*.57-8.2))
+              *smoothstep(.25,.65,-d);
+ base=vec3(.018,.013,.009);
+ alpha=.35*coal+.24*lip+.14*fissure;
+ emit=mix(vec3(.56,.15,.009),vec3(1.9,.76,.06),ripple)*lip+vec3(.78,.23,.018)*fissure;
+
 }
 void main(){
  float m=fxMode;vec3 emit=vec3(0.);float alpha=0.;vec3 base=vec3(0.);

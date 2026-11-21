@@ -423,12 +423,18 @@ class PyroPresentation implements AbilityPresentation {
     const pockets = kit.low ? 2 : 3;
     for (let i = 0; i < pockets; i++) {
       const angle = zone.id * .71 + i * 2.39996;
-      const reach = radius * (.6 + .22 * i / pockets);
+      const reach = radius * (i === 0 ? .48 : .94);
       const px = x + Math.cos(angle) * reach, pz = z + Math.sin(angle) * reach;
-      kit.directedFlame(px, .06, pz, .25 + .06 * (i % 3), .78 + .32 * (i % 4),
-        angle, .16, zone.id + i * 1.37, fade * .87, i === 0);
-      if (emit && i === Math.floor(kit.time * 11) % pockets)
-        kit.mote('spark', px, .65, pz, .12, 2, .08, .042, .65, CORE);
+      if (i > 0 && frame.snapshot?.zones.some(other => other.id !== zone.id && other.element === 'pyro' &&
+          other.shape === 'circle' && Math.hypot(px - other.x / UNIT, pz - other.y / UNIT) < other.radius / UNIT - .15)) continue;
+      const committed = frame.game?.enemies.snapshot.enemies.some(enemy =>
+        (enemy.meleePhase !== 'approach' || enemy.windupMs > 0 || enemy.chargeMs > 0) &&
+        Math.hypot(px - enemy.x / UNIT, pz - enemy.y / UNIT) < enemy.radius / UNIT + 1.4);
+      const height = committed ? .32 : .85 + .22 * i;
+      kit.directedFlame(px, .06, pz, .21 + .05 * i, height,
+        angle, .32, zone.id + i * 1.37, fade * (committed ? .32 : .88), i === 1);
+      if (!committed && emit && i === Math.floor(kit.time * 11) % pockets)
+        kit.mote('spark', px, height * .65, pz, .12, 1.6, .08, .042, .65, CORE);
     }
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
