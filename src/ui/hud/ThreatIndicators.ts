@@ -225,7 +225,7 @@ export class ThreatIndicators {
         projectWorld(this.renderer, x, y, this.point);
         if (!Number.isFinite(this.point.x) || !Number.isFinite(this.point.y))
             return;
-        if(this.point.visible){
+        if(this.point.visible&&(shotCharge<0||this.renderer.visible(x,y))){
             const b=this.bodyBounds;
             // A center crossing the frame is not a visible body. Keep the native
             // danger bearing until the complete actor also clears screen/HUD.
@@ -366,8 +366,14 @@ export class ThreatIndicators {
                 found = true;
                 break;
             }
-            if (!found)
-                continue;
+            if(!found&&candidate.shotCharge>=0&&!candidate.inFlight){
+                // A committed warning gets the visible lip of the dock even
+                // when other HUD regions consumed the perimeter slots.
+                x=Math.max(radius+8,Math.min(this.width-radius-8,candidate.point.x));
+                y=Math.max(radius+8,Math.min((tray?.top??this.height)-radius-12,candidate.point.y));
+                found=true;
+            }
+            if (!found) continue;
             marker.x = x;
             marker.y = y;
             marker.radius = radius;
