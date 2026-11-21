@@ -472,6 +472,10 @@ void main(){
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
    burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+   float flow=fxNoise(q*1.7+vec2(sin(t*2.+q.y),t*.9));
+   float heat=(.22+.52*(1.-smoothstep(.0,R,r)))*(.61+.39*flow);
+   emit+=vec3(1.55,.54,.032)*heat;
+   alpha+=heat*.42;
    line=0.;
    // The activation flash fills the centre before the moving aura settles.
    float pulse=1.-smoothstep(.05,.18,age);
