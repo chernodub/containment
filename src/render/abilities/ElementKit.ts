@@ -475,6 +475,7 @@ export class ElementKit {
         r.x = x;
         r.z = z;
         r.color = color;
+        r.y = 1;
         r.intensity = intensity * this.flashIntensity;
         r.distance = distance;
         r.priority = priority;
@@ -482,13 +483,14 @@ export class ElementKit {
         this.services?.lights.flash(r);
         this.measureLights();
     }
-    lightAt(id: number, x: number, z: number, color: number, intensity = 2, distance = 4, priority = 2): void {
+    lightAt(id: number, x: number, z: number, color: number, intensity = 2, distance = 4, priority = 2, height = 1): void {
         if (this.low || !this.dynamicLights)
             return;
         const r = this.light;
         r.x = x;
         r.z = z;
         r.color = color;
+        r.y = height;
         r.intensity = intensity;
         r.distance = distance;
         r.priority = priority;

@@ -39,9 +39,9 @@ void main(){
  float check=max(stroke(symbol,vec2(-.19,.01),vec2(-.045,-.13)),stroke(symbol,vec2(-.045,-.13),vec2(.20,.18)));
  float glyph=mix(check,cross,invalid);
  float mark=max(edge*dash,glyph*.9);
- float backing=max(edge,glyph)*.65;
+ float backing=max(edge*dash,glyph)*.45;
  if(backing<.01)discard;
- gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*data.w);
+ gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*min(.30,data.w));
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
 }`;
@@ -62,12 +62,12 @@ export class PlacementPreview {
     geometry.setAttribute('tint', this.tint);
     const material = new T.ShaderMaterial({
       name: 'ability-placement-preview', vertexShader: vertex, fragmentShader: fragment,
-      transparent: true, depthTest: false, depthWrite: false, side: T.DoubleSide,
+      transparent: true, depthTest: true, depthWrite: false, side: T.DoubleSide,
     });
     material.forceSinglePass = true;
     this.mesh = new T.InstancedMesh(geometry, material, 3);
     this.mesh.name = 'ability-placement-preview';
-    this.mesh.renderOrder = 4;
+    this.mesh.renderOrder = -2;
     this.mesh.frustumCulled = false;
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
     this.mesh.count = 0;

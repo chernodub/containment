@@ -150,7 +150,7 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
- private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,family:'',melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,brooding:false,secondPod:{shape:'circle',x:0,z:0} as Telegraph,id:0,family:'',melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly shooters = new Map<number, {x:number;y:number;z:number;angle:number;progress:number;fade:number}>();
  private readonly activeShooters = new Set<number>();
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
@@ -167,6 +167,7 @@ export class AttackEffects {
  warningNear(x:number,z:number,padding=.8):boolean{
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
+   if(warning.brooding && Math.hypot(x-warning.secondPod.x,z-warning.secondPod.z)<=(warning.secondPod.radius??0)+padding)return true;
    const w=warning.shape,dx=x-w.x,dz=z-w.z,angle=w.angle??0;
    const reach=Math.max(w.radius??0,w.length??0)+(w.width??0)*.5+padding;
    if(Math.abs(dx)>reach||Math.abs(dz)>reach)continue;
@@ -186,7 +187,7 @@ export class AttackEffects {
  }
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
- forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active&&warning.shape.length!==-1)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
+ forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active&&warning.shape.length!==-1){visit(warning.shape);if(warning.brooding)visit(warning.secondPod);}for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
  forEachShooterPriority(visit:(x:number,y:number,z:number,angle:number,id:number)=>void):void {
   for (const [id,cue] of this.shooters) visit(cue.x,cue.y,cue.z,cue.angle,id);
  }
@@ -357,6 +358,18 @@ export class AttackEffects {
     if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
     const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;warning.striking=enemy.meleePhase==='strike';w.progress=warning.striking?1:enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
    }
+   warning.brooding=false;
+   if(enemy?.champion==='matron' && enemy.health>0 && enemy.broodRemainingMs){
+    const remaining=enemy.broodRemainingMs/1000;
+    const distance=(BOSS_BODIES.matron.hatchRingMin+BOSS_BODIES.matron.hatchRingMax)/64;
+    const dx=Math.cos(enemy.id*2.399)*distance,dz=Math.sin(enemy.id*2.399)*distance;
+    const shape=warning.shape;
+    shape.shape='circle';shape.length=0;shape.x=enemy.x/32+dx;shape.z=enemy.y/32+dz;
+    shape.radius=.42+.68*remaining;shape.progress=1-remaining;
+    Object.assign(warning.secondPod,shape,{x:enemy.x/32-dx,z:enemy.y/32-dz});
+    warning.remainingMs=enemy.broodRemainingMs;warning.brooding=true;
+    continue;
+   }
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
    const angle=charge?Math.atan2(enemy.lockY,enemy.lockX):Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
@@ -494,7 +507,7 @@ export class AttackEffects {
    if(e.id!==undefined&&e.family){
     let warning=this.nativeWarnings.find(w=>w.active&&w.id===e.id);
     warning??=this.nativeWarnings.find(w=>!w.active);
-    if(warning){warning.active=true;warning.id=e.id;warning.melee=!!e.meleeShape;warning.weight=e.meleeShape?meleeWarningWeight(e.family??'crawler',e.elite):e.dangerWeight==='low'?.27:1;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
+    if(warning){warning.brooding=false;warning.striking=false;warning.active=true;warning.id=e.id;warning.melee=!!e.meleeShape;warning.weight=e.meleeShape?meleeWarningWeight(e.family??'crawler',e.elite):e.dangerWeight==='low'?.27:1;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
     return;
    }
    p.y=.035;const life=(e.durationMs??650)/1000;
@@ -869,6 +882,10 @@ export class AttackEffects {
   }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
    if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius,native.family);
+   if(native.brooding){
+    const pod=native.secondPod;
+    if(this.warningVisible(pod.x,pod.z,radius))this.queueWarning(pod.x,pod.z,radius,0,0,0,0,pod.progress??0,native.remainingMs,true,marineX,marineZ,marineRadius,native.family);
+   }
   }
   if(this.bossWarning){const w=this.bossWarning;if(this.warningVisible(w.x,w.z,w.radius))this.queueWarning(w.x,w.z,w.radius,0,0,0,0,w.progress,(1-w.progress)*1000,true,marineX,marineZ,marineRadius);}
   this.groupWarnings();

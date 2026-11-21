@@ -451,11 +451,11 @@ class PyroPresentation implements AbilityPresentation {
     if (pool) pool.seen = true;
     for (let i = 0; i < pockets; i++) {
       const seed = zone.id * .71 + i * 2.39996;
-      const interior = i % 3 === 0;
+      const interior = i % 3 !== 1;
       const nearSuit = meltdown && i === 0;
       const scatter = authoredVariation(seed);
-      const reach = nearSuit ? .78 : radius * (interior ? .24 + .42 * scatter : .70 + .25 * scatter);
-      const angle = seed + .12 * Math.sin(seed * 3.2);
+      const reach = nearSuit ? .78 : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
+      const angle = seed + .68 * Math.sin(seed * 3.2);
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
       // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
@@ -477,7 +477,7 @@ class PyroPresentation implements AbilityPresentation {
       const step = Math.max(0, frame.dt) / .15;
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
-      const height = (.55 + .22 * scatter + .08 * Math.sin(clock * 5 + seed)) * (1 - .67 * weight);
+      const height = (.40 + .66 * scatter + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? 1.65 : 1) * (1 - .67 * weight);
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
       kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
@@ -486,6 +486,16 @@ class PyroPresentation implements AbilityPresentation {
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
+    let nearest = radius * radius, lx = x, lz = z;
+    for (const enemy of frame.game?.enemies.snapshot.enemies ?? []) {
+      const ex = enemy.x / UNIT, ez = enemy.y / UNIT;
+      const dist = (ex-x)**2 + (ez-z)**2;
+      if (enemy.health <= 0 || dist > radius*radius || enemy.meleePhase !== 'approach' || enemy.windupMs > 0 || enemy.chargeMs > 0) continue;
+      const foot = enemy.radius / UNIT * .66;
+      kit.draw('flame', ex+foot, .23, ez, .19, .28, 1, CORE, fade*.88, 0, .2, POOL_FLAME_PHASE+enemy.id%31);
+      if (dist < nearest) { nearest=dist; lx=ex+foot; lz=ez+.22; }
+    }
+    kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 21 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
       if (shimmer) {
@@ -506,7 +516,7 @@ class PyroPresentation implements AbilityPresentation {
         z + Math.cos(i * 2.4 + rise) * radius * .12,
         .45 + rise * .65, .55 + rise * .5, 1, SOOT, (.3 - rise * .09) * fade);
     }
-    kit.lightAt(zone.id, x, z, FIRE, 16 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
+
     if (shimmer) kit.distort(x, z, radius, .003 * fade, .9, true);
     if (emit && !kit.low) kit.mote('spark', x, .2, z, .08, 1.4, .04, .035, .9, CORE);
   }
@@ -557,7 +567,7 @@ class PyroPresentation implements AbilityPresentation {
         x + c * .04 - s * side * .29, 1.42, z + s * .04 + c * side * .29, CORE, .025, .84 * fade, false);
     }
     kit.grade(.65 * fade);
-    kit.lightAt(zone.id, x, z, HOT, 16 * fade, 7, 3);
+
     if (emit) {
       kit.sustain(age);
       for (let i = 0; i < (kit.low ? 1 : 3); i++) {

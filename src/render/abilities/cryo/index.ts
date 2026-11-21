@@ -274,7 +274,7 @@ class CryoPresentation implements AbilityPresentation {
         clock.domeSeed = clock.dome.seed;
       }
       clock.dome.x = x; clock.dome.z = z; clock.dome.range = radius;
-      clock.dome.h0 = .04; clock.dome.h1 = 2.35; clock.dome.color = ICE;
+      clock.dome.h0 = .04; clock.dome.h1 = .52; clock.dome.color = ICE;
       clock.dome.param = fade; clock.dome.intensity = k.low ? .65 : 1;
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
@@ -285,6 +285,19 @@ class CryoPresentation implements AbilityPresentation {
     k.sustain(age / 1000);
     const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
+    // Low facets grow successively down branching radial seams.
+    for (let arm = 0; arm < (k.low ? 6 : 11); arm++) {
+      const heading = arm * 2.39996 + zone.id;
+      for (let joint = 1; joint <= (k.low ? 3 : 5); joint++) {
+        const distance = radius * joint / (k.low ? 3.6 : 5.7);
+        const grown = Math.min(1,Math.max(0,age/420-distance/radius));
+        if (!grown) continue;
+        const a = heading + .12*Math.sin(arm+joint);
+        k.draw('shard',x+Math.cos(a)*distance,.08,z+Math.sin(a)*distance,
+          (.13+.035*joint)*grown,.13*grown,radius*.13*grown, joint%2 ? ICE : CORE,
+          .82*fade,-a+Math.PI*.5,.18,2+joint);
+      }
+    }
     // Connected weather is a fixed perimeter mesh. A few atlas snow wisps add
     // parallax without rebuilding the old disconnected cloud-stamp silhouette.
     const wisps = k.low ? 4 : 8;

@@ -5,16 +5,19 @@ import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
 import type { ActorModel } from '../models';
 import { registerOriginalInteriorCutaways, updateOriginalInteriorCutaways, type InteriorCutaway } from './OriginalInteriorCutaways';
 
+import { dashedRing } from '../markers/dashedRing';
+
 export class PincerPresentation {
   readonly root = new T.Group();
   private readonly block = new T.BoxGeometry();
   private readonly body = new T.ConeGeometry(.26, .7, 5);
   private readonly sac = new T.SphereGeometry(.5,12,8);
-  private readonly ring = new T.RingGeometry(.68, .82, 48);
+  private readonly ring = dashedRing(.795, .82, 64);
   private readonly metal = new T.MeshBasicMaterial({ color: 0x535e65 });
   private readonly warning = new T.MeshBasicMaterial({ color: 0xffb354, side: T.DoubleSide });
   private readonly shadow = new T.MeshBasicMaterial({ color: 0x301b22 });
   private readonly signal = new T.MeshBasicMaterial({ color: 0x63eee2, side: T.DoubleSide });
+  private readonly track = new T.MeshBasicMaterial({color:0x63cbbb,transparent:true,opacity:.30,depthWrite:false});
   private readonly exit = new T.Group();
   private readonly gates = new Map<string, {
     root: T.Group;
@@ -38,7 +41,8 @@ export class PincerPresentation {
       new T.Mesh(this.block, this.metal),
       new T.Mesh(this.ring, this.warning),
       new T.Mesh(this.body, this.shadow),
-      new T.Mesh(this.ring, this.signal),
+      new T.Mesh(this.body, this.signal),
+      new T.Mesh(this.ring, this.track),
     );
     register(variants);
   }
@@ -59,6 +63,9 @@ export class PincerPresentation {
       model.root.rotation.y = Math.PI / 2 - enemy.wallStunAngle;
       model.body.rotation.x += .10;
       this.cutAwayCrown(model, game, camera, marineHeight);
+    }
+    if (enemy.champion === 'matron' && enemy.broodRemainingMs) {
+      model.setEmissionRegion?.('matron-vents', .72 + 1.8 * (1 - enemy.broodRemainingMs / 1000));
     }
     if (enemy.podStage !== 'opening') return;
     const parent = game.enemies.snapshot.enemies.find(actor => actor.champion === 'matron');
@@ -148,7 +155,8 @@ export class PincerPresentation {
     this.root.add(this.exit,this.brood);
     this.brood.add(this.broodSac);
     for (let i = 0; i < 3; i++) {
-      const light = new T.Mesh(this.ring, this.signal);
+      const light = new T.Mesh(this.ring, this.track);
+      light.renderOrder = -2;
       light.rotation.x = -Math.PI / 2;
       light.position.y = .12;
       light.scale.setScalar(1 + i * .37);
@@ -237,11 +245,7 @@ export class PincerPresentation {
     if(!matron.broodRemainingMs&&!interruption)return;
     this.brood.visible=true;
     const remaining=interruption?.remainingMs??0;
-    this.broodSac.position.set(matron.x/unit,2.45,matron.y/unit);
-    this.broodSac.rotation.set(0,0,Math.PI);
-    const collapse=Math.min(1,remaining/1800);
-    this.broodSac.scale.set(interruption?.82:1.25,interruption ? .16+collapse**12 : 1.4,interruption?.82:1.25);
-    this.broodSac.material=interruption?this.signal:this.warning;
+    this.broodSac.visible=false;
     for(const pod of this.broodSplits)pod.visible=false;
     const wither = Math.min(1, remaining / 1500);
     this.collapsedPods.forEach((point,index)=>{
@@ -304,6 +308,6 @@ export class PincerPresentation {
   dispose() {
     this.root.removeFromParent();
     for (const gate of this.gates.values()) gate.countdown.geometry.dispose();
-    for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal]) resource.dispose();
+    for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal, this.track]) resource.dispose();
   }
 }

@@ -3,7 +3,7 @@ import { TelegraphBatch, type Telegraph } from '../vfx/TelegraphBatch';
 
 /** Ground decoration is submitted before hostile timing fills, regardless of camera depth. */
 export const FRIENDLY_GROUND_ORDER = -2;
-export const FRIENDLY_BOUNDARY_ORDER = 3;
+export const FRIENDLY_BOUNDARY_ORDER = -2;
 
 /** Exact hit shapes with open interiors, rotating dashes and cyan-white ownership ticks. */
 export class FriendlyBoundaryBatch extends TelegraphBatch {
@@ -58,7 +58,7 @@ void main(){
  }
  float dash=step(.36,fract(along*32.-boundaryTime*.35));
  float tick=step(.90,fract(along*8.-boundaryTime*.0875));
- float a=edge*max(dash*.56,tick)*ink.a*data.w;
+ float a=edge*dash*min(.30,ink.a*data.w);
  // Hot boundaries share the ember cadence of the fuel, including on Low.
  if(ink.r>ink.g*2.3&&ink.g>ink.b*1.6){
   float ember=sin(along*402.1239)+.45*sin(along*703.7168);
