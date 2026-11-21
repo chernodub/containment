@@ -13,7 +13,7 @@
   color: #e8fbff;
   text-align: left;
 }
-#hud .contextual-onboarding kbd { float: right; font-size: 11px; margin: 0 0 6px 10px; }
+#hud .contextual-onboarding kbd { float: right; font-size: 12px; margin: 0 0 6px 10px; }
 #hud .contextual-onboarding b { display: block; font: 600 19px/1.15 var(--font-display); margin-bottom: 5px; }
 #hud .contextual-onboarding > span { display: block; color: #bcd1dc; font-size: 12px; line-height: 1.4; }
 #hud .contextual-onboarding[data-action=overdrive] { border-color: #ffd27a; }

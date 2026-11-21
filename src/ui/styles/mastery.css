@@ -23,5 +23,5 @@
 }
 #hud #action-bar [data-mastery=true] .ability-caption .ability-title::before { content: '· '; }
 #hud #action-bar [data-mastery=true] .ability-caption { white-space: nowrap; }
-#hud #action-bar [data-mastery=true] .cooldown-dial > .ability-value { font-size: 11px; }
+#hud #action-bar [data-mastery=true] .cooldown-dial > .ability-value { font-size: 12px; }
 .retry-lesson-art { flex: none; width: min(320px, 38%); height: auto; }

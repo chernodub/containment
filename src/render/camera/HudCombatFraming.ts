@@ -17,7 +17,7 @@ function isCommittedThreat(enemy:Contact):boolean {
   return !!enemy.pendingAttack||(enemy.windupMs??0)>0||(enemy.chargeMs??0)>0||enemy.meleePhase==='windup'||enemy.meleePhase==='strike';
 }
 type Camera=T.OrthographicCamera|T.PerspectiveCamera;
-const CAPACITY=6;
+const CAPACITY=12;
 
 /** CSS-space HUD reservation and allocation-free engaged-contact framing. */
 export class HudCombatFraming {
@@ -84,7 +84,10 @@ export class HudCombatFraming {
       const foot = camera && (distance <= 5.5 || attacking || coached)
         ? this.lowerContact.set(ex, 0, ez).project(camera) : undefined;
       const below = foot && foot.x > this.viewport.left && foot.x < this.viewport.right && foot.y < this.viewport.bottom + .18;
-      const score=below&&(attacking||coached) ? 100/(1+distance) : (below ? 12 : attacking ? 8 : 1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
+      const score=attacking ? 2000/(1+distance)
+        : distance<=4 ? 100 + (below ? 10 : 0) - distance
+        : coached ? 60/(1+distance*.1)
+        : (below ? 12 : 1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
       let index=this.count;
       if(index===CAPACITY){let weakest=0;for(let n=1;n<CAPACITY;n++)if(this.contacts[n*5+4]<this.contacts[weakest*5+4])weakest=n;if(score<=this.contacts[weakest*5+4])continue;index=weakest;}else this.count++;
       const p=index*5;this.contacts[p]=ex;this.contacts[p+1]=ez;this.contacts[p+2]=Math.max(.18,e.radius/units);this.contacts[p+3]=heightForContact&&e.id!==undefined?Math.max(.1,heightForContact(e.id)):2.65;this.contacts[p+4]=score;this.diagnostics.selectedIds[index]=e.id??-1;
@@ -117,14 +120,18 @@ export class HudCombatFraming {
       const range=Math.hypot(ex-x,ez-z);
       if(range>8)return;
       point.set(ex,.04,ez).project(camera);
-      if(point.z>=1||point.x<this.viewport.left||point.x>this.viewport.right)return;
+      if(point.z>=1||Math.abs(point.x)>1.15)return;
       const overlap=T.MathUtils.smoothstep(this.viewport.bottom+.27+radius-point.y,0,.38);
       pressure=Math.max(pressure,overlap*weight*(1-T.MathUtils.smoothstep(range,5,8)));
     };
+    const basis=camera.matrixWorld.elements;
     for(const enemy of enemies){
       if((enemy.health??1)<=0)continue;
+      const ex=enemy.x/32,ez=enemy.y/32,radius=enemy.radius/32;
       const committed=isCommittedThreat(enemy)||enemy.id===coachedId||enemy.priority;
-      probe(enemy.x/32,enemy.y/32,committed?1:.9,enemy.radius/160);
+      if(!committed&&Math.hypot(ex-x,ez-z)>4)continue;
+      // Probe the nearest ground corner, where legs leave the usable frame first.
+      probe(ex-Math.sign(basis[4])*radius,ez-Math.sign(basis[6])*radius,1);
     }
     source.forEachHostilePriority?.(warning=>{
       const angle=warning.angle??0;
@@ -143,11 +150,10 @@ export class HudCombatFraming {
         }
       }
     });
-    const basis=camera.matrixWorld.elements;
     const length=Math.hypot(basis[4],basis[6]);
     if(length>.001){
-      out.x-=basis[4]*pressure*2.6/length;
-      out.z-=basis[6]*pressure*2.6/length;
+      out.x-=basis[4]*pressure*3.4/length;
+      out.z-=basis[6]*pressure*3.4/length;
     }
   }
 
@@ -180,11 +186,14 @@ export class HudCombatFraming {
    * The bounded extra pullback is only used when HUD reservation makes that pair too large.
    * Final remote progression may explicitly spend compositional padding down
    * to a CSS-pixel body edge; the ordinary solve retains its larger margins. */
-  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false,bodyEdgePaddingCss?:number):void {
+  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false,bodyEdgePaddingCss?:number,priorityOnly=false):void {
     if(!this.count)return;
     const v=this.viewport,padX=Math.max(MARINE_FRAME_MARGIN_CSS*2/this.width,bodyEdgePaddingCss===undefined?.06*v.halfX:bodyEdgePaddingCss*2/this.width),padY=Math.max(MARINE_FRAME_MARGIN_CSS*2/this.height,bodyEdgePaddingCss===undefined?.10*v.halfY:bodyEdgePaddingCss*2/this.height);
     const leftLimit=v.left+padX,rightLimit=v.right-padX,topLimit=v.top-padY,bottomLimit=v.bottom+padY;
-    let selected=this.primary?0:-1;
+    let priority=0;
+    for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[priority*5+4])priority=n;
+    let selected=this.primary?0:priorityOnly?priority:-1;
+    if(priorityOnly){this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];}
     for(let pass=0;pass<32;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       let marineLeft=0,marineRight=0,marineTop=0,marineBottom=0;
@@ -212,7 +221,7 @@ export class HudCombatFraming {
         // remote solve explicitly requests literal body-edge clearance.
         const zoom=Math.max(minimumZoom,.88,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
-        if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
+        if(selected<0){selected=priority;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
         // Perspective body extents change when the camera moves on the deck.
         // Disjoint current intervals do not prove that the pair cannot fit:
         // first use the marine's remaining central-safe translation, then

@@ -213,9 +213,9 @@ export function shopScreen(game: DepthGame): string {
     const medicalLabel=id==='heal'?'Immediate':id==='medkit'?'Inventory':undefined;
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
       ${medicalLabel?`<span class="requisition-medical-art">${serviceArt(id)}<span class="requisition-medical-label">${medicalLabel}</span></span>`:serviceArt(id)}
-      <strong class="requisition-name">${escapeHtml(name)}</strong>
+      <span class="requisition-title-row"><strong class="requisition-name">${escapeHtml(name)}</strong><span class="requisition-price">${cost} CR</span></span>
       <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
-      <span class="requisition-item-footer"><span class="requisition-price">${cost} CR</span><span class="requisition-status">${status}</span></span>
+      <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
@@ -311,7 +311,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(room,routeArt)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
-            <strong class="route-option-title">${escapeHtml(title)}</strong>
+            <span class="route-title-row"><strong class="route-option-title">${escapeHtml(title)}</strong>${cost ? `<span class="route-option-price">${cost} CR</span>` : ''}</span>
             <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>
             <span class="route-option-subtitle">${escapeHtml((firstJunction?risk:variant ?? risk) ?? ROOM_KIND_LABELS[destination.kind])}${condition&&!firstJunction ? ` <small class="condition-chip" title="${condition.name}">+ ${conditionTerms}</small>` : ''}</span>
           </span>

@@ -9,7 +9,7 @@
 #radar-hud .radar-label {
   gap: 6px;
   color: #8ca4af;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: .12em;
 }
 #radar-hud .radar-label > .icon { display: none; }
