@@ -168,6 +168,8 @@ export class DepthGame {
  private rememberExpedition(){try{this.storage?.setItem(CONTRACT_PROFILE_KEY,'1');}catch{}}
  private siegeBeat=-1;private siegeRemainingMs=12000;private siegePoint={x:0,y:0};
  private prepareSiegePoint(){this.navigation.prepare(this.geometry.playerSpawn,1);const exit=this.geometry.exitPoint;for(let ring=0;ring<=320;ring+=16){for(let i=0;i<(ring?24:1);i++){const angle=i*Math.PI/12,p={x:exit.x+Math.cos(angle)*ring,y:exit.y+Math.sin(angle)*ring};if(canOccupyExpedition(this.geometry,p,this.player.radius)&&this.navigation.reachable(p)){this.siegePoint=p;return;}}}this.siegePoint={...this.geometry.playerSpawn};}
+ private gateHold:{id:string;ms:number}|undefined;
+ private gateStaged=false;
  private gatePads:{x:number;y:number}[]=[];
  private relayBanks:{x:number;y:number}[]=[];
  private relayBank:{x:number;y:number}|undefined;
@@ -184,11 +186,11 @@ export class DepthGame {
      if(distance(pads[0],first)+distance(pads[1],second)>distance(pads[0],second)+distance(pads[1],first))breaches.reverse();
     }
    }
-   return pads.map((point,index)=>({...point,id:breaches[index],kind:'gate' as const,radius:28}));
+   return pads.map((point,index)=>({...point,id:breaches[index],threats:pincer.flankers.filter(flank=>flank.breachId===breaches[index]).length,kind:'gate' as const,radius:28}));
   }
-  if(this.crossingRequired&&!this.relayBank)
+  if(this.node.templateId==='overload-floor'&&this.siege&&!this.relayBank)
    return [...this.relayBanks.map((point,index)=>({...point,id:String(index),kind:'bank' as const,radius:68})),
-    {...this.siegePoint,id:'failed-bank',kind:'failed-bank' as const,radius:220}];
+    ...(this.crossingRequired?[{...this.siegePoint,id:'failed-bank',kind:'failed-bank' as const,radius:220}]:[])];
   return [];
  }
  get closedFlank(){return this.director.closedFlank;}
@@ -206,13 +208,25 @@ export class DepthGame {
    remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000,crossing,choosing:crossing&&!this.relayBank};
  }
  private tickFloorObjectives(ms:number){
-  for(const pad of this.floorControls){
-   if(pad.kind==='failed-bank')continue;
-   if(Math.hypot(pad.x-this.player.x,pad.y-this.player.y)>pad.radius)continue;
-   if(pad.kind==='gate'){
-    if(this.director.closeFlank(pad.id))this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y});
-   }else this.relayBank=pad;
-   break;
+  if(!this.gateStaged&&this.node.templateId==='safety-interlock-station'&&this.encounter.pincer?.state==='staging'){
+   this.gateStaged=true;
+   const heading=Math.atan2(this.geometry.exitPoint.y-this.player.y,this.geometry.exitPoint.x-this.player.x);
+   const pads=floorChoicePair(this.geometry,this.player,p=>this.navigation.reachable(p),64,160,heading);
+   if(pads.length===2)this.gatePads=pads;
+  }
+  const pad=this.floorControls.find(control=>Math.hypot(control.x-this.player.x,control.y-this.player.y)<=control.radius
+   &&(control.kind==='gate'||control.kind==='bank'&&this.crossingRequired));
+  if(pad?.kind==='gate'){
+   if(this.gateHold?.id!==pad.id)this.gateHold={id:pad.id,ms:0};
+   this.gateHold.ms+=ms;
+   if(this.gateHold.ms>=950&&this.director.closeFlank(pad.id))
+    this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y,encounterCue:'pincer-broken'});
+  }else{
+   this.gateHold=undefined;
+   if(pad?.kind==='bank'&&!this.relayBank){
+    this.relayBank=pad;
+    this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y});
+   }
   }
   const siege=this.siege;
   if(!siege)return;
@@ -240,8 +254,16 @@ export class DepthGame {
   return true;
  }
  private enterRoom(start=true){this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
+ this.gateStaged=false;this.gateHold=undefined;
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
- this.relayBanks=this.node.templateId==='overload-floor'?floorChoicePair(this.geometry,this.siegePoint,p=>this.navigation.reachable(p),304,496):[];
+ this.relayBanks=[];
+ if(this.node.templateId==='overload-floor'){
+  const reachable=(point:{x:number;y:number})=>this.navigation.reachable(point);
+  const [near]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&hasClearExpeditionShot(this.geometry,this.siegePoint,p),292,388);
+  const [far]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&!hasClearExpeditionShot(this.geometry,this.siegePoint,p)
+   &&(!near||Math.hypot(p.x-near.x,p.y-near.y)>220),416,608);
+  this.relayBanks=near&&far?[near,far]:floorChoicePair(this.geometry,this.siegePoint,reachable,304,496);
+ }
  const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'&&this.node.depth===11&&this.combat.snapshot.health<50){
   const entrance=this.moveCorpse({...this.player,radius:14},48,0);
@@ -371,7 +393,7 @@ export class DepthGame {
   return !!this.coverLesson&&!this.coverLesson.learned&&this.enemies.snapshot.enemies.some(enemy=>enemy.type==='spitter');
  }
  get escortExitOpen(){return this.status==='playing'&&this.clearRequested&&[...this.departures.values()].some(departure=>departure.escort);}
- get encounterObjective(){if(this.status!=='playing')return '';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const pincer=this.encounter.pincer;if(this.floorControls.some(pad=>pad.kind==='gate'))return 'Step onto either control to seal that flank';if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.choosing)return 'Relay bank failing · Cross to either backup';if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
+ get encounterObjective(){if(this.status!=='playing')return '';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const pincer=this.encounter.pincer;if(this.floorControls.some(pad=>pad.kind==='gate'))return 'Hold either floor control to seal its flank';if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.choosing)return 'Relay bank failing · Near exposed bank or far covered bank';if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
  private storySkipped=false;
  get storyPresentation(){return this.storySkipped?undefined:this.storyRoom?.story;}
  skipStory(){this.storySkipped=true;}

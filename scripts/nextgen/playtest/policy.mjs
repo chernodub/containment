@@ -247,6 +247,7 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
     const ranged=visible.filter(e=>e.type==='spitter');
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
+    if(s.gate&&c.waypoint){score-=distance(next,c.waypoint)*4;score-=Math.max(0,distance(next,s.gate)-8)*4;}
     if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
     // Keep firing lanes only while a perceived target can be engaged.
     if (target && c.clear) score += 45;
