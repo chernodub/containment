@@ -57,7 +57,7 @@ export class PincerPresentation {
     if (enemy.wallStunAngle !== undefined) {
       this.pinned.set(model, model.body.rotation.x);
       model.root.rotation.y = Math.PI / 2 - enemy.wallStunAngle;
-      model.body.rotation.x += .48;
+      model.body.rotation.x += .10;
       this.cutAwayCrown(model, game, camera, marineHeight);
     }
     if (enemy.podStage !== 'opening') return;
@@ -68,14 +68,14 @@ export class PincerPresentation {
     model.root.rotation.z = -.3 * progress;
     let seam = this.seams.find(mesh => !mesh.visible);
     if (!seam) {
-      seam = new T.Mesh(this.block, this.warning);
+      seam = new T.Mesh(this.block, this.shadow);
       this.root.add(seam);
       this.seams.push(seam);
     }
     seam.visible = true;
-    seam.position.set(enemy.x / unit, .85, enemy.y / unit);
+    seam.position.set(enemy.x / unit, .12, enemy.y / unit);
     seam.rotation.y = -angle;
-    seam.scale.set(.65 + .45 * progress, .075, .09 + .1 * progress);
+    seam.scale.set(.20 + .08 * progress, .075, .78);
   }
 
   releaseActor(model: ActorModel) {
@@ -211,29 +211,53 @@ export class PincerPresentation {
     }
   }
 
+  private lastPodRoom = -1;
+  private lastPods: readonly {x:number;y:number}[] = [];
+  private collapsedPods: readonly {x:number;y:number}[] = [];
+
   private updateBrood(game: DepthGame, unit: number) {
     const interruption=game.broodInterruption;
-    const matron=game.enemies.snapshot.enemies.find(enemy=>enemy.champion==='matron');
-    if(!matron||(!matron.broodRemainingMs&&!interruption)) return;
+    const enemies=game.enemies.snapshot.enemies;
+    // A lethal second pod contact can start the interruption after the native
+    // collection has already removed the victim. Keep its last rendered mark.
+    if(this.lastPodRoom!==game.roomRevision){
+      this.lastPods=[];
+      this.collapsedPods=[];
+      this.lastPodRoom=game.roomRevision;
+    }
+    const matron=enemies.find(enemy=>enemy.champion==='matron');
+    if(!matron)return;
+    if(!interruption){
+      this.lastPods=enemies.filter(enemy=>enemy.pod);
+      this.collapsedPods=[];
+    }else if(!this.collapsedPods.length){
+      this.collapsedPods=interruption.pods.length?interruption.pods:this.lastPods.slice(0,1);
+    }
+    if(!matron.broodRemainingMs&&!interruption)return;
     this.brood.visible=true;
     const remaining=interruption?.remainingMs??0;
     this.broodSac.position.set(matron.x/unit,2.45,matron.y/unit);
-    this.broodSac.rotation.z=Math.PI;
+    this.broodSac.rotation.set(0,0,Math.PI);
     const collapse=Math.min(1,remaining/1800);
     this.broodSac.scale.set(interruption?.82:1.25,interruption ? .16+collapse**12 : 1.4,interruption?.82:1.25);
     this.broodSac.material=interruption?this.signal:this.warning;
     for(const pod of this.broodSplits)pod.visible=false;
     const wither = Math.min(1, remaining / 1500);
-    interruption?.pods.forEach((point,index)=>{
-      const pod=this.broodSplits[index]??new T.Mesh(this.sac,this.shadow);
-      if(!this.broodSplits[index]){
+    this.collapsedPods.forEach((point,index)=>{
+      const reuseSac=!interruption?.pods.length;
+      const pod=reuseSac?this.broodSac:this.broodSplits[index]??new T.Mesh(this.sac,this.metal);
+      if(!reuseSac&&!this.broodSplits[index]){
         this.broodSplits.push(pod);
         this.brood.add(pod);
       }
       pod.visible=true;
-      pod.position.set(point.x/unit,.4*wither,point.y/unit);
-      pod.scale.setScalar(wither);
-      pod.rotation.z=(1-wither)*Math.PI/2;
+      const fold = T.MathUtils.smoothstep(1800-remaining, index===0 ? 0 : 120, 650);
+      const dx=matron.x-point.x, dz=matron.y-point.y;
+      const pull=fold*Math.min(.72,64/Math.max(1,Math.hypot(dx,dz)));
+      pod.position.set((point.x+dx*pull)/unit,.36*wither,(point.y+dz*pull)/unit);
+      pod.rotation.set(0,-Math.atan2(dz,dx),0);
+      pod.scale.set((1.28+.58*fold)*wither,(1.65-1.36*fold)*wither,1.1*wither);
+      pod.material=this.metal;
     });
   }
 

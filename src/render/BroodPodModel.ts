@@ -27,11 +27,21 @@ export function broodPodModel(): ActorModel {
    batch.scale.x*=.72;batch.scale.z*=.72;batch.position.y-=.12;
   }
   batch.castShadow=mesh.castShadow;batch.receiveShadow=mesh.receiveShadow;
-  batch.setMatrixAt(0,new T.Matrix4());batch.setMatrixAt(1,satellite);
+  batch.setMatrixAt(0,new T.Matrix4());batch.setMatrixAt(1,hatching?.getObjectById(mesh.id)
+   ? satellite.clone().setPosition(-.64,0,.30) : satellite);
   mesh.parent!.add(batch);mesh.removeFromParent();batches.push(batch);
  }
  let motion=1;
  const closed=root.getObjectByName('brood-pod');
+ // The two-material GLB loads its low-detail nodes as groups. Use their
+ // shells for the rooted cups under the clutch, clear of the opening.
+ for(const name of ['brood-pod__lod_low','brood-pod-hatching__lod_low']){
+  const cup=root.getObjectByName(name);
+  if(cup){
+   cup.scale.set(.84,.17,.9);
+   cup.position.x=name.includes('hatching') ? -.34 : .34;
+  }
+ }
  const cores=source.materials.filter(material=>material.name==='pod-core');
  for(const shell of source.materials.filter(m=>m.name==='brood-pod-shell')){
   shell.transparent=true; shell.opacity=.89; shell.roughness=.48;
@@ -44,7 +54,7 @@ export function broodPodModel(): ActorModel {
   const glow=stage==='opening'?.36:stage==='swelling'?.76+.27*motion*Math.sin(ms/100):.24;
   for(const material of cores)material.emissiveIntensity=glow;
  };
- const reset=()=>update(0,'sealed');
+ const reset=()=>{root.rotation.set(0,0,0);root.scale.setScalar(1);update(0,'sealed');};
  reset();
  return {
   root,body,limbs:[],height:.95,

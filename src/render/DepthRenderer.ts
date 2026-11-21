@@ -94,7 +94,7 @@ import type {RunNode,RoomTemplate} from '../game/roguelike/types';
 const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
 export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number;materialProfiles:number};
-type Corpse={pendingEffect?:GameEffect;model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
+type Corpse={podFall?:{x:number;z:number;dx:number;dz:number};pendingEffect?:GameEffect;model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
 export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
@@ -680,6 +680,22 @@ export class DepthRenderer {
    if(c.pendingEffect && (c.model.corpseEffectReady?.(c.age) ?? true)){
     this.effects.event(c.pendingEffect,c.model.root.userData.motionDeathCue??'none');
     c.pendingEffect=undefined;
+   }
+   if(c.model.root.userData.broodPod && !c.podFall && c.age<.18 && game.broodInterruption){
+    const parent=game.enemies.getSnapshot(game.broodInterruption.id);
+    if(parent){
+     const dx=parent.x/UNIT-c.x,dz=parent.y/UNIT-c.y;
+     const reach=Math.min(.72,2/Math.max(.01,Math.hypot(dx,dz)));
+     c.podFall={x:c.x,z:c.y,dx:dx*reach,dz:dz*reach};
+    }
+   }
+   if(c.podFall){
+    c.age+=dt;
+    const fold=T.MathUtils.smoothstep(c.age,0,.65),remnant=1-.84*T.MathUtils.smoothstep(c.age,.35,1.45);
+    c.x=c.podFall.x+c.podFall.dx*fold;c.y=c.podFall.z+c.podFall.dz*fold;
+    c.model.root.position.set(c.x,0,c.y);
+    c.model.root.scale.set(remnant,(1-.80*fold)*remnant,remnant);
+    continue;
    }
    // The active Rapier budget can fill during a simultaneous elemental kill.
    // Keep the same drawing and debris clock on the retained fallback corpse.

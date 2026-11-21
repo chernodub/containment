@@ -76,7 +76,7 @@ class Creature:
                 self.legs.append(self.chain(names,None,index))
             for side in ['R','L']:
                 self.arms.append(self.chain(tuple(f'{name}.{side}'for name in ['upper_arm','upper_arm.001','upper_arm.002','claw']),None,-1 if side=='R' else 1))
-        if family in ('stalker','brute'):
+        if family in ('crawler','stalker','brute'):
             self.fit_blade()
         self.antennae = [n for n in self.names if n.startswith('antenna_') and n.endswith('0')]
         self.reset()
@@ -88,7 +88,7 @@ class Creature:
         # The fused crescent extends past the retained claw bone's tail and
         # bends sideways. Measure the blade on the untouched production skin.
         mesh=bpy.data.objects.get(f'k11-{self.family}-base')
-        claw=self.arms[0]
+        claw=self.legs[0] if self.family=='crawler' else self.arms[0]
         self.loaded_blade=dict(claw)
         name=claw['bones'][-1]
         group=mesh.vertex_groups.get(name) if mesh else None
@@ -273,13 +273,13 @@ class Creature:
         H,W=self.height,self.width
         if action=='m10-windup':
             keys=[(0, .10,-.20,.03, .01),(.29, .89,-.48,-.09,.28),
-                  (.63,.55,-.58,.58,.52), (1,.29,-.16,.96,.72)]
+                  (.63,.55,-.58,.58,.52), (1,.87,-.21,.65,.85)]
         elif action=='m10-strike':
             keys=[(0,.44,.71,-.17,-.48),(.28,.04,.82,-.64,-.83),
                   (.74,-.44,.62,-.90,-1),(1,-.52,.47,-.89,-.88)]
         else:
             keys=[(0,-.52,.47,-.89,-.88),(.24,-.61,.34,-.96,-1.12),
-                  (.49,-.35,.32,-.72,-.53),(.75,.03,.38,-.54,-.31),(1,.28,.14,-.25,0)]
+                  (.49,-.48,.69,-.72,-.82),(.75,.03,.38,-.54,-.31),(1,.28,.14,-.25,0)]
         side,forward,height,twist=[between(t,[(k[0],k[i]) for k in keys]) for i in range(1,5)]
         wind=action=='m10-windup'
         sunk=(.045+.13*math.sin(math.pi*t)) if wind else .24*min(1,abs(twist))
@@ -330,12 +330,14 @@ class Creature:
         self.move(self.center,-UP*H*(.13*load+.18*reach))
         self.mouth(.62*load+.87*reach)
         if self.family=='crawler':
+            self.rotate(self.center,UP,.42*load-.47*reach)
+            self.rotate(self.center,FWD,-.34*load+.43*reach)
             for leg in self.legs:
                 i=leg['index']
                 if i in (0,5):
                     lead=i==0
-                    targets[i]=leg['rest']+SIDE*W*(-.29 if lead else .10)*load
-                    targets[i]+=FWD*W*((-.23 if lead else .11)*load+(.42 if lead else .12)*reach)
+                    targets[i]=leg['rest']+SIDE*W*(-.66 if lead else .24)*load+SIDE*W*(-.29 if lead else .09)*reach
+                    targets[i]+=FWD*W*((-.23 if lead else .11)*load+(.62 if lead else .04)*reach)
                     targets[i]+=UP*H*((.88 if lead else .10)*load+.07*reach)
         else:
             self.rotate('spine2',SIDE,-.52*load+.27*reach)
@@ -378,7 +380,7 @@ class Creature:
             self.rotate('big_butt',SIDE,-.33*load+.22*bury)
             self.rotate('neck_lo',SIDE,-.45*load+.42*bury)
             self.rotate('chest',FWD,-.25*load-.36*bury)
-            self.rotate('chest',UP,-.34*pull)
+            self.rotate('chest',UP,-.55*pull)
         self.rotate('head',SIDE,.26*load+.39*bury)
         self.mouth(.65*load+.75*drive+.25*bury)
         head=self.m['head'].translation
@@ -390,8 +392,8 @@ class Creature:
                 self.rotate(arm['bones'][0],FWD,side*(.36*open_arm-.20*bury))
                 # Swing the wrist away from the crown before raising the edge.
                 sweep=between(t,[(0,.26),(.32,.35),(.64,-.16),(1,-.29)]) if wind else 0
-                ready=head+FWD*W*(sweep if lead else -.19)+SIDE*W*side*(.91 if lead else .22)+UP*H*(.54 if lead else -.07)
-                contact=head+FWD*W*(.86 if lead else .40)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
+                ready=head+FWD*W*(sweep if lead else .22)+SIDE*W*side*(1.13 if lead else .38)+UP*H*(.41 if lead else -.41)
+                contact=head+FWD*W*(1.02 if lead else .13)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
             elif brute:
                 ready=head-FWD*W*(.24 if lead else .11)+SIDE*W*side*(.61 if lead else .36)+UP*H*(.62 if lead else .12)
                 bed=self.base_matrices['head'].translation
@@ -424,7 +426,7 @@ class Creature:
     def show_edge(self, action, t):
         # Roll about the actual blade axis after FK/IK. Neither socket nor tip
         # is translated by exposing the broad face of the loaded limb.
-        if self.family=='crawler':limb=self.legs[0]
+        if self.family=='crawler':limb=self.loaded_blade
         elif self.family in ('stalker','brute'):limb=self.loaded_blade
         else:limb=next((a for a in self.arms if a['index']<0),None)
         if not limb:return
@@ -504,6 +506,16 @@ class Creature:
                 for arm in self.arms:
                     desired=arm['rest']+UP*H*.12+FWD*W*.09*math.sin(phase+arm['index']*math.pi/2)
                     self.solve(arm,desired)
+        elif action=='m10-wall-stun':
+            self.move(self.center,-UP*H*.22)
+            self.rotate(self.center,SIDE,.32)
+            self.rotate('head',SIDE,.49)
+            head=self.base_matrices['head'].translation
+            deck=min(leg['rest'].dot(UP) for leg in self.legs)
+            for arm in self.arms:
+                tip=head+FWD*W*.49+SIDE*arm['index']*W*.40
+                tip+=UP*(deck+.09*H-tip.dot(UP))
+                self.solve(arm,tip,16)
         elif action in ('m10-windup','m10-strike','m10-recovery'):
             if self.family=='brute':self.cleaver(action,t,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
@@ -546,7 +558,8 @@ class Creature:
             self.rotate(self.center,FWD,-vector.z*roll*hit)
             turn=(.83 if heavy else .47) if crawler else (.34 if heavy else .18)
             if rifle:
-                turn += .38
+                turn = (.83 if crawler else .69) * (1 if direction in ('front','right') else -1)
+                self.move(self.center,-vector*W*.16*catch)
                 self.rotate(self.center,FWD,(.30 if direction in ('right','front') else -.30)*catch)
             self.rotate(self.center,UP,turn*hit+(.29*catch if crawler and heavy else 0))
             if crawler:
@@ -554,6 +567,8 @@ class Creature:
             self.rotate('head',SIDE,-vector.x*.29*hit)
             self.rotate('tail',SIDE,-.32*vector.x*hit+.18*catch)
             self.mouth(.65*max(0,hit))
+            if rifle:
+                missed=min(self.legs,key=lambda leg:leg['rest'].dot(vector))['index']
             for leg in self.legs:
                 i=leg['index'];rest=leg['rest']
                 near=(rest-self.base_matrices[self.center].translation).dot(vector)<0
@@ -561,7 +576,8 @@ class Creature:
                 targets[i]=rest.lerp(self.m[self.center].translation,fold)
                 if near:
                     targets[i]+=UP*H*.17*catch - vector*W*(.20 if heavy else .08)*catch
-                    if rifle:targets[i]+=UP*H*.32*catch-vector*W*.22*catch
+                    if rifle and i == missed:
+                        targets[i]+=UP*H*.78*catch-vector*W*.37*catch
                 elif i%2==0:
                     targets[i]+=vector*W*(.21 if heavy else .085)*catch
                 if crawler and i in (0,5):
@@ -650,6 +666,24 @@ class Creature:
                     pull=between(arm_t,[(0,0),(.14,1),(.46,1),(.80,.2),(1,0)])
                     desired=arm['rest']+FWD*W*.40*pull-UP*H*.30*pull+UP*H*.18*math.sin(t*math.pi)
                     self.solve(arm,desired)
+        if self.family in ('brute','carrier') and action.startswith('m10-death-'):
+            # Land on the near shoulder. Keep the far pair spread beyond the
+            # mantle so their contact points survive the physics handoff.
+            fall=between(t,[(0,0),(.28,.08),(.57,.94),(.69,1),(1,1)])
+            self.rotate(self.center,FWD,.96*fall)
+            self.move(self.center,UP*H*.18*fall+SIDE*W*.08*fall)
+            self.rotate('head',UP,-.52*fall)
+            self.rotate('head',SIDE,-.38*fall)
+            for leg in self.legs:
+                i=leg['index']
+                side=1 if leg['rest'].dot(SIDE)>self.base_matrices[self.center].translation.dot(SIDE) else -1
+                land=leg['rest']+SIDE*W*side*.24+FWD*W*(.12 if i<2 else -.12)
+                targets[i]=targets.get(i,leg['rest']).lerp(land,fall)
+            for arm in self.arms:
+                side=arm['index']
+                tip=self.m[arm['bones'][-1]] @ arm['tip_local']
+                land=arm['rest']+SIDE*W*side*.29+FWD*W*(.27 if side<0 else -.13)
+                self.solve(arm,tip.lerp(land,fall))
         self.plant(targets)
         if action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
@@ -675,10 +709,12 @@ def author(family, patterns=None):
     arm=import_rig(family)
     creature=Creature(arm,family)
     takes = {name: seconds for name,seconds in DURATIONS.items() if not patterns or any(fnmatchcase(name,p) for p in patterns)}
-    if family in ('stalker','crawler'):
+    if family=='brute' and (not patterns or any(fnmatchcase('m10-wall-stun',p) for p in patterns)):
+        takes['m10-wall-stun']=.10
+    if family in ('stalker','crawler','brute','carrier','spitter'):
         for direction in ('front','right','back','left'):
             name=f'm10-hit-rifle-{direction}'
-            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.50
+            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.18
     for name,seconds in takes.items():
         new_action(arm,name,seconds)
         last=1+round(seconds*60)

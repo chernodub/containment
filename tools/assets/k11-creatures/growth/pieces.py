@@ -382,15 +382,13 @@ def brood_pod(hatching=False):
     core = Ellipsoid(shell_c - v3((0, 0, 0.03)), (0.24, 0.24, H * 0.36), zone=ORGAN)
     s.add(Stretch(core, (0, 0, 1), 0.09, 0.02, sharp=3, zone=ORGAN))
     if hatching:
-        # split crown: shell torn open at the top, core bulging out, petals curling back
-        s.add(Ellipsoid(shell_c + v3((0, 0, H * 0.4)), (0.26, 0.24, 0.22), op="sub", zone=CAVITY, k=0.03))
-        s.add(Ellipsoid(shell_c + v3((0, 0, H * 0.33)), (0.2, 0.2, 0.17), zone=ORGAN, k=0.04))
-        for k in range(5):
-            ang = k * 2 * math.pi / 5 + 0.4
-            d = v3((math.cos(ang), math.sin(ang), 0))
-            p0 = shell_c + d * 0.27 + v3((0, 0, H * 0.3))
-            s.add(Tube(bezier(p0, p0 + v3((0, 0, 0.12)) + d * 0.04, p0 + d * 0.16 + v3((0, 0, 0.16)), p0 + d * 0.26 + v3((0, 0, 0.06)), 5),
-                       [0.05, 0.045, 0.04, 0.03, 0.02, 0.01], zone=MEMBRANE, k=0.03))
+        # Leave the rooted cup continuous under a deep, open longitudinal cleft.
+        s.add(Box((0, 0, 0.77), (0.14, 0.80, 0.68), round=0.025, op="sub", zone=CAVITY))
+        for side in (-1, 1):
+            edge = v3((side * 0.44, 0, 0.56))
+            s.add(Ellipsoid(edge, (0.23, 0.39, 0.33), zone=ARMOR, k=0.035))
+            s.add(Ellipsoid(edge + v3((-side*0.08, 0, 0.21)),
+                            (0.12, 0.26, 0.09), zone=ORGAN, k=0.018))
     return s, 1500, {"size": [1.5, 1.5, H], "anchor": "floor, bottom-centred",
                      "placement": "spawned by the Carrier Matron; drive the pod-core finish emissive 0.3 -> 3.0 as the hatch countdown; swap to brood-pod-hatching for the final 0.5 s"}
 
