@@ -428,12 +428,12 @@ CASTS = [
 
 
 # The stock settles below the visor on the firing side. Keep both
-# ankle targets stationary through the seven-tick catch.
+# ankle targets stationary through the eleven-tick catch.
 SHOTGUN_CATCH = Pose(
-    5/60, firing_shoulder=(-.29, -.08, -.035), shoulder_turn=(-.58, -.38, .16),
-    pelvis=(-.38, -.15, -.23), spine=(-.72, -.48, -.20), ribs=(-.20, -.04, -.04),
-    head=(.57, .36, .14), left_delta=(-.23, -.12, -.13), right_delta=(-.27, -.24, -.17),
-    right_wrist=(-.28, -.025, 0), left_foot=(.02, .045, 0), right_foot=(-.09, -.03, 0),
+    5/60, firing_shoulder=(-.30, -.12, -.13), shoulder_turn=(-.58, -.38, .16),
+    pelvis=(-.42, -.19, -.32), spine=(-.72, -.48, -.20), ribs=(-.20, -.04, -.04),
+    head=(.31, .55, .06), left_delta=(-.23, -.12, -.13), right_delta=(-.18, -.33, -.24),
+    right_wrist=(-.28, -.025, 0), left_foot=(0, 0, 0), right_foot=(0, 0, 0),
 )
 
 WEAPONS = [
@@ -442,8 +442,8 @@ WEAPONS = [
         Pose(.02, firing_shoulder=(-0.069, 0.028, 0.037), shoulder_turn=(-0.222, -0.13, 0.074), pelvis=(-0.051, -0.018, -0.041), spine=(-0.12, 0.074, -0.037), ribs=(-0.222, -0.148, 0.037),
              head=(0.222, -0.046, 0.046), right_delta=(-0.118, -0.021, 0.161), right_wrist=(-.17, 0, 0),
              left=(-.015, .54, 1.20), left_foot=(.01, .025, 0), right_foot=(-.035, -.025, 0)),
-        Pose(.045, firing_shoulder=(-0.103, 0.037, 0.046), shoulder_turn=(-0.278, -0.167, 0.093), pelvis=(-0.081, -0.023, -0.055), spine=(-0.167, 0.083, -0.037), ribs=(-0.222, -0.185, 0.046),
-             head=(0.259, -0.065, 0.056), right_delta=(-0.161, -0.032, 0.204), right_pole=(-.38, -.95, 1.36), right_wrist=(-.28, 0, 0),
+        Pose(.045, firing_shoulder=(-.14, .065, -.045), shoulder_turn=(-0.278, -0.167, 0.093), pelvis=(-0.081, -0.023, -0.055), spine=(-0.167, 0.083, -0.037), ribs=(-0.222, -0.185, 0.046),
+             head=(0.259, -0.065, 0.056), right_delta=(-0.161, -0.032, 0.204), right_pole=(-.52, -1.02, 1.16), right_wrist=(-.28, 0, 0),
              left=(-.045, .59, 1.23), left_foot=(.015, .035, 0), right_foot=(-.07, -.035, 0)),
         Pose(.12, pelvis=(0.041, 0.011, -0.057), spine=(0.157, -0.102, 0.065), ribs=(0.083, 0.074, -0.037),
              head=(-0.093, 0.037, -0.028), right_delta=(0.054, 0.011, -0.075), right_wrist=(.065, 0, 0),
@@ -458,8 +458,8 @@ WEAPONS = [
         Pose(2/60, firing_shoulder=(-0.132, 0.041, 0.03), shoulder_turn=(-0.333, -0.263, 0.14), right_delta=(-0.2, -0.045, 0.104), left_delta=(-0.192, 0.032, 0.096),
              right_pole=(-.27, -.91, 1.12), spine=(-0.131, -0.063, -0.038),
              ribs=(-0.21, -0.131, -0.061), right_wrist=(-.12, 0, 0)),
-        Pose(3/60, firing_shoulder=(-0.239, 0.066, 0.074), shoulder_turn=(-0.367, -0.28, 0.158), pelvis=(-0.181, -0.074, -0.107), spine=(-0.385, -0.35, -0.149),
-             ribs=(-0.149, -0.175, -0.079), head=(.53, .52, .20),
+        Pose(3/60, firing_shoulder=(-.25, .09, -.055), shoulder_turn=(-0.367, -0.28, 0.158), pelvis=(-0.181, -0.074, -0.107), spine=(-0.385, -0.35, -0.149),
+             ribs=(-0.149, -0.175, -0.079), head=(.37, .50, .14),
              right_delta=(-0.16, -0.072, 0.072), left_delta=(-0.12, 0.042, 0.056)),
         Pose(5/60, pelvis=(-0.033, 0, -0.033), spine=(-0.061, -0.096, -0.021),
              ribs=(0.061, 0.044, 0.018), right_delta=(0.019, 0, -0.019)),
@@ -469,10 +469,10 @@ WEAPONS = [
         Pose(0),
         Pose(.02, firing_shoulder=(-0.217, 0.07, 0.07), shoulder_turn=(-0.429, -0.266, 0.163), pelvis=(-0.054, -0.023, -0.054), spine=(-0.281, -0.222, -0.118), ribs=(-0.296, 0.052, -0.052),
              head=(0.178, -0.037, 0.03), left_delta=(-0.18, 0.081, 0.18), right_delta=(-0.18, -0.036, 0.216),
-             right_wrist=(-.25, 0, 0), left_foot=(.015, .035, 0), right_foot=(-.06, -.025, .015)),
-        SHOTGUN_CATCH, replace(SHOTGUN_CATCH, time=12/60),
+             right_wrist=(-.25, 0, 0), left_foot=(0, 0, 0), right_foot=(0, 0, 0)),
+        SHOTGUN_CATCH, replace(SHOTGUN_CATCH, time=16/60),
         # Pull the fore-end to the hip, then send it back to battery.
-        Pose(.29, spine=(0.141, -0.104, 0.044), ribs=(0.089, -0.163, 0.052),
+        Pose(.34, spine=(0.141, -0.104, 0.044), ribs=(0.089, -0.163, 0.052),
              left_delta=(-0.414, 0.068, -0.198), right_delta=(-0.045, -0.022, -0.099)),
         Pose(.37, spine=(0.111, -0.081, 0.037), left_delta=(-0.468, 0.126, -0.234),
              left_pole=(-.32, 1.05, 1.04), right_delta=(0, 0, -0.081)),
@@ -498,12 +498,12 @@ WEAPONS = [
         Pose(.02, firing_shoulder=(-0.147, 0.056, 0.07), shoulder_turn=(-0.419, -0.232, 0.139),pelvis=(-0.14, -0.021, -0.182), spine=(-0.31, -0.124, -0.093), ribs=(-0.31, 0.062, -0.062),
              head=(0.217, 0.039, 0.054), left_delta=(-0.139, 0.07, 0.139), right_delta=(-.16, -.12, -.04),
              right_wrist=(-.20, 0, 0), left_foot=(.08, .08, 0), right_foot=(-.11, -.07, .085)),
-        Pose(.08, firing_shoulder=(-0.308, 0.109, 0.084), shoulder_turn=(-0.698, -0.357, 0.217),pelvis=(-0.406, -0.109, -0.266), spine=(-0.666, -0.279, -0.139), ribs=(-0.264, 0.109, -0.039),
+        Pose(.08, firing_shoulder=(-.34, .14, -.13), shoulder_turn=(-0.698, -0.357, 0.217),pelvis=(-0.406, -0.109, -0.266), spine=(-0.666, -0.279, -0.139), ribs=(-0.264, 0.109, -0.039),
              head=(0.248, -0.046, 0.062), left_delta=(-.21, -.10, -.08), right_delta=(-.23, -.19, -.11),
-             right_wrist=(-.24, -.025, 0), left_foot=(.12, .10, 0), right_foot=(-.39, -.11, 0)),
+             right_wrist=(-.24, -.025, 0), left_foot=(.12, .10, 0), right_foot=(-.46, -.13, 0)),
         Pose(.18, firing_shoulder=(-0.203, 0.049, 0.056), shoulder_turn=(-0.434, -0.202, 0.139),pelvis=(-0.154, -0.028, -0.196), spine=(-0.341, -0.093, -0.062), ribs=(-0.186, 0.054, -0.023),
              left_delta=(-0.139, 0.124, 0.124), right_delta=(-.16, -.13, -.07), right_wrist=(-.17, 0, 0),
-             left_foot=(.10, .08, 0), right_foot=(-.39, -.11, 0)),
+             left_foot=(.10, .08, 0), right_foot=(-.46, -.13, 0)),
         Pose(.23, pelvis=(0, 0, -0.119), spine=(0.054, 0.039, 0.023), ribs=(0.039, -0.016, 0.008),
              left_delta=(0.016, 0.07, 0.016), right_delta=(0.008, -0.008, 0.016), right_wrist=(.015, .01, 0),
              left_foot=(.065, .05, 0), right_foot=(-.19, -.065, .025)),

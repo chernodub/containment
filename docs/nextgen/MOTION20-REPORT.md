@@ -111,3 +111,29 @@ The matched Crew Checkpoint Breacher High benchmark recorded 124 median, 133 p95
 The final production build passed. The six-room seed-1729 Breacher run cleared Armory with zero errors and zero defects (`artifacts/nextgen/playtest/breacher-1729/report.json`). An earlier run alongside the captures also cleared all six rooms with zero errors and flagged one Passenger Vault room-load delay. The repeat recorded 2.48 seconds for that room.
 
 Repeating both 300-tick segments at fixed 1.0 resolution reproduced the median, p95, peak, program inventory and zero compile counts. Of the 37 draw samples, 35 matched exactly and two increased by one. The visible marine inventory still contained three meshes (body, Breacher rig and shotgun). Only the body gained triangles. The fixed-resolution receipts are `motion21-fixed-before/benchmark.json` and `motion21-fixed-after/benchmark.json`.
+
+## MOTION22
+
+The shotgun keeps both ankle targets in place while the hips move down and back and the shooting shoulder drops below the helmet. The stock travels down and outboard as the helmet tips back. The catch lasts from tick 5 through tick 16 (183 ms), then the pump draws the body forward. The rifle rolls the shoulder down on its third tick, the pistol pulls its elbow outward, and the rocket takes a 46 cm rear step. Plasma retains its sustained diagonal brace.
+
+The registered ready/fired silhouettes are in `artifacts/nextgen/motion22-overlays/sheet.png`. Each pair uses the same weapon, camera and floor mark, sampled before the trigger and during recoil. Magenta and cyan show the two silhouettes at their actual 480×270 viewing scale. Head / shooting shoulder excursions in screen pixels were 6.1 / 9.6 for pistol, 12.0 / 17.5 for rifle, 19.7 / 25.7 for shotgun, 8.8 / 9.3 for plasma and 19.6 / 23.9 for rocket. The shotgun grip moved 3.8 pixels relative to the head, alongside the much larger displacement of the whole torso.
+
+A steady pale grazing highlight follows upper rig paint and cyan brow emission within the existing marine surface. The actor shader cache key is `actor-surface-v15-motion22:marine`. The four portraits sample the equipped weapon's production recoil at ticks 7, 3, 12 and 6 for Breacher, Cryo, Pyro and Arc. A warmer side light and reduced hemisphere fill distinguish the helmet from the braced shoulder. Pyro faces across the frame to clear the orange dome from behind the tube. The rig selector, pause and death card use the same four portrait PNGs.
+
+Rebuild the clips and portraits with the following commands.
+
+```sh
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/marine_actions.py -- --clips=m10-fire-pistol,m10-fire-rifle,m10-fire-shotgun,m10-fire-rocket --install
+npm run studio -- --only=portrait-
+npm run build
+```
+
+The fifteen final strips completed with zero capture errors. Under `artifacts/nextgen/motion22-after/`, `quarter.png`, `quarter/`, and `room-comparison.png` compare against MOTION21. On the 480×270 shotgun row the shoulder stays below and behind the ready pose through the fifth sampled cell. The pistol hand still covers only a few pixels, so its elbow is easier to follow than its barrel. The maximum sampled horizontal aim deviation in the five firing strips was 1.8×10⁻⁷ radians.
+
+The four native-size frames in `overdrives/rig-effects.png` show the Breacher beam, Cryo field, Pyro blast and Arc discharge. The visor and coloured dome remain identifiable in each frame; Cryo's pale field gives the brow the least contrast. `scenes/pack-crawler.webp` and `scenes/pack-stalker.webp` show live fights. Their native event lists match MOTION21 exactly, including shot angles, times, hits and deaths. `artifacts/nextgen/motion22-portraits.png` shows the four selector poses side by side.
+
+The production build passed. In the fixed-resolution Crew Checkpoint benchmark, all 37 draw samples matched exactly (124 median, 133 p95, 134 peak). Both builds had 147 resident programs and zero combat compilations. Receipts are `artifacts/nextgen/motion22-fixed-before/benchmark.json` and `motion22-fixed-final/benchmark.json`.
+
+The Breacher campaign cleared six rooms through Armory with zero errors in `artifacts/nextgen/playtest/motion22-final/report.json`. The runner returned status 1 for two room-load observations over its five-second threshold, in Passenger Vault and Residential Gallery, while capture work was running.
+
+The repeat without concurrent capture or benchmarking also cleared six rooms with zero errors. Its runner returned status 1 for slow loads in Awakening Bay, Passenger Vault and Residential Gallery. The receipt is `artifacts/nextgen/playtest/motion22-quiet/report.json`.

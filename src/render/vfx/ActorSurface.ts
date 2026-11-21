@@ -67,7 +67,12 @@ ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the mari
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
 ${friendly ? `// SHADE15: one even self-light over the whole suit.
-totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;` : `vec3 creatureUp=viewMatrix[1].xyz;
+// The shipped marine stores its bind pose in Z-up authoring units.
+float browLight=smoothstep(.04,.30,min(totalEmissiveRadiance.g,totalEmissiveRadiance.b)-totalEmissiveRadiance.r)*smoothstep(11.4,12.2,actorPosition.z);
+float domePaint=step(.5,vRigPaint)*smoothstep(9.0,10.2,actorPosition.z);
+float signatureEdge=smoothstep(.08,.55,actorRim)*max(browLight,domePaint);
+totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
+totalEmissiveRadiance+=vec3(.72,.77,.80)*signatureEdge*(1.0-actorDissolve);` : `vec3 creatureUp=viewMatrix[1].xyz;
 float dorsal=smoothstep(.25,.82,dot(nonPerturbedNormal,creatureUp));
 float shellValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
 float shell=smoothstep(.018,.19,shellValue);
@@ -82,7 +87,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.10+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.20,.185,.17)*actorHitCard;// CREATURE18b: a mid lift that keeps lanterns and family colour, a step under the marine'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v13-hero19:marine' : 'actor-surface-v15-creature21:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v15-creature21:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

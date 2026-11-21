@@ -17,7 +17,7 @@ import {retireRoomModels} from '../../src/render/RoomModelCache';
 
 type Mark = {x?:number; z?:number; aim?:number; y?:number; scale?:number; shadow?:number};
 type Subject = Mark & (
-  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
+  {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; recoilTicks?:number; reload?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId|'queen'; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pod'; swollen?:boolean}
   | {kind:'ordnance'; weapon:'plasma'|'rocket'; from:[number,number,number]}
@@ -68,7 +68,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     : new T.Vector3(4,3.2,6).normalize();
   camera.position.copy(center).addScaledVector(direction,12);
   camera.lookAt(center); camera.updateMatrixWorld();
-  const key=new T.DirectionalLight(0xd9e8ff,2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,shot.framePortrait?.55:1.9);
+  const key=new T.DirectionalLight(shot.framePortrait?0xffead4:0xd9e8ff,shot.framePortrait?3.0:2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,shot.framePortrait?1.4:1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
   if(shot.card){
@@ -78,7 +78,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     if(!shot.room)key.intensity=3.1;
     rim.intensity=shot.room?.75:1.1;
   }
-  else if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,1.9));
+  else if(!shot.room)stage.add(key,rim,new T.HemisphereLight(0xb5dded,0x253036,shot.framePortrait?.82:1.9));
   else if(shot.origin){
     key.intensity=1.15;
     stage.add(key,key.target);
@@ -110,7 +110,8 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           actor.setMotionSeed?.(1729); actor.setMotionOptions?.(1,true);
           for(let tick=0;tick<30;tick++){
             actor.setAction?.(subject.pose??'',subject.frame??.55);
-            actor.animate(tick/60,0,subject.aim??.9,0,subject.reload??0);
+            const recoil=subject.recoilTicks===undefined?0:Number(tick===29-subject.recoilTicks);
+            actor.animate(tick/60,0,subject.aim??.9,recoil,subject.reload??0);
           }
           actor.syncWeaponPose?.();
           root=actor.root;

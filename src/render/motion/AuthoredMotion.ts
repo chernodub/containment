@@ -26,7 +26,7 @@ const FIRES: Record<string, string> = {
 // The wrist constraint consumes this pitch after the mixer. Keep its return
 // inside the shot interval so a rifle burst has distinct impacts.
 const RECEIVER_KICK: Record<string, readonly [number, number]> = {
-    pistol: [.39, 14], rifle: [.31, 24], shotgun: [.46, 14],
+    pistol: [.39, 14], rifle: [.31, 24], shotgun: [.28, 14],
     plasma: [.11, 11], rocket: [.39, 12],
 };
 const DEATHS: Record<DeathCue, string> = { none: 'm10-death-none', frost: 'm10-death-frost', burn: 'm10-death-burn', arc: 'm10-death-arc', acid: 'm10-death-acid' };
@@ -373,7 +373,7 @@ export class AuthoredMarineMotion {
         this.recoil = recoil;
         const [kick, decay] = RECEIVER_KICK[weapon];
         // Keep the barrel seated in the shotgun catch until the pump begins.
-        const returnAge = weapon === 'shotgun' ? Math.max(0, this.fireAge - .18) : this.fireAge;
+        const returnAge = weapon === 'shotgun' ? Math.max(0, this.fireAge - 16 / 60) : this.fireAge;
         const rise = Math.min(1, (this.fireAge + 1 / 120) * 56);
         this.barrelLift = !reload && !this.motion.actionName ?
             this.feedback * (kick * rise * Math.exp(-returnAge * decay) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;

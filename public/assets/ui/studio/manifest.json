@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 209834,
+    "bytes": 230002,
     "shot": {
       "width": 640,
       "height": 640,
@@ -13,8 +13,8 @@
           "weapon": "shotgun",
           "pose": "",
           "frame": 0,
-          "aim": 1.9,
-          "reload": 0
+          "aim": 1.78,
+          "recoilTicks": 7
         }
       ],
       "focus": [
@@ -24,9 +24,9 @@
       ],
       "rimColor": 16765027,
       "key": [
-        -3,
-        5,
-        2
+        -4,
+        3,
+        3
       ],
       "framePortrait": true,
       "transparent": true
@@ -34,7 +34,7 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 198850,
+    "bytes": 205673,
     "shot": {
       "width": 640,
       "height": 640,
@@ -46,8 +46,8 @@
           "weapon": "rifle",
           "pose": "",
           "frame": 0,
-          "aim": 1.95,
-          "reload": 0
+          "aim": 1.84,
+          "recoilTicks": 3
         }
       ],
       "focus": [
@@ -57,9 +57,9 @@
       ],
       "rimColor": 8378111,
       "key": [
-        -3,
-        5,
-        2
+        -4,
+        3,
+        3
       ],
       "framePortrait": true,
       "transparent": true
@@ -67,7 +67,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 308530,
+    "bytes": 311332,
     "shot": {
       "width": 640,
       "height": 640,
@@ -79,8 +79,8 @@
           "weapon": "rocket",
           "pose": "",
           "frame": 0,
-          "aim": -0.62,
-          "reload": 0.32
+          "aim": -0.93,
+          "recoilTicks": 12
         }
       ],
       "focus": [
@@ -90,9 +90,9 @@
       ],
       "rimColor": 16742958,
       "key": [
-        -3,
-        5,
-        2
+        -4,
+        3,
+        3
       ],
       "framePortrait": true,
       "transparent": true
@@ -100,7 +100,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 240453,
+    "bytes": 254895,
     "shot": {
       "width": 640,
       "height": 640,
@@ -112,8 +112,8 @@
           "weapon": "plasma",
           "pose": "",
           "frame": 0,
-          "aim": 1.98,
-          "reload": 0
+          "aim": 1.87,
+          "recoilTicks": 6
         }
       ],
       "focus": [
@@ -123,9 +123,9 @@
       ],
       "rimColor": 12033279,
       "key": [
-        -3,
-        5,
-        2
+        -4,
+        3,
+        3
       ],
       "framePortrait": true,
       "transparent": true
