@@ -1,0 +1,7 @@
+# SURFACE22 — painted environment surfaces
+
+## 1. Before (`artifacts/nextgen/surf22-before/`, commit 0b97db74, seed 1729, 1920 × 1080)
+
+Captured `incident-facing` and `combat-calm` for freight-hold, armory, crew-checkpoint, relay-racks, coolant-plant and swarm-junction, plus `value14-crowd-*` for relay-racks, swarm-junction and crew-checkpoint (24 PNGs, 0 failures).
+
+What the surface shader gives props and landmarks today. Props (the freight-hold booth counter, the armory issue counter, the crew-checkpoint scanner pillars) get the three-step diffuse ramp from `GraphicSurface.ts`, which on a box only separates the lit face from the shadowed face, so each face is one flat fill bounded by ink. Speculars are cut to 25 % and the only highlight is a Fresnel rim bevel on upward-facing silhouettes; there is no ambient occlusion on props beyond the deck contact shadow, and no texture beyond whatever flat albedo the kit material carries. Landmarks (the freight-hold leaning load, the armory carousel) get the same treatment plus the LIGHT13 landmark body emission, which lifts every raised surface within the radius uniformly: the carousel reads as a pale-grey block, the crate stack as mid-grey slabs whose top plane is no lighter than its sides. A painter would add a clearly lighter top plane in the room's light, a dark foot where the object meets the deck, a few large panel breaks per face in two tones, a broken light line on the top edges, and on the landmark a lit accent trim or core so it stands one value step above the floor.
