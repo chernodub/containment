@@ -403,7 +403,7 @@ export function runSimulation(options: SimOptions) {
         }
         if (target) screen = weaponScreen;
         input = readInput();
-        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible })), screen: { ...screen } });
+        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, objective: game.encounterObjective, siege: game.siege, encounter: game.encounter, remaining: game.encounterRemaining, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible, meleePhase: e.meleePhase, pendingAttack: e.pendingAttack, chargeMs: e.chargeMs })), screen: { ...screen } });
         advance(decision.stepMs);
         const progressStats = game.stats;
         const signature = `${Math.ceil((game.siege?.remainingMs??0)/1000)}:${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
@@ -422,7 +422,7 @@ export function runSimulation(options: SimOptions) {
     report.stats = game.stats;
     const finalState = snapshot();
     report.final = {...finalState, node: {...game.node}, status: game.status, phase: game.expedition.run.phase,
-        elapsed: game.elapsed, remaining: game.encounterRemaining, stats: game.stats, resources: game.combat.getRunResources(),
+        elapsed: game.elapsed, objective: game.encounterObjective, encounter: game.encounter, remaining: game.encounterRemaining, stats: game.stats, resources: game.combat.getRunResources(),
         reason: report.finalReason ?? report.outcome,
         noCombatProgressSeconds: game.elapsed - lastProgressElapsed,
         noCombatProgressOver45s: game.elapsed - lastProgressElapsed > 45,

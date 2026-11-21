@@ -97,3 +97,11 @@ The native runner samples combat at 100 ms intervals. The sampled melee count in
 ## What remains weak
 
 Standard exceeded its requested clear ceiling by one. Both native rigs chose the near exposed bank, so the far covered route has staged capture evidence and still lacks a native choice in these two campaigns. The ranged slot releases when the shot fires and the shooter starts repositioning. The measurable wind-up limits and coverage come from two competent bot runs on one seed. Human recognition of the cue during sustained fire remains unmeasured.
+
+## Overload Floor stall investigation
+
+The traced reproduction at `ef4e8333` stalled with 19 clears after 45.1 simulated seconds without combat progress. The marine ended at approximately (702, 289), in the reaction-feed threshold. For 447 of 450 sampled inputs in the last 45 seconds the bot stood still, and for the other three it tried moving left. It never fired. The bot's waypoint was (496, 272), but its westward movement probe collided with the deck geometry.
+
+Five enemies were live. A Carrier at (375, 305), Brutes at (420, 496) and (374, 434), and Crawlers at (464, 457) and (471, 492) were all in approach with blocked shots. None held an attack token. The room still counted 31 remaining, including later arrivals, and the siege state was null. The bank was waiting for the encounter to reach its relay beat.
+
+The three older result files have final snapshots and recent decisions. They lack full traces. Breacher 7 had two live enemies out of 28 remaining, Arc 11 had 12 out of 40, and Breacher 137 had 12 out of 46. Each marine stopped beside the same threshold, chose zero movement with no firing target, and had a blocked westward probe toward the reported waypoint. All three had no active siege and their live enemies were in approach.
