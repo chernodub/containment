@@ -1,3 +1,4 @@
+import {FloorChoiceMarkers} from './markers/FloorChoiceMarkers';
 import { PincerPresentation } from './world/PincerPresentation';
 import {setRoomBlackout} from './lighting/LocalLightShading';
 import {ShipConditionVisuals} from './vfx/ShipConditionVisuals';
@@ -155,6 +156,7 @@ export class DepthRenderer {
  private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute');private lastMenu=false;private menuThreatClock=0;
  private title=new TitlePresentation(this.scene);
  private readonly conditionVisuals=new ShipConditionVisuals(UNIT);
+ private readonly floorChoiceMarkers=new FloorChoiceMarkers();
  private readonly siegeBoundary=new SiegeBoundary(UNIT);
  constructor(readonly canvas:HTMLCanvasElement,assetRenderer?:T.WebGLRenderer){
   this.renderer=assetRenderer??new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
@@ -165,7 +167,7 @@ export class DepthRenderer {
   this.hudScene.add(this.healthBars.root);this.scene.add(this.afflictions.root);
   this.scene.background=new T.Color(0x081014);this.scene.fog=new T.FogExp2(0x102027,.014);
   this.reflection=new RoomReflectionCapture(this.renderer,this.scene);this.canvas.addEventListener('webglcontextlost',this.loseGraphics);this.canvas.addEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.addEventListener('change',this.motionChanged);
-  this.scene.add(this.lighting.root,this.contacts.mesh,this.siegeBoundary.root,this.conditionVisuals.root,this.pincerPresentation.root);
+  this.scene.add(this.lighting.root,this.contacts.mesh,this.floorChoiceMarkers.root,this.siegeBoundary.root,this.conditionVisuals.root,this.pincerPresentation.root);
   // Shared pickup/nest finishes can appear after a kill in a different room.
   // Match their future shaders to the retained generic material family before preparation.
   for(const material of Object.values(MAT))optimizeLocalLights(material);
@@ -623,6 +625,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,UNIT);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
@@ -848,5 +851,5 @@ export class DepthRenderer {
   for(const[id,mesh]of this.poolMeshes)if(!poolIds.has(id)){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();this.poolMeshes.delete(id);}
  }
  private clearPools(){for(const mesh of this.poolMeshes.values()){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();}this.poolMeshes.clear();}
- dispose(){if(this.disposed)return;this.disposed=true;this.pincerPresentation.dispose();this.conditionVisuals.dispose();this.siegeBoundary.dispose();this.kitDressing?.dispose();this.aheadRooms?.dispose();this.cancelRoomPrefetch?.();this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
+ dispose(){if(this.disposed)return;this.disposed=true;this.pincerPresentation.dispose();this.conditionVisuals.dispose();this.siegeBoundary.dispose();this.floorChoiceMarkers.dispose();this.kitDressing?.dispose();this.aheadRooms?.dispose();this.cancelRoomPrefetch?.();this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
 }
