@@ -273,7 +273,7 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     if (fade > 0) {
       kit.sustain(p.age);
-      kit.fireFan(p.x, p.z, p.range * Math.min(1, .25 + p.age * 8), p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
+      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
       kit.impact();
     }
     // Compact white-yellow muzzle core, only for the first beats.
