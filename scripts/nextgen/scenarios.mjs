@@ -306,6 +306,14 @@ export const SCENARIOS=[
   }
   d.step(680);d.refresh();
  }},
+ {id:'play23-interlock',state:'playing',room:'safety-interlock-station',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('safety-interlock-station',{rig:'arc',runStructure:true});
+  const g=d.game,director=g.director;
+  const beat=director.plan.beats.findIndex(b=>b.consequence==='pincer');
+  director.beatIndex=beat;director.dispatched=director.plan.beats[beat].start;
+  d.step(34);d.refresh();
+ }},
  {id:'play23-edge',state:'playing',room:'safety-interlock-station',setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('safety-interlock-station',{rig:'arc',runStructure:true});
