@@ -428,7 +428,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
         keys.splice(keys[0]==='e'?1:0,0,'Shift');
       }
       const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
-      const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
+      const lessonTarget = profile==='novice' ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
+      const actions = now >= nextInput ? timelyKeys.filter(key=>!lessonTarget||!['q','f','v','g'].includes(key)).slice(0,1) : [];
       if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
       // WEAPONS15 weapon selection.
       const ammo = s.resources?.ammo;
@@ -441,8 +442,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
         : near < 180 && hasAmmo('shotgun') ? 'shotgun'
         : hasAmmo('rifle') ? 'rifle' : hasAmmo('plasma') ? 'plasma' : 'pistol';
       let rocketTarget, platedTarget;
-      if (ammo && target && !novice) {
-        const range = distance(target, s.player);
+      if (ammo && (target||lessonTarget) && !novice) {
+        const range = target?distance(target, s.player):Infinity;
         const ready = id => ammo[id].magazine > 0 && !s.reloadingWeapons?.includes(id);
         if (hasAmmo('rocket')) rocketTarget = contacts.find(enemy => {
           if (!enemy.clear || distance(enemy,s.player) <= 225) return false;
@@ -450,21 +451,21 @@ export function createHumanPolicy(seed, profile = 'competent') {
           return contacts.some(other =>
             other.id !== enemy.id && other.clear && distance(other, enemy) < 110);
         });
-        platedTarget = hasAmmo('plasma') ? contacts.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
-          .sort((a,b)=>Number(b.id===s.plateLessonTarget)-Number(a.id===s.plateLessonTarget)||distance(a,s.player)-distance(b,s.player))[0] : undefined;
+        platedTarget = hasAmmo('plasma') ? lessonTarget??contacts.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+          .sort((a,b)=>distance(a,s.player)-distance(b,s.player))[0] : undefined;
         if (platedTarget) desired = 'plasma';
         else if (rocketTarget) desired = 'rocket';
-        else if (range > 145 && ready('pistol') &&
+        else if (target && range > 145 && ready('pistol') &&
           (s.reloadingWeapons?.includes(desired) ||
             (target.armor <= 0 && target.health <= 29 && near >= 145))) desired = 'pistol';
-        else if (range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
+        else if (target && range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
           ready('shotgun')) desired = 'shotgun';
       }
       if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
       const sidegrade = desired !== 'rifle' && desired !== 'shotgun';
       // Baseline selection already uses delayed positions, so only specialised
       // choices add a dwell before the existing input cadence admits a swap.
-      const switchReady = novice || !sidegrade || now - weaponNotice >= 250;
+      const switchReady = novice || !sidegrade || (lessonTarget&&desired==='plasma') || now - weaponNotice >= 250;
       const weapon = !actions.length && (novice || !s.abilities.dashing) &&
         now >= nextInput && switchReady && now >= weaponHold ? desired : current;
       if (weapon !== current) {

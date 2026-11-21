@@ -769,7 +769,7 @@ export class DepthGame {
   const escort=this.director.objectiveBroken&&this.encounter.grammar==='priority';
   this.cleanupElapsed=mode?this.cleanupElapsed+ms:0;
   for(const enemy of live){
-   if(enemy.priority)continue;
+   if(enemy.priority||enemy.id===this.platedLessonTarget&&(enemy.stunRemainingMs??0)>0)continue;
    let departure=this.departures.get(enemy.id);
    if(!mode&&!departure)continue;
    if(!departure){
