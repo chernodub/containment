@@ -81,13 +81,37 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 `;
 
 /** Tapered original flame family; retained explosions still use their authored atlas. */
+export const FIRE_FAN_PHASE = 500;
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
  float coverage;
- if(phase>=200.){
+ if(phase>=${FIRE_FAN_PHASE}.){
+  float halfArc=phase-${FIRE_FAN_PHASE}.;
+  vec2 ray=vec2(p.x*sin(halfArc),fireUv.y);
+  float t=length(ray),theta=atan(ray.x,max(.0001,ray.y))/halfArc;
+  if(t>1.||abs(theta)>1.)discard;
+  // Map overlapping tongue silhouettes into polar lanes. The edge lanes
+  // share the same normalized range and animate independently of cast age.
+  float lane=theta*3.3+.13*sin(t*8.+abilityTime*7.);
+  float nearest=floor(lane+.5);
+  vec2 stamp=vec2(.5+(lane-nearest)*.72,.10+t*.76);
+  vec4 fire=effectGraphicSequence(0.,64.,19.,(nearest+4.)*8.7,stamp);
+  float edge=1.-smoothstep(.88,1.,abs(theta));
+  float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
+  coverage=graphicCoverage(fire.a)*edge*tip*smoothstep(.055,.16,t);
+  c=mix(vec3(.72,.052,.003),vec3(2.15,.56,.038),fire.g);
+ }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
   c=graphicCombustion(fire);
+ }else if(phase>=100.){
+  // Use the authored fire silhouette for flows aligned along a limb or a jet.
+  vec4 fire=effectGraphicSequence(0.,64.,19.,phase-100.,fireUv);
+  coverage=graphicCoverage(fire.a);
+  float heat=smoothstep(.19,.84,fire.r);
+  float core=smoothstep(.35,.72,ink.g)*(1.-smoothstep(.28,.92,fireUv.y));
+  c=mix(vec3(.58,.044,.004),vec3(2.4,.58,.027),heat);
+  c=mix(c,vec3(3.9,3.4,2.35),core*heat);
  }else{
   // The same three unequal tongues serve jets, fuel edges and suit exhaust.
   // Source alpha no longer decides the silhouette: broad photo-core islands
@@ -95,9 +119,8 @@ export const TEXTURED_FIRE_GLSL = `
   float t=fireUv.y;float seed=mod(phase,32.);
   float family=mod(floor(seed),3.);
   float clock=abilityTime*3.1;
-  float jet=step(100.,phase);
   float bend=(sin(t*5.7+seed-clock)*.13+sin(t*13.3-seed+clock*.7)*.045)*t;
-  float throat=mix(.73,.27,jet);
+  float throat=.73;
   float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.52+family*.13);
   float lobe=.80+.16*sin(t*(11.+family*2.7)-clock+seed)+.075*sin(t*27.+clock*.6+seed);
   float width=max(.008,envelope*lobe);

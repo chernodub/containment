@@ -146,6 +146,7 @@ export class EnemyMotion {
     const share = this.beamAngle !== undefined ? .68 : this.family === 'crawler' ? .50 : .22;
     const travel = share * this.state.offsetLimit * this.strength * (this.reduced ? .3 : 1);
     const slide = T.MathUtils.smoothstep(progress, 0, .53);
+    if (this.beamAngle !== undefined) this.body.scale.y = 1 - .24 * Math.sin(Math.PI * slide) * this.strength;
     // Interpolate from the planted impact, including its existing sideways offset.
     this.body.position.x = T.MathUtils.lerp(this.fallX, Math.sin(local) * travel, slide);
     this.body.position.z = T.MathUtils.lerp(this.fallZ, Math.cos(local) * travel, slide);
@@ -195,6 +196,7 @@ export class EnemyMotion {
       const direction=aim-(beam?this.beamAngle!:this.hitAngle);
       const share=beam?.64:this.family==='crawler'?(this.heavy?.36:.54):.14;
       const carry=beam ? T.MathUtils.smoothstep(this.beamAge,0,.10)*(1-T.MathUtils.smoothstep(this.beamAge,.415,.62))*motion : 0;
+      const landing = beam ? Math.sin(Math.PI * T.MathUtils.smoothstep(this.beamAge,.21,.43)) * motion : 0;
       const offset=this.state.offsetLimit*Math.max(contact,carry)*share;
       // Clips supply the limbs; the presentation parent carries the entire mass.
       // Hold a readable silhouette from the first native warning frame, rather
@@ -223,7 +225,7 @@ export class EnemyMotion {
       // Compression and release stay deliberately smaller than the authored
       // poses; this layer must survive replacement meshes on the same rig.
       this.body.scale.set(1+(brace*(this.family==='brute'?.18:p.squashX*.90)+strike*.10)*motion,
-        1+(brace*(this.family==='brute'?-.10:p.squashY*.90)-strike*.10-contact*.06)*motion,
+        1+(brace*(this.family==='brute'?-.10:p.squashY*.90)-strike*.10-contact*.06)*motion - landing*.22,
         1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;

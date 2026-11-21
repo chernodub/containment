@@ -15,7 +15,7 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
@@ -23,9 +23,9 @@ type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: b
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
-  private readonly frostJoints = new WeakMap<T.Object3D, T.Object3D[]>();
+  private readonly contactJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
   private receiptCursor = 0;
   private ghostClock = 0;
@@ -75,8 +75,16 @@ class SystemPresentation implements AbilityPresentation {
       const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
       receipt ??= this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
       if (newIgnition) { receipt.ignition = k.time; receipt.sourceX = x / UNIT; receipt.sourceZ = y / UNIT; }
+      receipt.rail = event.ability === 'railbreaker';
+      if (receipt.rail) {
+        const position = k.statusActor(id)?.root.position;
+        receipt.railX = position?.x ?? x / UNIT;
+        receipt.railZ = position?.z ?? y / UNIT;
+        receipt.railAngle = event.angle ?? 0;
+        receipt.landed = false;
+      }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
+      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
     }
   }
 
@@ -97,6 +105,7 @@ class SystemPresentation implements AbilityPresentation {
     for (const receipt of this.receipts) {
       if (!receipt.live) continue;
       receipt.age += dt;
+      if (receipt.rail && !receipt.landed) this.railLanding(receipt);
       if (receipt.age >= receipt.life) receipt.live = false;
     }
     const snapshot = frame.snapshot;
@@ -151,21 +160,19 @@ class SystemPresentation implements AbilityPresentation {
     }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
     if (status?.frozen && actor) {
-      let joints = this.frostJoints.get(actor.root);
-      if (!joints) {
-        const found: T.Object3D[] = [];
-        actor.root.traverse(node => {
-          if (found.length < 4 && isContactJoint(node)) found.push(node);
-        });
-        this.frostJoints.set(actor.root, found);
-        joints = found;
-      }
+      const joints = this.joints(actor.root);
       k.sustain();
       k.sprite('crack', x, .049, z, radius * 1.5, radius * 1.4, ELEMENT_COLORS.cryo, .62, enemy.id, 'ground');
       k.impact();
       for (let i = 0; i < Math.min(joints.length, k.low ? 2 : 4); i++) {
         const m = joints[i].matrixWorld.elements;
-        k.draw('shard', m[12], m[13], m[14], .065, height * .10, .045, ELEMENT_COLORS.cryo, .52, i, .46);
+        k.draw('shard', m[12], m[13], m[14], .09, height * .17, .065, ELEMENT_COLORS.cryo, .78, i, .46);
+      }
+      for (let i = 0; i < (k.low ? 2 : 4); i++) {
+        const t = k.reducedMotion ? .55 : (k.time * 1.6 + i * .31 + enemy.id * .13) % 1;
+        const a = enemy.id + i * 2.4;
+        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * .42 * (1 - t * t),
+          z + Math.sin(a) * radius * .8, .037, .063, .035, WHITE, Math.sin(t * Math.PI) * .78, a);
       }
       k.impact();
     }
@@ -247,7 +254,7 @@ class SystemPresentation implements AbilityPresentation {
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
     // One low foot shell complements actor-owned frost without encasing anatomy.
-    this.kit.iceShell(x, z, radius * .84, height, .055 + flash * .06);
+    this.kit.iceShell(x, z, radius * .84, height, .19 + flash * .09);
   }
 
   /** Chill stacks thicken the foot fringe; actor materials retain upper-body identity. */
@@ -264,33 +271,64 @@ class SystemPresentation implements AbilityPresentation {
 
   private burning(x: number, z: number, radius: number, height: number, seed: number, receipt?: Receipt): void {
     const k = this.kit, asymmetry = Math.sin(seed * 2.39996);
-    const travel = receipt ? Math.min(1, (k.time - receipt.ignition) / .38) : 1;
+    const phase = receipt ? k.time - receipt.ignition : k.time + seed * .37;
+    const travel = k.reducedMotion ? .55 : (phase * 1.65) % 1;
+    const pulse = receipt ? Math.max(0, 1 - receipt.age / .18) : 0;
     const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
     for (let i = 0; i < (k.low ? 1 : 2); i++) {
       const growth = Math.min(1, Math.max(0, .32 + travel * 2.4 - i * .8));
       if (growth <= 0) continue;
       const a = incoming + (asymmetry < 0 ? -1 : 1) * (travel * 1.9 - i * .85);
-      const end = a + .63 + asymmetry * .4, h = height * (.28 + .14 * i);
-      k.flowFlame(x + Math.cos(a) * radius * .84, h, z + Math.sin(a) * radius * .84,
+      const end = a + .63 + asymmetry * .4, h = height * (.12 + .54 * travel + .09 * i);
+      k.flowFlame(x + Math.cos(a) * radius * .68, h, z + Math.sin(a) * radius * .68,
         x + Math.cos(end) * radius, h + height * (.3 + .18 * asymmetry + .22 * i) * growth,
         z + Math.sin(end) * radius, radius * (.31 + .09 * asymmetry) * growth,
-        seed + i * 3.7, .86 * growth, i === 0 && travel < .35);
+        seed + i * 3.7, .76 * growth + .22 * pulse, i === 0 && pulse > .45);
     }
   }
 
-  private stunned(x: number, z: number, radius: number, height: number, seed: number): void {
-    const k = this.kit, count = k.low ? 2 : 4, strike = k.reducedMotion ? 0 : Math.floor(k.time * 12);
-    for (let i = 0; i < count; i++) {
-      const a = seed * .73 + i * 2.39996323, r = radius * .86;
-      const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r, h = height * (.3 + i % 3 * .22);
-      k.draw('spark', px, h, pz, .045, .08 + Math.sin(seed + strike) ** 2 * .035, .03,
-        i % 2 ? WHITE : ELEMENT_COLORS.arc, .7);
-      if (!k.low) {
-        const b = a + .6 + Math.sin(seed + strike + i) * .12;
-        k.ribbon(px, h, pz, x + Math.cos(b) * r, h + height * .24, z + Math.sin(b) * r,
-          ELEMENT_COLORS.arc, .016, .6, true);
-      }
+  private joints(root: T.Object3D): T.Object3D[] {
+    let joints = this.contactJoints.get(root);
+    if (!joints) {
+      const found: T.Object3D[] = [];
+      root.traverse(node => {
+        if (found.length < 4 && isContactJoint(node)) found.push(node);
+      });
+      this.contactJoints.set(root, found);
+      joints = found;
     }
+    return joints;
+  }
+
+  private stunned(x: number, z: number, radius: number, height: number, seed: number): void {
+    const k = this.kit, actor = k.statusActor(seed);
+    const joint = actor && this.joints(actor.root)[0];
+    const tip = joint?.matrixWorld.elements, base = joint?.parent?.matrixWorld.elements;
+    const ax = base?.[12] ?? x, ay = base?.[13] ?? height * .58, az = base?.[14] ?? z;
+    const bx = tip?.[12] ?? x + radius * .72, by = tip?.[13] ?? height * .26, bz = tip?.[14] ?? z;
+    const flicker = k.reducedMotion ? .8 : .66 + .26 * Math.sin(k.time * 23 + seed);
+    k.ribbon(ax, ay, az, bx, by, bz, ELEMENT_COLORS.arc, .065, flicker, false);
+    k.ribbon(ax, ay + .02, az, bx, by + .02, bz, WHITE, .019, flicker, false);
+    k.draw('spark', bx, by, bz, .08, .09, 1, WHITE, flicker);
+  }
+
+  private railLanding(receipt: Receipt): void {
+    const k = this.kit, actor = k.statusActor(receipt.id);
+    if (!actor || receipt.age < .26) return;
+    receipt.landed = true;
+    const {x, z} = actor.root.position;
+    const dx = x - receipt.railX, dz = z - receipt.railZ;
+    const angle = Math.hypot(dx, dz) > .04 ? Math.atan2(dz, dx) : receipt.railAngle;
+    const size = Math.min(1.3, Math.max(.45, actor.height * .56));
+    k.sustain();
+    k.beam(x - Math.cos(angle) * size, .045, z - Math.sin(angle) * size,
+      x, .046, z, 0x796d5d, size * .12, .52, false);
+    for (let i = 0, count = k.low ? 5 : 10; i < count; i++) {
+      const a = angle + i * Math.PI * 2 / count, c = Math.cos(a), s = Math.sin(a);
+      k.mote('smoke', x + c * size * .36, .13, z + s * size * .36,
+        c * 1.7, .46, s * 1.7, size * .26, .42, 0xc2b197);
+    }
+    k.impact();
   }
 
   private launched(enemy: StruckTarget, radius: number, height: number, receipt: Receipt): void {

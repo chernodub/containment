@@ -12,7 +12,7 @@ const STEEL = 0x34414d;
 const TAU = Math.PI * 2;
 const NO_LINKS: readonly AbilityLinkSnapshot[] = [];
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
-type Discharge = { sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
+type Discharge = { overload: boolean; sx: number; sz: number; sy: number; ty: number; victimId: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; contactFrames: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
@@ -22,7 +22,7 @@ type Front = { live: boolean; x: number; z: number; radius: number; age: number;
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
-  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
+  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ overload: false, sx: 0, sz: 0, sy: .95, ty: .75, victimId: -1, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, contactFrames: 0, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
@@ -94,7 +94,7 @@ class ArcPresentation implements AbilityPresentation {
         // Links of a native chain arrive synchronously; presentation adds the hop rhythm only.
         if (k.time - this.chainAt > .03) this.chainHop = 0;
         this.chainAt = k.time;
-        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .04);
+        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .095);
       } else if (event.phase === 'impact') {
         k.flash(px, pz, WHITE, 10, 5, 4, .12);
         k.camera(.24);
@@ -161,7 +161,8 @@ class ArcPresentation implements AbilityPresentation {
     // The source and destination are immutable native link receipts.
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
-    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
+    d.overload = event.ability === 'overload';
+    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = d.overload ? .38 : 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
     d.ty = .75; d.victimId = event.targetIds?.[0] ?? -1;
     const id = event.targetIds?.[0], root = id === undefined ? undefined : k.statusActor(id)?.root;
     if (root) {
@@ -220,8 +221,8 @@ class ArcPresentation implements AbilityPresentation {
         d.fired = true;
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
-          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .55);
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .80;
+          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .42;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
@@ -238,11 +239,12 @@ class ArcPresentation implements AbilityPresentation {
       }
       k.sustain(d.age - d.delay);
       const fade = 1 - (d.age - d.delay) / d.life;
-      k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .36, false);
-      const contact = d.age - d.delay < .051;
+      if (!d.overload) k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .36, false);
+      const firstContact = d.overload && d.delay === 0;
+      const contact = d.age - d.delay < (firstContact ? .11 : .051);
       if (contact && d.contactFrames < 3) {
         k.impact();
-        k.sprite('glow', d.x, d.ty, d.z, .76, .55, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
+        k.sprite('glow', d.x, d.ty, d.z, firstContact ? 1.1 : .68, firstContact ? 1.24 : .55, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
         k.sustain(d.age - d.delay);
         if (dt > 0) d.contactFrames++;
       }

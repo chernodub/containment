@@ -28,17 +28,15 @@ type Transient = {
   angle: number;
   radius: number;
   range: number;
+  targetIds?: readonly number[];
   arc: number;
-  /** VFX13 fire volume slices owned by a Flashfire cone (fixed three, reused). */
-  slices: (FxSlot | undefined)[];
-  sliceSeeds: number[];
 };
 
 /** Four physical sources: a pressure jet, deck fuel, a liquid fire and a charged suit. */
 class PyroPresentation implements AbilityPresentation {
   private readonly effects: Transient[] = Array.from({ length: TRANSIENT_CAPACITY }, (_, lightId) => ({
     live: false, lightId: 7100 + lightId, kind: 'cone', age: 0, life: 1, x: 0, z: 0, tx: 0, tz: 0,
-    angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined], sliceSeeds: [-1, -1, -1],
+    angle: 0, radius: 0, range: 0, arc: 0,
   }));
   private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, seed: -1, slot: undefined as FxSlot | undefined }));
   private next = 0;
@@ -131,18 +129,8 @@ class PyroPresentation implements AbilityPresentation {
         const p = this.acquire('cone', x, z, 1.35);
         p.angle = event.angle ?? 0; p.range = (event.length ?? FAN_RANGE * UNIT) / UNIT;
         p.arc = event.arcRadians ?? FAN_ARC;
+        p.targetIds = event.targetIds;
         const c = Math.cos(p.angle), s = Math.sin(p.angle);
-        // Volume: a low hot sheet, the rolling body and a smoke crown. Low keeps the body.
-        const layers = kit.low ? 1 : 3;
-        for (let i = 0; i < 3; i++) {
-          if (i >= layers) { p.slices[i] = undefined; continue; }
-          const layer = kit.low ? .35 : i * .5;
-          const slot = kit.fx.spawn(FxMode.Fire, x, z, layer > .9 ? 1.35 : .62);
-          slot.angle = p.angle; slot.arc = p.arc; slot.range = p.range; slot.inner = .07;
-          slot.h0 = .95 + i * .08; slot.h1 = .5 + i * .4; slot.param = layer;
-          slot.mx = x + c * .55; slot.my = .95; slot.mz = z + s * .55;
-          p.slices[i] = slot; p.sliceSeeds[i] = slot.seed;
-        }
         const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 7);
         scorch.angle = p.angle; scorch.arc = p.arc; scorch.range = p.range; scorch.inner = .06; scorch.h0 = scorch.h1 = .034;
         kit.flash(x + c * 1.2, z + s * 1.2, HOT, 30, 9, 4, .34);
@@ -283,18 +271,28 @@ class PyroPresentation implements AbilityPresentation {
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
     else this.source.set(p.x + c * .55, .95, p.z + s * .55);
-    for (let i = 0; i < p.slices.length; i++) {
-      const slot = p.slices[i];
-      if (slot?.live && slot.seed === p.sliceSeeds[i] && slot.mode === FxMode.Fire) {
-        slot.mx = this.source.x; slot.my = this.source.y; slot.mz = this.source.z; slot.h0 = this.source.y;
-      }
-    }
     const fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .4);
     kit.impact();
+    if (fade > 0) {
+      kit.sustain(p.age);
+      // A shoved target can move beyond the original cone while the impact is still visible.
+      // Carry a short tongue onto the struck body using only the native hit receipt.
+      if (p.targetIds) for (const id of p.targetIds) {
+        const actor = kit.statusActor(id);
+        if (!actor) continue;
+        const { x, z } = actor.root.position;
+        const incoming = Math.atan2(z - p.z, x - p.x);
+        const dx = Math.cos(incoming), dz = Math.sin(incoming);
+        kit.flowFlame(x - dx * .84, actor.height * .33, z - dz * .84,
+          x + dx * .20, actor.height * .79, z + dz * .20, .32, id, fade);
+      }
+      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
+      kit.impact();
+    }
     // Compact white-yellow muzzle core, only for the first beats.
     if (p.age < .2) {
       const k = 1 - p.age / .2;
-      kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .5 * k + .14, .36 * k + .1, 1, CORE, k);
+      kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .68 * k + .16, .46 * k + .12, 1, 0xfff9e9, k);
       kit.draw('spark', this.source.x + c * .4, this.source.y, this.source.z + s * .4, .5 * k, .14 * k, 1, 0xffd27a, .8 * k, 0, -p.angle);
     }
     kit.lightAt(p.lightId, p.x + c * p.range * .4, p.z + s * p.range * .4, FIRE, (14 + 18 * hot) * fade, Math.max(8, p.range * 1.2));
@@ -421,6 +419,17 @@ class PyroPresentation implements AbilityPresentation {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, radius = zone.radius / UNIT;
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
     const fade = Math.min(1, zone.remainingMs / 600);
+    kit.sustain(elapsed);
+    const pockets = kit.low ? 3 : 7;
+    for (let i = 0; i < pockets; i++) {
+      const angle = zone.id * .71 + i * 2.39996;
+      const reach = radius * (.24 + .58 * i / pockets);
+      const px = x + Math.cos(angle) * reach, pz = z + Math.sin(angle) * reach;
+      kit.directedFlame(px, .06, pz, .25 + .06 * (i % 3), .78 + .32 * (i % 4),
+        angle, .16, zone.id + i * 1.37, fade * .87, i === 0);
+      if (emit && i === Math.floor(kit.time * 11) % pockets)
+        kit.mote('spark', px, .65, pz, .12, 2, .08, .042, .65, CORE);
+    }
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
       if (shimmer) {
@@ -444,7 +453,7 @@ class PyroPresentation implements AbilityPresentation {
         z + Math.cos(i * 2.4 + rise) * radius * .12,
         .45 + rise * .65, .55 + rise * .5, 1, SOOT, (.3 - rise * .09) * fade);
     }
-    kit.lightAt(zone.id, x, z, FIRE, 6 * fade, Math.max(6, Math.min(8, radius * 1.8)));
+    kit.lightAt(zone.id, x, z, FIRE, 12 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
     if (shimmer) kit.distort(x, z, radius, .003 * fade, .9, true);
     if (emit && !kit.low) kit.mote('spark', x, .2, z, .08, 1.4, .04, .035, .9, CORE);
   }
@@ -495,7 +504,7 @@ class PyroPresentation implements AbilityPresentation {
         x + c * .04 - s * side * .29, 1.42, z + s * .04 + c * side * .29, CORE, .025, .84 * fade, false);
     }
     kit.grade(.65 * fade);
-    kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
+    kit.lightAt(zone.id, x, z, FIRE, 10 * fade, 7, 3);
     if (emit) {
       kit.sustain(age);
       // Bounded ember storm is attached to the moving suit, never a floor aura fill.
