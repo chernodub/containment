@@ -66,6 +66,7 @@ export function addLaneIncident(root:T.Group,id:string){
         p.rod([u-8,3,v],[u+1,k,v-4],2.1,steel);
       }
       p.box(-12,15,-13,19,5,11,iron,-.28);
+      p.box(-12,19,-19,17,4,6,0x344348,-.28);
       lit(root,p,'peeled-laminated-lip',602,612,[[-12,18,-13]],0xc7e3e0);
       break;
     }
@@ -86,6 +87,7 @@ export function addLaneIncident(root:T.Group,id:string){
         const s=j*5;
         cable(p,[[-91,2,47+s],[-47,3,27+s],[-28,15,14+s],[-12,22,6+s],[7,18,12+s],[26,7,16+s],[49,3,27+s]],3.2-j*.35,0x94607c);
       }
+      p.rod([-15,25,1],[-11,25,12],3.4,0x353b38);
       p.box(17,21,-12,14,4,9,iron);
       lit(root,p,'colonised-duct-manifold',552,432,[[17,24,-12]],0xbecfa8);
       break;
@@ -131,6 +133,7 @@ export function addLaneIncident(root:T.Group,id:string){
       }
       p.face([[-83,20,-46],[-48,23,-33],[-38,23,-20],[-59,21,-24],[-84,19,-33]],0x9c997f);
       p.rod([-46,16,-18],[-28,11,-6],4,steel);
+      p.box(-62,22,-29,23,5,14,0x444c47,-.39);
       // The flanges diverge where the carriage pulled the guide out of gauge.
       for(const side of [-1,1]){
         cable(p,[[-118,3,-38+side*6],[-77,3,-40+side*6],[-50,5,-24+side*8],[-32,7,-4+side*10]],2.8,side<0?steel:cut);
@@ -154,6 +157,7 @@ export function addLaneIncident(root:T.Group,id:string){
       p.rod([138,10,105],[157,10,111],6,brass);
       p.face([[137,6,100],[148,6,93],[138,4,88],[131,4,91],[130,4,88],[126,4,93]],0xab906c);
       cable(p,[[143,12,108],[153,24,125],[164,24,122],[156,12,106]],2.5,cut);
+      p.rod([151,24,125],[164,24,122],4.1,0x393e38);
       lit(root,p,'cargo-web-ratchet',550,531,[[169,7,112]],0xe4c891);
       break;
     }
@@ -171,15 +175,15 @@ export function addLaneIncident(root:T.Group,id:string){
         for(let k=1;k<stem.length;k++){
           const [x,h,z]=stem[k-1],[u,y,v]=stem[k],w=8-k*.85;
           p.face([[x-w,h,z],[x,h+w,z],[u,y+w*.7,v],[u-w,y,v]],i%2?0x895373:0x653f60);
-          p.face([[x,h+w,z],[x+w,h,z],[u+w,y,v],[u,y+w*.7,v]],0xa16b83);
+          p.face([[x,h+w,z],[x+w,h,z],[u+w,y,v],[u,y+w*.7,v]],0x865669);
           if(k===4||k===5)p.rod([u,y+1,v],[u+a*13,y,v+15],1.8,0x825169);
         }
       }
       // Blistered tissue bridges the veins in patches, leaving open deck between lobes.
       for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-17,17,32,17,11,19],[12,10,46,19,8,24],
         [-8,6,76,13,6,16],[34,6,99,20,8,24],[50,4,115,12,5,16],[72,3,146,12,5,18]]){
-        p.add(new T.IcosahedronGeometry(1,1).scale(w,h,d).rotateY(z*.03).translate(x,y,z),0xaa708a);
-        p.add(new T.IcosahedronGeometry(1,0).scale(w*.38,h*.35,d*.5).translate(x-w*.3,y+h*.78,z-d*.14),0xc99aa5);
+        p.add(new T.IcosahedronGeometry(1,1).scale(w,h,d).rotateY(z*.03).translate(x,y,z),0x76475e);
+        p.add(new T.IcosahedronGeometry(1,0).scale(w*.38,h*.35,d*.5).translate(x-w*.3,y+h*.78,z-d*.14),0x895b70);
       }
       p.face([[-31,6,57],[10,11,44],[27,5,78],[10,4,70],[-9,7,83]],0x8e627c);
       p.face([[17,5,90],[47,8,100],[66,4,136],[48,5,118],[29,4,122]],0x98697e);
@@ -198,6 +202,7 @@ export function addLaneIncident(root:T.Group,id:string){
         lamps.push([x,28,9]);
       }
       for(const z of [-5,4])cable(p,[[-56,15,z],[-68,5,z+2],[-84,4,z-12],[-105,14,z-13],[-117,27,z-14]],2.6,brass);
+      for(const x of [-49,0,49])p.box(x,20,17,14,8,4,0x394641);
       p.box(-117,26,-13,21,7,21,iron);
       p.rod([-123,30,-12],[-109,30,-12],3,cut);
       // Fit the vault's actual occupied-window image into each status bezel.

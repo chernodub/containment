@@ -72,6 +72,9 @@ export function armoryCarousel():T.Group{
   box(mount,'secured-clamp',1.55,2.03,0,.18,.38,.36,edge);
   box(mount,'mount-recessed-lock',1.55,2.227,0,.14,.014,.24,rubber);
   for(const dz of [-.1,.1])box(mount,'mount-lock-fastener',1.55,2.24,dz,.04,.012,.035,pale);
+  box(mount,'rubber-stock-cradle',1.32,2.17,.22,.54,.14,.34,rubber);
+  box(mount,'polished-issue-lip',1.58,2.25,.24,.16,.035,.38,pale);
+  box(mount,'worn-clamp-paddle',1.68,2.13,-.23,.28,.10,.24,edge);
   const rifle=createStoredArmoryRifle();rifle.position.set(1.55,2.03,.21);rifle.rotation.z=Math.PI/2;mount.add(rifle);
  }
  const station=(degrees:number,name:string)=>{const a=degrees*Math.PI/180,g=new T.Group();g.name=name;g.position.set((600+255*Math.cos(a))/32,1.14,(450+255*Math.sin(a))/32);g.rotation.y=Math.PI/2-a;root.add(g);return g;};

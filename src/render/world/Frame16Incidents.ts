@@ -150,6 +150,10 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.face([[-4.7,138.2,-2.6],[-6.4,138.2,4.6],[-19.1,98.8,1.5],[-17.4,98.8,-5.7]],0x837a68);
       pieces.face([[-17.4,98.8,-5.7],[-19.1,98.8,1.5],[-37,12,24],[-43,14,22]],0xa79b83);
       pieces.face([[-43,14,22],[-37,12,24],[22,0.68,31],[16,0.68,32]],0x8d8370);
+      // Corner protector and broad chafe sleeve follow the tipped lid plane.
+      pieces.face([[-5,139,-3],[-7,139,5],[4,135,8],[8,134,6],[7,135,1]],0xb3bbb4);
+      pieces.face([[11,133,1],[8,133,10],[26,127,15],[29,127,5]],0x4e5045);
+      pieces.face([[42,124,8],[50,121,10],[48,121,18],[39,124,17]],0xb7aa85);
       // Frayed strands peel off before the loose strap reaches the numbered shoe.
       pieces.face([[16,.69,32],[22,.69,31],[48,.69,51],[44,.69,54]],0x9c8d73);
       pieces.face([[44,.69,54],[48,.69,51],[78,.69,82],[74,.69,84]],0xab9e81);
