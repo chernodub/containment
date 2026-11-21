@@ -591,8 +591,10 @@ export class DepthRenderer {
   if(effect.planReaction){
    const marine=new T.Vector3().setFromMatrixPosition(this.player.root.matrixWorld);
    const actual=new T.Vector3(x,.1,z);
-   if(actual.distanceTo(marine)>7){
-    const near=marine.clone().add(actual.sub(marine).normalize().multiplyScalar(2.5));
+   if(actual.distanceTo(marine)>7||!this.visible(effect.x,effect.y)){
+    const direction=actual.sub(marine).normalize();
+    const near=marine.clone().addScaledVector(direction,2.5);
+    if(!this.visible(near.x*UNIT,near.z*UNIT))near.copy(marine).addScaledVector(direction,.8);
     this.effects.event({type:'boon',boon:'shield',x:near.x*UNIT,y:near.z*UNIT,radius:20});
    }
   }

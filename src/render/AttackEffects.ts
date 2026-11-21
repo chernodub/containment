@@ -446,6 +446,7 @@ export class AttackEffects {
     const point=start.clone().lerp(end,i/7);
     this.particle(this.glow,EFFECT_LIMITS.glow,point,0x8df9db,.13,.28+i*.035);
    }
+   return;
   }
   if(e.selfBlast&&e.sourceX!==undefined&&e.sourceY!==undefined){
    const out=new T.Vector3(e.x-e.sourceX,0,e.y-e.sourceY);
