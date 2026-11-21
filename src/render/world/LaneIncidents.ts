@@ -32,7 +32,7 @@ export function addLaneIncident(root:T.Group,id:string){
         p.box(x*.96,95,z*.96,12,3,10,0x2b3734,-a);
         p.box(x*1.12,95,z*1.12,5,3,12,0x9eaa9d,-a);
       }
-      p.finish(root,'carousel-handling-shoes',515,488,undefined,true);
+      p.finish(root,'carousel-handling-shoes',515,488).userData.cutawayAsset='armory-weapon-carousel';
       break;
     }
     case 'residential-gallery': {
