@@ -8,7 +8,7 @@ import type { LightPool } from '../lighting/LightPool';
 import type { DistortionField } from '../post/DistortionField';
 import type { AbilityEvent, AbilityElement } from '../../game/abilities/contract';
 import { ELEMENT_COLORS, UNIT } from './types';
-import { EffectAtlas, EFFECT_TILES } from './EffectAtlas';
+import { EffectAtlas, EFFECT_TILES, FIRE_FAN_PHASE } from './EffectAtlas';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
 import { authoredVariation } from './GraphicLanguage';
 import { FlagshipFx } from './FlagshipFx';
@@ -383,18 +383,10 @@ export class ElementKit {
         this.flowFlame(sourceX, height, sourceZ, x + c * radius * .44, height + .12,
             z + s * radius * .44, radius * .084, .71, opacity, true);
 
-        const pairs = this.low ? 2 : 4;
-        const spacing = arc / (2 * pairs);
-        const width = radius * Math.sin(spacing) * .85;
-        // Submit both margins first so the shared screen-coverage cap preserves the silhouette.
-        for (let i = 0; i <= 2 * pairs; i++) {
-            const lane = (pairs - Math.floor(i / 2)) * (i % 2 ? -1 : 1);
-            const a = angle + lane * spacing, dx = Math.cos(a), dz = Math.sin(a);
-            const start = .09 + .08 * authoredVariation(i + .71);
-            this.flowFlame(x + dx * radius * start, height, z + dz * radius * start,
-                x + dx * radius, height + .26, z + dz * radius,
-                width, 4.71 + i * 7.13, opacity * .94);
-        }
+        const halfArc = arc * .5;
+        this.draw('flame', x + c * radius * .5, height, z + s * radius * .5,
+            radius * Math.sin(halfArc), radius * .5, 1, 0xff872b, opacity,
+            angle, 0, FIRE_FAN_PHASE + halfArc);
     }
 
     /** Short authored flame card aligned to the actual three-dimensional flow. */

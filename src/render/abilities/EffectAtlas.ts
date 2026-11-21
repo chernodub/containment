@@ -81,10 +81,26 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 `;
 
 /** Tapered original flame family; retained explosions still use their authored atlas. */
+export const FIRE_FAN_PHASE = 500;
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
  float coverage;
- if(phase>=200.){
+ if(phase>=${FIRE_FAN_PHASE}.){
+  float halfArc=phase-${FIRE_FAN_PHASE}.;
+  vec2 ray=vec2(p.x*sin(halfArc),fireUv.y);
+  float t=length(ray),theta=atan(ray.x,max(.0001,ray.y))/halfArc;
+  if(t>1.||abs(theta)>1.)discard;
+  // Map overlapping tongue silhouettes into polar lanes. The edge lanes
+  // share the same normalized range and animate independently of cast age.
+  float lane=theta*3.3+.13*sin(t*8.+abilityTime*7.);
+  float nearest=floor(lane+.5);
+  vec2 stamp=vec2(.5+(lane-nearest)*.72,.10+t*.76);
+  vec4 fire=effectGraphicSequence(0.,64.,19.,(nearest+4.)*8.7,stamp);
+  float edge=1.-smoothstep(.88,1.,abs(theta));
+  float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
+  coverage=graphicCoverage(fire.a)*edge*tip*smoothstep(.055,.16,t);
+  c=mix(vec3(.72,.052,.003),vec3(2.15,.56,.038),fire.g);
+ }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
   c=graphicCombustion(fire);

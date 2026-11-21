@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { EffectAtlas, EFFECT_ATLAS_GLSL, TEXTURED_FIRE_GLSL } from './EffectAtlas';
+import { EffectAtlas, FIRE_FAN_PHASE, EFFECT_ATLAS_GLSL, TEXTURED_FIRE_GLSL } from './EffectAtlas';
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
 
@@ -282,17 +282,20 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
+    const fireFan = this.kind === 'flame' && variant >= FIRE_FAN_PHASE;
     if (this.camera && this.camera.matrixWorld.elements[12] === this.camera.position.x && this.camera.matrixWorld.elements[13] === this.camera.position.y && this.camera.matrixWorld.elements[14] === this.camera.position.z && (this.kind === 'flame' || this.kind === 'smoke' || this.kind === 'decal' && (variant >= 12 && variant < 13 || variant >= 200 && variant < 600))) {
       const view = this.camera.matrixWorldInverse.elements, projection = this.camera.projectionMatrix.elements;
       const depth = Math.max(.1, -(view[2] * x + view[6] * y + view[10] * z + view[14]));
       const perspective = projection[15] === 0;
-      const area = Math.abs(sx * sy * projection[0] * projection[5]) / (perspective ? depth * depth : 1);
+      // The sector occupies halfArc / (2 sin(halfArc)) of its bounding rectangle.
+      const coverageFraction = fireFan ? (variant - FIRE_FAN_PHASE) / (2 * Math.sin(variant - FIRE_FAN_PHASE)) : 1;
+      const area = coverageFraction * Math.abs(sx * sy * projection[0] * projection[5]) / (perspective ? depth * depth : 1);
       if (this.coverage + area > this.maxCoverage) return;
       this.coverage += area;
     }
     const billboardDecal = this.kind === 'decal' && (variant >= 11 && variant < 13 || variant >= 200 && variant < 600);
     const uprightDecal = this.kind === 'decal' && variant >= 600 && variant < 1000;
-    if (this.view && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
+    if (this.view && !fireFan && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
       if (this.kind === 'smoke') rotationZ = 0;
@@ -305,7 +308,18 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     matrix[offset] = c * a * sx;
     matrix[offset + 4] = -c * b * sy;
     matrix[offset + 8] = s * sz;
-    if (this.kind === 'decal' && !billboardDecal && !uprightDecal) {
+    if (fireFan) {
+      // Local U is across the jet. Local V travels forward at muzzle height.
+      matrix[offset] = -s * sx;
+      matrix[offset + 1] = 0;
+      matrix[offset + 2] = c * sx;
+      matrix[offset + 4] = c * sy;
+      matrix[offset + 5] = 0;
+      matrix[offset + 6] = s * sy;
+      matrix[offset + 8] = 0;
+      matrix[offset + 9] = sz;
+      matrix[offset + 10] = 0;
+    } else if (this.kind === 'decal' && !billboardDecal && !uprightDecal) {
       matrix[offset + 1] = -s * a * sx;
       matrix[offset + 2] = -b * sx;
       matrix[offset + 5] = s * b * sy;
