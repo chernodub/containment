@@ -123,6 +123,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   // Physical diffuser and protective back at the existing pooled practical.
   const fixture=new T.Group();
   fixture.name='room14-landmark-worklight';
+  fixture.rotation.y=Math.atan2(plan.arena.x-source.at[0],plan.arena.y-source.at[1]);
   fixture.position.set(source.at[0]/32,source.height??3.8,source.at[1]/32);
   const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
   const lens = new T.Color(source.color);
@@ -136,7 +137,9 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   const mastHeight=Math.max(.72,fixture.position.y);
   const post=new T.BoxGeometry(.075,mastHeight,.075).translate(-.30,-mastHeight*.5,0);
   const shoe=new T.BoxGeometry(.25,.08,.29).translate(-.3,-mastHeight+.04,0);
-  const housing=mergeGeometries([casing.geometry,post,shoe])!;
+  const louvres=[-.12,.12].map(x=>new T.BoxGeometry(.025,.10,.19).translate(x,-.056,.11));
+  const housing=mergeGeometries([casing.geometry,post,shoe,...louvres])!;
+  louvres.forEach(g=>g.dispose());
   casing.geometry.dispose();post.dispose();shoe.dispose();casing.geometry=housing;
   fixture.add(casing,diffuser);root.add(fixture);
 }

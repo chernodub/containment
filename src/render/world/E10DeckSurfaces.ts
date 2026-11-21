@@ -70,9 +70,8 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
   if (!active() || disposed) return;
   const get = (low:boolean,family:string,name:string) => loaded.get(`${low}/${family}/${name}`)!;
   const story = buildDeckStory(t,get(false,'shared','decals')); textures.add(story.high); textures.add(story.low);
-  const services = world.getObjectByName('e9-room-interiors')?.userData.interior?.services ?? [];
   const bakeStarted=performance.now();
-  const light = bakeDeckLighting(t,deckLightSources(t),services,roomValueProfile(t.id)?.exit); textures.add(light.texture);
+  const light = bakeDeckLighting(t,deckLightSources(t),roomValueProfile(t.id)?.exit); textures.add(light.texture);
   record?.('deckIrradiance',performance.now()-bakeStarted);
   for (const [index,mesh] of surfaces.entries()) {
     const m = mesh.material as T.MeshStandardMaterial, family = index ? secondary : environment;
@@ -107,7 +106,7 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
   const valueProfile=roomValueProfile(t.id);material.userData.light13Deck=true;
   const valueFloor=new T.Vector4(valueProfile?.floor.lit??1,valueProfile?.floor.unlit??1,valueProfile?.floor.edge??1,valueProfile?1:0);
   const valuePerimeter=new T.Vector4(valueProfile?.perimeter.inner??0,valueProfile?.perimeter.outer??1,1,0);// the shared analytic field owns the perimeter
-  const accent=new T.Color(environment==='containment'?0x9e6bff:environment==='maintenance'?0x6cbea9:environment==='communications'?0x62beaa:0x91b3c0);
+  const accent=new T.Color(valueProfile?.landmark?.color??0xbfc6c3).lerp(new T.Color(0xc4c7bc),.58);
   material.onBeforeCompile=(shader,renderer)=>{
     previous.call(material,shader,renderer);
     shader.uniforms.e10LightBounds={value:bounds};shader.uniforms.e10KeyTint={value:keyTint};shader.uniforms.e10FillTint={value:fillTint};shader.uniforms.e10Arena={value:arena};shader.uniforms.e10AccentTint={value:accent};shader.uniforms.light13Floor={value:valueFloor};shader.uniforms.light13Perimeter={value:valuePerimeter};
@@ -136,10 +135,10 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
     shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','// Placed deck wear uses the native sampler in the base-colour path.');
     shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       reflectedLight.indirectDiffuse+=diffuseColor.rgb*(.025+.035*e10Pool);
-      reflectedLight.indirectDiffuse+=e10AccentTint*e10Irradiance.b*.15+vec3(.76,.36,.09)*e10Irradiance.a*.06;
+      reflectedLight.indirectDiffuse+=e10AccentTint*e10Irradiance.b*.12;
     `);
   };
-  material.customProgramCacheKey=()=>key+':e10-static-deck-v7-light13';material.needsUpdate=true;
+  material.customProgramCacheKey=()=>key+':e10-deck-hood-aperture';material.needsUpdate=true;
 }
 
 /** Both image resolutions decode during readiness; switching is synchronous. */
