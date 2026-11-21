@@ -440,7 +440,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       let desired = !ammo ? current
         : near < 180 && hasAmmo('shotgun') ? 'shotgun'
         : hasAmmo('rifle') ? 'rifle' : hasAmmo('plasma') ? 'plasma' : 'pistol';
-      let rocketTarget;
+      let rocketTarget, platedTarget;
       if (ammo && target && !novice) {
         const range = distance(target, s.player);
         const ready = id => ammo[id].magazine > 0 && !s.reloadingWeapons?.includes(id);
@@ -450,8 +450,10 @@ export function createHumanPolicy(seed, profile = 'competent') {
           return contacts.some(other =>
             other.id !== enemy.id && other.clear && distance(other, enemy) < 110);
         });
-        if (rocketTarget) desired = 'rocket';
-        else if (target.armor >= 40 && range > 150 && ready('plasma')) desired = 'plasma';
+        platedTarget = hasAmmo('plasma') ? contacts.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+          .sort((a,b)=>Number(b.id===s.plateLessonTarget)-Number(a.id===s.plateLessonTarget)||distance(a,s.player)-distance(b,s.player))[0] : undefined;
+        if (platedTarget) desired = 'plasma';
+        else if (rocketTarget) desired = 'rocket';
         else if (range > 145 && ready('pistol') &&
           (s.reloadingWeapons?.includes(desired) ||
             (target.armor <= 0 && target.health <= 29 && near >= 145))) desired = 'pistol';
@@ -470,6 +472,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
         weaponHold = now + (sidegrade && !novice ? 350 : 0);
       }
       if (weapon === 'rocket') target = rocketTarget ?? null;
+      if (weapon === 'plasma' && platedTarget) target = platedTarget;
       if (target) {
         const dx=target.x-s.player.x,dy=target.y-s.player.y;
         const screen=target.screen&&s.player.screen?{

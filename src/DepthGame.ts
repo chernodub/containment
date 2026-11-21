@@ -561,9 +561,10 @@ export class DepthGame {
  grenade(){if(this.status!=='playing')return;const r=this.combat.throwGrenade(this.player.angle);if(r)this.bullets.push({x:this.player.x,y:this.player.y,life:1.1,kind:'grenade',request:{...r,weaponId:'rocket',radius:7,penetration:1,mutationShotId:this.combat.nextMutationEventId('grenade')},tracker:new ProjectileHitTracker(1)});}
  private weaponImpactDamage(b:Bullet, id:number){
   const {weaponId,damage,precision}=b.request;
-  if(weaponId!=='pistol'&&weaponId!=='plasma')return damage;
+  if(weaponId!=='pistol'&&weaponId!=='plasma'&&weaponId!=='rifle')return damage;
   const enemy=this.enemies.getSnapshot(id);
   switch(weaponId){
+   case 'rifle':return enemy?.armor?Math.min(enemy.armor,damage*.42):damage;
    case 'pistol': {
     const recovering=enemy?.meleePhase==='recovery'||(enemy?.stunRemainingMs??0)>0;
     const finishing=recovering&&enemy&&enemy.armor===0&&enemy.health<=damage*2;
