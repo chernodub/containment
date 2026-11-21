@@ -303,13 +303,17 @@ export class ThreatIndicators {
             this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0,
                 winding ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '');
         }
+        let releaseShown=false;
+        const windingShot=enemies.some(enemy=>enemy.pendingAttack==='spit'&&enemy.windupMs>0);
         if (bullets) for (let i = 0; i < bullets.length; i++) {
             const bullet = bullets[i];
             if (!projectileThreatens(bullet, player) || bullet.sourceX === undefined || bullet.sourceY === undefined) continue;
             projectWorld(this.renderer, bullet.sourceX, bullet.sourceY, this.source);
             if (this.source.visible && !hudObstructs(this.source.x - 8, this.source.y - 8, this.source.x + 8, this.source.y + 8)) continue;
+            const released=!windingShot&&!releaseShown&&Math.hypot(bullet.x-bullet.sourceX,bullet.y-bullet.sourceY)<55;
+            if(released)releaseShown=true;
             this.consider(-2 - i, 'ranged', bullet.x, bullet.y, Math.hypot(bullet.x - player.x, bullet.y - player.y),
-                true, true, 0, true, 1, bullet.x + Math.cos(bullet.request.angle) * 100, bullet.y + Math.sin(bullet.request.angle) * 100);
+                true, true, 0, true, released?1:-1, bullet.x + Math.cos(bullet.request.angle) * 100, bullet.y + Math.sin(bullet.request.angle) * 100);
         }
         if (cues) for (let i = 0; i < cues.length; i++) {
             const cue = cues[i];
@@ -385,7 +389,7 @@ export class ThreatIndicators {
             const shot = candidate.shotCharge >= 0;
             marker.node.dataset.rangedShot = String(shot);
             marker.node.dataset.tactical = candidate.tactical;
-            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H32` : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
+            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H64` : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
             marker.node.style.setProperty('--shot-strength', String(shot ? .7 + candidate.shotCharge * .3 - (candidate.inFlight ? 0 : Math.sin(candidate.shotCharge * Math.PI * 2) ** 2 * .14) : 1));
             const count = -candidate.count;
             marker.count.hidden = count <= 1;
