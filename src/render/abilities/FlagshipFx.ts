@@ -215,13 +215,13 @@ void main(){
   base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
  }else if(m<2.5){
-  // Rail lance: hair-thin white core, sharp leading edge for ~2 frames.
+  // Rail lance: white-hot spine with a brief leading flash.
   float s=abs(fxLocal.x),v=fxLocal.y;
   float lead=clamp(age/.018,0.,1.);
   float reach=smoothstep(lead+.002,lead-.02,v);
   float headGlow=exp(-abs(v-lead)*40.)*(1.-step(1.,lead));
-  float life=1.-smoothstep(.016,.033,age);
-  float coreW=.06+.05*life;
+  float life=1.-smoothstep(.045,.16,age);
+  float coreW=.18+.15*life;
   float core=1.-smoothstep(coreW*.3,coreW,s);
   float halo=exp(-s*s*9.)*.55;
   float flick=.85+.15*fxNoise(vec2(v*40.-t*60.,fxSeed));
@@ -253,7 +253,11 @@ void main(){
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
    emit=(vec3(1.45)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
    alpha=(bolt*.22+fork*.08+halo*.06)*gate;
-  }else{emit=hot*i0*fxIntensity;alpha=i0*.12;}
+  }else{
+   float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
+   emit=(hot*i0+vec3(3.,2.85,2.6)*core)*fxIntensity;
+   alpha=i0*.12+core*.62;
+  }
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;

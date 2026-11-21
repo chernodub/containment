@@ -78,9 +78,11 @@ class SystemPresentation implements AbilityPresentation {
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
         const position = k.statusActor(id)?.root.position;
-        receipt.railX = position?.x ?? x / UNIT;
-        receipt.railZ = position?.z ?? y / UNIT;
         receipt.railAngle = event.angle ?? 0;
+        const c = Math.cos(receipt.railAngle), s = Math.sin(receipt.railAngle);
+        const along = position ? (position.x - x / UNIT) * c + (position.z - y / UNIT) * s : 0;
+        receipt.railX = x / UNIT + c * along;
+        receipt.railZ = y / UNIT + s * along;
         receipt.landed = false;
       }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
@@ -310,15 +312,21 @@ class SystemPresentation implements AbilityPresentation {
 
   private railLanding(receipt: Receipt): void {
     const k = this.kit, actor = k.statusActor(receipt.id);
-    if (!actor || receipt.age < .26) return;
-    receipt.landed = true;
+    if (!actor) return;
     const {x, z} = actor.root.position;
     const dx = x - receipt.railX, dz = z - receipt.railZ;
     const angle = Math.hypot(dx, dz) > .04 ? Math.atan2(dz, dx) : receipt.railAngle;
     const size = Math.min(1.3, Math.max(.45, actor.height * .56));
+    if (receipt.age < .1) {
+      k.impact();
+      k.sprite('impact', x, actor.height * .54, z, size * 1.45, size, WHITE,
+        (1 - receipt.age / .1) * k.flashIntensity, receipt.id, 'light');
+    }
     k.sustain();
-    k.beam(x - Math.cos(angle) * size, .045, z - Math.sin(angle) * size,
-      x, .046, z, 0x796d5d, size * .12, .52, false);
+    k.ribbon(receipt.railX, .055, receipt.railZ, x, .055, z, 0xc69e68, size * .14, .56, false);
+    if (receipt.age < .26) return;
+    receipt.landed = true;
+    k.beam(receipt.railX, .055, receipt.railZ, x, .055, z, 0xa08466, size * .14, .75, false);
     for (let i = 0, count = k.low ? 5 : 10; i < count; i++) {
       const a = angle + i * Math.PI * 2 / count, c = Math.cos(a), s = Math.sin(a);
       k.mote('smoke', x + c * size * .36, .13, z + s * size * .36,
