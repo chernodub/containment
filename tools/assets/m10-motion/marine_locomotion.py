@@ -18,7 +18,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[3]
 FPS = 60
-CYCLE_SECONDS = 16 / FPS
+CYCLE_SECONDS = 19 / FPS
 NOMINAL_SIM_SPEED = 220.0
 UP = Vector((0, -1, 0))
 FORWARD = Vector((1, 0, 0))
@@ -54,7 +54,7 @@ GAITS = {
     45: (.45, 1.72, .75, .55, .53, .13, 1.72, .16),
     90: (.45, 1.54, 1.70, .32, .56, .22, 1.90, .24),
     135: (.45, 1.28, 1.15, -.42, .54, .16, 1.82, .19),
-    180: (.35, .88, -.55, .18, .50, -.04, 1.60, .12),
+    180: (.35, 1.82, -.55, .18, .50, -.04, 1.60, .12),
     225: (.45, 1.28, 1.15, .42, .46, -.16, 1.82, .19),
     270: (.45, 1.54, 1.70, -.32, .44, -.22, 1.90, .24),
     315: (.45, 1.72, .75, -.55, .47, -.13, 1.72, .16),
@@ -79,6 +79,12 @@ def foot_path(direction, side, phase, source_speed):
     along, height = arc(((0, -half_stride, 0), (.19, -half_stride * 1.12, lift * .58),
         (.49, -half_stride * .04, lift), (.79, half_stride * .91, lift * .54),
         (1, half_stride, 0)), swing)
+    if direction == 180:
+        # Reach the landing spot while airborne. Draw the boot back at ground
+        # speed through touchdown so the last low frame shares the stance velocity.
+        approach = smooth((swing - .54) / .27)
+        landing = half_stride + source_speed * CYCLE_SECONDS * (1 - phase)
+        along += (landing - along) * approach
     displacement = travel * along + UP * (.70 * max(0, height))
     envelope = math.sin(math.pi * swing)
     # Trailing foot crosses in front; leading foot circles behind it. This
@@ -162,7 +168,7 @@ class MarineFootRig:
         pole = leg['knee'] + FORWARD * 5 + RIGHT * knee_open
         leg['pole'].location = self.armature.matrix_world @ pole
 
-    def torso(self, crouch, yaw, lean, lateral, phase):
+    def torso(self, crouch, yaw, lean, lateral, phase, bank=0):
         hips = self.armature.pose.bones['hips']
         matrix = Quaternion(UP, yaw).to_matrix().to_4x4() @ self.base['hips']
         matrix.translation = self.base['hips'].translation + UP * -crouch + RIGHT * lateral
@@ -177,7 +183,7 @@ class MarineFootRig:
             matrix.translation = pivot
             bone.matrix = matrix
 
-        turn('spine', Quaternion(RIGHT, lean) @ Quaternion(UP, -1.90 * yaw))
+        turn('spine', Quaternion(FORWARD, bank) @ Quaternion(RIGHT, lean) @ Quaternion(UP, -1.90 * yaw))
         bpy.context.view_layer.update()
         # The pack rides the rib cage. Both hands absorb the descending stock
         # a little later, while the head keeps its firing orientation.
@@ -187,14 +193,14 @@ class MarineFootRig:
         for side in ('L', 'R'):
             side_sign = 1 if side == 'L' else -1
             turn('shoulder.' + side, Quaternion(UP, (.13 + side_sign * .10) * lag)
-                 @ Quaternion(RIGHT, -.14 * lag))
+                 @ Quaternion(RIGHT, -.18 * lag))
         bpy.context.view_layer.update()
         head = self.armature.pose.bones['head']
         level = self.base['head'].copy()
         level.translation = head.matrix.translation
         head.matrix = level
 
-    def pose_cycle(self, direction, phase, weight=1.0):
+    def pose_cycle(self, direction, phase, weight=1.0, brake=0):
         self.reset()
         _, _, _, _, _, _, crouch, rotation = GAITS[direction]
         # Heel arrives ahead of the weight. Pelvis sinks on the loaded foot,
@@ -203,9 +209,9 @@ class MarineFootRig:
         load = (1 + math.cos((phase - .12) * math.tau * 2)) * .5
         dip = -.075 + crouch * .22 + .72 * load
         angle = math.radians(direction)
-        lean = -.17 * math.cos(angle) + .085 * (load - .5)
-        self.torso(dip * weight, beat * (rotation + .25) * weight, lean * weight,
-            beat * (.45 + .17 * abs(math.sin(angle))) * weight, phase)
+        lean = -.215 * math.cos(angle) + .045 * (load - .5)
+        self.torso(dip * weight, beat * (rotation + .25) * weight, lean * weight - .15 * brake * math.cos(angle),
+            beat * (.45 + .17 * abs(math.sin(angle))) * weight, phase, .21 * math.sin(angle) * weight - .14 * brake)
         for side in ('L', 'R'):
             displacement, pitch, yaw, planted = foot_path(direction, side, phase, self.source_speed)
             self.control(side, displacement * weight, pitch * weight, yaw * weight,
@@ -226,11 +232,12 @@ class MarineFootRig:
             return
         if kind == 'stop':
             amount = 1 - smooth(progress)
-            self.pose_cycle(direction, .12 + progress * .34, amount)
+            settle = arc(((0, 0), (.32, .75), (.66, -.15), (1, 0)), progress)[0]
+            self.pose_cycle(direction, .12 + progress * .34, amount, brake=settle)
             hips = self.armature.pose.bones['hips']
             matrix = hips.matrix.copy()
-            settle = arc(((0, 0), (.32, .75), (.66, -.15), (1, 0)), progress)[0]
-            matrix.translation -= UP * settle
+            travel = FORWARD * math.cos(math.radians(direction)) + RIGHT * math.sin(math.radians(direction))
+            matrix.translation += (travel * .85 - UP * 1.45 - RIGHT * .36) * settle
             hips.matrix = matrix
             # The final braking plant widens by a small amount before settling.
             for side in ('L', 'R'):

@@ -374,6 +374,11 @@ export class MarineMotion {
       this.rotate(this.spine, this.axis, .22 * load, this.yawQ);
       this.rotate(this.ribs, this.up, -.15 * load, this.yawQ);
     }
+    if (!this.dead && !this.action && !reload) {
+      // Lift around the sight line's transverse axis, keeping both hands on the weapon.
+      this.rotate(this.head, this.axis, T.MathUtils.degToRad(16), this.yawQ);
+      this.rotate(this.head, this.up, T.MathUtils.degToRad(4), this.yawQ);
+    }
     const flinch=this.hitAmount*Math.sin(Math.PI*this.hitLife/MARINE_REACTION_SECONDS)*strength;
     if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
     if((this.moving||this.stoppedFor<.14)&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);

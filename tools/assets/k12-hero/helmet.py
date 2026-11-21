@@ -165,6 +165,15 @@ class Helmet:
             brow[3] = (0, top - 1.8)
         self.plate('helmet brow plate', brow, standoff=.017, thickness=.012, crown=.008, profile='lip', fil=5)   # HERO19: deep brow rim over the lens
 
+        if o == 1:
+            # Seat the light along the external lip and turn its ends up toward the temples.
+            edge = [(-130, 38), (-109, 30), (-86, 19), (-64, 29), (-40, 37), (0, 35),
+                    (40, 37), (64, 29), (86, 19), (109, 30), (130, 38)]
+            path = kit.surface_path(self.bvh, self.front, edge, .033, closed=False,
+                                    samples=40 if self.high else 18)
+            self.add(kit.ribbon('visor brow light', path, .020, .002, closed=False,
+                                collection=self.col), 'visor_edge')
+
     def crown(self, o):
         t = self.top
         unit_note = None

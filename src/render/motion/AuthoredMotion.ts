@@ -23,6 +23,12 @@ const FIRES: Record<string, string> = {
     pistol: 'm10-fire-pistol', rifle: 'm10-fire-rifle', shotgun: 'm10-fire-shotgun',
     plasma: 'm10-fire-plasma', rocket: 'm10-fire-rocket',
 };
+// The wrist constraint consumes this pitch after the mixer. Keep its return
+// inside the shot interval so a rifle burst has distinct impacts.
+const RECEIVER_KICK: Record<string, readonly [number, number]> = {
+    pistol: [.21, 19], rifle: [.17, 32], shotgun: [.29, 15],
+    plasma: [.055, 12], rocket: [.23, 13],
+};
 const DEATHS: Record<DeathCue, string> = { none: 'm10-death-none', frost: 'm10-death-frost', burn: 'm10-death-burn', arc: 'm10-death-arc', acid: 'm10-death-acid' };
 const directionIndex = (direction: number, aim: number) => ((Math.round((direction - aim + Math.PI) / (Math.PI / 2)) % 4) + 4) % 4;
 // All pooled copies of a caste bind the same immutable reaction tracks.
@@ -95,13 +101,18 @@ export class AuthoredMotionPlayer {
                     // Blender optimizes constant channels independently per clip. An absent
                     // reference translation would stay absolute in makeClipAdditive,
                     // adding the rest offset again and separating the limb armor.
-                    // Upper actions/grips change articulation; local bone offsets
-                    // and scale remain owned by the full base pose.
+                    // Moving fire also loads the pelvis and stock. The travel clip
+                    // retains both ankle controls throughout the shot.
                     const firing = clip.name.startsWith('m10-fire-');
                     layer.tracks = layer.tracks.filter(track =>
                         (upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName) && track.name.endsWith('.quaternion'))
-                        || (firing && (track.name === 'spine.quaternion' || track.name === 'shoulderR.position')));
+                        || (firing && (track.name === 'spine.quaternion' || track.name === 'shoulderR.position' || track.name === 'hips.position')));
                     T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
+                    const hipTravel = layer.tracks.find(track => track.name === 'hips.position');
+                    if (hipTravel) {
+                        // A running leg already carries the gait's weight transfer.
+                        for (let i = 0; i < hipTravel.values.length; i++) hipTravel.values[i] *= .35;
+                    }
                     const overlay = mixer.clipAction(layer);
                     overlay.setLoop(T.LoopOnce, 1);
                     overlay.clampWhenFinished = true;
@@ -360,12 +371,12 @@ export class AuthoredMarineMotion {
         }
         this.motion.rifleLoad = weapon === 'rifle' ? this.burstRise / .075 : 0;
         this.recoil = recoil;
-        const kick = weapon === 'rifle' ? .13 : weapon === 'shotgun' ? .24 : 0;
+        const [kick, decay] = RECEIVER_KICK[weapon];
         const rise = Math.min(1, (this.fireAge + 1 / 120) * 56);
         this.barrelLift = !reload && !this.motion.actionName ?
-            this.feedback * (kick * rise * Math.exp(-this.fireAge * 28) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
+            this.feedback * (kick * rise * Math.exp(-this.fireAge * decay) + (weapon === 'rifle' ? this.burstRise : 0)) : 0;
         this.carryPitch = moving && this.fireAge > .18 && !reload && !this.motion.actionName
-            ? .032 * Math.sin((this.gait - .10) * Math.PI * 2) * Math.min(1, speed / 220) * this.feedback : 0;
+            ? .065 * Math.sin((this.gait - .14) * Math.PI * 2) * Math.min(1, speed / 220) * this.feedback : 0;
         const cast = CASTS[this.motion.actionName];
         if (cast && this.player.has(cast)) {
             const phase = this.motion.actionNormalized;

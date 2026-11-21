@@ -24,6 +24,7 @@ PALETTE = {
     'rubber': (.013, .014, .016),
     'brass': (.55, .36, .12),
     'marking': (.016, .018, .021),
+    'visor_edge': (.001, .24, .37),
     'visor': (.004, .012, .016),
     'glow': (.20, .85, 1.0),
     'amber_glow': (1.0, .52, .05),
@@ -55,6 +56,7 @@ ROLES = {
     'fabric': ('fabric', 'fabric', .82, .0, .0, .5),
     'rubber': ('polymer', 'rubber', .88, .0, .0, .6),
     'marking': ('paint', 'marking', .5, .0, .9, .5),
+    'visor_edge': ('glow', 'visor_edge', .3, .0, .0, .0),
     'visor': ('visor', 'visor', .06, .0, .0, .0),
     'glow': ('glow', 'glow', .3, .0, .0, .0),
     'amber_glow': ('glow', 'amber_glow', .3, .0, .0, .0),
@@ -231,7 +233,7 @@ def build(role, mode='render'):
         return mat
     if kind == 'glow':
         if mode == 'albedo':
-            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = tuple(min(1, c * .8 + .15) for c in PALETTE[key]) + (1,)
+            em = _n(nodes, 'ShaderNodeEmission', (600, 0)); em.inputs['Color'].default_value = (PALETTE[key] if role == 'visor_edge' else tuple(min(1, c * .8 + .15) for c in PALETTE[key])) + (1,)
             links.new(em.outputs[0], out.inputs['Surface'])
             return mat
         p = _n(nodes, 'ShaderNodeBsdfPrincipled', (500, 0))
