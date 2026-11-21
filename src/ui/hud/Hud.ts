@@ -355,7 +355,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         fighting = playing && (game.enemies.activeCount > 0 || game.boss.snapshot.active);
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
         const drill = getAwakeningDrill(game);
-        const lesson = !!drill || game.augmentDrillActive || game.coverLessonActive;
+        const lesson = !!drill || game.augmentDrillActive || game.coverLessonActive && !game.siege;
         lessonActive = playing && lesson;
         const objective = game.encounterObjective || cue || getRoomOpening(game)
             || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '');
@@ -552,11 +552,13 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
         const objectiveNode = nodes['room-objective'];
         objectiveNode.classList.toggle('anchored-objective', !!anchored);
+        const plate = weaponLesson?.target;
+        objectiveNode.classList.toggle('plate-key-pulse', prompt==='weapon-lesson' && !!plate && plate.armor>0 && plate.armor<plate.maxArmor*.9);
         if (anchored) {
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
             objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
         }
-        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
+        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');

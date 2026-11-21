@@ -214,7 +214,9 @@ export class EncounterDirector {
   private dispatched = 0;
   private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
+  private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
+    this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.plan = createEncounterPlan(options);
     this.holdUntilMs=options.holdUntilMs??0;
     this.breaches=options.breaches??[];
@@ -223,19 +225,24 @@ export class EncounterDirector {
         .filter(request=>request.reinforcement&&request.role==='flanker')));
     });
   }
-  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>):boolean {
-    const flanker=enemy.type==='stalker'&&enemy.role==='flanker'&&enemy.beat!==undefined;
-    if(enemy.beat===undefined||enemy.champion!==undefined)return true;
-    const angle=flanker?Math.atan2(player.y-enemy.y,player.x-enemy.x):0;
+  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge'):boolean {
+    let melee=0,ranged=0;
+    let charging=false;
     for(const other of others){
-      if(other.id===enemy.id||other.beat!==enemy.beat)continue;
-      if(other.champion==='warden'&&other.wallStunAngle!==undefined){
-        if((other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      if(other.id===enemy.id)continue;
+      if(other.champion==='warden'&&other.wallStunAngle!==undefined&&other.beat===enemy.beat&&!enemy.champion
+        &&(other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      if(other.champion){
+        charging ||= other.pendingAttack==='charge'||other.chargeMs>0;
+        continue;
       }
-      if(!flanker||other.type!=='stalker'||other.role!=='flanker')continue;
-      if((other.meleePhase==='windup'||other.meleePhase==='strike')&&Math.cos(angle-other.meleeAngle)<Math.SQRT1_2)return false;
+      if(other.pendingAttack==='spit')ranged++;
+      if(other.meleePhase!=='approach'||other.pendingAttack==='charge'||other.chargeMs>0)
+        melee+=other.type==='crawler'?.5:1;
     }
-    return true;
+    if(enemy.champion)return attack!=='charge'||melee<=this.tokens.meleeTokens-1;
+    if(attack==='ranged')return ranged<this.tokens.rangedTokens;
+    return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
   }
   get phase(): EncounterPhase { return this.currentPhase; }
   get currentWave(): number { return this.plan.wave; }

@@ -62,7 +62,7 @@ export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
-  canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>)=>boolean;
+  canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge')=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
   canMove?: (context: CollisionSteeringContext) => boolean;
@@ -165,7 +165,7 @@ export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?
 
 export const WARDEN_WALL_STUN_MS=1500;
 
-export type EnemyCommitment = Pick<EnemySnapshot,'id'|'type'|'role'|'beat'|'meleePhase'|'meleeAngle'|'x'|'y'|'champion'|'stunRemainingMs'|'wallStunAngle'|'meleeShape'>;
+export type EnemyCommitment = Pick<EnemySnapshot,'id'|'type'|'role'|'beat'|'meleePhase'|'meleeAngle'|'x'|'y'|'champion'|'stunRemainingMs'|'wallStunAngle'|'meleeShape'|'pendingAttack'|'chargeMs'>;
 
 export type EnemySystemSnapshot = Readonly<{
   activeCount: number;
@@ -510,7 +510,9 @@ export class EnemySystem {
       let largestRadius=28;for(const enemy of this.#enemies.values())if(enemy.radius>largestRadius)largestRadius=enemy.radius;
       this.#resolveCrowd(largestRadius);this.#clearCongestion(movementDelta,largestRadius);
     }
-    for(const enemy of this.#enemies.values()){
+    const candidates=[...this.#enemies.values()].sort((a,b)=>
+      Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y)||a.id-b.id);
+    for(const enemy of candidates){
       if(enemy.speed>0&&!enemy.pod&&enemy.stunRemainingMs===0&&enemy.broodRemainingMs===0)this.#collectAttacks(enemy, player, events);
     }
 
@@ -1010,7 +1012,7 @@ export class EnemySystem {
   #holdReadyContact(enemy:EnemyState,player:EnemyPlayerState):void {
     if(enemy.meleePhase!=='approach'||enemy.windupMs>0||enemy.chargeMs>0||!enemy.attackSlot||enemy.contactCooldownRemainingMs>0||this.#meleeStartGapMs>0)return;
     const profile=MELEE_ATTACKS[enemy.type];
-    if(this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
+    if(this.#canCommit?.(enemy,player,this.#enemies.values(),'melee')===false)return;
     if((profile.heavy?this.#heavyMeleeActive>=1:this.#smallMeleeActive>=this.#windups)||Math.hypot(enemy.x-player.x,enemy.y-player.y)>enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)+.5||this.#canAttack?.(enemy,player)===false)return;
     enemy.targetX=enemy.x;enemy.targetY=enemy.y;enemy.velocityX=enemy.velocityY=0;
     enemy.yieldMs=0;enemy.decisionCooldownRemainingMs=0;
@@ -1029,7 +1031,7 @@ export class EnemySystem {
     // Control releases the berth immediately. A resolved hit still owes its
     // remaining strike/recovery and full rest, without replaying that strike.
     const profile=MELEE_ATTACKS[enemy.type];
-    const recovery=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest;
+    const recovery=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.84:1);
     const stabilization=enemy.meleePhase==='windup'?120:enemy.meleeRemainingMs+
       (enemy.meleePhase==='strike'?recovery:0)+profile.cooldownMs;
     enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeRemainingMs=enemy.meleeDurationMs=0;enemy.meleeFacingLocked=false;
@@ -1066,11 +1068,11 @@ export class EnemySystem {
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         if(meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.12:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
-        enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest;
+        enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.84:1);
       }else{
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest;
         this.#yieldMeleeBerth(enemy);
@@ -1086,26 +1088,27 @@ export class EnemySystem {
   ): void {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     const playerRadius = player.radius ?? DEFAULT_PLAYER_RADIUS;
-    if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#canCommit?.(enemy,player,this.#enemies.values())===false)return;
-    if(enemy.openingVolley){const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
+    if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#meleeStartGapMs>0)return;
+    if(enemy.openingVolley){if(this.#canCommit?.(enemy,player,this.#enemies.values(),'ranged')===false)return;const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
+     if(this.#canCommit?.(enemy,player,this.#enemies.values(),'charge')===false)return;
      if(enemy.firstWardenCharge&&distance>240)return;
      const openingAim=enemy.firstWardenCharge?this.#wardenOpeningAim?.(enemy,player):undefined;
      if(enemy.firstWardenCharge&&!openingAim&&distance>200)return;
      const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
      const aim=openingAim??player;enemy.firstWardenCharge=undefined;
-     enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=aim.x-enemy.x;enemy.lockY=aim.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:aim.x,targetY:aim.y,durationMs:windup}));return;
+     this.#meleeStartGapMs=250;enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=aim.x-enemy.x;enemy.lockY=aim.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:aim.x,targetY:aim.y,durationMs:windup}));return;
     }
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canCommit?.(enemy,player,this.#enemies.values(),'melee')!==false&&this.#canAttack?.(enemy,player)!==false){
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);
       enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);
       if(enemy.meleeDurationMs<=melee.lockLeadMs)enemy.meleeFacingLocked=true;
       enemy.contactCooldownRemainingMs=0;enemy.velocityX=enemy.velocityY=0;enemy.yieldMs=0;enemy.blockedMs=0;
-      this.#meleeStartGapMs=MELEE_START_STAGGER_MS*(this.#lateDifficulty?(this.#difficulty().lateStagger??1):1);
+      this.#meleeStartGapMs=250;
       if(melee.heavy)this.#heavyMeleeActive++;else this.#smallMeleeActive++;
       events.push(freezeEvent({type:'melee-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape,durationMs:enemy.meleeDurationMs}));
       return;
@@ -1117,7 +1120,8 @@ export class EnemySystem {
       distance <= SPITTER_ATTACK_MAX_RANGE &&
       enemy.rangedCooldownRemainingMs === 0 && this.#canAttack?.(enemy,player)!==false
     ) {
-      if(this.#balance.specials){this.#windUpSpit(enemy,player,events);return;}
+      if(this.#canCommit&& !this.#canCommit(enemy,player,this.#enemies.values(),'ranged'))return;
+      if(this.#balance.specials||this.#canCommit){this.#windUpSpit(enemy,player,events);return;}
       events.push(
         freezeEvent({
           type: 'hazard-attack',
@@ -1135,6 +1139,7 @@ export class EnemySystem {
   }
 
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
+    this.#meleeStartGapMs=250;
     enemy.windupMs=this.#spitWindupMs;
     enemy.pendingAttack='spit';
     enemy.lockX=target.x;enemy.lockY=target.y;

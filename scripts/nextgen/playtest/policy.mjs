@@ -247,6 +247,7 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
     const ranged=visible.filter(e=>e.type==='spitter');
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
+    if(s.gate&&c.waypoint){score-=distance(next,c.waypoint)*4;score-=Math.max(0,distance(next,s.gate)-8)*4;}
     if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
     // Keep firing lanes only while a perceived target can be engaged.
     if (target && c.clear) score += 45;
@@ -413,6 +414,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const keys = chooseActions(perceived);
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player),keys);
       movement=conditionMovement;
+      if(s.gate&&distance(s.player,s.gate)<=s.gate.radius&&!escape)movement={dx:0,dy:0};
       if(profile==='novice') {
         const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
         for(const key of consumableNotices.keys())if(!eligible.has(key))consumableNotices.delete(key);
