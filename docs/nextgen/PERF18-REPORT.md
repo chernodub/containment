@@ -391,3 +391,35 @@ Baseline High Safety-interlock Pyro update p95 was 10.6–13.0 ms, versus 5.6–
 Traversal now checks continuous polygon clearance once instead of separately checking polygon clearance at each endpoint and again for the sweep. A swept bounding box rejects distant rectangular blockers before their existing exact endpoint, slab and corner tests. Immutable void polygons also reuse their bounds to reject disjoint sweeps before containment or edge work. Mutable topology still uses the exact polygon path. These queries preserve continuous concave geometry, endpoint clearance and tangency without changing collision shapes.
 
 In two isolated Safety-interlock Pyro screening trials, the traversal change alone measured 8.35% and 8.97% above 20 ms at loads 2.34 → 2.11 and 2.11 → 2.02. With the void bounds added, the same two observations were 8.26% and 7.15% at loads 2.22 → 1.99 and 1.99 → 2.09. CPU p95 fell from 20.20–20.90 ms to 19.10–20.10 ms in these separate live runs.
+
+### Final combat and warm preparation
+
+Both matrices used the same 15-second production command, with two repeats per room, rig and tier. The final table substitutes quiet reruns for the two baseline Transmission Arc Low rows and the after Safety-interlock Arc High second row that exceeded load 4. The original measurements remain in the raw logs. Draws are peaks and compiles are combat program creations.
+
+| Room | Rig | Tier | Repeat | Before load | Before >20 | Before p95 ms | Before update p95 | Before draws / compiles | After load | After >20 | After p95 ms | After update p95 | After draws / compiles |
+| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| safety-interlock-station | pyro | high | 1 | 2.18 → 3.02 | 9.58% | 25.00 | 13.00 | 306 / 0 | 1.89 → 2.10 | 7.98% | 25.00 | 6.90 | 296 / 0 |
+| safety-interlock-station | pyro | high | 2 | 3.02 → 2.99 | 7.48% | 25.00 | 10.60 | 297 / 0 | 2.10 → 2.76 | 11.59% | 25.10 | 7.60 | 292 / 0 |
+| safety-interlock-station | pyro | low | 1 | 2.99 → 2.43 | 3.70% | 18.10 | 10.80 | 285 / 0 | 2.76 → 3.23 | 1.67% | 17.70 | 3.70 | 290 / 0 |
+| safety-interlock-station | pyro | low | 2 | 2.43 → 2.43 | 3.49% | 18.00 | 10.50 | 289 / 0 | 3.23 → 2.72 | 1.44% | 18.00 | 4.20 | 296 / 0 |
+| safety-interlock-station | arc | high | 1 | 2.43 → 2.80 | 6.08% | 25.00 | 5.60 | 279 / 0 | 2.72 → 2.67 | 4.51% | 18.30 | 2.50 | 288 / 0 |
+| safety-interlock-station | arc | high | 2 | 2.80 → 2.84 | 9.09% | 25.00 | 6.10 | 304 / 0 | 1.84 → 2.32 | 5.22% | 23.60 | 2.30 | 292 / 0 |
+| safety-interlock-station | arc | low | 1 | 2.84 → 2.97 | 2.25% | 17.80 | 6.10 | 279 / 0 | 3.51 → 3.17 | 1.69% | 17.80 | 2.60 | 275 / 0 |
+| safety-interlock-station | arc | low | 2 | 2.97 → 2.36 | 2.01% | 18.00 | 6.10 | 282 / 0 | 3.17 → 2.86 | 1.55% | 17.70 | 2.50 | 279 / 0 |
+| transmission-chamber | pyro | high | 1 | 2.36 → 2.26 | 5.11% | 23.50 | 11.40 | 165 / 0 | 2.86 → 3.14 | 4.64% | 18.20 | 8.80 | 166 / 0 |
+| transmission-chamber | pyro | high | 2 | 2.26 → 2.80 | 7.19% | 24.90 | 8.90 | 164 / 0 | 3.14 → 2.92 | 3.49% | 18.10 | 9.50 | 169 / 0 |
+| transmission-chamber | pyro | low | 1 | 2.80 → 2.42 | 1.57% | 17.90 | 12.10 | 149 / 0 | 2.92 → 2.53 | 1.32% | 17.80 | 11.60 | 146 / 0 |
+| transmission-chamber | pyro | low | 2 | 2.42 → 2.72 | 1.44% | 18.00 | 10.80 | 149 / 0 | 2.53 → 2.36 | 1.44% | 17.70 | 11.70 | 152 / 0 |
+| transmission-chamber | arc | high | 1 | 2.72 → 3.87 | 5.35% | 24.70 | 4.00 | 161 / 0 | 2.36 → 2.29 | 3.84% | 18.20 | 2.60 | 160 / 0 |
+| transmission-chamber | arc | high | 2 | 3.87 → 3.66 | 4.10% | 18.20 | 3.80 | 161 / 0 | 2.29 → 1.97 | 4.83% | 18.50 | 3.40 | 163 / 0 |
+| transmission-chamber | arc | low | 1 | 2.88 → 2.96 | 2.04% | 17.90 | 3.70 | 149 / 0 | 1.97 → 2.20 | 1.56% | 17.70 | 2.60 | 149 / 0 |
+| transmission-chamber | arc | low | 2 | 2.96 → 2.91 | 2.04% | 17.90 | 3.90 | 149 / 0 | 2.20 → 2.03 | 1.80% | 18.20 | 2.80 | 149 / 0 |
+
+| Warm revisit | Before load | Before hold | After load | After hold |
+| --- | --- | ---: | --- | ---: |
+| Safety-interlock Station | 2.41 → 2.37 | 1,176.9 ms | 1.95 → 1.95 | 1,174.4 ms |
+| Transmission Chamber | 2.37 → 2.37 | 1,240.6 ms | 1.95 → 1.95 | 1,251.3 ms |
+
+Transmission's warm hold was 10.7 ms longer in the single matched revisit. Both rooms retained the same program inventory and recorded zero combat compiles. This comparison does not establish a repeatable loading change.
+
+Safety-interlock Pyro still missed 7% in both repeats. Its CPU p95 improved from 21.1–22.3 ms to 19.4–19.9 ms, while its frame p95 remained about 25 ms. Transmission's four High trials came in below 5%. Low stayed under 2% in all eight final trials. The maximum after draw count was below 330, with zero combat compiles.
