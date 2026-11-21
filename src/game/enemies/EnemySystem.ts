@@ -782,6 +782,25 @@ export class EnemySystem {
     const engagementGoal=enemy.type==='spitter'||enemy.type==='stalker'&&distanceToPlayer>145||enemy.type==='carrier'||enemy.role==='anchor'&&distanceToPlayer>170||enemy.role==='screen'&&distanceToPlayer>190?undefined:this.#engagement.goal(enemy,player);
     if(engagementGoal){targetX=engagementGoal.x;targetY=engagementGoal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);}
 
+    const attackKind=enemy.type==='spitter'?'ranged':'melee';
+    const waiting=!enemy.champion&&this.#canCommit?.(enemy,player,this.#enemies.values(),attackKind)===false;
+    const sight=(point:EnemyPlayerState)=>this.#canAttack?.({...point,type:enemy.type},player)!==false;
+    if(!enemy.champion&&!sight(enemy)||waiting){
+      const radius=enemy.type==='spitter'?SPITTER_MIN_RANGE+enemy.radius:enemy.type==='carrier'?170:
+        MELEE_ATTACKS[enemy.type].engageRange+enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS);
+      const bearing=Math.atan2(enemy.y-player.y,enemy.x-player.x);
+      const angle=bearing+(waiting&&sight(enemy)&&distanceToPlayer<=radius+enemy.radius?(enemy.id%2?1:-1)*.35:0);
+      const ring={x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius};
+      const route=this.#readyRoute(enemy,player,ring,radius,sight);
+      if(route){
+        enemy.targetX=route.x;enemy.targetY=route.y;
+        const heading=normalized(route.x-enemy.x,route.y-enemy.y);
+        enemy.velocityX=heading.x*enemy.speed*this.#movement;
+        enemy.velocityY=heading.y*enemy.speed*this.#movement;
+        return;
+      }
+    }
+
     const goalLegal=enemy.type!=='spitter'||this.#firingPositionLegal(enemy,{x:targetX,y:targetY});
     const keepFiringGoal=enemy.type==='spitter'&&enemy.firingGoal&&(distanceToPlayer<SPITTER_MIN_RANGE||distanceToPlayer>SPITTER_MAX_RANGE||this.#canAttack?.(enemy,player)===false);
     // Berths use the real body sweep. The navigation grid's extra two units
@@ -815,6 +834,25 @@ export class EnemySystem {
     enemy.velocityY = direction.y * speed;
   }
 
+  #readyRoute(enemy:EnemyState,player:EnemyPlayerState,ring:EnemyPlayerState,radius:number,
+    sight:(point:EnemyPlayerState)=>boolean):EnemyPlayerState|undefined {
+    const reachable=(goal:EnemyPlayerState)=>{
+      if(!sight(goal)||!this.#firingPositionLegal(enemy,goal))return undefined;
+      if(this.#movementAllowed(enemy,goal.x,goal.y))return goal;
+      const step=this.#route?.(enemy,goal);
+      return step&&Math.hypot(step.x-enemy.x,step.y-enemy.y)>.5?step:undefined;
+    };
+    const direct=reachable(ring);
+    if(direct)return direct;
+    const alternative=this.#alternateFiringPosition(enemy,player,[radius,Math.max(radius+enemy.radius*2,120),Math.max(radius+90,210)]);
+    if(alternative)return alternative.route??alternative.goal;
+    // The player's cell is a useful last route even before a firing position opens.
+    if(!sight(enemy)){
+      const advance=this.#route?.(enemy,player);
+      if(advance&&Math.hypot(advance.x-enemy.x,advance.y-enemy.y)>.5)return advance;
+    }
+  }
+
   #beginReposition(enemy:EnemyState,player:EnemyPlayerState):void {
     const toward=normalized(player.x-enemy.x,player.y-enemy.y),side=enemy.id%2?1:-1;
     enemy.repositionRemainingMs=900;enemy.repositionX=clamp(enemy.x-toward.y*side*100,enemy.radius,WORLD_WIDTH-enemy.radius);enemy.repositionY=clamp(enemy.y+toward.x*side*100,enemy.radius,WORLD_HEIGHT-enemy.radius);enemy.decisionCooldownRemainingMs=0;
@@ -825,12 +863,12 @@ export class EnemySystem {
     return this.#movementAllowed(enemy,goal.x,goal.y,goal.x,goal.y);
   }
 
-  #alternateFiringPosition(enemy:EnemyState,player:EnemyPlayerState){
-    const carrier=enemy.type==='carrier',minimum=carrier?140:SPITTER_MIN_RANGE,maximum=carrier?260:SPITTER_MAX_RANGE;
+  #alternateFiringPosition(enemy:EnemyState,player:EnemyPlayerState,readyRadii?:number[]){
+    const carrier=enemy.type==='carrier',minimum=readyRadii?0:carrier?140:SPITTER_MIN_RANGE,maximum=readyRadii?Infinity:carrier?260:SPITTER_MAX_RANGE;
     const usable=(goal:EnemyPlayerState)=>{
       const range=Math.hypot(goal.x-player.x,goal.y-player.y);
       if(range<minimum||range>maximum||!this.#firingPositionLegal(enemy,goal))return null;
-      const visible=carrier?(this.#canSeePlayer?this.#canSeePlayer(goal,player):this.#canAttack?.({...goal,type:'carrier'},player)):this.#canAttack?.({...goal,type:'spitter'},player);
+      const visible=readyRadii?this.#canAttack?.({...goal,type:enemy.type},player):carrier?(this.#canSeePlayer?this.#canSeePlayer(goal,player):this.#canAttack?.({...goal,type:'carrier'},player)):this.#canAttack?.({...goal,type:'spitter'},player);
       if(visible===false)return null;
       const route=this.#route?.(enemy,goal);
       if(route?.x===enemy.x&&route.y===enemy.y)return null;
@@ -842,7 +880,7 @@ export class EnemySystem {
     const failed=enemy.firingSearch;
     if(failed&&enemy.decisionVersion-failed.decision<5&&Math.hypot(failed.playerX-player.x,failed.playerY-player.y)<32)return null;
     const candidates:EnemyPlayerState[]=[];
-    for(const radius of (carrier?[170,220]:[280,340]))for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
+    for(const radius of (readyRadii??(carrier?[170,220]:[280,340])))for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
     candidates.sort((a,b)=>Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y));
     for(const goal of candidates){const result=usable(goal);if(result){enemy.firingGoal={...goal,playerX:player.x,playerY:player.y};enemy.firingSearch=undefined;return result;}}
     enemy.firingSearch={decision:enemy.decisionVersion,playerX:player.x,playerY:player.y};
