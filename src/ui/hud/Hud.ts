@@ -552,6 +552,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
         const objectiveNode = nodes['room-objective'];
         objectiveNode.classList.toggle('anchored-objective', !!anchored);
+        const plate = weaponLesson?.target;
+        objectiveNode.classList.toggle('plate-key-pulse', prompt==='weapon-lesson' && !!plate && plate.armor>0 && plate.armor<plate.maxArmor*.9);
         if (anchored) {
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
             objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;

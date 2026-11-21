@@ -21,3 +21,13 @@
 .threat-marker[data-tactical=cleanup] .threat-chevron {fill:#263434;stroke:#c5c5a0;}
 .threat-marker[data-tactical=arrival] .threat-type,
 .threat-marker[data-tactical=cleanup] .threat-type {fill:#071017;stroke:#eac786;stroke-width:2.8;width:26px;height:26px;left:9px;top:9px;}
+
+#room-objective.plate-key-pulse {
+    animation: plate-key-pulse .7s ease-out 2 alternate;
+}
+@keyframes plate-key-pulse {
+    to { box-shadow: 0 0 0 3px #91eaff; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #room-objective.plate-key-pulse { animation:none; box-shadow:0 0 0 2px #91eaff; }
+}
