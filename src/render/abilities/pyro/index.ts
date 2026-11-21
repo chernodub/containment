@@ -420,21 +420,31 @@ class PyroPresentation implements AbilityPresentation {
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
-    const pockets = kit.low ? 2 : 3;
+    const meltdown = zone.ability === 'meltdown';
+    const pockets = kit.low ? 9 : 18;
+    const clock = kit.reducedMotion ? 0 : kit.time;
     for (let i = 0; i < pockets; i++) {
-      const angle = zone.id * .71 + i * 2.39996;
-      const reach = radius * (i === 0 ? .48 : .94);
-      const px = x + Math.cos(angle) * reach, pz = z + Math.sin(angle) * reach;
-      if (i > 0 && frame.snapshot?.zones.some(other => other.id !== zone.id && other.element === 'pyro' &&
-          other.shape === 'circle' && Math.hypot(px - other.x / UNIT, pz - other.y / UNIT) < other.radius / UNIT - .15)) continue;
+      const seed = zone.id * .71 + i * 2.39996;
+      const interior = i % 3 === 0;
+      const nearSuit = meltdown && i === 0;
+      const scatter = authoredVariation(seed);
+      const reach = nearSuit ? .78 : radius * (interior ? .24 + .42 * scatter : .70 + .25 * scatter);
+      const angle = seed + .12 * Math.sin(seed * 3.2);
+      const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
+      const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
+      // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
+      if (frame.snapshot?.zones.some(other => other.id < zone.id && other.element === 'pyro' &&
+          other.shape === 'circle' && Math.hypot(px - other.x / UNIT, pz - other.y / UNIT) < other.radius / UNIT)) continue;
       const committed = frame.game?.enemies.snapshot.enemies.some(enemy =>
         (enemy.meleePhase !== 'approach' || enemy.windupMs > 0 || enemy.chargeMs > 0) &&
         Math.hypot(px - enemy.x / UNIT, pz - enemy.y / UNIT) < enemy.radius / UNIT + 1.4);
-      const height = committed ? .32 : .85 + .22 * i;
-      kit.directedFlame(px, .06, pz, .21 + .05 * i, height,
-        angle, .32, zone.id + i * 1.37, fade * (committed ? .32 : .88), i === 1);
-      if (!committed && emit && i === Math.floor(kit.time * 11) % pockets)
-        kit.mote('spark', px, height * .65, pz, .12, 1.6, .08, .042, .65, CORE);
+      const height = (.55 + .22 * scatter + .08 * Math.sin(clock * 5 + seed)) * (committed ? .33 : 1);
+      const width = (.30 + .15 * scatter) * (committed ? .4 : 1);
+      kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
+        nearSuit || i % 4 === 1 ? CORE : FIRE, fade * (committed ? .33 : 1), 0,
+        .14 * Math.sin(clock * 2.6 + seed), 100 + i * 2.3 + scatter);
+      if (!committed && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
+        kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
@@ -456,7 +466,7 @@ class PyroPresentation implements AbilityPresentation {
         z + Math.cos(i * 2.4 + rise) * radius * .12,
         .45 + rise * .65, .55 + rise * .5, 1, SOOT, (.3 - rise * .09) * fade);
     }
-    kit.lightAt(zone.id, x, z, FIRE, 12 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
+    kit.lightAt(zone.id, x, z, FIRE, 16 * fade, Math.max(6, Math.min(8, radius * 1.8)), 3);
     if (shimmer) kit.distort(x, z, radius, .003 * fade, .9, true);
     if (emit && !kit.low) kit.mote('spark', x, .2, z, .08, 1.4, .04, .035, .9, CORE);
   }
@@ -507,7 +517,7 @@ class PyroPresentation implements AbilityPresentation {
         x + c * .04 - s * side * .29, 1.42, z + s * .04 + c * side * .29, CORE, .025, .84 * fade, false);
     }
     kit.grade(.65 * fade);
-    kit.lightAt(zone.id, x, z, FIRE, 10 * fade, 7, 3);
+    kit.lightAt(zone.id, x, z, HOT, 16 * fade, 7, 3);
     if (emit) {
       kit.sustain(age);
       // Bounded ember storm is attached to the moving suit, never a floor aura fill.
