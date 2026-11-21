@@ -142,3 +142,45 @@ Still weak:
 2. The Stalker's light leading plane and the Crawler's forefoot separation are small at 480×270. The real fix is
    the wind-up key poses in `tools/assets/m10-motion/`, which this pass did not touch.
 3. The Warden's helm and pauldrons help from behind, but at 2.3× it still reads as a big Brute from above.
+
+## CREATURE20 — angular plates
+Base `8e08fc3f` (after FEEL19). Motion clips, pods, rigs, bone names, colliders and timings are untouched.
+
+- **Kit:** `sdf.AnglePlate(c, R, length, width, thick, keel, rake, taper, lift)` is a convex faceted plate (max of
+  planes): a flat underside, two keel facets, a front taper, side edges meeting in a sharp trailing point, a wedge
+  facet thinning to that edge, and an optional lifted back edge. The test render is
+  `blender -b --factory-startup -P tools/assets/k11-creatures/plate_test.py` → `artifacts/nextgen/c20-kit/plates.png`
+  (dome `Plate` beside three angular variants).
+- **Brute:**
+  - The chest dome shingles are gone. Two pairs of large angular pectoral plates in a dark umber `plate` band
+    (0.30,0.16,0.09) sit around a keeled ochre sternum, over an ochre chest mass.
+  - The brow is angular, the jaw plate's trailing point juts forward, and the upper arms and forearms are umber with
+    angular plates and pauldrons.
+  - The dark hump and dorsal blades from CREATURE19 are kept.
+  - Facing the marine (elite-pair frame), the front reads as umber armour over ochre, where before it was tan lumps.
+    From behind and in the wind-up it keeps the dark armoured back.
+- **Warden** (boss part, 19,900 triangles, unchanged): a broad forward-swept dark helm, a split crown of two raked
+  plates in the light `lead` band, a heavy umber jaw projecting forward, and angular pauldrons. In the Relay Racks charge
+  wind-up the pale V crown marks the head end at 480×270; in the wall stun the helm and crown are present but
+  overlapped by the marine.
+- **Matron** (21,000 triangles, unchanged): a dark angular thorax cuirass, a narrow dark neck, a larger head with a dark
+  crested carapace, a pale `lead` face plate and magenta eyes, and five rows of dark dorsal segment plates (`plate`
+  0.11,0.05,0.09) banding the plum abdomen. Her sac now reads segmented in greyscale. The magenta accent stays on the
+  vents and pods.
+
+Evidence: `artifacts/nextgen/c20-before{,-pairs,-bosses}` (frozen `8e08fc3f` dist) vs `c20-final{,-pairs,-bosses}`.
+Bosses were captured with `i13-native.mjs --rooms=crew-checkpoint,relay-racks --cases=warden,matron`: 4 cases, 0 errors,
+program counters flat through every case and identical to before (0/20/36/52). Draws and triangles are identical in the
+crowds, the Brute attack and both elite pairs; the Carrier pair's one-draw difference reproduced at 81 on both builds.
+Breacher seed 1729, 4 rooms: 0 errors, programs flat per room (`playtest/c20-playtest`).
+
+Pipeline note: when only some castes change and the rest are committed, `git checkout` of the untouched GLBs after
+`ship.sh` is safe. Pass `--dist` and `--dist-source-sha` as separate arguments; a shell variable holding both breaks
+in zsh.
+
+Still weak:
+1. From the game camera the Matron's thorax and new head sit under the flat orange brood clutch (FEEL19's pod). Her face
+   end only shows past the clutch, so "a distinct head" is true in the model but small in play. Moving the clutch or
+   lifting the head is a FEEL19/pod decision.
+2. Only the chest, arms and bosses use `AnglePlate`. The Brute's hind flanks and the other families still use
+   rounded `Plate` shingles, so the Brute's back half and the Stalker/Spitter shells keep the softer domed look.
