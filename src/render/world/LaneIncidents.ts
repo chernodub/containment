@@ -59,6 +59,30 @@ export function addLaneIncident(root:T.Group,id:string){
       lit(root,p,'colonised-duct-manifold',552,432,[[17,24,-12]],0xbecfa8);
       break;
     }
+    case 'diagnostic-gallery': {
+      // An open examination hoop has a cyan emitter over the recorder bed.
+      p.box(0,18,0,47,7,63,steel);
+      const arc:Pin[]=[];
+      for(let k=0;k<=8;k++){
+        const a=k*Math.PI/8;
+        arc.push([25*Math.cos(a),22+30*Math.sin(a),-11]);
+      }
+      cable(p,arc,5,cut);
+      p.box(0,24,7,20,3,35,iron);
+      lit(root,p,'diagnostic-read-head',425,481,[[0,55,-11],[0,26,14]],0x8cdbe6);
+      break;
+    }
+    case 'safety-interlock-station': {
+      // A forked mechanical isolator with two sleeved uprights and a bridging blade.
+      for(const x of [-22,22]){
+        p.rod([x,2,0],[x,33,0],7,iron);
+        for(const h of [12,21,30])p.rod([x,h,0],[x,h+4,0],10,0xa09270);
+      }
+      p.rod([-22,35,0],[15,53,5],4.4,brass);
+      p.box(14,53,5,18,8,12,iron);
+      lit(root,p,'forked-safety-isolator',509,453,[[-22,36,0],[22,36,0]],0xe5bc72);
+      break;
+    }
     case 'shielding-gate': {
       // The U-shaped guide shoe has lost one roller and torn its studs in shear.
       p.box(0,4,0,62,8,34,iron,-.14);
