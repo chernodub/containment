@@ -107,9 +107,12 @@ void main(){
 }`;
 
 const COLD_FIELD_LIMIT = 8;
+const BURN_FIELD_LIMIT = 32; // Maximum retained FlagshipFx slots.
 const fragment = `
 uniform vec4 coldAxes[${COLD_FIELD_LIMIT}];
 uniform float coldRadii[${COLD_FIELD_LIMIT}];
+uniform vec3 burnDiscs[${BURN_FIELD_LIMIT}];
+uniform int burnCount;uniform int burnOwner;
 uniform int coldCount;uniform int coldOwner;
 uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
 uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
@@ -132,6 +135,24 @@ vec3 fxHeat(float t){
  c=mix(c,vec3(1.8,.57,.02),smoothstep(.2,.45,t));
  c=mix(c,vec3(3.,1.35,.12),smoothstep(.45,.72,t));
  return mix(c,vec3(5.,4.2,2.8),smoothstep(.8,1.,t));
+}
+// The deepest disc owns each point. Coincident boundaries have one stable owner.
+float burnDistance(vec2 p){
+ float nearest=1e6;int owner=-1;
+ for(int i=0;i<${BURN_FIELD_LIMIT};i++){
+  if(i>=burnCount)break;
+  float distanceToDisc=length(p-burnDiscs[i].xy)-burnDiscs[i].z;
+  if(distanceToDisc<nearest){nearest=distanceToDisc;owner=i;}
+ }
+ if(owner!=burnOwner)discard;
+ return nearest;
+}
+void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
+ float lip=1.-smoothstep(.025,.18,abs(distanceToEdge+.12));
+ float coal=1.-smoothstep(-.14,0.,distanceToEdge);
+ base=vec3(.016,.013,.009);
+ alpha=.39*coal+.24*lip;
+ emit=vec3(1.54,.63,.058)*lip*.7;
 }
 void main(){
  float m=fxMode;vec3 emit=vec3(0.);float alpha=0.;vec3 base=vec3(0.);
@@ -340,11 +361,14 @@ void main(){
   alpha=mark*.62*fade;
   base=vec3(.008,.011,.014);
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
- }else if(m<8.5||(m>10.5&&m<11.5)){
+ }else if(m<8.5){
+  burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+  alpha*=fxParam;emit*=fxParam*fxIntensity;
+ }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
   float r=fxLocal.y,R=fxRange;
   float strip=length(vec2(fxLocal.x*fxInner,max(max(-r,r-R),0.)))/max(.001,fxInner);
-  float radial=m>10.5?strip:r/max(.01,R);
+  float radial=strip;
   vec2 q=(fxWorld.xz-fxOrigin.xz)*.65;
   float curl=fxNoise(q+fxSeed);
   float edge=1.-smoothstep(.91,.995,radial);
@@ -420,12 +444,8 @@ void main(){
    alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
-   // The hot lip rolls around a broad spent centre.
-   float radial=r/max(.01,R);
-   float lip=1.-smoothstep(.017,.072,abs(radial-(.89+.055*n)));
-   float coal=1.-smoothstep(.92,1.,radial);
-   emit=vec3(1.64,.72,.075)*lip*(.47+.42*n);
-   alpha=.29*coal+.26*lip;
+   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+   line=0.;
    // The activation flash fills the centre before the moving aura settles.
    float pulse=1.-smoothstep(.05,.18,age);
    float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
@@ -529,6 +549,8 @@ export class FlagshipFx {
   private readonly geometry = new T.PlaneGeometry(1, 1, 40, 24);
   private readonly coldAxes = Array.from({ length: COLD_FIELD_LIMIT }, () => new T.Vector4());
   private readonly coldRadii = new Float32Array(COLD_FIELD_LIMIT);
+  private readonly burnDiscs = Array.from({length: BURN_FIELD_LIMIT}, () => new T.Vector3());
+  private readonly burnSlots: FxSlot[] = [];
   private readonly coldSlots: FxSlot[] = [];
   private cursor = 0;
   private time = 0;
@@ -540,6 +562,7 @@ export class FlagshipFx {
     for (let i = 0; i < capacity; i++) {
       const material = new T.ShaderMaterial({
         uniforms: {
+          burnDiscs: { value: this.burnDiscs }, burnCount: { value: 0 }, burnOwner: { value: -1 },
           coldAxes: { value: this.coldAxes }, coldRadii: { value: this.coldRadii }, coldCount: { value: 0 }, coldOwner: { value: -1 },
           fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
           fxOrigin: { value: new T.Vector3() }, fxMuzzle: { value: new T.Vector3() }, fxAngle: { value: 0 }, fxArc: { value: 1 },
@@ -598,8 +621,14 @@ export class FlagshipFx {
     for (const slot of this.slots) if (slot.live && this.sustained(slot)) area += this.area(slot);
     const fields = this.coldSlots;
     fields.length = 0;
+    this.burnSlots.length = 0;
     for (const slot of this.slots) {
-      if (!slot.live || fields.length >= COLD_FIELD_LIMIT) continue;
+      if (!slot.live) continue;
+      if (slot.mode === FxMode.Fuel || slot.mode === FxMode.Climax && slot.arc === 2) {
+        this.burnDiscs[this.burnSlots.length].set(slot.x, slot.z, slot.range);
+        this.burnSlots.push(slot);
+      }
+      if (fields.length >= COLD_FIELD_LIMIT) continue;
       const strip = slot.mode === FxMode.FrostStrip;
       if (!strip && slot.mode !== FxMode.Frost && !(slot.mode === FxMode.Climax && slot.arc === 1)) continue;
       const i = fields.length;
@@ -620,6 +649,7 @@ export class FlagshipFx {
           if (f.x === slot.x && f.z === slot.z && f.range === slot.range) { owner = i; break; }
         }
       }
+      u.burnOwner.value = this.burnSlots.indexOf(slot); u.burnCount.value = this.burnSlots.length;
       u.coldOwner.value = owner; u.coldCount.value = fields.length;
       u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
       u.fxSeed.value = slot.seed; (u.fxOrigin.value as T.Vector3).set(slot.x, slot.y, slot.z);
