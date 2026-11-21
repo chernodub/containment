@@ -52,6 +52,7 @@ function validIncoming(value: unknown): value is IncomingDamageReceipt {
 /** Strict exact-schema validation; optional run context also checks timer membership and resume capacity. */
 export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value is RunStatsSnapshot {
   try {
+    if(!plain(value))return false;
     const keys=Object.hasOwn(value,'selfBlastDamage')?[...KEYS,'selfBlastDamage']:KEYS;
     if (!(exact(value, keys) || exact(value, [...keys, 'lastDamage', 'recentDamage'])) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
     if (!['damageTaken', 'shotsFired', 'shotsHit', 'overdrivesUsed', 'creditsEarned'].every(key => bounded(value[key], RUN_STATS_LIMITS.counter, key !== 'damageTaken'))) return false;
