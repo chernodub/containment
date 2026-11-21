@@ -23,6 +23,42 @@ function lit(root:T.Group,p:IncidentPieces,id:string,x:number,z:number,lamps:Pin
 export function addLaneIncident(root:T.Group,id:string){
   const p=new IncidentPieces();
   switch(id){
+    case 'breached-loading-bay': {
+      // The rolled tear is attached to the existing rib, with exposed
+      // sandwich construction visible along the lifted, serrated free lip.
+      const sections:Pin[]=[[-25,21,-84],[-21,19,-48],[-12,15,-16],[0,20,12],[14,11,48],[19,5,67]];
+      for(let i=1;i<sections.length;i++){
+        const [x,h,z]=sections[i-1],[u,k,v]=sections[i];
+        p.face([[x-9,2,z],[x,h,z],[u,k,v],[u-9,2,v]],0x899ca5);
+        p.face([[x,h,z],[x+8,h-3,z],[u+8,k-3,v],[u,k,v]],cut);
+        p.face([[x+8,h-3,z],[x+3,3,z],[u+3,3,v],[u+8,k-3,v]],iron);
+        p.rod([u-8,3,v],[u+1,k,v-4],2.1,steel);
+      }
+      p.box(-12,15,-13,19,5,11,iron,-.28);
+      lit(root,p,'peeled-laminated-lip',602,612,[[-12,18,-13]],0xc7e3e0);
+      break;
+    }
+    case 'swarm-junction': {
+      // Three duct throats converge on a bolted valve chest and handwheel.
+      p.box(0,10,0,57,18,41,iron);
+      for(const [u,v] of [[-65,4],[51,-39],[52,42]]){
+        p.rod([0,10,0],[u,7,v],9,steel);
+        p.rod([u*.68,8,v*.68],[u*.75,8,v*.75],13,brass);
+      }
+      p.rod([1,13,1],[1,24,1],4,brass);
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4,b=a+Math.PI/4;
+        p.rod([1+17*Math.cos(a),25,1+17*Math.sin(a)],[1+17*Math.cos(b),25,1+17*Math.sin(b)],2.3,cut);
+        if(i%2===0)p.rod([1,24,1],[1+16*Math.cos(a),25,1+16*Math.sin(a)],1.7,steel);
+      }
+      for(let j=0;j<4;j++){
+        const s=j*5;
+        cable(p,[[-91,2,47+s],[-47,3,27+s],[-28,15,14+s],[-12,22,6+s],[7,18,12+s],[26,7,16+s],[49,3,27+s]],3.2-j*.35,0x94607c);
+      }
+      p.box(17,21,-12,14,4,9,iron);
+      lit(root,p,'colonised-duct-manifold',552,432,[[17,24,-12]],0xbecfa8);
+      break;
+    }
     case 'shielding-gate': {
       // The U-shaped guide shoe has lost one roller and torn its studs in shear.
       p.box(0,4,0,62,8,34,iron,-.14);
@@ -31,6 +67,10 @@ export function addLaneIncident(root:T.Group,id:string){
         p.rod([-18,17,s*16],[18,16,s*13],2.2,cut);
         p.rod([12,10,s*10],[12,10,s*16],7,iron);
         for(const x of [-23,24])p.rod([x,5,s*11],[x+2,10,s*11],3,brass);
+      }
+      // The flanges diverge where the carriage pulled the guide out of gauge.
+      for(const side of [-1,1]){
+        cable(p,[[-118,3,-38+side*6],[-77,3,-40+side*6],[-50,5,-24+side*8],[-32,7,-4+side*10]],2.8,side<0?steel:cut);
       }
       p.rod([-12,10,-10],[-12,10,9],7,steel);
       p.box(-22,14,-3,17,5,8,iron);
