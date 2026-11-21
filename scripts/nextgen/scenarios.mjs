@@ -294,6 +294,26 @@ export const SCENARIOS=[
    id:`beat-${kind}-fixture`,state:'playing',room:'awakening-bay',burst:true,required:['#presentation-beat'],
    setupArgument:kind,setup:async kind=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.presentation(true);d.presentationEvent({type:'beat',kind});d.refresh();},
  })),
+ {id:'play21-supply',state:'reward',phase:'reward',required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
+  const g=d.game;
+  g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'plate-breaker',junctions:{3:'direct'}}};
+  g.combat.setCredits(180);d.refresh();
+ }},
+ {id:'play21-self-blast',state:'playing',room:'passenger-vault',setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('passenger-vault',{rig:'breacher'});
+  const g=d.game;
+  const valid=(x,y)=>d.canStand(x,y,g.player.radius);
+  const limit=g.geometry.blockers;
+  const positions=limit.flatMap(r=>[
+   {x:r.x-22,y:r.y+r.height/2,angle:0},{x:r.x+r.width+22,y:r.y+r.height/2,angle:Math.PI},
+   {x:r.x+r.width/2,y:r.y-22,angle:Math.PI/2},{x:r.x+r.width/2,y:r.y+r.height+22,angle:-Math.PI/2},
+  ]).filter(p=>valid(p.x,p.y)).sort((a,b)=>Math.hypot(a.x-600,a.y-440)-Math.hypot(b.x-600,b.y-440));
+  const pose=positions[0];
+  if(pose){Object.assign(g.player,pose);g.grenade();d.step(1135);d.refresh();}
+ }},
  {id:'shop',state:'reward',phase:'reward',required:['.service-shop','#claim'],setup:async()=>{await window.__containmentDebug.gotoRoom('communal-atrium',{phase:'reward'});}},
  {id:'g1-benchmark-high',rooms:true,state:'playing',setup:benchmarkSetup('high')},
  {id:'g1-native-room-shaders',rooms:true,state:'playing',setup:benchmarkSetup('high','gtao',false,true)},

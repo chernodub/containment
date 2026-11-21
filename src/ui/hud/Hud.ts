@@ -592,7 +592,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
         onboarding.effect(event);
-        if(event.selfBlast)toasts.show(`Your own blast · ${Math.round(event.selfBlast.distance)} / ${event.selfBlast.radius} blast radius`, 'warning', 'warning', 'self-blast');
+        if(event.selfBlast)toasts.show(`Your own blast · ${Math.round(event.selfBlast.radius-event.selfBlast.distance)} inside the blast radius`, 'warning', 'warning', 'self-blast');
         if (event.rocketUnarmed) showDenial('Inside arming distance');
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
             const id = event.targetId ?? event.id;

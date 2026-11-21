@@ -206,7 +206,7 @@ export function shopScreen(game: DepthGame): string {
     'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
   const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='revive'||game.node.depth===18&&run.version===3))
-    .flatMap<{id:Exclude<(typeof SERVICE_IDS)[number],'route-ammo'>;upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
+    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
     const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;

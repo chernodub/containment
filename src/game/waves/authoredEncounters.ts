@@ -17,6 +17,10 @@ const pincer=(n:number)=>b('pincer','Choose an exit before the arms close',g('cr
 const brokenPincer=(n:number)=>withRules(b('pincer','Break the crawler arm before the flank arrives',g('crawler',n,'screen'),g('stalker',2,'flanker',{reinforcement:true})),{consequence:'pincer',cleanup:'withdraw'});
 const priority=(n:number,guardian?:'warden'|'matron',breachOffset?:number)=>withRules(b('priority',guardian==='warden'?'Bait the Warden into a wall':guardian==='matron'?'Break the Matron brood pods':'Remove the brood leader before reinforcements',g(guardian==='warden'?'brute':'carrier',1,'brood',{priority:true,guardian}),g('brute',1,'anchor'),g('crawler',n,'screen',{reinforcement:true})),{consequence:guardian==='matron'?'brood':guardian?undefined:'leader',cleanup:'withdraw',breachOffset});
 const siege=(n:number)=>b('siege','Hold a lane, then change position',g('spitter',2,'ranged'),g('brute',1,'anchor'),g('crawler',n,'screen'));
+const overloadSiege=withRules(siege(6),{
+ label:'Hold the relay and turn the final flank',
+ groups:Object.freeze([...siege(6).groups,g('stalker',2,'flanker')]),
+});
 
 export const AWAKENING_DRILL = Object.freeze({
   family: 'brute',
@@ -45,8 +49,8 @@ export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.fre
  [priority(5,'matron'),pincer(7),siege(6)],
  [cross(6),priority(6),flank(4)],
  [brokenPincer(3),cross(7),priority(6)],
- [flank(4),priority(5,'warden',3),cross(6)],
- [brokenPincer(3),priority(5),siege(6)],
+ [flank(2),priority(5,'warden',3),cross(6)],
+ [brokenPincer(3),priority(5),overloadSiege],
 ].map(beats=>Object.freeze(beats)));
 export const DETOUR_BEATS:Readonly<Partial<Record<number,AuthoredBeat>>>=Object.freeze({
  15:priority(2,'warden'),

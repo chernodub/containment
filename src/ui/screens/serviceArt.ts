@@ -42,7 +42,8 @@ const objects: Record<Exclude<IllustratedService,'revive'>, string> = {
 const propArt: Record<IllustratedService, string> = {heal:'health',armor:'armor',ammo:'ammo',medkit:'medkit',grenade:'grenade',reroll:'reroll',upgrade:'upgrade',revive:'resuscitator'};
 const propBase = `${import.meta.env.BASE_URL}assets/ui/props14/`;
 
-export function serviceArt(id: IllustratedService): string {
+export function serviceArt(service: ServiceId): string {
+  const id=service==='route-ammo'?'ammo':service;
   if (useStudioArt) return studioImage(`service-${id}`, 'service-illustration', 448, 168);
   if (propArt[id]) return `<img class="service-illustration service-prop" src="${propBase}${propArt[id]}.png" width="300" height="300" alt="" loading="lazy" decoding="async">`;
   return `<svg class="service-illustration" viewBox="0 0 224 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
