@@ -245,7 +245,7 @@ export function runSimulation(options: SimOptions) {
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
-        const siege=game.siege,gate=game.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
+        const siege=game.siege,gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
