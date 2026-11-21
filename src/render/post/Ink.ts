@@ -12,6 +12,15 @@ uniform float inkMode;
 uniform float inkStrength;
 uniform sampler2D combatOutlineIds;
 uniform vec4 inkStyle; // actor width, prop width, opacity, crease strength
+uniform float inkWear;
+// SURFACE22 worn edges: the upper face of a convex architecture crease takes a broken light
+// line instead of ink. World-anchored value noise breaks it into chips that do not crawl.
+float inkWearLine=0.0;
+float inkWearHash(vec2 i){return fract(sin(dot(i,vec2(127.1,311.7)))*43758.5453);}
+float inkWearNoise(vec3 w){
+ vec2 q=w.xz*2.1+vec2(w.y*1.7,-w.y*1.3),i=floor(q),f=fract(q);f=f*f*(3.0-2.0*f);
+ return mix(mix(inkWearHash(i),inkWearHash(i+vec2(1,0)),f.x),mix(inkWearHash(i+vec2(0,1)),inkWearHash(i+vec2(1,1)),f.x),f.y);
+}
 vec3 inkNormal(vec2 e) {
  e=e*2.0-1.0;vec3 n=vec3(e,1.0-abs(e.x)-abs(e.y));
  if(n.z<0.0)n.xy=(1.0-abs(n.yx))*sign(n.xy);
@@ -22,6 +31,7 @@ float combatSilhouette=0.;
 float inkCoverage(vec2 uv, float depth, vec4 center) {
  inkBackdropLuma=1.0;
  combatSilhouette=0.;
+ inkWearLine=0.0;
  center.w=floor(center.w+.5);
  float centerRegion=floor(center.w/8.0);center.w=mod(center.w,8.0);
  if(inkMode<.5||center.z<.5||center.w<.5||center.w>6.5||abs(center.z-floor(center.z+.5))>.01||abs(center.w-floor(center.w+.5))>.01)return 0.0;
@@ -92,12 +102,17 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
     vec3 delta=viewPosition(q,texture2D(tDepth,q).x)-p;
     float bend=1.0-dot(normal,inkNormal(neighbor.xy));
     float major=smoothstep(.16,.40,bend)*smoothstep(.0015,.009,abs(dot(delta,normal)));
+    vec3 inkUp=vec3(cameraWorld[0][1],cameraWorld[1][1],cameraWorld[2][1]);
+    float wearSide=inkWear*step(1.5,center.w)*step(center.w,2.5)*step(dot(delta,normal),-.0015)
+     *step(dot(inkNormal(neighbor.xy),inkUp)+.15,dot(normal,inkUp));
+    if(wearSide>.5){inkWearLine=max(inkWearLine,major*inkStrength);continue;}
     crease=max(crease,major*inkStrength);
    }
   }
  }
  // Pixel-space geometry edges fade only into actual depth haze.
  float haze=1.0-smoothstep(35.0,80.0,-p.z)*.65;
+ if(inkWearLine>0.0)inkWearLine*=smoothstep(.34,.58,inkWearNoise((cameraWorld*vec4(p,1.0)).xyz))*haze;
  if(!actor)edge*=1.0-.18*inkStrength*clamp(fwidth(edge),0.0,1.0);
  return max(edge,crease*inkStyle.w)*haze*inkStyle.z;
 }
@@ -120,6 +135,8 @@ export const inkComposite = /* glsl */ `
   float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
   contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);
   color=mix(color,contour,line);
+  // Worn lip: a lighter value of the surface itself, never a white line.
+  color=mix(color,color*2.1+vec3(.010,.011,.012),inkWearLine*(1.0-line)*.8);
   if(combatSilhouette>.01&&geometry.w>=3.&&geometry.w<=6.){
    float committed=texture2D(combatOutlineIds,vec2((geometry.z+.5)/256.,.5)).r;
    // Bright effects cannot erase the identified actor's silhouette.

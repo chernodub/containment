@@ -1,10 +1,13 @@
 import { Color, MeshStandardMaterial, ShaderChunk, Vector4 } from 'three';
-import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE_FIELD, ROOM_LANDMARK, ROOM_LANDMARK_COLOR, ROOM_LANDMARK_GAINS } from './RoomValueStandard';
+import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE_FIELD, ROOM_LANDMARK, ROOM_LANDMARK_COLOR, ROOM_LANDMARK_GAINS, ROOM_LANDMARK_TRIM } from './RoomValueStandard';
 
 const blackout={value:0};
 export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 
-export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v14-room-blackout';
+export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v14-room-blackout-surface22';
+/** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
+const surfacePaint={value:new Vector4(1,0,0,0)};
+export function setSurfacePaintDetail(high:boolean):void{surfacePaint.value.x=high?1:0;}
 const installed = new WeakSet<MeshStandardMaterial>();
 const environmentGains = new WeakMap<MeshStandardMaterial, {value:number}>();
 const practicalShadowFills = new WeakMap<MeshStandardMaterial, {value:number}>();
@@ -111,8 +114,8 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;
-    shader.fragmentShader = 'uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;\nfloat roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
+    shader.fragmentShader = 'uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));
       vec3 roomWorld=transpose(mat3(viewMatrix))*geometryPosition+cameraPosition;
@@ -127,6 +130,53 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
       reflectedLight.directDiffuse=roomValueGrade(reflectedLight.directDiffuse)*roomField;reflectedLight.indirectDiffuse=roomValueGrade(reflectedLight.indirectDiffuse)*roomField;
       reflectedLight.directSpecular=roomValueGrade(reflectedLight.directSpecular)*roomField;reflectedLight.indirectSpecular=roomValueGrade(reflectedLight.indirectSpecular)*roomField;
       if(roomValue.z>0.0){
+      float paintValue=1.0;
+      #ifndef ROOM_FLOOR_SURFACE
+      {
+        // SURFACE22 painted value model for room architecture and props (never floors or actors:
+        // only room surfaces carry roomValue.z). Few, large world-anchored value shapes.
+        float paintH=roomWorld.y;
+        vec3 paintN=normalize(transpose(mat3(viewMatrix))*geometryNormal);
+        float paintRaised=smoothstep(.04,.22,paintH);
+        float paintTop=smoothstep(.62,.9,paintN.y)*paintRaised;
+        float paintSide=1.0-smoothstep(.45,.75,abs(paintN.y));
+        float paintLandmark=roomLandmark.w*(1.0-smoothstep(roomLandmark.z*.22,roomLandmark.z*.55,distance(roomWorld.xz,roomLandmark.xy)))*paintRaised;
+        float paintContrast=1.0+.9*paintLandmark;
+        // (a) top planes a clear step above sides; (b) sides darken toward the deck.
+        // Pale finishes are already near the actor range; their top step comes mostly from darker sides.
+        float paintAlbedo=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        float paintLift=.55*(1.0-.8*smoothstep(.25,.60,paintAlbedo));
+        paintValue=(1.0-.22*paintSide*paintContrast)*(1.0+paintLift*paintTop*paintContrast);
+        paintValue*=1.0-.58*paintSide*(1.0-smoothstep(.0,.75,paintH));
+        // Surfaces already lit toward the actor range take no lift, and a bright landmark comes down
+        // a step under the actors: its paint carries the modelling, not raw exposure.
+        float paintLit=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular+reflectedLight.indirectSpecular,vec3(.2126,.7152,.0722));
+        float paintHot=smoothstep(.08,.45,paintLit);
+        paintValue=mix(paintValue,min(paintValue,1.0),paintHot);
+        paintValue*=1.0-.32*max(paintLandmark,.7*paintTop)*paintHot;
+        // Pale, already-lit finishes never approach the actors: fight frames keep marine > creatures > landmark.
+        paintValue*=1.0-(.22*paintTop+.20)*paintHot*smoothstep(.30,.70,paintAlbedo);
+        float paintPanel=1.0;
+        if(surfacePaint.x>.5&&paintRaised>0.0){
+          // (d) two-tone panelling: large running-bond cells per face axis, hashed to two tones.
+          vec3 paintA=abs(paintN);
+          vec2 paintP=paintA.y>.7?roomWorld.xz/1.35:vec2(paintA.x>paintA.z?roomWorld.z:roomWorld.x,paintH)/vec2(1.2,.58);
+          paintP.x+=.5*floor(paintP.y);
+          float paintTone=fract(sin(dot(floor(paintP),vec2(127.1,311.7)))*43758.5453);
+          paintPanel=mix(1.0,.81-.06*paintLandmark,step(.52,paintTone));
+          // Landmark lit trim: one accent line around the body at knee height.
+          float paintTrimW=fwidth(paintH)*1.25+.014;
+          float paintTrim=(1.0-smoothstep(paintTrimW*.5,paintTrimW,abs(paintH-roomLandmarkTrim)))*paintSide*paintLandmark;
+          totalEmissiveRadiance+=roomLandmarkColor*paintTrim*1.1;
+        }
+        paintValue*=paintPanel;
+        reflectedLight.directDiffuse*=paintValue;reflectedLight.indirectDiffuse*=paintValue;
+        reflectedLight.directSpecular*=paintValue;reflectedLight.indirectSpecular*=paintValue;
+        // The top plane catches the room's own light colour (landmark accent near the landmark).
+        vec3 paintHue=mix(roomValueTint,roomLandmarkColor,.55*paintLandmark);
+        reflectedLight.indirectDiffuse+=diffuseColor.rgb*paintHue*roomValue.x*paintTop*paintContrast*paintLift*.025;
+      }
+      #endif
         // A landmark owns a bounded luminous body and a softer coloured floor spill.
         float landmarkDistance=distance(roomWorld.xz,roomLandmark.xy);
         float landmarkBody=roomLandmark.w*(1.0-smoothstep(roomLandmark.z*.25,roomLandmark.z,landmarkDistance))*smoothstep(.08,.35,roomWorld.y);
@@ -137,7 +187,8 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         float signalHue=step(totalEmissiveRadiance.b*1.2,max(totalEmissiveRadiance.r,totalEmissiveRadiance.g));
         vec3 signalLife=max(totalEmissiveRadiance,totalEmissiveRadiance/max(.0001,max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b)))*.8);
         totalEmissiveRadiance=mix(totalEmissiveRadiance,mix(mix(roomLandmarkColor,vec3(1.0),.18)*.8,signalLife,signalHue),landmarkBody*landmarkEmitter);
-        totalEmissiveRadiance+=roomLandmarkColor*landmarkBody*roomLandmarkGains.x*(.045+.55*sqrt(max(0.0,landmarkAlbedo)))+diffuseColor.rgb*landmarkBody*roomLandmarkGains.x*.35;
+        // SURFACE22: the self-lit body follows the painted value model, so it is modelled rather than flat.
+        totalEmissiveRadiance+=(roomLandmarkColor*landmarkBody*roomLandmarkGains.x*(.045+.55*sqrt(max(0.0,landmarkAlbedo)))+diffuseColor.rgb*landmarkBody*roomLandmarkGains.x*.35)*paintValue;
         }
         reflectedLight.indirectDiffuse+=roomLandmarkColor*landmarkSpill*roomLandmarkGains.y;
         // Low wall-foot wash outlines navigable boundaries without lifting the floor or far corners.
