@@ -31,6 +31,8 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
   if (!last) {
     return '<section class="incoming-report" aria-label="Failure analysis"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p></section>';
   }
+  const ready=game.deathReadyAbility;
+  const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
   const node = generateRun(game.expedition.run.seed, game.expedition.run.version).nodes.find(candidate => candidate.id === last.room);
   const room = node ? ROOM_TEMPLATES[node.templateId].name : 'Unknown room';
   const sources = new Map<string, number>();
@@ -41,7 +43,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
   const grouped = [...sources].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
   const total = grouped.reduce((sum, [, amount]) => sum + amount, 0);
   const format = (amount: number) => Math.round(amount).toLocaleString('en-US');
-  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p></div><div class="incoming-breakdown"><div class="telemetry-heading"><span class="eyebrow">THIS ROOM · LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</div></section>`;
+  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${escape}</div><div class="incoming-breakdown"><div class="telemetry-heading"><span class="eyebrow">THIS ROOM · LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</div></section>`;
 }
 
 /** Preserve the authored ending verbatim and give it a full-screen moment. */

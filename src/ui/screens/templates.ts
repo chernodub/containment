@@ -1,3 +1,4 @@
+import {studioImage} from '../studioArt';
 import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
 import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
@@ -234,7 +235,9 @@ export function shopScreen(game: DepthGame): string {
   const supplyEnabled=game.canPurchaseService('route-ammo');
   const supplyStatus=!supplyStock?'Sold out':resources.credits<supplyCost?`Need ${supplyCost-resources.credits} more credits`:supplyEnabled?`+${supply?.rounds} reserve`:'Ammunition full';
   const routeSupply=route&&supply?`<section class="route-supply">
-    <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
+    <div class="route-supply-heading">${studioImage(`route-threat-${route==='brood'?'matron':'warden'}`,'route-supply-guardian',160,90)}
+      <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
+    </div>
     <button id="purchase-route-ammo" data-purchase="route-ammo" class="secondary" ${supplyEnabled?'':'disabled'}>
       ${supply.name} · ${supplyCost} CR <small>${supplyStatus}</small>
     </button>
