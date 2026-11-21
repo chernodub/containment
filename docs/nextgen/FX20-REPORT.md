@@ -76,3 +76,19 @@ Full benchmark results are in `artifacts/nextgen/fx20-bench-full/benchmark.json`
 ## Desktop campaigns
 
 Pyro and Arc each cleared six rooms on seed 1729 in fast native-input mode with zero errors and zero reported defects. Each room's opening and closing program counts matched for both rigs. From Awakening Bay through Armory the counts were 161, 154, 149, 156, 155 and 155. The per-room records and screenshots are in `artifacts/nextgen/playtest/fx20-pyro/` and `artifacts/nextgen/playtest/fx20-arc/`. The final TypeScript and production build passed.
+
+## Flashfire onset and coverage revision
+
+The orange fan now appears at the full catalog range of 300 game units and angle of 1.22 radians on the native impact receipt. The white muzzle core and orange tips share the prepared flame batch. A single surface samples animated atlas tongues across the sector, so its center and both edges are submitted together. Short flames on the reported victims follow their displacement during the shove.
+
+In `fx20-after2/v2-flashfire-awakening-bay-02.png`, all five 18-damage victims touch fire 16 simulation milliseconds after the instantaneous cast. The earlier FX20 capture still had the flame at the muzzle at that time. At +30 ms and +150 ms both victims on the left edge remain in flame. At +600 ms the jet has expired and the residual fire separates from the muzzle. The same sequence reads in the native 1920×1080 images and at 480×270.
+
+The other onset checks used occupied targets. Napalm's splash appears when the canister lands, followed by the first three-target damage tick at simulation time 4.200 s in `fx20-after2-napalm-tick/ability-napalm-charge-awakening-bay-02.png`. Meltdown shows ignition at the feet of three brutes on the first damaging tick at 0.251 s in `fx20-after2-contact/gallery-overdrive-pyro-armory-01.png`. Overload's white first strike reaches the 60-damage victim while the other four targets show smaller contact sparks in `fx20-after2/v2-overload-awakening-bay-02.png`.
+
+The revised gallery lives in `artifacts/nextgen/fx20-after2/` and contains 48 native PNGs covering all eight Pyro and Arc abilities plus the Pyro overlap. Its `review/flashfire-onset-comparison.png` shows frames 02–05 as 480×270 images, with the original baseline, first FX20 pass and revision in descending row order. Renderer commit `7d2dbede` also passed the production build.
+
+Peak draws matched the preceding FX20 build in every scene. Flashfire peaked at 121 draws, Napalm at 123, Meltdown at 125, Afterburn at 124, Overload at 123, Overclock at 124, Static Step at 126 and Tesla Pylon at 126. Every Pyro overlap frame matched, peaking at 139 draws with 151 resident programs. The red warning sector and the shooter's aim line remain visible. The prior-build reference for Afterburn, Static Step and Tesla Pylon is in `fx20-after2-reference/`.
+
+All eight ability timeline probes recorded zero combat shader creations. Flashfire held 157 programs, and the other seven abilities held 158. Napalm had 157 in the preceding FX20 capture and 158 in this one. The single-program difference was already present after the first room preparation (116 versus 117) and the original pre-FX20 Napalm capture also held 158. Overload's first frame used one fewer draw, and frames 02–05 matched the previous pass in every ability and the overlap.
+
+The Pyro desktop campaign at seed 1729 cleared six rooms with zero errors and zero defects. Opening and closing program inventories matched within each fight. The report and screenshots are in `artifacts/nextgen/playtest/fx20-after2-final-pyro/`.
