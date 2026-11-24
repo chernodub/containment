@@ -1,6 +1,6 @@
 import {addIncidentLane} from './IncidentLaneMachines';
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
-import type {Group} from 'three';
+import {CylinderGeometry,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
 import {laneTerminal} from '../lighting/LaneWorklight';
@@ -23,25 +23,60 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-16,-5,6,17])p.box(x,13,-1,7,6,22,0x697e77);
       p.box(0,12,18,29,5,4,edge);break;
     case 'service-shaft-landing':
-      run([[140,220],[109,174],[81,121],[18,9],[-13,-14],[-72,-29]],3,2.8,0x827769);
-      p.rod([0,1,0],[0,6,0],25,rubber);p.rod([0,6,0],[0,8,0],21,metal);
-      for(let k=0;k<3;k++){const a=k*Math.PI/3;p.box(0,9,0,40,3,4,edge,a);}
-      p.rod([0,9,0],[0,13,0],5,0xb6a578);break;
-    case 'armory':
-      for(const x of [-11,11])run([[-57+x,-118],[-55+x,-78],[-23+x,-48],[x,0],[x+23,28]],3,2.5,metal);
-      p.box(0,4,0,37,7,49,rubber,-.45);
-      for(const x of [-9,9])p.box(x,10,0,6,14,37,metal,-.45);
-      p.box(1,12,8,17,8,29,0x9b8969,-.45);break;
+      // A taut standing part meets the sheave, then doubles back to the sling.
+      run([[126,153],[8,9],[-6,-3],[-49,36]],5,4.4,0xb1a18a);
+      p.rod([0,2,0],[0,12,0],21,rubber);
+      p.rod([0,12,0],[0,16,0],18,edge);
+      p.box(0,19,0,58,6,11,0xb3985c,.79);
+      for(const x of [-70,-49,-28])p.box(x,4,49,9,8,59,metal,-.18);
+      for(const [x,z,a] of [[-51,28,-.18],[-48,43,-.2],[-44,59,-.13],[-16,76,.66]])
+        p.box(x,10,z,63,7,11,0xbd9866,a);
+      p.box(-60,17,39,34,14,24,0x748c80,-.29);
+      break;
+    case 'armory':{
+      function cartridge(x:number,y:number,z:number,yaw:number){
+        // The flared case head and tapered copper nose survive the incident crop.
+        for(const [start,length,base,tip,color] of [
+          [-21,3,5.8,5.8,0xe0b45b],[-18,23,5,4.8,0xc9953f],
+          [5,4,4.8,3.6,0xdcb767],[9,12,3.6,.4,0xb26a4e]
+        ]){
+          const geometry=new CylinderGeometry(tip,base,length,8);
+          geometry.rotateZ(-Math.PI/2);geometry.translate(start+length/2,0,0);
+          geometry.rotateY(yaw);geometry.translate(x,y,z);p.add(geometry,color);
+        }
+      }
+      const belt:Pin[]=[[-57,-175],[-57,-99],[-37,-59],[5,4]];
+      for(let i=1;i<belt.length;i++){
+        const [x,z]=belt[i-1],[ex,ez]=belt[i];
+        const dx=ex-x,dz=ez-z,length=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
+        p.box((x+ex)/2,.38,(z+ez)/2,39,.55,length+2,rubber,yaw);
+        for(let step=7;step<length;step+=15){
+          const cx=x+dx*step/length,cz=z+dz*step/length;
+          cartridge(cx,6,cz,yaw);
+        }
+      }
+      p.box(7,4,11,54,7,43,metal,-.54);
+      for(const x of [-13,29])p.box(x,11,14,7,14,45,edge,-.54);
+      for(const [x,z,yaw] of [[5,15,.84],[15,22,-.62],[-14,43,.28],[-33,35,1.23],[12,55,-.12]])
+        cartridge(x,z<30?16:6,z,yaw);
+      break;
+    }
     case 'transmission-chamber':
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
-      p.box(0,8,0,32,14,31,metal,.42);
+      // Flared receiver horn with an exposed throat on the guide axis.
+      for(const side of [-1,1]){
+        p.face([[5,8,side*7],[-42,4,side*31],[-42,23,side*31],[5,18,side*7]],0xa9bbbe);
+        p.rod([-42,23,side*31],[5,18,side*7],2,edge);
+      }
+      p.face([[-42,4,-31],[-42,4,31],[5,8,7],[5,8,-7]],metal);
+      p.rod([-24,15,0],[14,15,0],5,0x95c9dc);
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
       p.box(34,4,-9,112,7,35,rubber,.20);
       for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,.20);
-      p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,rubber,-.2);
-      p.box(4,20,-1,19,8,13,0x847053,-.38);break;
+      p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
+      p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
       for(let i=0;i<17;i++){
         const x=-104+i*9,z=10*Math.sin(i*.32);
@@ -50,10 +85,17 @@ export function addLaneMachine(root:Group,id:string){
       }
       p.rod([0,1,0],[0,8,0],17,metal);
       for(let k=0;k<6;k++)p.box(0,6,0,38,5,6,edge,k*Math.PI/6);
-      p.rod([0,8,0],[0,12,0],8,rubber);break;
+      p.rod([0,8,0],[0,12,0],8,rubber);
+      for(const z of [-16,16])p.box(29,6,z,76,10,6,edge,.15);
+      p.box(29,14,0,69,13,34,0x78839b,.15);
+      for(const x of [8,30,52])p.box(x,22,-(x-30)*.15,7,4,35,metal,.15);
+      break;
     case 'manual-control-chamber':
       for(const z of [-7,0,7])run([[-182,-4+z],[-145,24+z],[-64,26+z],[-29,10+z],[0,z]],4,3,z===0?0x928170:rubber);
-      p.box(0,6,0,38,12,27,metal);
+      p.box(0,7,0,58,14,42,metal);
+      p.box(0,15,0,50,2,35,rubber);
+      p.box(0,17,-23,53,5,25,edge,0,.18);
+      for(const x of [-19,-8,7])p.rod([x,17,-12],[x+8,19,14],2.3,0xd69a69);
       for(let i=0;i<5;i++)p.box(-14+i*7,14,0,4,4,15,0x84ad9c);
       break;
     case 'coolant-plant':
@@ -62,7 +104,9 @@ export function addLaneMachine(root:Group,id:string){
         const x=-7+5*Math.sin(i*2),z=-48+i*9;
         p.face([[x-5,2,z],[x+5,3,z-8],[x+9,2,z+4],[x+1,2,z+8]],i%2?0x899fa1:0x70898c);
       }
-      for(const z of [-8,-2,4,10])p.box(0,4,z,24,3,3,edge);
+      p.rod([-26,11,4],[26,11,4],11,0x6e939a);
+      for(const x of [-23,-14,-5,4,13,22])p.rod([x,11,4],[x+3,11,4],13,0xc2dde1);
+      p.rod([-20,22,8],[21,22,8],2.8,0xd9e8e3);
   }
   p.finish(root,'lane-machine-'+id,end[0],end[1]);
 }

@@ -26,6 +26,12 @@ export function laneWorklight(id:string){
 // The second housing is fastened to the receiver flange or the split pipe header.
 // It uses the existing landmark key and a baked spill, leaving combat slots available.
 export function landmarkHousing(id:string){
+  if(id==='awakening-bay')return {x:164,z:467,y:.68,color:0x99ddf2,angle:.72};
   if(id==='transmission-chamber')return {x:820,z:486,y:1.08,color:0xa2ceff,angle:-1.20};
   if(id==='coolant-plant')return {x:378,z:326,y:.92,color:0xb7eafa,angle:.32};
+  const landmark=roomValueProfile(id)?.landmark,end=laneTerminal(id);
+  if(!landmark||!end)return;
+  const [x,z]=landmark.at;
+  const angle=Math.atan2(end[0]-x,end[1]-z);
+  return {x:x+16*Math.sin(angle),z:z+16*Math.cos(angle),y:Math.min(1.65,landmark.height??1),color:landmark.color,angle};
 }

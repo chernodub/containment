@@ -298,6 +298,14 @@ const incidents:Record<string,Incident>={
       p.rod([9,49,-156],[4,39,-209],1.8,0x849a93);
       p.box(4,21,-209,15,40,19,0x50695f);
       p.box(4,41,-209,21,6,25,0x91a29a);
+      // The return tackle reaches the lower balcony in the incident-facing view.
+      p.rod([-13,16,4],[-38,8,144],3.6,0xa29b7f);
+      p.rod([-38,8,144],[-72,5,173],3.6,0x879783);
+      p.box(-40,7,145,48,9,24,0x50675e,-.62);
+      p.rod([-40,12,145],[-40,18,145],12,0xab9d75);
+      p.box(-40,20,145,37,4,7,0xb9ad89,-.62);
+      for(const z of [-24,24])p.rod([22,0,z],[22,-88,z],3.6,0x536663);
+      for(const depth of [12,32,52,72])p.rod([22,-depth,-24],[22,-depth,24],2.8,0x82938a);
       // Torn landing comb and bent brackets fold down into the open shaft.
       for(let i=0;i<7;i++){
         const z=-25+i*9,h=5+5*Math.sin(i);
@@ -442,7 +450,7 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
   },id==='containment-annulus'||id==='crew-checkpoint'?.022:.021);
   if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
-  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z);
+  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z,undefined,id==='service-shaft-landing');
   if(id==='communal-atrium')hero.scale.y=.22; // plate shards lie flat beyond the bench
 }
 

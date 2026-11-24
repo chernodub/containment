@@ -230,7 +230,9 @@ def crown():
     L.asset('reactor-crown',12000)
     # A pressure vessel is captured by eight structural quadrants. No loose rods.
     L.cylinder('Foundation ring',(0,0,.16),2.2,.32,'e9-dark','Z',32,bevel=.025)
-    L.lathe('Pressure vessel',[(1.5,.3),(1.65,.45),(1.65,1.05),(1.35,1.65),(1.18,2.15),(1.18,2.45),(1.05,2.55)],role='e9-dark',segments=32)
+    L.lathe('Exposed reaction column',[(1.5,.3),(1.65,.45),(.78,.6),(.72,1.85),(.90,2.22),(1.18,2.45),(1.05,2.55)],role='e9-dark',segments=32)
+    for z,r in ((.71,1.35),(1.04,1.30),(1.37,1.21),(1.70,1.12),(2.03,1.02)):
+        L.torus('Exposed induction winding',(0,0,z),r,.12,'e9-violet','Z',24,6)
     for z,r in ((.48,1.65),(1.08,1.65),(2.38,1.18)):
         L.torus('Pressure flange',(0,0,z),r,.075,'e9-trim','Z',32,6)
     for i in range(8):
@@ -282,6 +284,7 @@ def crown():
 
 
 for pack, builders in (('control',(uplink,diagnostic,interlock)),('reactor',(dais,crown))):
+    if '--pack' in L.args() and pack != L.args()[L.args().index('--pack')+1]:continue
     L.reset_scene()
     for f in builders:f()
     L.export(pack+'-heroes',L.ROOT/('public/assets/p11/'+pack),pack+'.glb','Original mechanical control, diagnostic and reactor hero machinery.','blender -b --factory-startup -P tools/assets/p11-set-pieces/control_heroes.py')

@@ -1,47 +1,47 @@
 {
-  "bakeSeconds": 0.93,
-  "blenderPNGDecodeMs": 6.411,
+  "bakeSeconds": 1.426,
+  "blenderPNGDecodeMs": 9.522,
   "file": "duct-normal.png",
   "size": 512,
-  "bytes": 312411,
+  "bytes": 309969,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 131022,
+  "nonFlatPixels": 130163,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "swallowed-workbay--e9-body",
       "role": "e9-body",
-      "seconds": 0.052,
+      "seconds": 0.061,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "swallowed-workbay--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.023,
+      "seconds": 0.028,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "swallowed-workbay--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.027,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "swallowed-workbay--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.059,
+      "seconds": 0.052,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "swallowed-workbay--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.06,
+      "seconds": 0.186,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "swallowed-workbay--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.029,
+      "seconds": 0.074,
       "method": "three-segment high bevel"
     }
   ]

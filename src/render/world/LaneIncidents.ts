@@ -13,7 +13,10 @@ function cable(p:IncidentPieces,path:Pin[],r:number,color:number) {
 function lit(root:T.Group,p:IncidentPieces,id:string,x:number,z:number,lamps:Pin[],color:number){
   const body=p.finish(root,id,x,z,undefined,true);
   const glass=new IncidentPieces();
-  for(const [u,h,v] of lamps)glass.box(u,h,v,10,2,4,color);
+  for(const [u,h,v] of lamps){
+    if(id==='forked-safety-isolator')glass.box(u,h,v,21,2.5,16,color);
+    else glass.box(u,h,v,10,2,4,color);
+  }
   const lens=glass.finish(root,id+'-lens',x,z,new T.MeshBasicMaterial({vertexColors:true}));
   lens.castShadow=false;
   const [u,h,v]=lamps[0];
@@ -125,7 +128,7 @@ export function addLaneIncident(root:T.Group,id:string){
       }
       p.rod([-22,35,0],[15,53,5],4.4,brass);
       p.box(14,53,5,18,8,12,iron);
-      lit(root,p,'forked-safety-isolator',509,453,[[-22,36,0],[22,36,0]],0xe5bc72);
+      lit(root,p,'forked-safety-isolator',509,453,[[-22,36,0],[22,36,0]],0xffe5a1);
       break;
     }
     case 'shielding-gate': {
@@ -192,8 +195,8 @@ export function addLaneIncident(root:T.Group,id:string){
         }
       }
       // Blistered tissue bridges the veins in patches, leaving open deck between lobes.
-      for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-17,17,32,17,11,19],[12,10,46,19,8,24],
-        [-8,6,76,13,6,16],[34,6,99,20,8,24],[50,4,115,12,5,16],[72,3,146,12,5,18]]){
+      for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-23,12,42,29,11,15],[17,8,42,8,6,10],
+        [-11,4,80,7,4,19],[65,6,98,23,9,13],[46,4,119,9,5,7],[101,2,157,6,3,11]]){
         p.add(new T.IcosahedronGeometry(1,1).scale(w,h,d).rotateY(z*.03).translate(x,y,z),0x76475e);
         p.add(new T.IcosahedronGeometry(1,0).scale(w*.38,h*.35,d*.5).translate(x-w*.3,y+h*.78,z-d*.14),0x895b70);
       }
