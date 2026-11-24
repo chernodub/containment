@@ -131,14 +131,16 @@ const mapResponse = ShaderChunk.map_fragment
   .replace('diffuseColor *= sampledDiffuseColor;', `
   float graphicMapLuma = dot(sampledDiffuseColor.rgb, vec3(.2126, .7152, .0722));
   float graphicMapValue = graphicSoftValue(graphicMapLuma);
-  sampledDiffuseColor.rgb *= mix(1.0, graphicMapValue / max(graphicMapLuma, .0001),
+  // Preserve the unposterised sample for the creature's material zones.
+  vec4 graphicMapColor = sampledDiffuseColor;
+  graphicMapColor.rgb *= mix(1.0, graphicMapValue / max(graphicMapLuma, .0001),
     graphicEnabled * graphicSurfaceKind.x * graphicResponse.w);
   // Preserve only genuinely green sacs. The former yellow/green test also
   // exempted beige chitin, erasing family colors across most large enemies.
-  float graphicSac = smoothstep(.055, .16, sampledDiffuseColor.g - max(sampledDiffuseColor.r, sampledDiffuseColor.b))
-    * smoothstep(.12, .30, sampledDiffuseColor.g);
+  float graphicSac = smoothstep(.055, .16, graphicMapColor.g - max(graphicMapColor.r, graphicMapColor.b))
+    * smoothstep(.12, .30, graphicMapColor.g);
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
-  diffuseColor *= sampledDiffuseColor;
+  diffuseColor *= graphicMapColor;
   if(graphicMarine>.5){
     // HERO19: two calm values, as on the title: ceramic plates and a warm dark-grey undersuit
     // (not black), split above the gunmetal/grime range so worn plates never break into patches.
