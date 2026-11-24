@@ -380,8 +380,8 @@ export class ElementKit {
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
         height: number, sourceX: number, sourceZ: number): void {
         const c = Math.cos(angle), s = Math.sin(angle);
-        this.flowFlame(sourceX, height, sourceZ, x + c * radius * .44, height + .12,
-            z + s * radius * .44, radius * .084, .71, opacity, true);
+        this.flowFlame(sourceX, height, sourceZ, x + c * radius * .23, height,
+            z + s * radius * .23, radius * .084, .71, opacity, true);
 
         const halfArc = arc * .5;
         this.draw('flame', x + c * radius * .5, height, z + s * radius * .5,

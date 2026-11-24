@@ -290,17 +290,6 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     if (fade > 0) {
       kit.sustain(p.age);
-      // A shoved target can move beyond the original cone while the impact is still visible.
-      // Carry a short tongue onto the struck body using only the native hit receipt.
-      if (p.targetIds) for (const id of p.targetIds) {
-        const actor = kit.statusActor(id);
-        if (!actor) continue;
-        const { x, z } = actor.root.position;
-        const incoming = Math.atan2(z - p.z, x - p.x);
-        const dx = Math.cos(incoming), dz = Math.sin(incoming);
-        kit.flowFlame(x - dx * .84, actor.height * .33, z - dz * .84,
-          x + dx * .20, actor.height * .79, z + dz * .20, .32, id, fade);
-      }
       for (let i = 0, count = kit.low ? 7 : 16; i < count; i++) {
         const angle = p.angle + (authoredVariation(i + 1) - .5) * p.arc;
         const reach = p.range * (.23 + .71 * i / count);

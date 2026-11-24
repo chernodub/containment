@@ -39,10 +39,11 @@ export class SoftParticleDepth {
         if(!this.target){
           this.target=new WebGLRenderTarget(width,height,{
             format:RedFormat,type:UnsignedByteType,minFilter:NearestFilter,magFilter:NearestFilter,
-            depthBuffer:true,stencilBuffer:false,
+            depthBuffer:true,stencilBuffer:source.stencilBuffer,
           });
           this.target.texture.name='Containment soft-particle unused half-size R8 attachment';
           this.target.depthTexture=new DepthTexture(width,height,source.depthTexture.type);
+          this.target.depthTexture.format=source.depthTexture.format;
           this.target.depthTexture.name='Containment detached half-resolution opaque depth';
         }
         this.target.setSize(width,height);

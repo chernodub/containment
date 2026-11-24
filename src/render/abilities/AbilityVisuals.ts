@@ -43,6 +43,10 @@ export class AbilityVisuals extends AbilityGeometry {
             if (!(node instanceof T.Mesh)) return;
             const m = node.material as T.ShaderMaterial;
             if (!m.isShaderMaterial) return;
+            m.stencilFunc = T.NotEqualStencilFunc;
+            m.stencilRef = m.stencilFuncMask = 1;
+            m.stencilWriteMask = 0;
+            this.castMaterials.add(m);
             const g = node.geometry;
             bindPriorityMask(m, this.priorityMask.texture,
                 g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined, false, true);
@@ -68,6 +72,9 @@ export class AbilityVisuals extends AbilityGeometry {
         this.registry.get(event.rig)?.event(event, x, y);
         this.system?.event(event, x, y);
     }
+    private readonly castMaterials = new Set<T.Material>();
+    private protectVictims = false;
+
     override update(snapshot: AbilitiesSnapshot | undefined, dt: number, visible = true, game?: DepthGame, marine?: T.Object3D, camera?: T.Camera, marineBody?: T.Object3D): void {
         if (this.dead)
             return;
@@ -79,6 +86,11 @@ export class AbilityVisuals extends AbilityGeometry {
         if (!visible && this.wasVisible)
             this.clear();
         this.wasVisible = visible;
+        const protect = snapshot?.rig === 'pyro';
+        if (this.protectVictims !== protect) {
+            this.protectVictims = protect;
+            for (const material of this.castMaterials) material.stencilWrite = protect;
+        }
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
 
         this.kit.rings.setColdDominance();

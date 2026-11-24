@@ -101,8 +101,10 @@ export const TEXTURED_FIRE_GLSL = `
   coverage=smoothstep(.0,.018,edge)*smoothstep(.015,.13,t)*(1.-smoothstep(.94,1.,abs(theta)));
   float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
   float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
-  c=mix(vec3(.29,.018,.002),vec3(1.92,.32,.014),orange);
-  c=mix(c,vec3(2.8,1.42,.24),flare);
+  c=mix(vec3(.26,.005,0.),vec3(1.25,.13,0.),orange*(1.-smoothstep(.72,1.,abs(theta))));
+  c=mix(c,vec3(1.48,.78,.002),flare*(1.-smoothstep(.72,1.,abs(theta))));
+  float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
+  c=mix(c,vec3(2.2,1.65,.31),core);
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
@@ -114,7 +116,7 @@ export const TEXTURED_FIRE_GLSL = `
   float heat=smoothstep(.19,.84,fire.r);
   float core=smoothstep(.35,.72,ink.g)*(1.-smoothstep(.28,.92,fireUv.y));
   c=mix(vec3(.58,.15,.004),vec3(2.4,.88,.045),heat);
-  c=mix(c,vec3(3.9,3.4,2.35),core*heat);
+  c=mix(c,vec3(2.2,1.65,.31),core*heat);
  }else{
   // The same three unequal tongues serve jets, fuel edges and suit exhaust.
   // Source alpha no longer decides the silhouette: broad photo-core islands
@@ -138,8 +140,8 @@ export const TEXTURED_FIRE_GLSL = `
   coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
   float body=smoothstep(.08,.23,t)*(1.-smoothstep(.82,1.,side));
   float tip=smoothstep(.6,.72,t+.08*sin(signedSide*3.+seed));
-  c=mix(vec3(.27,.012,.003),vec3(2.25,.34,.012),body);
-  c=mix(c,vec3(3.2,1.95,.48),tip*body);
+  c=mix(vec3(.27,.012,.003),vec3(1.35,.15,0.),body);
+  c=mix(c,vec3(1.7,.91,.004),tip*body);
  }
  a*=coverage;
  // Every path hides all four card edges, including the source end of a jet.

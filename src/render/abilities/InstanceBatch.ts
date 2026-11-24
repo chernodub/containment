@@ -264,6 +264,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.onBeforeRender = () => { material.uniforms.atlasAvailable.value = this.atlas.loaded || typeof document === 'undefined' ? 1 : 0; };
     this.mesh.name = `ability-${kind}-batch`;
+    if (kind === 'flame') this.mesh.renderOrder = 4;
     if (kind === 'decal') this.mesh.renderOrder = FRIENDLY_GROUND_ORDER;
     // Soot silhouettes the hot volume, below friendly boundaries and hostile timing fills.
     if (kind === 'smoke') this.mesh.renderOrder = 1;

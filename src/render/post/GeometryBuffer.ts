@@ -2,7 +2,7 @@ import {ENEMY_BODY_COLORS} from '../ActorIdentity';
 import { setActorGeometryIdentity } from './ActorGeometryMaterial';
 import { optimizeLocalLights } from '../lighting/LocalLightShading';
 import { patchGraphicSurface, setGraphicActorBase } from '../lighting/GraphicSurface';
-import { Material, Mesh, MeshStandardMaterial, Object3D, ShaderMaterial, Vector2, WebGLRenderer } from 'three';
+import { ReplaceStencilOp, Material, Mesh, MeshStandardMaterial, Object3D, ShaderMaterial, Vector2, WebGLRenderer } from 'three';
 
 export const GEOMETRY_CLASSES = Object.freeze({ floor: 1, architecture: 2, marine: 3, enemy: 4, elite: 5, boss: 6 });
 export type GeometryClass = typeof GEOMETRY_CLASSES[keyof typeof GEOMETRY_CLASSES];
@@ -154,6 +154,13 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
     if (!(object instanceof Mesh)) return;
     let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.userData.containmentHostilePriority===true||owner.name==='hostile-warning-fills'||owner.name==='hostile-projectiles';}
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      // The closest opaque surface owns bit zero of the HDR scene stencil.
+      if (!material.transparent && material.depthWrite && !effect) {
+        material.stencilWrite = true;
+        material.stencilWriteMask = 1;
+        material.stencilRef = kind && kind >= GEOMETRY_CLASSES.enemy ? 1 : 0;
+        material.stencilZPass = ReplaceStencilOp;
+      }
       material.userData.containmentInkBlock=inkBlock;
       material.userData.containmentPreserveGeometry=!inkBlock&&(effect||!(material instanceof MeshStandardMaterial)||material.transparent);
       if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) {
