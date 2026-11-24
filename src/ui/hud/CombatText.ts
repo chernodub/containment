@@ -16,7 +16,7 @@ type Float = {
     x: number;
     y: number;
     target: number | undefined;
-    followThrow: boolean;
+    clusterSize: number;
     amount: number;
     displayed: number;
     fromAmount: number;
@@ -39,7 +39,6 @@ type Float = {
     baseHeight: number;
     fontSize: number;
     scale: number;
-    accumulating: boolean;
     ticks: number;
     repeatAmount: number;
     repeats: number;
@@ -52,6 +51,7 @@ const statusPriority: Record<string, number> = {freeze:6,shatter:6,shock:5,arc:5
 export class CombatText {
     private readonly pool: Float[] = [];
     private readonly pendingAbilityHits: HudEffect[] = [];
+    private readonly castHits = new Map<string, HudEffect[]>();
     private clusterId = -2;
     private enabled = true;
     private disposed = false;
@@ -75,7 +75,7 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, followThrow: false, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,accumulating:false,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, clusterSize: 0, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -90,11 +90,24 @@ export class CombatText {
             this.pendingAbilityHits.push(e);
             return;
         }
-        if (e.ability?.targetIds?.length) {
-            const event = e.ability;
-            const hits = this.pendingAbilityHits.filter(hit => event.targetIds!.includes(hit.targetId ?? hit.id ?? Infinity));
-            this.showClusters(hits);
-            for (const hit of hits) this.pendingAbilityHits.splice(this.pendingAbilityHits.indexOf(hit), 1);
+        const event = e.ability;
+        if (event) {
+            const key = event.ability + '/' + (event.entityId ?? 'cast');
+            if (event.phase === 'cast') {
+                const previous = this.castHits.get(key);
+                if (previous) this.showClusters(previous);
+                this.castHits.delete(key);
+            }
+            if (event.targetIds?.length) {
+                const matched = this.castHits.get(key) ?? [];
+                let remaining = 0;
+                for (const hit of this.pendingAbilityHits) {
+                    if (event.targetIds.includes(hit.targetId ?? hit.id ?? Infinity)) matched.push(hit);
+                    else this.pendingAbilityHits[remaining++] = hit;
+                }
+                this.pendingAbilityHits.length = remaining;
+                if (matched.length) this.castHits.set(key, matched);
+            }
         }
         this.showEffect(e);
     }
@@ -116,18 +129,18 @@ export class CombatText {
             const total = cluster.hits.reduce((sum,h) => sum+h.damage!,0);
             const first = cluster.hits[0];
             this.add(cluster.x+dx*reach,cluster.y+dy*reach,this.clusterId--,total,'damage',
-                first.damageElement ?? first.element ?? '',cluster.hits.some(h=>h.lethal),false,'ability',false,false,
-                cluster.hits.every(h=>h.damage===first.damage) ? cluster.hits.length : 1);
+                first.damageElement ?? first.element ?? '',cluster.hits.some(h=>h.lethal),false,'ability',false,
+                cluster.hits.every(h=>h.damage===first.damage) ? cluster.hits.length : 1, cluster.hits.length);
         }
     }
-    private showEffect(e: HudEffect, periodic = e.source === 'status', followThrow = false): void {
+    private showEffect(e: HudEffect, periodic = e.source === 'status'): void {
         const target = e.targetId ?? e.id;
         const element = e.source === 'weapon' ? 'weapon' : e.damageElement ?? e.element ?? (e.elements?.length === 1 ? e.elements[0] : undefined) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
         const victim = target === undefined ? null : this.locateTarget(target);
         const chip = e.source === 'weapon' && !e.lethal && !e.critical && !e.elite && !victim?.elite &&
             !(e.contact === 'armor' && victim?.armor === 0);
         if (!chip && (e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
-            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '', periodic, followThrow);
+            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '', periodic);
         // Never invent damage totals for old events. Element labels acknowledge real status events.
         if (e.type === 'hit' && e.elements)
             for (const element of e.elements) {
@@ -138,7 +151,7 @@ export class CombatText {
         if (e.type === 'boon' && e.boon && statusLabels[e.boon])
             this.add(e.x, e.y, target, 0, 'status', e.boon, false);
     }
-    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false, followThrow = false, count = 1): void {
+    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false, count = 1, clusterSize = 0): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (this.reduced && kind === 'status') return;
         const sameTarget = (p: Float) => target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<(kind === 'status'?72:25);
@@ -176,12 +189,11 @@ export class CombatText {
         entry.x = x;
         entry.y = y;
         entry.target = target;
-        entry.followThrow = followThrow;
+        entry.clusterSize = clusterSize;
         entry.age = merge ? entry.age : 0;
         entry.life = kind === 'damage' ? .4 : .8;
         entry.ticks = periodic ? (merge ? entry.ticks : 0) + 1 : 0;
         entry.node.dataset.ticks = String(entry.ticks);
-        entry.accumulating = false;
         entry.kind = kind;
         entry.status = color;
         entry.source = source;
@@ -209,7 +221,7 @@ export class CombatText {
         entry.node.dataset.lethal = String(entry.lethal);
     }
     private damageLabel(entry: Float, amount: number): string {
-        const value = entry.repeats > 1 ? `${Math.round(entry.repeatAmount)} ×${entry.repeats}` : String(Math.round(amount));
+        const value = entry.repeats > 1 ? `${Math.round(entry.repeatAmount)} ×${entry.repeats}` : entry.clusterSize > 1 ? `${Math.round(amount)} (${entry.clusterSize} hits)` : String(Math.round(amount));
         return entry.lethal ? `${value} ×` : value;
     }
     tick(dt: number, player: {
@@ -217,9 +229,11 @@ export class CombatText {
         right: number;
         top: number;
         bottom: number;
-    }, statusActive: (target: number) => boolean, threats: readonly {
+    }, threats: readonly {
         id: number; left: number; right: number; top: number; bottom: number;
     }[]): void {
+        for (const hits of this.castHits.values()) this.showClusters(hits);
+        this.castHits.clear();
         if (this.pendingAbilityHits.length) this.showClusters(this.pendingAbilityHits);
         this.pendingAbilityHits.length = 0;
         const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
@@ -227,15 +241,8 @@ export class CombatText {
         for (const p of this.pool) {
             if (p.life <= 0)
                 continue;
-            if (p.accumulating && p.quiet >= COMBAT_TEXT_MERGE_SECONDS &&
-                (p.target === undefined || !statusActive(p.target))) {
-                p.accumulating = false;
-                p.age = 0;
-            }
-            if (!p.accumulating) {
-                p.life = Math.max(0, p.life - dt);
-                p.age += dt;
-            }
+            p.life = Math.max(0, p.life - dt);
+            p.age += dt;
             p.quiet += dt;
             p.countAge += dt;
             if (p.kind === 'damage') {
@@ -247,10 +254,6 @@ export class CombatText {
             if (!p.life) {
                 p.node.hidden = true;
                 continue;
-            }
-            if (p.followThrow && p.target !== undefined) {
-                const body = this.locateTarget(p.target);
-                if (body) { p.x = body.x; p.y = body.y; }
             }
             const point = projectWorld(this.renderer, p.x, p.y, p.point, 1.2);
             if (!point.visible || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
@@ -267,7 +270,7 @@ export class CombatText {
             p.width = Math.ceil(p.baseWidth * p.scale); p.height = Math.ceil(p.baseHeight * p.scale);
             p.node.style.fontSize = `${p.fontSize * p.scale}px`;
             p.node.style.setProperty('--actor-scale', String(p.scale));
-            const rise = this.reducedMotion || p.followThrow ? 0 : 26 * (1 - Math.exp(-p.age * 6));
+            const rise = this.reducedMotion ? 0 : 26 * (1 - Math.exp(-p.age * 6));
             let x = Math.max(8, Math.min(w - p.width - 8, point.x - p.width / 2));
             let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 48 : 0)));
             const attacker = threats.find(threat => threat.id === p.target);
@@ -323,7 +326,7 @@ export class CombatText {
             p.node.style.opacity = String(Math.min(1, p.life / .2));
         }
     }
-    clear(): void { this.pendingAbilityHits.length = 0; for (const p of this.pool) {
+    clear(): void { this.castHits.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
         p.life = 0;
         p.node.hidden = true;
     } }
