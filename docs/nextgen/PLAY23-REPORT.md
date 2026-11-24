@@ -114,3 +114,42 @@ The shared bot navigator now checks that it can walk directly to a long waypoint
 Breacher 512, Arc 11, and Breacher 137 each cleared 20 sectors. Breacher 7 died in sector 16. The four twelve-seed Standard competent cohorts completed with zero stalls and 37 of 48 clears. Breacher cleared 6 of 12, Cryo 11, Pyro 9, and Arc 11. The measured results are under `artifacts/nextgen/playtest/play23-unstuck-{breacher,cryo,pyro,arc}/`. The separate 512 and 137 results are under `play23-unstuck-512` and `play23-unstuck-extra` in the same parent directory.
 
 The production build passed. Native Breacher 1729 cleared all 20 sectors with zero errors and zero runner diagnostics. Its report and trace are in `artifacts/nextgen/playtest/play23-unstuck-native/`.
+
+## PLAY24
+
+### Enemies seek a visible ready position
+
+An ordinary enemy that loses its attack lane or cannot commit searches for a clear point at its preferred distance from the marine. Melee starts at engage range plus body clearance. Spitters use their firing distance and Carriers use a larger stand-off. An enemy already close to the ring offsets its next point tangentially so it can circle while waiting. If that point is blocked, it searches nearby ring positions for the nearest reachable firing lane. An occluded enemy can also follow the marine's navigation route while a clear position is unavailable. The Overload sweep hint requires ten seconds with live enemies and no clear line of sight. Token budgets and commitment rules retain the PLAY23 values.
+
+### Breacher receipts and balance response
+
+The merged baseline replay reproduced all six deaths. The last incoming damage receipt identifies the lethal hit.
+
+| Seed | Clears | Fatal sector | Lethal hit |
+| ---: | ---: | --- | --- |
+| 7 | 15 | Swarm Junction | Brute contact |
+| 11 | 10 | Diagnostic Gallery | Crawler contact |
+| 23 | 18 | Manual Control Chamber | Crawler contact |
+| 99 | 18 | Manual Control Chamber | Spitter projectile |
+| 2025 | 11 | Safety-interlock Station | Spitter projectile |
+| 4096 | 10 | Diagnostic Gallery | Stalker contact |
+
+These replays used the same twelve seeds, bot policy and installed actor models. A simulation-only observer counted applied ability damage inside Ram and separated Bulwark crushes. Final run receipts retain the lethal source. The actor-model file manifest content digest was `6c5430fdc045e81ea4eb605852003b367c434c49ada35ae61a3129f1f1a9a7e0`.
+
+| Game revision | Clears | Ram targets hit | Crushes | Ram damage including crushes | Damage on crush hits |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Before tokens, `1d943a1f` | 7 | 85 | 9 | 1,866.8 | 548.0 |
+| Merged PLAY23, `feb27ac0` | 6 | 106 | 8 | 2,124.7 | 451.6 |
+| Ready ring, `cff8bf3b` | 10 | 112 | 8 | 2,267.4 | 440.8 |
+
+The controlled pre-token replay produced seven clears with the current models and policy. The historical eight-clear figure came from a different build and policy setup. Applied crush damage declined after tokens, but total Ram damage rose. Four of the six lethal hits were melee and two were Spitter projectiles. Both unadjusted totals and death-room evidence leave room for the higher strike pressure and differences in fight access to matter. The ready stance draws waiting targets into actionable lanes. That change alone brought Breacher back to the requested 8–10 clears, so this pass kept Ram and Bulwark at their existing values.
+
+The receipts are in `artifacts/nextgen/playtest/play24-ram-{1d943a1f,feb27ac0,cff8bf3b}/`.
+
+### PLAY24 verification
+
+Standard competent cleared 38 of 48 with zero stalls, up from 37 of 48 with zero stalls on `feb27ac0`. Breacher went from 6 to 10 of 12, Cryo from 11 to 10, Pyro from 9 to 8, and Arc from 11 to 10. Story novice cleared 23 of 24, with Breacher at 12 of 12 and Cryo at 11 of 12. All cohorts used the prescribed twelve seeds, two workers, and the same model files. The final Standard results are in `artifacts/nextgen/playtest/play24-ring-{arc,cryo,pyro}/` and `artifacts/nextgen/playtest/play24-ram-cff8bf3b/`. Story results are in `artifacts/nextgen/playtest/play24-story/`.
+
+The production build passed. Native Breacher 1729 started at a one-minute host load of 4.60 and cleared 20 sectors with zero errors or runner diagnostics. Of 647.5 simulated seconds with at least one live enemy, 165.1 seconds had no enemy inside the trace's conservative fighting view. The longest continuous gap was 5.3 seconds. Requiring both framing and a clear firing lane yielded 181.2 seconds without a target. These are interval totals from adjacent native trace samples, with room transitions and periods without live enemies excluded. Service Shaft Landing had the largest cumulative out-of-view total at 23.1 seconds. The ready-position search samples candidate points and does not guarantee continuous visibility from every legal player position.
+
+The native report and trace are in `artifacts/nextgen/playtest/play24-native-breacher/`.
