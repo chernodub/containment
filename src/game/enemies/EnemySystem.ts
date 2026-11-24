@@ -231,6 +231,7 @@ type EnemyState = {firstWardenCharge?:true;openingVolley?:{x:number;y:number};wa
   firingSearch?: {decision:number;playerX:number;playerY:number};
   baseSpeed:number;champion?:'warden'|'matron';
   windupMs:number;pendingAttack:'spit'|'charge'|null;lockX:number;lockY:number;specialCooldownMs:number;chargeMs:number;
+  meleeConnected?:boolean; recoveryPunished?:boolean;
   meleePhase:MeleePhase;meleeProgress:number;meleeAngle:number;meleeFacingLocked:boolean;
   meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 };
@@ -685,6 +686,16 @@ export class EnemySystem {
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
     this.#nextId = 1;this.#readyTimeMs=0;this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+  }
+
+  punishRecovery(id:number):boolean {
+    const enemy=this.#enemies.get(id);
+    if(!enemy||enemy.champion||enemy.meleePhase!=='recovery'||enemy.recoveryPunished||
+      (enemy.type!=='brute'&&enemy.type!=='carrier'&&enemy.type!=='stalker'))return false;
+    enemy.recoveryPunished=true;
+    enemy.meleeRemainingMs+=350;
+    enemy.meleeDurationMs+=350;
+    return true;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -1186,12 +1197,18 @@ export class EnemySystem {
         enemy.meleePhase='strike';enemy.meleeProgress=0;enemy.meleeFacingLocked=true;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
-        if(meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false){
+        enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
+        if(enemy.meleeConnected){
           events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
+        enemy.recoveryPunished=false;
+        if(!enemy.champion&&!enemy.meleeConnected){
+          const minimum=enemy.type==='brute'||enemy.type==='carrier'?450:enemy.type==='stalker'?320:0;
+          enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
+        }
       }else{
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest;
         this.#yieldMeleeBerth(enemy);
