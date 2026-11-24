@@ -18,7 +18,7 @@ The estimate does not account for pose, perspective or HUD displacement.
 | pyro | 8,177 | 2,338 (28.59%) | 0 (0.00%) |
 | story-cryo | 8,206 | 898 (10.94%) | 0 (0.00%) |
 
-## Camera candidate
+## Direct-clamp trials
 
 The room clamp allows up to 22% outside the playable AABB at 1080 CSS
 pixels and 7% at 720 CSS pixels, interpolated between those heights.
@@ -34,7 +34,7 @@ and 24% trials cropped the physical Safety Interlock warning at 1080p.
 The 22% trial kept it visible. At 720p the warning check failed at 22%
 and 18%, then passed at 7%.
 
-## Desktop and room review
+## Direct-clamp desktop and room review
 
 The matched 1080p scenario sets produced 13 verified PNGs each. The
 Safety Interlock marine's silhouette centre moved from 5.77% to 31.59%
@@ -67,7 +67,7 @@ The captures are under `artifacts/nextgen/` in
 and `cam24-final-kiting/`. The first 45% Safety Interlock failure is
 retained under `cam24-edge-inspection/`.
 
-## Native comparison
+## Initial native comparison
 
 The base is `f4212bf2`. Each native campaign uses seed 1729, standard
 difficulty, the default room limit and `--fast --startup-timeout-ms=180000`.
@@ -125,6 +125,8 @@ production build passed and its native comparison is pending.
 
 | Rig and build | Outcome | Clears | Damage | Hit ratio | Outside central box, strict |
 | --- | --- | ---: | ---: | ---: | ---: |
+| Arc base | Died in Infested Workshop | 14 | 482.33 | 79.57% (1,235 / 1,552) | 997 / 6,257 (15.93%) |
+| Arc rendered-pose variant | Complete | 20 | 793.42 | 81.75% (1,980 / 2,422) | 2,366 / 9,396 (25.18%) |
 | Cryo base | Complete | 20 | 1,267.15 | 76.33% (1,303 / 1,707) | 962 / 8,366 (11.50%) |
 | Cryo rendered-pose variant | Complete | 20 | 1,109.37 | 74.87% (1,332 / 1,779) | 2,226 / 8,426 (26.42%) |
 
@@ -135,3 +137,14 @@ at 2.55 / 2.47 / 2.83. The variant placed 1,337 observations in the
 fraction of a pixel within 0.01 px of a central-box edge. With that
 projection tolerance, the out-of-box share was 10.55% versus 11.50%
 on the base. I retained the strict counts in the table.
+
+The Arc candidate took 393.62 damage over the 14 rooms both builds
+cleared, compared with 363.74 on the base (+8.21%). It cleared six
+more rooms. The runs started at load averages 2.10 / 2.10 / 2.32 and
+1.89 / 2.05 / 2.14, respectively, and neither recorded errors or
+defects. Estimated dock overlap was zero in both traces. Counting the
+1,305 Arc candidate observations within 0.01 px of the box edges as
+on the edge, the out-of-box share was 11.29% versus 15.93%.
+
+The rendered-pose variant passed the 10% comparable-room damage
+criterion in both quiet-host pairs.
