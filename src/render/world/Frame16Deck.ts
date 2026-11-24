@@ -1,4 +1,4 @@
-import {laneWorklight} from '../lighting/LaneWorklight';
+import {landmarkHousing,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
@@ -79,20 +79,25 @@ function serviceJoints(c: CanvasRenderingContext2D, room: string): void {
 
 /** Bake contact shadows, service joints and traffic wear into one lit relief sheet. */
 export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): void {
+  const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
+  function paintLights(c:CanvasRenderingContext2D){
+    for(const lamp of fixtures){
+      if(!lamp)continue;
+      c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
+      const tint='#'+lamp.color.toString(16).padStart(6,'0');
+      const wash=c.createRadialGradient(0,12,4,0,28,71);
+      wash.addColorStop(0,tint+'db');wash.addColorStop(.34,tint+'ac');
+      wash.addColorStop(.75,tint+'48');wash.addColorStop(1,tint+'00');
+      c.fillStyle=wash;c.beginPath();c.moveTo(-15,-3);
+      c.quadraticCurveTo(-22,19,-55,82);c.lineTo(55,82);
+      c.quadraticCurveTo(22,19,15,-3);c.closePath();c.fill();c.restore();
+    }
+  }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
-    const lamp=laneWorklight(room.id);
-    if(lamp){
-      c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
-      c.scale(.68,1.25);
-      const glow=c.createRadialGradient(0,8,1,0,22,47);
-      const tint='#'+lamp.color.toString(16).padStart(6,'0');
-      glow.addColorStop(0,tint+'64');glow.addColorStop(.50,tint+'32');glow.addColorStop(1,tint+'00');
-      c.fillStyle=glow;c.beginPath();c.moveTo(-11,-2);c.lineTo(-43,69);
-      c.lineTo(43,69);c.lineTo(11,-2);c.closePath();c.fill();c.restore();
-    }
+    paintLights(c);
     // Scuffed wheel tracks taper toward the workshop light. Their bend is
     // offset from the straight sightline so the marine stays on clear deck.
     const source = roomValueProfile(room.id)?.landmark?.at;
@@ -196,5 +201,5 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     c.restore();
-  }, .0214);
+  }, .0214, paintLights);
 }

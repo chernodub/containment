@@ -1,3 +1,5 @@
+import {addIncidentLane} from './IncidentLaneMachines';
+import {incidentLanes} from '../lighting/IncidentLaneLayouts';
 import type {Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
@@ -6,6 +8,8 @@ import {laneTerminal} from '../lighting/LaneWorklight';
 type Pin=[number,number];
 
 export function addLaneMachine(root:Group,id:string){
+  const incident=incidentLanes[id];
+  if(incident){addIncidentLane(root,id,incident);return;}
   const end=laneTerminal(id);if(!end)return;
   const p=new IncidentPieces(),metal=0x657779,edge=0x949e98,rubber=0x343e43;
   // Offsets are relative to the service end, in the same ship units as the room plan.

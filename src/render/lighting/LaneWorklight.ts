@@ -1,3 +1,4 @@
+import {incidentLanes} from './IncidentLaneLayouts';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {roomValueProfile} from './RoomValueStandard';
 
@@ -7,7 +8,7 @@ const terminals:Record<string,Pin>={
   'transmission-chamber':[677,535],'crew-checkpoint':[433,414],
   'shielding-gate':[669,505],'manual-control-chamber':[659,573],'coolant-plant':[417,450],
 };
-export function laneTerminal(id:string):Pin|undefined{return terminals[id];}
+export function laneTerminal(id:string):Pin|undefined{const layout=incidentLanes[id];return layout?[layout[2],layout[3]]:terminals[id];}
 
 
 /** Follow the original machine's direction from the arena to its service light. */
@@ -20,4 +21,11 @@ export function laneWorklight(id:string){
   const [x,z]=laneTerminal(id)??[arena.x+dx*reach,arena.y+dz*reach];
   const color=id==='manual-control-chamber'?0x9acbbb:source.color;
   return {x:x+9,z:z-10,color,y:.76,angle:Math.atan2(arena.x-x,arena.y-z)};
+}
+
+// The second housing is fastened to the receiver flange or the split pipe header.
+// It uses the existing landmark key and a baked spill, leaving combat slots available.
+export function landmarkHousing(id:string){
+  if(id==='transmission-chamber')return {x:820,z:486,y:1.08,color:0xa2ceff,angle:-1.20};
+  if(id==='coolant-plant')return {x:378,z:326,y:.92,color:0xb7eafa,angle:.32};
 }
