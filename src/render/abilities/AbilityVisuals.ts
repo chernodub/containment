@@ -45,7 +45,7 @@ export class AbilityVisuals extends AbilityGeometry {
             if (!m.isShaderMaterial) return;
             const g = node.geometry;
             bindPriorityMask(m, this.priorityMask.texture,
-                g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined);
+                g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined, false, true);
         });
     }
     /** Renderer integration: await this before first-room warmup. */
