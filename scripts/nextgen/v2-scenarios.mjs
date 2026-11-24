@@ -237,7 +237,9 @@ V2_SCENARIOS.push({
   await (${stageV2.toString()})({room:'crew-checkpoint',rig:'pyro',setupOnly:true});
   const d=window.__containmentDebug,g=d.game,lane=d.benchmarkLane;
   g.enemies.reset();
-  const x=lane.x+Math.cos(lane.angle)*125,y=lane.y+Math.sin(lane.angle)*125;
+  // Aim back across the lane so the flying plate clears the marine on screen.
+  Object.assign(g.player,{x:lane.x+Math.cos(lane.angle)*125,y:lane.y+Math.sin(lane.angle)*125,vx:0,vy:0});
+  const x=lane.x,y=lane.y;
   if(!d.canStand(x,y,28))throw Error('Plate target lane is obstructed');
   // Priority enemies remain in the encounter while an escort ordinarily retreats.
   const spawned=g.enemies.spawn('brute',x,y,false,{priority:true});
@@ -251,6 +253,12 @@ V2_SCENARIOS.push({
    d.setInput({x:0,y:0,angle,fire:true,autoAim:false});d.step(1000/60);
   }
   d.v2Proof.armorAfter=g.enemies.getSnapshot(id)?.armor;
+  Object.defineProperty(d.v2Proof,'plateFragment',{enumerable:true,get(){
+   const fragment=d.renderer.effects.debris.find(p=>p.life===3.8&&p.size===.54);
+   if(!fragment)return null;
+   const p=fragment.p.clone().project(d.renderer.camera);
+   return {u:(p.x+1)*.5,v:(1-p.y)*.5,age:fragment.age,ground:fragment.ground};
+  }});
   d.setInput({fire:false});d.refresh();
  })();`),
  advanceFrame:frame=>window.__containmentDebug.step(frame===1?230:1400),
