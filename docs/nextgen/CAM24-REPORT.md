@@ -83,3 +83,22 @@ the warning check at 1280×720, after 18% and 22% both failed. In the
 matched edge fixture, the projected silhouette centre moved from
 5.77% to 31.59% of frame width at 1920×1080 and from 8.20% to
 18.99% at 1280×720.
+
+## Corner and compact desktop review
+
+I reviewed 80 calm frames at the nearest legal position to each of
+the four bounding-box corners in each of the twenty story rooms.
+The exterior was the dark ship subdeck in every room. I found no
+sky-colour gaps or unfinished exterior geometry. The largest AABB
+outside share was 22.00%. The largest exact-hull outside share was
+52.17% at Shielding Gate, where the playable hull turns inward from
+its bounding box. Some corner poses still push the marine outside
+the preferred centre band when the AABB allowance is spent.
+
+The compact-cap build produced all five requested 1280×720 PNGs
+without capture failures. The final 60-frame desktop resize fixture
+recorded zero errors, 174.65 px minimum screen clearance and 0.81 px
+minimum clearance from a HUD element. The final TypeScript and Vite
+production build passed. The 1080p matched example frames measured
+100.00–120.72 px of hero scale on the base and 100.00–121.09 px on
+the candidate.
