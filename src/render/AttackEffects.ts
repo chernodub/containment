@@ -50,7 +50,7 @@ else if(style>5.5 && vFrame>.5){
 else if(style>5.5){
  // Merge the capsule footprints before inking their perimeter. A group
  // shares the longitudinal front of its earliest commitment.
- float fill=0.,core=0.,key=0.,pulseInk=0.,laneBoundary=1e4;
+ float fill=0.,core=0.,key=0.,pulseInk=0.,queuedInk=0.,laneBoundary=1e4;
  for(int i=0;i<57;i++){
   if(i>=warningCount)break;
   vec4 o=warningOrigin[i],sz=warningSize[i],tm=warningTime[i];
@@ -65,7 +65,7 @@ else if(style>5.5){
    boundary=max(boundary,sin(clamp(angle,-1.5708,1.5708))*radial);
   }
   if(boundary>.14)continue;
-  if(tm.z<0.){key=max(key,.55*(1.-smoothstep(.015,.046,abs(boundary))));continue;}
+  if(tm.z<0.){queuedInk=max(queuedInk,.52*(1.-smoothstep(.012,.042,abs(boundary))));continue;}
   int leader=int(tm.w);
   bool primary=leader==primaryWarning || i==primaryWarning;
   float pulse=primary ? sin(3.14159*clamp(warningTime[max(0,primaryWarning)].y/.2,0.,1.))*flashScale : 0.;
@@ -102,6 +102,7 @@ else if(style>5.5){
  color=mix(color,vec3(1.65,.018,.044),hullInk);
  color=mix(color,vec3(1.65,.018,.044)*(1.+.35*pulseInk),core);
  alpha=max(ink,core);
+ if(queuedInk>alpha){color=vec3(.68,.072,.092);alpha=queuedInk;}
 
 }
 else if(style>4.5){
@@ -278,7 +279,7 @@ export class AttackEffects {
   const hits=kind===0?Math.hypot(marineX-x,marineZ-z)<=radius+marineRadius:
    meleeStrikeContains(shape,x,z,angle,marineX,marineZ,marineRadius);
   const previous=this.primaryWarning.value;
-  if(hits&&(previous<0||remaining/1000<this.warningTimes[previous].y))this.primaryWarning.value=i;
+  if(!outlineOnly&&hits&&(previous<0||remaining/1000<this.warningTimes[previous].y))this.primaryWarning.value=i;
   const reach=radius+.14,endX=x+(kind===1?Math.cos(angle)*length:0),endZ=z+(kind===1?Math.sin(angle)*length:0);
   const minX=Math.min(x,endX)-reach,maxX=Math.max(x,endX)+reach,minZ=Math.min(z,endZ)-reach,maxZ=Math.max(z,endZ)+reach;
   this.warningMinX=Math.min(this.warningMinX,minX);this.warningMaxX=Math.max(this.warningMaxX,maxX);this.warningMinZ=Math.min(this.warningMinZ,minZ);this.warningMaxZ=Math.max(this.warningMaxZ,maxZ);
@@ -295,6 +296,7 @@ export class AttackEffects {
   const n=this.unionCount.value;
   for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningSoonest[i]=i;}
   for(let i=0;i<n;i++)for(let j=0;j<i;j++){
+   if(this.warningTimes[i].z<0||this.warningTimes[j].z<0)continue;
    const a=this.warningOrigins[i],b=this.warningOrigins[j],sa=this.warningSizes[i],sb=this.warningSizes[j];
    const la=sa.w>.5&&sa.w<1.5?sa.y:0,lb=sb.w>.5&&sb.w<1.5?sb.y:0;
    if(!la||!lb||this.warningFamilies[i]!==this.warningFamilies[j]||a.z*b.z+a.w*b.w<.92)continue;
