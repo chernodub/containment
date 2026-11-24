@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {loadavg,cpus} from 'node:os';
 import {chromium} from 'playwright';
-import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
+import {BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, RIGS, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
@@ -122,7 +122,7 @@ async function advance(milliseconds) {
 }
 
 async function snapshot() {
-  return page.evaluate(() => {
+  return page.evaluate(coveredRelayHealthFraction => {
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     const project=(x,y,height=.65)=>{
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
@@ -132,7 +132,7 @@ async function snapshot() {
     for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.botShotClear(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const objective=g.siege;
-    const siege=objective?.farBank&&g.combat.snapshot.health<g.combat.snapshot.maxHealth/2
+    const siege=objective?.farBank&&g.combat.snapshot.health<g.combat.snapshot.maxHealth*coveredRelayHealthFraction
       ? {...objective,...objective.farBank}:objective;
     const gate=g.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);const waypoint=goal ? d.botWaypoint(goal)??goal : null;
@@ -162,7 +162,7 @@ async function snapshot() {
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
-  });
+  }, COVERED_RELAY_HEALTH_FRACTION);
 }
 async function shot(name,s,options={}) {
   const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});

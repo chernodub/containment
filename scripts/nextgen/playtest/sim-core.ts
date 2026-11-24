@@ -24,7 +24,7 @@ import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
-import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
+import { BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
 import {botPursuitLookAhead,botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
@@ -246,7 +246,7 @@ export function runSimulation(options: SimOptions) {
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const objective=game.siege;
-    const siege=objective?.farBank&&game.combat.snapshot.health<game.combat.snapshot.maxHealth/2
+    const siege=objective?.farBank&&game.combat.snapshot.health<game.combat.snapshot.maxHealth*COVERED_RELAY_HEALTH_FRACTION
       ? {...objective,...objective.farBank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);

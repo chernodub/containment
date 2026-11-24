@@ -13,18 +13,19 @@ export class SiegeLabel {
         host.append(this.node);
     }
 
-    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}) {
+    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
         this.node.hidden = true;
-        if (!siege || siege.choosing) return;
-        const {x, y: anchorY, visible} = projectWorld(renderer, siege.x, siege.y, this.point, .48);
+        if (!cover && (!siege || siege.choosing)) return;
+        const anchor = cover ?? siege!;
+        const {x, y: anchorY, visible} = projectWorld(renderer, anchor.x, anchor.y, this.point, .48);
         const overlapsMarine = x + 100 > marine.left && x - 100 < marine.right &&
             anchorY + 16 > marine.top && anchorY - 16 < marine.bottom;
         const y = overlapsMarine ? marine.bottom + 22 : anchorY;
         if (!visible || hudObstructs(x - 100, y - 15, x + 100, y + 15)) return;
-        const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
+        const inside = siege && Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
         this.node.hidden = false;
         this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
-        const label = siege.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege.remainingMs / 1000)}s`;
+        const label = cover ? 'Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
         if (label !== this.node.textContent) this.node.textContent = label;
     }
 
