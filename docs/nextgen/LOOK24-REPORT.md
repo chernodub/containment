@@ -2,7 +2,32 @@
 
 The old cap limits reflected light and adds the emissive rim and full-body hit card back in full. After bloom, the ink composite also mixes committed creature silhouettes toward pale blue before tone mapping, producing a bright edge independently of the body material.
 
-## Screen samples
+## Revised body values and attack ownership
+
+The revised grade preserves dark values and compresses the upper range. Lit dorsal planes get more separation from the joints, and the authored emissive mask identifies family accents in the existing geometry buffer. At 480×270, the Relay Racks Spitter gland measured 209 → 115 → 210 across the three passes. Its dark leg sample measured 18 → 18 → 22.
+
+The pale attack-owner contour is two display pixels wide at 1080p and is composited after the body ceiling. It follows living enemies in wind-up or strike, including a committed charge. The current fixture provides no attack order, so all committed attackers receive it. If the enemy snapshot supplies a finite numeric `order`, the lowest ordered committed attacker receives it.
+
+| Measurement | Original | First pass | Revised |
+|---|---:|---:|---:|
+| Relay Racks body max / marine median | 146 / 185 (79%) | 101 / 185 (55%) | 125 / 185 (67%) |
+| Crew Checkpoint body max / marine median | 146 / 185 (79%) | 102 / 185 (55%) | 124 / 185 (67%) |
+| Pyro overlap body max / marine median | 172 / 185 (93%) | 111 / 185 (60%) | 123 / 185 (67%) |
+| Flashfire body max / marine median | 214 / 186 (115%) | 116 / 186 (62%) | 125 / 186 (67%) |
+| Swarm Junction body max / marine median | 143 / 183 (78%) | 100 / 183 (55%) | 124 / 183 (68%) |
+| Relay Racks dark floor → Spitter body | 26 → 109 (+83) | 26 → 96 (+70) | 26 → 112 (+86) |
+| Swarm Junction dark floor → Spitter body | 29 → 107 (+79) | 29 → 93 (+64) | 31 → 106 (+75) |
+| Dark Breached Loading Bay floor → Spitter body | 4 → 67 (+63) | 4 → 66 (+62) | 4 → 71 (+67) |
+
+All values use Rec.709-weighted sRGB code values. Native frame 01 body samples in the three crowd scenes use a 7×7 shell interior to exclude the restored contour. Their top-left coordinates are (808,590), (875,590) and (875,591) in Relay Racks, Crew Checkpoint and Swarm Junction. The Pyro, Flashfire and marine samples use the first-pass coordinates documented below. Ratios and differences use unrounded values.
+
+The last three rows use 480×270 colour images. The body value is a 3×3 median on the Spitter below its lantern. The floor value is the darkest 3×3 median in a nearby 7×7 clear deck patch. Body and floor patch centres are (60,116) and (46,120) for Relay Racks, (77,116) and (63,120) for Swarm Junction, and (167,115) and (184,118) for the Dark loading bay. The loading-bay original was recaptured from the baseline revision with all 37 script and stylesheet hashes matching the original capture manifest.
+
+The production build passed and all 29 revised captures completed without errors. Program counts matched the first pass in every frame. Draw counts matched in 27 of 29. Swarm Junction frame 01 moved from 82 to 83 draws and Flashfire frame 01 moved from 120 to 119. The 20-second realtime High/Pyro Relay Racks benchmark retained 148 programs, created zero during the fight and kept the same median of 157 draws. [Three-column colour and greyscale comparisons at 1920×1080 and 480×270](../../artifacts/nextgen/look24-comparison2/index.html) · [Revised captures](../../artifacts/nextgen/look24-after2/index.html) · [Benchmark](../../artifacts/nextgen/look24-after2-bench/benchmark.json)
+
+The isolated six-room Pyro campaign cleared Armory with zero errors and zero defects. Program inventory matched at entry and clear in each room. [Campaign](../../artifacts/nextgen/playtest/look24-after2-pyro/index.html)
+
+## First-pass screen samples
 
 Sharp sampled frame 01 of each 1920×1080 production PNG. The creature column gives the maximum Rec.709-weighted sRGB code value in a 13×12 body patch. The marine column gives the median in a 5×5 pale plate patch. Coordinates are top-left pixel coordinates in each image. These measurements include the displayed effects, ink, grade and final antialiasing.
 
