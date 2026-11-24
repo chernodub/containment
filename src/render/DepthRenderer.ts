@@ -812,8 +812,9 @@ export class DepthRenderer {
   try{
    this.post.render(dt);
    const hidden=menu||combat.dead;
-   this.playerBeacon.update(this.player.root,p.angle,hidden,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout);
-   if(!hidden)this.playerBeacon.renderMask(this.renderer,this.camera,p,this.player.height,this.post.sceneDepthTexture,this.post.sceneGeometryTexture,RIG_ACCENTS[game.abilities.snapshot.rig??'breacher']);
+   const reveal=this.graphicsAblation!=='silhouette';
+   this.playerBeacon.update(this.player.root,p.angle,hidden,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout,reveal);
+   if(!hidden&&reveal)this.playerBeacon.renderMask(this.renderer,this.camera,p,this.player.height,this.post.sceneDepthTexture,this.post.sceneGeometryTexture,RIG_ACCENTS[game.abilities.snapshot.rig??'breacher']);
    this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);
   }
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}

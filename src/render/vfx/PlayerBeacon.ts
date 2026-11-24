@@ -126,8 +126,9 @@ export class PlayerBeacon {
   /** Incoming side comes from the native damage receipt; the stable arc avoids motion flashes. */
   hit(angle:number,strength=1){this.hitAngle=angle;this.hitLife=.32;this.hitStrength=T.MathUtils.clamp(strength,0,1);}
 
-  /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
-  update(player:T.Object3D,angle:number,hidden=false,warning=false,dt=0,blackout=false){
+  /** Place the locator and incoming-hit marker in the final HUD pass. */
+  update(player:T.Object3D,angle:number,hidden=false,warning=false,dt=0,blackout=false,reveal=true){
+    this.quad.visible=reveal;
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible){this.hitLife=0;return;}
     this.locatorMaterial.opacity=warning?(blackout?.55:.22):1;
     this.hitLife=Math.max(0,this.hitLife-dt);
