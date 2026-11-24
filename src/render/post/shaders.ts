@@ -97,6 +97,7 @@ uniform float atmosphereEnabled;
 uniform float useAgX;
 uniform float saturation;
 uniform vec3 abilityPresentation;
+uniform vec3 flameGrade;
 uniform float contrast;
 uniform vec3 lift;
 uniform vec3 gain;
@@ -171,6 +172,16 @@ ${inkComposite}
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);
+  // Restore combustion chroma lost in the filmic shoulder. Only colored flame
+  // texels in the live fan qualify; the white core and inked actors keep their grade.
+  if(flameGrade.z>0. && mod(floor(actorGeometry.w+.5),8.)<2.5 && sharpColor.r>.23){
+    vec3 world=(cameraWorld*vec4(viewPosition(uv,texture2D(tDepth,uv).x),1.)).xyz;
+    float local=1.-smoothstep(flameGrade.z*.85,flameGrade.z,distance(world.xz,flameGrade.xy));
+    float green=sharpColor.g/max(.001,sharpColor.r);
+    float fire=local*smoothstep(.035,.09,green)*(1.-smoothstep(.84,.98,green))
+      *(1.-smoothstep(.06,.19,sharpColor.b/sharpColor.r));
+    color*=mix(vec3(1.),vec3(1.42,.92,.09),fire);
+  }
   // Preserve hot hostile red/orange hues while cooling the time-dilated world.
   float hostileHue = smoothstep(.08,.23,color.r-max(color.g,color.b));
   float coolState = abilityPresentation.z * (1.0-hostileHue);

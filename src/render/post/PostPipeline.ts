@@ -110,6 +110,10 @@ export class PostPipeline {
   private readonly savedClearColor = new Color();
   private focusDistance = 26;
   private menuPresentation = false;
+  private readonly flameGrade = new Vector3();
+  setFlameGrade(x: number, z: number, radius: number): void {
+    this.flameGrade.set(x, z, radius);
+  }
   private readonly abilityPresentation = new Vector3();
   private readonly softDepth: SoftParticleDepth;
   private softParticleBinding?: {enabled:()=>boolean;receive:(depth:DepthTexture|null)=>void;release:()=>void};
@@ -385,7 +389,7 @@ export class PostPipeline {
       lensEnabled: { value: 0 }, atmosphereEnabled: { value: 0 }, useAgX: { value: 0 },
       focusDistance: { value: 26 }, menuPresentation: { value: 0 },
       toneMappingExposure: { value: 1 }, saturation: { value: 1 }, contrast: { value: 1 },
-      abilityPresentation: { value: this.abilityPresentation },
+      abilityPresentation: { value: this.abilityPresentation }, flameGrade: { value: this.flameGrade },
       lift: { value: new Vector3() }, gain: { value: new Vector3(1, 1, 1) },
       shadowTint: { value: new Color() }, highlightTint: { value: new Color() },
       fogColor: { value: new Color() }, fogDensity: { value: 0 }, fogHeight: { value: 1 },

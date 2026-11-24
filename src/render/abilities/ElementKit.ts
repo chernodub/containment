@@ -72,7 +72,7 @@ export interface AbilityServices {
         kick(angle: number, n: number): void;
     };
     /** Existing HDR composite; no extra fullscreen pass or dynamic material. */
-    presentation?: { setAbilityPresentation(exposure: number, warm: number, cool: number): void };
+    presentation?: { setFlameGrade?(x: number, z: number, radius: number): void; setAbilityPresentation(exposure: number, warm: number, cool: number): void };
 }
 /** Frame epochs avoid clearing/repopulating a Set backing table in combat. */
 class StatusOwnership {
@@ -380,6 +380,7 @@ export class ElementKit {
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
         height: number, sourceX: number, sourceZ: number): void {
         const c = Math.cos(angle), s = Math.sin(angle);
+        this.services?.presentation?.setFlameGrade?.(x + c * radius * .5, z + s * radius * .5, radius * .82);
         this.flowFlame(sourceX, height, sourceZ, x + c * radius * .23, height,
             z + s * radius * .23, radius * .084, .71, opacity, true);
 
@@ -531,6 +532,7 @@ export class ElementKit {
         this.statusOwners.clear();
         this.time += dt;
         this.impact();
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0);
         this.warm = this.cool = 0;
         this.instanceCount = 0;
         this.rings.setTime(this.time, this.reducedMotion);
@@ -630,7 +632,8 @@ export class ElementKit {
             rings++; for (const p of this.beams)
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
-    clear(): void { for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
+    clear(): void {
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)

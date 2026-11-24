@@ -159,7 +159,7 @@ export class DepthRenderer {
  private readonly floorChoiceMarkers=new FloorChoiceMarkers();
  private readonly siegeBoundary=new SiegeBoundary(UNIT);
  constructor(readonly canvas:HTMLCanvasElement,assetRenderer?:T.WebGLRenderer){
-  this.renderer=assetRenderer??new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
+  this.renderer=assetRenderer??new T.WebGLRenderer({canvas,antialias:false,alpha:false,stencil:true,powerPreference:'high-performance'});
   // Scene roots remain identity; only moving descendants compose local matrices.
   this.scene.matrixAutoUpdate=false;this.hudScene.matrixAutoUpdate=false;
   this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.AgXToneMapping;this.renderer.toneMappingExposure=1.22;
