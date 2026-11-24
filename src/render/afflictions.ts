@@ -28,9 +28,13 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
     float iceValue=dot(icyShell,vec3(.2126,.7152,.0722));
     outgoingLight=lanternEmission+mix(icyShell,iceValue*vec3(.56,1.09,1.36),statusFrost*.52);
     #endif
-    outgoingLight+=vec3(.028,.085,.12)*smoothstep(.32,.84,frostEdge)*statusFrost;
+    vec3 worldUpView=mat3(viewMatrix)*vec3(0.,1.,0.);
+    float iceCap=smoothstep(.12,.72,dot(normalize(normal),worldUpView));
+    float crust=iceCap*(1.-smoothstep(.24,.78,frostEdge))*statusFrost*statusFrost;
+    outgoingLight*=1.-.28*(1.-iceCap)*statusFrost;
+    outgoingLight=mix(outgoingLight,vec3(.17,.34,.42),crust*.68);
     #include <opaque_fragment>
-   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v5';m.needsUpdate=true;
+   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v6';m.needsUpdate=true;
  }});
  return {set(status:AfflictionStatus){data.status=status;frost.value=status.frozen?1:status.chilled?Math.min(3,Math.max(1,status.chillStacks??1))*.29:0;},animate(_time:number){},reset(frozenBody=false){data.status=NO_AFFLICTION;frost.value=frozenBody?1:0;}};
 }

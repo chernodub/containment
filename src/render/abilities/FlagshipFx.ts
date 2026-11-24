@@ -441,7 +441,7 @@ void main(){
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
    // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
-   float spread=R*(1.-pow(1.-clamp(age/.7,0.,1.),2.));
+   float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
    // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
    float an=fxFbm(vec2(cos(a),sin(a))*2.6+fxSeed);
@@ -452,11 +452,11 @@ void main(){
    float crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,fxFbm(q*.35+4.));
    float pulseR=mod(max(0.,age-.7),2.)*R*.8;
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
-   float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
-   float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
-   emit=vec3(.5,.82,1.15)*(wall*crisp*.14+fern*.45+crack*inside*.35)+vec3(1.,1.4,1.9)*pulse*.55;
-   alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
-   base=vec3(.11,.19,.24);
+   float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
+   float peak=1.-smoothstep(.18,.36,age);
+   alpha=inside*(.38+.23*roll+.18*peak)+wall*.27;
+   base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
+   emit=vec3(.15,.34,.43)*(wall*.9+crack*.26+pulse*.18)*smoothstep(.4,1.2,r);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
