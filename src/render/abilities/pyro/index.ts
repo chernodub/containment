@@ -466,7 +466,7 @@ class PyroPresentation implements AbilityPresentation {
       const interior = i % 3 !== 1;
       const nearSuit = meltdown;
       const scatter = authoredVariation(seed);
-      const reach = nearSuit ? .85 + .27 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
+      const reach = nearSuit ? 1.18 + .36 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
       const angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);

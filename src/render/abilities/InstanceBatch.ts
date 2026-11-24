@@ -58,6 +58,7 @@ export class InstanceBatch {
     geometry.setAttribute('abilityPhase', this.phase);
 
     const fragment = `
+${kind === 'flame' ? '#define FOOT_FIRE_COVER (phase>=164. && phase<200.)' : kind === 'spark' ? '#define FOOT_FIRE_COVER (phase>=1000.)' : ''}
 uniform float abilityTime;uniform float flash;uniform float atlasAvailable;
 uniform sampler2D softDepth;uniform vec4 softCamera;
 ${EFFECT_ATLAS_GLSL}

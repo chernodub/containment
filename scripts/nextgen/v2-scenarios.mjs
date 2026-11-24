@@ -114,6 +114,12 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
   d.step=ms=>{
    if(ms!==150)return advance(ms);
    if(++index===1){
+    // These two casts stun their original targets. A fresh legal approach can
+    // commit during the residual without altering the hit or a warning timer.
+    if(id==='flashfire'||id==='overload'){
+     const a=p.angle+.22;
+     d.spawn('stalker',g.player.x+Math.cos(a)*65,g.player.y+Math.sin(a)*65);
+    }
     advance(150);
     for(let i=0;i<8&&!g.enemies.snapshot.enemies.some(e=>e.meleePhase==='windup'||e.windupMs>0);i++)advance(16);
     record('residual');
@@ -224,3 +230,23 @@ for(const [rig, ids] of Object.entries(rigs))for(const [i,id] of ids.entries()){
  V2_SCENARIOS.push({id:'v2-fx26-'+id,room:'crew-checkpoint',state:'playing',burst:true,frameCount:3,
   setup:stageV2,setupArgument:{rig,id,slot:slots[i],room:'crew-checkpoint',castStudy:true}});
 }
+
+V2_SCENARIOS.push({
+ id:'v2-fx26-plate',room:'crew-checkpoint',state:'playing',burst:true,frameCount:3,
+ setup:new Function(`return (async()=>{
+  await (${stageV2.toString()})({room:'crew-checkpoint',rig:'pyro',setupOnly:true});
+  const d=window.__containmentDebug,g=d.game,lane=d.benchmarkLane;
+  g.enemies.reset();
+  const x=lane.x+Math.cos(lane.angle)*125,y=lane.y+Math.sin(lane.angle)*125;
+  const id=d.spawn('brute',x,y);
+  g.switchWeapon('plasma');d.step(450);
+  for(let i=0;i<180;i++){
+   const e=g.enemies.getSnapshot(id);
+   if(!e||e.armor<=0)break;
+   const angle=Math.atan2(e.y-g.player.y,e.x-g.player.x);
+   d.setInput({x:0,y:0,angle,fire:true,autoAim:false});d.step(1000/60);
+  }
+  d.setInput({fire:false});d.refresh();
+ })();`),
+ advanceFrame:frame=>window.__containmentDebug.step(frame===1?230:1400),
+});

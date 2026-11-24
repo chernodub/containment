@@ -93,14 +93,16 @@ export const TEXTURED_FIRE_GLSL = `
   if(t>1.||abs(theta)>1.)discard;
   // Map overlapping tongue silhouettes into polar lanes. The edge lanes
   // share the same normalized range and animate independently of cast age.
-  float lane=theta*3.3+.13*sin(t*8.+abilityTime*7.);
-  float nearest=floor(lane+.5);
-  vec2 stamp=vec2(.5+(lane-nearest)*.72,.10+t*.76);
-  vec4 fire=effectGraphicSequence(0.,64.,19.,(nearest+4.)*8.7,stamp);
-  float edge=1.-smoothstep(.88,1.,abs(theta));
-  float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
-  coverage=smoothstep(.12,.28,fire.a)*edge*tip*smoothstep(.055,.16,t);
-  c=mix(vec3(.31,.022,.004),vec3(1.85,.39,.018),fire.g);
+  float lane=theta*3.8+t*.24*sin(t*10.-abilityTime*8.);
+  float tooth=1.-abs(fract(lane+.5)*2.-1.);
+  float roll=sin(floor(lane+.5)*2.7+abilityTime*5.+t*7.);
+  float reach=.60+.36*pow(tooth,.65)+.035*roll;
+  float edge=reach-t;
+  coverage=smoothstep(.0,.018,edge)*smoothstep(.015,.13,t)*(1.-smoothstep(.94,1.,abs(theta)));
+  float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
+  float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
+  c=mix(vec3(.29,.018,.002),vec3(1.92,.32,.014),orange);
+  c=mix(c,vec3(2.8,1.42,.24),flare);
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
