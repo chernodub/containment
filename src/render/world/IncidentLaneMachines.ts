@@ -82,9 +82,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       box(L+17,17,25,25,9,15,0x648785,-.35);
       for(const x of [-6,6])disc(L+17+x,22,25,4,2,ice);
       disc(L+26,1,41,20,4,iron);
-      p.rod([L+37,4,46],[L+37,29,46],4,steel);
-      p.rod([L+37,29,46],[L+21,29,40],4,steel);
-      disc(L+21,19,40,6,10,ice);break;
+      p.rod([L+37,4,46],[L+37,22,46],4,steel);
+      p.rod([L+37,22,46],[L+21,22,40],3,steel);
+      disc(L+21,14,40,6,8,ice);break;
     case 'safety-interlock-station':
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);

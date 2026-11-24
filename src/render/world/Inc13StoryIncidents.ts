@@ -450,7 +450,7 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
   },id==='containment-annulus'||id==='crew-checkpoint'?.022:.021);
   if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
-  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z);
+  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z,undefined,id==='service-shaft-landing');
   if(id==='communal-atrium')hero.scale.y=.22; // plate shards lie flat beyond the bench
 }
 
