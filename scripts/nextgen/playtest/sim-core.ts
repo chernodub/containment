@@ -165,8 +165,13 @@ export function runSimulation(options: SimOptions) {
     const weaponUsage = Object.fromEntries(['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'].map(id => [id, {
         shots: 0, equippedMs: 0, damage: 0, kills: 0, families: {} as Record<string, {damage: number; kills: number}>,
     }]));
+    const weaponHits = {total:0, exposed:0};
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if(e.type==='hit'&&e.source==='weapon'&&(e.damage??0)>0){
+            weaponHits.total++;
+            if(e.exposedHit)weaponHits.exposed++;
+        }
         if (e.type === 'shot' && e.weapon) weaponUsage[e.weapon].shots++;
         camera.observeEffect(e);
         recordNativeObservedEvent(events, e, game.elapsed);
@@ -222,7 +227,7 @@ export function runSimulation(options: SimOptions) {
     const report = { mode: 'sim-human-v1', difficulty: options.difficulty ?? 'standard', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
-        weaponUsage, rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
+        weaponUsage, weaponHits, rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
     let room: any, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
     let stopEnemyObserver: (()=>void)|undefined;
     const observeRoomAttacks = () => {
@@ -247,8 +252,10 @@ export function runSimulation(options: SimOptions) {
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const objective=game.siege;
     const suit=game.combat.snapshot;
-    const takeCover=suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*COVERED_RELAY_HEALTH_FRACTION
-      || (objective?.nearLaneWindup&&!game.abilities.snapshot.slots?.dash?.ready);
+    const takeCover=objective?.nearBank
+      ? suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*COVERED_RELAY_HEALTH_FRACTION
+        || (objective.nearLaneWindup&&!game.abilities.snapshot.slots?.dash?.ready)
+      : suit.health<suit.maxHealth*COVERED_RELAY_HEALTH_FRACTION;
     const bank=takeCover?objective?.farBank:objective?.nearBank;
     const siege=bank?{...objective!,...bank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
