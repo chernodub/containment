@@ -17,3 +17,17 @@ The estimate does not account for pose, perspective or HUD displacement.
 | cryo | 3,606 | 540 (14.98%) | 0 (0.00%) |
 | pyro | 8,177 | 2,338 (28.59%) | 0 (0.00%) |
 | story-cryo | 8,206 | 898 (10.94%) | 0 (0.00%) |
+
+## Camera candidate
+
+The candidate allows 45% outside the playable AABB across the usable
+viewport, subject to the existing small-axis rules. The camera prefers
+the middle 60% horizontally and 30–62% vertically for the marine's
+projected centre. It preserves the existing follow spring and body-safe
+viewport. When neither axis is small, the clamp searches for the nearest
+legal position along the path back into the room. The capture marine
+contract reads the active limit from the room-framing diagnostics.
+Archived captures without that field retain their 18% interpretation.
+
+The 45% value is provisional pending the native damage comparison and
+visual review. The base build and the candidate production build passed.

@@ -24,8 +24,10 @@ export function assertPlayingMarine(evidence, viewport, name='playing capture') 
   assert(['outside','outsideX','outsideZ','hullOutside'].every(key=>Number.isFinite(room[key]) && room[key]>=-1e-6)
     && ['smallX','smallZ','centeredX','centeredZ'].every(key=>typeof room[key]==='boolean'),
   `${name}: invalid room-area receipt`);
-  assert((room.smallX?room.centeredX:room.outsideX<=.180001)
-    && (room.smallZ?room.centeredZ:room.outsideZ<=.180001)
-    && (room.smallX||room.smallZ||room.outside<=.180001),
+  // Archived distributions predate the limit receipt.
+  const limit=(room.outsideLimit??.18)+1e-6;
+  assert((room.smallX?room.centeredX:room.outsideX<=limit)
+    && (room.smallZ?room.centeredZ:room.outsideZ<=limit)
+    && (room.smallX||room.smallZ||room.outside<=limit),
   `${name}: marine framing violates C6 room-area rule`);
 }
