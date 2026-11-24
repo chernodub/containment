@@ -48,7 +48,7 @@ ${friendly?'':`// SHADER25: one flat albedo per material zone, set straight afte
 // the bakes' value distribution split dark armour, mid plate, warm flesh and bone;
 // each zone has one flat albedo, so the light alone makes its second value.
 #ifdef USE_MAP
-vec3 zoneAlbedo=texture2D(map,vMapUv,0.0).rgb*diffuse;
+vec3 zoneAlbedo=sampledDiffuseColor.rgb*diffuse;
 #else
 vec3 zoneAlbedo=diffuseColor.rgb;
 #endif
