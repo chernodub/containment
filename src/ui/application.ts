@@ -176,7 +176,7 @@ export async function bootstrap() {
     captureWeaponPointer(el('pause') as HTMLButtonElement);
     captureWeaponPointer(el('skip-story') as HTMLButtonElement);
     el('pause').addEventListener('click', pause);
-    document.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b => { captureWeaponPointer(b); b.addEventListener('click', () => { if (!roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading && !graphicsLost)
+    document.querySelectorAll<HTMLButtonElement>('#weapon-picker [data-weapon]').forEach(b => { captureWeaponPointer(b); b.addEventListener('click', () => { if (!roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading && !graphicsLost)
         game.switchWeapon(b.dataset.weapon as WeaponId); b.blur(); }); });
     el('skip-story').addEventListener('click', () => { game.skipStory(); hud(); });
     // END HUD INPUT

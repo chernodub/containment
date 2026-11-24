@@ -22,7 +22,7 @@ import {contractFor, CONTRACT_ENDS} from '../../game/roguelike/contracts';
 import {junctionConsequence, runHeader} from '../../game/roguelike/shipConditions';
 import {routeVignette} from './routeVignettes';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats, getRoomOpening, getRouteThreat, getShipCondition} from '../gameAdapter';
+import {getWeaponInventory, getAbilities, getRunStats, getRoomOpening, getRouteThreat, getShipCondition} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
@@ -371,11 +371,25 @@ export function buildIcons(game: DepthGame): string {
 }
 
 function pauseWeapons(game: DepthGame): string {
-  const {weaponId, magazine, reserve} = game.combat.snapshot;
-  const weapons = (Object.keys(WEAPON_JOBS) as WeaponId[]).map((id, index) =>
-    `<li aria-current="${id === weaponId}"><kbd>${index + 1}</kbd><span><strong>${WEAPONS[id].label}</strong>${WEAPON_JOBS[id]}</span></li>`
-  ).join('');
-  return `<section class="pause-weapons"><h3>${WEAPONS[weaponId].label} <b>${magazine} / ${Number.isFinite(reserve) ? reserve : '∞'}</b></h3><ul aria-label="Weapon modes">${weapons}</ul></section>`;
+  const {weapon, ammo} = getWeaponInventory(game);
+  const targets: Record<WeaponId, string> = {
+    pistol: 'Best against isolated light enemies.',
+    rifle: 'Best against spread-out, unarmored enemies.',
+    shotgun: 'Best against enemies at close range.',
+    plasma: 'Best against plated enemies.',
+    rocket: 'Best against packs. Your blast can hurt you.',
+  };
+  const ids = Object.keys(WEAPON_JOBS) as WeaponId[];
+  return `<section class="pause-weapons">
+    <div class="pause-weapon-picker" aria-label="Inspect weapons">${ids.map((id, index) =>
+      `<button type="button" data-weapon="${id}" aria-controls="pause-weapon-${id}" aria-pressed="${id === weapon}"><kbd>${index + 1}</kbd> ${WEAPONS[id].label}</button>`
+    ).join('')}</div>
+    ${ids.map(id => `<article class="pause-weapon-detail" id="pause-weapon-${id}" ${id === weapon ? '' : 'hidden'}>
+      ${studioImage(`weapon-${id}`, 'pause-weapon-art')}
+      <div><h3>${WEAPONS[id].label}</h3><p>${WEAPON_JOBS[id]}</p><p>${targets[id]}</p>
+      <p><strong>${ammo[id].magazine} / ${ammo[id].reserve === -1 ? '∞' : ammo[id].reserve}</strong> loaded / reserve</p></div>
+    </article>`).join('')}
+  </section>`;
 }
 
 export function buildRecap(game: DepthGame): string {

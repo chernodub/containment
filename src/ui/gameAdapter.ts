@@ -614,3 +614,7 @@ export function getWeaponSituation(game: DepthGame, platedId?: number) {
   if (pair && combat.weaponId !== 'rocket')
     return {weapon: 'rocket' as const, target: pair, text: '5 · Rocket for the pair'};
 }
+
+export function getWeaponInventory(game: DepthGame) {
+  return game.combat.getRunResources();
+}

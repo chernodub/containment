@@ -82,7 +82,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             nodes[id].style.width = next;
     };
     const weaponPanel = document.querySelector<HTMLElement>('.weapon-hud')!;
-    const weapons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-weapon]'));
+    const weapons = Array.from(document.querySelectorAll<HTMLButtonElement>('#weapon-picker [data-weapon]'));
     const phases = Array.from(document.querySelectorAll<HTMLElement>('[data-boss-phase]'));
     const slots = (['dash', 'tactical', 'power', 'overdrive'] as const).map(slot => {
         const node = document.querySelector<HTMLElement>(`[data-ability="${slot}"]`)!;
