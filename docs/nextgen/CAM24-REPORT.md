@@ -120,3 +120,18 @@ rendered camera when the marine is outside the preferred band and the
 correction shows more of the hull. The base solver retains its own
 pose, engagement progression and follow-spring state. The variant's
 production build passed and its native comparison is pending.
+
+### Quiet-host rendered-pose comparison
+
+| Rig and build | Outcome | Clears | Damage | Hit ratio | Outside central box, strict |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Cryo base | Complete | 20 | 1,267.15 | 76.33% (1,303 / 1,707) | 962 / 8,366 (11.50%) |
+| Cryo rendered-pose variant | Complete | 20 | 1,109.37 | 74.87% (1,332 / 1,779) | 2,226 / 8,426 (26.42%) |
+
+The Cryo damage fell 12.45% over all 20 shared clears. Both runs had
+zero runner errors, defects and estimated dock overlaps. The base
+started at load averages 2.44 / 2.49 / 3.59 and the variant started
+at 2.55 / 2.47 / 2.83. The variant placed 1,337 observations in the
+fraction of a pixel within 0.01 px of a central-box edge. With that
+projection tolerance, the out-of-box share was 10.55% versus 11.50%
+on the base. I retained the strict counts in the table.
