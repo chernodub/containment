@@ -889,6 +889,13 @@ export class AttackEffects {
    const t=pulse.age/pulse.life,mesh=pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.slash?slash++:ring++;
    this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);this.dummy.scale.setScalar(pulse.radius*(pulse.slash?.65+t*.35:.15+t*.85));this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*(this.warningNear(pulse.p.x,pulse.p.z,pulse.radius)?.20:.8));
   }
+  for(const enemy of targets??[]){
+   if(enemy.feintProgress===undefined)continue;
+   const x=enemy.x/32,z=enemy.y/32,shape=enemy.meleeShape;
+   const angle=Math.atan2(marineZ-z,marineX-x),line=shape.kind==='line';
+   const radius=(line?shape.width/2:shape.range)/32,length=line?shape.range/32:0;
+   if(this.warningVisible(x,z,radius,length,angle))this.queueWarning(x,z,radius,length,angle,shape.halfAngle,line?1:2,enemy.feintProgress,0,false,marineX,marineZ,marineRadius,enemy.type,true);
+  }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
    if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius,native.family,native.melee&&native.later);
    if(native.brooding){
