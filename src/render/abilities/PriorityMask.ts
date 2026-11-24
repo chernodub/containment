@@ -36,7 +36,12 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
     .replace('#include <tonemapping_fragment>', `
  ${bodyPocket ? 'gl_FragColor.rgb*=1.-.36*prioritySample.r;' : ''}
  float priority=${hostileOnly ? '0.' : 'max(prioritySample.r*.72,prioritySample.a*.97)'};
- gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-prioritySample.b));
+ #ifdef FOOT_FIRE_COVER
+ float marineCover=FOOT_FIRE_COVER ? prioritySample.a : prioritySample.b;
+ #else
+ float marineCover=prioritySample.b;
+ #endif
+ gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-marineCover));
  gl_FragColor.a*=1.-prioritySample.g;
  gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'};
  if(gl_FragColor.a<.004)discard;

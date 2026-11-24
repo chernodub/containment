@@ -286,7 +286,7 @@ void main(){
    float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(vec3(6.2,5.9,5.6)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
    alpha=(bolt*.82+fork*.25+halo*.07)*gate;
   }else{
    float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
@@ -436,41 +436,43 @@ void main(){
   // VFX15 Overdrive climaxes: three distinct floor events on one disc (fxArc 1 cryo, 2 pyro, 3 arc).
   float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853,el=fxArc,on=fxParam;
   vec2 q=fxWorld.xz-fxOrigin.xz;
-  float n=fxFbm(q*.7+fxSeed);
+  float n=fxNoise(q*.7+fxSeed);
   // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
    // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
-   float spread=R*(1.-pow(1.-clamp(age/.7,0.,1.),2.));
+   line=0.;
+   float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
    // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
-   float an=fxFbm(vec2(cos(a),sin(a))*2.6+fxSeed);
+   float an=.22+.56*fxNoise(vec2(cos(a),sin(a))*2.6+fxSeed);
    float jag=spread*(.62+.5*an)+teeth*smoothstep(R*.3,R,spread)-.2;
    float inside=1.-smoothstep(jag-.04,jag,r);
    float wall=smoothstep(jag-.35-.4*(spread/R),jag-.04,r)*inside;
-   vec3 c=fxCells(q*.9+n*.8);
-   float crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,fxFbm(q*.35+4.));
+   float crack=0.;
+   if(fxLow<.5){
+    vec3 c=fxCells(q*.9+n*.8);
+    crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,n);
+   }
    float pulseR=mod(max(0.,age-.7),2.)*R*.8;
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
-   float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
-   float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
-   emit=vec3(.5,.82,1.15)*(wall*crisp*.14+fern*.45+crack*inside*.35)+vec3(1.,1.4,1.9)*pulse*.55;
-   alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
-   base=vec3(.11,.19,.24);
+   float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
+   float peak=1.-smoothstep(.18,.36,age);
+   alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
+   base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
+   emit=vec3(.15,.34,.43)*(wall*.9+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
   }else if(el<2.5){
-   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
-   float flow=fxNoise(q*1.7+vec2(sin(t*2.+q.y),t*.9));
-   float heart=(1.-smoothstep(.32,1.48+.38*flow,r))*smoothstep(.24,.65,flow);
-   float shimmer=(1.-smoothstep(.03,.20,abs(r-R+.24+.23*flow)))*smoothstep(.35,.72,flow);
-   emit+=vec3(3.4,2.5,.83)*heart+vec3(.9,.41,.03)*shimmer;
-   alpha+=heart*.42+shimmer*.13;
+   vec3 cell=fxCells(q*1.25+.32*n);
+   float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
+   float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
+   float peak=1.-smoothstep(.16,.25,age);
+   float rays=pow(abs(cos(a*5.+.16*n)),9.);
+   float star=(1.-smoothstep(R*(.22+.55*rays),R*(.33+.65*rays),r))*peak;
+   float core=(1.-smoothstep(.25,1.20,r))*peak;
+   base=vec3(.13,.027,.009);
+   emit=vec3(1.38,.27,.018)*fissure*(.4+.6*heat)+vec3(2.7,.85,.14)*star+vec3(2.,2.2,1.8)*core;
+   alpha=.14+.55*fissure+.82*star;
    line=0.;
-   // The activation flash fills the centre before the moving aura settles.
-   float pulse=1.-smoothstep(.05,.18,age);
-   float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
-   emit+=fxHeat(.52+.26*core)*core*pulse*(.23+.77*smoothstep(.27,.73,n));
-   alpha+=core*pulse*.64;
-   base=vec3(.025,.01,.006);
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
    vec3 c=fxCells(q*.75+fxSeed),d=fxCells(q*.75+fxSeed+vec2(.07,.03));
@@ -557,7 +559,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a/fxA0;
 }`;
 
-const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: -3, 15: 2 };
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: 1, 14: 1, 15: 2 };
 
 /** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
 export class FlagshipFx {
@@ -643,7 +645,7 @@ export class FlagshipFx {
     this.burnSlots.length = 0;
     for (const slot of this.slots) {
       if (!slot.live) continue;
-      if (slot.mode === FxMode.Fuel || slot.mode === FxMode.Climax && slot.arc === 2) {
+      if (slot.mode === FxMode.Fuel) {
         this.burnDiscs[this.burnSlots.length].set(slot.x, slot.z, slot.range);
         this.burnSlots.push(slot);
       }

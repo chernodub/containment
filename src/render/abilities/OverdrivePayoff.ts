@@ -1,4 +1,3 @@
-import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilityEvent, RigId } from '../../game/abilities/contract';
 import type { ElementKit } from './ElementKit';
 import { FxMode, type FxSlot } from './FlagshipFx';
@@ -53,11 +52,9 @@ export class OverdrivePayoff {
       // The air crystallises: a short upward burst of shards, no ring.
       for (let i = 0, n = k.low ? 8 : 28; i < n; i++) {
         const a = i * 2.39996, v = (i % 5) / 5;
-        k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, i % 3 ? ICE : WHITE);
+        k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, 0x5799b0);
       }
     } else if (event.ability === 'meltdown') {
-      const shape = ABILITY_CATALOG.meltdown.shape;
-      if (shape.kind === 'circle') k.scar('soot', px, pz, shape.radius / UNIT * .86, 0x2a1510, 7);
       const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
       column.param = 1; column.range = .82; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);
@@ -168,6 +165,10 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
+    if (active && this.rig === 'pyro' && this.age < .65) {
+      const progress = this.age / .65;
+      this.kit.front(this.x, this.z, this.radius * 2.5, progress, HOT, .14, 1 - progress, 1);
+    }
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);
       this.crawl(game, dt);

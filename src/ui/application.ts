@@ -48,7 +48,7 @@ export async function bootstrap() {
     const audioCode=import('../game/audio/AudioSystem');
     const {WebGLRenderer}=await import('three');
     let assetRenderer: InstanceType<typeof WebGLRenderer>;
-    try {assetRenderer=new WebGLRenderer({canvas:el('world') as HTMLCanvasElement,antialias:false,alpha:false,powerPreference:'high-performance'});}
+    try {assetRenderer=new WebGLRenderer({canvas:el('world') as HTMLCanvasElement,antialias:false,alpha:false,stencil:true,powerPreference:'high-performance'});}
     catch {fail('3D graphics unavailable', 'Open this game in a browser with WebGL 2 enabled.');throw new Error('WebGL renderer unavailable');}
     try {
         await preloadAssets(fraction => {

@@ -1,3 +1,5 @@
+import {ABILITY_CATALOG} from '../../game/abilities/catalog';
+import {UNIT} from '../abilities/types';
 import type {GameEffect} from '../../DepthGame';
 import type {ElementKit} from '../abilities/ElementKit';
 import type {ActorModel} from '../models';
@@ -12,6 +14,18 @@ export class OverdriveReactions {
 
   event(effect: GameEffect, actors: ReadonlyMap<number,ActorModel>, corpses: readonly {id:number;model:ActorModel}[], kit?: ElementKit) {
     const ability = effect.ability;
+    if (ability?.phase === 'impact' && (ability.element === 'pyro' || ability.ability === 'whiteout')) {
+      for (const id of ability.targetIds ?? []) this.target(id, actors, corpses)?.shadeCastPeak?.();
+      const shape = ABILITY_CATALOG[ability.ability].shape;
+      if (shape.kind === 'circle') {
+        const placed = ability.ability === 'napalm-charge';
+        const x = (placed ? ability.targetX ?? effect.x : effect.x) / UNIT;
+        const z = (placed ? ability.targetY ?? effect.y : effect.y) / UNIT;
+        for (const actor of actors.values()) {
+          if (Math.hypot(actor.root.position.x-x,actor.root.position.z-z) <= (ability.radius ?? shape.radius)/UNIT) actor.shadeCastPeak?.();
+        }
+      }
+    }
     if (ability?.ability === 'overclock') {
       if (ability.phase === 'impact') this.overclock = true;
       if (ability.phase === 'end') this.overclock = false;

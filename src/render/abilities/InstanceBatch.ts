@@ -58,6 +58,7 @@ export class InstanceBatch {
     geometry.setAttribute('abilityPhase', this.phase);
 
     const fragment = `
+${kind === 'flame' ? '#define FOOT_FIRE_COVER (phase>=164. && phase<200.)' : kind === 'spark' ? '#define FOOT_FIRE_COVER (phase>=1000.)' : ''}
 uniform float abilityTime;uniform float flash;uniform float atlasAvailable;
 uniform sampler2D softDepth;uniform vec4 softCamera;
 ${EFFECT_ATLAS_GLSL}
@@ -75,7 +76,7 @@ ${kind === 'smoke' ? `
  a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
 ${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}
-${kind === 'spark' ? 'float tile=phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
+${kind === 'spark' ? 'float tile=phase>=1000.?floor(phase)-1000.:phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
 ${kind === 'decal' ? `
  if(phase>=200.){
   float tile=floor(phase)-(phase>=1000.?1000.:phase>=600.?600.:200.);
@@ -237,6 +238,10 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  ` : ''}
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
+ ${kind === 'flame' ? `#ifdef HAS_ABILITY_PRIORITY_MASK
+ a=min(a,1.-.4*prioritySample.r);
+ #endif` : ''}
+
  if(a<.004)discard;gl_FragColor=vec4(c,a);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
@@ -259,6 +264,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.onBeforeRender = () => { material.uniforms.atlasAvailable.value = this.atlas.loaded || typeof document === 'undefined' ? 1 : 0; };
     this.mesh.name = `ability-${kind}-batch`;
+    if (kind === 'flame') this.mesh.renderOrder = 4;
     if (kind === 'decal') this.mesh.renderOrder = FRIENDLY_GROUND_ORDER;
     // Soot silhouettes the hot volume, below friendly boundaries and hostile timing fills.
     if (kind === 'smoke') this.mesh.renderOrder = 1;
@@ -299,9 +305,10 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
       if (this.coverage + area > this.maxCoverage) return;
       this.coverage += area;
     }
+    const groundLight = this.kind === 'spark' && variant >= 1000;
     const billboardDecal = this.kind === 'decal' && (variant >= 11 && variant < 13 || variant >= 200 && variant < 600);
     const uprightDecal = this.kind === 'decal' && variant >= 600 && variant < 1000;
-    if (this.view && !fireFan && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
+    if (this.view && !fireFan && !groundLight && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
       if (this.kind === 'smoke') rotationZ = 0;
@@ -325,7 +332,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
       matrix[offset + 8] = 0;
       matrix[offset + 9] = sz;
       matrix[offset + 10] = 0;
-    } else if (this.kind === 'decal' && !billboardDecal && !uprightDecal) {
+    } else if (groundLight || this.kind === 'decal' && !billboardDecal && !uprightDecal) {
       matrix[offset + 1] = -s * a * sx;
       matrix[offset + 2] = -b * sx;
       matrix[offset + 5] = s * b * sy;
@@ -344,7 +351,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     // floor-like ribbons under the steep gameplay camera; fire remains upright.
     // Keep the foot of a small fuel flame planted as its card faces the camera.
     const poolFlame = this.kind === 'flame' && variant >= POOL_FLAME_PHASE && variant < 200;
-    if (this.camera && (poolFlame || billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
+    if (this.camera && !groundLight && (poolFlame || billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
       const cameraBasis = this.camera.matrixWorld.elements;
       if (poolFlame) {
         x += cameraBasis[4] * sy;

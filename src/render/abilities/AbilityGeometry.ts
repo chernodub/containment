@@ -226,7 +226,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 slot.start.position.set(x, .04, z);
                 slot.start.scale.set(zone.radius / UNIT, zone.radius / UNIT, 1);
                 slot.start.visible = true;
-                if (!this.ownsZonePresentation || zone.element !== 'pyro')
+                if (!this.ownsZonePresentation || (zone.element !== 'pyro' && zone.ability !== 'whiteout'))
                     this.circleFootprint(x, z, zone.radius / UNIT, COLORS[zone.element]);
             }
             else {

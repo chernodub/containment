@@ -15,13 +15,13 @@ const PULSE_CAPACITY = 24;
 const WALL_SECTIONS = [0, .11, .24, .39, .57, .72, .87, 1] as const;
 const LOW_WALL_SECTIONS = [0, .17, .39, .61, .82, 1] as const;
 type ColdWave = { live: boolean; x: number; z: number; radius: number; age: number; life: number; shatter: boolean; aftermath: boolean };
-type ZoneClock = { id: number; pulse: number; seen: boolean; fx?: FxSlot; fxSeed?: number; dome?: FxSlot; domeSeed?: number };
+type ZoneClock = { id: number; pulse: number; seen: boolean; fx?: FxSlot; fxSeed?: number };
 type WallState = { id: number; health: number; flash: number; seen: boolean };
 
 /** Four Cryo signatures composed exclusively from the shared, prewarmed instance pools. */
 class CryoPresentation implements AbilityPresentation {
   private waves: ColdWave[] = Array.from({ length: PULSE_CAPACITY }, () => ({ live: false, x: 0, z: 0, radius: 1, age: 0, life: 1, shatter: false, aftermath: false }));
-  private zones: ZoneClock[] = Array.from({ length: 24 }, () => ({ id: -1, pulse: 0, seen: false, fx: undefined, fxSeed: -1, dome: undefined, domeSeed: -1 }));
+  private zones: ZoneClock[] = Array.from({ length: 24 }, () => ({ id: -1, pulse: 0, seen: false, fx: undefined, fxSeed: -1 }));
   private walls: WallState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private cursor = 0;
   private mistAge = 0;
@@ -173,8 +173,7 @@ class CryoPresentation implements AbilityPresentation {
     k.impact();
     for (const clock of this.zones) if (!clock.seen) {
       if (clock.fx && clock.fx.seed === clock.fxSeed) clock.fx.live = false;
-      if (clock.dome && clock.dome.seed === clock.domeSeed) clock.dome.live = false;
-      clock.fx = clock.dome = undefined;
+      clock.fx = undefined;
       clock.id = -1;
     }
     for (const state of this.walls) if (!state.seen) { state.id = -1; }
@@ -269,13 +268,6 @@ class CryoPresentation implements AbilityPresentation {
     }
     if (clock) {
       clock.seen = true;
-      if (!clock.dome?.live || clock.dome.mode !== FxMode.Blizzard || clock.dome.seed !== clock.domeSeed) {
-        clock.dome = k.fx.spawn(FxMode.Blizzard, x, z, 1e6);
-        clock.domeSeed = clock.dome.seed;
-      }
-      clock.dome.x = x; clock.dome.z = z; clock.dome.range = radius;
-      clock.dome.h0 = .04; clock.dome.h1 = .52; clock.dome.color = ICE;
-      clock.dome.param = fade; clock.dome.intensity = k.low ? .65 : 1;
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
@@ -298,8 +290,7 @@ class CryoPresentation implements AbilityPresentation {
           .82*fade,-a+Math.PI*.5,.18,2+joint);
       }
     }
-    // Connected weather is a fixed perimeter mesh. A few atlas snow wisps add
-    // parallax without rebuilding the old disconnected cloud-stamp silhouette.
+    // Local snow wisps drift above the single rolling ground surface.
     const wisps = k.low ? 4 : 8;
     for (let i = 0; i < wisps; i++) {
       const seed = i * 2.731 + zone.id * .73;
@@ -459,8 +450,7 @@ class CryoPresentation implements AbilityPresentation {
     for (const wave of this.waves) wave.live = false;
     for (const clock of this.zones) {
       if (clock.fx && clock.fx.seed === clock.fxSeed) clock.fx.live = false;
-      if (clock.dome && clock.dome.seed === clock.domeSeed) clock.dome.live = false;
-      clock.fx = clock.dome = undefined;
+      clock.fx = undefined;
       clock.id = -1; clock.pulse = 0; clock.seen = false;
     }
     for (const state of this.walls) { state.id = -1; state.flash = 0; state.seen = false; }

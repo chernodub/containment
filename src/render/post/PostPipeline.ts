@@ -9,7 +9,7 @@ import { setSurfacePaintDetail } from '../lighting/LocalLightShading';
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DataTexture, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, RedFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, RedFormat, UnsignedInt101111Type, UnsignedInt248Type, DepthStencilFormat, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
@@ -110,6 +110,10 @@ export class PostPipeline {
   private readonly savedClearColor = new Color();
   private focusDistance = 26;
   private menuPresentation = false;
+  private readonly flameGrade = new Vector3();
+  setFlameGrade(x: number, z: number, radius: number): void {
+    this.flameGrade.set(x, z, radius);
+  }
   private readonly abilityPresentation = new Vector3();
   private readonly softDepth: SoftParticleDepth;
   private softParticleBinding?: {enabled:()=>boolean;receive:(depth:DepthTexture|null)=>void;release:()=>void};
@@ -385,7 +389,7 @@ export class PostPipeline {
       lensEnabled: { value: 0 }, atmosphereEnabled: { value: 0 }, useAgX: { value: 0 },
       focusDistance: { value: 26 }, menuPresentation: { value: 0 },
       toneMappingExposure: { value: 1 }, saturation: { value: 1 }, contrast: { value: 1 },
-      abilityPresentation: { value: this.abilityPresentation },
+      abilityPresentation: { value: this.abilityPresentation }, flameGrade: { value: this.flameGrade },
       lift: { value: new Vector3() }, gain: { value: new Vector3(1, 1, 1) },
       shadowTint: { value: new Color() }, highlightTint: { value: new Color() },
       fogColor: { value: new Color() }, fogDensity: { value: 0 }, fogHeight: { value: 1 },
@@ -409,14 +413,15 @@ export class PostPipeline {
   private target(width: number, height: number, depth = false): WebGLRenderTarget {
     const target = new WebGLRenderTarget(width, height, {
       type: HalfFloatType, minFilter: LinearFilter, magFilter: LinearFilter,
-      depthBuffer: depth, stencilBuffer: false, count: depth ? 2 : 1,
+      depthBuffer: depth, stencilBuffer: depth, count: depth ? 2 : 1,
     });
     target.texture.name = depth ? 'Containment HDR scene' : 'Containment post';
     // Scene alpha is never sampled; RGB11/11/10 preserves positive HDR while
     // halving main color storage/bandwidth. AO remains full RGBA16F.
     if (depth) { target.texture.type=UnsignedInt101111Type;target.texture.format=RGBFormat;target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].type=UnsignedByteType; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
     if (depth) {
-      target.depthTexture = new DepthTexture(width, height, UnsignedIntType);
+      target.depthTexture = new DepthTexture(width, height, UnsignedInt248Type);
+      target.depthTexture.format = DepthStencilFormat;
       target.samples = 0; // Post AA avoids HDR multisample color/depth resolves.
     }
     return target;

@@ -93,14 +93,18 @@ export const TEXTURED_FIRE_GLSL = `
   if(t>1.||abs(theta)>1.)discard;
   // Map overlapping tongue silhouettes into polar lanes. The edge lanes
   // share the same normalized range and animate independently of cast age.
-  float lane=theta*3.3+.13*sin(t*8.+abilityTime*7.);
-  float nearest=floor(lane+.5);
-  vec2 stamp=vec2(.5+(lane-nearest)*.72,.10+t*.76);
-  vec4 fire=effectGraphicSequence(0.,64.,19.,(nearest+4.)*8.7,stamp);
-  float edge=1.-smoothstep(.88,1.,abs(theta));
-  float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
-  coverage=graphicCoverage(fire.a)*edge*tip*smoothstep(.055,.16,t);
-  c=mix(vec3(.72,.18,.006),vec3(2.15,.78,.048),fire.g);
+  float lane=theta*3.8+t*.24*sin(t*10.-abilityTime*8.);
+  float tooth=1.-abs(fract(lane+.5)*2.-1.);
+  float roll=sin(floor(lane+.5)*2.7+abilityTime*5.+t*7.);
+  float reach=.60+.36*pow(tooth,.65)+.035*roll;
+  float edge=reach-t;
+  coverage=smoothstep(.0,.018,edge)*smoothstep(.015,.13,t)*(1.-smoothstep(.94,1.,abs(theta)));
+  float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
+  float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
+  c=mix(vec3(.26,.005,0.),vec3(1.25,.13,0.),orange*(1.-smoothstep(.72,1.,abs(theta))));
+  c=mix(c,vec3(1.48,.78,.002),flare*(1.-smoothstep(.72,1.,abs(theta))));
+  float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
+  c=mix(c,vec3(2.2,1.65,.31),core);
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
@@ -112,7 +116,7 @@ export const TEXTURED_FIRE_GLSL = `
   float heat=smoothstep(.19,.84,fire.r);
   float core=smoothstep(.35,.72,ink.g)*(1.-smoothstep(.28,.92,fireUv.y));
   c=mix(vec3(.58,.15,.004),vec3(2.4,.88,.045),heat);
-  c=mix(c,vec3(3.9,3.4,2.35),core*heat);
+  c=mix(c,vec3(2.2,1.65,.31),core*heat);
  }else{
   // The same three unequal tongues serve jets, fuel edges and suit exhaust.
   // Source alpha no longer decides the silhouette: broad photo-core islands
@@ -134,19 +138,10 @@ export const TEXTURED_FIRE_GLSL = `
   float side=abs(signedSide)/mix(left,right,step(0.,signedSide));
   float aa=max(.014,min(.12,fwidth(side)));
   coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
-  // A narrow heated spine lives at the source. The outer connected lobes are
-  // orange, with a dark char edge; only the nozzle earns a near-white value.
-  float body=1.-smoothstep(.61,.85,side);
-  float rolling=sin(t*21.-clock*1.4+seed+signedSide*4.8);
-  float fold=smoothstep(.24,.78,side)*smoothstep(.16,.32,t)*(1.-smoothstep(.76,.95,t));
-  body*=1.-smoothstep(.26,.83,rolling)*fold*.56;
-  float spine=abs(signedSide-sin(t*10.-clock+seed)*.065);
-  float inner=(1.-smoothstep(.10,.31,spine))*(1.-smoothstep(.12,.63,t));
-  float core=inner*smoothstep(.30,.65,ink.g);
-  c=mix(vec3(.018,.009,.005),vec3(.95,.24,.006),body);
-  c=mix(c,vec3(2.15,.65,.055),inner*.64);
-  coverage*=mix(.78,1.,smoothstep(.40,.90,side));
-  c=mix(c,vec3(2.8,1.9,.34),core);
+  float body=smoothstep(.08,.23,t)*(1.-smoothstep(.82,1.,side));
+  float tip=smoothstep(.6,.72,t+.08*sin(signedSide*3.+seed));
+  c=mix(vec3(.27,.012,.003),vec3(1.35,.15,0.),body);
+  c=mix(c,vec3(1.7,.91,.004),tip*body);
  }
  a*=coverage;
  // Every path hides all four card edges, including the source end of a jet.

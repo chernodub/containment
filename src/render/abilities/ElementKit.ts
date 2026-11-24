@@ -72,7 +72,7 @@ export interface AbilityServices {
         kick(angle: number, n: number): void;
     };
     /** Existing HDR composite; no extra fullscreen pass or dynamic material. */
-    presentation?: { setAbilityPresentation(exposure: number, warm: number, cool: number): void };
+    presentation?: { setFlameGrade?(x: number, z: number, radius: number): void; setAbilityPresentation(exposure: number, warm: number, cool: number): void };
 }
 /** Frame epochs avoid clearing/repopulating a Set backing table in combat. */
 class StatusOwnership {
@@ -172,10 +172,10 @@ export class ElementKit {
     /** Authored atlas stamp in retained alpha/light pools; dimensions are half extents. */
     sprite(tile: keyof typeof EFFECT_TILES | number, x: number, y: number, z: number,
         halfWidth: number, halfHeight: number, color: number, opacity = 1, seed = 0,
-        plane: 'billboard' | 'ground' | 'vertical' | 'light' = 'billboard', yaw = 0, tilt = 0): void {
+        plane: 'billboard' | 'ground' | 'vertical' | 'light' | 'ground-light' = 'billboard', yaw = 0, tilt = 0): void {
         const index = typeof tile === 'number' ? tile : EFFECT_TILES[tile];
-        this.draw(plane === 'light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
-            color, opacity, yaw, tilt, (plane === 'ground' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
+        this.draw(plane === 'light' || plane === 'ground-light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
+            color, opacity, yaw, tilt, (plane === 'ground' || plane === 'ground-light' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
     }
 
     private readonly contacts = Array.from({ length: 24 }, () => ({
@@ -380,8 +380,9 @@ export class ElementKit {
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
         height: number, sourceX: number, sourceZ: number): void {
         const c = Math.cos(angle), s = Math.sin(angle);
-        this.flowFlame(sourceX, height, sourceZ, x + c * radius * .44, height + .12,
-            z + s * radius * .44, radius * .084, .71, opacity, true);
+        this.services?.presentation?.setFlameGrade?.(x + c * radius * .5, z + s * radius * .5, radius * .82);
+        this.flowFlame(sourceX, height, sourceZ, x + c * radius * .23, height,
+            z + s * radius * .23, radius * .084, .71, opacity, true);
 
         const halfArc = arc * .5;
         this.draw('flame', x + c * radius * .5, height, z + s * radius * .5,
@@ -531,6 +532,7 @@ export class ElementKit {
         this.statusOwners.clear();
         this.time += dt;
         this.impact();
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0);
         this.warm = this.cool = 0;
         this.instanceCount = 0;
         this.rings.setTime(this.time, this.reducedMotion);
@@ -630,7 +632,8 @@ export class ElementKit {
             rings++; for (const p of this.beams)
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
-    clear(): void { for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
+    clear(): void {
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)
