@@ -164,7 +164,7 @@ class PyroPresentation implements AbilityPresentation {
         for (const p of this.effects) if (p.live && p.kind === 'lob' && Math.hypot(p.tx - tx, p.tz - tz) < .02) p.live = false;
         kit.burst(tx, .25, tz, 'pyro', 36, 3.5, .65);
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
-        kit.scar('soot', tx, tz, radius, SOOT, 6);
+        kit.scar('soot', tx, tz, radius, SOOT, 8);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);
         kit.distort(tx, tz, radius * 1.1, .004, .65, true);
         kit.camera(.26);
@@ -305,6 +305,7 @@ class PyroPresentation implements AbilityPresentation {
         kit.draw('flame', p.x + Math.cos(angle) * reach, .42, p.z + Math.sin(angle) * reach,
           .33, .40, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
       }
+      kit.sprite('glow', p.x + c*p.range*.48, .05, p.z + s*p.range*.48, p.range*.42, p.range*.27, FIRE, fade*.25, 0, 'ground-light');
       kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
       kit.impact();
     }
@@ -436,6 +437,7 @@ class PyroPresentation implements AbilityPresentation {
       const t = (i + .5) / points;
       kit.draw('flame', x + (ex - x) * t, .32, z + (ez - z) * t, .25, .3, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
     }
+    kit.sprite('glow', (x+ex)*.5, .05, (z+ez)*.5, length*.52, radius, FIRE, .3*fade, zone.id, 'ground-light', 0, -angle);
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4 * fade, 4);
     if (emit) {
       const t = (Math.floor(kit.time * 13) * .61803398875) % 1;
@@ -496,7 +498,7 @@ class PyroPresentation implements AbilityPresentation {
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
-    kit.sprite('glow', x, .052, z, radius * 1.9, radius * 1.9, FIRE, .34 * fade, zone.id, 'ground');
+    kit.sprite('glow', x, .052, z, radius * 1.18, radius * 1.18, FIRE, .27 * fade, zone.id, 'ground-light');
     let nearest = radius * radius, lx = x, lz = z;
     for (const enemy of frame.game?.enemies.snapshot.enemies ?? []) {
       const ex = enemy.x / UNIT, ez = enemy.y / UNIT;
@@ -538,7 +540,7 @@ class PyroPresentation implements AbilityPresentation {
     const exhaustAngle = moving ? Math.atan2(-move.vy, -move.vx) : angle + Math.PI;
     const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 8) * .12;
     const age = (zone.durationMs-zone.remainingMs)/1000;
-    kit.sprite('glow', x, .055, z, 1.9, 1.4, HOT, fade * .72, zone.id, 'ground');
+    kit.sprite('glow', x, .055, z, 1.35, 1.1, HOT, fade * .48, zone.id, 'ground-light');
     this.suitAngle=angle;
     if (frame.marine !== this.suit) {
       this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);

@@ -172,10 +172,10 @@ export class ElementKit {
     /** Authored atlas stamp in retained alpha/light pools; dimensions are half extents. */
     sprite(tile: keyof typeof EFFECT_TILES | number, x: number, y: number, z: number,
         halfWidth: number, halfHeight: number, color: number, opacity = 1, seed = 0,
-        plane: 'billboard' | 'ground' | 'vertical' | 'light' = 'billboard', yaw = 0, tilt = 0): void {
+        plane: 'billboard' | 'ground' | 'vertical' | 'light' | 'ground-light' = 'billboard', yaw = 0, tilt = 0): void {
         const index = typeof tile === 'number' ? tile : EFFECT_TILES[tile];
-        this.draw(plane === 'light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
-            color, opacity, yaw, tilt, (plane === 'ground' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
+        this.draw(plane === 'light' || plane === 'ground-light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
+            color, opacity, yaw, tilt, (plane === 'ground' || plane === 'ground-light' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
     }
 
     private readonly contacts = Array.from({ length: 24 }, () => ({

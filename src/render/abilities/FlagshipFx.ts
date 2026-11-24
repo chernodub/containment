@@ -641,7 +641,7 @@ export class FlagshipFx {
     this.burnSlots.length = 0;
     for (const slot of this.slots) {
       if (!slot.live) continue;
-      if (slot.mode === FxMode.Fuel || slot.mode === FxMode.Climax && slot.arc === 2) {
+      if (slot.mode === FxMode.Fuel) {
         this.burnDiscs[this.burnSlots.length].set(slot.x, slot.z, slot.range);
         this.burnSlots.push(slot);
       }
