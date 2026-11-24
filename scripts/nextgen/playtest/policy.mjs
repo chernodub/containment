@@ -202,17 +202,19 @@ function conditionDecision(s,perceived,movement,target,keys){
 }
 // End RUN15 run structure.
 /** Focus a visible marked priority threat, then ranged pressure; never use hidden state. */
-export function chooseTarget(enemies, player) {
+export function chooseTarget(enemies, player, weaponRange = 0) {
   return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
     const score = e => (e.id === -1 ? 1000 : e.priority ? 850 : e.champion || e.id < 0 ? 600 : 0) + (e.pod ? 650 : e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
-    return score(b) - score(a) || a.id - b.id;
+    const punish = e => !e.champion && e.exposedMs >= 150 && distance(e, player) <= weaponRange &&
+      (e.type === 'brute' || e.type === 'carrier' || e.type === 'stalker');
+    return Number(punish(b)) - Number(punish(a)) || score(b) - score(a) || a.id - b.id;
   })[0];
 }
 /** Score legal movement endpoints for spacing, fire lanes and hazard avoidance. */
 export function chooseMovement(s, previous = {x: 0, y: 0}) {
   const escape=meleeEscapePlan(s);
   if(escape)return escape.candidate;
-  const target = chooseTarget(s.enemies, s.player);
+  const target = chooseTarget(s.enemies, s.player, s.weaponRange);
   const chase = !target && s.enemies.length ? [...s.enemies].sort((a, b) => distance(a, s.player) - distance(b, s.player))[0] : null;
   const visible=visibleEnemies(s),speed=walkingSpeed(s),radius=s.player.radius??16;
   let best = null, highest = -Infinity;
@@ -391,7 +393,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const perceived = {...s,enemies:tracked.filter(old=>visible.some(e=>e.id===old.id)).map(old=>{
         const current = visible.find(e=>e.id===old.id), warning = warnings.get(old.id);
         const noticed = warning && !warning.missed && now >= warning.readyAt;
-        return {...old,meleePhase:noticed?current.meleePhase:'approach',
+        return {...old,clear:current.clear,exposedMs:current.exposedMs,meleePhase:noticed?current.meleePhase:'approach',
           meleeShape:noticed?current.meleeShape:undefined,
           meleeAngle:current.meleeAngle,meleeOriginX:current.meleeOriginX,meleeOriginY:current.meleeOriginY,
           meleeRemainingMs:current.meleeRemainingMs,meleeDurationMs:current.meleeDurationMs,meleeProgress:current.meleeProgress};
@@ -413,7 +415,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       const keys = chooseActions(perceived);
-      let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player),keys);
+      let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player,s.weaponRange),keys);
       movement=conditionMovement;
       if(s.gate&&distance(s.player,s.gate)<=s.gate.radius&&!escape)movement={dx:0,dy:0};
       if(profile==='novice') {
