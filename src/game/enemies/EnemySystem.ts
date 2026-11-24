@@ -114,7 +114,7 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enem
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
-  | Readonly<{type:'melee-miss';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -574,6 +574,7 @@ export class EnemySystem {
     id: number,
     amount: number,
     knockback?: Readonly<{ x: number; y: number }>,
+    weaponHit=false,
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
@@ -587,9 +588,17 @@ export class EnemySystem {
     enemy.health -= healthDamage;
     if(enemy.broodRemainingMs>0){enemy.broodDamage+=healthDamage+absorbedByArmor;if(enemy.broodDamage>=20){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}
     const died = enemy.health === 0;
-    // The corpse carries the lethal impulse; do not teleport it before physics starts.
-    const appliedKnockback = died ? Object.freeze({x:0,y:0}) : this.#applyKnockback(enemy, knockback);
-    const events: EnemyEvent[] = [];
+    const punishableRecovery=weaponHit&&!enemy.champion&&enemy.meleePhase==='recovery'&&
+      (enemy.type==='brute'||enemy.type==='carrier'||enemy.type==='stalker');
+    // Weapon knockback can move the body without cancelling its punish window.
+    const appliedKnockback=died?Object.freeze({x:0,y:0}):this.#applyKnockback(enemy,knockback,!punishableRecovery);
+    const events:EnemyEvent[]=[];
+    if(!died&&punishableRecovery&&!enemy.recoveryPunished){
+      enemy.recoveryPunished=true;
+      enemy.meleeRemainingMs+=350;
+      enemy.meleeDurationMs+=350;
+      events.push(freezeEvent({type:'recovery-stagger',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+    }
 
     if (died) {
       events.push(
@@ -693,16 +702,6 @@ export class EnemySystem {
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
     this.#nextId = 1;this.#readyTimeMs=0;this.#marineTrail.length=0;this.#laneStalkers.clear();this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
-  }
-
-  punishRecovery(id:number):boolean {
-    const enemy=this.#enemies.get(id);
-    if(!enemy||enemy.champion||enemy.meleePhase!=='recovery'||enemy.recoveryPunished||
-      (enemy.type!=='brute'&&enemy.type!=='carrier'&&enemy.type!=='stalker'))return false;
-    enemy.recoveryPunished=true;
-    enemy.meleeRemainingMs+=350;
-    enemy.meleeDurationMs+=350;
-    return true;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -1313,7 +1312,8 @@ export class EnemySystem {
 
   #applyKnockback(
     enemy: EnemyState,
-    knockback?: Readonly<{ x: number; y: number }>,
+    knockback: Readonly<{ x: number; y: number }>|undefined,
+    cancelAttack:boolean,
   ): Readonly<{ x: number; y: number }> {
     if (
       !knockback ||
@@ -1324,7 +1324,7 @@ export class EnemySystem {
     }
     const magnitude = Math.hypot(knockback.x, knockback.y);
     if (magnitude === 0) return Object.freeze({ x: 0, y: 0 });
-    this.#cancelMelee(enemy);
+    if(cancelAttack)this.#cancelMelee(enemy);
     if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}
     const clampedMagnitude = Math.min(magnitude, MAX_KNOCKBACK);
     const resistance = enemy.type === 'brute' ? BRUTE_KNOCKBACK_RESISTANCE : 1;
