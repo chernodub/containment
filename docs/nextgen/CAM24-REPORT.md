@@ -75,6 +75,7 @@ difficulty, the default room limit and `--fast --startup-timeout-ms=180000`.
 | Rig and build | Outcome | Rooms cleared | Total damage | Hit ratio | Outside central box | Estimated dock overlap |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | Arc base | Died in Service Shaft Landing | 13 | 490.48 | 76.34% (1,010 / 1,323) | 1,416 / 5,527 (25.62%) | 0 |
+| Arc candidate | Complete | 20 | 716.98 | 80.28% (1,714 / 2,135) | 1,028 / 9,193 (11.18%) | 0 |
 | Cryo base | Complete | 20 | 1,055.03 | 77.31% (1,356 / 1,754) | 2,213 / 8,286 (26.71%) | 0 |
 
 Both base runs recorded zero runner errors. Cryo recorded one loading
@@ -83,3 +84,10 @@ averages 3.21 / 2.07 / 2.12 and Cryo at 16.04 / 17.06 / 17.40 on the
 10-core host. Arc's one-minute load reached 34.49 while other Chromium
 and Metal compiler jobs were active. The base runs cannot establish a
 quiet-machine comparison.
+
+Across the 13 rooms cleared in both Arc runs, damage rose from 331.48
+to 360.49 (+8.75%). The candidate cleared seven more rooms. It recorded
+zero runner errors or defects and started at load averages 11.29 /
+9.30 / 8.40. The Arc archived Final15 share outside the central box was
+19.50%, compared with 25.62% on the fresh base and 11.18% on the
+candidate. Estimated dock overlap was zero in all three traces.
