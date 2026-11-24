@@ -506,3 +506,24 @@ Safety-interlock Pyro High reproduced a 1.30 and 2.70 percentage-point increase 
 Other Chromium sessions were active by the Safety-interlock Arc Low trials. The second Arc Low run reached load 3.94 → 5.01 and 32.91% over 20 ms. Transmission High trials overlapped that activity. The lead changed the remaining protocol to interleaved trials without waiting for a fixed load threshold. Each High comparison uses full, candidate, full, candidate in sequence. A comparison is discarded when the two full-High tail shares differ by more than one-third of the smaller share. The raw sequential matrices retain the interference.
 
 [Previous production results](../../artifacts/nextgen/perf25-previous/benchmark.json) · [Current production results](../../artifacts/nextgen/perf25-current/benchmark.json)
+
+### Attribution
+
+The candidates were separate production builds of the current source and assets. The creature finish candidate used the existing post-processed diffuse value for zone selection and restored the previous ink shader. The room candidate restored the previous lane props, practical placement, deck-light bake and deck wash. The waiting candidate returned waiting actors to idle presentation and suppressed their feint pose, while the simulation kept native movement and attack decisions. The warning candidate skipped feint outlines and the exposed-recovery brackets. Each trial recorded Warden presence from the native enemy snapshots. None of the measured trials included a Warden.
+
+| Safety-interlock Pyro High candidate | Pair | Full load | Full >20 ms | Candidate load | Candidate >20 ms | Saving (pp) |
+| --- | ---: | --- | ---: | --- | ---: | ---: |
+| finish | 1 | 6.48 → 8.13 | 5.68% | 8.13 → 9.85 | 86.71% | -81.03 (discarded) |
+| finish | 2 | 9.85 → 12.01 | 84.87% | 12.01 → 13.90 | 88.76% | -3.89 (discarded) |
+| room | 1 | 14.18 → 13.86 | 89.77% | 13.86 → 12.14 | 92.25% | -2.48 |
+| room | 2 | 12.14 → 13.92 | 90.95% | 13.92 → 13.87 | 91.41% | -0.46 |
+| waiting | 1 | 13.64 → 10.63 | 94.51% | 10.63 → 9.06 | 98.03% | -3.51 |
+| waiting | 2 | 9.06 → 8.29 | 93.46% | 8.29 → 11.47 | 93.53% | -0.06 |
+| warnings | 1 | 12.47 → 11.50 | 95.05% | 11.50 → 12.79 | 95.49% | -0.45 |
+| warnings | 2 | 12.79 → 11.40 | 95.45% | 11.40 → 9.57 | 93.40% | 2.05 |
+| finish retry | 1 | 10.39 → 13.14 | 96.92% | 13.14 → 10.18 | 92.08% | +4.84 |
+| finish retry | 2 | 10.18 → 9.05 | 92.59% | 9.05 → 8.69 | 94.07% | -1.48 |
+
+The first creature finish comparison failed the full-High agreement rule. Its retry moved in opposite directions across the two pairs. Room dressing added no measurable tail savings when removed. Waiting animation and the new warnings also showed no repeatable improvement when removed. The accepted comparisons occurred during load spikes and most frames already exceeded 20 ms. The small pair differences at that saturation cannot establish cost near the shipping target.
+
+Room25 kept the existing High four-slot light pool. The second housing in Transmission uses baked spill and the existing landmark key. Disabling the new hardware and restoring its light placement did not reduce the shader light count.
