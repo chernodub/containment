@@ -248,7 +248,7 @@ export const SCENARIOS=[
    d.refresh();
   })();`),
  }))),
- {id:'run15-condition-route',state:'route',diagnosticOnly:true,setup:async()=>{
+ {id:'run15-condition-route',state:'route',diagnosticOnly:true,nativeKeys:[['Tab',0],['ArrowRight',0]],setup:async()=>{
   await window.__containmentDebug.gotoRoom('residential-gallery',{phase:'route',seed:5,runStructure:true});
  }},
  {id:'run15-results',state:'complete',diagnosticOnly:true,setup:async()=>{
@@ -420,7 +420,7 @@ export const SCENARIOS=[
   g.hurt(40,{x:g.player.x-80,y:g.player.y},{source:'enemy-contact',enemyFamily:'stalker'});
   d.refresh();
  }},
- {id:'play21-supply',state:'reward',phase:'reward',required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
+ {id:'play21-supply',state:'reward',phase:'reward',nativeKeys:[['Tab',0],['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
   const g=d.game;

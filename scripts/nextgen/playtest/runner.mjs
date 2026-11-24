@@ -70,7 +70,7 @@ const report = {
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
   screenProgressGuard:'post-action-observation-v1',
-  policy: `Seeded ${human.profile} human limits over native WASD/mouse: delayed warning attention, threat-load misses, lagged aim with error, movement commitments and input rate limits. Rig-path drafts, safer routes and native actions.`,
+  policy: `Seeded ${human.profile} human limits over native WASD/mouse: delayed warning attention, threat-load misses, lagged aim with error, movement commitments and input rate limits. Rig-path drafts, safer routes and keyboard activation for screen decisions.`,
   clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 100ms human-policy observations; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 100ms human-policy observations; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Legacy damageSourcesInferred uses proximity; topDamageSources and deathCause use the authoritative room ledger.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
@@ -255,17 +255,17 @@ try {
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
   if(resumed){
     await page.evaluate(cp=>localStorage.setItem('containment-depth:run:v1',JSON.stringify(cp)),resumed.checkpoint);
-    await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await enableNative();await page.locator('#continue').click();
+    await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await enableNative();await page.locator('#continue').press('Space');
   }else{
   if(shouldProbe('menu'))await probe('menu');
-  for(const [kind,selector]of [['menu-settings','#settings'],['menu-controls','#controls'],['menu-credits','#menu-credits']])if(shouldProbe(kind)){await page.locator(selector).click();await page.locator(kind==='menu-settings'?'.configuration-drawer':kind==='menu-controls'?'.controls-drawer':'.credits-drawer').waitFor({state:'visible'});await probe(kind);}
-  await page.locator('#start').click();
+  for(const [kind,selector]of [['menu-settings','#settings'],['menu-controls','#controls'],['menu-credits','#menu-credits']])if(shouldProbe(kind)){await page.locator(selector).press('Space');await page.locator(kind==='menu-settings'?'.configuration-drawer':kind==='menu-controls'?'.controls-drawer':'.credits-drawer').waitFor({state:'visible'});await probe(kind);}
+  await page.locator('#start').press('Space');
   const difficultyCard = page.locator(`[data-difficulty="${difficulty}"]`);
-  await difficultyCard.click();
-  await page.locator('#difficulty-begin').click();
+  await difficultyCard.press('Space');
+  await page.locator('#difficulty-begin').press('Space');
   await page.waitForFunction(()=>window.__containmentDebug.game.expedition.run.phase==='rig-select');
   if(options.legacy) {
-    await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
+    await page.locator(`[data-rig="${rig}"]`).press('Space');await page.locator('#equip-rig').press('Space');
     await page.evaluate(({seed,rig})=>window.__containmentDebug.startLegacyRun(seed,rig),{seed,rig});
     const initial=await snapshot();
     report.legacyBootstrap={method:'Guarded initial legacy campaign factory after native rig selection; legacy has no title-menu entry.',run:initial.run,build:initial.build,resources:initial.resources,stats:initial.stats};
@@ -314,33 +314,33 @@ try {
       await release();
       if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
       if(s.phase==='rig-select') {
-        await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
+        await page.locator(`[data-rig="${rig}"]`).press('Space');await page.locator('#equip-rig').press('Space');
       } else if(s.status==='reward') {
         const ids=s.actions.map(a=>a.mutation).filter(Boolean);
-        if(ids.length){const id=chooseBoon(ids,rig,s.build.mutations);await page.locator(`[data-mutation="${id}"]`).click();}
+        if(ids.length){const id=chooseBoon(ids,rig,s.build.mutations);await page.locator(`[data-mutation="${id}"]`).press('Space');}
         else {
           const purchase=chooseServicePurchase(s.actions.map(a=>a.purchase).filter(Boolean),s.combat,s.build,s.run);
-          if(purchase)await page.locator(`[data-purchase="${purchase}"]:not(:disabled)`).last().click();
-          else if(s.actions.some(a=>a.id==='claim'))await page.locator('#claim').click();
+          if(purchase)await page.locator(`[data-purchase="${purchase}"]:not(:disabled)`).last().press('Space');
+          else if(s.actions.some(a=>a.id==='claim'))await page.locator('#claim').press('Space');
         }
       } else if(s.status==='route') {
-        if(s.actions.some(a=>a.id==='destroy-ship')) await page.locator('#destroy-ship').click();
+        if(s.actions.some(a=>a.id==='destroy-ship')) await page.locator('#destroy-ship').press('Space');
         else {
           const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
           if(s.actions.some(a=>a.detour)){
             if(s.run.runStructure&&[2,6,10].includes(s.node.depth)){
               const skip=page.locator('#skip-clear-record');
-              if(await skip.isVisible())await skip.click();
+              if(await skip.isVisible())await skip.press('Space');
               await page.locator('.route-briefing').waitFor({state:'visible'});
               await page.locator('.route-briefing img').evaluateAll(async images=>{await Promise.allSettled(images.map(image=>image.decode()));});
               await shot(`junction-r${s.node.depth+2}`,await snapshot(),{animations:'disabled'});
             }
             const preferred=chooseDetour(s.combat,s.node.depth,s.actions,report.profile,s.run.runStructure?seed:undefined);
             const choice=s.actions.some(a=>a.detour===preferred&&!a.disabled)?preferred:'direct';
-            await page.locator(`[data-detour="${choice}"]:not(:disabled):not([aria-disabled="true"])`).last().click();
+            await page.locator(`[data-detour="${choice}"]:not(:disabled):not([aria-disabled="true"])`).last().press('Space');
           }
-          else if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
+          else if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().press('Space');await page.locator(`[data-route="${route.id}"]`).press('Space');}
         }
       } else if(s.status==='paused') await page.keyboard.press('Escape');
       if(performance.now()-screenSince>10000){
@@ -371,7 +371,7 @@ try {
       previousProgress='';stagnantSince=s.elapsed;
     }
     const pauseProbe=['pause','pause-loadout','pause-settings','pause-controls'].find(kind=>shouldProbe(kind)&&!probed.has(kind));
-    if(pauseProbe&&(!shouldProbe('combat')||probed.has('combat'))&&s.elapsed-room.startedElapsed>4){await release();await page.keyboard.press('Escape');await page.waitForFunction(()=>window.__containmentDebug.game.status==='paused');if(pauseProbe!=='pause')await page.locator(`[data-pause-tab="${pauseProbe.slice(6)}"]`).click();probed.add(pauseProbe);s=await probe(pauseProbe);room.result='checkpoint-interrupted';room=null;continue;}
+    if(pauseProbe&&(!shouldProbe('combat')||probed.has('combat'))&&s.elapsed-room.startedElapsed>4){await release();await page.keyboard.press('Escape');await page.waitForFunction(()=>window.__containmentDebug.game.status==='paused');if(pauseProbe!=='pause')await page.locator(`[data-pause-tab="${pauseProbe.slice(6)}"]`).press('Space');probed.add(pauseProbe);s=await probe(pauseProbe);room.result='checkpoint-interrupted';room=null;continue;}
     if(shouldProbe('combat')&&!probed.has('combat')&&s.elapsed-room.startedElapsed>3) {
       probed.add('combat');s=await probe('combat');
       // Rollback is intentional. Restart this room measurement after re-choosing the boundary.
