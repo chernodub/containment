@@ -13,7 +13,10 @@ function cable(p:IncidentPieces,path:Pin[],r:number,color:number) {
 function lit(root:T.Group,p:IncidentPieces,id:string,x:number,z:number,lamps:Pin[],color:number){
   const body=p.finish(root,id,x,z,undefined,true);
   const glass=new IncidentPieces();
-  for(const [u,h,v] of lamps)glass.box(u,h,v,10,2,4,color);
+  for(const [u,h,v] of lamps){
+    if(id==='forked-safety-isolator')glass.box(u,h,v,21,2.5,16,color);
+    else glass.box(u,h,v,10,2,4,color);
+  }
   const lens=glass.finish(root,id+'-lens',x,z,new T.MeshBasicMaterial({vertexColors:true}));
   lens.castShadow=false;
   const [u,h,v]=lamps[0];
@@ -125,7 +128,7 @@ export function addLaneIncident(root:T.Group,id:string){
       }
       p.rod([-22,35,0],[15,53,5],4.4,brass);
       p.box(14,53,5,18,8,12,iron);
-      lit(root,p,'forked-safety-isolator',509,453,[[-22,36,0],[22,36,0]],0xe5bc72);
+      lit(root,p,'forked-safety-isolator',509,453,[[-22,36,0],[22,36,0]],0xffe5a1);
       break;
     }
     case 'shielding-gate': {
