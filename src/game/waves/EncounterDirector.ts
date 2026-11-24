@@ -115,9 +115,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
+    const shaftOpening=node.templateId==='service-shaft-landing'&&beatIndex===0;
     const rehearsalFlank=beat.rehearseHeavy&&group.role==='flanker'&&index===0;
     const reserveHeavy=beat.rehearseHeavy&&group.role==='anchor'&&index>0;
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(reserveHeavy?2500:0)+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&(group.role==='flanker'||reserveHeavy)?{afterHeavyRecovery:true as const}:{}),...(rehearsalFlank?{rehearsalFlank:true as const}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(reserveHeavy?2500:0)+(shaftOpening&&ordinal>0?2800:0)+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&(group.role==='flanker'||reserveHeavy)?{afterHeavyRecovery:true as const}:{}),...(rehearsalFlank?{rehearsalFlank:true as const}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.

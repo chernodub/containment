@@ -567,6 +567,19 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
+ if(this.node.templateId==='service-shaft-landing'){
+  const firstLunge=e.beat===0&&e.enemyId==='stalker'&&e.spawnId.endsWith('spawn-0');
+  const repeat=e.beat===1&&e.enemyId==='crawler';
+  if(firstLunge||repeat){
+   const radius=enemyBodyRadius(e.enemyId,e.elite);
+   const landing=firstLunge?this.player:{x:135,y:440};
+   const sides=firstLunge?[1,-1]:[Number(e.spawnId.split('-').at(-1))%2?1:-1];
+   const point=sides.map(side=>({x:landing.x,y:landing.y+side*(firstLunge?145:185)})).find(point=>
+    canTraverseExpedition(this.geometry,point,landing,radius)&&
+    (!firstLunge||[-1,1].some(side=>canTraverseExpedition(this.geometry,landing,{x:landing.x+side*100,y:landing.y},this.player.radius))));
+   if(point)({x,y}=point);
+  }
+ }
  if(e.rehearsalFlank){
   const bearing=Math.atan2(y-this.player.y,x-this.player.x);
   const radius=enemyBodyRadius(e.enemyId,e.elite);

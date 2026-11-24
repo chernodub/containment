@@ -44,7 +44,7 @@ export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.fre
  [priority(5),flank(3),cross(6)],
  [brokenPincer(2),siege(5),priority(5)],
  [cross(6),priority(5,'warden',2),pincer(7)],
- [flank(4),pincer(7),cross(6)],
+ [b('interception','Sidestep the lunge on the lift landing',g('stalker',4,'flanker'),g('brute',1,'anchor')),pincer(7),cross(6)],
  [swarm(9),priority(6),flank(4)],
  [priority(5,'matron'),pincer(7),siege(6)],
  [cross(6),priority(6),flank(4)],
