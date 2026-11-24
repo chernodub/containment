@@ -148,3 +148,45 @@ on the edge, the out-of-box share was 11.29% versus 15.93%.
 
 The rendered-pose variant passed the 10% comparable-room damage
 criterion in both quiet-host pairs.
+
+## Final rendered-pose verification
+
+CAM24 uses 22% playable-AABB allowance at 1080 CSS pixels for the
+extra rendered pan, tapering to 7% at 720 CSS pixels. The existing
+engagement solver still uses its 18% limit. The capture diagnostics
+receive the effective upper bound and continue to report exact-hull
+coverage separately. The extra pan changes the current rendered
+translation when it can improve the marine's centre without changing
+zoom or losing full-body clearance. It leaves the existing follow
+and engagement state available for the next frame.
+
+The final build passed all 13 matched 1080p example captures and all
+five 1280×720 captures. Safety Interlock moved the marine's silhouette
+centre from 5.77% to 20.52% of frame width at 1080p and from 8.20% to
+19.00% at 720p. The physical warning remained readable at both sizes.
+The active coolant frame in Communal Atrium moved the marine above
+the lower approach. Armory Cryo still has attackers partly under the
+dock and below the frame.
+
+In four calm corner positions per room, all 20 story rooms showed
+dark hull outside the playable floor. I saw no unfinished exterior
+geometry or sky-colour gaps. Maximum AABB outside area was 22.00% in
+Service Shaft Landing. Maximum exact-hull outside area was 39.03%
+in Shielding Gate. Extreme corners can still put the marine outside
+the preferred band. The 60-frame desktop resize passed without page
+errors, with minimum recorded screen and HUD clearances of 174.65 px
+and 133.07 px. `npm run build` passed.
+
+I also ran one five-second Arc benchmark per tier in Safety Interlock.
+High median frame intervals were 16.70 ms on both builds, with p90
+rising from 17.80 ms to 25.10 ms. Low p90 was 17.50 ms on both builds.
+The runs started at one-minute loads between 2.43 and 3.68. This
+short single-room comparison leaves the High tail unconfirmed.
+
+The final evidence is under `artifacts/nextgen/` in
+`cam24-rendered-examples/`, `cam24-rendered-720/`,
+`cam24-rendered-resize/`, `cam24-rendered-corners/`,
+`cam24-bench-base/`, and `cam24-bench-rendered/`. The before set
+is in `cam24-examples-before/`. The quiet native receipts are in
+`playtest/cam24-quiet-base-{arc,cryo}/` and
+`playtest/cam24-rendered-{arc,cryo}/`.
