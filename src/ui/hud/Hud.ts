@@ -126,7 +126,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.style.left=`${Math.max(85,Math.min(innerWidth-85,pointerX))}px`;
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
-    const combatText = new CombatText(el('combat-text'), renderer, id => game.enemies.getSnapshot(id));
+    const combatText = new CombatText(el('combat-text'), renderer, id => game.enemies.getSnapshot(id), () => game.player);
     const encounterCues = new EncounterCues();
     const targetMarkers = new TargetMarkers(el('threat-indicators'));
     const siegeLabel = new SiegeLabel(el('threat-indicators'));
@@ -203,10 +203,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             markHudOcclusion(actorBounds.left, actorBounds.top, actorBounds.right, actorBounds.bottom);
         }
         else obscureWorld(x, y, radius);
-    };
-    const statusActive = (target: number) => {
-        const status = game.boonStatuses(target);
-        return status.burning || status.poisoned || (status.chillStacks >= 3 && game.expedition.build.mutations.includes('frostbite'));
     };
     const warningOverlaps = (left: number, top: number, right: number, bottom: number) =>
         renderer.warningObstructs(left, top, right, bottom);
@@ -734,7 +730,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             const body = {id: enemy.id, left: 0, right: 0, top: 0, bottom: 0};
             if (projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) committedBodies.push(body);
         }
-        combatText.tick(elapsed, bounds, statusActive, committedBodies);
+        combatText.tick(elapsed, bounds, committedBodies);
         threats.tick(elapsed);
         toasts.tick(elapsed);
     };

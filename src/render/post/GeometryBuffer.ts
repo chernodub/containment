@@ -112,10 +112,15 @@ vec2 containmentOctNormal(vec3 n) {
 #else
  vec3 containmentNormal = normalize(vNormal);
 #endif
-containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, vec2(containmentIdentity.x,containmentIdentity.y+8.0*floor(vActorRegion+.5)*step(2.5,containmentIdentity.y)) / 255.0);
+float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
+#if defined(HAS_CREATURE_LANTERN) && defined(USE_EMISSIVEMAP)
+ // Reserved region for the emitting texels of the authored organ mask.
+ if(lanternPeak>.04)geometryRegion=30.;
+#endif
+containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, vec2(containmentIdentity.x,containmentIdentity.y+8.0*geometryRegion) / 255.0);
 `);
   };
-  material.customProgramCacheKey = () => key.includes(':geometry-mrt-v1')?key:`${key}:geometry-mrt-v1`;
+  material.customProgramCacheKey = () => key.includes(':geometry-mrt-v2')?key:`${key}:geometry-mrt-v2`;
   material.needsUpdate = true;
 }
 

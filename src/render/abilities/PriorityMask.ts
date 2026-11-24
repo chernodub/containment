@@ -17,8 +17,10 @@ const WINDUP_DISTANCE_CAP = .061;
 const DISTANCE_RANGE = 1.5;
 
 /** Shared shader hook; all materials are patched before renderer preparation. */
-export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture, attribute?: string, hostileOnly = false): void {
+export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture, attribute?: string, hostileOnly = false, bodyPocket = false): void {
   if (material.uniforms.abilityPriorityMap) return;
+  const baseKey = material.customProgramCacheKey();
+  material.customProgramCacheKey = () => baseKey + ':priority-mask-look24';
   material.uniforms.abilityPriorityMap = { value: texture };
   material.uniforms.diagnosticPrioritySampling = { value: true };
   material.vertexShader = `varying vec4 priorityClip;${attribute ? `attribute float ${attribute};varying float priorityWeight;` : ''}\n` + material.vertexShader;
@@ -32,6 +34,7 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
 }\n` + material.fragmentShader;
   material.fragmentShader = material.fragmentShader.replace('void main(){', 'void main(){vec4 prioritySample=abilityPriority();')
     .replace('#include <tonemapping_fragment>', `
+ ${bodyPocket ? 'gl_FragColor.rgb*=1.-.36*prioritySample.r;' : ''}
  float priority=${hostileOnly ? '0.' : 'max(prioritySample.r*.72,prioritySample.a*.97)'};
  gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-prioritySample.b));
  gl_FragColor.a*=1.-prioritySample.g;
@@ -137,6 +140,7 @@ export class AbilityPriorityMask {
   /** Stamp a projected actor capsule including its head, rather than only its ground circle. */
   private actor(x: number, z: number, radius: number, height: number): void {
     this.segment(x, 0, z, x, height, z, radius, 0);
+    this.segment(x, 0, z, x, 0, z, radius*1.45, 0);
   }
 
   private segment(x: number, y: number, z: number, tx: number, ty: number, tz: number, radius: number, channel = 1, distanceCap = DISTANCE_RANGE): void {
