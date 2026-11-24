@@ -122,7 +122,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       pipe(L-3,0,L+17,16,6,10,0x697d78);
       box(L,3,0,66,6,42,boot);
       for(const z of [-20,20])box(L,12,z,68,21,4,iron);
-      box(L+5,13,-33,65,4,22,steel,.08,.22);
+      p.box(L+5,13,-33,65,4,22,steel,.08,.22);
       for(const x of [-22,-11,0,11,22])pipe(L+x,-15,L+x,15,10,4,0xffb56c);
       break;
   }

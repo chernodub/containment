@@ -1,4 +1,4 @@
-import {landmarkHousing,laneWorklight} from '../lighting/LaneWorklight';
+import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
@@ -97,6 +97,20 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     c.save();
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
+    const terminal=laneTerminal(room.id);
+    if(terminal){
+      c.save();c.translate(...terminal);c.scale(1,.69);
+      const shadow=c.createRadialGradient(0,0,5,0,0,43);
+      shadow.addColorStop(0,'rgba(9,12,15,.76)');shadow.addColorStop(1,'rgba(9,12,15,0)');
+      c.fillStyle=shadow;c.fillRect(-43,-43,86,86);c.restore();
+    }
+    if(room.id==='service-shaft-landing'){
+      for(const offset of [-17,16]){
+        c.beginPath();c.moveTo(300+offset,318);c.quadraticCurveTo(216+offset,229,153+offset,247);
+        c.lineWidth=5;c.strokeStyle='#3d4744';c.stroke();
+        c.translate(1,1);c.lineWidth=1.5;c.strokeStyle='#82908a';c.stroke();c.translate(-1,-1);
+      }
+    }
     paintLights(c);
     // Scuffed wheel tracks taper toward the workshop light. Their bend is
     // offset from the straight sightline so the marine stays on clear deck.
