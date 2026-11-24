@@ -1,8 +1,9 @@
 import type {Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
-type Pin=[number,number];
 import {laneTerminal} from '../lighting/LaneWorklight';
+
+type Pin=[number,number];
 
 export function addLaneMachine(root:Group,id:string){
   const end=laneTerminal(id);if(!end)return;
@@ -33,8 +34,8 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
-      p.box(34,4,-9,112,7,35,rubber,-.20);
-      for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,-.20);
+      p.box(34,4,-9,112,7,35,rubber,.20);
+      for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,.20);
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,rubber,-.2);
       p.box(4,20,-1,19,8,13,0x847053,-.38);break;
     case 'shielding-gate':

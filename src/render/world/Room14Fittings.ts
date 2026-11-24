@@ -105,11 +105,11 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
   const lens = new T.Color(source.color);
   lens.multiplyScalar(.68);
-  const diffuser=new T.Mesh(new T.BoxGeometry(.56,.066,.14),new T.MeshStandardMaterial({
+  const diffuser=new T.Mesh(new T.BoxGeometry(.61,.05,.18),new T.MeshStandardMaterial({
     color:lens,emissive:lens,emissiveIntensity:.46,roughness:.36
   }));
   casing.material.userData.actorMaterial=true;diffuser.material.userData.actorMaterial=true;
-  diffuser.position.set(0,-.057,.091);
+  diffuser.position.set(0,.082,.048);
   const mastHeight=Math.max(.72,fixture.position.y);
   const post=new T.BoxGeometry(.075,mastHeight,.075).translate(-.30,-mastHeight*.5,0);
   const shoe=new T.BoxGeometry(.25,.08,.29).translate(-.3,-mastHeight+.04,0);
