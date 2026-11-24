@@ -160,7 +160,7 @@ export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?
   baseSpeed:number;champion?:'warden'|'matron';
   windupMs:number;pendingAttack:'spit'|'charge'|null;lockX:number;lockY:number;specialCooldownMs:number;chargeMs:number;
   meleePhase:MeleePhase;meleeProgress:number;meleeAngle:number;meleeFacingLocked:boolean;
-  meleeOrder?:number;meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
+  exposedMs:number;meleeOrder?:number;meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 }>;
 
 export const WARDEN_WALL_STUN_MS=1500;
@@ -677,6 +677,7 @@ export class EnemySystem {
       maxArmor: enemy.maxArmor,
       radius: enemy.radius,
       speed: enemy.speed*this.#movement,
+      exposedMs:enemy.meleePhase==='recovery'?enemy.meleeRemainingMs:0,
       meleeOrder:enemy.meleePhase==='windup'?1+[...this.#enemies.values()].filter(other=>
         other.meleePhase==='windup'&&(other.meleeRemainingMs<enemy.meleeRemainingMs
           ||other.meleeRemainingMs===enemy.meleeRemainingMs&&other.id<enemy.id)).length:undefined,
