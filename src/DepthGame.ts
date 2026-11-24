@@ -297,7 +297,7 @@ export class DepthGame {
   const reachable=(point:{x:number;y:number})=>this.navigation.reachable(point);
   const [near]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&hasClearExpeditionShot(this.geometry,this.siegePoint,p),292,388);
   const [far]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&!hasClearExpeditionShot(this.geometry,this.siegePoint,p)
-   &&(!near||Math.hypot(p.x-near.x,p.y-near.y)>250),608,832);
+   &&(!near||Math.hypot(p.x-near.x,p.y-near.y)>250),704,864);
   this.relayBanks=near&&far?[near,far]:floorChoicePair(this.geometry,this.siegePoint,reachable,304,496);
   const routes=new FacilityNavigation(this.geometry);
   this.relayRoutes=this.relayBanks.map(bank=>this.relayRoute(bank,routes));
