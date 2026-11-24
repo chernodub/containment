@@ -32,3 +32,16 @@ Archived captures without that field retain their 18% interpretation.
 
 The 45% value is provisional pending the native damage comparison and
 visual review. The base build and the candidate production build passed.
+
+In the staged PLAY23 Safety Interlock edge frame, the marine moved
+from roughly 4% to 36% of frame width compared with the archived
+capture. The newly visible left side is the dark ship subdeck. The
+candidate screenshot failed the existing warning visibility check
+because no retained warning panel was fully readable in the allowed
+region. The failure is retained in
+`artifacts/nextgen/cam24-edge-inspection/`.
+
+The serial native baseline began at load averages 3.21 / 2.07 / 2.12.
+The one-minute load later reached 34.49 on this 10-core host while
+other Chromium and Metal compiler jobs were active. This receipt
+cannot establish the requested quiet-machine comparison.
