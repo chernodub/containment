@@ -16,7 +16,7 @@ import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictio
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
-import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,RIG_ACCENTS} from './ActorIdentity';
+import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
@@ -122,7 +122,7 @@ export function alien(kind:string,elite=false):ActorModel{
  fitFootprint();
  const organStrength=r.materials.map(m=>m.emissiveIntensity),emission=originalCreatureEmission(r.materials);
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.08);const value=kind==='brute'?.62:kind==='carrier'?.75:kind==='spitter'?.70:kind==='stalker'?.40:kind==='queen'?.28:.68;if(!original)for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
- const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
+ const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
  surface.lantern(FAMILY_LANTERNS[kind as keyof typeof FAMILY_LANTERNS]??FAMILY_LANTERNS.crawler);
  const identity=alienIdentity(r.root,kind,r.span,r.height,elite);
  /* CREATURE18: every creature knows its rest-pose height so the corpse wipe is crisp. */{const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z,(bounds.min.x+bounds.max.x)/2,(bounds.max.x-bounds.min.x)*.18);}

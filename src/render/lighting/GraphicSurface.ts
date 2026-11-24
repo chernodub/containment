@@ -118,7 +118,7 @@ const minorPointResponse = /* glsl */ `
 `;
 const mapResponse = ShaderChunk.map_fragment
   .replace('texture2D( map, vMapUv )',
-    'texture2D( map, vMapUv, graphicEnabled * graphicSurfaceKind.y * graphicStrength * 2.5 )')
+    'texture2D( map, vMapUv, graphicEnabled * (graphicSurfaceKind.y * graphicStrength * 2.5 - graphicSurfaceKind.x * (1.0 - graphicMarine) * 1.5) )')
   .replace('diffuseColor *= sampledDiffuseColor;', `
   float graphicMapLuma = dot(sampledDiffuseColor.rgb, vec3(.2126, .7152, .0722));
   float graphicMapValue = graphicSoftValue(graphicMapLuma);
@@ -160,7 +160,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
   const key = material.customProgramCacheKey();
   // Retained preparation proxies copy an already-patched hook and cache key.
-  if (key.includes(':graphic-surface-v2') || key.includes(':graphic-surface-hero19')) return;
+  if (key.includes(':graphic-surface-v3') || key.includes(':graphic-surface-hero19')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   // K10's original flat zones replace inherited photographic skins. Keep the
@@ -220,6 +220,14 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         // Marine value steps are diffuse reflectance, not emission. Mostly neutral
         // incident hue preserves ivory/graphite and the saturated authored rig panels.
         if(graphicMarine>.5){graphicActorLight=.66+.34*smoothstep(.30,.62,graphicActorIncident);graphicActorHue=vec3(1.);}
+        // SHADER25: creatures share the marine's two-plane grammar with a harder step: a lit
+        // plane and a shadow plane at 25 % of it (linear), one pixel-wide antialiased terminator.
+        // The plane is chosen by a fixed screen key from the upper left (the rake the old
+        // gradient used), so every room splits a dorsal dome into one lit and one shadow plane.
+        else if(graphicSurfaceKind.x>.5){
+          float graphicKeyFacing=dot(geometryNormal,vec3(-.52,.42,.74));
+          float graphicTerminator=max(fwidth(graphicKeyFacing),.02);
+          graphicActorLight=mix(.25,1.0,smoothstep(.56-graphicTerminator,.56+graphicTerminator,graphicKeyFacing));}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
@@ -234,6 +242,6 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
         totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
-  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-hero19" : "graphic-surface-v2"}`;
+  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-hero19" : "graphic-surface-v3"}`;
   material.needsUpdate = true;
 }
