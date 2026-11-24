@@ -386,9 +386,11 @@ def brood_pod(hatching=False):
         s.add(Box((0, 0, 0.77), (0.14, 0.80, 0.68), round=0.025, op="sub", zone=CAVITY))
         for side in (-1, 1):
             edge = v3((side * 0.44, 0, 0.56))
-            s.add(Ellipsoid(edge, (0.23, 0.39, 0.33), zone=ARMOR, k=0.035))
-            s.add(Ellipsoid(edge + v3((-side*0.08, 0, 0.21)),
-                            (0.12, 0.26, 0.09), zone=ORGAN, k=0.018))
+            # The dark socket stays visible around the recessed egg membrane at game scale.
+            socket = edge + v3((0, 0, 0.19))
+            s.add(Ellipsoid(edge, (0.24, 0.39, 0.32), zone=MEMBRANE, k=0.035))
+            s.add(Ellipsoid(socket, (0.245, 0.36, 0.15), zone=CAVITY, k=0.01))
+            s.add(Ellipsoid(socket + v3((0, 0, 0.075)), (0.145, 0.245, 0.10), zone=ORGAN))
     return s, 1500, {"size": [1.5, 1.5, H], "anchor": "floor, bottom-centred",
                      "placement": "spawned by the Carrier Matron; drive the pod-core finish emissive 0.3 -> 3.0 as the hatch countdown; swap to brood-pod-hatching for the final 0.5 s"}
 

@@ -17,23 +17,27 @@ VOXEL = 0.0065
 TRIS = {"body": 7600, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
-BANDS = {   # CREATURE18: dark chitin, rust flesh, pale tan dorsal carapace (mid mass at 480x270), red lantern
-    "chitin": (0.10, 0.045, 0.035), "flesh": (0.66, 0.32, 0.19), "bone": (0.50, 0.40, 0.28),
-    "accent": (0.95, 0.10, 0.03), "eye": (1.0, 0.40, 0.08),
+FORM_NORMALS = "proxy"
+FORM_MIX = 1.0
+BAND_CELL = 0.15
+BANDS = {
+    "chitin": (0.072, 0.032, 0.028), "flesh": (0.51, 0.23, 0.18),
+    "bone": (0.73, 0.69, 0.67), "accent": (0.88, 0.16, 0.32), "eye": (0.96, 0.36, 0.43),
 }
-BAND_MAP = {"bone": "chitin", "tooth": "chitin"}   # legs, hooks and leg blades join the dark chitin
-# CREATURE18b: the abdomen mantle (plates 1-16), tail cap (20), thorax shingles (30-31) and head shield (40) form one
-# tan dorsal cap around the red lantern slit, so the top view is a mid-value body, walking or curled.
-BANDS["lead"] = (0.82, 0.68, 0.48)   # CREATURE19: the head shield is the lightest plane; the tail cap stays dark
-PLATE_BAND = {**{p: "bone" for p in (*range(1, 17), 30, 31)}, 40: "lead"}
+BANDS["lead"] = BANDS["bone"]
+BANDS["plate"] = BANDS["chitin"]
+PLATE_BAND = {
+    **{p: "flesh" for p in (*range(1, 17), 30, 31, *range(90, 100))},
+    20: "plate", 40: "lead", 42: "bone",
+}
 PALETTE = {
     "shell": (0.20, 0.06, 0.02), "edge": (0.62, 0.40, 0.20), "membrane": (0.13, 0.026, 0.03),
     "sinew": (0.24, 0.05, 0.045), "claw": (0.020, 0.012, 0.010), "tooth": (0.70, 0.56, 0.36),
     "organ": (0.9, 0.12, 0.012), "eye": (1.0, 0.40, 0.08), "crest": (0.58, 0.44, 0.27),
     "cavity": (0.03, 0.005, 0.006), "under": (0.10, 0.035, 0.022),
 }
-GLOW_STRENGTH = 2.0
-GLOW = {"organ": (1.0, 0.085, 0.0), "eye": (1.0, 0.45, 0.10)}
+GLOW_STRENGTH = 0.075
+GLOW = {"organ": (1.0, 0.18, 0.29), "eye": (1.0, 0.45, 0.10)}
 
 
 def build(sk):
@@ -104,8 +108,12 @@ def build(sk):
         hip, knee, foot = sk.h(up), sk.h(lo), sk.end(lo)
         heavy = 1.25 if (raptor and side < 0) else 1.0   # the off-hand: right hook is heavier
         if raptor:
-            body.extend(A.limb(hip, knee, knee + (foot - knee) * 0.25, 0.15 * heavy, 0.12 * heavy, 0.07, up, lo,
-                               spurs=0, tendon=True, seed=sum(map(ord, leg)) % 50, tint=1.0, planted=False))
+            forelimb = A.limb(hip, knee, knee + (foot - knee) * 0.25, 0.15 * heavy, 0.12 * heavy, 0.07, up, lo,
+                               spurs=0, tendon=True, seed=sum(map(ord, leg)) % 50, tint=1.0, planted=False)
+            for surface in forelimb:
+                if surface.bone == lo and surface.zone in (ARMOR, SHELL):
+                    surface.plate = 42
+            body.extend(forelimb)
             # raptorial scythe: crescent blade, cutting edge facing forward/inward
             shin = normalize(foot - knee)
             edge = v3((1.0, -0.35 * side, 0.6))

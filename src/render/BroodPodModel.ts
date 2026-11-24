@@ -23,9 +23,6 @@ export function broodPodModel(): ActorModel {
  for(const mesh of pieces){
   const batch=new T.InstancedMesh(mesh.geometry,mesh.material,2);
   batch.name=mesh.name;batch.position.copy(mesh.position);batch.quaternion.copy(mesh.quaternion);batch.scale.copy(mesh.scale);
-  if(!Array.isArray(mesh.material)&&mesh.material.name==='pod-core'&&hatching?.getObjectById(mesh.id)){
-   batch.scale.x*=.72;batch.scale.z*=.72;batch.position.y-=.12;
-  }
   batch.castShadow=mesh.castShadow;batch.receiveShadow=mesh.receiveShadow;
   batch.setMatrixAt(0,new T.Matrix4());batch.setMatrixAt(1,hatching?.getObjectById(mesh.id)
    ? satellite.clone().setPosition(-.64,0,.30) : satellite);

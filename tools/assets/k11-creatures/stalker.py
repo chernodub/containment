@@ -19,14 +19,19 @@ VOXEL = 0.011
 TRIS = {"body": 8800, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elites drawn ~12% larger than the regular (loader: base fit x rank scale)
 ATLAS = 1024
-GLOW_STRENGTH = 1.7
-BANDS = {   # CREATURE18: violet-black chitin, mauve flesh, cool grey scythes, violet lantern
-    "chitin": (0.10, 0.08, 0.13), "flesh": (0.48, 0.32, 0.52), "bone": (0.28, 0.28, 0.33),
+GLOW_STRENGTH = 0.07
+FORM_NORMALS = "proxy"
+FORM_MIX = 1.0
+BAND_CELL = 0.30
+BANDS = {
+    "chitin": (0.048, 0.042, 0.067), "flesh": (0.30, 0.26, 0.42), "bone": (0.68, 0.69, 0.73),
     "accent": (0.55, 0.22, 1.0), "eye": (0.75, 0.45, 1.0),
 }
-BANDS["lead"] = (0.66, 0.56, 0.72)   # CREATURE19: broad light plane on the leading shell (facing in shadow)
-PLATE_BAND = {1: "lead", 2: "lead", 30: "lead", 31: "lead", 500: "chitin"}
-BAND_MAP = {"armor": "flesh"}   # CREATURE18b: shingles and membrane body both carry the mauve mid band
+BANDS["lead"] = BANDS["bone"]
+BANDS["plate"] = BANDS["chitin"]
+PLATE_BAND = {1: "flesh", 2: "flesh", 59: "bone", 30: "bone", 31: "bone", 500: "plate",
+              **{i: "flesh" for i in (*range(40, 56), *range(90, 100))}}
+BAND_MAP = {"armor": "flesh"}
 PALETTE = {
     "shell": (0.15, 0.06, 0.075), "edge": (0.62, 0.50, 0.55), "armor": (0.50, 0.40, 0.46), "membrane": (0.07, 0.018, 0.04),
     "sinew": (0.20, 0.05, 0.09), "claw": (0.018, 0.012, 0.016), "tooth": (0.66, 0.58, 0.55),
@@ -59,7 +64,7 @@ def build(sk):
     # --- head: narrow keeled wedge, mandibles, violet eye row -----------------------
     head_c = hd + (sk.end("head") - hd) * 0.5 + v3((0.08, 0, 0.0))
     hdir = normalize(sk.end("jaw") - hd)
-    body.add(A.mass(head_c, (0.3, 0.17, 0.15 * a), frame(hdir), bone="head", k=0.06))
+    body.add(A.mass(head_c, (0.3, 0.17, 0.15 * a), frame(hdir), zone=BONE, bone="head", k=0.06))
     body.add(Plate(head_c + v3((-0.03, 0, 0.13 * a)), (0.46, 0.27, 0.11), frame(hdir, (0, 0, 1)), 0.05, rings=0.004,
                    lip=0.012, chip=0.01, zone=CREST, bone="head", plate=30))
     body.add(RoundCone(head_c + v3((-0.25, 0, 0.18 * a)), head_c + hdir * 0.3 + v3((0, 0, 0.04)), 0.03, 0.008, zone=CREST, bone="head", k=0.03))
@@ -107,7 +112,7 @@ def build(sk):
         # CREATURE19: the off scythe is slimmer and both splay away from the flanks so the body shows between them
         tip = v3((-0.95, 1.38 * s, 1.0 * a)) if s < 0 else v3((-0.62, 1.4, 1.05 * a))   # same footprint radius
         body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), (0.52 * heavy) if s < 0 else 0.3, 0.06 * heavy, f"claw.{side}",
-                            hook=0.62, serrations=4, zone=BONE, edge_zone=BONE))
+                            hook=0.62, serrations=4, zone=BONE if s < 0 else MEMBRANE, edge_zone=BONE if s < 0 else MEMBRANE))
         # a short dark hook at the wrist keeps the joint and claw read
         body.add(RoundCone(wr, end + (wr - end) * 0.55, 0.07, 0.02, zone=CLAW, bone=f"claw.{side}", k=0.03))
         # flared shoulder hood: the pouncer's wide key silhouette

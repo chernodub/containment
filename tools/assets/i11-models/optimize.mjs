@@ -9,6 +9,7 @@ await MeshoptEncoder.ready;
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.encoder':MeshoptEncoder,'meshopt.decoder':MeshoptDecoder});
 const report=[];
 for(const name of ['dretch','basilisk','marauder','tyrant','dragoon','marine']) {
+ if(process.env.K11_PACK_MODEL && name!==process.env.K11_PACK_MODEL) continue;
  const path=`public/assets/models/${name}.glb`;
  const original=await readFile(path);
  const doc=await io.readBinary(original);

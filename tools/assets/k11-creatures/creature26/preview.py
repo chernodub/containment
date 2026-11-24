@@ -1,10 +1,8 @@
-"""CREATURE26 quick plan-view preview (no bake): mesh body / elite / Warden at a coarse voxel, paint the anatomy bands
-(build_bands.anatomy_bands, the same call build.py makes), shade with the form normals and the game's fixed
-upper-left key as two flat planes, and render from the game camera pitch facing left and facing the camera, plus a
-black silhouette row. Rest pose only (motion clips are checked in game).
+"""Preview a caste in its motion poses from the game pitch, with flat anatomy colours and silhouette rows.
 
-blender -b --factory-startup -P tools/assets/k11-creatures/creature26/preview.py -- --out=DIR [--parts=body,elite,boss]
+blender -b --factory-startup -P tools/assets/k11-creatures/creature26/preview.py -- --caste=crawler --out=DIR
 """
+import importlib
 import math
 import sys
 from pathlib import Path
@@ -16,23 +14,23 @@ import json
 import bpy
 import numpy as np
 import kit as K
-import brute as M
 import build_bands
 import pose as P
 
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 opt = lambda k, d: next((a.split("=", 1)[1] for a in args if a.startswith(f"--{k}=")), d)
+M = importlib.import_module(opt("caste", "brute"))
 OUT = Path(opt("out", str(K.ROOT / "artifacts/nextgen/creature26/preview")))
 OUT.mkdir(parents=True, exist_ok=True)
-PARTS = opt("parts", "body,elite,boss").split(",")
 POSES = opt("poses", "rest,m10-idle@0.5,m10-waiting@0.6,m10-windup@0.95").split(",")
 FACINGS = opt("facings", "left,down").split(",")
-VOX = float(opt("voxel", "0.05"))
+VOX = float(opt("voxel", str(0.05 if M.FAMILY == "brute" else max(0.05, 3 * M.VOXEL))))
 K.reset_scene()
 arm = K.load_contract(M.ASSET)
 vol = json.loads((HERE / "reference" / f"{M.ASSET}-volumes.json").read_text())["parts"]
 sk = K.Skeleton(arm, M.ASPECT, vol)
 parts = M.build(sk)
+PARTS = opt("parts", ",".join(k for k in ("body", "elite", "boss") if k in parts)).split(",")
 pitch = math.atan2(26, 19)
 to_cam = np.array([0.0, -math.cos(pitch), math.sin(pitch)])
 cam_up = np.array([0.0, math.sin(pitch), math.cos(pitch)])
@@ -41,19 +39,15 @@ key = -0.52 * right + 0.42 * cam_up + 0.74 * to_cam   # GraphicSurface creature 
 key /= np.linalg.norm(key)
 RGB = {}
 SKIN = {}
-MOTION = P.Motion(K.ROOT / "public/assets/models/motion/brute-motion.glb")
-print("RESTCHECK", np.round(P.gltf_to_blender(MOTION.rest_head("chest")[None])[0], 3), np.round(sk.heads["chest"], 3))
+MOTION = P.Motion(K.ROOT / f"public/assets/models/motion/{M.FAMILY}-motion.glb")
+
 
 LIT, SHADOW = float(opt("lit", "1.0")), float(opt("shadow", "0.30"))
 
 
 def mesh_for(name):
-    if name == "elite":
-        a = K.sculpt_mesh(parts["body"], VOX, "p-body-e")
-        b = K.sculpt_mesh(parts["elite"], VOX, "p-elite")
-        objs = [(a, parts["body"]), (b, parts["elite"])]
-    else:
-        objs = [(K.sculpt_mesh(parts[name], VOX, f"p-{name}"), parts[name])]
+    members = getattr(M, "RANK_PARTS", {}).get(name, ["body", "elite"] if name == "elite" else [name])
+    objs = [(K.sculpt_mesh(parts[part], VOX, f"p-{name}-{part}"), parts[part]) for part in members]
     for o, sc in objs:
         K.shade_smooth(o)
         bands, rgb = build_bands.anatomy_rgb(o, sc, M)
@@ -84,10 +78,16 @@ def shade(o, yaw):
 
 
 objs = []
-offsets = {"body": 0.0, "elite": 9.0, "boss": 21.0}
+offsets = {}
 groups = {}
 for name in PARTS:
     groups[name] = mesh_for(name)
+cursor = 0.0
+for name, meshes in groups.items():
+    co = np.vstack([K.verts_np(o) for o, _ in meshes])
+    radius = float(np.max(np.linalg.norm(co[:, :2], axis=1)))
+    offsets[name] = cursor + radius
+    cursor += 2.4 * radius
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_WORKBENCH"
 scene.display.shading.light = "FLAT"
@@ -114,7 +114,7 @@ for pose_name in POSES:
             for o, _ in objs_:
                 o.rotation_euler = (0, 0, yaw)
                 o.location = (offsets[name], 0, 0)
-                o.scale = (1.0, 1.0, 1.0) if name != "boss" else (1.0, 1.0, 0.86)
+                o.scale = (1.0, 1.0, 1.0) if name != "boss" or M.FAMILY != "brute" else (1.0, 1.0, 0.86)
                 shade(o, yaw)
                 allo.append(o)
         bpy.context.view_layer.update()

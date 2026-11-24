@@ -47,6 +47,7 @@ function writeGLB(json, bin) {
 }
 const receipt = [];
 for (const name of names) {
+ if(process.env.K11_PACK_MODEL && name!==process.env.K11_PACK_MODEL) continue;
   const original = await readFile(resolve(root, name + '.glb'));
   const source = readGLB(original);
   // NodeIO is used solely for read-only decompression of source accessors.

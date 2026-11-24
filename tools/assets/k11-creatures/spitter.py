@@ -18,12 +18,19 @@ VOXEL = 0.03
 TRIS = {"body": 9500, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16
 ATLAS = 1024
-GLOW_STRENGTH = 0.9   # CREATURE18: a lantern, not a glow blob
-BANDS = {   # CREATURE18: dark chitin, olive-ochre flesh (mid mass), pale mortar mouth, acid accent
-    "chitin": (0.08, 0.075, 0.04), "flesh": (0.54, 0.50, 0.26), "bone": (0.48, 0.46, 0.34),
+GLOW_STRENGTH = 0.018   # CREATURE18: a lantern, not a glow blob
+FORM_NORMALS = "proxy"
+FORM_MIX = 1.0
+BAND_CELL = 0.64
+BANDS = {
+    "chitin": (0.052, 0.056, 0.032), "flesh": (0.34, 0.32, 0.16), "bone": (0.73, 0.74, 0.68),
     "accent": (0.35, 0.95, 0.08), "eye": (0.55, 1.0, 0.25),
 }
-BAND_MAP = {"shell": "flesh"}
+BANDS["lead"] = BANDS["bone"]
+BANDS["plate"] = BANDS["chitin"]
+PLATE_BAND = {50: "bone", **{i: "plate" for i in range(40, 44)},
+              **{i: "flesh" for i in range(90, 114)}}
+BAND_MAP = {"shell": "chitin"}
 PALETTE = {
     "shell": (0.12, 0.06, 0.028), "edge": (0.55, 0.45, 0.24), "membrane": (0.09, 0.03, 0.02),
     "sinew": (0.22, 0.08, 0.04), "claw": (0.02, 0.015, 0.01), "tooth": (0.68, 0.62, 0.42),
@@ -87,7 +94,7 @@ def build(sk):
         body.add(Plate(p0 + (p1 - p0) * t + v3((0, 0, 0.32 * a)), (float(np.linalg.norm(p1 - p0)) * 0.6, 0.55, 0.22),
                        frame(ax, (0, 0, 1)), 0.18, rings=0.008, lip=0.04, chip=0.03, zone=SHELL, bone=bone, plate=40 + int(t * 3)))
     head_c = z(3.2, 0, 3.05)
-    body.add(A.mass(head_c, (0.7, 0.62, 0.42 * a), frame((1, 0, -0.5)), bone="head", k=0.2))
+    body.add(A.mass(head_c, (0.7, 0.62, 0.42 * a), frame((1, 0, -0.5)), zone=BONE, bone="head", k=0.2))
     body.add(Plate(head_c + z(-0.1, 0, 0.32), (0.8, 0.66, 0.26), frame((1, 0, -0.45)), 0.18, rings=0.008, ring_count=3,
                    lip=0.05, chip=0.03, zone=CREST, bone="head", plate=50))
     mz0, mz1 = z(3.5, 0, 2.7), z(4.0, 0, 2.25)
@@ -101,9 +108,9 @@ def build(sk):
         for t in (0.25, 0.75):   # sinew collars hold the duct to the neck plates
             body.add(S.Torus(path[i] + (path[i + 1] - path[i]) * t, path[i + 1] - path[i], 0.27 - 0.02 * i, 0.07, zone=SINEW,
                              bone=duct_bones[i], k=0.05))
-    body.add(RoundCone(mz0, mz1, 0.46, 0.4, zone=BONE, bone="jaw", k=0.15))   # pale mortar mouth: the aiming face
-    body.add(Ellipsoid(mz1, (0.24, 0.28, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
-    body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.14, 0.2, 0.2 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
+    body.add(RoundCone(mz0, mz1, 0.60, 0.55, zone=BONE, bone="jaw", k=0.15))   # pale mortar mouth: the aiming face
+    body.add(Ellipsoid(mz1, (0.30, 0.34, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
+    body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.22, 0.27, 0.20 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
     for s in (-1, 1):
         body.extend(A.hook([mz1 + v3((-0.1, 0.32 * s, 0.1)), mz1 + v3((0.25, 0.4 * s, -0.1)), mz1 + v3((0.35, 0.22 * s, -0.4)),
                             mz1 + v3((0.25, 0.08 * s, -0.6))], 0.1, 0.02, "jaw", k=0.04, tip=0.4))

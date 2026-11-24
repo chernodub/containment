@@ -23,7 +23,14 @@ const SMALL_FAMILY_SHADOW_PLANE=.68;
 // CREATURE26: the Warden's rank scale fell 3.8 -> 2.79 so its drawn reach is ~2.3 m; this presentation-only
 // stature factor (was .86) keeps its in-game height at the WARDEN25 4.41 m.
 const WARDEN_STATURE=1.175;
-const BRUTE_ZONE_LEVELS=[.050,.050,.105,.19,.16] as const;   // + wet specular pick on flesh
+// Armour, plate, flesh, bone and the wet highlight on flesh.
+const CREATURE_ZONE_LEVELS: Readonly<Partial<Record<string, readonly [number, number, number, number, number]>>> = {
+ crawler: [.050, .050, .105, .180, .08],
+ stalker: [.052, .052, .115, .187, .06],
+ spitter: [.048, .048, .105, .185, .10],
+ carrier: [.050, .050, .108, .180, .075],
+ brute: [.050, .050, .105, .190, .16],
+};
 import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
@@ -131,7 +138,15 @@ export function alien(kind:string,elite=false):ActorModel{
  fitFootprint();
  const organStrength=r.materials.map(m=>m.emissiveIntensity),emission=originalCreatureEmission(r.materials);
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.08);const value=kind==='brute'?.62:kind==='carrier'?.75:kind==='spitter'?.70:kind==='stalker'?.40:kind==='queen'?.28:.68;if(!original)for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
- const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);if(kind==='brute'&&original)surface.zones(...BRUTE_ZONE_LEVELS);if(kind==='crawler'||kind==='spitter'||kind==='stalker')for(const m of r.materials)setGraphicShadowPlane(m,SMALL_FAMILY_SHADOW_PLANE);surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
+ const surface=actorSurface(r.materials,false,elite||kind==='queen');
+ surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);
+ const levels=CREATURE_ZONE_LEVELS[kind];
+ if(original && levels)surface.zones(...levels);
+ if(kind==='crawler'||kind==='spitter'||kind==='stalker'){
+  const shadow=original && kind==='stalker' ? .82 : SMALL_FAMILY_SHADOW_PLANE;
+  for(const material of r.materials)setGraphicShadowPlane(material,shadow);
+ }
+ surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
  surface.lantern(FAMILY_LANTERNS[kind as keyof typeof FAMILY_LANTERNS]??FAMILY_LANTERNS.crawler);
  const identity=alienIdentity(r.root,kind,r.span,r.height,elite);
  /* CREATURE18: every creature knows its rest-pose height so the corpse wipe is crisp. */{const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z,(bounds.min.x+bounds.max.x)/2,(bounds.max.x-bounds.min.x)*.18);}
@@ -178,7 +193,7 @@ export function alien(kind:string,elite=false):ActorModel{
    if(liveCrack)frost?.use();else frost?.reset();
   }
   if(!dead&&bossStun===0){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);/* CREATURE22: the Matron arches and lowers her head while releasing a pod (presentation only). */if(champion==='matron'&&brood>0)authored.player.sample('m10-brood',.6,dt,.12);/* CREATURE23: hold the lifted carapace for the whole release *//* WARDEN25: the Warden loads and charges ram-first (presentation only; charge rules unchanged). */if(champion==='warden'){if(bossCharge>0)authored.player.sample('m10-ram-charge',(visualTime/.5)%1,dt,.1);else if(threatKind==='charge'&&windup>0)authored.player.sample('m10-ram-load',1-Math.min(1,windup/windupDuration),dt,.08);}}
-  if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);for(const [i,m] of r.materials.entries()){if(original){m.emissive.setHex(0xffffff);m.emissiveIntensity=organStrength[i]*(dead?.10:bossStun>0?.15:1+flash*.65+(elite?.28:0)+(champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0))+intensity;}else{if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}}emissiveHex=hex;}};
+  if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);for(const [i,m] of r.materials.entries()){if(original){m.emissive.setHex(0xffffff);m.emissiveIntensity=organStrength[i]*(dead?.10:bossStun>0?.15:1+flash*.65+(elite?.28:0)+(champion==='matron'?1.45:champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0))+intensity;}else{if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}}emissiveHex=hex;}};
 }
 /** LIGHT13: the carried weapon reads mid-grey against a dark deck, never a black hole in the marine. */
 const liftedWeaponMaterials=new WeakSet<T.Material>(),weaponGrey=new T.Color(0x5d666f);

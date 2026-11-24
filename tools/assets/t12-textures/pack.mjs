@@ -18,6 +18,7 @@ async function replaceIfChanged(path,bytes){
 }
 const temp=await mkdtemp(join(tmpdir(),'t12-pack-'));
 try{for(const name of names){
+ if(process.env.K11_PACK_MODEL && name!==process.env.K11_PACK_MODEL) continue;
  const original=await readFile(join(source,name+'.glb'));
  const len=original.readUInt32LE(12),json=JSON.parse(original.toString('utf8',20,20+len)),bin=original.subarray(28+len);
  // Treat a packed model as the current shipping output. Its older PNG

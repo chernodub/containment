@@ -18,19 +18,23 @@ ASSET = "dragoon"
 FAMILY = "carrier"
 ASPECT = 2.7
 VOXEL = 0.075
-TRIS = {"body": 11000, "elite": 1500, "boss": 21000}
+TRIS = {"body": 11000, "elite": 1500, "cradles": 560, "boss": 21000}
 RANK_SCALE = {"boss": 1.9, "elite": 1.12}   # Carrier Matron (BOSS14): her own full body, scaled to the boss tier
-RANK_PARTS = {"boss": ["boss"]}   # the Matron rank is a complete skin, not base + addons   # Carrier Matron: uniform boss-tier scale applied by the loader
+RANK_PARTS = {"elite": ["body", "elite", "cradles"], "boss": ["boss"]}   # the Matron rank is a complete skin, not base + addons   # Carrier Matron: uniform boss-tier scale applied by the loader
 ATLAS = 2048
-GLOW_STRENGTH = 1.0
-BANDS = {   # CREATURE18: dark plum chitin, plum flesh, grey-rose shield, magenta accent
-    "chitin": (0.09, 0.05, 0.08), "flesh": (0.54, 0.26, 0.40), "bone": (0.24, 0.22, 0.23),
+FORM_NORMALS = "proxy"
+FORM_MIX = 1.0
+BAND_CELL = 1.4
+GLOW_STRENGTH = 0.05
+BANDS = {
+    "chitin": (0.055, 0.030, 0.048), "flesh": (0.46, 0.235, 0.335), "bone": (0.72, 0.67, 0.70),
     "accent": (0.75, 0.06, 0.42), "eye": (1.0, 0.35, 0.75),
 }
-BANDS["lead"] = (0.72, 0.55, 0.64)    # CREATURE20: the Matron's pale face plate (which end is the head)
-BANDS["plate"] = (0.11, 0.05, 0.09)   # CREATURE20: dark angular thorax and abdominal segment armour
-PLATE_BAND = {400: "lead", **{i: "plate" for i in range(401, 460)}}
-BAND_MAP = {"shell": "flesh"}   # thorax shingles carry the mid band
+BANDS["lead"] = BANDS["bone"]
+BANDS["plate"] = BANDS["chitin"]
+PLATE_BAND = {**{i: "plate" for i in range(1, 29)}, 50: "lead", 400: "lead", **{i: "plate" for i in range(401, 460)},
+              **{i: "flesh" for i in range(90, 114)}}
+BAND_MAP = {"shell": "flesh"}
 PALETTE = {
     "shell": (0.13, 0.045, 0.06), "edge": (0.52, 0.38, 0.36), "membrane": (0.11, 0.025, 0.045),
     "sinew": (0.16, 0.03, 0.06), "claw": (0.02, 0.012, 0.016), "tooth": (0.7, 0.6, 0.5),
@@ -69,7 +73,7 @@ def build(sk):
                       (-0.62, -0.35, 1.0), (0.15, 1.25, 0.9), (0.1, -1.3, 0.9), (-0.45, 1.6, 0.85), (-0.4, -1.65, 0.85)]:
         p, n = A.ellipsoid_surface(bb_c, bb_r, bb_R, u, phi)
         c = p - n * r * 0.45
-        body.add(Ellipsoid(c, (r * 1.15, r, r), frame(normalize(v3(rng.normal(size=3)) + n * 2), n), zone=FLESH, bone=tf(u), k=0.35))
+        body.add(Ellipsoid(c, (r * 1.15, r, r), frame(normalize(v3(rng.normal(size=3)) + n * 2), n), zone=ORGAN, bone=tf(u), k=0.35))
         GLOW_PODS.append((c, r))
     for x0, x1 in ((-2.2, -6.5), (-3.0, -7.2)):
         for side in (-1, 1):
@@ -142,9 +146,18 @@ def build(sk):
         q = p + n * 0.9 + v3((2.0, 1.4 * s_, 0.2))
         elite.extend(A.hook([q, q + v3((0.8, 0.5 * s_, 0.9)), q + v3((1.6, 0.7 * s_, 1.0)), q + v3((2.2, 0.4 * s_, 0.6))],
                             0.35, 0.05, "body", zone=CREST, tip_zone=TOOTH, k=0.15, tip=0.3))
+    # The elite bears two eggs in side cradles under its thoracic crest.
+    cradles = S.Sculpture("carrier-cradles")
+    for side in (-1, 1):
+        q, n = A.ellipsoid_surface(th_c, th_r, th_R, 0.05, side * 1.0)
+        axes = frame(v3((1, 0, 0.1)), n)
+        cradles.add(Ellipsoid(q + n * 0.55, (2.35, 1.6, 1.1), axes, zone=SHELL, bone="body.001"))
+        c = q + n * 1.18
+        cradles.add(Ellipsoid(c, (1.95, 1.32, 1.18), axes, zone=ORGAN, bone="body.001", k=0.18))
+        GLOW_PODS.append((c, 1.1))
     # --- boss (Carrier Matron): a hugely expanded brood and attendant pods ------------
     boss = matron(sk, a, z, bf)
-    return {"body": body, "elite": elite, "boss": boss}
+    return {"body": body, "elite": elite, "cradles": cradles, "boss": boss}
 
 
 def matron(sk, a, z, bf):

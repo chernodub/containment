@@ -556,3 +556,51 @@ any full build. Other tools in `creature26/`: `sheet.mjs`, `values.mjs`, `crop.m
    - Small families keep their `SMALL_FAMILY_SHADOW_PLANE` .68 unless their p25 falls under the floor.
 5. Rebuild the caste with `build.py --caste=<c>`, then run `ship.sh`, `npm run build`, the crowd capture and the
    playtest. Compare at native size and at 480×270.
+
+## CREATURE27 — the five remaining brood silhouettes
+
+Base `b680d0d3`. All four skinned assets now use the CREATURE26 flat-cell atlas and pure proxy normals. Carrier and Matron share the dragoon asset. The renderer sets each family's zone levels through the existing material interface. Skeletons, motion clips and the creature shader retain their integration versions.
+
+- **Crawler.** The back is russet around a pink dorsal slit. The pale paired claws extend visually into the lower forelimbs. Widening the claw mesh in the first pass changed the model height through footprint fitting. Extending the pale surface across the original joints preserved the original model height.
+- **Stalker.** The leading scythe, wrist and head wedge have pale surfaces above the slate-violet body. The comparison includes an open lane on Swarm Junction because the standard calm fixture places the animal behind a pipe. Its legs still lose contrast first on the plum deck.
+- **Spitter.** The pale muzzle wraps around the jaw and joins the head plane. Dark flank plates separate it from the olive trunk and acid-green dorsal ridge. The regular and elite use the same mortar profile.
+- **Carrier.** Dark thoracic plates and magenta brood stand over the many legs. The elite carries an additional pair of eggs in side cradles attached to the thorax. Building the cradles as a separate 560-triangle part kept the existing crest and its exact height. They join the elite mesh in the export.
+- **Matron.** The pink egg stack sits against plum armour. Each opening pod has dark socket tissue around its lit membrane. The shell and membrane share their authored transform during opening, which keeps the rim around the cavity in both pods.
+
+### Heights and rig
+
+The game measurements use the same seeded lineup, fixed idle sample and actor IDs in both builds. The first two columns are the public model height in metres. The last two are the tallest visible skinned vertex above the actor origin in the same frame. All comparisons matched at full numeric precision before rounding. The exported rest-mesh height also matched for every rank. Joint names, parent relationships, local rest matrices and inverse bind matrices matched for all 46 Crawler, 38 Stalker, 57 Spitter and 73 Carrier/Matron joints.
+
+| Rank | Model before | Model after | Visible before | Visible after |
+|---|---:|---:|---:|---:|
+| Crawler | 0.773644 | 0.773644 | 0.686785 | 0.686785 |
+| Elite Crawler | 1.793735 | 1.793735 | 1.718230 | 1.718230 |
+| Stalker | 1.081849 | 1.081849 | 1.024072 | 1.024072 |
+| Elite Stalker | 1.705099 | 1.705099 | 1.671488 | 1.671488 |
+| Spitter | 1.651721 | 1.651721 | 1.595860 | 1.595860 |
+| Elite Spitter | 2.885776 | 2.885776 | 2.899489 | 2.899489 |
+| Carrier | 1.980371 | 1.980371 | 1.921693 | 1.921693 |
+| Elite Carrier | 3.253404 | 3.253404 | 3.264440 | 3.264440 |
+| Matron | 5.295817 | 5.295817 | 4.804680 | 4.804680 |
+
+### Rebuild and review
+
+Run the CREATURE26 preview with `--caste=crawler|stalker|spitter|carrier` and an output directory. The default poses are rest, idle, waiting and wind-up from two directions. For the Carrier lineup `--voxel=.45` keeps the preview inexpensive. The preview accepts `--parts=boss` for the Matron alone. Rebuild with `build.py -- --caste=<family>`, then run `TOKTX=<toktx> sh tools/assets/k11-creatures/creature26/ship.sh <asset>` with dretch, basilisk, marauder or dragoon. The packers process that model only. The pod rebuild uses `growth/build.py -- --set=pod`, followed by `pack-brood.mjs --pod-only` and `brood-lod.mjs --pod-only`.
+
+Local comparison sheets are under `artifacts/nextgen/creature27/sheets/`. Open `{crawler,stalker,spitter,carrier,matron,rooms}-{native,480}.png`. Each frame has the integration build on the left and CREATURE27 on the right. The individual burst frames are under `pairs/`. Matron coverage uses the native encounter fixture in Relay Racks, including calm, brood release, countdown, opening, hatch, death and ragdoll. The opening frame shows the shell before the hatchling separates.
+
+### Game-camera values and remaining limits
+
+The CREATURE26 silhouette measurement erodes three pixels before sampling. In the crew-checkpoint lineups the marine plate p90 was 181–183. The brightest creature p98 across the sampled ranks was 121. The table shows the regular animals and the Matron.
+
+| Family | Before p98 | After p25 / p50 / p90 / p98 | After p98 as fraction of marine plate p90 |
+|---|---:|---:|---:|
+| Crawler | 174 | 58 / 86 / 111 / 119 | 65% |
+| Stalker | 158 | 30 / 61 / 107 / 114 | 62% |
+| Spitter | 208 | 48 / 65 / 103 / 118 | 65% |
+| Carrier | 117 | 36 / 57 / 81 / 112 | 62% |
+| Matron | 167 | 27 / 43 / 71 / 119 | 66% |
+
+The three body bands survive minification, but bent legs, the attack outline and overlapping actors can still break them into smaller shapes. The Crawler's slit and the Spitter's ridge are dimmer after the value correction. At 480×270 the Stalker's thin legs still recede into the purple floor. The marine's gun covers part of the mouth in the Spitter melee capture. The ranged wind-up row in Awakening Bay uses a shorter native firing lane to keep both actors visible. At 480×270 the red aiming line still draws the eye first. The Matron's p50 remains close to the deck. The pink stack and cavity rims carry the read there.
+
+The production build passed. The unassisted Arc desktop campaign cleared 12 rooms on seed 1729 with zero errors and zero recorded defects. The High Arc Relay Racks benchmark completed one 20-second trial per build with zero runtime compiles in either trial. Median frame time was 16.7 ms in both, with p95 of 25.0 ms before and 24.9 ms after. Host load differed substantially between trials. The raw benchmark receipts are in `artifacts/nextgen/c27-bench-{before,after}/benchmark.json`.
