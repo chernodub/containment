@@ -9,49 +9,49 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 0.93,
-    "blenderPNGDecodeMs": 6.411,
+    "bakeSeconds": 1.426,
+    "blenderPNGDecodeMs": 9.522,
     "file": "duct-normal.png",
     "size": 512,
-    "bytes": 312411,
+    "bytes": 309969,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 131022,
+    "nonFlatPixels": 130163,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "swallowed-workbay--e9-body",
         "role": "e9-body",
-        "seconds": 0.052,
+        "seconds": 0.061,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.023,
+        "seconds": 0.028,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.027,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--p11-flesh",
         "role": "p11-flesh",
-        "seconds": 0.059,
+        "seconds": 0.052,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "swallowed-workbay--p11-growth",
         "role": "p11-growth",
-        "seconds": 0.06,
+        "seconds": 0.186,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "swallowed-workbay--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.029,
+        "seconds": 0.074,
         "method": "three-segment high bevel"
       }
     ]
@@ -100,8 +100,8 @@
   ],
   "output": {
     "file": "duct.glb",
-    "bytes": 539864,
-    "sha256": "dfc2994b91ff4b02bdab39cb246d8ca207518ed49f5771682bda7b984f919a57",
+    "bytes": 537424,
+    "sha256": "8b4eff349c0bafcd72fe3ad853263bda67fe8f78964d8bf0ba91bcbc871db43e",
     "triangles": 5082
   },
   "overBudget": [],

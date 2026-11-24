@@ -65,8 +65,8 @@ export function addLaneMachine(root:Group,id:string){
     case 'crew-checkpoint':
       p.box(34,4,-9,112,7,35,rubber,.20);
       for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,.20);
-      p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,rubber,-.2);
-      p.box(4,20,-1,19,8,13,0x847053,-.38);break;
+      p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
+      p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
       for(let i=0;i<17;i++){
         const x=-104+i*9,z=10*Math.sin(i*.32);

@@ -54,7 +54,7 @@ for side in (-1,1):
             (-.03,side*.33,1.51),(.67,side*.27,1.49),(1.58,side*.41,1.29),(2.79,side*.45,.89)],.15,'p11-flesh',7)
 for i in range(4):
     x=-.48+i*.28
-    L.egg('Lantern blister',(x,-.46,1.32),.24+.07*math.sin(i),'p11-bio-violet',i,.5)
+    L.egg('Lantern blister',(x,-.43+.17*math.sin(i*2),1.32+.13*math.cos(i)),(.16,.37,.20,.28)[i],'p11-bio-violet',i,.5)
 # Narrow coaxial roots break away from the belly and stick to the floor.
 for i in range(5):
     x=-.99+.52*i
@@ -64,7 +64,7 @@ for i in range(5):
 # The brood hangs beneath the overhanging tool bench, held by a resin sling.
 for i in range(6):
     x=.83+i*.34
-    L.egg('Egg under carriage',(x,-.57,.10),.34,'p11-flesh',i,.28)
+    L.egg('Egg under carriage',(x,-.56+.21*math.sin(i*1.7),.12),(.43,.21,.30,.18,.38,.23)[i],'p11-flesh',i,.28)
 L.sweep('Pod sling',[(.50,-.49,.82),(.72,-.76,.31),(1.43,-.72,.17),
         (2.32,-.73,.24),(2.73,-.49,.88)],.08,'p11-growth',7)
 # A portable barricade was never raised. Only its left shoe was pinned.

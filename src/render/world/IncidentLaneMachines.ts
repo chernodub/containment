@@ -39,7 +39,10 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const [x,z,t,c] of [[L-34,0,.12,ochre],[L+2,17,-.48,0x657784]]){
         box(x,12,z,33,13,19,c,t);box(x,19,z,4,2,19,boot,t);
         box(x+3,18,z-10,11,3,4,steel,t);
-      }break;
+      }
+      // A child's coat spills over the open case, sleeves hanging off both edges.
+      p.face([[L-50,20,-8],[L-39,22,-13],[L-33,21,-6],[L-25,22,-10],[L-13,12,1],[L-19,10,6],[L-27,18,1],[L-25,19,16],[L-45,20,19],[L-47,16,4],[L-54,11,8],[L-59,10,4]],0xbb8067);
+      break;
     case 'residential-gallery':
       rails(10);box(L,6,0,44,8,26,iron,.1);
       for(const x of [L-16,L+16])for(const z of [-10,10])
@@ -59,7 +62,12 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       rails(17);
       for(let x=12;x<L;x+=38)box(x,4,0,9,6,36,iron);
       for(const z of [-17,17]){box(L-10,8,z,43,11,9,ochre);box(L-3,15,z,22,3,9,steel);}
-      box(L-22,8,0,10,10,42,boot);break;
+      box(L-22,8,0,10,10,42,boot);
+      for(const [x,z,t] of [[L-6,0,0],[L+10,4,.25],[L+27,18,-.43],[L+43,28,.72]]){
+        box(x,5,z,11,10,26,0x9cae91,t);
+        box(x,11,z,10,2,8,0xd8c693,t);
+      }
+      break;
     case 'breached-loading-bay':
       for(const s of [-1,1]){
         pipe(0,s*6,L*.46,s*20,5,3.8,0x8a8271);
@@ -72,7 +80,11 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       disc(L,5,0,15,7,boot);disc(L,12,0,10,4,steel);
       p.rod([L,15,0],[L+16,19,25],4,steel);
       box(L+17,17,25,25,9,15,0x648785,-.35);
-      for(const x of [-6,6])disc(L+17+x,22,25,4,2,ice);break;
+      for(const x of [-6,6])disc(L+17+x,22,25,4,2,ice);
+      disc(L+26,1,41,20,4,iron);
+      p.rod([L+37,4,46],[L+37,29,46],4,steel);
+      p.rod([L+37,29,46],[L+21,29,40],4,steel);
+      disc(L+21,19,40,6,10,ice);break;
     case 'safety-interlock-station':
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);

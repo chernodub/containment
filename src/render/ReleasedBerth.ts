@@ -23,7 +23,14 @@ export function attachReleasedBerth(room:T.Group,onChanged:()=>void,load:(signal
  owner.ready=Promise.race([pending,timeout,cancelled]).then(s=>{
   if(!active){retire(s);return;}source=s;
   if(!fallback||fallback.parent!==room)throw Error('stale released berth target');
-  validate(s);s.name='released-berth';s.position.set(135/32,0,440/32);s.traverse(o=>{if(o instanceof T.Mesh)o.castShadow=o.receiveShadow=true;});
+  validate(s);s.name='released-berth';s.position.set(135/32,0,440/32);s.traverse(o=>{
+    if(!(o instanceof T.Mesh))return;
+    o.castShadow=o.receiveShadow=true;
+    if(o.material.name==='10 washable recovery upholstery'){
+      o.material.emissive.setHex(0x68bec8);
+      o.material.emissiveIntensity=.27;
+    }
+  });
   const oldSigns=new Set(fallback.userData.localSigns??[]);
   room.add(s);room.userData.localSigns=(room.userData.localSigns??[]).filter((sign:unknown)=>!oldSigns.has(sign));disposeModel(fallback);owner.state='ready';
  }).catch(()=>{if(source){retire(source);source=undefined;}if(active){active=false;controller.abort();owner.state='fallback';}}).then(()=>{

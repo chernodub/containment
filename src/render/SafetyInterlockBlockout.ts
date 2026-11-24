@@ -21,7 +21,7 @@ export function safetyInterlockBlockout(footprint:Footprint,index:number):T.Grou
  const palette=(name:string,color:number,metalness:number,roughness:number,emissive=0)=>{
   const m=new T.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:emissive?.35:0});m.name=`room12-${name}`;m.userData.actorMaterial=true;return m;
  };
- const ivory=palette('ivory',0xc9c0a3,.12,.72),copper=palette('dark-copper',0x654432,.65,.49),orange=palette('muted-orange',0x986346,.25,.7),dark=palette('socket',0x172326,.15,.85),steel=palette('housing',0x465354,.55,.64),lamp=palette('local-light',0xd2ba7e,.1,.6,0xc8a361);
+ const ivory=palette('ivory',0x998e76,.12,.72),copper=palette('dark-copper',0x654432,.65,.49),orange=palette('muted-orange',0x765741,.25,.7),dark=palette('socket',0x172326,.15,.85),steel=palette('housing',0x465354,.55,.64),lamp=palette('local-light',0xd2ba7e,.1,.6,0xc8a361);
  const b=(name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const mesh=owned(name,industrialBoxGeometry(w,h,d),m);mesh.position.set(x,y,z);return mesh;};
  const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
  // Custom surfaces are room-owned. The existing world batcher releases these
