@@ -487,3 +487,22 @@ The build passed, and the repeated fast native Pyro run on seed 1729 cleared all
 The remaining Safety-interlock Pyro pattern is consistent with expensive High GPU rendering at the adaptive floor of 0.90. At the two loads in the table, the combined main-thread p95 was 20.8 and 18.8 ms while raw GPU query medians were 49.26 and 47.49 ms. The GPU values reflect queue scheduling as well as execution and cannot isolate fill, soft-depth copies, or another individual pass. The quiet ablations did not justify removing any of the reviewed art. The cheapest next candidate is a lower High internal-resolution floor in this room class during sustained misses. That would trade some sharpness and needs its own matched screenshots and timing run. Accepting this room's residual tail preserves the current presentation.
 
 [Exact-path remeasurement](../../artifacts/nextgen/perf22/exact/final/benchmark.json) · [Quiet Low replacement](../../artifacts/nextgen/perf22/exact/final-low-retry/benchmark.json) · [Low confirmation trials](../../artifacts/nextgen/perf22/exact/final-low-check/benchmark.json) · [Repeated Pyro campaign](../../artifacts/nextgen/playtest/perf22-exact-pyro/report.json)
+
+## PERF25
+
+### Reproduction
+
+The M1 Pro ran the November 24, 2026 production builds of `9aefc2a3` and `b74bfa28` back to back at 1920×1080. Both used the same 25-enemy benchmark, with 15 seconds per trial. The older build used a separate dist built from its own source and assets. The renderer stayed on the production adaptive scale. CPU update p95 includes the fixture driver.
+
+| Safety-interlock Pyro High | Load before → after | Frames over 20 ms | CPU update / render p95 (ms) | Peak draws | Combat compiles |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Previous 1 | 2.19 → 2.47 | 4.59% | 4.80 / 12.00 | 294 | 0 |
+| Previous 2 | 2.47 → 3.16 | 4.61% | 4.20 / 11.30 | 299 | 0 |
+| Current 1 | 3.80 → 3.48 | 5.89% | 4.10 / 12.50 | 292 | 0 |
+| Current 2 | 3.48 → 3.02 | 7.31% | 4.50 / 11.10 | 293 | 0 |
+
+Safety-interlock Pyro High reproduced a 1.30 and 2.70 percentage-point increase with overlapping CPU update and render p95. Safety-interlock Pyro Low measured 1.42–1.54% in the previous build at loads 3.16 → 3.32 and 3.32 → 2.96, and 1.30–1.55% in the current build at loads 3.02 → 2.82 and 2.82 → 3.13.
+
+Other Chromium sessions were active by the Safety-interlock Arc Low trials. The second Arc Low run reached load 3.94 → 5.01 and 32.91% over 20 ms. Transmission High trials overlapped that activity. The lead changed the remaining protocol to interleaved trials without waiting for a fixed load threshold. Each High comparison uses full, candidate, full, candidate in sequence. A comparison is discarded when the two full-High tail shares differ by more than one-third of the smaller share. The raw sequential matrices retain the interference.
+
+[Previous production results](../../artifacts/nextgen/perf25-previous/benchmark.json) · [Current production results](../../artifacts/nextgen/perf25-current/benchmark.json)
