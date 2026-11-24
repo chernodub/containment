@@ -36,8 +36,8 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[]){
-  const covered=choices.find(choice=>choice.kind==='bank'&&choice.id==='1');
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege']){
+  const covered=choices.find(choice=>choice.kind==='bank'&&choice.id==='1')??(siege?.selectedBank==='far'?siege:undefined);
   this.coverGlyph.visible=!!covered;
   if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
   this.routes.forEach((mesh,index)=>{

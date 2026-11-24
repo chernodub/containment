@@ -384,7 +384,7 @@ export class AttackEffects {
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
    const angle=charge?Math.atan2(enemy.lockY,enemy.lockX):Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
    const radius=charge?enemy.radius:enemy.pod?enemy.radius:(enemy.broodRemainingMs??0)>0?BOSS_BODIES.matron.hatchRingMax:ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
-   if(!charge){shape.shape='circle';shape.x=enemy.lockX/32;shape.z=enemy.lockY/32;shape.radius=radius/32;shape.width=radius*2/32;shape.length=0;shape.angle=angle;warning.remainingMs=enemy.windupMs;shape.progress=1-enemy.windupMs/warning.durationMs;continue;}
+   if(!charge&&enemy.id!==relayVolley){shape.shape='circle';shape.x=enemy.lockX/32;shape.z=enemy.lockY/32;shape.radius=radius/32;shape.width=radius*2/32;shape.length=0;shape.angle=angle;warning.remainingMs=enemy.windupMs;shape.progress=1-enemy.windupMs/warning.durationMs;continue;}
    shape.shape='line';
    if(shape.length!<0||Math.hypot(shape.x-enemy.x/32,shape.z-enemy.y/32)>.03){
     const maximum=charge?(enemy.chargeWarningLength??ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000):ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife;

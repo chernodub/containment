@@ -256,6 +256,13 @@ export class DepthGame {
    this.presentation.push({type:'enemy-warning',...point,radius:32,durationMs:400});
   }
  }
+ get relayVolley(){
+  if(!this.crossingRequired||this.relayVolleyId===undefined)return undefined;
+  const enemy=this.enemies.getSnapshot(this.relayVolleyId);
+  const near=this.relayBanks[0];
+  if(enemy?.pendingAttack==='spit'&&enemy.lockX===(near.x+this.siegePoint.x)/2&&
+   enemy.lockY===(near.y+this.siegePoint.y)/2)return enemy.id;
+ }
  private get crossingRequired(){
   return this.node.templateId==='overload-floor'&&this.siegeBeat>=0&&this.siegeRemainingMs<=4000&&this.relayBanks.length>0
    &&this.director.snapshot.grammar==='siege';
@@ -267,8 +274,8 @@ export class DepthGame {
   const target=crossing?(this.relayBank??this.relayBanks.reduce((best,point)=>
    Math.hypot(point.x-this.player.x,point.y-this.player.y)<Math.hypot(best.x-this.player.x,best.y-this.player.y)?point:best)):this.siegePoint;
   return {beat:encounter.beat??0,x:target.x,y:target.y,radius:crossing?68:220,durationMs:12000,
-   selectedBank:crossing&&this.relayBank?(this.relayBank===this.relayBanks[0]||this.relayBank.x===this.relayBanks[0].x&&this.relayBank.y===this.relayBanks[0].y?'near':'far'):undefined,
-   nearLaneWindup:crossing&&this.relayVolleyId!==undefined&&this.enemies.getSnapshot(this.relayVolleyId)?.pendingAttack==='spit',
+   selectedBank:crossing&&this.relayBank?(this.relayBank.x===this.relayBanks[0].x&&this.relayBank.y===this.relayBanks[0].y?'near':'far'):undefined,
+   nearLaneWindup:this.relayVolley!==undefined,
    nearBank:crossing&&!this.relayBank?this.relayBanks[0]:undefined,
    remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000,crossing,choosing:crossing&&!this.relayBank,farBank:crossing&&!this.relayBank?this.relayBanks[1]:undefined};
  }
