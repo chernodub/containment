@@ -145,6 +145,20 @@ export function botWaypoint(game: BotGame, target: Point): Point | null {
     const waypoint = observer.fine[index].waypoint(origin, target);
     if (waypoint) return waypoint;
   }
+  // The marine can reach corners tighter than the observer grid's padding.
+  // Step back to a reachable padded cell before asking the grid for a route.
+  if (!canOccupyExpedition(game.geometry, origin, CLEARANCE)) {
+    let exit: Point | null = null, closest = Infinity;
+    for (let direction = 0; direction < 8; direction++) {
+      const angle = direction * Math.PI / 4;
+      const point = {x: origin.x + Math.cos(angle) * 32, y: origin.y + Math.sin(angle) * 32};
+      if (!canOccupyExpedition(game.geometry, point, 19)
+        || !canTraverseExpedition(game.geometry, origin, point, origin.radius)) continue;
+      const separation = distance(point, target);
+      if (separation < closest) {exit = point; closest = separation;}
+    }
+    if (exit) return exit;
+  }
   return ordinary&&canTraverseExpedition(game.geometry,origin,ordinary,origin.radius)?ordinary:null;
 }
 
