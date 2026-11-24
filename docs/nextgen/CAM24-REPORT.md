@@ -75,8 +75,9 @@ difficulty, the default room limit and `--fast --startup-timeout-ms=180000`.
 | Rig and build | Outcome | Rooms cleared | Total damage | Hit ratio | Outside central box | Estimated dock overlap |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | Arc base | Died in Service Shaft Landing | 13 | 490.48 | 76.34% (1,010 / 1,323) | 1,416 / 5,527 (25.62%) | 0 |
-| Arc candidate | Complete | 20 | 716.98 | 80.28% (1,714 / 2,135) | 1,028 / 9,193 (11.18%) | 0 |
+| Arc 22% | Complete | 20 | 716.98 | 80.28% (1,714 / 2,135) | 1,028 / 9,193 (11.18%) | 0 |
 | Cryo base | Complete | 20 | 1,055.03 | 77.31% (1,356 / 1,754) | 2,213 / 8,286 (26.71%) | 0 |
+| Cryo 22% | Died in Diagnostic Gallery | 10 | 372.99 | 75.94% (524 / 690) | 390 / 3,723 (10.48%) | 0 |
 
 Both base runs recorded zero runner errors. Cryo recorded one loading
 defect in Manual Control Chamber (5.08 seconds). Arc started at load
@@ -91,3 +92,12 @@ zero runner errors or defects and started at load averages 11.29 /
 9.30 / 8.40. The Arc archived Final15 share outside the central box was
 19.50%, compared with 25.62% on the fresh base and 11.18% on the
 candidate. Estimated dock overlap was zero in all three traces.
+
+Across the 10 rooms both Cryo runs cleared, damage rose from 189.07
+to 264.99 (+40.15%). The 22% build failed the 10% damage bar despite
+reducing the fresh base's out-of-box share from 26.71% to 10.48%.
+The archived Final15 Cryo share was 14.98%. Estimated dock overlap was
+zero in all three traces. The 22% Cryo run recorded zero runner errors
+and zero defects. It started at load averages 3.84 / 6.91 / 8.44.
+The 22% build remains unapproved. I began the tighter 18% trial at
+load averages 2.38 / 3.43 / 5.60.
