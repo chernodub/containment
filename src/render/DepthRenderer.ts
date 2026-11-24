@@ -796,7 +796,7 @@ export class DepthRenderer {
   // WARN16 uses the existing ink composite and the actor IDs in its opaque buffer.
   this.post.beginCombatOutlines();
   if(!menu&&this.graphicsAblation!=='silhouette')for(const enemy of enemies){
-   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleePhase==='windup'||enemy.meleePhase==='strike'))continue;
+   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleeOrder===1))continue;
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
