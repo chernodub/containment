@@ -40,9 +40,11 @@ if(style>6.5){
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.04,.14,abs(d-.32));color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(2.3,2.1,1.95),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5 && vFrame>2.5){
- float ring=1.-smoothstep(.035,.13,abs(d-.76));
+ // Exposed recovery: four thin corner brackets, so it cannot be mistaken for the elite's full gold ring.
+ float ring=1.-smoothstep(.02,.075,abs(d-.76));
+ float corners=smoothstep(.62,.8,abs(sin(2.*atan(p.y,p.x))));
  color=vec3(.89,.73,.44);
- alpha*=ring*(.55+.45*abs(p.x));
+ alpha*=ring*corners;
 }
 else if(style>5.5 && vFrame>.5){
  float shaft=(1.-smoothstep(.12,.43,abs(p.y)))*(1.-smoothstep(.77,1.,vUv.x));
