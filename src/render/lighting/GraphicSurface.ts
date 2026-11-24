@@ -227,7 +227,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         else if(graphicSurfaceKind.x>.5){
           float graphicKeyFacing=dot(geometryNormal,vec3(-.52,.42,.74));
           float graphicTerminator=max(fwidth(graphicKeyFacing),.02);
-          graphicActorLight=mix(.30,1.0,smoothstep(.56-graphicTerminator,.56+graphicTerminator,graphicKeyFacing));}
+          graphicActorLight=mix(.30,1.0,smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
