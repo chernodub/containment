@@ -161,3 +161,36 @@ All fifteen `artifacts/nextgen/motion23-after/` motion strips completed with zer
 The production build passed. The fixed-resolution, 300-tick Crew Checkpoint Breacher High benchmark retained 124 median, 133 p95 and 134 peak draws, 149 resident programs and zero combat compilations. Of the 37 draw samples, 36 matched exactly and one rose from 126 to 127. See `artifacts/nextgen/motion23-before/benchmark.json` and `motion23-final/benchmark.json`.
 
 The seed-1729 Breacher campaign cleared all six rooms through Armory with zero errors, zero defects and exit status 0. The receipt is `artifacts/nextgen/playtest/motion23-breacher/report.json`.
+
+## MOTION25
+
+The Breacher leads with his plate arm. Its painted face and three dark slots sit above and beside the weapon in the game view. The left wrist now reaches forward and out, then the forearm rolls about the elbow-to-wrist axis to bring the plate face toward the overhead camera. The same carry runs over idle, locomotion, brake, aim and recoil. The firing hand still follows the weapon. The HERO24 mount, skin, textures and portrait are the shipped assets.
+
+| Family | Waiting at the edge of a fight | Exposed after its strike | Native recovery |
+| --- | --- | --- | --- |
+| Crawler | Skitters sideways, drops low and opens its jaws | Stays pitched over its forward claw | 280 ms |
+| Stalker | Paces sideways while the two scythes weave in opposition | Carries a scythe beyond the front feet and tips onto one side | 650 ms |
+| Brute | Half-steps forward, lowers its body and rolls the weapon shoulder | Folds its weight over the buried cleaver | 550 ms |
+| Spitter | Shuffles sideways as the throat swells | Presents its flank with the mouth open | 420 ms |
+| Carrier | Sways and draws in its rear sac | Sags sideways over the extended claw | 500 ms |
+
+Each family has a 1.6-second waiting loop. The renderer offsets it by enemy ID. It selects the loop during approach using range, engagement, attack-slot ownership and pending attack. The exposed clip keeps the loaded limb in place while the trunk settles and releases in the final fifth of the native recovery. Native recovery progress also carries the existing elite duration adjustment. Comparing all 157 previously shipped enemy takes against the baseline found identical key times, values, channels and interpolation, including the Warden's charge and stun.
+
+Each 250 ms feint samples the first third of the family's wind-up and returns to ready. The camera strips drive this input explicitly. The production renderer expects an optional normalized `feintProgress` on the enemy snapshot during a flagged feint. The MOTION25 base does not publish that field, so the two live crowd captures demonstrate waiting and ordinary attacks only.
+
+The two matched galleries under `artifacts/nextgen/motion25-before/` and `motion25-after/` each contain 29 strips. The nine Breacher rows cover idle, four travel directions, stop-start, aim, shotgun and rifle. The four rows per creature cover waiting, feint, strike and recovery. The `camera/` strips retain the full room at 480×270 per cell. In `motion25-after/compare/`, the six pairs of `*-quarter.png` and `*-480.png` place the baseline on the left. The sampled brake and recoil frames show clear space between the plate face and barrel. The rear edge can merge with the yellow dome when the figure turns away.
+
+In `artifacts/nextgen/motion25-live/`, the Swarm Junction snapshot contains 16 enemies eligible for waiting across all five families. The heavy Crew Checkpoint frames contain nine waiting Brutes and four waiting Spitters. At 480×270 the Breacher's plate is easy to pick out in the calm and Swarm Junction frames. Enemy overlap and the red warning sector conceal part of it in the heavy Crew Checkpoint frame. The Brute's roll and the Stalker's pace read more clearly in the pack than the Spitter's throat pulse.
+
+Rebuild the motion-only GLBs and reproduce the strips from the repository root:
+
+```sh
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/enemy_actions.py -- --families=crawler,stalker,brute,spitter,carrier --clips=m10-waiting,m10-feint,m10-exposed
+npm run build
+node scripts/nextgen/m9-motion.mjs --collection=motion25 --subjects=marine,crawler,stalker,brute,spitter,carrier --steps=8 --out=artifacts/nextgen/motion25-after
+npm run capture -- --label=motion25-crowds --scenarios=play25-ordered-crowd,play23-crowd,k10-calm-breacher:crew-checkpoint,k10-heavy-breacher:crew-checkpoint --burst=2
+```
+
+For the before strips, use the same collection with `--dist` pointing to a production build of `4ea56510`. The matched five-second High Crew Checkpoint CPU-submission benchmarks in `motion25-bench-before/` and `motion25-bench-final/` both recorded 141 draws, 153 programs and zero mid-fight compilations.
+
+The clean install and production build passed. Both strip manifests report zero errors. The six-room Breacher playtest with seed 1729, fast stepping and a 180000 ms startup timeout cleared all six rooms with zero errors and zero recorded defects. Its report is `artifacts/nextgen/playtest/motion25-breacher/report.json`.

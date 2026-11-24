@@ -481,13 +481,81 @@ class Creature:
         history.append(centre.copy())
         if len(history)>2:history.pop(0)
 
+    def waiting(self, t, targets):
+        phase=t*math.tau
+        wave=math.sin(phase)
+        # One purposeful weight shift followed by a pause at the slot.
+        load=between(t,[(0,0),(.13,.10),(.34,1),(.55,.92),(.80,0),(1,0)])
+        H,W=self.height,self.width
+        if self.family=='crawler':
+            self.move(self.center,SIDE*W*.19*load-UP*H*.23*load)
+            self.rotate(self.center,UP,.26*wave)
+            self.mouth(.85*load)
+        elif self.family=='stalker':
+            self.move(self.center,SIDE*W*.23*wave-UP*H*.09*load)
+            self.rotate('neck_lo',UP,-.24*wave)
+            for arm in self.arms:
+                side=arm['index']
+                self.solve(arm,arm['rest']+SIDE*W*side*(.13+.12*wave)
+                           +FWD*W*side*.18*wave+UP*H*(.17+.14*side*wave))
+        elif self.family=='brute':
+            self.move(self.center,FWD*W*.13*load-UP*H*.15*load)
+            self.rotate(self.center,FWD,.21*load)
+            self.rotate('shoulder.r',UP,-.46*load)
+            self.rotate('shoulder.r',SIDE,-.31*wave)
+            self.rotate('head',UP,.21*load)
+        elif self.family=='spitter':
+            self.move(self.center,SIDE*W*.14*load)
+            self.rotate('head',SIDE,-.22*load)
+            self.squash('head',1+.24*load,1+.15*load,1-.09*load)
+            self.mouth(.70*load)
+        else:
+            self.rotate(self.center,FWD,.18*wave)
+            self.rotate('tail',SIDE,-.38*load)
+            self.squash('tail',1+.13*load,1-.23*load,1-.12*load)
+        for leg in self.legs:
+            i=leg['index']
+            step=math.sin(phase+(i%2)*math.pi)*load
+            if self.family=='brute' and i!=0:continue
+            if self.family=='carrier':continue
+            offset=FWD*W*.20*load if self.family=='brute' else SIDE*W*.15*step
+            targets[i]=leg['rest']+offset+UP*H*.14*max(0,step)
+
     def pose(self, action, t, seconds):
         self.reset()
         self.current_action=action
         H,W = self.height,self.width
         crawler = self.family == 'crawler'
         targets = {}
-        if action == 'm10-idle':
+        if action=='m10-exposed':
+            # Keep the impact footprint until the final fifth of native recovery.
+            release=smooth((t-.79)/.21)
+            self.pose('m10-recovery',.14*smooth(t/.27)+.86*release,seconds)
+            limb=getattr(self,'loaded_blade',None) or self.arms[0]
+            tip=self.m[limb['bones'][-1]] @ limb['tip_local']
+            feet={leg['index']:self.m[leg['bones'][-1]] @ leg['tip_local'] for leg in self.legs}
+            weight=smooth(t/.16)*(1-release)
+            roll={'crawler':.38,'stalker':-.44,'brute':.42,'spitter':-.35,'carrier':.32}[self.family]
+            self.rotate(self.center,FWD,roll*weight)
+            self.move(self.center,(-UP*H*.13+SIDE*W*roll*.22)*weight)
+            self.rotate('head',UP,-.43*weight)
+            if self.family=='carrier':self.rotate('tail',SIDE,-.39*weight)
+            if self.family=='spitter':self.mouth(.73*weight)
+            self.plant(feet)
+            self.solve(limb,tip,14)
+            if release:
+                self.m={n:m.lerp(self.idle_start[n],release) for n,m in self.m.items()}
+            self.commit()
+            return
+        if action=='m10-feint':
+            self.pose('m10-windup',min(1,t/.54)/3,1.)
+            release=smooth((t-.54)/.46)
+            self.m={n:m.lerp(self.idle_start[n],release) for n,m in self.m.items()}
+            self.commit()
+            return
+        if action=='m10-waiting':
+            self.waiting(t,targets)
+        elif action == 'm10-idle':
             breath=math.sin(t*math.tau)
             shift=math.sin(t*math.tau*.5)
             self.rotate(self.center,FWD,.055*shift)
@@ -724,7 +792,7 @@ class Creature:
 
 
 DURATIONS = {
-    'm10-idle':3.2,'m10-run':.64,'m10-windup':1.,'m10-strike':.16,'m10-recovery':1.,
+    'm10-exposed':1.,'m10-waiting':1.6,'m10-feint':.25,'m10-idle':3.2,'m10-run':.64,'m10-windup':1.,'m10-strike':.16,'m10-recovery':1.,
     **{f'm10-hit-{weight}-{direction}':(.18 if weight=='light' else .39)
        for weight in ['light','heavy'] for direction in ['front','right','back','left']},
     'm10-stagger':.72,'m10-burning':1.2,'m10-shocked':.8,'m10-frozen':.6,

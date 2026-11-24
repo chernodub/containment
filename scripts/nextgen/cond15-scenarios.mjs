@@ -76,3 +76,34 @@ for(const [id,seed,clock] of [['vent-warning',10,11300],['conduit-charging',2,25
   })();`),
  });
 }
+
+// Matched close-up of the emergency-light fight, including live and falling bodies.
+async function stageLook25(rig, dark) {
+ const d=window.__containmentDebug,g=d.game,room='breached-loading-bay';
+ await d.gotoRoom(room,{rig,seed:12,runStructure:dark});
+ d.invulnerable(true);
+ g.enemies.reset();
+ Object.assign(g.player,{x:779,y:698,angle:-.83});
+ const cases=[['crawler',865,583,true],['stalker',915,600,false],['spitter',815,603,false],
+  ['crawler',875,670,false],['stalker',945,600,true],['crawler',982,745,false],
+  ['spitter',920,760,false],['crawler',974,544,false]];
+ const ids=[];
+ for(const [family,x,y,elite] of cases)ids.push(d.spawn(family,x,y,elite));
+ d.step(120);
+ g.setAimPoint({x:875,y:610});g.useAbility('tactical');
+ d.step(340);
+ const targets=g.targets();
+ ids.forEach((id,i)=>{
+  const t=targets.find(target=>target.id===id);if(!t)return;
+  if(i!==1&&i!==4)g.mutations.applyAbilityStatus(t,rig==='pyro'?'burn':i%2?'chill':'freeze',rig==='pyro'||i%2?2:2400);
+ });
+ d.step(75);
+ for(const i of [3,5,6])if(ids[i])g.damage(ids[i],10000);
+ d.step(170);d.refresh();
+ d.g5Proof={condition:g.conditionState?.condition.id??'ordinary',rig,ids,corpseCount:d.renderer.corpses.length,
+  states:g.enemies.snapshot.enemies.map(e=>({id:e.id,...g.boonStatuses(e.id)}))};
+}
+for(const [rig,dark] of [['cryo',true],['pyro',true],['cryo',false]]){
+ COND15_SCENARIOS.push({id:'look25-'+(dark?'dark-':'ordinary-')+rig,room:'breached-loading-bay',state:'playing',diagnosticOnly:true,
+  setup:new Function('return ('+stageLook25.toString()+')('+JSON.stringify(rig)+','+dark+')')});
+}

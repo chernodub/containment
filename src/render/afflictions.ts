@@ -16,17 +16,23 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
    shader.fragmentShader='uniform float statusFrost; varying vec3 statusPosition;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
     // Chilled palettes retain hue and categorical ink. Ice gathers at the feet;
     // upper anatomy receives only a restrained cool cast, never a pale cap.
-    float frostAmount=.40*statusFrost;
+    float frostAmount=.12*statusFrost;
     float frostLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-    vec3 glaze=mix(diffuseColor.rgb,vec3(frostLuma),frostAmount)*mix(vec3(1.0),vec3(.89,1.0,1.07),statusFrost);
+    vec3 glaze=mix(diffuseColor.rgb,vec3(frostLuma),frostAmount)*mix(vec3(1.0),vec3(.70,1.0,1.18),statusFrost);
     float frostLower=${shader.vertexShader.includes('varying float vActorRegion;')?'step(4.5,vActorRegion)*step(vActorRegion,5.5)':'0.0'};
-    diffuseColor.rgb=mix(glaze,glaze*vec3(.78,1.04,1.12)+vec3(.012,.032,.042),frostLower*statusFrost*.24);
-   `).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+    diffuseColor.rgb=mix(glaze,glaze*vec3(.76,1.04,1.16),frostLower*statusFrost*.24);
+   `).replace('#include <opaque_fragment>',`
     float frostEdge=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),5.0);
-    totalEmissiveRadiance+=vec3(.035,.10,.13)*frostEdge*statusFrost;
-   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v4';m.needsUpdate=true;
+    #ifdef HAS_CREATURE_LANTERN
+    vec3 icyShell=max(outgoingLight-lanternEmission,vec3(0.));
+    float iceValue=dot(icyShell,vec3(.2126,.7152,.0722));
+    outgoingLight=lanternEmission+mix(icyShell,iceValue*vec3(.56,1.09,1.36),statusFrost*.52);
+    #endif
+    outgoingLight+=vec3(.028,.085,.12)*smoothstep(.32,.84,frostEdge)*statusFrost;
+    #include <opaque_fragment>
+   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v5';m.needsUpdate=true;
  }});
- return {set(status:AfflictionStatus){data.status=status;frost.value=status.frozen?1:status.chilled?Math.min(3,Math.max(1,status.chillStacks??1))*.29:0;},animate(_time:number){},reset(){data.status=NO_AFFLICTION;frost.value=0;}};
+ return {set(status:AfflictionStatus){data.status=status;frost.value=status.frozen?1:status.chilled?Math.min(3,Math.max(1,status.chillStacks??1))*.29:0;},animate(_time:number){},reset(frozenBody=false){data.status=NO_AFFLICTION;frost.value=frozenBody?1:0;}};
 }
 const vertex=`attribute float particleAlpha;varying float opacity;attribute vec4 atlas; varying vec2 texUV; varying vec2 localUV;
 void main(){opacity=particleAlpha;texUV=atlas.xy+uv*atlas.zw;localUV=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
