@@ -451,7 +451,7 @@ class PyroPresentation implements AbilityPresentation {
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
     const meltdown = zone.ability === 'meltdown';
-    const pockets = kit.low ? 9 : 18;
+    const pockets = meltdown ? 6 : kit.low ? 9 : 18;
     const clock = kit.reducedMotion ? 0 : kit.time;
     let pool = this.burnYield.find(entry => entry.zone === zone.id);
     if (!pool) {
@@ -462,10 +462,10 @@ class PyroPresentation implements AbilityPresentation {
     for (let i = 0; i < pockets; i++) {
       const seed = zone.id * .71 + i * 2.39996;
       const interior = i % 3 !== 1;
-      const nearSuit = meltdown && i === 0;
+      const nearSuit = meltdown;
       const scatter = authoredVariation(seed);
-      const reach = nearSuit ? .78 : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
-      const angle = seed + .68 * Math.sin(seed * 3.2);
+      const reach = nearSuit ? .85 + .27 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
+      const angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
       // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
@@ -487,7 +487,7 @@ class PyroPresentation implements AbilityPresentation {
       const step = Math.max(0, frame.dt) / .15;
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
-      const height = (.40 + .66 * scatter + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? 1.65 : 1) * (1 - .67 * weight);
+      const height = (.40 + .66 * scatter + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
       kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
@@ -538,6 +538,7 @@ class PyroPresentation implements AbilityPresentation {
     const exhaustAngle = moving ? Math.atan2(-move.vy, -move.vx) : angle + Math.PI;
     const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 8) * .12;
     const age = (zone.durationMs-zone.remainingMs)/1000;
+    kit.sprite('glow', x, .055, z, 1.9, 1.4, HOT, fade * .72, zone.id, 'ground');
     this.suitAngle=angle;
     if (frame.marine !== this.suit) {
       this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);
