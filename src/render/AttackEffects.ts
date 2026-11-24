@@ -357,7 +357,7 @@ export class AttackEffects {
    warning.heavy=!!enemy&&(enemy.type==='brute'||!!enemy.champion);
    if(warning.melee){
     if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
-    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;warning.later=(enemy.meleeOrder??1)>1;warning.striking=enemy.meleePhase==='strike';w.progress=warning.striking?1:enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
+    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;warning.later=enemy.meleePhase==='strike'||(enemy.meleeOrder??1)>1;warning.striking=enemy.meleePhase==='strike';w.progress=warning.striking?1:enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
    }
    warning.brooding=false;
    if(enemy?.champion==='matron' && enemy.health>0 && enemy.broodRemainingMs){
