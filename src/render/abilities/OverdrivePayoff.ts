@@ -58,6 +58,7 @@ export class OverdrivePayoff {
     } else if (event.ability === 'meltdown') {
       const shape = ABILITY_CATALOG.meltdown.shape;
       if (shape.kind === 'circle') k.scar('soot', px, pz, shape.radius / UNIT * .86, 0x2a1510, 7);
+      k.ring(px, pz, this.radius * 2.5, HOT, .65, true);
       const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
       column.param = 1; column.range = .82; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);

@@ -458,19 +458,17 @@ void main(){
    alpha=inside*(.01+c.z*.01+crack*.25+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.11,.19,.24);
   }else if(el<2.5){
-   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
-   float flow=fxNoise(q*1.7+vec2(sin(t*2.+q.y),t*.9));
-   float heart=(1.-smoothstep(.32,1.48+.38*flow,r))*smoothstep(.24,.65,flow);
-   float shimmer=(1.-smoothstep(.03,.20,abs(r-R+.24+.23*flow)))*smoothstep(.35,.72,flow);
-   emit+=vec3(3.4,2.5,.83)*heart+vec3(.9,.41,.03)*shimmer;
-   alpha+=heart*.42+shimmer*.13;
+   vec3 cell=fxCells(q*1.25+.32*n);
+   float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
+   float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
+   float peak=1.-smoothstep(.16,.25,age);
+   float rays=pow(abs(cos(a*5.+.16*n)),9.);
+   float star=(1.-smoothstep(R*(.22+.55*rays),R*(.33+.65*rays),r))*peak;
+   float core=(1.-smoothstep(.25,1.20,r))*peak;
+   base=vec3(.13,.027,.009);
+   emit=vec3(1.38,.27,.018)*fissure*(.4+.6*heat)+vec3(2.7,.85,.14)*star+vec3(2.,2.2,1.8)*core;
+   alpha=.14+.55*fissure+.82*star;
    line=0.;
-   // The activation flash fills the centre before the moving aura settles.
-   float pulse=1.-smoothstep(.05,.18,age);
-   float core=1.-smoothstep(R*(.32+.14*n)*pulse,R*(.61+.16*n)*pulse+.01,r);
-   emit+=fxHeat(.52+.26*core)*core*pulse*(.23+.77*smoothstep(.27,.73,n));
-   alpha+=core*pulse*.64;
-   base=vec3(.025,.01,.006);
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
    vec3 c=fxCells(q*.75+fxSeed),d=fxCells(q*.75+fxSeed+vec2(.07,.03));
