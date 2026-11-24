@@ -60,6 +60,9 @@ def build(joints, tails, high):
         if high and '--portrait-kit' in ARGS:
             from selection_kit import extend
             extend(suit, rig)
+        elif '--portrait-kit' not in ARGS:   # HERO24: game-scale selector kit on the play model
+            import game_kit
+            game_kit.extend(suit, rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
         for side in ((-1, 1) if high else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
             stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
@@ -73,10 +76,10 @@ def build(joints, tails, high):
             big_side = 'R' if key == 'pyro' else 'L'
             cap = name.endswith('pauldron cap ' + big_side)
             lames = ' pauldron lame ' in name and name.endswith(' ' + big_side)
-            painted = cap or lames or ' crown stripe ' in name
+            painted = cap or lames or ' crown stripe ' in name or name.startswith('kit24 paint')
             module = name in ('breacher accumulator', 'cryo dewar', 'pyro fuel cell', 'arc capacitor bank')
             if not high:
-                if not cap and ' crown stripe ' not in name and not module:
+                if not cap and ' crown stripe ' not in name and not module and not name.startswith('kit24 paint'):
                     for slot in obj.material_slots:
                         if slot.material.get('k12Role') in (*M.RIG_COLOUR.values(), 'hazard'):
                             slot.material = M.get('ceramic')

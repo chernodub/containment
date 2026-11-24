@@ -65,7 +65,7 @@ function rig(name:AssetName,span:number,human=false,collisionRadius?:number){
   existing=mixer.clipAction(masked);actions.set(name,existing);return existing;
  };
  const idle=action('stand')??action('idle');idle?.play();if(human){const pose=action('shotgun_delta');pose?.play();if(pose)pose.paused=true;}mixer.update(0);root.updateMatrixWorld(true);
- let metrics=rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{if(object instanceof T.Mesh)bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
+ let metrics=rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{/* HERO24: rig kit (Arc mast, Cryo dewars) may stand above the helmet; the marine's scale stays fitted to the body. */if(object instanceof T.Mesh&&!(human&&/^k10-rig-/.test(object.name||object.parent?.name||'')))bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
  const {size,center,minY}=metrics,factor=span/(human?size.y:Math.max(size.x,size.z));
  // A collider is a circle: fitting only the widest axis lets diagonal legs and
  // thoraxes cross a touching neighbor. Preserve height, tighten horizontal stance.

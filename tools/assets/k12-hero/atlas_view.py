@@ -29,10 +29,15 @@ for m in bpy.data.materials:
     em = nt.nodes.new('ShaderNodeEmission'); nt.links.new(img.outputs[0], em.inputs[0])
     outn = next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'); nt.links.new(em.outputs[0], outn.inputs[0])
 arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+if clip.startswith('m10-'):   # HERO24: authored clips live in motion/marine-motion.glb (same bone names)
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=str(ROOT / 'public/assets/models/motion/marine-motion.glb'))
+    for o in set(bpy.data.objects) - before:
+        o.hide_render = True
 acts = [x.name for x in bpy.data.actions]
 print('ACTIONS', acts)
 if clip:
-    act = next((x for x in bpy.data.actions if clip in x.name), None)
+    act = next((x for x in bpy.data.actions if x.name.startswith(clip)), None) or next((x for x in bpy.data.actions if clip in x.name), None)
     if act:
         arm.animation_data_create(); arm.animation_data.action = act
         if hasattr(arm.animation_data, 'action_slot') and act.slots:
