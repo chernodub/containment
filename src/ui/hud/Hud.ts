@@ -576,22 +576,33 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             let side = '';
             let left = (innerWidth - width) / 2;
             let top = dockTop - height - 12;
-            if (anchored && target && projectActorBounds(renderer, target.id, target.x, target.y, target.radius, actorBounds)) {
+            const hasTargetBounds = target && projectActorBounds(renderer, target.id, target.x, target.y, target.radius, actorBounds);
+            const clears = (x: number, y: number, body: typeof bounds) =>
+                x + width + 8 <= body.left || x >= body.right + 8 || y + height + 8 <= body.top || y >= body.bottom + 8;
+            if (anchored && hasTargetBounds) {
                 const right = actorBounds.left + actorBounds.right >= marine.left + marine.right;
                 const x = right ? actorBounds.right + 24 : actorBounds.left - width - 24;
                 const y = (actorBounds.top + actorBounds.bottom - height) / 2;
-                const clearMarine = x + width + 8 <= marine.left || x >= marine.right + 8
-                    || y + height + 8 <= marine.top || y >= marine.bottom + 8;
-                if (clearMarine && x >= 16 && x + width <= innerWidth - 16 && y >= 24 && y + height <= dockTop - 12) {
+                if (clears(x, y, marine) && x >= 16 && x + width <= innerWidth - 16 && y >= 24 && y + height <= dockTop - 12) {
                     side = right ? 'right' : 'left';
                     left = x;
                     top = y;
                 }
             }
+            if (!side) {
+                const dock = el('action-bar').getBoundingClientRect();
+                const clearSlot = [left, dock.left, dock.right - width].find(x => x >= 16 && x + width <= innerWidth - 16
+                    && clears(x, top, marine) && (!hasTargetBounds || clears(x, top, actorBounds)));
+                if (clearSlot !== undefined) left = clearSlot;
+                objectiveNode.classList.toggle('coaching-obstructed', clearSlot === undefined);
+            } else objectiveNode.classList.remove('coaching-obstructed');
             objectiveNode.dataset.leader = side;
             objectiveNode.style.left = `${left}px`;
             objectiveNode.style.top = `${top}px`;
-        } else if (anchored) {
+        } else {
+            objectiveNode.classList.remove('coaching-obstructed');
+        }
+        if (!coaching && anchored) {
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
             objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
         }

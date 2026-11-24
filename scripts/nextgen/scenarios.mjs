@@ -113,6 +113,17 @@ export const SCENARIOS=[
    }
    throw Error('No seeded live Cryo augment reward draft found');
  }},
+ {id:'ui26-ice-road-draft',state:'reward',phase:'reward',nativeFocus:'[data-mutation=ice-road]',setup:async()=>{
+   const d=window.__containmentDebug;
+   for(let seed=1729;seed<1809;seed++){
+     await d.startRun(seed);
+     await d.gotoRoom('awakening-bay',{phase:'reward',rig:'cryo'});
+     d.grantBoons(['cryogenic']);
+     for(let frame=0;frame<120&&!document.querySelector('.choice-grid');frame++)await new Promise(requestAnimationFrame);
+     if(document.querySelector('[data-mutation=ice-road]'))return;
+   }
+   throw Error('No seeded Ice Road draft found');
+ }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-inspect summary'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
  {id:'rig-inspect-open',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','.rig-inspect[open]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('.rig-inspect summary');frame++)await new Promise(requestAnimationFrame);document.querySelector('.rig-inspect summary').click();}},
  {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('[data-rig=cryo]');frame++)await new Promise(requestAnimationFrame);document.querySelector('[data-rig=cryo]').click();}},
@@ -277,7 +288,13 @@ export const SCENARIOS=[
    d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=loadout]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=loadout]').click();
    const panel=document.querySelector('#pause-tabpanel');panel.scrollTop=panel.scrollHeight;
  }},
- {id:"pause-weapons",state:"paused",required:[".pause-weapons"],nativeKeys:[["Tab",0]],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom("passenger-vault");d.game.pause();d.refresh();while(!document.querySelector("[data-pause-tab=weapons]"))await new Promise(requestAnimationFrame);document.querySelector("[data-pause-tab=weapons]").click();}},
+ {id:"pause-weapons",state:"paused",required:[".pause-weapons"],nativeKeys:[["ArrowRight",0],["ArrowRight",0],["Tab",0],["4",0],["ArrowRight",0]],setup:async()=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom("passenger-vault");
+   d.game.pause();d.refresh();
+   for(let frame=0;frame<900&&!document.querySelector("#tab-resume");frame++)await new Promise(requestAnimationFrame);
+   document.querySelector("#tab-resume").focus();
+ }},
 
  {id:'pause-settings',state:'paused',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=settings]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced')?.setAttribute('open','');}},
  {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=settings]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=settings]').click();const advanced=document.querySelector('.settings-advanced');if(advanced)advanced.open=true;}},
