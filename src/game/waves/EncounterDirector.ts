@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;reinforcement?:boolean;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -25,7 +25,7 @@ export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficult
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
-  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true}>[];
+  beats?:readonly Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;start:number;end:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true;rehearseHeavy?:true}>[];
 }>;
 export type PincerSnapshot = Readonly<{
   state: 'staging' | 'sealed' | 'open';
@@ -115,12 +115,14 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(resistant)marked=true;
     const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&group.role==='flanker'?{afterHeavyRecovery:true as const}:{}),reinforcement:!!reinforcement}));
+    const rehearsalFlank=beat.rehearseHeavy&&group.role==='flanker'&&index===0;
+    const reserveHeavy=beat.rehearseHeavy&&group.role==='anchor'&&index>0;
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(reserveHeavy?2500:0)+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&(group.role==='flanker'||reserveHeavy)?{afterHeavyRecovery:true as const}:{}),...(rehearsalFlank?{rehearsalFlank:true as const}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
-  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
+  return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
@@ -244,6 +246,7 @@ export class EncounterDirector {
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
   }
+  get rehearsalBeat(){return this.plan.beats?.[this.beatIndex]?.rehearseHeavy?this.beatIndex:undefined;}
   get phase(): EncounterPhase { return this.currentPhase; }
   get currentWave(): number { return this.plan.wave; }
   get snapshot(): EncounterSnapshot {
@@ -324,11 +327,12 @@ export class EncounterDirector {
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
   reportPriorityDefeated(beat:number):void {if(Number.isSafeInteger(beat)&&beat===this.beatIndex){this.defusedBeats.add(beat);const plan=this.plan.beats?.[beat];if(plan?.consequence==='leader')this.breakBeat(plan.end);}}
   cancelNextReinforcements():void { this.skipReinforcements=true; }
+  private rehearsalReleaseMs?:number;
   private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean):readonly EncounterEvent[]{
     const beat=this.plan.beats![this.beatIndex];if(!beat)return EMPTY;
     if(this.clearingBeat){
       this.lullRemainingMs=Math.max(0,this.lullRemainingMs-deltaMs);if(this.lullRemainingMs>0)return EMPTY;
-      this.beatIndex++;this.broken=false;this.canceledReinforcements=0;this.usedFlankerBreaches.clear();this.beatElapsedMs=0;this.clearingBeat=false;return EMPTY;
+      this.beatIndex++;this.rehearsalReleaseMs=undefined;this.broken=false;this.canceledReinforcements=0;this.usedFlankerBreaches.clear();this.beatElapsedMs=0;this.clearingBeat=false;return EMPTY;
     }
     this.beatElapsedMs+=deltaMs;
     if(this.dispatched===beat.end){
@@ -344,7 +348,11 @@ export class EncounterDirector {
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
       const cost=request.enemyId==='carrier'?4:1;
-      if(request.atMs>this.beatElapsedMs||cost>slots||request.afterHeavyRecovery&&!heavyRecovered&&occupiedCount>0)break;
+      if(request.atMs>this.beatElapsedMs||cost>slots)break;
+      if(request.rehearsalFlank){
+        if(!heavyRecovered&&occupiedCount>0)break;
+        this.rehearsalReleaseMs=this.beatElapsedMs;
+      }else if(request.afterHeavyRecovery&&this.beatElapsedMs<(this.rehearsalReleaseMs??this.beatElapsedMs)+900)break;
       const arrival=this.placeInterception(request,player);
       if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
         this.dispatched++;this.canceledReinforcements++;continue;
@@ -379,6 +387,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }
