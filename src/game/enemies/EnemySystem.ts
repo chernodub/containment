@@ -280,6 +280,8 @@ export class EnemySystem {
   #nextId = 1;
   #reservedCount = 0;
   #readyTimeMs=0;
+  #feintsStarted=0;
+  get feintsStarted(){return this.#feintsStarted;}
   #packFeintMs=1800;
   readonly #readySeed:number;
   #meleeStartGapMs=0;
@@ -523,6 +525,7 @@ export class EnemySystem {
       const reach=MELEE_ATTACKS[enemy.type].engageRange+(player.radius??DEFAULT_PLAYER_RADIUS);
       if(!this.#packFeintMs&&enemy.type!=='spitter'&&distance<reach+22){
         enemy.feintMs=250;
+        this.#feintsStarted++;
         this.#packFeintMs=3600;
       }
       if(enemy.type!=='brute')continue;
@@ -681,7 +684,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;this.#readyTimeMs=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+    this.#nextId = 1;this.#readyTimeMs=0;this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
