@@ -31,9 +31,10 @@ const actionFilter=option('actions','all').split(',');
 const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const studyAim=Number(option('aim',0))*Math.PI/180;assert(Number.isFinite(studyAim),'Invalid aim angle');
 const travelOption=option('travel',null),travelOverrideAngle=travelOption===null?null:Number(travelOption)*Math.PI/180;assert(travelOverrideAngle===null||Number.isFinite(travelOverrideAngle),'Invalid travel angle');
+const motion25=option('collection','')==='motion25';
 const motion16=option('collection','')==='motion16';
-const motion14=motion16||option('collection','')==='motion14';
-const frames=motion14?30:Number(option('frames',12)),steps=Number(option('steps',4));
+const motion14=motion25||motion16||option('collection','')==='motion14';
+const frames=motion25?12:motion14?30:Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=30);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
 // A matched editing reel. Historical M9 rows retain their original cadence.
@@ -48,6 +49,10 @@ const reel={
 if(motion16){
  reel.marine=[...new Set([...reel.marine,...marineActions.filter(a=>a.startsWith('run-')||a.startsWith('fire-'))])];
  for(const family of ['crawler','stalker','spitter'])reel[family]=[...new Set([...reel[family],'attack','weapon-hit-rifle'])];
+}
+if(motion25){
+ reel.marine=['idle','run-0','run-90','run-180','run-270','stop-start','aim','fire-shotgun','fire-rifle'];
+ for(const family of ['crawler','stalker','brute','spitter','carrier'])reel[family]=['waiting','feint','strike','recovery'];
 }
 const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn',...['pistol','rifle','shotgun','plasma','rocket'].flatMap(w=>[`weapon-hit-${w}`,`weapon-kill-${w}`])];
 const manifest={version:1,meleeProfiles:MELEE_ATTACKS,eliteWindupScale:ELITE_MELEE_WINDUP_SCALE,eliteRecoveryScale:ELITE_MELEE_RECOVERY_SCALE,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
@@ -69,7 +74,7 @@ try{
   for(const action of motion14?(reel[subject]??[]):subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
    const actionFrames=motion14?frames:/^(attack|death|weapon-)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
-   const result=await page.evaluate(({subject,action,frames,steps,motion14,profiles,windupScale,recoveryScale,studyWeapon,studyAim,travelOverrideAngle,weapons})=>{
+   const result=await page.evaluate(({subject,action,frames,steps,motion25,motion14,profiles,windupScale,recoveryScale,studyWeapon,studyAim,travelOverrideAngle,weapons})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
@@ -131,11 +136,14 @@ try{
     if(roomStrip){roomStrip.width=4*480;roomStrip.height=Math.ceil(frames/4)*270;}
     let roomView=false;
 
+    const profile=profiles[family];
+    const studySeconds=action==='feint'?.25:action==='strike'?profile.strikeMs/1000:action==='recovery'?profile.recoveryMs/1000:frames*steps/60;
     const chainStart={x:0,y:0,z:0};
     try{
      for(let frame=0;frame<frames;frame++){
       for(let step=0;step<steps;step++){
-       const tick=frame*steps+step,time=(tick+1)/60,phase=tick/(frames*steps-1);
+       const tick=frame*steps+step,phase=tick/(frames*steps-1);
+       const time=motion25?phase*studySeconds:(tick+1)/60;
        let moving=0,recoil=0,reload=0,vx=0,vy=0;
        if(action.startsWith('run-')){const angle=Number(action.slice(4))*Math.PI/180;moving=1;vx=Math.cos(angle)*220;vy=Math.sin(angle)*220;}
        else if(action.startsWith('reversal-')){const angle=Number(action.slice(9))*Math.PI/180+(phase<.4?Math.PI:0);moving=1;vx=Math.cos(angle)*220;vy=Math.sin(angle)*220;}
@@ -153,6 +161,9 @@ try{
         // Native event timing is observed separately in ordinary capture/play.
         model.setAction?.(ability,phase);
        }
+       if(action==='aim')model.setAimPitch?.(-.12);
+       if(action==='waiting'||action==='feint')model.setWaitingState?.(action==='waiting',action==='feint'?phase:undefined,true);
+       if(action==='strike'||action==='recovery')model.setAttackState?.(action,phase,0,profile.shape);
        if(action==='attack'){
         const profile=profiles[family]??profiles.brute;
         const duration=profile.windupMs*(elite?windupScale:1),remaining=Math.max(0,duration-time*1000);
@@ -268,7 +279,7 @@ try{
      for(let i=1;i<models.length;i++)if(models[i]!==shooter)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
     }
-   },{subject,action,frames:actionFrames,steps,motion14,studyWeapon,studyAim,travelOverrideAngle,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
+   },{subject,action,frames:actionFrames,steps,motion25,motion14,studyWeapon,studyAim,travelOverrideAngle,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
    const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
    if(result.room){await mkdir(resolve(out,'camera'),{recursive:true});await writeFile(resolve(out,'camera',file.replace('.png','.webp')),Buffer.from(result.room,'base64'));delete result.room;}
    await writeFile(resolve(out,file),png);

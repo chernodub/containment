@@ -53,6 +53,7 @@ type Leg = {
 export class MarineMotion {
   authored=false;
   rifleLoad = 0;
+  carriesPlate = false;
   get actionName(){return this.action;}
   get actionNormalized(){return this.actionProgress;}
   private heldCast=false;
@@ -396,7 +397,23 @@ export class MarineMotion {
         if(forward<.18){this.target.x+=Math.cos(this.aim)*(.18-forward);this.target.z+=Math.sin(this.aim)*(.18-forward);this.solveChain(this.leftArm,this.leftForearm,this.leftHand);}
       }
     }
-    if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+    if(this.carriesPlate && !this.dead && !this.action && !reload){
+      this.shieldCarry();
+    }else if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+  }
+
+  private shieldCarry(){
+    if(!this.leftArm||!this.leftForearm||!this.leftHand)return;
+    this.castArm(this.leftArm,this.leftForearm,this.leftHand,.54,-.35,-.18,1);
+    // Roll the mounted face up and slightly forward around the elbow-to-wrist
+    // axis. Its bind-local normal comes from HERO24's painted forearm slab.
+    this.leftForearm.getWorldPosition(this.from);
+    this.leftHand.getWorldPosition(this.axis).sub(this.from).normalize();
+    this.leftForearm.getWorldQuaternion(this.parentQ);
+    this.from.set(.39,0,.92).applyQuaternion(this.parentQ).projectOnPlane(this.axis).normalize();
+    this.to.set(.38*Math.cos(this.aim),1,.38*Math.sin(this.aim)).projectOnPlane(this.axis).normalize();
+    const roll=Math.atan2(this.axis.dot(this.direction.crossVectors(this.from,this.to)),this.from.dot(this.to));
+    this.rotate(this.leftForearm,this.axis,roll,this.yawQ);
   }
 
   /** The original rifle is shorter than the retained animation's handguard.

@@ -496,6 +496,21 @@ export class AuthoredEnemyMotion {
     private feedback = 1;
     private visible = true;
     private renderManaged = false;
+    private waiting = false;
+    private ordinary = true;
+    private get recoveryClip(): string {
+        return this.ordinary && this.player.has('m10-exposed') ? 'm10-exposed' : 'm10-recovery';
+    }
+    private waitOffset = 0;
+    private feintProgress: number | undefined;
+    seedWaiting(id: number): void {
+        this.waitOffset = (Math.imul(id, 0x9e3779b1) >>> 0) / 0x100000000;
+    }
+    setWaitingState(waiting: boolean, feintProgress?: number, ordinary = true): void {
+        this.ordinary = ordinary;
+        this.waiting = waiting;
+        this.feintProgress = feintProgress;
+    }
     private quietLocomotion = false;
     private idlePoseTime = -Infinity;
     constructor(readonly player: AuthoredMotionPlayer, private readonly family = '') { }
@@ -570,7 +585,7 @@ export class AuthoredEnemyMotion {
             : this.element === 'fire' ? 'm10-overdrive-fire' : this.element === 'kinetic' ? 'm10-overdrive-kinetic' : '';
         if (this.phase !== 'approach' || winding) {
             const windup = this.phase === 'windup' || this.phase === 'approach';
-            const base = windup ? 'm10-windup' : this.phase === 'strike' ? 'm10-strike' : 'm10-recovery';
+            const base = windup ? 'm10-windup' : this.phase === 'strike' ? 'm10-strike' : this.recoveryClip;
             const progress = this.phase === 'approach' ? anticipation : this.progress;
             if (reacting || elementClip) {
                 this.player.beginBatch();
@@ -585,7 +600,7 @@ export class AuthoredEnemyMotion {
             return this.player.sample(base, progress, dt, this.phase === 'strike' ? 0 : .025);
         }
         if (this.rifle && reacting && !elementClip) {
-            const base = this.attackAge < .16 ? 'm10-strike' : this.attackAge < .55 ? 'm10-recovery'
+            const base = this.attackAge < .16 ? 'm10-strike' : this.attackAge < .55 ? this.recoveryClip
                 : moving > .3 ? 'm10-run' : 'm10-idle';
             const cycle = this.player.duration(base);
             const progress = this.attackAge < .16 ? this.attackAge / .16 : this.attackAge < .55
@@ -607,23 +622,26 @@ export class AuthoredEnemyMotion {
         if (this.attackAge < .16)
             return this.player.sample('m10-strike', this.attackAge / .16, dt, .02);
         if (this.attackAge < .55)
-            return this.player.sample('m10-recovery', (this.attackAge - .16) / .39, dt);
+            return this.player.sample(this.recoveryClip, (this.attackAge - .16) / .39, dt);
         const spawnDuration = this.player.duration('m10-spawn');
         if (this.age < spawnDuration)
             return this.player.sample('m10-spawn', this.age / spawnDuration, dt);
-        const name = shocked && this.feedback > 0 ? 'm10-shocked' : burning && this.feedback > 0 ? 'm10-burning' : moving > .3 ? 'm10-run' : 'm10-idle';
+        if(this.feintProgress !== undefined && !shocked && !burning && this.player.has('m10-feint'))
+            return this.player.sample('m10-feint',this.feintProgress,dt,.025,this.feedback);
+        const name = shocked && this.feedback > 0 ? 'm10-shocked' : burning && this.feedback > 0 ? 'm10-burning' : this.waiting && this.player.has('m10-waiting') ? 'm10-waiting' : moving > .3 ? 'm10-run' : 'm10-idle';
         const duration = this.player.duration(name);
         // Only renderer-managed waiting locomotion samples at30Hz. Native time,
         // roots and facing stay full rate; combat/status/spawn branches above
         // bypass this pose-only LOD, as do berth owners and direct rig studies.
         let poseDelta = dt;
-        if (this.renderManaged && this.quietLocomotion && (name === 'm10-idle' || name === 'm10-run')) {
+        if (this.renderManaged && this.quietLocomotion && (name === 'm10-idle' || name === 'm10-run' || name === 'm10-waiting')) {
             const continuing = this.player.isCurrent(name);
             if (continuing && time - this.idlePoseTime < 1 / 30 - 1e-6) return true;
             poseDelta = continuing ? Math.min(.05, Math.max(dt, time - this.idlePoseTime)) : dt;
             this.idlePoseTime = time;
         }
-        return this.player.sample(name, (time * (moving > .3 ? speed : 1) % duration) / duration, poseDelta, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
+        const cycle = name === 'm10-waiting' ? (this.age / duration + this.waitOffset) % 1 : (time * (moving > .3 ? speed : 1) % duration) / duration;
+        return this.player.sample(name, cycle, poseDelta, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
     }
     private clearReaction(): void {
         if (this.layered) {
@@ -673,6 +691,7 @@ export class AuthoredEnemyMotion {
     reset(): void {
         this.player.reset();
         this.previous = undefined;
+        this.setWaitingState(false);
         this.age = 0;
         this.element = undefined; this.elementAge = 10;
         this.rifleContactAge = Infinity;
