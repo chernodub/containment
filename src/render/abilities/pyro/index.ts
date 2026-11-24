@@ -177,7 +177,6 @@ class PyroPresentation implements AbilityPresentation {
     if (event.ability === 'meltdown') {
       if (event.phase === 'tick') {
         kit.sustain();
-        kit.ring(x, z, (event.radius ?? 130) / UNIT, HOT, .22, true);
         for (const id of event.targetIds ?? []) {
           const actor = kit.statusActor(id);
           if (actor) kit.mote('spark', actor.root.position.x, .14, actor.root.position.z, 0, .8, 0, .22, .2, CORE);
@@ -489,7 +488,7 @@ class PyroPresentation implements AbilityPresentation {
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
-    kit.sprite('glow', x, .052, z, radius * 1.18, radius * 1.18, FIRE, .27 * fade, zone.id, 'ground-light');
+    if (!meltdown) kit.sprite('glow', x, .052, z, radius * 1.18, radius * 1.18, FIRE, .27 * fade, zone.id, 'ground-light');
     let nearest = radius * radius, lx = x, lz = z;
     for (const enemy of frame.game?.enemies.snapshot.enemies ?? []) {
       const ex = enemy.x / UNIT, ez = enemy.y / UNIT;

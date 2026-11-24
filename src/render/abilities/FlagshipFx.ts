@@ -436,7 +436,7 @@ void main(){
   // VFX15 Overdrive climaxes: three distinct floor events on one disc (fxArc 1 cryo, 2 pyro, 3 arc).
   float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853,el=fxArc,on=fxParam;
   vec2 q=fxWorld.xz-fxOrigin.xz;
-  float n=fxFbm(q*.7+fxSeed);
+  float n=fxNoise(q*.7+fxSeed);
   // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
@@ -445,12 +445,15 @@ void main(){
    float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
    // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
-   float an=fxFbm(vec2(cos(a),sin(a))*2.6+fxSeed);
+   float an=.22+.56*fxNoise(vec2(cos(a),sin(a))*2.6+fxSeed);
    float jag=spread*(.62+.5*an)+teeth*smoothstep(R*.3,R,spread)-.2;
    float inside=1.-smoothstep(jag-.04,jag,r);
    float wall=smoothstep(jag-.35-.4*(spread/R),jag-.04,r)*inside;
-   vec3 c=fxCells(q*.9+n*.8);
-   float crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,fxFbm(q*.35+4.));
+   float crack=0.;
+   if(fxLow<.5){
+    vec3 c=fxCells(q*.9+n*.8);
+    crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,n);
+   }
    float pulseR=mod(max(0.,age-.7),2.)*R*.8;
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
