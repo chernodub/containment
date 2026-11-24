@@ -1015,6 +1015,11 @@ SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nat
 const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
 SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});
 SCENARIOS.push({...SCENARIOS.find(s=>s.id==='complete-fixture'),id:'u4-ending-reduced-motion',reducedMotion:true});
+SCENARIOS.push({
+  ...SCENARIOS.find(s=>s.id==='complete-fixture'),
+  id:'ui26-ending-statistics',
+  nativeKeys:[['Tab',0],['Space',0]],
+});
 const u4Fire=SCENARIOS.find(s=>s.id==='v2-flashfire');
 SCENARIOS.push({...u4Fire,id:'u4-burn-ticks',burst:false,required:['.combat-float[data-source=status][data-damage-token=pyro]:not([hidden])'],setup:new Function(`return (async()=>{
  await (${u4Fire.setup.toString()})(${JSON.stringify(u4Fire.setupArgument)});

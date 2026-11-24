@@ -386,7 +386,7 @@ function pauseWeapons(game: DepthGame): string {
   const ids = Object.keys(WEAPON_JOBS) as WeaponId[];
   return `<section class="pause-weapons">
     <div class="pause-weapon-picker" aria-label="Inspect weapons">${ids.map((id, index) =>
-      `<button type="button" data-weapon="${id}" aria-controls="pause-weapon-${id}" aria-pressed="${id === weapon}"><kbd>${index + 1}</kbd> ${WEAPONS[id].label}</button>`
+      `<button type="button" id="inspect-weapon-${id}" data-weapon="${id}" aria-controls="pause-weapon-${id}" aria-pressed="${id === weapon}"><kbd>${index + 1}</kbd> ${WEAPONS[id].label}</button>`
     ).join('')}</div>
     ${ids.map(id => `<article class="pause-weapon-detail" id="pause-weapon-${id}" ${id === weapon ? '' : 'hidden'}>
       ${studioImage(`weapon-${id}`, 'pause-weapon-art')}
