@@ -328,3 +328,99 @@ Still weak:
    is applied before GraphicSurface's band pass. The marine remains the brightest shape overall, but this case needs
    a per-pixel probe. The Matron's brood arch also barely shows: the `tail` rotation axis may not be the pitch axis,
    so check `m10-brood` in the m9 strip.
+
+## WARDEN25 — the Warden is a boss, not a big Brute
+Base `4ea56510`. Sim collider, charge reach, damage, the wall-impact rule and `BOSS_BODIES` are unchanged.
+
+**Before** (item 1, `artifacts/nextgen/warden25-before{,-trio,-relay}`): from the game camera the Brute, the elite Brute
+and the Warden measured 1.98 / 2.84 / 3.07 m wide and 2.76 / 3.38 / 3.45 m tall. They read as one animal at three
+sizes because they were one sculpture: the Warden was the Brute body plus a horn crown and a ram, so the four pillar
+legs, symmetric shoulders, chest hump and hooked cleaver were identical. The Warden was only 8% wider than the elite.
+In 480×270 silhouette the two were the same blob with a spiky tuft, and the boss showed only through its ring and the
+stun icon.
+
+**Model** (`tools/assets/k11-creatures/warden.py`; `brute.py` now sets `RANK_PARTS = {"boss": ["boss"]}` and
+`TRIS["boss"] = 19900`): one whole sculpture on the shared `tyrant` rig.
+- Right (leading) side: one enormous ram shoulder in the darkest band, with two stacked angular carapace plates, an
+  outer flank plate and a slate ribbed ram face (still the `warden-ram` emission region) driven past the head.
+- Left (trailing) side: a small low shoulder over a bare ochre flank, strapped with dark sinew, with the amber lantern
+  down its back.
+- Head: carried low, offset left and behind the ram, under a pale split crown (plates 450/451, `lead` band).
+- Stance: a braced club forefoot under the ram, heavy splayed hind legs, and a short armoured counterweight tail club.
+- Rigging: the ram, carapace and flank armour ride `chest`, so the shared Brute arm clips cannot swing them. The
+  tyrant forearms rise toward the head, so both arms ignore that line and plant forward and down; only the binding
+  is shared.
+- Plates 400–403 map to `chitin`, 404–429 to `plate`, and 450–451 to `lead`.
+- Atlas: the Warden part now covers a whole body in the shared 2048 atlas, so the Brute's texel share is smaller
+  (bakes are flat bands since CREATURE23).
+
+**Scale** (rank scale 2.3 → 3.8, drawn only):
+- Trio frame, footprint: 3.07 × 2.49 m → 4.49 × 3.65 m (1.46×).
+- Trio frame, height: 3.45 → 4.41 m.
+- i13 idle radial: 1.88 → 2.99 m.
+- i13 height: 3.45 → 4.48 m (calm), 3.59 → 3.99 m (wall stun).
+- Collider: stays 64 units (2.0 m). `warden25/collider.mjs` measured standable area at radius 64/80/96 across all 20
+  story rooms:
+  - At 96 (1.5×), area drops about 45% on average and 72% in passenger-vault (352 → 97 cells).
+  - At 80, it still drops 25%.
+- So the drawn body overhangs the collider by about 1.0 m radius, mostly the counterweight tail. The ram front sits
+  near the collider edge, so at the wall-impact stop it rests on, or slightly into, the wall.
+- Balance simulator / model heights: the rest-pose build estimate (`stats.json` `boss_estimate.height_m`) goes from
+  4.06 to 5.56 m. The in-game bounding height goes from 3.45 to 4.48 m (the runtime squash ×0.86 applies).
+
+**Motion** (`tools/assets/m10-motion/enemy_actions.py`, Brute rig, presentation only):
+- `m10-ram-load` (1.0 s): the charge wind-up, sampled by anticipation in `models.ts` for `champion==='warden'`. The
+  body coils low with the nose down, yawed so the right ram shoulder leads and rolled onto it. The hind feet set back
+  and the left one scrapes twice; the club forefoot braces.
+- `m10-ram-charge` (0.5 s): the run cycle with the same ram lean, held while `chargeMs > 0`.
+- `m10-wall-stun` (used only by the Warden): slumped onto the ram shoulder into the wall, with the bare left flank
+  rolled up toward the room and the head turned away from the wall, crown up.
+- Rebuild:
+  `blender -b -P tools/assets/m10-motion/enemy_actions.py -- --families=brute --clips=m10-ram-load,m10-ram-charge,m10-wall-stun`
+
+**Rebuild trap:** `boss14/ship.sh` failed in `lod.mjs` (`RangeError: Invalid typed array length`) because
+`optimize.mjs` had repacked the other creature files, which already carry LODs. Restore the untouched creatures before
+`lod.mjs`, not after:
+```sh
+R() { for n in dretch basilisk marauder dragoon marine pistol rifle shotgun plasma rocket; do git checkout -- public/assets/models/$n.glb public/assets/models/plain/$n.glb; done; }
+node tools/assets/i11-models/optimize.mjs && R && TOKTX=<toktx> node tools/assets/t12-textures/pack.mjs && R && node tools/assets/i11-models/lod.mjs && R
+```
+
+**Tools:**
+- `warden25/trio.mjs`: Brute, elite Brute and Warden from the game camera. It writes colour, greyscale and silhouette
+  at 1920×1080 and 480×270, plus sizes, draws and triangles.
+- `warden25/preview.py`: a quick band-coloured Blender shape preview, with no bake.
+- `warden25/collider.mjs`: the room area and lane table.
+
+**Evidence** (`artifacts/nextgen/`):
+- `warden25-{before,after}`: crew-checkpoint.
+- `warden25-{before,after}-relay`: relay-racks.
+- `warden25-before-trio` vs `warden25-final-trio`: both rooms.
+- `warden25-k11`: build renders and stats.
+- `playtest/breacher-1729`.
+
+**Measured:**
+- Warden triangles: 19,900 before and after.
+- Trio frames:
+  - Crew-checkpoint: 80 → 79 draws, 175,482 → 175,326 triangles.
+  - Relay-racks: 98 → 99 draws, 189,196 → 189,208 triangles (the known ±1 draw capture variance).
+- i13 boss cases, one boss per invocation: all phases seen in both rooms (wind-up, charge, wall stun, recovery,
+  death), 0 errors, program counters flat at 0.
+- Breacher seed 1729, 7 rooms, `--fast`: 0 errors, 0 defects, programs flat per room (165/158/155/161/161/160/160).
+  The Warden met in the armory (room 6) reached a wall and stunned there (`wallStunAngle` in the mid snapshot).
+
+**What it looks like now:**
+- From above, it is a heavy lopsided hulk about half again the elite's size: a dark angular hull and slate ram on one
+  shoulder, a bare ochre flank on the other, and a club tail behind.
+- Mid-charge, the raised ram shoulder leads the body.
+- In the 480×270 silhouette, the elite is a spiky X of blades while the Warden is a broad mass with a blunt ram knob on
+  one side and the tail club on the other.
+
+**Still weak:**
+1. Seen head-on (it faces the marine most of the time), the outline is broad rather than lopsided. The ram reads as a
+   knob on one shoulder, and the dark carapace dominates the top. In the relay-racks stun the dark carapace still
+   covers most of the top view, so the ochre flank and crown show only along its edge. The roll in `m10-wall-stun`
+   (0.30) may need to be larger, or the dorsal plate 400 smaller.
+2. The drawn body overhangs the 2.0 m collider by about 1 m. The marine can stand inside the Warden's visual edge
+   (visible in the relay stun frame), and the tail clips into walls behind it. A collider of about 72 units is the
+   largest worth trying before passenger-vault and communal-atrium lose too much floor.

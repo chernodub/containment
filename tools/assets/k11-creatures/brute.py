@@ -10,14 +10,15 @@ import numpy as np
 import sdf as S
 from sdf import AnglePlate, bezier, EYE, BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
+import warden as WARDEN
 
 ASSET = "tyrant"
 FAMILY = "brute"
 ASPECT = 1.8
 VOXEL = 0.024
-TRIS = {"body": 11500, "elite": 1600, "boss": 8400}
-RANK_SCALE = {"boss": 2.3, "elite": 1.12}
-RANK_PARTS = {"boss": ["body", "boss"]}   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
+TRIS = {"body": 11500, "elite": 1600, "boss": 19900}   # WARDEN25: the Warden is one whole sculpture (warden.py)
+RANK_SCALE = {"boss": 3.8, "elite": 1.12}   # WARDEN25: Warden drawn ~1.47x the CREATURE23 footprint (sim collider stays 64, see CREATURE18-HANDOFF WARDEN25)
+RANK_PARTS = {"boss": ["boss"]}   # WARDEN25: its own animal, not the Brute body plus a crown   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 2.0
 BANDS = {   # CREATURE18: dark chitin, warm flesh, blades at ~half the old bone value (cool grey), ochre lantern
@@ -28,7 +29,7 @@ BANDS["lead"] = (0.80, 0.55, 0.32)
 BANDS["plate"] = (0.30, 0.16, 0.09)   # CREATURE20: dark umber angular chest/arm armour over the ochre body   # CREATURE19: the head plate is the lightest body plane (which end is the head)
 BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}
 # dorsal shingle row (hump 90/93, hind 20/23/26/29) joins the dark armour: a hard spine over ochre flanks
-PLATE_BAND = {**{i: "plate" for i in range(300, 335)}, 50: "plate", 55: "lead", 329: "lead", **{160 + i: "lead" for i in range(8)}, **{i: "chitin" for i in (*range(90, 96), 20, 23, 26, 29)}}   # CREATURE19: the whole hump is dark armour   # top-view plates carry the mid band, gaps go dark
+PLATE_BAND = {**{i: "plate" for i in (*range(300, 335), *WARDEN.RAM_PLATES)}, **{i: "lead" for i in WARDEN.CROWN_PLATES}, **{i: "chitin" for i in WARDEN.RAM_DARK}, 50: "plate", 55: "lead", 329: "lead", **{160 + i: "lead" for i in range(8)}, **{i: "chitin" for i in (*range(90, 96), 20, 23, 26, 29)}}   # CREATURE19: the whole hump is dark armour   # top-view plates carry the mid band, gaps go dark
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),
@@ -161,64 +162,6 @@ def build(sk):
     elite.extend(A.blade(wr_r + (end_r - wr_r) * 0.2, end_r + v3((1.55, -0.75, 0.3)), v3((0.45, -1.0, 0.6)), 1.15, 0.2, "claw.r",
                          hook=0.55, serrations=5, zone=BONE, edge_zone=BONE))
     elite.extend(A.rank_mantle(hind_c, hind_r, hind_R, "tail", 0.15))   # CREATURE21: broad pale rank mantle
-    # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
-    boss = S.Sculpture("brute-warden")
-    # --- organic crown: grown horn/bone plates rising from the shoulders, asymmetric, one broken tine
-    horns = [(-1.45, 1.6, 0.25, False), (-0.75, 2.3, 0.3, False), (0.0, 2.0, 0.32, False), (0.75, 2.9, 0.34, False),
-             (1.4, 3.4, 0.36, False), (1.95, 1.05, 0.3, True)]
-    for i, (yy, h, r, broken) in enumerate(horns):
-        base = chest_c + z(-0.15 - 0.1 * abs(yy), yy * 0.8, 0.95 - 0.12 * abs(yy))
-        outward = v3((0, yy * 0.35, 0))
-        h *= 1.35
-        tip = base + v3((-1.6 - 0.35 * h, 0, h * 0.85)) + outward * h * 0.9
-        mid = base + v3((0.15, 0, h * 0.55)) + outward * h * 0.25
-        pts = bezier(base, mid, tip + v3((0.4, 0, -h * 0.15)), tip, 8)
-        if broken:   # snapped tine: thick stump with a jagged end
-            pts = pts[:5]
-        radii = [r * (1.0 - 0.8 * j / 8) for j in range(len(pts))]
-        if broken:
-            radii[-1] = r * 0.62
-        boss.add(S.Tube(pts, radii, zone=CREST, bone="chest", k=0.12, plate=160 + i))   # CREATURE19: crown in the light lead band
-        if broken:
-            for k in range(3):
-                d = v3((np.cos(k * 2.1), np.sin(k * 2.1), 0.6))
-                boss.add(RoundCone(pts[-1], pts[-1] + d * r * 0.7, r * 0.3, r * 0.05, zone=TOOTH, bone="chest"))
-        for t in (0.25, 0.55):   # growth rings banding the horn
-            j = int(t * (len(pts) - 1))
-            boss.add(S.Torus(pts[j], pts[j + 1] - pts[j], radii[j] * 0.95, radii[j] * 0.18, zone=ARMOR, bone="chest", k=0.05))
-    # fused bone plates knitting the horn roots into a collar over the shoulders
-    for i, yy in enumerate((-1.1, -0.35, 0.4, 1.15)):
-        c = chest_c + z(-0.25, yy * 0.85, 0.85)
-        boss.add(Plate(c, (0.75, 0.6, 0.28), frame(v3((1, 0, 0.4)), normalize(v3((0.3, yy * 0.3, 1)))), 0.22, rings=0.014, lip=0.06,
-                       chip=0.06, seed=150 + i, zone=ARMOR, bone="chest", plate=150 + i))
-    # --- battering ram: massive blunt bone ram on the brow (emission region warden-ram)
-    ram0, ram1 = head_c + z(-0.5, 0, 0.3), head_c + z(1.55, 0, -0.05)
-    boss.add(RoundCone(ram0, ram1, 0.85, 0.8, zone=ARMOR, bone="head", k=0.25, name="warden-ram"))
-    boss.add(S.Stretch(Ellipsoid(ram1 + z(0.15, 0, 0), (0.6, 1.05, 0.62 * a), frame(normalize(ram1 - ram0))),
-                       normalize(ram1 - ram0), 0.2, 0.06, zone=BONE, bone="head", name="warden-ram"))   # pale ram face = charge direction
-    for s_ in (-1, 1):
-        boss.add(RoundCone(ram1 + v3((-0.1, 0.75 * s_, 0.1)), ram1 + v3((0.35, 1.05 * s_, 0.35)), 0.34, 0.16, zone=CREST, bone="head"))
-    # CREATURE19 Warden's own head and stance: a forward-slung armoured helm hanging below the brow line,
-    # and low heavy dark pauldrons that widen the shoulders at elbow height
-    # CREATURE20 Warden head: a broad, forward-swept dark helm with a split crown of two raked light plates and a heavy
-    # umber lower jaw projecting forward past the shoulder line, all angular plates; low angular pauldrons
-    boss.add(AnglePlate(head_c + z(0.45, 0, 0.32), frame((1, 0, -0.45)), 1.75, 1.55, 0.42, keel=0.38, rake=0.25, taper=0.8,
-                        lift=0.0, zone=ARMOR, bone="head", plate=158))
-    for s_ in (-1, 1):
-        boss.add(AnglePlate(head_c + z(-0.55, 0.75 * s_, 0.75), frame(normalize(v3((-0.55, 0.55 * s_, 1.0))), normalize(v3((0.25, s_, 0.1)))),
-                            1.35, 0.55, 0.26, keel=0.16, rake=0.9, taper=0.5, zone=CREST, bone="head", plate=166 + (s_ > 0)))
-    boss.add(AnglePlate(head_c + z(1.05, 0, -0.6), frame((-1, 0, 0.25), (0, 0, -1)), 1.6, 1.05, 0.36, keel=0.28, rake=0.75, taper=0.75,
-                        zone=ARMOR, bone="jaw", plate=329))
-    for s_ in (-1, 1):   # CREATURE21: the Warden's ochre eyes glow on the helm front, above the light jaw
-        boss.add(Ellipsoid(head_c + z(1.55, 0.72 * s_, 0.12), (0.3, 0.3, 0.3 * a), zone=EYE, bone="head"))
-    for s_ in (-1, 1):
-        side_ = "r" if s_ < 0 else "l"
-        sh_ = sk.h(f"shoulder.{side_}")
-        boss.add(AnglePlate(sh_ + v3((0.0, 0.85 * s_, 0.1)), frame(normalize(v3((-1, 0.15 * s_, -0.1))), normalize(v3((0, s_, 0.55)))),
-                            1.4, 1.05, 0.4, keel=0.3, rake=0.6, taper=0.6, lift=0.2, zone=ARMOR, bone=f"shoulder.{side_}", plate=157))
-    # heavier right battering forearm: knuckle bosses along the crusher
-    el, wr = sk.h("forearm.r"), sk.h("claw.r")
-    for t in (0.3, 0.55, 0.8):
-        c = el + (wr - el) * t + v3((0.25, -0.45, 0.2))
-        boss.add(Ellipsoid(c, (0.36, 0.34, 0.3), zone=ARMOR, bone="forearm.r", k=0.05))
+    # --- boss (Brute Warden): WARDEN25 its own asymmetric battering animal (warden.py)
+    boss = WARDEN.build(sk, a)
     return {"body": body, "elite": elite, "boss": boss}

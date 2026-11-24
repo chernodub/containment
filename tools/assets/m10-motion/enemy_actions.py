@@ -463,6 +463,39 @@ class Creature:
             else:
                 self.rotate(name,axis,face*.82)
 
+    def ram_lean(self, l):
+        """WARDEN25: lead with the right ram shoulder: low, nose down, yawed left so the ram comes forward, rolled
+        onto the ram side. Body rotations only; planted feet are solved afterwards."""
+        H,W=self.height,self.width
+        self.move(self.center,-UP*H*.10*l-FWD*W*.03*l)
+        self.rotate(self.center,SIDE,.20*l)
+        self.rotate(self.center,UP,.36*l)
+        self.rotate(self.center,FWD,.12*l)
+        self.rotate('head',UP,-.30*l)
+        self.rotate('head',SIDE,.18*l)
+
+    def ram_load(self, t, targets):
+        """WARDEN25 charge wind-up (sampled by anticipation): coil low behind the ram, hind legs set back and wide,
+        the left hind foot scrapes twice, the club forefoot braces forward."""
+        H,W=self.height,self.width
+        l=smooth(min(1,t/.55))
+        self.ram_lean(l*1.15)
+        self.move(self.center,-FWD*W*.05*l)
+        scrape=max(0.,math.sin(math.pi*min(1,max(0,(t-.35)/.5))*2)) if t>.35 else 0
+        for leg in self.legs:
+            i=leg['index']
+            if i>=2:
+                targets[i]=leg['rest']-FWD*W*.14*l+SIDE*W*(.05 if i==3 else -.05)*l
+                if i==3 and scrape>0:
+                    targets[i]=targets[i]-FWD*W*.16*scrape+UP*H*.05*scrape
+            else:
+                targets[i]=leg['rest']+FWD*W*.05*l
+        for arm in self.arms:
+            if arm['index']<0:
+                self.solve(arm,arm['rest']+FWD*W*.18*l-UP*H*.10*l,14)
+            else:
+                self.solve(arm,arm['rest']-FWD*W*.10*l+SIDE*W*.05*l,14)
+
     def lag_brood(self, history):
         # The rear mantle skins to tail / tail.001 / tip. Let the thorax
         # lead it by two 30 Hz drawings, also when banking on a side hit.
@@ -553,7 +586,12 @@ class Creature:
             self.m={n:m.lerp(self.idle_start[n],release) for n,m in self.m.items()}
             self.commit()
             return
-        if action=='m10-waiting':
+        ram = action if action in ('m10-ram-load', 'm10-ram-charge') else ''
+        if ram == 'm10-ram-charge':
+            action = 'm10-run'
+        if ram == 'm10-ram-load':
+            self.ram_load(t, targets)
+        elif action=='m10-waiting':
             self.waiting(t,targets)
         elif action == 'm10-idle':
             breath=math.sin(t*math.tau)
@@ -593,17 +631,25 @@ class Creature:
                     desired=arm['rest']+UP*H*.12+FWD*W*.09*math.sin(phase+arm['index']*math.pi/2)
                     self.solve(arm,desired)
         elif action=='m10-wall-stun':
-            # CREATURE22: the helm rests forward against the wall, crown up and visible from above
-            self.move(self.center,-UP*H*.18)
-            self.rotate(self.center,SIDE,.22)
-            self.rotate('head',SIDE,-.12)   # CREATURE23: crown tips up in profile above the shoulder line
-            self.move('head',FWD*W*.18+UP*H*.07)
-            head=self.base_matrices['head'].translation
-            deck=min(leg['rest'].dot(UP) for leg in self.legs)
+            # WARDEN25: slumped onto the ram shoulder against the wall. The body rolls onto its armoured right side and
+            # yaws the ram into the wall, so the bare ochre left flank turns up and back toward the room; the head drops
+            # back off the ram and turns away from the wall, crown up.
+            self.move(self.center,-UP*H*.16-FWD*W*.02)
+            self.rotate(self.center,SIDE,.20)
+            self.rotate(self.center,UP,.34)
+            self.rotate(self.center,FWD,.30)
+            self.rotate('head',UP,.55)
+            self.rotate('head',SIDE,-.30)
+            self.move('head',-FWD*W*.10+UP*H*.06+SIDE*W*.08)
             for arm in self.arms:
-                tip=head+FWD*W*.49+SIDE*arm['index']*W*.40
-                tip+=UP*(deck+.09*H-tip.dot(UP))
-                self.solve(arm,tip,16)
+                if arm['index']<0:   # club forefoot braced on the wall foot
+                    self.solve(arm,arm['rest']+FWD*W*.22-UP*H*.12,16)
+                else:                # small left arm hangs off the raised flank
+                    self.solve(arm,arm['rest']+SIDE*W*.14-UP*H*.04,16)
+            for leg in self.legs:
+                i=leg['index']
+                left=leg['rest'].dot(SIDE)>self.base_matrices[self.center].translation.dot(SIDE)
+                targets[i]=leg['rest']+SIDE*W*(.16 if left else -.04)+FWD*W*(.08 if i<2 else -.06)
         elif action in ('m10-windup','m10-strike','m10-recovery'):
             if self.family=='brute':self.cleaver(action,t,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
@@ -782,6 +828,8 @@ class Creature:
                 tip=self.m[arm['bones'][-1]] @ arm['tip_local']
                 land=arm['rest']+SIDE*W*side*.29+FWD*W*(.27 if side<0 else -.13)
                 self.solve(arm,tip.lerp(land,fall))
+        if ram == 'm10-ram-charge':
+            self.ram_lean(1.0)
         self.plant(targets)
         if action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
@@ -801,7 +849,7 @@ DURATIONS = {
     'm10-death-kinetic':.40,
     'm10-spawn':1.1,
 }
-FAMILY_CLIPS = {'carrier': {'m10-brood': .6}}   # CREATURE22: family-only clips
+FAMILY_CLIPS = {'carrier': {'m10-brood': .6}, 'brute': {'m10-ram-load': 1.0, 'm10-ram-charge': .5}}   # WARDEN25: Warden ram clips   # CREATURE22: family-only clips
 
 
 def author(family, patterns=None):
