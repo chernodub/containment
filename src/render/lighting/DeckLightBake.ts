@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {roomValueProfile} from './RoomValueStandard';
+import {landmarkHousing,laneWorklight} from './LaneWorklight';
 import type { RoomTemplate } from '../../game/roguelike/types';
 
 type Bake = { key:string; pixels:Uint8Array; bounds:T.Vector4 };
@@ -32,11 +32,9 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
   const smooth = (lo: number, hi: number, value: number) => {
     const a = Math.max(0, Math.min(1, (value - lo) / (hi - lo))); return a * a * (3 - 2 * a);
   };
-  const lamp = roomValueProfile(t.id)?.landmark;
-  const sourceX = (lamp?.at[0] ?? 0)/32, sourceZ = (lamp?.at[1] ?? 0)/32;
-  const arena=pools[0];
-  const aim = arena ? Math.atan2(arena.x-sourceX,arena.y-sourceZ) : 0;
-  const sin = Math.sin(aim), cos = Math.cos(aim);
+  const lamps=[laneWorklight(t.id),landmarkHousing(t.id)].flatMap(lamp=>lamp?[{
+    x:lamp.x/32,z:lamp.z/32,sin:Math.sin(lamp.angle),cos:Math.cos(lamp.angle),
+  }]:[]);
   const size = 256, pixels = new Uint8Array(size * size * 4);
   for (let row = 0; row < size; row++) for (let column = 0; column < size; column++) {
     const x = x0 + (column + .5) / size * width, z = z0 + (row + .5) / size * depth;
@@ -52,12 +50,15 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
     }
     // A fixed cut-off hood casts three panes of light from the visible
     // landmark post. The same room-space field is filtered on both tiers.
-    const along=(x-sourceX)*sin+(z-sourceZ)*cos;
-    const across=(x-sourceX)*cos-(z-sourceZ)*sin;
-    const spread=.34+Math.max(0,along)*.22;
-    const u=across/spread;
-    const aperture=lamp && arena ? smooth(0,.20,along)*(1-smooth(2.7,5.8,along))*
-      (1-smooth(.82,1.05,Math.abs(u)))*(.22+.78*smooth(.035,.13,Math.abs(Math.abs(u)-.34))) : 0;
+    let aperture=0;
+    for(const lamp of lamps){
+      const along=(x-lamp.x)*lamp.sin+(z-lamp.z)*lamp.cos;
+      const across=(x-lamp.x)*lamp.cos-(z-lamp.z)*lamp.sin;
+      const u=across/(.46+Math.max(0,along)*.34);
+      const beam=smooth(-.30,.14,along)*(1-smooth(.9,3.6,along))*
+        (1-smooth(.56,1.2,Math.abs(u)))*(.64+.36*smooth(.02,.16,Math.abs(Math.abs(u)-.34)));
+      aperture=Math.max(aperture,beam);
+    }
     const index = (row * size + column) * 4;
     pixels[index] = Math.round(pool * 255); pixels[index + 1] = Math.round(smooth(.1, 1.7, nearest) * 255);
     pixels[index + 2] = Math.round(aperture*255); pixels[index + 3] = 255;

@@ -43,9 +43,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
     case 'residential-gallery':
       rails(10);box(L,6,0,44,8,26,iron,.1);
       for(const x of [L-16,L+16])for(const z of [-10,10])
-        p.rod([x,7,z],[x,21,z],2,steel);
-      box(L,21,0,44,3,27,ochre);disc(L-9,23,2,7,2,0xa5aea4);
-      disc(L+7,23,-3,5,7,0x748385);break;
+        p.rod([x,7,z],[x,16,z],2,steel);
+      box(L,16,0,44,3,27,ochre);disc(L-9,18,2,7,2,0xa5aea4);
+      disc(L+7,18,-3,5,7,0x748385);break;
     case 'communal-atrium':
       pipe(0,0,L,0,4,4,0x756e53);
       for(let x=22;x<L;x+=40){pipe(x,0,x+9,13,3,2.5,iron);disc(x+9,4,13,4,3,steel);}
@@ -70,9 +70,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
     case 'diagnostic-gallery':
       box(L/2,3,0,L,6,14,iron);box(L/2,7,0,L,2,5,steel);
       disc(L,5,0,15,7,boot);disc(L,12,0,10,4,steel);
-      p.rod([L,15,0],[L+16,22,25],4,steel);
-      box(L+17,20,25,25,9,15,0x648785,-.35);
-      for(const x of [-6,6])disc(L+17+x,25,25,4,2,ice);break;
+      p.rod([L,15,0],[L+16,19,25],4,steel);
+      box(L+17,17,25,25,9,15,0x648785,-.35);
+      for(const x of [-6,6])disc(L+17+x,22,25,4,2,ice);break;
     case 'safety-interlock-station':
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);
