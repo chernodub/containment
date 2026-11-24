@@ -45,3 +45,10 @@ The serial native baseline began at load averages 3.21 / 2.07 / 2.12.
 The one-minute load later reached 34.49 on this 10-core host while
 other Chromium and Metal compiler jobs were active. This receipt
 cannot establish the requested quiet-machine comparison.
+
+The first kiting captures showed that an existing engagement fit could
+move the marine below the preferred band. The updated candidate retries
+the centre correction after engagement framing. It retains the preceding
+pose when the correction would change zoom or fail the room and full-body
+clearance checks. This makes the centre band a preference at conflicting
+positions.

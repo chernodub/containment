@@ -213,6 +213,13 @@ export class RoomCombatFraming {
     // Final pose safety follows every room/remote clamp; perspective extents
     // are remeasured to convergence rather than spending the16px margin.
     this.protectBody(camera,focus,x,z,radius,height,viewport);
+    const safeX=camera.position.x,safeZ=camera.position.z,safeZoom=camera.zoom;
+    this.protectBody(camera,focus,x,z,radius,height,viewport,undefined,true);
+    if(camera.zoom!==safeZoom||!this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport)){
+      this.move(camera,focus,safeX-camera.position.x,safeZ-camera.position.z);
+      if(camera.zoom!==safeZoom){camera.zoom=safeZoom;camera.updateProjectionMatrix();}
+      this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+    }
     this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
     outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
     this.x=camera.position.x;this.z=camera.position.z;this.zoom=camera.zoom;
