@@ -17,11 +17,11 @@ void main(){
 const revealFragment = `
 uniform sampler2D suitDepth, optics, sceneDepth, sceneGeometry;
 uniform vec2 screenSize;
-uniform vec4 patch;
+uniform vec4 patchRect;
 uniform vec3 rigColor;
 uniform bool classified;
 void main(){
-  vec2 uv=(gl_FragCoord.xy-patch.xy)/patch.zw;
+  vec2 uv=(gl_FragCoord.xy-patchRect.xy)/patchRect.zw;
   float depth=texture2D(suitDepth,uv).r;
   if(depth>=1.)discard;
   vec2 screen=gl_FragCoord.xy/screenSize;
@@ -30,7 +30,7 @@ void main(){
     if(kind==3.||depth<=texture2D(sceneDepth,screen).r+.000001)discard;
   }
   gl_FragDepth=depth-.000001;
-  vec2 px=1.5/patch.zw;
+  vec2 px=1.5/patchRect.zw;
   float outside=max(max(texture2D(suitDepth,uv+vec2(px.x,0)).r,texture2D(suitDepth,uv-vec2(px.x,0)).r),
                     max(texture2D(suitDepth,uv+vec2(0,px.y)).r,texture2D(suitDepth,uv-vec2(0,px.y)).r));
   float edge=step(1.,outside),visor=texture2D(optics,uv).r;
@@ -64,12 +64,12 @@ function locatorTexture():T.DataTexture {
 export class PlayerBeacon {
   readonly root = new T.Group();
   readonly maskScene=new T.Scene();
-  readonly target=new T.WebGLRenderTarget(1,1,{minFilter:T.NearestFilter,magFilter:T.NearestFilter,depthTexture:new T.DepthTexture(1,1)});
+  readonly target=new T.WebGLRenderTarget(1,1,{minFilter:T.NearestFilter,magFilter:T.NearestFilter,depthTexture:new T.DepthTexture(1,1,T.UnsignedIntType)});
   private readonly skinMaterial=new T.ShaderMaterial({vertexShader:skinVertex,fragmentShader:`uniform sampler2D glow;varying vec2 suitUv;
     void main(){vec3 c=texture2D(glow,suitUv).rgb;gl_FragColor=vec4(smoothstep(.015,.12,c.b-c.r),0.,0.,1.);}`,uniforms:{glow:{value:null}},toneMapped:false});
   private readonly material=new T.ShaderMaterial({transparent:true,depthWrite:false,depthFunc:T.GreaterDepth,toneMapped:false,
-    uniforms:{patch:{value:new T.Vector4()},screenSize:{value:new T.Vector2()},suitDepth:{value:this.target.depthTexture},optics:{value:this.target.texture},sceneDepth:{value:null},sceneGeometry:{value:null},classified:{value:false},rigColor:{value:new T.Color()}},
-    vertexShader:`uniform vec4 patch;uniform vec2 screenSize;void main(){gl_Position=vec4((patch.xy+uv*patch.zw)/screenSize*2.-1.,0.,1.);}`,fragmentShader:revealFragment});
+    uniforms:{patchRect:{value:new T.Vector4()},screenSize:{value:new T.Vector2()},suitDepth:{value:this.target.depthTexture},optics:{value:this.target.texture},sceneDepth:{value:null},sceneGeometry:{value:null},classified:{value:false},rigColor:{value:new T.Color()}},
+    vertexShader:`uniform vec4 patchRect;uniform vec2 screenSize;void main(){gl_Position=vec4((patchRect.xy+uv*patchRect.zw)/screenSize*2.-1.,0.,1.);}`,fragmentShader:revealFragment});
   private readonly quad=new T.Mesh(new T.PlaneGeometry(2,2),this.material);
   private readonly sources:Array<{source:T.SkinnedMesh,copy:T.SkinnedMesh}>=[];
   private readonly projection=new Float64Array(6);
@@ -81,7 +81,7 @@ export class PlayerBeacon {
     const x=Math.floor((left+1)*screen.x*.5)-3,y=Math.floor((bottom+1)*screen.y*.5)-3;
     const w=Math.ceil(((right-left)*screen.x*.5+8)/64)*64,h=Math.ceil(((top-bottom)*screen.y*.5+8)/64)*64;
     this.target.setSize(w,h);this.target.viewport.set(-x,-y,screen.x,screen.y);
-    u.patch.value.set(x,y,w,h);u.rigColor.value.setHex(rig);
+    u.patchRect.value.set(x,y,w,h);u.rigColor.value.setHex(rig);
     u.sceneDepth.value=depth;u.sceneGeometry.value=geometry;u.classified.value=!!depth&&!!geometry;
     this.material.depthTest=!u.classified.value;
     for(const {copy,source} of this.sources){
@@ -89,7 +89,7 @@ export class PlayerBeacon {
       copy.bindMatrix.copy(source.bindMatrix);copy.bindMatrixInverse.copy(source.bindMatrixInverse);
     }
     const previous=renderer.getRenderTarget();renderer.setRenderTarget(this.target);
-    try{renderer.clearDepth();renderer.render(this.maskScene,camera);}finally{renderer.setRenderTarget(previous);}
+    try{renderer.render(this.maskScene,camera);}finally{renderer.setRenderTarget(previous);}
   }
 
   private readonly locatorMap=locatorTexture();
