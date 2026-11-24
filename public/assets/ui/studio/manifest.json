@@ -1,153 +1,45 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 194907,
+    "bytes": 239529,
     "shot": {
+      "source": "selection24",
+      "rig": "breacher",
       "width": 640,
       "height": 640,
-      "span": 2.1,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "breacher",
-          "weapon": "shotgun",
-          "pose": "",
-          "frame": 0,
-          "aim": 1.29
-        }
-      ],
-      "focus": [
-        0,
-        0.99,
-        0
-      ],
-      "rimColor": 16765027,
-      "key": [
-        2,
-        4,
-        5
-      ],
-      "cameraDirection": [
-        4,
-        1.9,
-        6
-      ],
-      "card": true,
-      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 192113,
+    "bytes": 228303,
     "shot": {
+      "source": "selection24",
+      "rig": "cryo",
       "width": 640,
       "height": 640,
-      "span": 2.13,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "cryo",
-          "weapon": "rifle",
-          "pose": "",
-          "frame": 0,
-          "aim": 1.37
-        }
-      ],
-      "focus": [
-        0,
-        0.99,
-        0
-      ],
-      "rimColor": 8378111,
-      "key": [
-        2,
-        4,
-        5
-      ],
-      "cameraDirection": [
-        4,
-        1.9,
-        6
-      ],
-      "card": true,
-      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 261705,
+    "bytes": 235051,
     "shot": {
+      "source": "selection24",
+      "rig": "pyro",
       "width": 640,
       "height": 640,
-      "span": 2.13,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "pyro",
-          "weapon": "rocket",
-          "pose": "",
-          "frame": 0,
-          "aim": 0.09
-        }
-      ],
-      "focus": [
-        0,
-        0.99,
-        0
-      ],
-      "rimColor": 16742958,
-      "key": [
-        2,
-        4,
-        5
-      ],
-      "cameraDirection": [
-        4,
-        1.9,
-        6
-      ],
-      "card": true,
-      "framePortrait": true,
       "transparent": true
     }
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 201140,
+    "bytes": 219444,
     "shot": {
+      "source": "selection24",
+      "rig": "arc",
       "width": 640,
       "height": 640,
-      "span": 2.17,
-      "subjects": [
-        {
-          "kind": "marine",
-          "rig": "arc",
-          "weapon": "plasma",
-          "pose": "",
-          "frame": 0,
-          "aim": 1.43
-        }
-      ],
-      "focus": [
-        0,
-        0.99,
-        0
-      ],
-      "rimColor": 12033279,
-      "key": [
-        2,
-        4,
-        5
-      ],
-      "cameraDirection": [
-        4,
-        1.9,
-        6
-      ],
-      "card": true,
-      "framePortrait": true,
       "transparent": true
     }
   },

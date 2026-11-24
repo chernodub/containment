@@ -57,6 +57,9 @@ def build(joints, tails, high):
         suit.groups['body'].append(part)
     for rig in RIGS:
         suit.build_rig(rig)
+        if high and '--portrait-kit' in ARGS:
+            from selection_kit import extend
+            extend(suit, rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
         for side in ((-1, 1) if high else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
             stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
@@ -181,8 +184,10 @@ def main():
         from bake import bake_and_export
         bake_and_export(arm, low, high, D)
     if '--hero' in ARGS:
-        from hero import save_hero
-        save_hero(arm, high, D)
+        import hero
+        if "--portrait-kit" in ARGS:
+            hero.HERO_GLB = hero.HERO_GLB.with_name("marine-selection.glb")
+        hero.save_hero(arm, high, D)
 
 
 main()
