@@ -121,8 +121,9 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
 `;
 
 export const inkComposite = /* glsl */ `
+ vec4 actorGeometry=texture2D(tGeometry,uv);actorGeometry.zw*=255.0;
  if(inkMode>.5) {
-  vec4 geometry=texture2D(tGeometry,uv);geometry.zw*=255.0;
+  vec4 geometry=actorGeometry;
   float line=inkCoverage(uv,texture2D(tDepth,uv).x,geometry);
   geometry.w=mod(floor(geometry.w+.5),8.0);
   // Hot effects stay above ink; the line inherits a restrained local light tint.
@@ -142,7 +143,7 @@ export const inkComposite = /* glsl */ `
   if(combatSilhouette>.01&&geometry.w>=3.&&geometry.w<=6.){
    float committed=texture2D(combatOutlineIds,vec2((geometry.z+.5)/256.,.5)).r;
    // Bright effects cannot erase the identified actor's silhouette.
-   color=mix(color,vec3(.80,.91,1.),combatSilhouette*committed*.62*step(3.5,geometry.w));
+   color=mix(color,vec3(.078,.095,.11),combatSilhouette*committed*.62*step(3.5,geometry.w));
   }
  }
 `;

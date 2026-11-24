@@ -186,6 +186,19 @@ ${inkComposite}
     float vignette = smoothstep(0.23, 0.76, length((vUv - 0.5) * vec2(1.0, 0.85)));
     color *= 1.0 - vignette * 0.11;
   }
+  // Roll graded creature highlights into a shoulder without crushing shadows.
+  float packedClass=floor(actorGeometry.w+.5);
+  float actorClass=mod(packedClass,8.0);
+  float region=floor(packedClass/8.0);
+  if(actorClass>=4.0 && actorClass<=6.0){
+    float value=dot(color,vec3(.2126,.7152,.0722));
+    bool ornament=region==9.0 || region==15.0;
+    bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
+    if(!ornament && !danger && value>.075){
+      float bounded=.075+.097*(1.-exp(-(value-.075)/.097));
+      color*=bounded/value;
+    }
+  }
   gl_FragColor = vec4(max(color, 0.0), 1.0);
   #include <colorspace_fragment>
   float dither = noise(gl_FragCoord.yx + 19.0);
