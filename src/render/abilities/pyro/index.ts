@@ -135,7 +135,7 @@ class PyroPresentation implements AbilityPresentation {
         p.arc = event.arcRadians ?? FAN_ARC;
         p.targetIds = event.targetIds;
         const c = Math.cos(p.angle), s = Math.sin(p.angle);
-        const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 7);
+        const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 2.4);
         scorch.angle = p.angle; scorch.arc = p.arc; scorch.range = p.range; scorch.inner = .06; scorch.h0 = scorch.h1 = .034;
         kit.flash(x + c * 1.2, z + s * 1.2, HOT, 30, 9, 4, .34);
         kit.flash(x + c * p.range * .6, z + s * p.range * .6, FIRE, 18, p.range, 3, .45);
@@ -164,7 +164,7 @@ class PyroPresentation implements AbilityPresentation {
         for (const p of this.effects) if (p.live && p.kind === 'lob' && Math.hypot(p.tx - tx, p.tz - tz) < .02) p.live = false;
         kit.burst(tx, .25, tz, 'pyro', 36, 3.5, .65);
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
-        kit.scar('soot', tx, tz, radius, SOOT, 10);
+        kit.scar('soot', tx, tz, radius, SOOT, 6);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);
         kit.distort(tx, tz, radius * 1.1, .004, .65, true);
         kit.camera(.26);
@@ -284,7 +284,7 @@ class PyroPresentation implements AbilityPresentation {
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
     else this.source.set(p.x + c * .55, .95, p.z + s * .55);
-    const fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .4);
+    const fade = Math.max(0, 1 - Math.max(0, p.age - .18) / .4);
     kit.impact();
     if (fade > 0) {
       kit.sustain(p.age);
@@ -298,6 +298,12 @@ class PyroPresentation implements AbilityPresentation {
         const dx = Math.cos(incoming), dz = Math.sin(incoming);
         kit.flowFlame(x - dx * .84, actor.height * .33, z - dz * .84,
           x + dx * .20, actor.height * .79, z + dz * .20, .32, id, fade);
+      }
+      for (let i = 0, count = kit.low ? 7 : 16; i < count; i++) {
+        const angle = p.angle + (authoredVariation(i + 1) - .5) * p.arc;
+        const reach = p.range * (.23 + .71 * i / count);
+        kit.draw('flame', p.x + Math.cos(angle) * reach, .42, p.z + Math.sin(angle) * reach,
+          .33, .40, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
       }
       kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
       kit.impact();
@@ -426,6 +432,10 @@ class PyroPresentation implements AbilityPresentation {
     kit.sustain((zone.durationMs - zone.remainingMs) / 1000);
     // One connected native-width strip avoids a row of circular fire stamps.
     this.surface(zone.id, 0, x, z, radius, angle, 0, .038, .038, fade * .85, true, length);
+    for (let i = 0; i < points; i++) {
+      const t = (i + .5) / points;
+      kit.draw('flame', x + (ex - x) * t, .32, z + (ez - z) * t, .25, .3, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
+    }
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4 * fade, 4);
     if (emit) {
       const t = (Math.floor(kit.time * 13) * .61803398875) % 1;
@@ -486,6 +496,7 @@ class PyroPresentation implements AbilityPresentation {
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
+    kit.sprite('glow', x, .052, z, radius * 1.9, radius * 1.9, FIRE, .34 * fade, zone.id, 'ground');
     let nearest = radius * radius, lx = x, lz = z;
     for (const enemy of frame.game?.enemies.snapshot.enemies ?? []) {
       const ex = enemy.x / UNIT, ez = enemy.y / UNIT;

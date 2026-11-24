@@ -99,8 +99,8 @@ export const TEXTURED_FIRE_GLSL = `
   vec4 fire=effectGraphicSequence(0.,64.,19.,(nearest+4.)*8.7,stamp);
   float edge=1.-smoothstep(.88,1.,abs(theta));
   float tip=1.-smoothstep(.88+.09*fire.r,1.,t);
-  coverage=graphicCoverage(fire.a)*edge*tip*smoothstep(.055,.16,t);
-  c=mix(vec3(.72,.18,.006),vec3(2.15,.78,.048),fire.g);
+  coverage=smoothstep(.12,.28,fire.a)*edge*tip*smoothstep(.055,.16,t);
+  c=mix(vec3(.31,.022,.004),vec3(1.85,.39,.018),fire.g);
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);
@@ -134,19 +134,10 @@ export const TEXTURED_FIRE_GLSL = `
   float side=abs(signedSide)/mix(left,right,step(0.,signedSide));
   float aa=max(.014,min(.12,fwidth(side)));
   coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
-  // A narrow heated spine lives at the source. The outer connected lobes are
-  // orange, with a dark char edge; only the nozzle earns a near-white value.
-  float body=1.-smoothstep(.61,.85,side);
-  float rolling=sin(t*21.-clock*1.4+seed+signedSide*4.8);
-  float fold=smoothstep(.24,.78,side)*smoothstep(.16,.32,t)*(1.-smoothstep(.76,.95,t));
-  body*=1.-smoothstep(.26,.83,rolling)*fold*.56;
-  float spine=abs(signedSide-sin(t*10.-clock+seed)*.065);
-  float inner=(1.-smoothstep(.10,.31,spine))*(1.-smoothstep(.12,.63,t));
-  float core=inner*smoothstep(.30,.65,ink.g);
-  c=mix(vec3(.018,.009,.005),vec3(.95,.24,.006),body);
-  c=mix(c,vec3(2.15,.65,.055),inner*.64);
-  coverage*=mix(.78,1.,smoothstep(.40,.90,side));
-  c=mix(c,vec3(2.8,1.9,.34),core);
+  float body=smoothstep(.08,.23,t)*(1.-smoothstep(.82,1.,side));
+  float tip=smoothstep(.6,.72,t+.08*sin(signedSide*3.+seed));
+  c=mix(vec3(.27,.012,.003),vec3(2.25,.34,.012),body);
+  c=mix(c,vec3(3.2,1.95,.48),tip*body);
  }
  a*=coverage;
  // Every path hides all four card edges, including the source end of a jet.
