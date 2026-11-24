@@ -562,14 +562,39 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             lessonAnchorKey = '';
         }
         const objectiveNode = nodes['room-objective'];
-        objectiveNode.classList.toggle('anchored-objective', !!anchored);
+        const coaching = prompt === 'lesson' || prompt === 'weapon-lesson' || prompt === 'weapon';
         const plate = weaponLesson?.target;
         objectiveNode.classList.toggle('plate-key-pulse', prompt==='weapon-lesson' && !!plate && plate.armor>0 && plate.armor<plate.maxArmor*.9);
-        if (anchored) {
+        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
+        objectiveNode.classList.toggle('anchored-objective', !!anchored || coaching);
+        objectiveNode.classList.toggle('coaching-objective', coaching);
+        if (coaching) {
+            const dockTop = el('action-bar').getBoundingClientRect().top;
+            const width = objectiveNode.offsetWidth;
+            const height = objectiveNode.offsetHeight;
+            const marine = renderer.playerScreenBounds(game.player.radius);
+            let side = '';
+            let left = (innerWidth - width) / 2;
+            let top = dockTop - height - 12;
+            if (anchored && target && projectActorBounds(renderer, target.id, target.x, target.y, target.radius, actorBounds)) {
+                const right = actorBounds.left + actorBounds.right >= marine.left + marine.right;
+                const x = right ? actorBounds.right + 24 : actorBounds.left - width - 24;
+                const y = (actorBounds.top + actorBounds.bottom - height) / 2;
+                const clearMarine = x + width + 8 <= marine.left || x >= marine.right + 8
+                    || y + height + 8 <= marine.top || y >= marine.bottom + 8;
+                if (clearMarine && x >= 16 && x + width <= innerWidth - 16 && y >= 24 && y + height <= dockTop - 12) {
+                    side = right ? 'right' : 'left';
+                    left = x;
+                    top = y;
+                }
+            }
+            objectiveNode.dataset.leader = side;
+            objectiveNode.style.left = `${left}px`;
+            objectiveNode.style.top = `${top}px`;
+        } else if (anchored) {
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
             objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
         }
-        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');
