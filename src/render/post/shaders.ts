@@ -199,6 +199,8 @@ ${inkComposite}
       color*=bounded/value;
     }
   }
+  // Committed attack ownership stays legible over the graded body and elemental FX.
+  color=mix(color,vec3(.52,.59,.65),combatSilhouette*.88);
   gl_FragColor = vec4(max(color, 0.0), 1.0);
   #include <colorspace_fragment>
   float dither = noise(gl_FragCoord.yx + 19.0);

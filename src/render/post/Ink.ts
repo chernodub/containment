@@ -41,6 +41,8 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
  // Low's silhouette path performs no normal comparisons.
  float width=actor?inkStyle.x:inkStyle.y;
  if(center.w==3.0)width*=1.25;else if(center.w>4.5)width*=mix(1.18,1.06,inkStrength);
+ bool committed=center.w>=4.0&&center.w<=6.0&&texture2D(combatOutlineIds,vec2((center.z+.5)/256.,.5)).r>.5;
+ if(committed)width=2.0;
  vec3 p=viewPosition(uv,depth);
  float edge=0.0,crease=0.0;
  vec3 normal=vec3(0.0,0.0,1.0);if(inkMode>1.5)normal=inkNormal(center.xy);
@@ -61,7 +63,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   // and position reconstructions; major actor creases have their own kernel.
   if(actor) {
    edge=max(edge,different*surface);
-   combatSilhouette=max(combatSilhouette,different*surface);
+   if(committed)combatSilhouette=max(combatSilhouette,different*surface);
    // Only contour fragments inspect adjacent scene radiance. A quiet light line
    // separates dark chitin from dark local scenery without lighting the floor.
    if(different*surface>.5)inkBackdropLuma=min(inkBackdropLuma,dot(texture2D(tScene,q).rgb,vec3(.2126,.7152,.0722)));
@@ -140,10 +142,6 @@ export const inkComposite = /* glsl */ `
   color=mix(color,contour,line);
   // Worn lip: a lighter value of the surface itself, never a white line.
   color=mix(color,color*2.1+vec3(.010,.011,.012),inkWearLine*(1.0-line)*.8);
-  if(combatSilhouette>.01&&geometry.w>=3.&&geometry.w<=6.){
-   float committed=texture2D(combatOutlineIds,vec2((geometry.z+.5)/256.,.5)).r;
-   // Bright effects cannot erase the identified actor's silhouette.
-   color=mix(color,vec3(.078,.095,.11),combatSilhouette*committed*.62*step(3.5,geometry.w));
-  }
+
  }
 `;
