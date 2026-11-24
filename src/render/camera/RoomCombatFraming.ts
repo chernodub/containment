@@ -10,12 +10,15 @@ type Camera = T.OrthographicCamera | T.PerspectiveCamera;
 export const HERO_MIN_PIXELS = 100;
 export const HERO_EMERGENCY_PIXELS = HERO_MIN_PIXELS*.85;
 export const HERO_NORMAL_PIXELS = 122;
-export const ROOM_OUTSIDE_LIMIT = .18;
+const ENGAGEMENT_OUTSIDE_LIMIT = .18;
+export const ROOM_OUTSIDE_LIMIT = .22;
+const COMPACT_ROOM_OUTSIDE_LIMIT = .07;
 
 /** Constrain the actual camera after threat and HUD framing. No scene/DOM reads. */
 export class RoomCombatFraming {
   private readonly point = new T.Vector3();
   private readonly target = new T.Vector3();
+  private readonly presentationFocus = new T.Vector3();
   private readonly corners = new Float64Array(8);
   private readonly polygonA = new Float64Array(128);
   private readonly polygonB = new Float64Array(128);
@@ -45,7 +48,7 @@ export class RoomCombatFraming {
   private zoom = 1;
   private zoomVelocity = 0;
   private remoteProgress = false;
-  readonly diagnostics = {emergencyPullback:false,heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0, shallowZoomFloor:0};
+  readonly diagnostics = {emergencyPullback:false,heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, outsideLimit:ROOM_OUTSIDE_LIMIT, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0, shallowZoomFloor:0};
 
   reset():void { this.ready = false; this.floorDepth = -1; this.remoteProgress=false; }
 
@@ -99,7 +102,7 @@ export class RoomCombatFraming {
     let outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
     // At a north corner the head needs a narrow strip beyond the deck. Reclaim
     // that strip with a bounded pullback, stopping at the hero's size floor.
-    for(let pass=0;pass<16&&outside>ROOM_OUTSIDE_LIMIT&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
+    for(let pass=0;pass<16&&outside>ENGAGEMENT_OUTSIDE_LIMIT&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
       this.heroFloor=HERO_EMERGENCY_PIXELS;this.diagnostics.emergencyPullback=true;
       const oldZoom=camera.zoom;
       camera.zoom=Math.max(roomZoomFloor,camera.zoom*.97);camera.updateProjectionMatrix();
@@ -111,7 +114,7 @@ export class RoomCombatFraming {
     // closer view too, retaining it only when joint body/room coverage improves.
     if(urgent&&engagement)engagement.refreshFit(camera,this.point);
     const preserveUrgentFit=urgent&&engagement?.diagnostics.fit===true;
-    for(let pass=0;pass<8&&outside>ROOM_OUTSIDE_LIMIT;pass++){
+    for(let pass=0;pass<8&&outside>ENGAGEMENT_OUTSIDE_LIMIT;pass++){
       const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom,oldOutside=outside;
       camera.zoom*=1.02;camera.updateProjectionMatrix();
       this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
@@ -139,7 +142,7 @@ export class RoomCombatFraming {
         this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
         this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
         const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
-        if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>ROOM_OUTSIDE_LIMIT+1e-6)
+        if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>ENGAGEMENT_OUTSIDE_LIMIT+1e-6)
           ||this.diagnostics.smallX&&!this.diagnostics.centeredX||this.diagnostics.smallZ&&!this.diagnostics.centeredZ){
           this.move(camera,focus,oldX-camera.position.x,oldZ-camera.position.z);camera.zoom=oldZoom;camera.updateProjectionMatrix();
           this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
@@ -216,6 +219,39 @@ export class RoomCombatFraming {
     this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
     outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
     this.x=camera.position.x;this.z=camera.position.z;this.zoom=camera.zoom;
+    const viewportScale=T.MathUtils.clamp((cssHeight-720)/(1080-720),0,1);
+    const limit=T.MathUtils.lerp(COMPACT_ROOM_OUTSIDE_LIMIT,ROOM_OUTSIDE_LIMIT,viewportScale);
+    this.diagnostics.outsideLimit=Math.max(ENGAGEMENT_OUTSIDE_LIMIT,limit);
+    this.point.set(x,.65,z).project(camera);
+    const outsideCentre=this.point.x<-.6||this.point.x>.6||this.point.y<-.24||this.point.y>.4;
+    if(outsideCentre&&outside<limit&&!this.diagnostics.smallX&&!this.diagnostics.smallZ){
+      // Spend room overscan on the rendered pose without feeding its pan back
+      // into the follow spring or the next engagement solve.
+      const zoomVelocity=this.zoomVelocity;
+      this.presentationFocus.copy(focus);
+      this.protectBody(camera,this.presentationFocus,x,z,radius,height,viewport,undefined,true);
+      const dx=camera.position.x-this.x,dz=camera.position.z-this.z;
+      let candidate=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+      if(candidate>limit&&camera.zoom===this.zoom){
+        let low=0,high=1;
+        for(let attempt=0;attempt<12;attempt++){
+          const fraction=(low+high)*.5;
+          this.move(camera,this.presentationFocus,this.x+dx*fraction-camera.position.x,this.z+dz*fraction-camera.position.z);
+          candidate=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+          if(candidate<=limit)low=fraction;
+          else high=fraction;
+        }
+        this.move(camera,this.presentationFocus,this.x+dx*low-camera.position.x,this.z+dz*low-camera.position.z);
+        candidate=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+      }
+      if(camera.zoom!==this.zoom||candidate<=outside+1e-6
+        ||!this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,limit)){
+        this.move(camera,this.presentationFocus,this.x-camera.position.x,this.z-camera.position.z);
+        if(camera.zoom!==this.zoom){camera.zoom=this.zoom;camera.updateProjectionMatrix();}
+        this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+      }else outside=candidate;
+      this.zoomVelocity=zoomVelocity;
+    }
     this.point.set(x,0,z).project(camera);this.target.set(x,this.heroHeight,z).project(camera);
     this.diagnostics.heroPixels=Math.abs(this.target.y-this.point.y)*cssHeight*.5;
     this.diagnostics.outside=outside;
@@ -286,7 +322,7 @@ export class RoomCombatFraming {
   }
 
   /** Test the actual intermediate pose, without moving it to another clamp. */
-  private validPose(camera:Camera,x:number,z:number,radius:number,height:number,left:number,top:number,right:number,bottom:number,v:CombatViewport):boolean {
+  private validPose(camera:Camera,x:number,z:number,radius:number,height:number,left:number,top:number,right:number,bottom:number,v:CombatViewport,limit=ENGAGEMENT_OUTSIDE_LIMIT):boolean {
     this.point.set(x,0,z).project(camera);this.target.set(x,this.heroHeight,z).project(camera);
     let valid=Math.abs(this.target.y-this.point.y)*540>=this.heroFloor-1e-6;
     for(let sample=0;sample<(this.envelope?.count||MARINE_ENVELOPE_POINTS);sample++){
@@ -302,7 +338,7 @@ export class RoomCombatFraming {
     d.smallX=maxX-minX>right-left;d.smallZ=maxZ-minZ>bottom-top;
     d.centeredX=d.smallX&&Math.abs((minX+maxX-left-right)*.5)<1e-5;
     d.centeredZ=d.smallZ&&Math.abs((minZ+maxZ-top-bottom)*.5)<1e-5;
-    const roomFits=this.fitsRoomMargin(camera,v,left,top,right,bottom,minX,maxX,minZ,maxZ,d.centeredX,d.centeredZ);
+    const roomFits=this.fitsRoomMargin(camera,v,left,top,right,bottom,minX,maxX,minZ,maxZ,d.centeredX,d.centeredZ,limit);
     return valid&&roomFits;
   }
 
@@ -359,7 +395,7 @@ export class RoomCombatFraming {
 
   /** Validate the exact projected allowance without relaxing either small-axis rule. */
   private fitsRoomMargin(camera:Camera,viewport:CombatViewport,left:number,top:number,right:number,bottom:number,
-    minX:number,maxX:number,minZ:number,maxZ:number,centeredX:boolean,centeredZ:boolean):boolean {
+    minX:number,maxX:number,minZ:number,maxZ:number,centeredX:boolean,centeredZ:boolean,limit=ENGAGEMENT_OUTSIDE_LIMIT):boolean {
     const d=this.diagnostics;
     if(d.smallX&&!centeredX||d.smallZ&&!centeredZ)return false;
     this.setRectangle(left,top,right,bottom);
@@ -369,8 +405,8 @@ export class RoomCombatFraming {
     this.setRectangle(minX-.001,top,maxX+.001,bottom);
     const outsideZ=this.outsideFraction(camera,right,bottom,viewport,this.boundsPolygon);
     this.setRectangle(left,top,right,bottom);
-    return(d.smallX||outsideX<=ROOM_OUTSIDE_LIMIT)&&(d.smallZ||outsideZ<=ROOM_OUTSIDE_LIMIT)
-      &&(d.smallX||d.smallZ||total<=ROOM_OUTSIDE_LIMIT);
+    return(d.smallX||outsideX<=limit)&&(d.smallZ||outsideZ<=limit)
+      &&(d.smallX||d.smallZ||total<=limit);
   }
 
   private readonly springResult = [0,0];
@@ -391,7 +427,7 @@ export class RoomCombatFraming {
     }
   }
 
-  private protectBody(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,v:CombatViewport,edgePaddingY?:number):void {
+  private protectBody(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,v:CombatViewport,edgePaddingY?:number,preferCentre=false):void {
     for(let pass=0;pass<16;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       for(let sample=0;sample<(this.envelope?.count||MARINE_ENVELOPE_POINTS);sample++){
@@ -407,8 +443,11 @@ export class RoomCombatFraming {
       // first; otherwise alternating left/right edge corrections can run away.
       const fit=Math.min(1,(v.right-v.left-pl-pr)/Math.max(.0001,right-left),(v.top-v.bottom-pt-pb)/Math.max(.0001,top-bottom));
       if(fit<1-1e-7){camera.zoom*=Math.max(.01,fit*.999);camera.updateProjectionMatrix();this.zoomVelocity=Math.min(0,this.zoomVelocity);continue;}
-      const dx=left<v.left+pl?left-v.left-pl:right>v.right-pr?right-v.right+pr:0;
-      const dy=top>v.top-pt?top-v.top+pt:bottom<v.bottom+pb?bottom-v.bottom-pb:0;
+      if(preferCentre)this.point.set(x,.65,z).project(camera);
+      const dx=left<v.left+pl?left-v.left-pl:right>v.right-pr?right-v.right+pr:
+        preferCentre?this.point.x-T.MathUtils.clamp(this.point.x,-.6,.6):0;
+      const dy=top>v.top-pt?top-v.top+pt:bottom<v.bottom+pb?bottom-v.bottom-pb:
+        preferCentre?this.point.y-T.MathUtils.clamp(this.point.y,-.24,.4):0;
       if(Math.abs(dx)+Math.abs(dy)<1e-7)return;
       this.point.set(x,height*.5,z).project(camera);this.target.copy(this.point);this.target.x-=dx;this.target.y-=dy;
       this.point.unproject(camera);this.target.unproject(camera);

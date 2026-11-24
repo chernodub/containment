@@ -7,8 +7,9 @@ export function assertPriorityPair(evidence, viewport, name='priority pair') {
  const ids=proof.framing.focusedPair?[proof.framing.focusContactId]:proof.framing.selectedIds.filter(id=>id>=0);
  assert(ids.length>0,`${name}: missing organic priority contact`);
  assert(room&&room.heroPixels>=(room.emergencyPullback?85:100)*viewport.height/1080-.1,`${name}: hero size floor lost`);
- assert((room.smallX?room.centeredX:room.outsideX<=.18001)&&(room.smallZ?room.centeredZ:room.outsideZ<=.18001),`${name}: room-area constraint lost`);
- assert(room.smallX||room.smallZ||room.outside<=.18001,`${name}: outside room area exceeds18%`);
+ const limit=(room.outsideLimit??.18)+1e-5;
+ assert((room.smallX?room.centeredX:room.outsideX<=limit)&&(room.smallZ?room.centeredZ:room.outsideZ<=limit),`${name}: room-area constraint lost`);
+ assert(room.smallX||room.smallZ||room.outside<=limit,`${name}: outside room area exceeds the active limit`);
  for(const id of ids){
   const contact=proof.contacts.find(c=>c.id===id);assert(contact,`${name}: missing selected contact ${id}`);
   if(contact.insideUsable)continue;
