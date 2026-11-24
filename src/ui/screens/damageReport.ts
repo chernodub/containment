@@ -31,6 +31,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
   if (!last) {
     return '<section class="incoming-report" aria-label="Failure analysis"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p></section>';
   }
+  const dodge = fatalDodge(last);
   const ready=game.deathReadyAbility;
   const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
   const node = generateRun(game.expedition.run.seed, game.expedition.run.version).nodes.find(candidate => candidate.id === last.room);
@@ -43,7 +44,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
   const grouped = [...sources].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
   const total = grouped.reduce((sum, [, amount]) => sum + amount, 0);
   const format = (amount: number) => Math.round(amount).toLocaleString('en-US');
-  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${escape}</div><div class="incoming-breakdown"><div class="telemetry-heading"><span class="eyebrow">THIS ROOM · LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</div></section>`;
+  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${dodge ? `<p class="fatal-escape">${escapeHtml(dodge)}</p>` : ''}${escape}</div><div class="incoming-breakdown"><div class="telemetry-heading"><span class="eyebrow">THIS ROOM · LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</div></section>`;
 }
 
 /** Preserve the authored ending verbatim and give it a full-screen moment. */
@@ -63,11 +64,25 @@ const lessons = {
   matron: 'Shoot the pods or focus the Matron to interrupt its brood.',
 } as const;
 
+function fatalDodge(receipt: IncomingDamageReceipt): string {
+  switch (receipt.source) {
+    case 'enemy-charge': return 'Step sideways out of the locked charge lane.';
+    case 'enemy-contact':
+      return receipt.enemyFamily === 'brute' ? 'Sidestep the sweep before it lands.'
+        : receipt.enemyFamily === 'stalker' ? lessons.stalker : 'Move out of the marked strike area.';
+    case 'enemy-projectile': return 'Break the sightline behind solid cover.';
+    case 'acid-pool': return 'Step off the acid before it ticks.';
+    case 'boss-attack': return 'Leave the marked blast area.';
+    case 'self-blast': return 'Back away from the blast radius.';
+    default: return '';
+  }
+}
+
 export function retryLesson(game: DepthGame): string {
   const top=getRoomDamage(game)[0];
   const family=top?.enemyFamily;
   const key=top?.guardian??family;
-  if(!key||key==='queen'||!Object.hasOwn(lessons,key))return '';
+  if(!top||!key||key==='queen'||!Object.hasOwn(lessons,key))return '';
   const copy=lessons[key];
-  return `<aside class="retry-lesson">${studioImage(`lesson-${key}`,'retry-lesson-art',320,180)}<p><b>TRY NEXT RUN</b><br>${escapeHtml(copy)}</p></aside>`;
+  return `<aside class="retry-lesson">${studioImage(`lesson-${key}`,'retry-lesson-art',320,180)}<p><b>Most damage — ${escapeHtml(top.guardian ? `${top.guardian==='warden'?'Warden':'Matron'} ${top.source==='enemy-charge'?'charge':'strike'}` : incomingDamageLabel(top))}</b><br>${escapeHtml(copy)}</p></aside>`;
 }

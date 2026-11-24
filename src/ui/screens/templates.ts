@@ -2,7 +2,7 @@ import {studioImage} from '../studioArt';
 import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
 import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
-import {GUARDIAN_ROUTES,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
+import {GUARDIAN_ROUTES,GUARDIAN_ROUTE_DEPTH,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
@@ -278,12 +278,15 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const run=game.expedition.run;
   const graph=generateRun(run.seed,run.version);
   const destinations=game.node.next.map(id=>graph.nodes.find(node=>node.id===id)!);
+  const booked = run.guardianRoute && game.node.depth < GUARDIAN_ROUTE_DEPTH
+    ? run.guardianRoute === 'brood' ? 'Matron' : 'Warden' : undefined;
+  const guardian = booked ? `<span class="route-booked-guardian">${studioImage(`route-threat-${booked.toLowerCase()}`,'',64,36)}<span>${booked} · Sector ${GUARDIAN_ROUTE_DEPTH+1}</span></span>` : '';
   const offers=detourOffers(run);
   const contract=game.contractOffer;
   const next=destinations[0];
   const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
   if (!offers.length && destinations.length===1 && !getShipCondition(game,next.depth)) {
-    return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p><button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
+    return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p>${guardian}<button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }
   const workshop=game.node.depth===fieldWorkshopDepth;
   const options=offers.length
@@ -341,6 +344,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(destination.templateId,routeArt,threat)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
+            ${guardian}
             <span class="route-title-row"><strong class="route-option-title">${escapeHtml(title)}</strong>${cost ? `<span class="route-option-price">${cost} CR</span>` : ''}</span>
             <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>
             <span class="route-option-subtitle">${escapeHtml((firstJunction?risk:variant ?? risk) ?? ROOM_KIND_LABELS[destination.kind])}${condition&&!firstJunction ? ` <small class="condition-chip" title="${condition.name}">+ ${conditionTerms}</small>` : ''}</span>

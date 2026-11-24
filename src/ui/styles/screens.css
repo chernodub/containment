@@ -665,3 +665,6 @@
 #overlay .route-supply-heading {display:flex; align-items:center; gap:12px;}
 #overlay .route-supply-guardian {width:100px; height:58px; object-fit:contain;}
 #overlay .fatal-escape {color:#ffd27a; font-weight:600;}
+
+.route-booked-guardian {display:flex;align-items:center;gap:8px;font-size:13px;}
+.route-booked-guardian img {width:48px;height:27px;object-fit:cover;}
