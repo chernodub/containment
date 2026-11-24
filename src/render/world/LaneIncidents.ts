@@ -192,8 +192,8 @@ export function addLaneIncident(root:T.Group,id:string){
         }
       }
       // Blistered tissue bridges the veins in patches, leaving open deck between lobes.
-      for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-17,17,32,17,11,19],[12,10,46,19,8,24],
-        [-8,6,76,13,6,16],[34,6,99,20,8,24],[50,4,115,12,5,16],[72,3,146,12,5,18]]){
+      for(const [x,y,z,w,h,d] of [[0,31,9,23,15,27],[-23,12,42,29,11,15],[17,8,42,8,6,10],
+        [-11,4,80,7,4,19],[65,6,98,23,9,13],[46,4,119,9,5,7],[101,2,157,6,3,11]]){
         p.add(new T.IcosahedronGeometry(1,1).scale(w,h,d).rotateY(z*.03).translate(x,y,z),0x76475e);
         p.add(new T.IcosahedronGeometry(1,0).scale(w*.38,h*.35,d*.5).translate(x-w*.3,y+h*.78,z-d*.14),0x895b70);
       }
