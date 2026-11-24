@@ -114,6 +114,7 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enem
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
+  | Readonly<{type:'melee-miss';enemyId:number;x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -1206,6 +1207,7 @@ export class EnemySystem {
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         enemy.recoveryPunished=false;
         if(!enemy.champion&&!enemy.meleeConnected){
+          events.push(freezeEvent({type:'melee-miss',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
           const minimum=enemy.type==='brute'||enemy.type==='carrier'?450:enemy.type==='stalker'?320:0;
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }

@@ -481,6 +481,7 @@ export class AttackEffects {
    for(let i=1;i<=5;i++)this.pulse(from.clone().addScaledVector(out,length*i/5),0xffbd68,i===5?.34:.09,1);
   }
 
+  if(e.type==='recovery-stagger'){this.pulse(p,0xffd28a,.38,1.35);return;}
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
   if(e.type==='corpse'){this.death(e,p,deathCue,frozenBody);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
@@ -802,7 +803,7 @@ export class AttackEffects {
   }
  }
  private readonly bulletSkipPoint=new T.Vector3();
- update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[]){
+ update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined){
   if(dt<=0||this.disposed)return;
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
   let beam=0,hostile=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
@@ -909,15 +910,16 @@ export class AttackEffects {
   this.groupWarnings();
   this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,camera),targets));
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,camera),targets,actorPosition));
 
  }
- private drawRecovery(count:number, targets:readonly EnemySnapshot[]|undefined):number {
+ private drawRecovery(count:number, targets:readonly EnemySnapshot[]|undefined,actorPosition?:(id:number)=>T.Vector3|undefined):number {
   const mesh=this.hostileWarningMesh;
   for(const enemy of targets??[]){
    if(!enemy.exposedMs||enemy.health<=0||count>=mesh.instanceMatrix.count)continue;
    const radius=enemy.radius/32;
-   this.dummy.position.set(enemy.x/32,.065,enemy.y/32);
+   const position=actorPosition?.(enemy.id);
+   this.dummy.position.set(position?.x??enemy.x/32,.065,position?.z??enemy.y/32);
    this.dummy.rotation.set(-Math.PI/2,0,0);
    this.dummy.scale.set(radius*1.23,radius*1.23,1);
    this.dummy.updateMatrix();
