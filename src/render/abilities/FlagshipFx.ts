@@ -441,6 +441,7 @@ void main(){
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
    // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
+   line=0.;
    float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
    // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
@@ -454,9 +455,9 @@ void main(){
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
    float peak=1.-smoothstep(.18,.36,age);
-   alpha=inside*(.38+.23*roll+.18*peak)+wall*.27;
+   alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
    base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
-   emit=vec3(.15,.34,.43)*(wall*.9+crack*.26+pulse*.18)*smoothstep(.4,1.2,r);
+   emit=vec3(.15,.34,.43)*(wall*.9+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
@@ -555,7 +556,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a/fxA0;
 }`;
 
-const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: -3, 15: 2 };
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: 1, 15: 2 };
 
 /** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
 export class FlagshipFx {
