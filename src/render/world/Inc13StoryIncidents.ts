@@ -298,6 +298,8 @@ const incidents:Record<string,Incident>={
       p.rod([9,49,-156],[4,39,-209],1.8,0x849a93);
       p.box(4,21,-209,15,40,19,0x50695f);
       p.box(4,41,-209,21,6,25,0x91a29a);
+      for(const z of [-24,24])p.rod([12,0,z],[12,-88,z],3.6,0x536663);
+      for(const depth of [12,32,52,72])p.rod([12,-depth,-24],[12,-depth,24],2.8,0x82938a);
       // Torn landing comb and bent brackets fold down into the open shaft.
       for(let i=0;i<7;i++){
         const z=-25+i*9,h=5+5*Math.sin(i);
