@@ -52,3 +52,14 @@ the centre correction after engagement framing. It retains the preceding
 pose when the correction would change zoom or fail the room and full-body
 clearance checks. This makes the centre band a preference at conflicting
 positions.
+
+The Safety Interlock warning check also failed at 24% outside area:
+its rightmost corner projected just beyond the frame. At 22% the same
+fixture passed all capture diagnostics. It places the marine around 30%
+of frame width and leaves the warning fully visible. The current
+candidate therefore uses 22% pending the native comparison.
+
+The baseline Arc run ended in Service Shaft Landing after 13 clears.
+It took 490.5 total damage and hit 1,010 of 1,323 shots (76.34%),
+with zero runner errors. Host contention prevents treating this run as
+quiet-machine evidence.

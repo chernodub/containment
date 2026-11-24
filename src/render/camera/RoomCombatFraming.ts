@@ -10,7 +10,7 @@ type Camera = T.OrthographicCamera | T.PerspectiveCamera;
 export const HERO_MIN_PIXELS = 100;
 export const HERO_EMERGENCY_PIXELS = HERO_MIN_PIXELS*.85;
 export const HERO_NORMAL_PIXELS = 122;
-export const ROOM_OUTSIDE_LIMIT = .45;
+export const ROOM_OUTSIDE_LIMIT = .22;
 
 /** Constrain the actual camera after threat and HUD framing. No scene/DOM reads. */
 export class RoomCombatFraming {
