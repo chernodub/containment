@@ -30,14 +30,7 @@ float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBoun
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
       shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
-        .replace('#include <color_fragment>', `#include <color_fragment>
-${friendly ? `// Keep the paint chromatic through the shared light bands.
-vec3 paintLuma=vec3(.2126,.7152,.0722);
-vec3 paintedCeramic=vec3(.74,.78,.82)*actorRigColor;
-float darkestPaint=min(paintedCeramic.r,min(paintedCeramic.g,paintedCeramic.b));
-paintedCeramic=max(vec3(0.),paintedCeramic-darkestPaint);
-paintedCeramic*=max(1.0,.38/max(.01,dot(paintedCeramic,paintLuma)));
-diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));` : ''}
+        .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
 // CREATURE18: the atlas paints the blades at rest value (matte cool grey, low chroma);
@@ -48,7 +41,8 @@ float bonePlane=smoothstep(.09,.15,dot(boneAlbedo,vec3(.2126,.7152,.0722)))*(1.0
 creatureBone=bonePlane;
 float strikingRegion=step(1.5,vActorRegion)*step(vActorRegion,5.5);
 float creatureStrike=mix(1.0,1.55,actorAttackLoad*strikingRegion*bonePlane);` : 'float creatureStrike=1.0;'}
-${friendly?'':`// SHADER25: one flat albedo per painted zone, as the marine's plates. Hue comes from the
+${friendly?'':`// SHADER25: one flat albedo per painted zone, set straight after the atlas sample so
+// status casts (frost) and death tints still colour it, as the marine's plates. Hue comes from the
 // atlas; value collapses to recess / shell / bone tiers with narrow steps, so the
 // painted gradients and gutter bleed inside each island no longer show.
 float atlasValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
@@ -59,7 +53,16 @@ vec3 familyHue=actorBodyHue/max(.005,dot(actorBodyHue,vec3(.2126,.7152,.0722)));
 vec3 atlasHue=mix(familyHue,diffuseColor.rgb/max(atlasValue,.001),mix(.26,.45,atlasBright));
 atlasHue=min(atlasHue/max(.05,dot(atlasHue,vec3(.2126,.7152,.0722))),vec3(2.4));
 float atlasTier=mix(.56,1.0,smoothstep(.022,.032,atlasValue))*mix(1.0,1.12,atlasBright);
-diffuseColor.rgb=atlasHue*atlasTier*.15*creatureStrike;`}
+diffuseColor.rgb=atlasHue*atlasTier*.15;`}`)
+        .replace('#include <color_fragment>', `#include <color_fragment>
+${friendly ? `// Keep the paint chromatic through the shared light bands.
+vec3 paintLuma=vec3(.2126,.7152,.0722);
+vec3 paintedCeramic=vec3(.74,.78,.82)*actorRigColor;
+float darkestPaint=min(paintedCeramic.r,min(paintedCeramic.g,paintedCeramic.b));
+paintedCeramic=max(vec3(0.),paintedCeramic-darkestPaint);
+paintedCeramic*=max(1.0,.38/max(.01,dot(paintedCeramic,paintLuma)));
+diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));` : ''}
+${friendly?'':'diffuseColor.rgb*=creatureStrike;'}
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
 ${friendly?`float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
@@ -106,7 +109,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v21-shader25:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v23-shader25:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

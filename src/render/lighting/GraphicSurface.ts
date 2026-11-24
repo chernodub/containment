@@ -221,13 +221,13 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         // incident hue preserves ivory/graphite and the saturated authored rig panels.
         if(graphicMarine>.5){graphicActorLight=.66+.34*smoothstep(.30,.62,graphicActorIncident);graphicActorHue=vec3(1.);}
         // SHADER25: creatures share the marine's two-plane grammar with a harder step: a lit
-        // plane and a shadow plane at 25 % of it (linear), one pixel-wide antialiased terminator.
+        // plane and a shadow plane at 30 % of it (linear, ≈25 % display value), one pixel-wide antialiased terminator.
         // The plane is chosen by a fixed screen key from the upper left (the rake the old
         // gradient used), so every room splits a dorsal dome into one lit and one shadow plane.
         else if(graphicSurfaceKind.x>.5){
           float graphicKeyFacing=dot(geometryNormal,vec3(-.52,.42,.74));
           float graphicTerminator=max(fwidth(graphicKeyFacing),.02);
-          graphicActorLight=mix(.25,1.0,smoothstep(.56-graphicTerminator,.56+graphicTerminator,graphicKeyFacing));}
+          graphicActorLight=mix(.30,1.0,smoothstep(.56-graphicTerminator,.56+graphicTerminator,graphicKeyFacing));}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
