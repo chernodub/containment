@@ -82,5 +82,5 @@ export class FacilityNavigation {
     if(remaining>8)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y},sample:{x:enemy.x,y:enemy.y},decision:Number.isFinite(enemy.decisionVersion)?enemy.decisionVersion:undefined,bestRemaining:remaining,stalled:0});
     return {x:target.x,y:target.y};
   }
-  reachable(p:FacilityPoint):boolean {return this.closest(p,true)>=0;}
+  reachable(p:FacilityPoint,radius=12):boolean {return this.closest(p,true,radius)>=0;}
 }
