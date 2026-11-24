@@ -109,7 +109,9 @@ class PyroPresentation implements AbilityPresentation {
       } else if (event.phase === 'dash-end') {
         const tx = (event.targetX ?? x * UNIT) / UNIT, tz = (event.targetY ?? y) / UNIT;
         kit.burst(tx, .15, tz, 'pyro', 16, 1.4, .4);
-        kit.scar('soot', tx, tz, .7, SOOT, 5);
+        const length = Math.hypot(tx - x, tz - z);
+        kit.scar('soot', (x + tx) * .5, (z + tz) * .5, Math.max(.7, length * .5),
+          SOOT, 4.5, Math.atan2(tz - z, tx - x), .68);
       }
       return;
     }
