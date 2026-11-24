@@ -134,7 +134,7 @@ async function stagedConsequence(kind) {
     }
   }
   const enemies=game.enemies.snapshot.enemies;
-  const consequence=kind==='cover'?enemies.some(enemy=>enemy.type==='spitter')&&game.encounterObjective.includes('line of sight')
+  const consequence=kind==='cover'?enemies.some(enemy=>enemy.type==='spitter')&&game.coverLessonActive
     :kind==='escort'?enemies.some(enemy=>game.getEscortRetreat(enemy.id))
     :kind==='brood'?game.broodInterruption:kind==='pods'?enemies.filter(enemy=>enemy.podStage==='opening').length===2:enemies.some(enemy=>enemy.wallStunAngle!==undefined);
   if(!consequence)throw Error('Requested consequence did not occur: '+kind);
