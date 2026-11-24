@@ -1,24 +1,10 @@
 import type {Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
-type Layout = readonly [sourceX:number, sourceZ:number, endX:number, endZ:number];
-export const incidentLanes:Readonly<Record<string,Layout>> = {
-  'awakening-bay':[640,295,935,432],
-  'passenger-vault':[380,551,211,458],
-  'residential-gallery':[531,432,651,480],
-  'communal-atrium':[554,412,365,487],
-  'freight-hold':[480,468,741,725],
-  'breached-loading-bay':[599,618,652,718],
-  'diagnostic-gallery':[382,423,583,496],
-  'safety-interlock-station':[509,453,391,504],
-  'infested-workshop':[577,319,680,483],
-  'swarm-junction':[552,432,637,549],
-  'containment-annulus':[551,508,390,542],
-  'overload-floor':[589,508,365,574],
-};
+import type {IncidentLaneLayout} from '../lighting/IncidentLaneLayouts';
 
 /** Longitudinal coordinates put the machine socket at zero and the lane fitting at L. */
-export function addIncidentLane(root:Group,id:string,layout:Layout):void {
+export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):void {
   const [sx,sz,ex,ez]=layout;
   const L=Math.hypot(ex-sx,ez-sz),angle=Math.atan2(ez-sz,ex-sx);
   const p=new IncidentPieces(), steel=0x859694, iron=0x4e6061, boot=0x354447;

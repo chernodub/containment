@@ -1,4 +1,5 @@
-import {addIncidentLane,incidentLanes} from './IncidentLaneMachines';
+import {addIncidentLane} from './IncidentLaneMachines';
+import {incidentLanes} from '../lighting/IncidentLaneLayouts';
 import type {Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 

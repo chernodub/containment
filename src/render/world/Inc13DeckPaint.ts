@@ -49,7 +49,7 @@ function membraneGeometry(w:number,d:number,reliefMap:ReturnType<typeof relief>)
 /** The painter uses room coordinates. Alpha leaves the original floor visible,
  * and all marks share a single prepared, disposable floor mesh. */
 export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number,number,number],
-  paint:(c:CanvasRenderingContext2D)=>void,height=.020):void {
+  paint:(c:CanvasRenderingContext2D)=>void,height=.020, illumination?:(c:CanvasRenderingContext2D)=>void):void {
   const [left,top,width,depth]=bounds;
   const canvas=document.createElement('canvas');
   canvas.width=1024;canvas.height=Math.round(canvas.width*depth/width);
@@ -64,6 +64,17 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   const bias=layered?-5:-1;
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
+  if(illumination){
+    const light=document.createElement('canvas');
+    light.width=256;light.height=Math.round(256*depth/width);
+    const brush=light.getContext('2d')!;
+    brush.fillStyle='black';brush.fillRect(0,0,light.width,light.height);
+    brush.scale(light.width/width,light.height/depth);brush.translate(-left,-top);
+    illumination(brush);
+    const emission=new T.CanvasTexture(light);emission.colorSpace=T.SRGBColorSpace;
+    material.emissiveMap=emission;material.emissive.setHex(0xffffff);material.emissiveIntensity=.36;
+    material.addEventListener('dispose',()=>emission.dispose());
+  }
   if(name.includes('swarm')||name==='inc13-resin-runout'){
     material.emissiveMap=map;material.emissive.setHex(0xfca5ec);material.emissiveIntensity=.66;
   }

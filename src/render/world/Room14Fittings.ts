@@ -7,7 +7,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {INCIDENT_OBSTACLES} from '../../game/roguelike/incidentObstacles';
-import {laneWorklight} from '../lighting/LaneWorklight';
+import {landmarkHousing,laneWorklight} from '../lighting/LaneWorklight';
 
 type Insert = readonly [kind:'drain'|'hatch'|'rails'|'trench', length:number, width:number, yaw:number, bays:number];
 const inserts:Record<string,Insert>={
@@ -96,20 +96,24 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     if(consoleLamp)Object.assign(consoleLamp,{color:0x9bcad5,nativeColor:true,gain:.47});
   }
   const source=laneWorklight(id);
-  if(!source)return;
+  if(source)addWorklightHousing(root,source);
+  const landmark=landmarkHousing(id);
+  if(landmark)addWorklightHousing(root,landmark);
+}
+function addWorklightHousing(root:T.Group,source:NonNullable<ReturnType<typeof laneWorklight>>){
   // Physical diffuser and protective back at the existing pooled practical.
   const fixture=new T.Group();
   fixture.name='room14-landmark-worklight';
   fixture.rotation.y=source.angle;
   fixture.position.set(source.x/32,source.y,source.z/32);
-  const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(.74,.16,.28),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
+  const casing=new T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>(new T.BoxGeometry(1.06,.22,.40),new T.MeshStandardMaterial({color:0x394749,roughness:.64}));
   const lens = new T.Color(source.color);
   lens.multiplyScalar(.68);
-  const diffuser=new T.Mesh(new T.BoxGeometry(.61,.05,.18),new T.MeshStandardMaterial({
+  const diffuser=new T.Mesh(new T.BoxGeometry(.93,.07,.31),new T.MeshStandardMaterial({
     color:lens,emissive:lens,emissiveIntensity:.46,roughness:.36
   }));
   casing.material.userData.actorMaterial=true;diffuser.material.userData.actorMaterial=true;
-  diffuser.position.set(0,.082,.048);
+  diffuser.position.set(0,.122,.07);
   const mastHeight=Math.max(.72,fixture.position.y);
   const post=new T.BoxGeometry(.075,mastHeight,.075).translate(-.30,-mastHeight*.5,0);
   const shoe=new T.BoxGeometry(.25,.08,.29).translate(-.3,-mastHeight+.04,0);
