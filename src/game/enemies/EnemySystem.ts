@@ -282,6 +282,8 @@ export class EnemySystem {
   #nextId = 1;
   #reservedCount = 0;
   #readyTimeMs=0;
+  readonly #marineTrail:{x:number;y:number;time:number}[]=[];
+  readonly #laneStalkers=new Map<number|undefined,number>();
   #feintsStarted=0;
   get feintsStarted(){return this.#feintsStarted;}
   #packFeintMs=1800;
@@ -459,6 +461,10 @@ export class EnemySystem {
     const movementDelta = Math.min(deltaMs, MAX_MOVEMENT_DELTA_MS);
     const events: EnemyEvent[] = [];
     this.#readyTimeMs+=timerDelta;
+    const trail=this.#marineTrail;
+    if(!trail.length||this.#readyTimeMs-trail[trail.length-1].time>=50)
+      trail.push({x:player.x,y:player.y,time:this.#readyTimeMs});
+    while(trail.length>1&&trail[1].time<=this.#readyTimeMs-1000)trail.shift();
     this.#packFeintMs=Math.max(0,this.#packFeintMs-timerDelta);
     this.#meleeStartGapMs=Math.max(0,this.#meleeStartGapMs-timerDelta);
     this.#meleeStrikeGapMs=Math.max(0,this.#meleeStrikeGapMs-timerDelta);
@@ -686,7 +692,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;this.#readyTimeMs=0;this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+    this.#nextId = 1;this.#readyTimeMs=0;this.#marineTrail.length=0;this.#laneStalkers.clear();this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
   }
 
   punishRecovery(id:number):boolean {
@@ -867,7 +873,14 @@ export class EnemySystem {
           readyRadius+=24*Math.sin(phase/155);
         }else if(enemy.type==='stalker'){
           enemy.readyBehaviour='pace';
-          angle+=.42*Math.sin(phase/420);
+          const past=this.#marineTrail[0];
+          const dx=player.x-past.x,dy=player.y-past.y;
+          if(!this.#laneStalkers.has(enemy.beat)&&Math.hypot(dx,dy)>30)this.#laneStalkers.set(enemy.beat,enemy.id);
+          if(this.#laneStalkers.get(enemy.beat)===enemy.id&&Math.hypot(dx,dy)>30){
+            const retreat=Math.atan2(dy,dx);
+            angle+=Math.max(-.85,Math.min(.85,Math.atan2(Math.sin(retreat-bearing),Math.cos(retreat-bearing))));
+            readyRadius=MELEE_ATTACKS.stalker.engageRange+(player.radius??DEFAULT_PLAYER_RADIUS)-8;
+          }else angle+=.42*Math.sin(phase/420);
         }else if(enemy.type==='brute'){
           const braced=phase%1200>=480&&distanceToPlayer<=radius;
           enemy.readyBehaviour=braced?'brace':'step';
