@@ -599,6 +599,14 @@ export class EnemySystem {
     if(enemy){enemy.rushing=true;enemy.decisionCooldownRemainingMs=0;}
   }
 
+  releaseStagger(id:number):void {
+    const enemy=this.#enemies.get(id);
+    if(!enemy)return;
+    enemy.stunRemainingMs=0;
+    enemy.decisionCooldownRemainingMs=0;
+    this.#cachedSnapshot=null;
+  }
+
   stagger(id:number,durationMs:number):void {
     const enemy=this.#enemies.get(id);
     if(!enemy)return;
