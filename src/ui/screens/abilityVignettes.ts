@@ -46,6 +46,11 @@ const fireZone = `<circle class="shape-fill" cx="65" cy="42" r="25"/>${enemies([
 const pylon = '<path class="shape-fill" d="m82 39 8-13 8 13-8 13Z"/><path d="M90 48v15m-9 0h18"/>';
 const pylonArc = `${enemies([124,23])}<path d="m97 36 9-8 2 4 12-9"/>`;
 
+const iceAttack = `${marine(48)}${enemies([149,34],[149,50])}`;
+const iceVolley = '<path class="vignette-hostile" d="M144 34H105m5-3-5 3 5 3M144 50H105m5-3-5 3 5 3"/>';
+const overloadTargets = enemies([65,27],[102,53],[140,24],[171,52]);
+const meltdownTargets = enemies([115,30],[158,42]);
+
 const transformations: Partial<Record<AugmentId, Transformation>> = {
   'siege-plow': {
     target: 'Bulwark',
@@ -53,7 +58,7 @@ const transformations: Partial<Record<AugmentId, Transformation>> = {
     before: scenes.bulwark,
     after: {
       label: 'Bulwark moves forward from its original position and launches enemies in its path',
-      drawing: `${marine(43)}<path class="vignette-wall vignette-ghost" d="M91 14v55"/><path class="vignette-wall" d="M122 14v55"/>${arrow(103,42)}${enemies([132,22],[134,57])}${arrow(151,22)}${arrow(152,57)}`,
+      drawing: `${marine(43)}<path class="vignette-wall vignette-ghost" d="M91 14v55"/><path class="vignette-wall" d="M122 14v55"/>${arrow(103,42)}${enemies([135,22],[143,57])}<path class="vignette-hostile" d="M130 22H124m0-4v8M137 58H124m0-4v8"/>${arrow(151,22)}${arrow(152,57)}`,
     },
   },
   'fault-line': {
@@ -74,11 +79,14 @@ const transformations: Partial<Record<AugmentId, Transformation>> = {
   },
   'ice-road': {
     target: 'Glacier',
-    lost: 'Ice walls that block enemies and shots, plus their shatter burst.',
-    before: scenes.glacier,
+    lost: 'Projectile-blocking walls and manual shatter.',
+    before: {
+      label: 'The incoming volley stops at the wall, which the marine can shatter manually',
+      drawing: `${iceAttack}${iceVolley}<path class="shape-fill" d="m96 21 7 7-5 9 7 8-6 9 5 9H94V21Z"/><path d="m110 26 6-6m-7 39 7 6m-6-23 10-2"/>`,
+    },
     after: {
       label: 'The marine moves faster along a traversable ice road that chills enemies standing on it',
-      drawing: `<path class="shape-fill" d="M33 28H171V56H33Z"/><path class="vignette-ghost" d="M40 42h123" stroke-dasharray="3 5"/>${marine(73)}${arrow(103,42)}${arrow(125,42)}${enemies([151,34],[135,52])}<path d="m146 27 3-4m5 3 4-3m-24 36 1 5m6-7 3 4"/>`,
+      drawing: `<path class="shape-fill" d="M33 28H171V56H33Z"/>${iceAttack}${iceVolley}<path class="vignette-hostile" stroke-dasharray="3 3" d="M103 34H61m5-3-5 3 5 3M103 50H61m5-3-5 3 5 3"/>${arrow(75,42)}`,
     },
   },
   'ember-relay': {
@@ -95,7 +103,7 @@ const transformations: Partial<Record<AugmentId, Transformation>> = {
     before: scenes.meltdown,
     after: {
       label: 'A short fuse follows the marine, then a larger burst damages and ignites nearby enemies',
-      drawing: `<circle cx="57" cy="42" r="15" class="shape-fill"/>${marine(57)}${arrow(100,42)}<circle cx="143" cy="42" r="32" class="shape-fill"/><path d="M143 12v9m0 42v9m-31-30h8m46 0h8m-52-21 6 6m30 30 6 6m0-42-6 6m-30 30-6 6"/>${marine(143)}${enemies([129,28],[162,51])}${flame(129,22)}${flame(162,45)}<text x="57" y="69" text-anchor="middle">2 s fuse</text>`,
+      drawing: `<circle cx="93" cy="42" r="15" stroke-dasharray="3 3"/><circle cx="93" cy="42" r="38" class="shape-fill"/>${marine(93)}${meltdownTargets}${flame(115,23)}<text x="94" y="69" text-anchor="middle">2 s fuse</text>`,
     },
   },
   'pilgrim-pylon': {
@@ -116,7 +124,7 @@ const transformations: Partial<Record<AugmentId, Transformation>> = {
     before: scenes.overload,
     after: {
       label: 'One enemy anchors a tether to the marine; enemies crossing the line take repeated damage and shock',
-      drawing: `<path class="shape-fill" d="M40 45H169V54H40Z"/>${marine(28,49)}${enemies([65,27],[103,49],[140,24],[169,49])}<path d="m42 49 15-2 5 5 18-4 4 3 20-2 18-2 5 5 17-4 4 2 16-1"/><circle cx="169" cy="49" r="9" stroke-dasharray="2 3"/><path d="m97 42 4-5m4 4 5-4m-5 26 4-5"/>`,
+      drawing: `<path class="shape-fill" d="M40 45L171 48V56L40 53Z"/>${marine(28,49)}${overloadTargets}<path d="m42 49 15-2 5 5 18-4 4 3 20-2 18-2 5 5 17-4 4 2 16-1"/><circle cx="171" cy="52" r="9" stroke-dasharray="2 3"/><path d="m97 42 4-5m4 4 5-4m-5 26 4-5"/>`,
     },
   },
 };
@@ -135,5 +143,5 @@ export function transformationPreview(id: string, upgraded = false): string {
   const loss = transformation.lost
     ? `${transformation.lost} Also locks out ${AUGMENT_BOONS[partner].name}.`
     : `Access to ${AUGMENT_BOONS[partner].name}.`;
-  return `<span class="transformation-preview"><b class="transformation-title">Transforms: ${transformation.target}</b><span class="reward-combat-preview"><span><small>Before</small>${renderVignette(transformation.before)}</span><b aria-hidden="true">→</b><span><small>After</small>${renderVignette(after)}</span></span><span class="transformation-loss"><b>You lose:</b> ${loss}</span></span>`;
+  return `<span class="transformation-preview"><b class="transformation-title">Transforms: ${transformation.target}</b><span class="reward-combat-preview"><span><small>Before</small>${renderVignette(transformation.before)}</span><b aria-hidden="true">→</b><span><small>After</small>${renderVignette(after)}</span></span><span class="transformation-loss"><b>Gives up</b> ${loss}</span></span>`;
 }
