@@ -4,6 +4,7 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false) {
+  const castShade={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
@@ -24,12 +25,12 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody});
+      if (!friendly) Object.assign(shader.uniforms, {actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody});
       shader.vertexShader = (friendly ? 'attribute float _rig_paint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=_rig_paint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -95,7 +96,7 @@ ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the mari
 vec3 creatureBody=max(outgoingLight-lanternEmission,vec3(0.));
 float bodyValue=dot(creatureBody,vec3(.2126,.7152,.0722));
 float bounded=min(bodyValue,.25);
-outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))+lanternEmission;`}
+outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*actorCastShade)+lanternEmission*(1.-.55*actorCastShade);`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
@@ -126,6 +127,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     patchActorRegions(material,friendly);
   }
   return {
+    castShade(value:number) { castShade.value=value; },
     load(value:number) { attackLoad.value = T.MathUtils.clamp(value, 0, 1); },
     lantern(color:number) { lanternColor.value.setHex(color); },
     rig(color:number) { rigColor.value.setHex(color); },
@@ -140,6 +142,6 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
     death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
-    reset() { attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
+    reset() { castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };
 }

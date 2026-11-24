@@ -4,7 +4,7 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false,conditionSeed}) {
+export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false,castStudy=false,conditionSeed}) {
  const d=window.__containmentDebug,g=d.game;
  const clearStagingActors=()=>{
   if(conditionSeed===undefined||g.conditionState?.condition.id!=='brood'){g.enemies.reset();return;}
@@ -91,11 +91,38 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
   d.v2Proof.programs=programs;gl.createProgram=create;d.shaderCompilations=programs;
   if(programs)throw Error('V2 combat shader compiles '+programs);d.refresh();return;
  }
+ if(castStudy){
+  const a=p.angle;
+  d.spawn('brute',p.x+Math.cos(a)*70,p.y+Math.sin(a)*70);
+  g.setAimPoint({x:p.x+Math.cos(a)*85,y:p.y+Math.sin(a)*85});
+  d.step(16);
+ }
  if(slot==='overdrive')d.fillOverdrive();
  if(!g.useAbility(slot))throw Error('V2 ability denied '+id);
  const cast=g.abilities.snapshot.slots[slot].castRemainingMs;
  const duration=g.abilities.snapshot.slots[slot].activeMs||({bulwark:6000,glacier:5000,'tesla-pylon':9000,'frost-trail':2500,afterburn:2500,whiteout:8000,meltdown:8000,overclock:6000}[id]??(boons.includes('scorched-fan')?2500:0));
  const resolution=slot==='dash'?140:cast;
+ if(castStudy){
+  const advance=d.step;
+  const record=phase=>{
+   d.v2Proof.phase=phase;
+   d.v2Proof.attackers=g.enemies.snapshot.enemies.filter(e=>e.meleePhase==='windup'||e.windupMs>0).map(e=>e.id);
+   d.refresh();
+  };
+  advance(resolution+85);record('peak');
+  let index=0;
+  d.step=ms=>{
+   if(ms!==150)return advance(ms);
+   if(++index===1){
+    advance(150);
+    for(let i=0;i<8&&!g.enemies.snapshot.enemies.some(e=>e.meleePhase==='windup'||e.windupMs>0);i++)advance(16);
+    record('residual');
+   }else{
+    clearStagingActors();advance(500);clearStagingActors();record('rest');
+   }
+  };
+  return;
+ }
  const samples=[0,Math.max(16,resolution*.5),resolution+30,resolution+150,resolution+600,resolution+Math.max(1200,duration*.5),resolution+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
  // The runner samples at fixed 150ms; map those sampling requests to explicit art-review phases.
@@ -190,4 +217,10 @@ async function stageGalleryOverdrive({rig}){
 for(const rig of Object.keys(rigs)){
  V2_SCENARIOS.push({id:`gallery-overdrive-${rig}`,room:'armory',state:'playing',
   diagnosticOnly:true,burst:true,frameCount:3,stepMs:1000/60,setupArgument:{rig},setup:stageGalleryOverdrive});
+}
+
+for(const [rig, ids] of Object.entries(rigs))for(const [i,id] of ids.entries()){
+ if(!['afterburn','flashfire','napalm-charge','meltdown','whiteout','overload'].includes(id))continue;
+ V2_SCENARIOS.push({id:'v2-fx26-'+id,room:'crew-checkpoint',state:'playing',burst:true,frameCount:3,
+  setup:stageV2,setupArgument:{rig,id,slot:slots[i],room:'crew-checkpoint',castStudy:true}});
 }
