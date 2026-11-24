@@ -4,7 +4,7 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false) {
-  const castShade={value:0};
+  const castShade={value:0},shedShoulder={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
@@ -24,13 +24,13 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     const previousKey = material.customProgramCacheKey();
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
-      Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
+      Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
       if (!friendly) Object.assign(shader.uniforms, {actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody});
       shader.vertexShader = (friendly ? 'attribute float _rig_paint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=_rig_paint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -75,7 +75,7 @@ paintedCeramic*=max(1.0,.38/max(.01,dot(paintedCeramic,paintLuma)));
 diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));` : ''}
 ${friendly?'':'diffuseColor.rgb*=creatureStrike;'}
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
-if(actorPlateOpening>.99 && plateHeight>.66 && actorPosition.z-actorPlateBounds.z>actorPlateBounds.w*.46 && abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y*.87)discard;
+if(actorShedShoulder>.5 && plateHeight>.66 && actorPosition.z-actorPlateBounds.z>actorPlateBounds.w*.46 && abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y*.87)discard;
 if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
 ${friendly?`float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
 if(ash<actorDissolve)discard;`:`// CREATURE18: crisp rest-pose top-down wipe instead of per-voxel noise holes.
@@ -134,6 +134,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     body(color:number) { bodyHue.value.setHex(color); },
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },
     plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
+    shedShoulder(value:number) { shedShoulder.value=value; },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },
     identity(color:number,champion=false,strength?:number) { rimColor.value.setHex(color);eliteBody.value=champion||elite?1:0;rimStrength.value=strength??(champion?.28:elite?.24:.19); },
     reveal(value: number) { reveal.value = value; },
@@ -142,6 +143,6 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
     death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
-    reset() { castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
+    reset() { shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };
 }

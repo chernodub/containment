@@ -238,7 +238,11 @@ V2_SCENARIOS.push({
   const d=window.__containmentDebug,g=d.game,lane=d.benchmarkLane;
   g.enemies.reset();
   const x=lane.x+Math.cos(lane.angle)*125,y=lane.y+Math.sin(lane.angle)*125;
-  const id=d.spawn('brute',x,y);
+  if(!d.canStand(x,y,28))throw Error('Plate target lane is obstructed');
+  // Priority enemies remain in the encounter while an escort ordinarily retreats.
+  const spawned=g.enemies.spawn('brute',x,y,false,{priority:true});
+  if(!spawned.spawned)throw Error('Plate target unavailable');
+  const id=spawned.enemy.id;
   g.switchWeapon('plasma');d.step(450);
   for(let i=0;i<180;i++){
    const e=g.enemies.getSnapshot(id);
@@ -246,6 +250,7 @@ V2_SCENARIOS.push({
    const angle=Math.atan2(e.y-g.player.y,e.x-g.player.x);
    d.setInput({x:0,y:0,angle,fire:true,autoAim:false});d.step(1000/60);
   }
+  d.v2Proof.armorAfter=g.enemies.getSnapshot(id)?.armor;
   d.setInput({fire:false});d.refresh();
  })();`),
  advanceFrame:frame=>window.__containmentDebug.step(frame===1?230:1400),
