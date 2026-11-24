@@ -76,3 +76,10 @@ Interlock warning check failed. The base build passed the same
 completed 60 frames without a page error, going from 1920×1080 down
 to 1280×720 and back. Its minimum measured screen clearance was
 208.8 px and its minimum gap from a HUD element was 0.8 px.
+
+The compact desktop limit is 7% at 720 CSS pixels. The limit increases
+linearly to 22% at 1080 CSS pixels. The 7% Safety Interlock trial passed
+the warning check at 1280×720, after 18% and 22% both failed. In the
+matched edge fixture, the projected silhouette centre moved from
+5.77% to 31.59% of frame width at 1920×1080 and from 8.20% to
+18.99% at 1280×720.

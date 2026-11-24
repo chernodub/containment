@@ -11,6 +11,8 @@ export const HERO_MIN_PIXELS = 100;
 export const HERO_EMERGENCY_PIXELS = HERO_MIN_PIXELS*.85;
 export const HERO_NORMAL_PIXELS = 122;
 export const ROOM_OUTSIDE_LIMIT = .22;
+// The physical warning repeaters need more room coverage at 720 CSS px.
+const COMPACT_ROOM_OUTSIDE_LIMIT = .07;
 
 /** Constrain the actual camera after threat and HUD framing. No scene/DOM reads. */
 export class RoomCombatFraming {
@@ -53,6 +55,8 @@ export class RoomCombatFraming {
   apply(camera:Camera, focus:T.Vector3, x:number, z:number, radius:number, height:number,
     roomWidth:number, roomDepth:number, viewport:CombatViewport, cssHeight:number,
     dt:number, reducedMotion:boolean, boundary?:Boundary, engagement?:HudCombatFraming,bodyHeight=height,marineAngle=0,envelope?:DrawnMarineEnvelope):void {
+    const viewportScale=T.MathUtils.clamp((cssHeight-720)/(1080-720),0,1);
+    this.diagnostics.outsideLimit=T.MathUtils.lerp(COMPACT_ROOM_OUTSIDE_LIMIT,ROOM_OUTSIDE_LIMIT,viewportScale);
     this.envelope=envelope;
     this.heroFloor=HERO_MIN_PIXELS;this.diagnostics.emergencyPullback=false;
     this.heroHeight=bodyHeight;this.marineAngle=marineAngle;
@@ -99,7 +103,7 @@ export class RoomCombatFraming {
     let outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
     // At a north corner the head needs a narrow strip beyond the deck. Reclaim
     // that strip with a bounded pullback, stopping at the hero's size floor.
-    for(let pass=0;pass<16&&outside>ROOM_OUTSIDE_LIMIT&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
+    for(let pass=0;pass<16&&outside>this.diagnostics.outsideLimit&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
       this.heroFloor=HERO_EMERGENCY_PIXELS;this.diagnostics.emergencyPullback=true;
       const oldZoom=camera.zoom;
       camera.zoom=Math.max(roomZoomFloor,camera.zoom*.97);camera.updateProjectionMatrix();
@@ -111,7 +115,7 @@ export class RoomCombatFraming {
     // closer view too, retaining it only when joint body/room coverage improves.
     if(urgent&&engagement)engagement.refreshFit(camera,this.point);
     const preserveUrgentFit=urgent&&engagement?.diagnostics.fit===true;
-    for(let pass=0;pass<8&&outside>ROOM_OUTSIDE_LIMIT;pass++){
+    for(let pass=0;pass<8&&outside>this.diagnostics.outsideLimit;pass++){
       const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom,oldOutside=outside;
       camera.zoom*=1.02;camera.updateProjectionMatrix();
       this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
@@ -139,7 +143,7 @@ export class RoomCombatFraming {
         this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
         this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
         const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
-        if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>ROOM_OUTSIDE_LIMIT+1e-6)
+        if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>this.diagnostics.outsideLimit+1e-6)
           ||this.diagnostics.smallX&&!this.diagnostics.centeredX||this.diagnostics.smallZ&&!this.diagnostics.centeredZ){
           this.move(camera,focus,oldX-camera.position.x,oldZ-camera.position.z);camera.zoom=oldZoom;camera.updateProjectionMatrix();
           this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
@@ -361,7 +365,7 @@ export class RoomCombatFraming {
         for(let step=0;step<12;step++){
           const mid=(low+high)*.5;
           this.move(camera,focus,startX+dx*mid-camera.position.x,startZ+dz*mid-camera.position.z);
-          if(this.outsideFraction(camera,roomRight,roomBottom,viewport,this.boundsPolygon)<=ROOM_OUTSIDE_LIMIT)high=mid;
+          if(this.outsideFraction(camera,roomRight,roomBottom,viewport,this.boundsPolygon)<=this.diagnostics.outsideLimit)high=mid;
           else low=mid;
         }
         this.move(camera,focus,startX+dx*high-camera.position.x,startZ+dz*high-camera.position.z);
@@ -388,8 +392,8 @@ export class RoomCombatFraming {
     this.setRectangle(minX-.001,top,maxX+.001,bottom);
     const outsideZ=this.outsideFraction(camera,right,bottom,viewport,this.boundsPolygon);
     this.setRectangle(left,top,right,bottom);
-    return(d.smallX||outsideX<=ROOM_OUTSIDE_LIMIT)&&(d.smallZ||outsideZ<=ROOM_OUTSIDE_LIMIT)
-      &&(d.smallX||d.smallZ||total<=ROOM_OUTSIDE_LIMIT);
+    return(d.smallX||outsideX<=this.diagnostics.outsideLimit)&&(d.smallZ||outsideZ<=this.diagnostics.outsideLimit)
+      &&(d.smallX||d.smallZ||total<=this.diagnostics.outsideLimit);
   }
 
   private readonly springResult = [0,0];
