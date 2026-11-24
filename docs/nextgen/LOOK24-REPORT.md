@@ -61,3 +61,7 @@ The isolated Pyro campaign (seed 1729, fast native input) cleared six rooms with
 
 1. In the hottest part of Flashfire, the body stays below plate value, but the orange light still obscures interior detail. At 480×270 the outer contour carries most of the facing cue.
 2. In the Dark loading bay, small creatures near the edge of the light pool are easiest to find by their lanterns. Their feet have less separation from the deck than the larger armored bodies do.
+
+## LOOK25
+
+The creature lighting ramp replaces directional diffuse with a nearly constant band across broad, single-colour shell plates, and the two highlight ceilings compress the remaining differences. The Dark deck exposes this in both Cryo and Pyro, and frost rim emission also enters the family-lantern calculation, while corpse admission zeros the real lantern emission altogether.
