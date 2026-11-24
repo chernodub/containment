@@ -65,3 +65,42 @@ The isolated Pyro campaign (seed 1729, fast native input) cleared six rooms with
 ## LOOK25
 
 The creature lighting ramp replaces directional diffuse with a nearly constant band across broad, single-colour shell plates, and the two highlight ceilings compress the remaining differences. The Dark deck exposes this in both Cryo and Pyro, and frost rim emission also enters the family-lantern calculation, while corpse admission zeros the real lantern emission altogether.
+
+The final16 Breached Loading Bay pressure snapshot contained four live enemies and nine recent corpse events. The matched fixtures use the same cargo room with and without emergency lighting. Each Cryo fixture has two frozen and three chilled survivors and three admitted corpses. Dark Pyro reproduces the broad pale plate without ice. The room visibility floor applies to the deck. The creature wipe discards geometry above its moving boundary and keeps surviving pixels opaque.
+
+The new material rolls highlights off according to the posed triangle normal and the position across the shell. The curve preserves the initial slope at black, and the low-light fill scales with the authored material colour. Ice tints the shell at its existing luminance and catches grazing edges independently of the family lamp. On death the lamp retains 30% of its authored resting intensity. The marine and the committed attacker contour keep their existing shading.
+
+### Matched pixel samples
+
+Values are display-space luma on a 0–255 scale. Each arrow compares the baseline with LOOK25. The body column is the maximum of a 5 × 5 lit-plane patch, the dark plate is a 3 × 3 median, and the marine plate is a 5 × 5 median. These are local samples from the native PNGs. The original LOOK24 scenes use frame 01. Family lamps, warning contours and readable HUD elements are outside the sample patches.
+
+| Scene | Lit body | Dark plate | Marine plate | Body / marine | Lit body / dark plate |
+|---|---:|---:|---:|---:|---:|
+| Dark Cryo | 123.3 → 121.9 | 48.9 → 28.2 | 197.6 | 62% → 62% | 2.5 → 4.3 |
+| Dark Pyro | 129.8 → 127.3 | 54.6 → 33.1 | 183.6 | 71% → 69% | 2.4 → 3.8 |
+| Ordinary Cryo | 123.3 → 122.1 | 46.7 → 28.2 | 192.6 | 64% → 63% | 2.6 → 4.3 |
+| Relay Racks | 121.6 → 109.9 | 42.4 → 21.6 | 184.6 | 66% → 60% | 2.9 → 5.1 |
+| Crew Checkpoint | 125.1 → 125.1 | 58.9 → 40.3 | 184.6 | 68% → 68% | 2.1 → 3.1 |
+| Pyro overlap | 122.9 → 122.8 | 42.1 → 21.6 | 184.6 | 67% → 67% | 2.9 → 5.7 |
+| Flashfire | 123.1 → 123.0 | 51.5 → 41.0 | 183.6 | 67% → 67% | 2.4 → 3.0 |
+| Swarm Junction | 125.1 → 125.1 | 45.6 → 24.9 | 183.6 | 68% → 68% | 2.7 → 5.0 |
+
+On the frozen elite Crawler, seven pixels sampled every four pixels from (918,367) through (942,367) across one upper plate previously read 122–123. The same pixels now span 65–89, revealing curvature even within one painted panel.
+
+| Scene | Lit body patch (x,y) | Dark plate patch (x,y) | Marine plate patch (x,y) |
+|---|---:|---:|---:|
+| Dark and ordinary Cryo | 869,367 | 931,406 | 690,549 |
+| Dark Pyro | 822,523 | 868,531 | 717,569 |
+| Relay Racks | 821,581 | 815,600 | 610,525 |
+| Crew Checkpoint | 863,572 | 890,606 | 678,525 |
+| Pyro overlap | 899,579 | 875,630 | 688,530 |
+| Flashfire | 902,276 | 934,319 | 713,554 |
+| Swarm Junction | 862,572 | 889,606 | 678,525 |
+
+At 480 × 270 the Spitter body versus nearby dark floor measured 85.4 versus 25.9 in Relay Racks, 87.5 versus 31.1 in Swarm Junction and 85.9 versus 4.0 in the Dark loading bay. The corresponding baseline body readings were 111.6, 105.4 and 98.3. A rack partially occludes the Relay Racks Crawler, and Flashfire still puts orange light across the target. [Native and 480 × 270 comparisons](../../artifacts/nextgen/look25-comparison/index.html)
+
+### Runtime verification
+
+The production build passed. Both capture runs produced 29 matched frames with zero capture errors or failures. All four requested scenes matched their original draw counts. Across the full suite, 27 of 29 frames matched draw counts and 28 of 29 matched resident program counts. The other draw counts were 105 → 104 in the dark atrium and 125 → 126 in dark heavy cargo. Dark Pyro recorded 151 → 152 resident programs, and the original build also recorded 152 on repeat. [Before](../../artifacts/nextgen/look25-before/index.html) · [After](../../artifacts/nextgen/look25-after/index.html) · [Original build repeated](../../artifacts/nextgen/look25-baseline-repeat/index.html)
+
+The 20-second High/Cryo benchmark in the Dark loading bay recorded 135–162 draws, 155 resident programs and zero combat program creations. The unassisted Cryo campaign at seed 1729 cleared all six rooms with zero errors and zero defects. Program counts matched at entry and clear in each room (165, 158, 155, 161, 161 and 160). [Realtime benchmark](../../artifacts/nextgen/look25-bench/benchmark.json) · [Six-room campaign](../../artifacts/nextgen/playtest/look25-cryo/index.html)
