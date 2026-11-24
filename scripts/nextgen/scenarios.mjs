@@ -113,16 +113,16 @@ export const SCENARIOS=[
    }
    throw Error('No seeded live Cryo augment reward draft found');
  }},
- {id:'ui26-ice-road-draft',state:'reward',phase:'reward',nativeFocus:'[data-mutation=ice-road]',setup:async()=>{
+ {id:'ui26-ice-road-draft',state:'reward',phase:'reward',nativeKeys:[['Tab',0]],setup:async()=>{
    const d=window.__containmentDebug;
-   for(let seed=1729;seed<1809;seed++){
-     await d.startRun(seed);
-     await d.gotoRoom('awakening-bay',{phase:'reward',rig:'cryo'});
-     d.grantBoons(['cryogenic']);
-     for(let frame=0;frame<120&&!document.querySelector('.choice-grid');frame++)await new Promise(requestAnimationFrame);
-     if(document.querySelector('[data-mutation=ice-road]'))return;
-   }
-   throw Error('No seeded Ice Road draft found');
+   await d.gotoRoom('passenger-vault',{phase:'reward',rig:'cryo',runStructure:true});
+ }},
+ {id:'ui26-ice-road-shop',state:'reward',phase:'reward',nativeFocus:'#purchase-ice-road',setup:async()=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom('communal-atrium',{phase:'reward',rig:'cryo'});
+   d.grantBoons(['ice-road']);
+   d.game.combat.setCredits(600);
+   d.refresh();
  }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-inspect summary'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
  {id:'rig-inspect-open',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','.rig-inspect[open]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('.rig-inspect summary');frame++)await new Promise(requestAnimationFrame);document.querySelector('.rig-inspect summary').click();}},
