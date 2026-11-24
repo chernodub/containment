@@ -197,9 +197,19 @@ export class AudioSystem implements GameAudioDirector {
       this.updateHeartbeat();
     }
   }
+  private lastMeleeMissAt = -Infinity;
   handleEffect(effect: GameEffect, listener: AudioListener): void {
     const dx = effect.x - listener.x, dy = effect.y - listener.y;
     const pan = Math.max(-.85, Math.min(.85, dx / 500)), distance = Math.hypot(dx, dy);
+    if (effect.type === 'melee-miss') {
+      const now = performance.now();
+      if (now - this.lastMeleeMissAt >= 1500) {
+        this.lastMeleeMissAt = now;
+        this.cue(ALERTS.exposed, { pan, distance, level: .45 });
+      }
+      return;
+    }
+    if (effect.type === 'recovery-stagger') this.cue(ALERTS.resolved, { pan, distance, level: .55 });
     if (effect.encounterCue === 'flank' || effect.encounterCue === 'crossfire') {
       this.playAlert(effect.encounterCue, pan, distance);
       return;

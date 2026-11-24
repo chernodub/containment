@@ -114,6 +114,7 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enem
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -231,6 +232,7 @@ type EnemyState = {firstWardenCharge?:true;openingVolley?:{x:number;y:number};wa
   firingSearch?: {decision:number;playerX:number;playerY:number};
   baseSpeed:number;champion?:'warden'|'matron';
   windupMs:number;pendingAttack:'spit'|'charge'|null;lockX:number;lockY:number;specialCooldownMs:number;chargeMs:number;
+  meleeConnected?:boolean; recoveryPunished?:boolean;
   meleePhase:MeleePhase;meleeProgress:number;meleeAngle:number;meleeFacingLocked:boolean;
   meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 };
@@ -280,6 +282,8 @@ export class EnemySystem {
   #nextId = 1;
   #reservedCount = 0;
   #readyTimeMs=0;
+  readonly #marineTrail:{x:number;y:number;time:number}[]=[];
+  readonly #laneStalkers=new Map<number|undefined,number>();
   #feintsStarted=0;
   get feintsStarted(){return this.#feintsStarted;}
   #packFeintMs=1800;
@@ -457,6 +461,10 @@ export class EnemySystem {
     const movementDelta = Math.min(deltaMs, MAX_MOVEMENT_DELTA_MS);
     const events: EnemyEvent[] = [];
     this.#readyTimeMs+=timerDelta;
+    const trail=this.#marineTrail;
+    if(!trail.length||this.#readyTimeMs-trail[trail.length-1].time>=50)
+      trail.push({x:player.x,y:player.y,time:this.#readyTimeMs});
+    while(trail.length>1&&trail[1].time<=this.#readyTimeMs-1000)trail.shift();
     this.#packFeintMs=Math.max(0,this.#packFeintMs-timerDelta);
     this.#meleeStartGapMs=Math.max(0,this.#meleeStartGapMs-timerDelta);
     this.#meleeStrikeGapMs=Math.max(0,this.#meleeStrikeGapMs-timerDelta);
@@ -566,6 +574,7 @@ export class EnemySystem {
     id: number,
     amount: number,
     knockback?: Readonly<{ x: number; y: number }>,
+    weaponHit=false,
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
@@ -579,9 +588,17 @@ export class EnemySystem {
     enemy.health -= healthDamage;
     if(enemy.broodRemainingMs>0){enemy.broodDamage+=healthDamage+absorbedByArmor;if(enemy.broodDamage>=20){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}
     const died = enemy.health === 0;
-    // The corpse carries the lethal impulse; do not teleport it before physics starts.
-    const appliedKnockback = died ? Object.freeze({x:0,y:0}) : this.#applyKnockback(enemy, knockback);
-    const events: EnemyEvent[] = [];
+    const punishableRecovery=weaponHit&&!enemy.champion&&enemy.meleePhase==='recovery'&&
+      (enemy.type==='brute'||enemy.type==='carrier'||enemy.type==='stalker');
+    // Weapon knockback can move the body without cancelling its punish window.
+    const appliedKnockback=died?Object.freeze({x:0,y:0}):this.#applyKnockback(enemy,knockback,!punishableRecovery);
+    const events:EnemyEvent[]=[];
+    if(!died&&punishableRecovery&&!enemy.recoveryPunished){
+      enemy.recoveryPunished=true;
+      enemy.meleeRemainingMs+=350;
+      enemy.meleeDurationMs+=350;
+      events.push(freezeEvent({type:'recovery-stagger',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+    }
 
     if (died) {
       events.push(
@@ -684,7 +701,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;this.#readyTimeMs=0;this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+    this.#nextId = 1;this.#readyTimeMs=0;this.#marineTrail.length=0;this.#laneStalkers.clear();this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -855,7 +872,14 @@ export class EnemySystem {
           readyRadius+=24*Math.sin(phase/155);
         }else if(enemy.type==='stalker'){
           enemy.readyBehaviour='pace';
-          angle+=.42*Math.sin(phase/420);
+          const past=this.#marineTrail[0];
+          const dx=player.x-past.x,dy=player.y-past.y;
+          if(!this.#laneStalkers.has(enemy.beat)&&Math.hypot(dx,dy)>30)this.#laneStalkers.set(enemy.beat,enemy.id);
+          if(this.#laneStalkers.get(enemy.beat)===enemy.id&&Math.hypot(dx,dy)>30){
+            const retreat=Math.atan2(dy,dx);
+            angle+=Math.max(-.85,Math.min(.85,Math.atan2(Math.sin(retreat-bearing),Math.cos(retreat-bearing))));
+            readyRadius=MELEE_ATTACKS.stalker.engageRange+(player.radius??DEFAULT_PLAYER_RADIUS)-8;
+          }else angle+=.42*Math.sin(phase/420);
         }else if(enemy.type==='brute'){
           const braced=phase%1200>=480&&distanceToPlayer<=radius;
           enemy.readyBehaviour=braced?'brace':'step';
@@ -1186,12 +1210,19 @@ export class EnemySystem {
         enemy.meleePhase='strike';enemy.meleeProgress=0;enemy.meleeFacingLocked=true;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
-        if(meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false){
+        enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
+        if(enemy.meleeConnected){
           events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
+        enemy.recoveryPunished=false;
+        if(!enemy.champion&&!enemy.meleeConnected){
+          events.push(freezeEvent({type:'melee-miss',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+          const minimum=enemy.type==='brute'||enemy.type==='carrier'?450:enemy.type==='stalker'?320:0;
+          enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
+        }
       }else{
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest;
         this.#yieldMeleeBerth(enemy);
@@ -1260,6 +1291,14 @@ export class EnemySystem {
     }
   }
 
+  startOpeningVolley(id:number,target:{x:number;y:number}):readonly EnemyEvent[] {
+    const enemy=this.#enemies.get(id);
+    if(!enemy||enemy.type!=='spitter'||enemy.pendingAttack)return [];
+    const events:EnemyEvent[]=[];
+    this.#windUpSpit(enemy,target,events);
+    return events;
+  }
+
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
     this.#meleeStartGapMs=250;
     enemy.windupMs=this.#spitWindupMs;
@@ -1273,7 +1312,8 @@ export class EnemySystem {
 
   #applyKnockback(
     enemy: EnemyState,
-    knockback?: Readonly<{ x: number; y: number }>,
+    knockback: Readonly<{ x: number; y: number }>|undefined,
+    cancelAttack:boolean,
   ): Readonly<{ x: number; y: number }> {
     if (
       !knockback ||
@@ -1284,7 +1324,7 @@ export class EnemySystem {
     }
     const magnitude = Math.hypot(knockback.x, knockback.y);
     if (magnitude === 0) return Object.freeze({ x: 0, y: 0 });
-    this.#cancelMelee(enemy);
+    if(cancelAttack)this.#cancelMelee(enemy);
     if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}
     const clampedMagnitude = Math.min(magnitude, MAX_KNOCKBACK);
     const resistance = enemy.type === 'brute' ? BRUTE_KNOCKBACK_RESISTANCE : 1;

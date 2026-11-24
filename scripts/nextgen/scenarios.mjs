@@ -1269,6 +1269,18 @@ SCENARIOS.push(
   }
   d.refresh();
  }},
+ ...['crossing-volley','covered-bank'].map(kind=>({id:`play27-${kind}`,state:'playing',room:'overload-floor',setupArgument:kind,setup:async kind=>{
+  const d=window.__containmentDebug,g=d.game;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  const director=g.director,index=director.plan.beats.findIndex(beat=>beat.grammar==='siege');
+  director.beatIndex=index;director.dispatched=director.plan.beats[index].start;
+  Object.assign(g.player,g.siegePoint);
+  d.step(33);
+  g.siegeRemainingMs=4000;
+  if(kind==='covered-bank')Object.assign(g.player,g.siege.farBank);
+  d.step(230);
+  d.refresh();
+ }})),
  {id:'play26-death-card',state:'dead',required:['.fatal-source','.retry-lesson'],setup:async()=>{
   const d=window.__containmentDebug,g=d.game;
   await d.gotoRoom('relay-racks',{rig:'cryo'});

@@ -121,6 +121,7 @@ export class DepthRenderer {
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
  private readonly hostileSocket = new T.Vector3();
+ private readonly actorPosition = (id:number) => this.actors.get(id)?.root.position;
  private readonly shooterSocket = (id:number) =>
   this.actors.get(id)?.root.getObjectByName('jaw')?.getWorldPosition(this.hostileSocket);
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
@@ -631,7 +632,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
-  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches);
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
@@ -785,7 +786,7 @@ export class DepthRenderer {
    if(sampling)sampling.value=false;
   });
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
-  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies);
+  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition);
   if(this.graphicsAblation==='floorResidues'){
    this.effects.showFloorDecals(false);
    this.interimAbilities.kit?.hideFloorResidues();

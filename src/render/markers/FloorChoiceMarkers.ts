@@ -8,7 +8,7 @@ export class FloorChoiceMarkers {
  private readonly geometry=dashedRing(.98,1,64);
  private readonly materials=[
   new T.MeshBasicMaterial({color:0xffbf62,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide}),
-  new T.MeshBasicMaterial({color:0x8debff,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide}),
+  new T.MeshBasicMaterial({color:0x8debff,transparent:true,opacity:.72,toneMapped:false,depthWrite:false,side:T.DoubleSide}),
  ];
  private readonly failedGeometry=dashedRing(.99,1,96);
  private readonly failed=new T.MeshBasicMaterial({color:0xcd9766,transparent:true,opacity:.28,depthWrite:false,side:T.DoubleSide});
@@ -16,6 +16,13 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
   mesh.renderOrder=-2;mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
  });
+ private readonly coverGlyphGeometry=new T.CircleGeometry(.48,6);
+ private readonly coverGlyph=new T.Mesh(this.coverGlyphGeometry,this.materials[1]);
+ constructor(){
+  this.coverGlyph.rotation.x=-Math.PI/2;
+  this.coverGlyph.visible=false;
+  this.root.add(this.coverGlyph);
+ }
  private readonly arrowGeometry=new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute([
   -.22,0,-.12,.15,0,-.12,.15,0,.12,-.22,0,-.12,.15,0,.12,-.22,0,.12,
   .08,0,-.28,.55,0,0,.08,0,.28,
@@ -29,7 +36,10 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[]){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege']){
+  const covered=choices.find(choice=>choice.kind==='bank'&&choice.id==='1')??(siege?.selectedBank==='far'?siege:undefined);
+  this.coverGlyph.visible=!!covered;
+  if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
   this.routes.forEach((mesh,index)=>{
    const path=approaches[index];
    let count=0;
@@ -37,7 +47,7 @@ export class FloorChoiceMarkers {
     const from=path[i-1],to=path[i],dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
     for(let along=22;along<distance&&count<48;along+=37){
      this.routeDummy.position.set((from.x+dx*along/distance)/unit,.05,(from.y+dy*along/distance)/unit);
-     this.routeDummy.rotation.y=-Math.atan2(dy,dx);this.routeDummy.scale.setScalar(.65);this.routeDummy.updateMatrix();
+     this.routeDummy.rotation.y=-Math.atan2(dy,dx);this.routeDummy.scale.setScalar(index===1?1.1:.65);this.routeDummy.updateMatrix();
      mesh.setMatrixAt(count++,this.routeDummy.matrix);
     }
    }
@@ -62,5 +72,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.coverGlyphGeometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }
