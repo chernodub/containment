@@ -1,3 +1,4 @@
+import {laneWorklight} from './lighting/LaneWorklight';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../game/roguelike/shipArchitectureLayouts';
 import {ENVIRONMENT_COMPOSITION} from './lighting/EnvironmentComposition';
 import * as T from 'three';
@@ -33,6 +34,7 @@ export class SceneLighting {
  private valueProfile:RoomValueProfile|undefined;private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private manualConsole=false;private overloadFloor=false;private menuPresentation=false;
  private templateArchitecture=false;private interiorPresentation=false;
  private coveragePoint=new T.Vector3();private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
+ private laneLight:{x:number;y:number;z:number;color:number;priority:number;duration:number;distance:number;intensity:number}|undefined;
  private blackout=false;
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
@@ -58,6 +60,8 @@ export class SceneLighting {
   this.interiorPresentation=!!world.getObjectByName('e9-room-interiors');
   this.templateArchitecture=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId??'');
   this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.overloadFloor=templateId==='overload-floor';this.composition=roomComposition(templateId);this.valueProfile=roomValueProfile(templateId);this.menuPresentation=false;
+  const service=laneWorklight(templateId??'');
+  this.laneLight=service?{x:service.x/32,y:service.y,z:service.z/32,color:service.color,priority:-10,duration:1,distance:4.6,intensity:0}:undefined;
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
   this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
   this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
@@ -95,7 +99,7 @@ export class SceneLighting {
    candidates.length=write;
   }
   this.authoredFixtures=candidates.slice();this.playerX=this.playerZ=NaN;
-  const selected:Fixture[]=this.landmarkFixture()?[this.landmarkFixture()!]:[];
+  const selected:Fixture[]=[];
   candidates.sort((a,b)=>Math.hypot(a.x-width/2,a.z-height/2)-Math.hypot(b.x-width/2,b.z-height/2));
   while(candidates.length&&selected.length<this.fixtures.length){
    if(selected.length)candidates.sort((a,b)=>Math.min(...selected.map(s=>Math.hypot(b.x-s.x,b.z-s.z)))-Math.min(...selected.map(s=>Math.hypot(a.x-s.x,a.z-s.z))));
@@ -116,10 +120,6 @@ export class SceneLighting {
    }
   });
  }
- private landmarkFixture():Fixture|undefined {
-  const source=this.tier==='high'||this.blackout?this.valueProfile?.landmark:undefined;
-  return source?{x:source.at[0]/32,z:source.at[1]/32,y:source.height??3.8,color:source.keyColor??source.color,nativeColor:true,gain:source.keyGain??1.4,distance:source.radius*2,poolWidth:source.radius,poolDepth:source.radius*1.6,poolStyle:0}:undefined;
- }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
   light.userData.poolAngle=angle;light.userData.worldBounceGain=this.interiorPresentation?0:ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
@@ -134,7 +134,6 @@ export class SceneLighting {
   this.playerX=x;this.playerZ=z;
   const selected=this.nearbyFixtures;selected.length=0;
   if(this.staging)selected.push({x:this.staging.coreX,y:this.staging.coreY,z:this.staging.coreZ,color:this.staging.coreColor});
-  else {const landmark=this.landmarkFixture();if(landmark)selected.push(landmark);}
   if(this.mood.environment==='reactor'){
    this.authoredFixtures.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
    for(const fixture of this.authoredFixtures){
@@ -175,6 +174,11 @@ export class SceneLighting {
   const delta=Number.isFinite(dt)?Math.max(0,dt):0;this.time+=delta;this.pool.update(delta);
   this.blastLife=Math.max(0,this.blastLife-delta);this.blast.intensity=12*this.flashIntensity*(this.blastLife/.18)**2;
   if(this.menuPresentation)return;
+  if(this.laneLight&&this.tier==='high'&&this.dynamicLights){
+   // Match floor illuminance at the source, compensating for the lower lamp height.
+   this.laneLight.intensity=.65*this.lamp.light.intensity*(this.laneLight.y/1.65)**2*(this.blackout?.15:1);
+   this.pool.attach('lane-worklight',this.laneLight);
+  }
   const behavior=this.mood.practical.behavior;
   for(let i=0;i<this.fixtureCount;i++){
    const light=this.fixtures[i];if(!light.visible)continue;
