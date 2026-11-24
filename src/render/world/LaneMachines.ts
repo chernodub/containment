@@ -1,6 +1,6 @@
 import {addIncidentLane} from './IncidentLaneMachines';
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
-import type {Group} from 'three';
+import {CylinderGeometry,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
 import {laneTerminal} from '../lighting/LaneWorklight';
@@ -34,21 +34,31 @@ export function addLaneMachine(root:Group,id:string){
       p.box(-60,19,39,34,16,24,0x748c80,-.29);
       break;
     case 'armory':{
+      function cartridge(x:number,y:number,z:number,yaw:number){
+        // The flared case head and tapered copper nose survive the incident crop.
+        for(const [start,length,base,tip,color] of [
+          [-21,3,5.8,5.8,0xe0b45b],[-18,23,5,4.8,0xc9953f],
+          [5,4,4.8,3.6,0xdcb767],[9,12,3.6,.4,0xb26a4e]
+        ]){
+          const geometry=new CylinderGeometry(tip,base,length,8);
+          geometry.rotateZ(-Math.PI/2);geometry.translate(start+length/2,0,0);
+          geometry.rotateY(yaw);geometry.translate(x,y,z);p.add(geometry,color);
+        }
+      }
       const belt:Pin[]=[[-57,-175],[-57,-99],[-37,-59],[5,4]];
       for(let i=1;i<belt.length;i++){
         const [x,z]=belt[i-1],[ex,ez]=belt[i];
         const dx=ex-x,dz=ez-z,length=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
         p.box((x+ex)/2,.38,(z+ez)/2,39,.55,length+2,rubber,yaw);
-        for(let step=5;step<length;step+=10){
+        for(let step=7;step<length;step+=15){
           const cx=x+dx*step/length,cz=z+dz*step/length;
-          p.box(cx,3,cz,33,5,6,0xb89a55,yaw);
-          p.box(cx+12*Math.cos(yaw),3,cz-12*Math.sin(yaw),8,5.5,6,0x794c38,yaw);
+          cartridge(cx,6,cz,yaw);
         }
       }
       p.box(7,4,11,54,7,43,metal,-.54);
       for(const x of [-13,29])p.box(x,11,14,7,14,45,edge,-.54);
       for(const [x,z,yaw] of [[5,15,.84],[15,22,-.62],[-14,43,.28],[-33,35,1.23],[12,55,-.12]])
-        p.box(x, z<30?13:3,z,27,6,7,0xcaa45e,yaw);
+        cartridge(x,z<30?16:6,z,yaw);
       break;
     }
     case 'transmission-chamber':
