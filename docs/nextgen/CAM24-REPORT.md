@@ -63,3 +63,16 @@ The baseline Arc run ended in Service Shaft Landing after 13 clears.
 It took 490.5 total damage and hit 1,010 of 1,323 shots (76.34%),
 with zero runner errors. Host contention prevents treating this run as
 quiet-machine evidence.
+
+The matched 1920×1080 scenario sets each produced 13 verified PNGs.
+In Communal Atrium's active coolant fixture the marine moved higher
+above the dock. In the dark cargo fixture the marine moved farther
+from the left edge. Armory Cryo still loses part of its lower approach
+to the dock and frame edge.
+
+At 1280×720 the candidate Armory Cryo capture passed, but the Safety
+Interlock warning check failed. The base build passed the same
+1280×720 Safety Interlock fixture. The candidate resize fixture
+completed 60 frames without a page error, going from 1920×1080 down
+to 1280×720 and back. Its minimum measured screen clearance was
+208.8 px and its minimum gap from a HUD element was 0.8 px.
