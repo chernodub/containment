@@ -597,7 +597,7 @@ body[data-state=playing] #world{cursor:none}
 
 #hud #room-objective.coaching-objective { transform: none; margin: 0 !important; }
 #hud #room-objective.coaching-objective[data-leader]:not([data-leader=""])::after {
-  content: ''; position: absolute; top: 50%; width: 19px; height: 1px; background: var(--accent);
+  content: ''; position: absolute; top: 50%; width: 24px; height: 2px; background: #9fe8ffb8;
 }
 #hud #room-objective.coaching-objective[data-leader="right"]::after { right: 100%; }
 #hud #room-objective.coaching-objective[data-leader="left"]::after { left: 100%; }
