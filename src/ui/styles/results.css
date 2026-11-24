@@ -51,18 +51,29 @@
 #overlay .debrief-panel:has(.result-details[open]) .result-details {margin-top:8px;}
 #overlay .debrief-panel:has(.result-details[open]) .result-details>summary {padding:10px 4px;}
 
-/* The authored final image carries the cost; the ending statement sits below. */
-#overlay .ending-transmission {width:min(1200px,100%);margin:18px 0 0;}
-#overlay .ending-render {margin-inline:auto;position:relative;aspect-ratio:16/9;max-height:44vh;overflow:hidden;border-top:1px solid #9fe8ff50;border-bottom:1px solid #9fe8ff30;background:#06111b;}
-#overlay .ending-set,#overlay .ending-set img {display:block;width:100%;height:100%;object-fit:contain;}
-#overlay .debrief-panel:has(.result-details[open]) .ending-transmission {display:none;}
-@keyframes ending-uplink {0%,100%{opacity:.5}50%{opacity:1}}
-@media(max-height:800px) {
- #overlay .completion-ending[data-ending='sacrifice'] {min-height:62vh;padding:8px 0;}
- #overlay .ending-render {max-height:42vh;}
- #overlay .completion-ending .ending-exact {font-size:clamp(26px,2.5vw,34px);margin:20px 0 8px;}
- #overlay .completion-ending .ending-rule {margin:12px 0;}
+#overlay .completion-ending[data-ending='sacrifice'] {
+  position: relative;
+  isolation: isolate;
+  justify-content: end;
+  min-height: 68dvh;
+  margin: calc(-1 * clamp(20px,4vh,50px)) calc(-1 * clamp(24px,7vw,150px)) 0;
+  padding: 24px;
 }
+#overlay .ending-transmission { position: absolute; inset: 0; z-index: -1; margin: 0; overflow: hidden; }
+#overlay .ending-render, #overlay .ending-set, #overlay .ending-set img {
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 44%;
+}
+#overlay .ending-transmission::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(transparent 35%, #050c1390 68%, #050c13 100%);
+}
+#overlay .completion-ending[data-ending='sacrifice'] .ending-exact {
+  max-width: 26ch; margin: 8px 0 0; text-shadow: 0 2px 12px #050c13;
+}
+#overlay .completion-ending[data-ending='sacrifice'] .ending-rule { margin: 12px 0 0; }
+#overlay .debrief-panel:has(.result-details[open]) .ending-transmission { display: none; }
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending { margin: 0; }
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact { max-width: none; }
 @media(prefers-reduced-motion:reduce) {
  #overlay .ending-transmission * {animation:none!important;}
 }
