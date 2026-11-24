@@ -32,8 +32,11 @@ void main(){vShape=effectShape;vFrame=effectFrame;vUv=uv;vColor=instanceColor;vA
 const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec4 vShape;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 ${GRAPHIC_COMBUSTION_GLSL}
 uniform vec4 warningOrigin[57];uniform vec4 warningSize[57];uniform vec4 warningTime[57];
-uniform int warningCount;uniform int primaryWarning;uniform float warningFillScale;varying vec2 warningWorld;
+uniform vec2 warningMarine;uniform int warningCount;uniform int primaryWarning;uniform float warningFillScale;varying vec2 warningWorld;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
+#ifdef LOCAL_WARNING_EDGE
+ gl_FragDepth=gl_FragCoord.z;
+#endif
 if(style>6.5){
  if(d>1.0)discard;
  if(vFrame<-.5){color=vec3(.006,.008,.009);alpha*=.88*(1.0-smoothstep(.75,1.0,d));}
@@ -109,6 +112,10 @@ else if(style>5.5){
  color=mix(color,vec3(1.65,.018,.044),hullInk);
  color=mix(color,vec3(1.65,.018,.044)*(1.+.35*pulseInk),core);
  alpha=max(ink,core);
+ #ifdef LOCAL_WARNING_EDGE
+ // Only the printed stroke is lifted. The interior retains its floor depth.
+ if(max(max(hullInk,core),queuedInk)>.14 && distance(warningWorld,warningMarine)<1.5)gl_FragDepth=0.;
+ #endif
  if(queuedInk>alpha){color=vec3(.68,.072,.092);alpha=queuedInk;}
 
 }
@@ -248,7 +255,8 @@ export class AttackEffects {
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
   this.hostileMesh=pool(scene,new T.PlaneGeometry(2,2),320,7);this.hostileMesh.name='hostile-projectiles';this.hostileMesh.renderOrder=40;(this.hostileMesh.material as T.Material).depthTest=false;
   this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),2+64,6);this.hostileWarningMesh.name='hostile-warning-union';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=true;(this.hostileWarningMesh.material as T.Material).forceSinglePass=true;
-  Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{warningOrigin:{value:this.warningOrigins},warningSize:{value:this.warningSizes},warningTime:{value:this.warningTimes},warningCount:this.unionCount,primaryWarning:this.primaryWarning,warningFillScale:this.unionFillScale});
+  (this.hostileWarningMesh.material as T.ShaderMaterial).defines.LOCAL_WARNING_EDGE=1;
+  Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{warningMarine:{value:new T.Vector2()},warningOrigin:{value:this.warningOrigins},warningSize:{value:this.warningSizes},warningTime:{value:this.warningTimes},warningCount:this.unionCount,primaryWarning:this.primaryWarning,warningFillScale:this.unionFillScale});
   this.emptyPriorityTexture.needsUpdate=true;
   for (const mesh of [this.decalMesh,this.fieldMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fireMesh,this.smokeMesh]) {
    const material=mesh.material as T.ShaderMaterial;
@@ -907,6 +915,7 @@ export class AttackEffects {
   }
   if(this.bossWarning){const w=this.bossWarning;if(this.warningVisible(w.x,w.z,w.radius))this.queueWarning(w.x,w.z,w.radius,0,0,0,0,w.progress,(1-w.progress)*1000,true,marineX,marineZ,marineRadius);}
   this.groupWarnings();
+  (this.hostileWarningMesh.material as T.ShaderMaterial).uniforms.warningMarine.value.set(marineX,marineZ);
   this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,camera),targets));
