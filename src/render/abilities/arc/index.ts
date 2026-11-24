@@ -101,7 +101,7 @@ class ArcPresentation implements AbilityPresentation {
           last.terminal = true;
           last.life = .57;
         }
-        k.flash(px, pz, WHITE, 10, 5, 4, .12);
+        k.flash(px, pz, VIOLET, 5, 4, 4, .12);
         k.camera(.24);
       }
       return;
@@ -228,9 +228,9 @@ class ArcPresentation implements AbilityPresentation {
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload ? 1.62 : .54;
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload && d.delay === 0 ? 1.38 : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
-          if (d.overload) {
+          if (d.overload && d.delay === 0) {
             k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .38, .23, true);
           }
           // Two asymmetric branches meet the same native contact; no invented target.
@@ -250,10 +250,10 @@ class ArcPresentation implements AbilityPresentation {
       const fade = 1 - (d.age - d.delay) / d.life;
       if (!d.overload) k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .36, false);
       const firstContact = d.overload && d.delay === 0;
-      const contact = d.age - d.delay < (firstContact ? .11 : .051);
-      if (contact && d.contactFrames < 3) {
+      const contact = d.age - d.delay < (d.overload ? .17 : .051);
+      if (contact) {
         k.impact();
-        k.sprite('glow', d.x, d.ty, d.z, firstContact ? 1.1 : .68, firstContact ? 1.24 : .55, d.contactFrames < 2 ? WHITE : VIOLET, k.flashIntensity, d.seed, 'light');
+        k.sprite('glow', d.x, d.ty, d.z, firstContact ? .70 : .52, firstContact ? .85 : .6, VIOLET, k.flashIntensity, d.seed, 'light');
         k.sustain(d.age - d.delay);
         if (dt > 0) d.contactFrames++;
       }
@@ -261,7 +261,7 @@ class ArcPresentation implements AbilityPresentation {
       if (d.victimId >= 0 && d.age - d.delay < (d.terminal ? d.life : .34)) {
         const actor = k.statusActor(d.victimId);
         const joint = actor && this.contactBones.get(actor.root);
-        if (actor && d.terminal) {
+        if (actor && (d.terminal || d.overload && contact)) {
           const root = actor.root.position, tip = joint?.matrixWorld.elements;
           const radius = (frame.game?.enemies.snapshot.enemies.find(e => e.id === d.victimId)?.radius ?? 24) / UNIT;
           const dx = d.sx - root.x, dz = d.sz - root.z, length = Math.max(.001, Math.hypot(dx, dz));

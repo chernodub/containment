@@ -53,7 +53,7 @@ export class OverdrivePayoff {
       // The air crystallises: a short upward burst of shards, no ring.
       for (let i = 0, n = k.low ? 8 : 28; i < n; i++) {
         const a = i * 2.39996, v = (i % 5) / 5;
-        k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, i % 3 ? ICE : WHITE);
+        k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, 0x5799b0);
       }
     } else if (event.ability === 'meltdown') {
       const shape = ABILITY_CATALOG.meltdown.shape;

@@ -286,7 +286,7 @@ void main(){
    float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
    float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(vec3(6.2,5.9,5.6)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
    alpha=(bolt*.82+fork*.25+halo*.07)*gate;
   }else{
    float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
