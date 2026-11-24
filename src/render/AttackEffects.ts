@@ -489,6 +489,12 @@ export class AttackEffects {
    if(e.exposedHit)this.pulse(p,0xffd28a,.29,1);
    const color=e.weapon==='plasma'?0x82f4ff:blocked?0x90baca:e.weapon==='pistol'?0xfff1cb:0xffe6b7;
    if(e.weapon==='plasma'&&e.contact==='armor'){
+    if(e.plateBroken){
+     const basis=this.priorityCamera?.matrixWorld.elements;
+     this.forward.set(basis?basis[4]-basis[0]:-1,0,basis?basis[6]-basis[2]:-1).normalize().multiplyScalar(3.5);
+     this.forward.y=3.2;
+     this.particle(this.debris,EFFECT_LIMITS.debris,p,0xa48c75,.54,3.8,this.forward,9.8,1.55);
+    }
     this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.33,.23);
    }
    this.flash(p,color,heavy?1.1:.65,heavy?2.1:1.7,.07,1);
