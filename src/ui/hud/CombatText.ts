@@ -51,8 +51,10 @@ const statusPriority: Record<string, number> = {freeze:6,shatter:6,shock:5,arc:5
 export class CombatText {
     private readonly pool: Float[] = [];
     private readonly pendingAbilityHits: HudEffect[] = [];
+    private readonly clusterPoint: ScreenPoint = {x:0,y:0,visible:false};
     private readonly castHits = new Map<string, HudEffect[]>();
-    private clusterId = -2;
+    // Half-integers keep synthetic anchors distinct from native enemy and nest IDs.
+    private clusterId = -.5;
     private enabled = true;
     private disposed = false;
     private reduced = false;
@@ -125,7 +127,10 @@ export class CombatText {
         for (const cluster of clusters) {
             const angle = Math.atan2(cluster.y-player.y,cluster.x-player.x);
             const dx = Math.cos(angle), dy = Math.sin(angle);
-            const reach = Math.max(...cluster.hits.map(h => (h.x-cluster.x)*dx+(h.y-cluster.y)*dy)) + 32;
+            let reach = Math.max(...cluster.hits.map(h => (h.x-cluster.x)*dx+(h.y-cluster.y)*dy)) + 32;
+            // A cast can run up to the viewport edge. Keep its label on the visible
+            // side of that boundary, then let the screen-space placement clear the HUD.
+            for (let step = 0; step < 4 && !projectWorld(this.renderer,cluster.x+dx*reach,cluster.y+dy*reach,this.clusterPoint,1.2).visible; step++) reach *= .5;
             const total = cluster.hits.reduce((sum,h) => sum+h.damage!,0);
             const first = cluster.hits[0];
             this.add(cluster.x+dx*reach,cluster.y+dy*reach,this.clusterId--,total,'damage',
@@ -297,7 +302,7 @@ export class CombatText {
                 y = Math.max(8, y);
             }
             // Enemy feedback yields to opaque furniture rather than covering vital copy.
-            if(hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) {p.node.hidden=true;continue;}
+
             // Nearby enemies have independent receipts; deterministic fan-out
             // preserves each total while preventing cross-target text piles.
             const originX = x, originY = y;
