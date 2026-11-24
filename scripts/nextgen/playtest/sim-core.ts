@@ -24,7 +24,7 @@ import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
-import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
+import { BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
 import {botPursuitLookAhead,botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
@@ -246,7 +246,7 @@ export function runSimulation(options: SimOptions) {
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const objective=game.siege;
-    const siege=objective?.farBank&&game.combat.snapshot.health<game.combat.snapshot.maxHealth/2
+    const siege=objective?.farBank&&game.combat.snapshot.health<game.combat.snapshot.maxHealth*COVERED_RELAY_HEALTH_FRACTION
       ? {...objective,...objective.farBank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);
@@ -272,7 +272,7 @@ export function runSimulation(options: SimOptions) {
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
             }), abilities: game.abilities.snapshot, conditionObservation:game.conditionObservation??null, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
                 ...game.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
-                ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
+                ...game.bullets.filter(b => b.kind === 'hazard' && !b.preview).map(b => ({ id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
                 ...nativeWarningHazards(events.filter(e=>e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2)),game.elapsed,game.enemies.snapshot.enemies).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
     }
     function advance(ms: number) {

@@ -1,3 +1,4 @@
+import type {DepthGame} from '../../DepthGame';
 import './tacticalMarkers.css';
 import type {EncounterCues} from './EncounterCues';
 import { hudObstructs, presentationObstructs } from './layout';
@@ -51,6 +52,7 @@ type Candidate = {
     attacking: boolean;
     inFlight: boolean;
     shotAngle: number;
+    shotBlocked?:boolean;
     shotTargetX?:number;
     shotTargetY?:number;
     shotCharge: number;
@@ -221,7 +223,7 @@ export class ThreatIndicators {
         }
         return false;
     }
-    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true, shotCharge = -1, aimX = x, aimY = y, tactical: Candidate['tactical'] = ''): void {
+    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true, shotCharge = -1, aimX = x, aimY = y, tactical: Candidate['tactical'] = '', clipLane?: DepthGame['clipHostileLane']): void {
         if (!tactical && kind !== 'boss' && !attacking && distance > 1000)
             return;
         projectWorld(this.renderer, x, y, this.point);
@@ -270,8 +272,11 @@ export class ThreatIndicators {
         }
         candidate.tactical = tactical;
         candidate.shotCharge = shotCharge;
+        candidate.shotBlocked = false;
         if (shotCharge >= 0) {
-            projectWorld(this.renderer, aimX, aimY, this.aim, .8);
+            const lane = clipLane?.({x, y}, {x: aimX, y: aimY});
+            candidate.shotBlocked = lane?.blocked;
+            projectWorld(this.renderer, lane?.point.x ?? aimX, lane?.point.y ?? aimY, this.aim, .8);
             candidate.shotTargetX=this.aim.x;candidate.shotTargetY=this.aim.y;
             candidate.shotAngle = Math.atan2(this.aim.y - this.point.y, this.aim.x - this.point.x);
         }
@@ -288,7 +293,7 @@ export class ThreatIndicators {
         top: number;
         right: number;
         bottom: number;
-    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss, cues?: EncounterCues['locations'], cleanup = false): void {
+    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss, cues?: EncounterCues['locations'], cleanup = false, clipLane?: DepthGame['clipHostileLane']): void {
         this.width = getViewportWidth(this.renderer);
         this.height = getViewportHeight(this.renderer);
         this.originX = (bounds.left + bounds.right) / 2;
@@ -304,7 +309,7 @@ export class ThreatIndicators {
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
             const winding = enemy.type === 'spitter' && enemy.pendingAttack === 'spit' && enemy.windupMs > 0;
             this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0,
-                winding ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '');
+                winding ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '', winding ? clipLane : undefined);
         }
         let releaseShown=false;
         const windingShot=enemies.some(enemy=>enemy.pendingAttack==='spit'&&enemy.windupMs>0);
@@ -400,16 +405,16 @@ export class ThreatIndicators {
             marker.node.dataset.tactical = candidate.tactical;
             const laneX=(candidate.shotTargetX??x)-x,laneY=(candidate.shotTargetY??y)-y;
             const laneAngle=Math.atan2(laneY,laneX);
-            const lastStroke=shot&&!candidate.inFlight&&candidate.shotCharge>=.4;
+            const lastStroke=shot&&!candidate.inFlight;
             if(lastStroke)marker.node.style.setProperty('--bearing',`${laneAngle}rad`);
-            const strokeEnd=lastStroke?16+Math.max(48,Math.hypot(laneX,laneY)*32/(30*scale)):64;
-            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H${strokeEnd}` : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
+            const strokeEnd=lastStroke?16+Math.max(-3,Math.hypot(laneX,laneY)*32/(30*scale)):64;
+            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H${strokeEnd}${candidate.shotBlocked?`M${strokeEnd} 12v8`:''}` : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
             marker.node.style.setProperty('--shot-strength', String(shot ? .7 + candidate.shotCharge * .3 - (candidate.inFlight ? 0 : Math.sin(candidate.shotCharge * Math.PI * 2) ** 2 * .14) : 1));
             const count = -candidate.count;
             marker.count.hidden = count <= 1;
             marker.count.textContent = count > 1 ? String(count) : '';
             marker.node.dataset.count = String(count);
-            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${shot ? candidate.inFlight ? ', incoming projectile' : ', shot charging' : candidate.attacking ? ', attacking' : ''}`);
+            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${shot ? candidate.inFlight ? ', incoming projectile' : candidate.shotBlocked ? ', shot blocked by cover' : ', shot charging' : candidate.attacking ? ', attacking' : ''}`);
         }
     }
     tick(dt: number): void {

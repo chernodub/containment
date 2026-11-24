@@ -1203,3 +1203,58 @@ for(const index of [0,1])SCENARIOS.push({
   d.refresh();
  }
 });
+
+SCENARIOS.push(
+ ...['exposed','feint'].map(kind => ({
+  id:`play26-${kind}`,state:'playing',room:'swarm-junction',setupArgument:kind,
+  setup:async kind=>{
+   const d=window.__containmentDebug,g=d.game;
+   await d.gotoRoom('swarm-junction',{rig:'cryo',runStructure:true});
+   g.enemies.reset();
+   d.invulnerable(true);
+   const crowd=kind==='feint';
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6,x=g.player.x+Math.cos(angle)*105,y=g.player.y+Math.sin(angle)*105;
+    if(d.canStand(x,y,28)&&d.clearShot(x,y,g.player)){
+     const id=d.spawn(crowd?['crawler','stalker','brute'][i%3]:'brute',x,y);
+     if(id&&!crowd)break;
+    }
+   }
+   for(let i=0;i<300;i++){
+    d.step(33);
+    if(g.enemies.snapshot.enemies.some(enemy=>d.renderer.visible(enemy.x,enemy.y)&&
+     (crowd?enemy.feintProgress!==undefined:enemy.exposedMs>0)))break;
+   }
+   d.refresh();
+  },
+ })),
+ {id:'play26-final-fork',state:'playing',room:'overload-floor',setup:async()=>{
+  const d=window.__containmentDebug,g=d.game;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  const director=g.director,index=director.plan.beats.findIndex(beat=>beat.grammar==='siege');
+  director.beatIndex=index;director.dispatched=director.plan.beats[index].start;
+  Object.assign(g.player,g.siegePoint);
+  d.step(33);
+  const cover=g.relayCoverPreview;
+  if(cover){
+   for(let i=0;i<90;i++){
+    const shot=g.bullets.find(bullet=>bullet.preview);
+    if(!shot||Math.hypot(shot.x-cover.x,shot.y-cover.y)<18)break;
+    d.step(33);
+   }
+  }
+  d.refresh();
+ }},
+ {id:'play26-death-card',state:'dead',required:['.fatal-source','.retry-lesson'],setup:async()=>{
+  const d=window.__containmentDebug,g=d.game;
+  await d.gotoRoom('relay-racks',{rig:'cryo'});
+  for(let i=0;i<3;i++){
+   g.hurt(60,undefined,{source:'enemy-contact',enemyFamily:'brute'});
+   d.step(300);
+  }
+  const {health,armor}=g.combat.snapshot;
+  g.combat.applyDamage(health+armor-1);
+  g.hurt(40,undefined,{source:'enemy-projectile',enemyFamily:'spitter'});
+  d.refresh();
+ }},
+);

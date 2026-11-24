@@ -159,6 +159,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     slots.find(entry => entry.slot === 'dash')!.node.append(dashActiveDial);
     const dashActiveRing = dashActiveDial.firstElementChild as SVGCircleElement;
     let health = 100, armor = 50, maxArmor = 50, hpGhost = 100, armorGhost = 50, hpDelay = 0, armorDelay = 0;
+    const shownLessonAnchors = new Set<string>();
+    let lessonAnchorKey = '', lessonAnchorUntil = 0;
     let suggestionUntil = 0;
     let plateHit: {id: number; until: number} | undefined;
     let shownSituation: string | undefined;
@@ -544,8 +546,21 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const target = prompt === 'lesson' ? lessonTarget : prompt === 'brood' ? matron
             : prompt === 'weapon-lesson' ? weaponLesson?.target : prompt === 'weapon' ? situation?.target : prompt === 'objective' && !game.siege && !encounter.pincer ? encounterTarget : undefined;
         const anchor = target && projectWorld(renderer, target.x, target.y, projected, prompt === 'brood' ? 2.65 : 1.4);
-        const anchored = anchor && (projected.visible || prompt === 'brood'
+        let anchored = anchor && (projected.visible || prompt === 'brood'
             && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
+        if (prompt === 'lesson' || prompt === 'weapon-lesson') {
+            const key = prompt === 'lesson'
+                ? `${game.roomRevision}:${drill ? 'dodge' : game.coverLessonActive ? 'cover' : 'augment'}`
+                : `${game.roomRevision}:${weaponLesson?.text}`;
+            if (anchored && !shownLessonAnchors.has(key)) {
+                shownLessonAnchors.add(key);
+                lessonAnchorKey = key;
+                lessonAnchorUntil = game.elapsed + 2.2;
+            }
+            anchored = anchored && key === lessonAnchorKey && game.elapsed < lessonAnchorUntil;
+        } else {
+            lessonAnchorKey = '';
+        }
         const objectiveNode = nodes['room-objective'];
         objectiveNode.classList.toggle('anchored-objective', !!anchored);
         const plate = weaponLesson?.target;
@@ -585,9 +600,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 ? game.geometry.breaches.filter(breach=>flank.flankers.some(enemy=>enemy.breachId===breach.id))
                     .map(breach=>({x:breach.x,y:breach.y,life:1,kind:'flank' as const,beat:encounter.beat??-1}))
                 : [];
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3, game.clipHostileLane);
         }
-        siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
+        siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds, playing ? game.relayCoverPreview : undefined);
         setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
         targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
         if (!playing && wasPlaying) {

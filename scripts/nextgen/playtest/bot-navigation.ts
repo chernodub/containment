@@ -6,11 +6,12 @@ export {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 
 type Point = {x: number; y: number};
 type Geometry = DepthGame['geometry'];
-type BotGame = Pick<DepthGame, 'geometry' | 'navigation' | 'player'>;
+type BotGame = Pick<DepthGame, 'geometry' | 'navigation' | 'player' | 'elapsed'>;
 const CLEARANCE = 18;
 const USEFUL_DISTANCE = 45;
 const MAX_GRID_NODES = 80_000;
 const observers = new WeakMap<Geometry, {standard: FacilityNavigation; fine: FineGrid[]}>();
+const tightCorners = new WeakMap<Geometry, {origin: Point; since: number}>();
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /** Bounded observer-only refinement for corridors missed by the 32-unit shared grid. */
@@ -131,7 +132,10 @@ export function botWaypoint(game: BotGame, target: Point): Point | null {
   const origin = {...game.player, radius: 16};
   const ordinary = game.navigation.waypoint(origin, target, 1);
   if (!ordinary || distance(ordinary, origin) > USEFUL_DISTANCE
-    && canTraverseExpedition(game.geometry, origin, ordinary, origin.radius)) return ordinary;
+    && canTraverseExpedition(game.geometry, origin, ordinary, origin.radius)) {
+    tightCorners.delete(game.geometry);
+    return ordinary;
+  }
   let observer = observers.get(game.geometry);
   if (!observer) {
     observer = {standard: new FacilityNavigation(game.geometry, CLEARANCE), fine: []};
@@ -145,7 +149,29 @@ export function botWaypoint(game: BotGame, target: Point): Point | null {
     const waypoint = observer.fine[index].waypoint(origin, target);
     if (waypoint) return waypoint;
   }
-  return ordinary&&canTraverseExpedition(game.geometry,origin,ordinary,origin.radius)?ordinary:null;
+  const fallback = ordinary && canTraverseExpedition(game.geometry, origin, ordinary, origin.radius) ? ordinary : null;
+  // The marine can reach corners tighter than the observer grid's padding.
+  // Step back to a reachable padded cell before asking the grid for a route.
+  if (!canOccupyExpedition(game.geometry, origin, CLEARANCE)) {
+    const corner = tightCorners.get(game.geometry);
+    if (!corner || distance(corner.origin, origin) > 2) {
+      tightCorners.set(game.geometry, {origin, since: game.elapsed});
+      return fallback;
+    }
+    if (game.elapsed - corner.since < 6) return fallback;
+    let exit: Point | null = null, closest = Infinity;
+    for (let direction = 0; direction < 8; direction++) {
+      const angle = direction * Math.PI / 4;
+      const point = {x: origin.x + Math.cos(angle) * 32, y: origin.y + Math.sin(angle) * 32};
+      if (!canOccupyExpedition(game.geometry, point, 19)
+        || !canTraverseExpedition(game.geometry, origin, point, origin.radius)) continue;
+      const separation = distance(point, target);
+      if (separation < closest) {exit = point; closest = separation;}
+    }
+    return exit ?? fallback;
+  }
+  tightCorners.delete(game.geometry);
+  return fallback;
 }
 
 /** Shorten only blocked pursuit probes. A legal straight approach retains the normal look-ahead. */

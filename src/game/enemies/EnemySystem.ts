@@ -56,7 +56,7 @@ export type CollisionSteeringContext = Readonly<{
 
 export type EnemySpawnOptions=Readonly<{openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
-export type EnemySystemOptions = Readonly<{spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
+export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
@@ -113,6 +113,7 @@ export type MeleeWarningEvent = Readonly<{type:'melee-warning';enemyId:number;en
 export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape}>;
 
 export type EnemyEvent =
+  | Readonly<{type:"ready-shove";x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -124,7 +125,9 @@ export type EnemyEvent =
 export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 
 export type PodStage = 'sealed' | 'swelling' | 'opening';
-export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+type ReadyBehaviour = "skitter" | "pace" | "step" | "brace" | "relocate";
+
+export type EnemySnapshot = Readonly<{readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -160,7 +163,7 @@ export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?
   baseSpeed:number;champion?:'warden'|'matron';
   windupMs:number;pendingAttack:'spit'|'charge'|null;lockX:number;lockY:number;specialCooldownMs:number;chargeMs:number;
   meleePhase:MeleePhase;meleeProgress:number;meleeAngle:number;meleeFacingLocked:boolean;
-  meleeOrder?:number;meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
+  exposedMs:number;meleeOrder?:number;meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 }>;
 
 export const WARDEN_WALL_STUN_MS=1500;
@@ -190,6 +193,9 @@ export type DamageResult = Readonly<{
 }>;
 
 type EnemyState = {firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+  readyBehaviour?: ReadyBehaviour;
+  feintMs?: number;
+  braceMs?: number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -273,6 +279,11 @@ export class EnemySystem {
   readonly #immovables?: EnemySystemOptions['immovables'];
   #nextId = 1;
   #reservedCount = 0;
+  #readyTimeMs=0;
+  #feintsStarted=0;
+  get feintsStarted(){return this.#feintsStarted;}
+  #packFeintMs=1800;
+  readonly #readySeed:number;
   #meleeStartGapMs=0;
   #meleeStrikeGapMs=0;
   #lateDifficulty=false;
@@ -294,6 +305,7 @@ export class EnemySystem {
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
+    this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
     this.#canMove = options.canMove;
     this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
@@ -444,6 +456,8 @@ export class EnemySystem {
     const timerDelta = Math.min(deltaMs, MAX_TIMER_DELTA_MS);
     const movementDelta = Math.min(deltaMs, MAX_MOVEMENT_DELTA_MS);
     const events: EnemyEvent[] = [];
+    this.#readyTimeMs+=timerDelta;
+    this.#packFeintMs=Math.max(0,this.#packFeintMs-timerDelta);
     this.#meleeStartGapMs=Math.max(0,this.#meleeStartGapMs-timerDelta);
     this.#meleeStrikeGapMs=Math.max(0,this.#meleeStrikeGapMs-timerDelta);
 
@@ -497,6 +511,31 @@ export class EnemySystem {
       if(enemy.speed===0||enemy.stunRemainingMs>0||enemy.pod||enemy.broodRemainingMs>0)continue;
       if (enemy.decisionCooldownRemainingMs === 0) {
         this.#decide(enemy, player);
+      }
+    }
+
+    for(const enemy of this.#enemies.values()){
+      enemy.feintMs=Math.max(0,(enemy.feintMs??0)-timerDelta);
+      const ready=enemy.readyBehaviour;
+      if(!ready||enemy.speed===0||enemy.stunRemainingMs>0||enemy.meleePhase!=='approach'||enemy.windupMs>0){
+        enemy.feintMs=enemy.braceMs=0;
+        continue;
+      }
+      const distance=Math.hypot(player.x-enemy.x,player.y-enemy.y);
+      const reach=MELEE_ATTACKS[enemy.type].engageRange+(player.radius??DEFAULT_PLAYER_RADIUS);
+      if(!this.#packFeintMs&&enemy.type!=='spitter'&&distance<reach+22){
+        enemy.feintMs=250;
+        this.#feintsStarted++;
+        this.#packFeintMs=3600;
+      }
+      if(enemy.type!=='brute')continue;
+      const inReach=distance<reach&&Math.hypot(player.vx??0,player.vy??0)<5&&distance>0;
+      enemy.braceMs=inReach?(enemy.braceMs??0)+timerDelta:0;
+      if(enemy.braceMs>=1100){
+        enemy.braceMs=0;
+        const shove=normalized(player.x-enemy.x,player.y-enemy.y);
+        const distanceToMove=player.radius??DEFAULT_PLAYER_RADIUS;
+        events.push(freezeEvent({type:'ready-shove',x:shove.x*distanceToMove,y:shove.y*distanceToMove}));
       }
     }
 
@@ -645,7 +684,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+    this.#nextId = 1;this.#readyTimeMs=0;this.#feintsStarted=0;this.#packFeintMs=1800;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -677,6 +716,9 @@ export class EnemySystem {
       maxArmor: enemy.maxArmor,
       radius: enemy.radius,
       speed: enemy.speed*this.#movement,
+      readyBehaviour:enemy.meleePhase==='approach'&&!enemy.windupMs&&enemy.speed>0&&enemy.stunRemainingMs===0?enemy.readyBehaviour:undefined,
+      feintProgress:enemy.feintMs&&enemy.meleePhase==='approach'&&!enemy.windupMs?1-enemy.feintMs/250:undefined,
+      exposedMs:enemy.meleePhase==='recovery'?enemy.meleeRemainingMs:0,
       meleeOrder:enemy.meleePhase==='windup'?1+[...this.#enemies.values()].filter(other=>
         other.meleePhase==='windup'&&(other.meleeRemainingMs<enemy.meleeRemainingMs
           ||other.meleeRemainingMs===enemy.meleeRemainingMs&&other.id<enemy.id)).length:undefined,
@@ -737,6 +779,7 @@ export class EnemySystem {
   #decide(enemy: EnemyState, player: EnemyPlayerState): void {
     if(enemy.speed===0||enemy.stunRemainingMs>0||enemy.pod||enemy.broodRemainingMs>0||enemy.windupMs>0||enemy.meleePhase!=='approach'){enemy.velocityX=enemy.velocityY=0;return;}
     if(enemy.chargeMs>0){const d=normalized(enemy.lockX,enemy.lockY);enemy.velocityX=d.x*ENEMY_ATTACK_SHAPES.chargeSpeed*this.#movement;enemy.velocityY=d.y*ENEMY_ATTACK_SHAPES.chargeSpeed*this.#movement;return;}
+    enemy.readyBehaviour=undefined;
     const distanceToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     enemy.decisionIntervalMs =
       distanceToPlayer > FAR_DECISION_DISTANCE
@@ -802,14 +845,36 @@ export class EnemySystem {
       const radius=enemy.type==='spitter'?SPITTER_MIN_RANGE+enemy.radius:enemy.type==='carrier'?170:
         MELEE_ATTACKS[enemy.type].engageRange+enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS);
       const bearing=Math.atan2(enemy.y-player.y,enemy.x-player.x);
-      const angle=bearing+(waiting&&sight(enemy)&&distanceToPlayer<=radius+enemy.radius?(enemy.id%2?1:-1)*.35:0);
-      const ring={x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius};
-      const route=this.#readyRoute(enemy,player,ring,radius,sight);
+      let angle=bearing, readyRadius=radius, speed=1;
+      if(waiting&&sight(enemy)&&distanceToPlayer<=radius+enemy.radius+30){
+        const phase=this.#readyTimeMs+(Math.imul(this.#readySeed^enemy.id,0x9e3779b1)>>>0)%2400;
+        const side=enemy.id%2?1:-1;
+        if(enemy.type==='crawler'){
+          enemy.readyBehaviour='skitter';
+          angle+=side*(.22+.14*Math.sin(phase/120));
+          readyRadius+=24*Math.sin(phase/155);
+        }else if(enemy.type==='stalker'){
+          enemy.readyBehaviour='pace';
+          angle+=.42*Math.sin(phase/420);
+        }else if(enemy.type==='brute'){
+          const braced=phase%1200>=480&&distanceToPlayer<=radius;
+          enemy.readyBehaviour=braced?'brace':'step';
+          speed=braced?0:.72;
+          readyRadius*=.83;
+        }else if(enemy.type==='spitter'){
+          enemy.readyBehaviour='relocate';
+          angle+=side*.30;
+        }
+      }
+      const ring=enemy.type==='spitter'&&enemy.repositionRemainingMs>0
+        ? {x:enemy.repositionX,y:enemy.repositionY}
+        : {x:player.x+Math.cos(angle)*readyRadius,y:player.y+Math.sin(angle)*readyRadius};
+      const route=this.#readyRoute(enemy,player,ring,readyRadius,sight);
       if(route){
         enemy.targetX=route.x;enemy.targetY=route.y;
         const heading=normalized(route.x-enemy.x,route.y-enemy.y);
-        enemy.velocityX=heading.x*enemy.speed*this.#movement;
-        enemy.velocityY=heading.y*enemy.speed*this.#movement;
+        enemy.velocityX=heading.x*enemy.speed*this.#movement*speed;
+        enemy.velocityY=heading.y*enemy.speed*this.#movement*speed;
         return;
       }
     }

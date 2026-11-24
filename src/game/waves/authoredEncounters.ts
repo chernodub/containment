@@ -6,7 +6,7 @@ export type EnemyRole = 'screen'|'anchor'|'flanker'|'ranged'|'brood';
 export type AuthoredGroup = Readonly<{family:StandardEnemyId;count:number;role:EnemyRole;priority?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean}>;
 export type Consequence = 'leader'|'pincer'|'brood';
 export type Cleanup = 'rush'|'withdraw';
-export type AuthoredBeat = Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true;breachOffset?:number;groups:readonly AuthoredGroup[]}>;
+export type AuthoredBeat = Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;consequence?:Consequence;cleanup?:Cleanup;recallAfterLunge?:true;rehearseHeavy?:true;breachOffset?:number;groups:readonly AuthoredGroup[]}>;
 const g=(family:StandardEnemyId,count:number,role:EnemyRole,extra:Partial<AuthoredGroup>={}):AuthoredGroup=>Object.freeze({family,count,role,...extra});
 const b=(grammar:EncounterGrammar,label:string,...groups:AuthoredGroup[]):AuthoredBeat=>Object.freeze({grammar,label,lullMs:2500,groups:Object.freeze(groups)});
 const swarm=(n:number)=>b('swarm','Break the rush',g('crawler',n,'screen'));
@@ -39,7 +39,7 @@ export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.fre
  [priority(3,'warden',0),cross(4),swarm(6)],
  [swarm(7),pincer(5),priority(4)],
  [flank(3),cross(5),pincer(6)],
- [cross(5),priority(4,'warden',1),flank(3)],
+ [cross(5),priority(4,'warden',1),withRules(flank(3),{rehearseHeavy:true})],
  [siege(5),pincer(6),cross(5),siege(6)],
  [priority(5),flank(3),cross(6)],
  [brokenPincer(2),siege(5),priority(5)],
