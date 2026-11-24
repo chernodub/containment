@@ -1,3 +1,4 @@
+import {laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
@@ -82,6 +83,16 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     c.save();
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
+    const lamp=laneWorklight(room.id);
+    if(lamp){
+      c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
+      c.scale(.68,1.25);
+      const glow=c.createRadialGradient(0,8,1,0,22,47);
+      const tint='#'+lamp.color.toString(16).padStart(6,'0');
+      glow.addColorStop(0,tint+'64');glow.addColorStop(.50,tint+'32');glow.addColorStop(1,tint+'00');
+      c.fillStyle=glow;c.beginPath();c.moveTo(-11,-2);c.lineTo(-43,69);
+      c.lineTo(43,69);c.lineTo(11,-2);c.closePath();c.fill();c.restore();
+    }
     // Scuffed wheel tracks taper toward the workshop light. Their bend is
     // offset from the straight sightline so the marine stays on clear deck.
     const source = roomValueProfile(room.id)?.landmark?.at;
