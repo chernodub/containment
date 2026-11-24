@@ -1,6 +1,6 @@
 /** Deterministic decision helpers; these never call game actions. */
 export {BOT_POLICY_VERSION} from './bot-navigation-version.mjs';
-export const COVERED_RELAY_HEALTH_FRACTION = .5;
+export const COVERED_RELAY_HEALTH_FRACTION = .6;
 export const RIGS = ['breacher', 'cryo', 'pyro', 'arc'];
 const PATHS = {
   breacher: ['breacher', 'heavy-pellets', 'chain-reaction', 'seismic-impact', 'afterquake', 'reinforced-bulwark'],

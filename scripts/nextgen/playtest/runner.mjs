@@ -132,8 +132,11 @@ async function snapshot() {
     for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.botShotClear(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const objective=g.siege;
-    const siege=objective?.farBank&&g.combat.snapshot.health<g.combat.snapshot.maxHealth*coveredRelayHealthFraction
-      ? {...objective,...objective.farBank}:objective;
+    const suit=g.combat.snapshot;
+    const takeCover=suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*coveredRelayHealthFraction
+      || (objective?.nearLaneWindup&&!g.abilities.snapshot.slots?.dash?.ready);
+    const bank=takeCover?objective?.farBank:objective?.nearBank;
+    const siege=bank?{...objective,...bank}:objective;
     const gate=g.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);const waypoint=goal ? d.botWaypoint(goal)??goal : null;
     const lookAhead=waypoint&&!enemies.some(e=>e.visible&&e.clear)

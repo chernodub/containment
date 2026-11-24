@@ -1292,6 +1292,14 @@ export class EnemySystem {
     }
   }
 
+  startOpeningVolley(id:number,target:{x:number;y:number}):readonly EnemyEvent[] {
+    const enemy=this.#enemies.get(id);
+    if(!enemy||enemy.type!=='spitter'||enemy.pendingAttack)return [];
+    const events:EnemyEvent[]=[];
+    this.#windUpSpit(enemy,target,events);
+    return events;
+  }
+
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
     this.#meleeStartGapMs=250;
     enemy.windupMs=this.#spitWindupMs;

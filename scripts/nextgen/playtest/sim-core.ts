@@ -246,8 +246,11 @@ export function runSimulation(options: SimOptions) {
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const objective=game.siege;
-    const siege=objective?.farBank&&game.combat.snapshot.health<game.combat.snapshot.maxHealth*COVERED_RELAY_HEALTH_FRACTION
-      ? {...objective,...objective.farBank}:objective;
+    const suit=game.combat.snapshot;
+    const takeCover=suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*COVERED_RELAY_HEALTH_FRACTION
+      || (objective?.nearLaneWindup&&!game.abilities.snapshot.slots?.dash?.ready);
+    const bank=takeCover?objective?.farBank:objective?.nearBank;
+    const siege=bank?{...objective!,...bank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
     const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
@@ -409,6 +412,12 @@ export function runSimulation(options: SimOptions) {
         report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, objective: game.encounterObjective, siege: game.siege, encounter: game.encounter, remaining: game.encounterRemaining, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible, meleePhase: e.meleePhase, pendingAttack: e.pendingAttack, chargeMs: e.chargeMs })), screen: { ...screen } });
         advance(decision.stepMs);
         const progressStats = game.stats;
+        const crossing=game.siege;
+        if(crossing?.choosing&&!room.relayCrossing)room.relayCrossing={startDamage:progressStats.damageTaken};
+        if(room.relayCrossing&&!room.relayCrossing.bank&&crossing?.selectedBank){
+            room.relayCrossing.bank=crossing.selectedBank;
+            room.relayCrossing.damageTaken=progressStats.damageTaken-room.relayCrossing.startDamage;
+        }
         const signature = `${Math.ceil((game.siege?.remainingMs??0)/1000)}:${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
         if (signature !== progressSignature) {progressSignature = signature; lastProgressElapsed = game.elapsed;}
         const diagnostic = nativeDiagnosticBurst(game,lastProgressElapsed,room.startedElapsed,options.maxRoomSeconds ?? 240,hardest,advance);

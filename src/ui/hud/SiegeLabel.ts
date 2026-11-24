@@ -25,7 +25,8 @@ export class SiegeLabel {
         const inside = siege && Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
         this.node.hidden = false;
         this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
-        const label = cover ? 'Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
+        this.node.style.fontSize = cover ? 'clamp(16px, 2.8vw, 48px)' : '18px';
+        const label = cover ? '⬢ Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
         if (label !== this.node.textContent) this.node.textContent = label;
     }
 
