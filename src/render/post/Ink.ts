@@ -40,7 +40,8 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
  if(floorSurface)return 0.0;
  // Low's silhouette path performs no normal comparisons.
  float width=actor?inkStyle.x:inkStyle.y;
- if(center.w==3.0)width*=1.25;else if(center.w>4.5)width*=mix(1.18,1.06,inkStrength);
+ // SHADER25: every actor class carries the marine's contour weight.
+ if(actor)width*=1.25;
  bool committed=center.w>=4.0&&center.w<=6.0&&texture2D(combatOutlineIds,vec2((center.z+.5)/256.,.5)).r>.5;
  if(committed)width=2.0;
  vec3 p=viewPosition(uv,depth);
@@ -64,9 +65,6 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   if(actor) {
    edge=max(edge,different*surface);
    if(committed)combatSilhouette=max(combatSilhouette,different*surface);
-   // Only contour fragments inspect adjacent scene radiance. A quiet light line
-   // separates dark chitin from dark local scenery without lighting the floor.
-   if(different*surface>.5)inkBackdropLuma=min(inkBackdropLuma,dot(texture2D(tScene,q).rgb,vec3(.2126,.7152,.0722)));
    continue;
   }
   float d=texture2D(tDepth,q).x;
@@ -94,7 +92,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*1.0,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
    if(centerRegion!=30.&&floor(neighbor.w/8.)!=30.&&abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
-    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*(center.w==3.0?.10:.80)); // HERO19: faint marine plate seams; large calm shapes at gameplay size
+    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*.10); // HERO19/SHADER25: faint plate seams on every actor; bone-weight regions are not creases
   }
  } else if(inkMode>1.5&&inkStrength>.01) {
   for(int i=0;i<4;i++) {
@@ -134,11 +132,6 @@ export const inkComposite = /* glsl */ `
   vec3 neutralInk=min(color*.18,vec3(.006,.008,.011)+min(color,vec3(.5))*.04);
   vec3 boldInk=min(color*.20,vec3(.010,.011,.012)+shadowTint*.0015+min(color,vec3(.5))*.006);
   vec3 contour=mix(neutralInk,boldInk,inkStrength);
-  float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
-  contour=mix(contour,vec3(.035,.055,.076),darkBackdrop*.72);
-  // Elite silhouettes carry a restrained bronze contour in addition to their crest.
-  float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
-  contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);
   color=mix(color,contour,line);
   // Worn lip: a lighter value of the surface itself, never a white line.
   color=mix(color,color*2.1+vec3(.010,.011,.012),inkWearLine*(1.0-line)*.8);
