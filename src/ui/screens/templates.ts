@@ -22,7 +22,7 @@ import {contractFor, CONTRACT_ENDS} from '../../game/roguelike/contracts';
 import {junctionConsequence, runHeader} from '../../game/roguelike/shipConditions';
 import {routeVignette} from './routeVignettes';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats, getRoomOpening, getRouteThreat, getShipCondition} from '../gameAdapter';
+import {getWeaponInventory, getAbilities, getRunStats, getRoomOpening, getRouteThreat, getShipCondition} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
@@ -198,7 +198,7 @@ export function shopScreen(game: DepthGame): string {
   const outcomes = {
     heal: 'Restore up to 35 health.',
     armor: 'Restore up to 30 armor.',
-    ammo: 'Resupply every weapon.',
+    ammo: '80 rifle · 16 shells · 32 plasma · 2 rockets.',
     medkit: 'Add one medkit.',
     grenade: 'Add up to two grenades.',
     reroll: 'Bank one free boon reroll.',
@@ -206,6 +206,8 @@ export function shopScreen(game: DepthGame): string {
     revive: SERVICE_CATALOG.revive.description,
     'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
+  const amounts = {heal: '+35 HP', armor: '+30 armor', ammo: '+130 rounds', medkit: '+1 medkit',
+    grenade: '+2 grenades', reroll: '+1 reroll', upgrade: '+1 upgrade', revive: '+1 revive', 'route-ammo': ''};
   const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='revive'||game.node.depth===18&&run.version===3))
     .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
@@ -223,8 +225,9 @@ export function shopScreen(game: DepthGame): string {
     const medicalLabel=id==='heal'?'Immediate':id==='medkit'?'Inventory':undefined;
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
       ${medicalLabel?`<span class="requisition-medical-art">${serviceArt(id)}<span class="requisition-medical-label">${medicalLabel}</span></span>`:serviceArt(id)}
-      <span class="requisition-title-row"><strong class="requisition-name">${escapeHtml(name)}</strong><span class="requisition-price">${cost} CR</span></span>
+      <span class="requisition-title-row"><strong class="requisition-name">${escapeHtml(name)}</strong><span class="requisition-terms"><b class="requisition-amount">${amounts[id]}</b><span class="requisition-price">${cost} CR</span></span></span>
       <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
+      ${upgrade?transformationPreview(upgrade,true):''}
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
@@ -233,13 +236,13 @@ export function shopScreen(game: DepthGame): string {
   const supplyCost=serviceCost('route-ammo',game.node.depth);
   const supplyStock=serviceStock(run,'route-ammo');
   const supplyEnabled=game.canPurchaseService('route-ammo');
-  const supplyStatus=!supplyStock?'Sold out':resources.credits<supplyCost?`Need ${supplyCost-resources.credits} more credits`:supplyEnabled?`+${supply?.rounds} reserve`:'Ammunition full';
+  const supplyStatus=!supplyStock?'Sold out':resources.credits<supplyCost?`Need ${supplyCost-resources.credits} more credits`:supplyEnabled?'Reserve ammunition':'Ammunition full';
   const routeSupply=route&&supply?`<section class="route-supply">
     <div class="route-supply-heading">${studioImage(`route-threat-${route==='brood'?'matron':'warden'}`,'route-supply-guardian',160,90)}
       <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
     </div>
     <button id="purchase-route-ammo" data-purchase="route-ammo" class="secondary" ${supplyEnabled?'':'disabled'}>
-      ${supply.name} · ${supplyCost} CR <small>${supplyStatus}</small>
+      ${supply.name} <span class="requisition-terms"><b class="requisition-amount">+${supply.rounds}</b><span class="requisition-price">${supplyCost} CR</span></span><small>${supplyStatus}</small>
     </button>
   </section>`:'';
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
@@ -344,6 +347,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(destination.templateId,routeArt,threat)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
+            ${augment?transformationPreview(augment,true):''}
             ${guardian}
             <span class="route-title-row"><strong class="route-option-title">${escapeHtml(title)}</strong>${cost ? `<span class="route-option-price">${cost} CR</span>` : ''}</span>
             <span class="route-option-terms" data-route-term="reward">${firstJunction?escapeHtml(deal??''):outcome}</span>
@@ -371,11 +375,25 @@ export function buildIcons(game: DepthGame): string {
 }
 
 function pauseWeapons(game: DepthGame): string {
-  const {weaponId, magazine, reserve} = game.combat.snapshot;
-  const weapons = (Object.keys(WEAPON_JOBS) as WeaponId[]).map((id, index) =>
-    `<li aria-current="${id === weaponId}"><kbd>${index + 1}</kbd><span><strong>${WEAPONS[id].label}</strong>${WEAPON_JOBS[id]}</span></li>`
-  ).join('');
-  return `<section class="pause-weapons"><h3>${WEAPONS[weaponId].label} <b>${magazine} / ${Number.isFinite(reserve) ? reserve : '∞'}</b></h3><ul aria-label="Weapon modes">${weapons}</ul></section>`;
+  const {weapon, ammo} = getWeaponInventory(game);
+  const targets: Record<WeaponId, string> = {
+    pistol: 'Best against isolated light enemies.',
+    rifle: 'Best against spread-out, unarmored enemies.',
+    shotgun: 'Best against enemies at close range.',
+    plasma: 'Best against plated enemies.',
+    rocket: 'Best against packs. Your blast can hurt you.',
+  };
+  const ids = Object.keys(WEAPON_JOBS) as WeaponId[];
+  return `<section class="pause-weapons">
+    <div class="pause-weapon-picker" aria-label="Inspect weapons">${ids.map((id, index) =>
+      `<button type="button" id="inspect-weapon-${id}" data-weapon="${id}" aria-controls="pause-weapon-${id}" aria-pressed="${id === weapon}"><kbd>${index + 1}</kbd> ${WEAPONS[id].label}</button>`
+    ).join('')}</div>
+    ${ids.map(id => `<article class="pause-weapon-detail" id="pause-weapon-${id}" ${id === weapon ? '' : 'hidden'}>
+      ${studioImage(`weapon-${id}`, 'pause-weapon-art')}
+      <div><h3>${WEAPONS[id].label}</h3><p>${WEAPON_JOBS[id]}</p><p>${targets[id]}</p>
+      <p><strong>${ammo[id].magazine} / ${ammo[id].reserve === -1 ? '∞' : ammo[id].reserve}</strong> loaded / reserve</p></div>
+    </article>`).join('')}
+  </section>`;
 }
 
 export function buildRecap(game: DepthGame): string {

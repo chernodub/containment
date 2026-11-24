@@ -113,6 +113,17 @@ export const SCENARIOS=[
    }
    throw Error('No seeded live Cryo augment reward draft found');
  }},
+ {id:'ui26-ice-road-draft',state:'reward',phase:'reward',nativeKeys:[['Tab',0]],setup:async()=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom('passenger-vault',{phase:'reward',rig:'cryo',runStructure:true});
+ }},
+ {id:'ui26-ice-road-shop',state:'reward',phase:'reward',nativeFocus:'#purchase-ice-road',setup:async()=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom('communal-atrium',{phase:'reward',rig:'cryo'});
+   d.grantBoons(['ice-road']);
+   d.game.combat.setCredits(600);
+   d.refresh();
+ }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-inspect summary'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
  {id:'rig-inspect-open',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','.rig-inspect[open]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('.rig-inspect summary');frame++)await new Promise(requestAnimationFrame);document.querySelector('.rig-inspect summary').click();}},
  {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('[data-rig=cryo]');frame++)await new Promise(requestAnimationFrame);document.querySelector('[data-rig=cryo]').click();}},
@@ -237,7 +248,7 @@ export const SCENARIOS=[
    d.refresh();
   })();`),
  }))),
- {id:'run15-condition-route',state:'route',diagnosticOnly:true,setup:async()=>{
+ {id:'run15-condition-route',state:'route',diagnosticOnly:true,nativeKeys:[['Tab',0],['ArrowRight',0]],setup:async()=>{
   await window.__containmentDebug.gotoRoom('residential-gallery',{phase:'route',seed:5,runStructure:true});
  }},
  {id:'run15-results',state:'complete',diagnosticOnly:true,setup:async()=>{
@@ -277,6 +288,14 @@ export const SCENARIOS=[
    d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=loadout]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=loadout]').click();
    const panel=document.querySelector('#pause-tabpanel');panel.scrollTop=panel.scrollHeight;
  }},
+ {id:"pause-weapons",state:"paused",required:[".pause-weapons"],nativeKeys:[["ArrowRight",0],["ArrowRight",0],["Tab",0],["4",0],["ArrowRight",0]],setup:async()=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom("passenger-vault");
+   d.game.pause();d.refresh();
+   for(let frame=0;frame<900&&!document.querySelector("#tab-resume");frame++)await new Promise(requestAnimationFrame);
+   document.querySelector("#tab-resume").focus();
+ }},
+
  {id:'pause-settings',state:'paused',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=settings]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced')?.setAttribute('open','');}},
  {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=settings]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=settings]').click();const advanced=document.querySelector('.settings-advanced');if(advanced)advanced.open=true;}},
  {id:'pause-controls',state:'paused',required:['.controls-reference'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=controls]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=controls]').click();}},
@@ -401,7 +420,7 @@ export const SCENARIOS=[
   g.hurt(40,{x:g.player.x-80,y:g.player.y},{source:'enemy-contact',enemyFamily:'stalker'});
   d.refresh();
  }},
- {id:'play21-supply',state:'reward',phase:'reward',required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
+ {id:'play21-supply',state:'reward',phase:'reward',nativeKeys:[['Tab',0],['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
   const g=d.game;
@@ -996,6 +1015,11 @@ SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nat
 const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
 SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});
 SCENARIOS.push({...SCENARIOS.find(s=>s.id==='complete-fixture'),id:'u4-ending-reduced-motion',reducedMotion:true});
+SCENARIOS.push({
+  ...SCENARIOS.find(s=>s.id==='complete-fixture'),
+  id:'ui26-ending-statistics',
+  nativeKeys:[['Tab',0],['Space',0]],
+});
 const u4Fire=SCENARIOS.find(s=>s.id==='v2-flashfire');
 SCENARIOS.push({...u4Fire,id:'u4-burn-ticks',burst:false,required:['.combat-float[data-source=status][data-damage-token=pyro]:not([hidden])'],setup:new Function(`return (async()=>{
  await (${u4Fire.setup.toString()})(${JSON.stringify(u4Fire.setupArgument)});

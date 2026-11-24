@@ -177,3 +177,7 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
   #overlay .panel.draft-panel:has(.transformation-preview):has(.effect-set-lesson) .reward-art {height:84px;}
   #overlay .panel.draft-panel:has(.transformation-preview) .effect-set-lesson {padding:4px 8px;margin-bottom:5px;}
 }
+
+#overlay :is(.requisition-item,.route-option) .transformation-preview { color: #b9e3ee; }
+#overlay :is(.requisition-item,.route-option) .transformation-preview .ability-vignette { display: block; width: 100%; height: 62px; }
+#overlay .route-option-copy > .transformation-preview { order: 1; }

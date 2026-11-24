@@ -208,6 +208,18 @@ export function createScreens(context: ScreenContext) {
       button.addEventListener('pointermove',()=>{if(!deliberateRig&&selectedRig!==id) inspectRig(id);});
       button.addEventListener('focus',()=>{if(!deliberateRig&&selectedRig!==id) inspectRig(id,true);});
     });
+    const weaponButtons = root.querySelectorAll<HTMLButtonElement>('.pause-weapon-picker [data-weapon]');
+    for (const button of weaponButtons) {
+      const inspect = () => {
+        for (const option of weaponButtons) {
+          option.setAttribute('aria-pressed', String(option === button));
+          const detail = el(option.getAttribute('aria-controls')!);
+          if (detail) detail.hidden = option !== button;
+        }
+      };
+      button.addEventListener('focus', inspect);
+      button.addEventListener('click', inspect);
+    }
     root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>setPauseTab(button.dataset.tab as PauseTab,true)));
     root.querySelectorAll<HTMLElement>('.owned-boon').forEach(card=>{
       card.addEventListener('focus',()=>positionBuildTooltip(card));
@@ -369,6 +381,14 @@ export function createScreens(context: ScreenContext) {
       const tabs: PauseTab[]=Array.from(root.querySelectorAll<HTMLButtonElement>('[data-pause-tab]'), button => button.dataset.pauseTab as PauseTab);
       const index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(tabs.indexOf(pauseTab)+(event.key==='ArrowRight'?1:tabs.length-1))%tabs.length;
       setPauseTab(tabs[index],true); return;
+    }
+    if (status === 'paused' && pauseTab === 'weapons') {
+      const buttons = [...root.querySelectorAll<HTMLButtonElement>('.pause-weapon-picker [data-weapon]')];
+      const index = buttons.findIndex(button => button.getAttribute('aria-pressed') === 'true');
+      const direction = ['ArrowLeft','ArrowUp'].includes(event.key) ? -1 : ['ArrowRight','ArrowDown'].includes(event.key) ? 1 : 0;
+      const next = /^[1-5]$/.test(shortcut) ? buttons[Number(shortcut) - 1]
+        : direction ? buttons[(index + direction + buttons.length) % buttons.length] : undefined;
+      if (next) { event.preventDefault(); next.focus(); return; }
     }
     if(status==='rig-select') {
       if(target?.closest('.ability-preview')&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(event.key)) return;

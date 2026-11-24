@@ -65,3 +65,10 @@
 
 #overlay .route-title-row {display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 12px}
 #overlay .route-option-price {color:#ffe0a1;font:600 clamp(20px,2vw,27px)/1.1 var(--font-display);white-space:nowrap}
+
+#overlay .route-option-visual { isolation: isolate; overflow: hidden; background: #081820; }
+#overlay .route-room-crop {
+  position: absolute; inset: 0 auto auto 0; width: 315%; max-width: none; height: 100%;
+  object-fit: cover; object-position: left center; filter: brightness(.43) saturate(.75);
+}
+#overlay .route-room-crop + .route-creature { position: relative; mix-blend-mode: screen; background: transparent; }

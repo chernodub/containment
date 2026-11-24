@@ -115,3 +115,6 @@
 #overlay .requisition-title-row {
   display:flex;flex-wrap:wrap;align-items:baseline;column-gap:10px;row-gap:2px;
 }
+
+#overlay .requisition-terms { display: inline-flex; align-items: baseline; gap: 10px; }
+#overlay .requisition-amount { color: #e6f5fa; font: 600 clamp(22px, 2vw, 32px)/1 var(--font-display); white-space: nowrap; }
