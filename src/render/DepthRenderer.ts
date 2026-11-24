@@ -1,3 +1,4 @@
+import {RIG_ACCENTS} from './ActorIdentity';
 import {FloorChoiceMarkers} from './markers/FloorChoiceMarkers';
 import { PincerPresentation } from './world/PincerPresentation';
 import {setRoomBlackout,setSurfacePaintDiagnostic} from './lighting/LocalLightShading';
@@ -356,6 +357,7 @@ export class DepthRenderer {
    // require the screen color-space/tone-mapping program, not the HDR variant.
    this.renderer.setRenderTarget(null);this.renderer.toneMapping=mapping;
    await this.compilePrepared(this.hudScene,this.camera);
+   this.renderer.setRenderTarget(this.playerBeacon.target);await this.compilePrepared(this.playerBeacon.maskScene,this.camera);
    this.renderer.setRenderTarget(this.tier==='high'?warmTarget:null);this.renderer.toneMapping=this.tier==='high'?T.NoToneMapping:T.AgXToneMapping;
    await this.post.prepare((scene,camera)=>this.compilePrepared(scene,camera));
   }finally{this.siegeBoundary.root.visible=false;this.lighting.pool.setPrewarmCount(null);this.applyQuality();this.preparationTargets.delete(warmTarget);warmTarget.dispose();restoreMaterials();restoreArena();restoreBackdrop();restoreAtmosphere();this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;this.renderer.shadowMap.enabled=shadowEnabled;this.renderer.setScissorTest(false);this.resize();for(const m of models)this.actorPool.release(m);disposeModel(warm);this.shadowsDirty=true;}
@@ -663,14 +665,14 @@ export class DepthRenderer {
   // M10: one articulated marine death; native killing direction, retained physics owner.
   if(combat.dead&&!this.marineDeathStarted){this.marineDeathStarted=true;const direction=this.player.root.userData.motionHitDirection??p.angle;if(this.corpses.length&&this.ragdolls.snapshot().active>=this.ragdolls.snapshot().budget){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}this.ragdolls.add(-2147483648,this.player,'marine',{x:Math.cos(direction)*5,z:Math.sin(direction)*5},'none');}
   this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?TITLE_STAGE.marine.x:p.x/UNIT,menu?TITLE_STAGE.marine.z:p.y/UNIT,menu?TITLE_STAGE.marine.angle:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
-  const active=this.activeActorIds;active.clear();let crowding=0;
+  const active=this.activeActorIds;active.clear();
   this.actorPoseFrustum.setFromProjectionMatrix(this.actorPoseMatrix.multiplyMatrices(this.camera.projectionMatrix,this.camera.matrixWorldInverse));
   // M10: borrow this settled frustum for warning GPU instances only.
   this.effects.setWarningFrustum(this.actorPoseFrustum);
   // PERF13: keep the nearest four and all close silhouettes at authored detail.
   this.lodDistances.fill(Infinity);for(const e of enemies){const d=(e.x-p.x)**2+(e.y-p.y)**2;for(let i=0;i<4;i++)if(d<this.lodDistances[i]){for(let j=3;j>i;j--)this.lodDistances[j]=this.lodDistances[j-1];this.lodDistances[i]=d;break;}}
   // E10: contact-only actor pool changes do not invalidate the static architecture atlas.
-  for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);/* I13: native pod hatch swaps static art to the living caste. */if(model&&!!model.root.userData.broodPod!==!!e.pod){this.actorPool.release(model);this.actors.delete(e.id);model=undefined;}if(!model){model=this.actorPool.take(e.pod?'brood-pod':e.type,e.elite);useActorContactShadows(model.root,true);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.actors.set(e.id,model);registerGeometry(model.root,e.champion?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);model.setStageLight?.(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS?.12:1);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setExposed?.(e.maxArmor>0&&e.armor===0);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);/* I13: presentation follows authoritative guardian clocks. */model.setBossState?.(e.champion||(e.type==='brute'&&e.maxArmor>0&&e.armor<=0)?e.stunRemainingMs??0:0,e.broodRemainingMs??0,e.chargeMs);if(e.pod)model.setPodCountdown?.(e.podRemainingMs??0,e.podStage);const ordinary=!e.champion&&!e.pod;
+  for(const e of enemies){active.add(e.id);let model=this.actors.get(e.id);/* I13: native pod hatch swaps static art to the living caste. */if(model&&!!model.root.userData.broodPod!==!!e.pod){this.actorPool.release(model);this.actors.delete(e.id);model=undefined;}if(!model){model=this.actorPool.take(e.pod?'brood-pod':e.type,e.elite);useActorContactShadows(model.root,true);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.actors.set(e.id,model);registerGeometry(model.root,e.champion?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);model.setStageLight?.(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS?.12:1);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setExposed?.(e.maxArmor>0&&e.armor===0);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);/* I13: presentation follows authoritative guardian clocks. */model.setBossState?.(e.champion||(e.type==='brute'&&e.maxArmor>0&&e.armor<=0)?e.stunRemainingMs??0:0,e.broodRemainingMs??0,e.chargeMs);if(e.pod)model.setPodCountdown?.(e.podRemainingMs??0,e.podStage);const ordinary=!e.champion&&!e.pod;
    const ranged=e.engagement==='ranged';
    const waiting=!!e.readyBehaviour||ordinary&&!e.attackSlot&&!e.pendingAttack&&e.meleePhase==='approach'&&
      (e.engagement==='waiting'||ranged)&&Math.hypot(e.x-p.x,e.y-p.y)<(ranged?440:e.meleeShape.range+110);
@@ -807,9 +809,13 @@ export class DepthRenderer {
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
-  // MARINE17: compare opaque and effected marine pixels in the silhouette pass.
-  this.playerBeacon.beginCoverage(this.renderer,this.camera,p,this.player.height,!menu&&!combat.dead&&this.tier==='high'&&this.graphicsAblation!=='silhouette');
-  try{try{this.post.render(dt);}finally{this.playerBeacon.endCoverage(this.renderer);}this.playerBeacon?.setDepthSource(this.graphicsAblation==='silhouette'?null:this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{
+   this.post.render(dt);
+   const hidden=menu||combat.dead;
+   this.playerBeacon.update(this.player.root,p.angle,hidden,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout);
+   if(!hidden)this.playerBeacon.renderMask(this.renderer,this.camera,p,this.player.height,this.post.sceneDepthTexture,this.post.sceneGeometryTexture,RIG_ACCENTS[game.abilities.snapshot.rig??'breacher']);
+   this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);
+  }
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
