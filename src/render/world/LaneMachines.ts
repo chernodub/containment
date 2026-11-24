@@ -53,7 +53,13 @@ export function addLaneMachine(root:Group,id:string){
     }
     case 'transmission-chamber':
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
-      p.box(0,8,0,32,14,31,metal,.42);
+      // Flared receiver horn with an exposed throat on the guide axis.
+      for(const side of [-1,1]){
+        p.face([[5,8,side*7],[-42,4,side*31],[-42,30,side*31],[5,18,side*7]],0xa9bbbe);
+        p.rod([-42,30,side*31],[5,18,side*7],2,edge);
+      }
+      p.face([[-42,4,-31],[-42,4,31],[5,8,7],[5,8,-7]],metal);
+      p.rod([-24,15,0],[14,15,0],5,0x95c9dc);
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
@@ -69,10 +75,17 @@ export function addLaneMachine(root:Group,id:string){
       }
       p.rod([0,1,0],[0,8,0],17,metal);
       for(let k=0;k<6;k++)p.box(0,6,0,38,5,6,edge,k*Math.PI/6);
-      p.rod([0,8,0],[0,12,0],8,rubber);break;
+      p.rod([0,8,0],[0,12,0],8,rubber);
+      for(const z of [-16,16])p.box(29,6,z,76,10,6,edge,.15);
+      p.box(29,14,0,69,13,34,0x78839b,.15);
+      for(const x of [8,30,52])p.box(x,22,-(x-30)*.15,7,4,35,metal,.15);
+      break;
     case 'manual-control-chamber':
       for(const z of [-7,0,7])run([[-182,-4+z],[-145,24+z],[-64,26+z],[-29,10+z],[0,z]],4,3,z===0?0x928170:rubber);
-      p.box(0,6,0,38,12,27,metal);
+      p.box(0,7,0,58,14,42,metal);
+      p.box(0,15,0,50,2,35,rubber);
+      p.box(0,22,-23,53,6,25,edge,0,.24);
+      for(const x of [-19,-8,7])p.rod([x,17,-12],[x+8,19,14],2.3,0xd69a69);
       for(let i=0;i<5;i++)p.box(-14+i*7,14,0,4,4,15,0x84ad9c);
       break;
     case 'coolant-plant':
@@ -81,7 +94,9 @@ export function addLaneMachine(root:Group,id:string){
         const x=-7+5*Math.sin(i*2),z=-48+i*9;
         p.face([[x-5,2,z],[x+5,3,z-8],[x+9,2,z+4],[x+1,2,z+8]],i%2?0x899fa1:0x70898c);
       }
-      for(const z of [-8,-2,4,10])p.box(0,4,z,24,3,3,edge);
+      p.rod([-26,13,4],[26,13,4],14,0x6e939a);
+      for(const x of [-23,-14,-5,4,13,22])p.rod([x,13,4],[x+3,13,4],16,0xc2dde1);
+      p.rod([-20,25,8],[21,25,8],3,0xd9e8e3);
   }
   p.finish(root,'lane-machine-'+id,end[0],end[1]);
 }

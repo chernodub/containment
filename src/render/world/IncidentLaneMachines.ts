@@ -98,13 +98,21 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
         box(x,5,z,L/5+4,9,26,iron,turn);
         box(x,11,z+6,L/5-3,4,7,steel,turn);
       }
-      for(const z of [-14,14])box(L,8,z,38,13,11,steel,z*.025);
+      for(let i=0;i<7;i++){
+        const a=i*.20,x=L-12+56*Math.sin(a),z=56*(Math.cos(a)-1);
+        box(x,8,z,15,13,28,0x648884,a);
+        box(x,16,z,12,3,18,0x93b7ad,a);
+      }
       disc(L-12,10,0,9,6,0x749589);break;
     case 'overload-floor':
       pipe(0,0,L,0,6,10,0x697d78);
       for(let x=14;x<L;x+=41)pipe(x,0,x+7,0,6,12,iron);
       pipe(L-3,0,L+17,16,6,10,0x697d78);
-      disc(L,11,0,11,5,ochre);disc(L,16,0,5,3,boot);break;
+      box(L,3,0,66,6,42,boot);
+      for(const z of [-20,20])box(L,12,z,68,21,4,iron);
+      box(L+5,13,-33,65,4,22,steel,.08,.22);
+      for(const x of [-22,-11,0,11,22])pipe(L+x,-15,L+x,15,10,4,0xffb56c);
+      break;
   }
   const mesh=p.finish(root,'lane-machine-'+id,sx,sz);
   mesh.rotation.y=-angle;
