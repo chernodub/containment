@@ -32,6 +32,10 @@ CASTE = opt("caste", "crawler")
 REVIEW = Path(opt("review", str(K.ROOT / "artifacts/nextgen/k11-final" / CASTE)))
 EXPORT = "--no-export" not in args
 BAKE_SIZE = int(opt("bake", "2048"))
+# CREATURE26: shading normals from a smoothed proxy of each body mass ("off" keeps the true normals)
+FORM = opt("form", None)
+FORM_MIX = float(opt("form-mix", "1.0"))
+FORM_ITER = int(opt("form-iter", "100"))
 M = importlib.import_module(CASTE)
 RADIUS = {"crawler": 14, "stalker": 17, "spitter": 18, "brute": 28, "carrier": 24}[M.FAMILY] / 32
 started = time.time()
@@ -116,6 +120,10 @@ def colorize_bands(high, sculpture):
         bands[sel] = band
     for pid, band in getattr(M, "PLATE_BAND", {}).items():   # chosen plates keep a deliberate band
         bands[plate == pid] = band
+    flat = bool(getattr(M, "BAND_CELL", 0))
+    if flat:   # CREATURE26: anatomy-sized value shapes only (build_bands.merge_islands)
+        import build_bands
+        bands = build_bands.merge_islands(co, bands, M.BAND_CELL)
     for band in set(bands.tolist()):
         sel = bands == band
         base[sel] = B[band]
@@ -131,9 +139,9 @@ def colorize_bands(high, sculpture):
     # CREATURE23: no per-plate value step: three flat values per material (dark plate, mid flesh, one lit edge)
     convex = S.smoothstep(0.9, 2.2, cv)
     concave = S.smoothstep(0.6, 1.8, -cv)
-    lift = np.where(chitin, 0.12, np.where(bands == "bone", 0.06, 0.0))
+    lift = np.where(chitin, 0.12, np.where(bands == "bone", 0.06, 0.0)) * (0.0 if flat else 1.0)
     base = base + (np.minimum(base * 2.2 + 0.03, 1.0) - base) * (convex * lift)[:, None]
-    base *= (1 - 0.10 * concave)[:, None]
+    base *= (1 - (0.0 if flat else 0.10) * concave)[:, None]
     glow = np.zeros((len(co), 3), np.float32)
     for key in ("organ", "eye"):
         sel = zone == (S.ORGAN if key == "organ" else S.EYE)
@@ -203,6 +211,67 @@ def colorize(high, sculpture):
     K.write_color(high, "base", np.hstack([np.clip(base, 0, 1), ones]))
 
 
+
+
+# CREATURE26 flat-cell atlas: castes with BAND_CELL get no bake. Each face maps to the centre of one solid colour cell
+# for its anatomy band, so there are no UV islands, seams or gutter for the gameplay mips to bleed into; the atlas
+# the game already reads carries clean zone steps at every mip.
+FLAT = bool(getattr(M, "BAND_CELL", 0))
+CELL_GRID = 4
+
+
+def cell_names():
+    names = list(dict.fromkeys(list(M.BANDS) + ["eye", "gold"]))
+    assert len(names) <= CELL_GRID * CELL_GRID
+    return names
+
+
+def srgb(c):
+    c = np.clip(np.asarray(c, np.float32), 0, 1)
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
+
+
+def flat_cells(low, sculpture):
+    """Per-face anatomy band -> UVs at the centre of that band's cell."""
+    import build_bands
+    co = K.verts_np(low)
+    bands, zone, _ = build_bands.vertex_bands(co, sculpture, M)
+    bands = build_bands.merge_islands(co, bands, M.BAND_CELL)
+    bands[zone == S.EYE] = "eye"
+    if sculpture.name.endswith("-elite"):
+        hard = np.isin(zone, [S.SHELL, S.UNDER, S.ARMOR, S.CREST, S.CLAW, S.BONE, S.TOOTH])
+        bands[hard] = "gold"
+    names = cell_names()
+    vid = np.array([names.index(b) for b in bands])
+    uv = low.data.uv_layers.new(name="UVMap")
+    counts = {}
+    for poly in low.data.polygons:
+        ids = [vid[v] for v in poly.vertices]
+        cell = max(set(ids), key=ids.count)
+        counts[names[cell]] = counts.get(names[cell], 0) + 1
+        cu, cv = (cell % CELL_GRID + 0.5) / CELL_GRID, (cell // CELL_GRID + 0.5) / CELL_GRID
+        for li in poly.loop_indices:
+            uv.data[li].uv = (cu, cv)
+    K.log(f"{low.name}: flat cells {counts}")
+
+
+def flat_atlas(size):
+    names = cell_names()
+    base = np.zeros((size, size, 4), np.float32)
+    glow = np.zeros((size, size, 4), np.float32)
+    normal = np.zeros((size, size, 4), np.float32)
+    normal[...] = (0.5, 0.5, 1.0, 1.0)
+    base[..., 3] = glow[..., 3] = 1.0
+    c = size // CELL_GRID
+    gold = (0.90, 0.76, 0.42)
+    for i, name in enumerate(names):
+        x, y = (i % CELL_GRID) * c, (i // CELL_GRID) * c
+        col = gold if name == "gold" else M.BANDS.get(name, M.BANDS.get("accent"))
+        base[y:y + c, x:x + c, :3] = srgb(col)
+        g = M.GLOW["organ"] if name == "accent" else M.GLOW["eye"] if name == "eye" else (0, 0, 0)
+        glow[y:y + c, x:x + c, :3] = srgb(g)
+    return base, glow, normal
+
 # ------------------------------------------------------------------- sculpt
 highs, lows = {}, {}
 for name, sculpture in parts.items():
@@ -210,8 +279,9 @@ for name, sculpture in parts.items():
     K.smooth_mesh(high, 1, 0.4)
     K.shade_smooth(high)
     low = K.duplicate(high, f"{M.FAMILY}-{name}-low")
-    tertiary(high, sculpture)
-    colorize(high, sculpture)
+    if not FLAT:
+        tertiary(high, sculpture)
+        colorize(high, sculpture)
     for attr in list(low.data.color_attributes):
         low.data.color_attributes.remove(attr)
     K.decimate(low, M.TRIS[name])
@@ -231,43 +301,52 @@ for name, sculpture in parts.items():
                 reg[sel, ch] = np.maximum(reg[sel, ch], w)
         attr = low.data.attributes.new("k11_region", "FLOAT2", "POINT")
         attr.data.foreach_set("vector", reg.ravel())
+    if FLAT:
+        flat_cells(low, sculpture)
     highs[name], lows[name] = high, low
     K.log(f"{name}: sculpted in {time.time() - started:.0f}s")
 
-# ---------------------------------------------------------------------- uv
-K.unwrap(list(lows.values()), margin=0.006)
-
-# -------------------------------------------------------------------- bake
-emit_base = K.emission_material("emit-base", "base")
-emit_glow = K.emission_material("emit-glow", "glow")
-plain = K.diffuse_material("plain")
-images = {kind: K.image(f"{M.FAMILY}-{kind}", BAKE_SIZE, (0.2, 0.05, 0.02, 1), data=kind in ("normal", "ao"))
-          for kind in ("base", "glow", "normal", "ao")}
-images["normal"].generated_color = (0.5, 0.5, 1, 1)
-images["ao"].generated_color = (1, 1, 1, 1)
-images["glow"].generated_color = (0, 0, 0, 1)
-ext, dist = M.VOXEL * 8, M.VOXEL * 18
-for name in parts:
-    high, low = highs[name], lows[name]
-    for kind, mat, bake_type, samples in [("base", emit_base, "EMIT", 1), ("glow", emit_glow, "EMIT", 1),
-                                          ("normal", plain, "NORMAL", 1), ("ao", plain, "AO", 24)]:
-        K.set_material(high, mat)
-        K.bake(bake_type, low, [high], images[kind], ext, dist, samples=samples)
-    K.log(f"{name}: baked in {time.time() - started:.0f}s")
-
-base = K.image_np(images["base"])
-ao = K.image_np(images["ao"])
-glow = K.image_np(images["glow"])
-normal = K.image_np(images["normal"])
-# Bake AO into the albedo (actors draw without an AO sampler on the flat path).
-if hasattr(M, "BANDS"):   # CREATURE18: light occlusion only, so crevices do not turn the mid band to mud
-    base[..., :3] *= 0.88 + 0.12 * ao[..., :3]   # CREATURE23: flatter fold
-else:
-    base[..., :3] *= (0.42 + 0.58 * ao[..., :3]) ** 1.15
 paths = {kind: BAKES / f"{M.FAMILY}-{kind}.png" for kind in ("base", "normal", "glow")}
-K.save_np(base, paths["base"], M.ATLAS)
-K.save_np(normal, paths["normal"], M.ATLAS, data=True)
-K.save_np(glow, paths["glow"], M.ATLAS // 2)
+if FLAT:
+    base, glow, normal = flat_atlas(M.ATLAS)
+    K.save_np(base, paths["base"])
+    K.save_np(normal, paths["normal"], data=True)
+    K.save_np(glow, paths["glow"], M.ATLAS // 2)
+else:
+    # ---------------------------------------------------------------------- uv
+    K.unwrap(list(lows.values()), margin=0.006)
+
+    # -------------------------------------------------------------------- bake
+    emit_base = K.emission_material("emit-base", "base")
+    emit_glow = K.emission_material("emit-glow", "glow")
+    plain = K.diffuse_material("plain")
+    images = {kind: K.image(f"{M.FAMILY}-{kind}", BAKE_SIZE, (0.2, 0.05, 0.02, 1), data=kind in ("normal", "ao"))
+              for kind in ("base", "glow", "normal", "ao")}
+    images["normal"].generated_color = (0.5, 0.5, 1, 1)
+    images["ao"].generated_color = (1, 1, 1, 1)
+    images["glow"].generated_color = (0, 0, 0, 1)
+    ext, dist = M.VOXEL * 8, M.VOXEL * 18
+    for name in parts:
+        high, low = highs[name], lows[name]
+        for kind, mat, bake_type, samples in [("base", emit_base, "EMIT", 1), ("glow", emit_glow, "EMIT", 1),
+                                              ("normal", plain, "NORMAL", 1), ("ao", plain, "AO", 24)]:
+            K.set_material(high, mat)
+            K.bake(bake_type, low, [high], images[kind], ext, dist, samples=samples)
+        K.log(f"{name}: baked in {time.time() - started:.0f}s")
+
+    base = K.image_np(images["base"])
+    ao = K.image_np(images["ao"])
+    glow = K.image_np(images["glow"])
+    normal = K.image_np(images["normal"])
+    # Bake AO into the albedo (actors draw without an AO sampler on the flat path).
+    if hasattr(M, "BANDS"):   # CREATURE18: light occlusion only, so crevices do not turn the mid band to mud
+        base[..., :3] *= 0.88 + 0.12 * ao[..., :3]   # CREATURE23: flatter fold
+    else:
+        base[..., :3] *= (0.42 + 0.58 * ao[..., :3]) ** 1.15
+    K.save_np(base, paths["base"], M.ATLAS)
+    K.save_np(normal, paths["normal"], M.ATLAS, data=True)
+    K.save_np(glow, paths["glow"], M.ATLAS // 2)
+
 
 # --------------------------------------------------------- game material
 game = bpy.data.materials.new(f"k11-{M.FAMILY}")
@@ -292,6 +371,21 @@ for high in highs.values():
     high.hide_render = True
     high.hide_set(True)
 
+def form_normals(obj, mix, iterations):
+    """CREATURE26: shade with normals from a Taubin-smoothed copy of the same mesh (one clean terminator per mass).
+
+    Lumps, shingles and plate edges vanish from the shading normals while the silhouette and the geometry stay
+    as sculpted. Written as ordinary custom (corner) normals, so the GLB NORMAL attribute carries them and
+    skinning deforms them; no shader input is added. mix = weight of the proxy against the true normals."""
+    import build_bands
+    true_n = K.normals_np(obj)
+    n = build_bands.form_normals_np(obj, iterations, mix)
+    obj.data.normals_split_custom_set_from_vertices([tuple(map(float, v)) for v in n])
+    obj.data.update()
+    turn = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", n, true_n), -1, 1)))
+    K.log(f"{obj.name}: form normals mix {mix} iter {iterations}: mean turn {turn.mean():.1f} deg, p90 {np.percentile(turn, 90):.1f}")
+
+
 # ---------------------------------------------------------------- variants
 ranks = ["base", "elite"] + (["boss"] if "boss" in parts else [])
 variants = {}
@@ -313,6 +407,10 @@ for rank in ranks:
 for low in lows.values():
     low.hide_render = True
     low.hide_set(True)
+form = FORM if FORM is not None else getattr(M, "FORM_NORMALS", "off")
+if form != "off":
+    for v in variants.values():
+        form_normals(v, FORM_MIX if FORM is not None else getattr(M, "FORM_MIX", FORM_MIX), FORM_ITER)
 
 stats = {rank: len(v.data.polygons) for rank, v in variants.items()}
 co = K.verts_np(variants["base"])

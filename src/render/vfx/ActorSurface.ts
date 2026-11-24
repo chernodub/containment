@@ -17,6 +17,8 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const lanternColor = { value: new T.Color(0xffffff) };
   const reveal = { value: 0 }, attackLoad = { value: 0 };
   const rigColor = { value: new T.Color(0xffd063) }, bodyHue = { value: new T.Color(0x43312b) }, eliteBody = { value: elite ? 1 : 0 };
+  // CREATURE26: lit albedo per atlas zone (armour, plate, flesh, bone); families keep the SHADER25b levels unless set.
+  const zoneLevel = { value: new T.Vector4(.040, .056, .15, .165) }, wetPick = { value: 0 };
   for (const material of materials) {
     material.userData.containmentMarineSurface=friendly;
     const previous = material.onBeforeCompile;
@@ -24,12 +26,12 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody});
+      if (!friendly) Object.assign(shader.uniforms, {actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float _rig_paint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=_rig_paint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -55,7 +57,7 @@ vec3 zoneAlbedo=diffuseColor.rgb;
 float zoneValue=dot(zoneAlbedo,vec3(.2126,.7152,.0722));
 float zoneMid=smoothstep(.075,.095,zoneValue),zoneFlesh=smoothstep(.19,.23,zoneValue),zoneBone=smoothstep(.40,.46,zoneValue);
 // Armour and plate lit (.040/.056) sit at or below the flesh shadow plane (.15 x .30).
-float zoneLevel=mix(mix(mix(.040,.056,zoneMid),.15,zoneFlesh),.165,zoneBone);
+float zoneLevel=mix(mix(mix(actorZoneLevel.x,actorZoneLevel.y,zoneMid),actorZoneLevel.z,zoneFlesh),actorZoneLevel.w,zoneBone);
 // Family hue unifies the creature; zones keep most of their own hue, armour less chroma.
 vec3 familyHue=actorBodyHue/max(.005,dot(actorBodyHue,vec3(.2126,.7152,.0722)));
 vec3 zoneHue=mix(familyHue,zoneAlbedo/max(zoneValue,.001),.7);
@@ -113,13 +115,16 @@ float keyRim=smoothstep(.80,.88,1.0-clamp(dot(creatureFacing,normalize(vViewPosi
 float lanternPeak=max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b));
 // SHADE15: no white dorsal/crest highlight (read as a headlamp); a dim cool shell lift keeps form, lantern stays the only emissive.
 vec3 lanternEmission=actorLanternColor*lanternPeak*smoothstep(.015,.045,lanternPeak)*actorHierarchy.z*(1.0+actorReveal);
-totalEmissiveRadiance=lanternEmission;`}
+totalEmissiveRadiance=lanternEmission;
+// CREATURE26: a small wet specular pick from the fixed key, on flesh zones only (0 = off for families not rebuilt).
+float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
+totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(${friendly?'actorDissolve,actorDissolve+.045,ash':'0.0,.03,ash'}):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v25-shader25b:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v26-creature26:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
@@ -129,6 +134,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     lantern(color:number) { lanternColor.value.setHex(color); },
     rig(color:number) { rigColor.value.setHex(color); },
     body(color:number) { bodyHue.value.setHex(color); },
+    zones(armour:number,plate:number,flesh:number,bone:number,wet=0) { zoneLevel.value.set(armour,plate,flesh,bone);wetPick.value=wet; },
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },
     plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },

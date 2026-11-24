@@ -17,7 +17,7 @@ export const FAMILY_IDENTITY = Object.freeze({
 export const FAMILY_LANTERNS = Object.freeze({crawler:0xff276e, stalker:0x9570ff, spitter:0xa7ff42, brute:0xc8962a, carrier:0xf85de7, queen:0xea42af});
 export const ENEMY_BODY_COLORS = Object.freeze({crawler:0x43312b,brute:0x30232a,spitter:0x253229,stalker:0x292737,carrier:0x382b3b,queen:0x241c2a});
 /** SHADER25 body hue per family (luma is discarded; the shader sets the two value planes). */
-export const CREATURE_BODY_HUES = Object.freeze({crawler:0x9a5a3c,brute:0x7d6a55,spitter:0x6e7a4a,stalker:0x5f5a80,carrier:0x7f5878,queen:0x6a4a66});
+export const CREATURE_BODY_HUES = Object.freeze({crawler:0x9a5a3c,brute:0x6b6c5e,spitter:0x6e7a4a,stalker:0x5f5a80,carrier:0x7f5878,queen:0x6a4a66});
 export const RIG_ACCENTS = Object.freeze({breacher:0xffd063,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 
 export type ActorPart = {

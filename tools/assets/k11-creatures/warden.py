@@ -31,22 +31,22 @@ def build(sk, a):
     w.add(A.mass(chest_c, chest_r, chest_R, bone="chest", zone=FLESH, lump=0.006, freq=1.5, seed=2))
     w.add(A.mass(z(-0.65, 0.05, 2.45), (1.3, 1.1, 0.62 * a), frame((1, 0, 0.08)), zone=FLESH, k=0.4, lump=0.02, freq=1.2,
                  seed=9, bone=("blend", "chest", "tail", z(0.3, 0, 3.0), z(-1.2, 0, 2.3))))
-    hind_c, hind_r, hind_R = z(-1.55, 0.05, 2.2), v3((1.45, 1.15, 0.72 * a)), frame((1, 0, 0.1))
+    hind_c, hind_r, hind_R = z(-1.3, 0.05, 2.25), v3((1.2, 1.1, 0.72 * a)), frame((1, 0, 0.1))   # CREATURE26: rear pulled in
     w.add(A.mass(hind_c, hind_r, hind_R, bone="tail", zone=MEMBRANE, k=0.35, lump=0.01, freq=1.5, seed=3))
-    w.extend(A.shingles(hind_c, hind_r, hind_R, "tail", rows=3, phis=(0.0,), u0=0.55, u1=-0.6, size=(0.8, 0.8, 0.3),
+    w.extend(A.shingles(hind_c, hind_r, hind_R, "tail", rows=2, phis=(0.0,), u0=0.5, u1=-0.45, size=(0.95, 0.9, 0.3),
                         thickness=0.26, lift=0.4, grow=-0.2, seed=60, plate0=420, angular=True))
     # --- counterweight: a short thick tail ending in an armoured club, swung slightly left (away from the ram) ------
-    tail = bezier(z(-2.55, 0.1, 2.05), z(-3.4, 0.3, 1.8), z(-4.1, 0.5, 1.4), z(-4.6, 0.62, 1.0), 6)
-    w.add(S.Tube(tail, [0.78, 0.74, 0.68, 0.62, 0.56, 0.52, 0.5], zone=MEMBRANE, bone="tail", k=0.2))
-    w.add(AnglePlate(z(-4.1, 0.5, 1.6), frame(normalize(v3((1, -0.1, 0.25))), normalize(v3((0.25, 0, 1)))), 1.05, 0.85,
-                     0.32, keel=0.3, rake=0.5, taper=0.7, lift=0.15, zone=ARMOR, bone="tail", plate=418))
-    w.add(Ellipsoid(z(-4.65, 0.64, 0.95), (0.82, 0.78, 0.45 * a), frame((1, -0.1, 0.4)), zone=ARMOR, bone="tail", k=0.15,
+    # CREATURE26: the counterweight is a short club tucked under the hind body (the drawn body must not promise a
+    # target far outside the 2.0 m collider)
+    tail = bezier(z(-2.2, 0.1, 2.0), z(-2.7, 0.25, 1.7), z(-3.0, 0.4, 1.35), z(-3.15, 0.45, 1.05), 6)
+    w.add(S.Tube(tail, [0.72, 0.68, 0.62, 0.58, 0.54, 0.5, 0.48], zone=MEMBRANE, bone="tail", k=0.2))
+    w.add(Ellipsoid(z(-3.15, 0.45, 1.0), (0.66, 0.66, 0.4 * a), frame((1, -0.1, 0.4)), zone=ARMOR, bone="tail", k=0.15,
                     plate=419))
     # --- the ram shoulder (right / leading): one huge armoured mass, rigid with the chest ---------------------------
     sh_c, sh_r, sh_R = z(0.65, -2.05, 3.45), v3((1.8, 1.45, 1.0 * a)), frame((1, -0.12, -0.08))
     w.add(A.mass(sh_c, sh_r, sh_R, bone="chest", zone=ARMOR, k=0.45, lump=0.01, freq=1.3, seed=31))
     # dorsal carapace: two stacked angular plates, trailing points raked back over the hind body
-    for i, (dx, dy, dz, L, W_, T) in enumerate(((0.45, -1.95, 4.62, 1.95, 1.5, 0.38), (-0.95, -1.6, 4.25, 1.35, 1.15, 0.32))):
+    for i, (dx, dy, dz, L, W_, T) in enumerate(((0.35, -2.05, 4.5, 1.55, 1.2, 0.34), (-0.85, -1.75, 4.15, 1.05, 0.95, 0.3))):   # CREATURE26: smaller
         w.add(AnglePlate(z(dx, dy, dz), frame(normalize(v3((1, -0.15, -0.22))), normalize(v3((0.05, -0.35, 1)))), L, W_, T,
                          keel=0.42, rake=0.55, taper=0.8, lift=0.2, zone=ARMOR, bone="chest", plate=400 + i))
     # outer flank plate hanging over the right legs (the widest point of the outline)
@@ -56,12 +56,12 @@ def build(sk, a):
     ram0, ram1 = z(1.4, -1.85, 3.35), z(2.95, -1.65, 3.0)
     w.add(RoundCone(ram0, ram1, 1.15, 1.05, zone=ARMOR, bone="chest", k=0.3, plate=403, name="warden-ram"))
     w.add(S.Stretch(Ellipsoid(ram1 + z(0.32, 0, 0), (0.55, 1.3, 0.85 * a), frame(normalize(ram1 - ram0))),
-                    normalize(ram1 - ram0), 0.22, 0.07, zone=BONE, bone="chest", name="warden-ram"))
+                    normalize(ram1 - ram0), 0.22, 0.07, zone=ARMOR, bone="chest", name="warden-ram"))   # CREATURE26: dark slate, so crest and maw lead
     for s_, dz in ((-1, 0.0), (1, 0.15)):   # two blunt horn bosses at the ram's corners
         w.add(RoundCone(ram1 + z(0.1, 0.8 * s_, 0.35 + dz), ram1 + z(0.65, 0.95 * s_, 0.55 + dz), 0.34, 0.14,
                         zone=TOOTH, bone="chest", k=0.08))
     # armoured right hind flank down to the tail (the whole leading side is plate)
-    for i, (x, zz) in enumerate(((-1.1, 2.75), (-2.1, 2.45))):
+    for i, (x, zz) in enumerate(((-1.2, 2.7),)):
         w.add(AnglePlate(z(x, -1.3, zz), frame(normalize(v3((1, 0.05, -0.05))), normalize(v3((0, -1, 0.75)))), 0.75, 0.62,
                          0.24, keel=0.22, rake=0.55, taper=0.7, lift=0.12, zone=ARMOR, bone="tail", plate=404 + i))
     # --- trailing left shoulder: small, low, bare -------------------------------------------------------------------
@@ -69,11 +69,11 @@ def build(sk, a):
     w.add(AnglePlate(z(0.05, 1.2, 3.95), frame(normalize(v3((-1, 0.1, -0.1))), normalize(v3((0, 0.6, 1)))), 0.55, 0.45,
                      0.18, keel=0.14, rake=0.6, taper=0.55, lift=0.1, zone=ARMOR, bone="chest", plate=406))
     # bare left flank: dark sinew straps over ochre flesh (the opening while stunned)
-    for i, x in enumerate((0.55, -0.25, -1.05, -1.85)):
+    for i, x in enumerate((0.35, -1.0)):
         pts = [z(x + 0.15, 0.25, 3.9 - 0.25 * (x < 0)), z(x, 1.2, 3.3 - 0.25 * (x < 0)), z(x - 0.15, 1.35, 2.5 - 0.15 * (x < 0))]
         w.add(S.Tube(pts, [0.1, 0.12, 0.09], zone=SINEW, bone="chest" if x > 0 else "tail", k=0.06))
     # family lantern: the amber split runs down the bare left back
-    w.extend(A.lantern(z(0.35, 0.5, 3.95), z(-1.25, 0.6, 3.4), 0.3, "chest", height=1.4, ribs=0.15))
+    w.extend(A.lantern(z(0.15, 0.55, 3.85), z(-0.9, 0.6, 3.45), 0.17, "chest", height=1.0, ribs=0.12))
     # --- head: low, offset left and behind the ram face -------------------------------------------------------------
     head_c = z(1.85, 0.6, 3.05)
     neck = ("blend", "chest", "head", z(0.8, 0.3, 3.4), z(1.7, 0.6, 3.1))
@@ -81,12 +81,14 @@ def build(sk, a):
     w.add(A.mass(head_c, (0.78, 0.62, 0.4 * a), frame((1, 0.2, -0.3)), bone="head", k=0.18))
     w.add(AnglePlate(head_c + z(0.45, 0.05, -0.32), frame((-1, -0.1, 0.5), (0, 0, -1)), 0.9, 0.7, 0.24, keel=0.22, rake=0.6,
                      taper=0.6, zone=ARMOR, bone="jaw", plate=407))
-    # the pale split crown: two broad plates lying on the skull, trailing edges lifted, a dark gap down the middle
-    for i, s_ in enumerate((-1, 1)):
-        w.add(AnglePlate(head_c + z(-0.15, 0.3 * s_, 0.38), frame(normalize(v3((1, 0.18 * s_, -0.25))), normalize(v3((0, 0.4 * s_, 1)))),
-                         0.85, 0.36, 0.18, keel=0.14, rake=0.75, taper=0.55, lift=0.3, zone=CREST, bone="head",
-                         plate=CROWN_PLATES[i]))
-    w.add(Ellipsoid(head_c + z(-0.1, 0, 0.36), (0.75, 0.09, 0.08 * a), frame((1, 0.18, -0.25)), zone=ORGAN, bone="head"))
+    # CREATURE26: the Warden's own bone crest: one broad pale plate over the skull (the lit head plane) rising into a
+    # swept keel back over the neck, and the lit maw slot carried forward and up at the front of the head, the
+    # brightest thing on the body
+    w.add(AnglePlate(head_c + z(0.0, 0.0, 0.42), frame(normalize(v3((-1, -0.18, 0.2))), normalize(v3((0.15, 0, 1)))), 1.2, 0.78,
+                     0.22, keel=0.34, rake=0.9, taper=0.5, lift=0.55, zone=CREST, bone="head", plate=CROWN_PLATES[0]))
+    w.add(AnglePlate(head_c + z(-0.85, -0.15, 0.62), frame(normalize(v3((-1, -0.2, 0.55))), normalize(v3((0.4, 0, 1)))), 0.7, 0.2,
+                     0.16, keel=0.3, rake=0.8, taper=0.4, lift=0.3, zone=CREST, bone="head", plate=CROWN_PLATES[1]))
+    w.add(Ellipsoid(head_c + z(0.8, 0.0, 0.45), (0.42, 0.78, 0.2 * a), frame((1, 0.18, 0.75)), zone=ORGAN, bone="head"))
     for s_ in (-1, 1):
         w.add(Ellipsoid(head_c + z(0.72, 0.36 * s_, 0.0), (0.12, 0.12, 0.12 * a), zone=EYE, bone="head"))
         w.extend(A.hook([head_c + z(0.55, 0.3 * s_, -0.35), head_c + z(0.85, 0.36 * s_, -0.55), head_c + z(1.0, 0.3 * s_, -0.8),

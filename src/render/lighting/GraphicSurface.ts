@@ -171,7 +171,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
   const key = material.customProgramCacheKey();
   // Retained preparation proxies copy an already-patched hook and cache key.
-  if (key.includes(':graphic-surface-v4') || key.includes(':graphic-surface-hero19')) return;
+  if (key.includes(':graphic-surface-v5') || key.includes(':graphic-surface-hero19')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   // K10's original flat zones replace inherited photographic skins. Keep the
@@ -238,9 +238,13 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         // The plane is chosen by a fixed screen key from the upper left (the rake the old
         // gradient used), so every room splits a dorsal dome into one lit and one shadow plane.
         else if(graphicSurfaceKind.x>.5){
-          float graphicKeyFacing=dot(geometryNormal,vec3(-.52,.42,.74));
+          float graphicKeyFacing=dot(normalize(vNormal),vec3(-.52,.42,.74));
           float graphicTerminator=max(fwidth(graphicKeyFacing),.02);
-          graphicActorLight=mix(graphicShadowPlane,1.0,smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));}
+          // CREATURE26: one narrow half-tone step (facing .55-.64) between the planes reads as turning form, not a cut.
+          graphicActorLight=mix(graphicShadowPlane,1.0,.45*smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing)+.55*smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));
+          // CREATURE26: room light hue varies across the body with practical pools and shadow-map edges; on a creature
+          // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
+          graphicActorHue=mix(vec3(1.),graphicActorHue,.3);}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
@@ -255,6 +259,6 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
         totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
-  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-hero19" : "graphic-surface-v4"}`;
+  material.customProgramCacheKey = () => `${key}:${material.userData.containmentMarineSurface ? "graphic-surface-hero19" : "graphic-surface-v5"}`;
   material.needsUpdate = true;
 }

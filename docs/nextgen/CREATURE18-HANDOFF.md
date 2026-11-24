@@ -424,3 +424,135 @@ node tools/assets/i11-models/optimize.mjs && R && TOKTX=<toktx> node tools/asset
 2. The drawn body overhangs the 2.0 m collider by about 1 m. The marine can stand inside the Warden's visual edge
    (visible in the relay stun frame), and the tail clips into walls behind it. A collider of about 72 units is the
    largest worth trying before passenger-vault and communal-atrium lose too much floor.
+
+## CREATURE26 — heavies read as lit, built animals from the game camera
+Base `b74bfa28`. Simulation, colliders, reach, skeleton, bone names, joint rest positions, motion clips and the five
+other families' models are unchanged. Evidence is local under `artifacts/nextgen/creature26/` (not committed).
+
+**Diagnosis, tested.**
+- (a) Lumpy SDF normals drawing camouflage: **true but small.** Proxy normals alone (item 2, `proxy`/`mix-vn`)
+  gave larger, cleaner shadow shapes on the old Brute; pure proxy and 75/25 looked nearly the same. Kept: pure proxy.
+- (b) Zones following paint noise: **the main cause, and worse than thought.** The atlas was thousands of tiny UV
+  islands on a dark maroon gutter (`bakes/brute/brute-base.png` before this pass). At gameplay mips the zone
+  sample bleeds into the gutter and drops tiers, so every seam became a dark blotch.
+- A third cause nobody named: the creature light **hue** term carried room-light pools and shadow-map edges across
+  the body. With flat albedo this showed as tan and green patches with jagged edges.
+- (c) Plan view is a blob: **true.** The rest-pose blades hung as two curtains over the arms and head, and the
+  arms lay on the chest in every clip.
+
+**What changed (items 2–5).**
+- `build.py --form=proxy` (castes set `FORM_NORMALS="proxy"`, `FORM_MIX`). Shading normals come from a
+  Taubin-smoothed copy of each variant: 100 λ/μ iterations (.5/−.53), then 12 Laplacian passes on the normal
+  field to remove sliver noise. They are written as custom corner normals, so they ride on the GLB `NORMAL`.
+- `GraphicSurface` creature branch:
+  - Key facing reads `vNormal`, not the normal-mapped normal.
+  - Lit / half-tone / shadow steps sit at facing .55 and .64, each one `fwidth` wide (½-tone weight .45).
+  - Room hue is kept at 30 %.
+  - Cache key `graphic-surface-v5`.
+- Flat-cell atlas (castes with `BAND_CELL`):
+  - No bake. Each face's UVs go to the centre of one solid 512 px cell for its band, in a 4×4 grid on the same
+    2048 atlas and in the same zone reader.
+  - Bands are chosen by zone, `BAND_MAP` and `PLATE_BAND`, then `build_bands.merge_islands` (cell 0.3 design
+    units, majority below 30 %).
+  - The normal map is flat. Glow cells are the organ and eye colours.
+  - The rebuild takes ~2 min instead of ~3.5.
+- `ActorSurface`:
+  - New per-actor uniforms `actorZoneLevel` (defaults .040/.056/.15/.165 = SHADER25b, so other families are
+    unchanged) and `actorWet` (default 0).
+  - `surface.zones(armour, plate, flesh, bone, wet)` sets them.
+  - The wet pick is Blinn from the fixed key, exponent 48, smoothstep .35–.75, colour (.62,.66,.62)×wet, on flesh
+    zones only.
+  - Cache key `actor-surface-v26-creature26:alien`.
+  - No fetch, pass, target or draw was added.
+- Brute palette (linear vertex/cell colours):
+  - carapace (.040,.050,.042)
+  - flesh (.34,.32,.21)
+  - bone (.74,.73,.68)
+  - `CREATURE_BODY_HUES.brute` 0x6b6c5e
+  - `BRUTE_ZONE_LEVELS` .050/.050/.105/.19, wet .16
+- Brute model (`brute.py`):
+  - Head wedge 0.35 units further forward than CREATURE19, with one broad pale top plate (plate 50 → `lead`).
+  - Narrower chest (y 1.42→1.02).
+  - One dark yoke plate (300) over hump and shoulders, joined to the back as one carapace saddle.
+  - Forelimb geometry carried 0.72 units out from the shoulder line (bones unchanged).
+  - The weapon forearm's outer plate (310, `bone`) runs into the cleaver's pale edge; the blade bodies are dark
+    and shorter (×0.78 / ×0.55).
+  - Removed: pectorals, collar ring, pauldrons, elbow spur, tendons, 12 forearm shingles and half the dorsal
+    blades and shingles.
+- Elite: a three-horn pale crown swept back off the head plane replaces the shoulder horn and fins.
+- Warden (`warden.py`):
+  - Its own bone crest: a broad pale head plane rising into a swept keel.
+  - A large lit maw at the head's front, now the brightest thing on it.
+  - A smaller back lantern, a dark slate ram face and smaller dorsal plates.
+  - A short counterweight tucked under the hind body; half the straps and shingles.
+  - `RANK_SCALE.boss` 3.8 → 2.79, with `WARDEN_STATURE` (models.ts, presentation only) .86 → 1.175.
+
+**Measured** (heavies lineup, crew-checkpoint, luma inside each silhouette eroded 3 px; marine plate p90 = 180;
+floor p50 = 42):
+
+| | before p25 / p50 / p90 / p98 | after p25 / p50 / p90 / p98 |
+|---|---|---|
+| Brute | 31 / 37 / 68 / 108 | 37 / 56 / 96 / 118 |
+| Elite Brute | 25 / 34 / 86 / 158 | 39 / 49 / 92 / 120 |
+| Warden | 16 / 35 / 68 / 109 | 38 / 51 / 95 / 123 |
+
+- Lit planes sit at about 50–53 % of the marine plate, shadow (p25) at about 21 %, and bone/head p98 at 66–68 %.
+- Before, the body median sat at floor value.
+
+| Sizes in game (width × depth, height, radial from centre) | before | after |
+|---|---|---|
+| Brute | 1.98 × 1.68 m, 2.76 m, 1.26 m | 1.90 × 1.72 m, 2.79 m, 1.27 m |
+| Elite Brute | 2.84 × 2.26 m, 3.38 m, 1.90 m | 2.98 × 2.51 m, 3.33 m, 2.18 m |
+| Warden | 4.49 × 3.65 m, 4.41 m, 2.99 m | 3.85 × 3.75 m, 4.41 m, 2.30 m |
+
+- Bones and joint rest positions are unchanged.
+- The Brute's and elite's in-game heights are normalised by the runtime (2.95 m rest target), so they moved by
+  idle-pose rounding only: +0.03 m and −0.05 m.
+- The Warden's height is held exactly by `WARDEN_STATURE`.
+- **The Warden's presence fell.** Its drawn reach is now 2.30 m against the 2.0 m collider. The runtime fits the
+  boss footprint to `rankScale × radius × .94` from the farthest vertex, so a reach of 2.3 m forces the scale down.
+  Its footprint is now 1.29× the elite's width, not 1.46×. Keeping 1.46× at 2.3 m would need a rounder body, or
+  a runtime fit that ignores the tail; neither was done.
+
+**Rebuild:** `TOKTX=<toktx 4.4.2> sh tools/assets/k11-creatures/creature26/iterate.sh <tag>` runs four steps:
+1. build (`blender … build.py -- --caste=brute`)
+2. `creature26/ship.sh` (optimize → restore others → KTX2 → restore → LOD → restore)
+3. `npm run build`
+4. the lineup
+
+`creature26/preview.py` is a 50 s no-bake plan view. It poses the mesh in any motion clip through `pose.py`, a
+numpy glTF clip evaluator, and renders flat two-plane shading plus a silhouette from the game pitch. Use it before
+any full build. Other tools in `creature26/`: `sheet.mjs`, `values.mjs`, `crop.mjs`, `pairs.mjs`, `shoot.sh`
+(item-1 scenario set) and `heavies.mjs` (lineup with radial and height).
+
+**Still weak.**
+1. Shadow shapes still have ragged edges in places, especially on legs in attack poses. The causes are band
+   boundaries at triangle resolution (11.5 k tris) and Taubin normals on slivers. More normal-field iterations,
+   or a higher body triangle budget, would help.
+2. The dark yoke is the topmost shape when a Brute faces away. In the m9 strip it reads as a backpack plate.
+3. The elite's crown is small at 480×270; the gold blade and mantle carry rank more than the crown.
+4. In the crowd frame the Brutes no longer show the brown-paper camo, but each body still has 4–6 light shapes,
+   not 2–3.
+5. Warden presence (above). The tail no longer overhangs the collider, but the body is smaller.
+
+**Recipe for Crawler, Stalker, Spitter, Carrier, Matron** (one caste per pass; do not touch the shader):
+1. Run `preview.py` with that caste's module and motion file. Change `import brute as M` and the motion path, or
+   add a `--caste` option. Look at idle, waiting and wind-up from left and down.
+2. Forms (item 2): in the caste module set `FORM_NORMALS = "proxy"` and `FORM_MIX = 1.0`. Nothing else is needed;
+   `build.py` writes the normals.
+3. Zones (item 3):
+   - Set `BAND_CELL = 0.3`, scaled to the body: about a sixth of the body width divided by 2.
+   - Reduce `BANDS` to three body values, each landing clearly inside one zone-reader tier (linear luma): carapace
+     < .07, flesh .25–.38 with chroma ≥ .12 so it is not read as bone, bone > .55 with chroma ≤ .07.
+   - `BANDS["lead"]` = bone and `BANDS["plate"]` = carapace.
+   - Write `PLATE_BAND` so the head's top plate is `lead` and one striking edge is `bone`. Small armour plates
+     (leg plates 90–99) go to `flesh`.
+   - Check the `flat cells` log line: no band under a few hundred faces except eyes.
+4. Palette rule: the body hue must stay away from the deck's blue-grey and from Pyro's orange (0xff7a2e).
+   - Set `CREATURE_BODY_HUES.<family>` to the new carapace or flesh hue.
+   - In `models.ts` call `surface.zones(carapace, plate, flesh, bone, wet)` for that family only.
+   - Aim lit flesh at about 50 % of the marine plate in `values.mjs` (p90 ≈ 90), the head/bone at most 68 % (p98
+     ≤ 122) and shadow at about 20 % (p25 ≈ 36).
+   - Small families keep their `SMALL_FAMILY_SHADOW_PLANE` .68 unless their p25 falls under the floor.
+5. Rebuild the caste with `build.py --caste=<c>`, then run `ship.sh`, `npm run build`, the crowd capture and the
+   playtest. Compare at native size and at 480×270.

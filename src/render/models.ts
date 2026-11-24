@@ -19,6 +19,11 @@ import {actorSurface} from './vfx/ActorSurface';
 import {setGraphicShadowPlane} from './lighting/GraphicSurface';
 /** SHADER25b: small families keep a lighter shadow plane so they stay findable on the darkest decks. */
 const SMALL_FAMILY_SHADOW_PLANE=.68;
+// CREATURE26: Brute zone levels (lit albedo: carapace, plate, flesh, bone) for its three anatomy value shapes.
+// CREATURE26: the Warden's rank scale fell 3.8 -> 2.79 so its drawn reach is ~2.3 m; this presentation-only
+// stature factor (was .86) keeps its in-game height at the WARDEN25 4.41 m.
+const WARDEN_STATURE=1.175;
+const BRUTE_ZONE_LEVELS=[.050,.050,.105,.19,.16] as const;   // + wet specular pick on flesh
 import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
@@ -115,7 +120,7 @@ export function alien(kind:string,elite=false):ActorModel{
   const rankHeight=originalCreatureRankHeight(kind,rankKey);
   const rankScale=regularBrute&&rankHeight>0?2.95/rankHeight:originalCreatureRankScale(kind,rankKey);
   // CREATURE19: the Warden stands low and heavy (presentation only; collider, reach and span unchanged).
-  const verticalScale=(regularBrute?rankScale*(elite?ELITE_BODY_SCALE:1):rankScale*rankAdjustment)*(rank==='warden'?.86:1);
+  const verticalScale=(regularBrute?rankScale*(elite?ELITE_BODY_SCALE:1):rankScale*rankAdjustment)*(rank==='warden'?WARDEN_STATURE:1);
   r.assetRoot.scale.x=sourceScale.x*fit*jitter;r.assetRoot.scale.z=sourceScale.z*fit*jitter;
   // K11 boss tier: uniform rank scale; keep the feet on the deck by moving the asset origin, not the pooled body.
   r.assetRoot.scale.y=sourceScale.y*verticalScale*jitter;r.assetRoot.position.y=sourcePosition.y+groundY*(verticalScale*jitter-1);
@@ -125,7 +130,7 @@ export function alien(kind:string,elite=false):ActorModel{
  fitFootprint();
  const organStrength=r.materials.map(m=>m.emissiveIntensity),emission=originalCreatureEmission(r.materials);
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.08);const value=kind==='brute'?.62:kind==='carrier'?.75:kind==='spitter'?.70:kind==='stalker'?.40:kind==='queen'?.28:.68;if(!original)for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
- const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);if(kind==='crawler'||kind==='spitter'||kind==='stalker')for(const m of r.materials)setGraphicShadowPlane(m,SMALL_FAMILY_SHADOW_PLANE);surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
+ const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);if(kind==='brute'&&original)surface.zones(...BRUTE_ZONE_LEVELS);if(kind==='crawler'||kind==='spitter'||kind==='stalker')for(const m of r.materials)setGraphicShadowPlane(m,SMALL_FAMILY_SHADOW_PLANE);surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);
  surface.lantern(FAMILY_LANTERNS[kind as keyof typeof FAMILY_LANTERNS]??FAMILY_LANTERNS.crawler);
  const identity=alienIdentity(r.root,kind,r.span,r.height,elite);
  /* CREATURE18: every creature knows its rest-pose height so the corpse wipe is crisp. */{const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z,(bounds.min.x+bounds.max.x)/2,(bounds.max.x-bounds.min.x)*.18);}
