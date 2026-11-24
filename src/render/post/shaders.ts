@@ -192,10 +192,10 @@ ${inkComposite}
   float region=floor(packedClass/8.0);
   if(actorClass>=4.0 && actorClass<=6.0){
     float value=dot(color,vec3(.2126,.7152,.0722));
-    bool ornament=region==9.0 || region==15.0;
+    bool ornament=region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
-    if(!ornament && !danger && value>.075){
-      float bounded=.075+.097*(1.-exp(-(value-.075)/.097));
+    if(!ornament && !danger && value>.145){
+      float bounded=.145+.057*(1.-exp(-(value-.145)/.057));
       color*=bounded/value;
     }
   }

@@ -68,7 +68,7 @@ ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the mari
 // is exempt; shell lift, status colour and the grazing hit rim share the budget.
 vec3 creatureBody=max(outgoingLight-lanternEmission,vec3(0.));
 float bodyValue=dot(creatureBody,vec3(.2126,.7152,.0722));
-outgoingLight=creatureBody*min(1.,.12/max(bodyValue,.0001))+lanternEmission;`}
+outgoingLight=creatureBody*min(1.,.32/max(bodyValue,.0001))+lanternEmission;`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
@@ -85,16 +85,17 @@ float shell=smoothstep(.018,.19,shellValue);
 float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);
 float shellLift=dorsal*mix(.55,1.0,shell)*mix(1.0,.21,limb);
 float crest=shellLift*smoothstep(.13,.23,shellValue)*step(2.2,actorHierarchy.z);
+#define HAS_CREATURE_LANTERN
 float lanternPeak=max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b));
 // SHADE15: no white dorsal/crest highlight (read as a headlamp); a dim cool shell lift keeps form, lantern stays the only emissive.
 vec3 lanternEmission=actorLanternColor*lanternPeak*actorHierarchy.z*(1.0+actorReveal);
-totalEmissiveRadiance=lanternEmission+vec3(.022,.028,.038)*shellLift*actorStageLight*actorCamouflage*(1.0-actorDissolve);`}
+totalEmissiveRadiance=lanternEmission+vec3(.058,.067,.079)*shellLift*actorStageLight*actorCamouflage*(1.0-actorDissolve);`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(${friendly?'actorDissolve,actorDissolve+.045,ash':'0.0,.03,ash'}):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*actorRim*(actorRimStrength+actorReveal*.28${friendly?'':'+.10+.13*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v17-look24:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v18-look24:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

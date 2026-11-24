@@ -91,7 +91,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    float a=float(i)*1.5707963268;
    vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*1.0,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
-   if(abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
+   if(centerRegion!=30.&&floor(neighbor.w/8.)!=30.&&abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
     crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*(center.w==3.0?.10:.80)); // HERO19: faint marine plate seams; large calm shapes at gameplay size
   }
  } else if(inkMode>1.5&&inkStrength>.01) {
@@ -133,7 +133,7 @@ export const inkComposite = /* glsl */ `
   vec3 boldInk=min(color*.20,vec3(.010,.011,.012)+shadowTint*.0015+min(color,vec3(.5))*.006);
   vec3 contour=mix(neutralInk,boldInk,inkStrength);
   float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
-  contour=mix(contour,vec3(.012,.022,.034),darkBackdrop*.55);
+  contour=mix(contour,vec3(.035,.055,.076),darkBackdrop*.72);
   // Elite silhouettes carry a restrained bronze contour in addition to their crest.
   float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
   contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);

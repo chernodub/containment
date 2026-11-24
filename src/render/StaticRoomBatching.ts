@@ -73,7 +73,7 @@ function rigidMaterial(material: T.Material): boolean {
   const key=material.customProgramCacheKey(),local=original+LOCAL_LIGHT_CACHE_SUFFIX;
   if(material.onBeforeRender===T.Material.prototype.onBeforeRender)
     return key===local||key===`${local}:graphic-surface-v1`;
-  return key===`${local}:graphic-surface-v1:geometry-mrt-v1`&&hasStaticGeometryPolicy(material);
+  return key===`${local}:graphic-surface-v1:geometry-mrt-v2`&&hasStaticGeometryPolicy(material);
 }
 
 function materialKey(material: T.Material): string | undefined {
