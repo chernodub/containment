@@ -110,15 +110,16 @@ export function expeditionTemplate(node: RunNode): RoomTemplate {
 }
 
 /** End of the legal portion of a projectile lane through static geometry. */
-export function clipExpeditionLane(geometry: ExpeditionGeometry, from: Point, to: Point, radius: number) {
-  if (canTraverseExpedition(geometry, from, to, radius)) return {point: to, blocked: false};
+export function clipExpeditionLane(geometry: ExpeditionGeometry, from: Point, to: Point, radius: number, blocks?: (from: Point, to: Point, radius: number) => boolean) {
+  const traverses = (target: Point) => canTraverseExpedition(geometry, from, target, radius) && !blocks?.(from, target, radius);
+  if (traverses(to)) return {point: to, blocked: false};
   let clear = 0, blocked = 1;
   const point = {...from};
   for (let step = 0; step < 12; step++) {
     const t = (clear + blocked) / 2;
     point.x = from.x + (to.x - from.x) * t;
     point.y = from.y + (to.y - from.y) * t;
-    if (canTraverseExpedition(geometry, from, point, radius)) clear = t;
+    if (traverses(point)) clear = t;
     else blocked = t;
   }
   return {point: {x: from.x + (to.x - from.x) * clear, y: from.y + (to.y - from.y) * clear}, blocked: true};

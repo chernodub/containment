@@ -1,5 +1,4 @@
-import {clipExpeditionLane, type ExpeditionGeometry} from '../../game/world/expeditionGeometry';
-import {ENEMY_ATTACK_SHAPES} from '../../game/enemies/attackShapes';
+import type {DepthGame} from '../../DepthGame';
 import './tacticalMarkers.css';
 import type {EncounterCues} from './EncounterCues';
 import { hudObstructs, presentationObstructs } from './layout';
@@ -224,7 +223,7 @@ export class ThreatIndicators {
         }
         return false;
     }
-    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true, shotCharge = -1, aimX = x, aimY = y, tactical: Candidate['tactical'] = '', shotBlocked = false): void {
+    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true, shotCharge = -1, aimX = x, aimY = y, tactical: Candidate['tactical'] = '', clipLane?: DepthGame['clipHostileLane']): void {
         if (!tactical && kind !== 'boss' && !attacking && distance > 1000)
             return;
         projectWorld(this.renderer, x, y, this.point);
@@ -273,9 +272,11 @@ export class ThreatIndicators {
         }
         candidate.tactical = tactical;
         candidate.shotCharge = shotCharge;
-        candidate.shotBlocked = shotBlocked;
+        candidate.shotBlocked = false;
         if (shotCharge >= 0) {
-            projectWorld(this.renderer, aimX, aimY, this.aim, .8);
+            const lane = clipLane?.({x, y}, {x: aimX, y: aimY});
+            candidate.shotBlocked = lane?.blocked;
+            projectWorld(this.renderer, lane?.point.x ?? aimX, lane?.point.y ?? aimY, this.aim, .8);
             candidate.shotTargetX=this.aim.x;candidate.shotTargetY=this.aim.y;
             candidate.shotAngle = Math.atan2(this.aim.y - this.point.y, this.aim.x - this.point.x);
         }
@@ -292,7 +293,7 @@ export class ThreatIndicators {
         top: number;
         right: number;
         bottom: number;
-    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss, cues?: EncounterCues['locations'], cleanup = false, geometry?: ExpeditionGeometry): void {
+    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss, cues?: EncounterCues['locations'], cleanup = false, clipLane?: DepthGame['clipHostileLane']): void {
         this.width = getViewportWidth(this.renderer);
         this.height = getViewportHeight(this.renderer);
         this.originX = (bounds.left + bounds.right) / 2;
@@ -307,10 +308,8 @@ export class ThreatIndicators {
             const flight = !bullets && this.inFlight(enemy, player), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike' || !!enemy.pendingAttack || flight;
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
             const winding = enemy.type === 'spitter' && enemy.pendingAttack === 'spit' && enemy.windupMs > 0;
-            const lock = {x: enemy.lockX, y: enemy.lockY};
-            const lane = winding && geometry ? clipExpeditionLane(geometry, enemy, lock, ENEMY_ATTACK_SHAPES.spitterProjectileRadius) : undefined;
             this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0,
-                winding ? clamp(1 - enemy.windupMs / 500) : -1, lane?.point.x ?? lock.x, lane?.point.y ?? lock.y, cleanup && !attacking ? 'cleanup' : '', lane?.blocked);
+                winding ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '', winding ? clipLane : undefined);
         }
         let releaseShown=false;
         const windingShot=enemies.some(enemy=>enemy.pendingAttack==='spit'&&enemy.windupMs>0);

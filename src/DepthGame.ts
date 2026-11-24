@@ -211,6 +211,8 @@ export class DepthGame {
   }
   return route;
  }
+ readonly clipHostileLane=(from:{x:number;y:number},to:{x:number;y:number})=>
+  clipExpeditionLane(this.geometry,from,to,SPITTER_PROJECTILE_RADIUS,(a,b,radius)=>this.abilities.blocksMovement(a,b,radius));
  private coverPreview?:{x:number;y:number;until:number};
  get relayCoverPreview(){return this.coverPreview&&this.elapsed<this.coverPreview.until?this.coverPreview:undefined;}
  private previewRelayCover(){
