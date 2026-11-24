@@ -86,7 +86,7 @@ export class AbilityVisuals extends AbilityGeometry {
         if (!visible && this.wasVisible)
             this.clear();
         this.wasVisible = visible;
-        const protect = snapshot?.rig === 'pyro';
+        const protect = snapshot?.rig === 'pyro' || snapshot?.rig === 'arc';
         if (this.protectVictims !== protect) {
             this.protectVictims = protect;
             for (const material of this.castMaterials) material.stencilWrite = protect;
