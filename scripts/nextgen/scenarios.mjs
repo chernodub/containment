@@ -1196,8 +1196,8 @@ for(const index of [0,1])SCENARIOS.push({
   const g=d.game,director=g.director,beat=director.plan.beats.findIndex(b=>b.grammar==='siege');
   director.beatIndex=beat;director.dispatched=director.plan.beats[beat].start;
   g.siegeBeat=beat;g.siegeRemainingMs=4000;
-  const route=g.relayApproaches[index],point=route?.at(Math.max(0,route.length-2));
-  if(point)Object.assign(g.player,point);
+  const route=g.relayApproaches[index],point=route?.at(-2),bank=route?.at(-1);
+  if(point&&bank)Object.assign(g.player,index===0?point:{x:(point.x+bank.x)/2,y:(point.y+bank.y)/2});
   d.invulnerable(true);d.step(470);
   d.g5Proof={approaches:g.relayRoutes,bank:g.relayBank};
   d.refresh();
