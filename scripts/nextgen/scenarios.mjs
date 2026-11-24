@@ -1155,3 +1155,51 @@ registerScale17Scenarios(SCENARIOS);
 import {propScenarios} from '../../tools/assets/props14/scenarios.mjs';
 SCENARIOS.push(...propScenarios);
 SCENARIOS.push(...ART14_SCENARIOS);
+
+const play25Crowd=SCENARIOS.find(scenario=>scenario.id==='value14-crowd-swarm-junction');
+SCENARIOS.push({...play25Crowd,id:'play25-ordered-crowd',burst:false,frameCount:1,setup:new Function(`
+ return (async()=>{
+  await (${play25Crowd.setup.toString()})();
+  const d=window.__containmentDebug;
+  let best={step:0,count:0};
+  for(let step=0;step<600;step++){
+   const attackers=d.game.enemies.snapshot.enemies.filter(enemy=>enemy.meleeOrder);
+   if(attackers.length>best.count)best={step,count:attackers.length};
+   if(best.count>=3)break;
+   d.step(1000/60);
+  }
+  await (${play25Crowd.setup.toString()})();
+  for(let step=0;step<best.step;step++)d.step(1000/60);
+  d.g5Proof={attackers:d.game.enemies.snapshot.enemies.filter(enemy=>enemy.meleeOrder).map(enemy=>({
+   id:enemy.id,order:enemy.meleeOrder,remainingMs:enemy.meleeRemainingMs
+  }))};
+  d.refresh();
+ })();
+`)});
+SCENARIOS.push({id:'play25-brute-scale',state:'playing',room:'armory',setup:async()=>{
+ const d=window.__containmentDebug;
+ await d.gotoRoom('armory',{rig:'arc',runStructure:true});
+ const g=d.game,p=g.player;
+ g.enemies.reset();
+ for(const angle of [0,.4,-.4,1,-1,Math.PI]){
+  const x=p.x+Math.cos(angle)*115,y=p.y+Math.sin(angle)*115;
+  if(!d.canStand(x,y,43)||!d.botShotClear(x,y))continue;
+  const brute=g.enemies.spawn('brute',x,y);
+  if(brute.spawned){g.enemies.stagger(brute.enemy.id,2500);break;}
+ }
+ d.refresh();
+}});
+for(const index of [0,1])SCENARIOS.push({
+ id:`play25-route-${index}`,state:'playing',room:'overload-floor',setupArgument:index,setup:async index=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('overload-floor',{rig:'arc',runStructure:true});
+  const g=d.game,director=g.director,beat=director.plan.beats.findIndex(b=>b.grammar==='siege');
+  director.beatIndex=beat;director.dispatched=director.plan.beats[beat].start;
+  g.siegeBeat=beat;g.siegeRemainingMs=4000;
+  const route=g.relayApproaches[index],point=route?.at(-2),bank=route?.at(-1);
+  if(point&&bank)Object.assign(g.player,index===0?point:{x:(point.x+bank.x)/2,y:(point.y+bank.y)/2});
+  d.invulnerable(true);d.step(470);
+  d.g5Proof={approaches:g.relayRoutes,bank:g.relayBank};
+  d.refresh();
+ }
+});

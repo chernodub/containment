@@ -629,7 +629,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
-  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT);
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
@@ -795,17 +795,10 @@ export class DepthRenderer {
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
   // WARN16 uses the existing ink composite and the actor IDs in its opaque buffer.
   this.post.beginCombatOutlines();
-  let nextAttackOrder=Infinity;
   if(!menu&&this.graphicsAblation!=='silhouette')for(const enemy of enemies){
-   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleePhase==='windup'||enemy.meleePhase==='strike'))continue;
-   const actor=this.actors.get(enemy.id);if(!actor)continue;
-   const order='order' in enemy ? enemy.order : undefined;
-   if(typeof order==='number'&&Number.isFinite(order)){
-    if(order>=nextAttackOrder)continue;
-    nextAttackOrder=order;
-    this.post.beginCombatOutlines();
-   }else if(Number.isFinite(nextAttackOrder))continue;
-   this.post.markCombatOutline(actor.root);
+   // The contour marks the attack that lands next (PLAY25 order) and the strike itself; ranged wind-ups and charges always.
+   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleeOrder===1||enemy.meleePhase==='strike'))continue;
+   const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
   // MARINE17: compare opaque and effected marine pixels in the silhouette pass.

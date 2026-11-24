@@ -19,7 +19,7 @@ export const ENEMY_FAMILY_SCALE: Readonly<Record<StandardEnemyId, number>> = Obj
   stalker: 1.20,
   spitter: 1.25,
   carrier: 1.10,
-  brute: 1,
+  brute: 1.3,
 });
 
 export const ELITE_BODY_SCALE = 1.30;

@@ -15,7 +15,7 @@ export class SiegeLabel {
 
     update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}) {
         this.node.hidden = true;
-        if (!siege) return;
+        if (!siege || siege.choosing) return;
         const {x, y: anchorY, visible} = projectWorld(renderer, siege.x, siege.y, this.point, .48);
         const overlapsMarine = x + 100 > marine.left && x - 100 < marine.right &&
             anchorY + 16 > marine.top && anchorY - 16 < marine.bottom;

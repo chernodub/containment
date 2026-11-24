@@ -26,8 +26,8 @@ export class SiegeBoundary {
     }
 
     update(siege: DepthGame['siege'], player: DepthGame['player'], enemies: DepthGame['enemies']['snapshot']['enemies']) {
-        this.root.visible = !!siege;
-        if (!siege) return;
+        this.root.visible = !!siege && !siege.choosing;
+        if (!siege || siege.choosing) return;
         const radius = siege.radius / this.unit;
         this.root.position.set(siege.x / this.unit, .026, siege.y / this.unit);
         this.root.scale.setScalar(radius);

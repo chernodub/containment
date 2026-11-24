@@ -160,7 +160,7 @@ export type EnemySnapshot = Readonly<{wallStunAngle?:number;chargeWarningLength?
   baseSpeed:number;champion?:'warden'|'matron';
   windupMs:number;pendingAttack:'spit'|'charge'|null;lockX:number;lockY:number;specialCooldownMs:number;chargeMs:number;
   meleePhase:MeleePhase;meleeProgress:number;meleeAngle:number;meleeFacingLocked:boolean;
-  meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
+  meleeOrder?:number;meleeShape:MeleeStrikeShape;meleeOriginX:number;meleeOriginY:number;meleeRemainingMs:number;meleeDurationMs:number;
 }>;
 
 export const WARDEN_WALL_STUN_MS=1500;
@@ -274,6 +274,7 @@ export class EnemySystem {
   #nextId = 1;
   #reservedCount = 0;
   #meleeStartGapMs=0;
+  #meleeStrikeGapMs=0;
   #lateDifficulty=false;
   get #movement(){return this.#lateDifficulty?(this.#difficulty().lateMovement??1):1;}
   get #rest(){const d=this.#difficulty();return d.rest*(this.#lateDifficulty?(d.lateRest??1):1);}
@@ -444,6 +445,7 @@ export class EnemySystem {
     const movementDelta = Math.min(deltaMs, MAX_MOVEMENT_DELTA_MS);
     const events: EnemyEvent[] = [];
     this.#meleeStartGapMs=Math.max(0,this.#meleeStartGapMs-timerDelta);
+    this.#meleeStrikeGapMs=Math.max(0,this.#meleeStrikeGapMs-timerDelta);
 
     this.#solids=this.#immovables?.()??[];
     this.#engagement.update(this.#enemies.values(),player,(e,x,y)=>this.#movementAllowed(e,x,y,x,y),(x,y)=>{const first=this.#enemies.values().next().value;return !first||this.#movementAllowed(first,x,y,player.x,player.y,player.radius??16);},Math.max(3,this.#windups));
@@ -597,6 +599,14 @@ export class EnemySystem {
     if(enemy){enemy.rushing=true;enemy.decisionCooldownRemainingMs=0;}
   }
 
+  releaseStagger(id:number):void {
+    const enemy=this.#enemies.get(id);
+    if(!enemy)return;
+    enemy.stunRemainingMs=0;
+    enemy.decisionCooldownRemainingMs=0;
+    this.#cachedSnapshot=null;
+  }
+
   stagger(id:number,durationMs:number):void {
     const enemy=this.#enemies.get(id);
     if(!enemy)return;
@@ -635,7 +645,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;this.#engagement.reset();this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
+    this.#nextId = 1;this.#engagement.reset();this.#meleeStrikeGapMs=this.#meleeStartGapMs=this.#smallMeleeActive=this.#heavyMeleeActive=0;
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -667,6 +677,9 @@ export class EnemySystem {
       maxArmor: enemy.maxArmor,
       radius: enemy.radius,
       speed: enemy.speed*this.#movement,
+      meleeOrder:enemy.meleePhase==='windup'?1+[...this.#enemies.values()].filter(other=>
+        other.meleePhase==='windup'&&(other.meleeRemainingMs<enemy.meleeRemainingMs
+          ||other.meleeRemainingMs===enemy.meleeRemainingMs&&other.id<enemy.id)).length:undefined,
       meleePhase:enemy.meleePhase,meleeProgress:enemy.meleeProgress,meleeAngle:enemy.meleeAngle,meleeFacingLocked:enemy.meleeFacingLocked,meleeShape:enemy.meleeShape,meleeOriginX:enemy.meleeOriginX,meleeOriginY:enemy.meleeOriginY,meleeRemainingMs:enemy.meleeRemainingMs,meleeDurationMs:enemy.meleeDurationMs,
       // Existing non-charge warning presentation consumes this facade; no simulated spit is scheduled for brood/pods.
       baseSpeed:enemy.baseSpeed,champion:enemy.champion,windupMs:enemy.pod?enemy.podRemainingMs:enemy.broodRemainingMs>0?enemy.broodRemainingMs:enemy.windupMs,pendingAttack:enemy.pod||enemy.broodRemainingMs>0?'spit':enemy.pendingAttack,lockX:enemy.pod||enemy.broodRemainingMs>0?enemy.x:enemy.lockX,lockY:enemy.pod||enemy.broodRemainingMs>0?enemy.y:enemy.lockY,specialCooldownMs:enemy.specialCooldownMs,chargeMs:enemy.chargeMs,...(enemy.pendingAttack==='charge'&&enemy.windupMs>0?{chargeWarningLength:ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000*this.#movement}:{}),
@@ -1093,7 +1106,8 @@ export class EnemySystem {
     const profile=MELEE_ATTACKS[enemy.type];
     if(enemy.meleePhase==='windup'&&!enemy.meleeFacingLocked){
       this.#aimMelee(enemy,player);
-      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs)enemy.meleeFacingLocked=true;
+      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs&&![...this.#enemies.values()].some(other=>
+        other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs))enemy.meleeFacingLocked=true;
     }
     let remaining=deltaMs;
     while(enemy.meleePhase!=='approach'){
@@ -1102,6 +1116,8 @@ export class EnemySystem {
       enemy.meleeProgress=enemy.meleeDurationMs?Math.min(1,1-enemy.meleeRemainingMs/enemy.meleeDurationMs):1;
       if(enemy.meleeRemainingMs>0)break;
       if(enemy.meleePhase==='windup'){
+        if(this.#meleeStrikeGapMs>0){enemy.meleeRemainingMs=this.#meleeStrikeGapMs;break;}
+        this.#meleeStrikeGapMs=450;
         enemy.meleePhase='strike';enemy.meleeProgress=0;enemy.meleeFacingLocked=true;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
@@ -1144,6 +1160,9 @@ export class EnemySystem {
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);
       enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);
+      for(const other of this.#enemies.values())if(other!==enemy&&other.meleePhase==='windup')
+        enemy.meleeRemainingMs=Math.max(enemy.meleeRemainingMs,other.meleeRemainingMs+450);
+      enemy.meleeDurationMs=enemy.meleeRemainingMs;
       if(enemy.meleeDurationMs<=melee.lockLeadMs)enemy.meleeFacingLocked=true;
       enemy.contactCooldownRemainingMs=0;enemy.velocityX=enemy.velocityY=0;enemy.yieldMs=0;enemy.blockedMs=0;
       this.#meleeStartGapMs=250;

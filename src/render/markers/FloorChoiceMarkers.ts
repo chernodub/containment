@@ -24,7 +24,25 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.arrowGeometry,this.materials[0]);
   mesh.visible=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number){
+ private readonly routeDummy=new T.Object3D();
+ private readonly routes=this.materials.map(material=>{
+  const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
+  mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
+ });
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[]){
+  this.routes.forEach((mesh,index)=>{
+   const path=approaches[index];
+   let count=0;
+   for(let i=1;path&&i<path.length;i++){
+    const from=path[i-1],to=path[i],dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
+    for(let along=22;along<distance&&count<48;along+=37){
+     this.routeDummy.position.set((from.x+dx*along/distance)/unit,.05,(from.y+dy*along/distance)/unit);
+     this.routeDummy.rotation.y=-Math.atan2(dy,dx);this.routeDummy.scale.setScalar(.65);this.routeDummy.updateMatrix();
+     mesh.setMatrixAt(count++,this.routeDummy.matrix);
+    }
+   }
+   mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
+  });
   this.arrows.forEach((arrow,index)=>{
    const choice=choices[index];
    const breach=choice?.kind==='gate'&&breaches.find(point=>point.id===choice.id);
@@ -39,10 +57,10 @@ export class FloorChoiceMarkers {
    mesh.visible=!!choice;
    if(!choice)return;
    mesh.geometry=choice.kind==='failed-bank'?this.failedGeometry:this.geometry;
-   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'?0:1];
+   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.id==='0'?0:1];
    mesh.position.set(choice.x/unit,.04,choice.y/unit);
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.geometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }
