@@ -101,3 +101,22 @@ zero in all three traces. The 22% Cryo run recorded zero runner errors
 and zero defects. It started at load averages 3.84 / 6.91 / 8.44.
 The 22% build remains unapproved. I began the tighter 18% trial at
 load averages 2.38 / 3.43 / 5.60.
+
+### Tighter direct-clamp trials
+
+| Cryo cap at 1080p | Outcome | Clears | Total damage | Damage over shared clears | Hit ratio | Outside central box |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 18% | Died in Diagnostic Gallery | 10 | 389.10 | 359.66 vs 189.07 (+90.22%) | 78.75% (478 / 607) | 322 / 3,473 (9.27%) |
+| 7% | Complete | 20 | 1,249.60 | 1,249.60 vs 1,055.03 (+18.44%) | 76.96% (1,296 / 1,684) | 1,129 / 8,908 (12.67%) |
+
+Both runs recorded zero runner errors, defects and estimated dock
+overlaps. The 18% trial started at load averages 2.51 / 3.44 / 5.59.
+The 7% trial started at 11.67 / 6.57 / 5.85 and ended at 2.73 /
+2.54 / 3.64. The lower limits did not pass the Cryo damage criterion.
+
+I started another base Cryo run at load averages 2.44 / 2.49 / 3.59.
+The next variant applies the extra room allowance only to the current
+rendered camera when the marine is outside the preferred band and the
+correction shows more of the hull. The base solver retains its own
+pose, engagement progression and follow-spring state. The variant's
+production build passed and its native comparison is pending.
