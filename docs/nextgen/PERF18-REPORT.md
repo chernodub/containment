@@ -527,3 +527,45 @@ The candidates were separate production builds of the current source and assets.
 The first creature finish comparison failed the full-High agreement rule. Its retry moved in opposite directions across the two pairs. Room dressing added no measurable tail savings when removed. Waiting animation and the new warnings also showed no repeatable improvement when removed. The accepted comparisons occurred during load spikes and most frames already exceeded 20 ms. The small pair differences at that saturation cannot establish cost near the shipping target.
 
 Room25 kept the existing High four-slot light pool. The second housing in Transmission uses baked spill and the existing landmark key. Disabling the new hardware and restoring its light placement did not reduce the shader light count.
+
+### Production change
+
+Creature material-zone classification now shares the original albedo sample. The graphic map pass retains the unposterised RGB for that classification and uses a copy for its existing colour response. This removes one atlas fetch from each mapped creature fragment. The change is confined to the two shader hooks. There are no changes to simulation code, movement timing, warnings, light ownership or warmup.
+
+### Interleaved verification
+
+Before is the full `b74bfa28` build. After is the single-fetch change at `d84fa554`. All trials used Safety-interlock station, a 1920×1080 viewport and the same 15-second production benchmark. CPU columns are update / render p95 in milliseconds.
+
+| Rig / tier / pair | Before load | Before >20 ms | Before CPU | After load | After >20 ms | After CPU | Saving (pp) |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: |
+| pyro / high / 1 | 7.52 → 8.41 | 58.31% | 5.8 / 17.5 | 8.41 → 8.04 | 92.96% | 14.5 / 23.7 | -34.65 (discarded) |
+| pyro / high / 2 | 8.04 → 8.12 | 95.11% | 12.9 / 21.5 | 8.12 → 9.26 | 77.13% | 11.5 / 21.5 | 17.98 (discarded) |
+| arc / high / 1 | 9.26 → 10.02 | 81.82% | 5.1 / 45.2 | 10.02 → 9.55 | 84.71% | 3.8 / 46.8 | -2.89 |
+| arc / high / 2 | 9.55 → 10.06 | 91.54% | 7.1 / 21.9 | 10.06 → 12.95 | 91.33% | 6.0 / 23.4 | 0.21 |
+| pyro / high / retry 1 | 7.99 → 8.31 | 90.48% | 9.9 / 27.4 | 8.31 → 7.51 | 93.28% | 12.0 / 23.5 | -2.81 |
+| pyro / high / retry 2 | 7.51 → 8.23 | 95.03% | 14.5 / 23.9 | 8.23 → 6.38 | 97.47% | 9.5 / 21.3 | -2.44 |
+| pyro / low / 1 | 12.26 → 10.36 | 65.80% | 6.7 / 14.2 | 10.36 → 9.02 | 75.87% | 11.0 / 14.8 | -10.08 |
+
+The first Pyro High sequence failed the full-High agreement screen. One rerun stopped on the benchmark’s existing sustained-population guard. The next sequence passed both checks. Its render submission p95 decreased in each pair, while more frames exceeded 20 ms. Arc High passed the agreement screen and its two tail differences went in opposite directions. The completed trials peaked at 300 draws and recorded zero combat compiles. The under-5% target, the historical comparison and Low timing parity remain unverified on this host state. The lead will collect the clean sixteen-trial matrix.
+
+| Warm revisit | Before load | Before ready / scene preparation (ms) | After load | After ready / scene preparation (ms) |
+| --- | --- | ---: | --- | ---: |
+| Safety-interlock | 8.82 → 8.91 | 1770.7 / 159.2 | 8.11 → 8.11 | 1740.9 / 151.3 |
+| Transmission | 8.91 → 8.91 | 1689.1 / 144.1 | 8.11 → 7.86 | 2056.9 / 136.6 |
+
+The first Transmission revisit took 367.8 ms longer, with 347.8 ms of that increase in reflection capture. Two additional before/after passes checked whether it repeated.
+
+| Warm revisit / pair | Before load | Before ready / scene preparation (ms) | After load | After ready / scene preparation (ms) |
+| --- | --- | ---: | --- | ---: |
+| Safety-interlock / 1 | 4.88 → 4.88 | 2458.1 / 169.3 | 6.58 → 6.61 | 2189.1 / 165.8 |
+| Transmission / 1 | 4.88 → 4.97 | 2078.5 / 162.5 | 6.61 → 6.61 | 2171.9 / 149.9 |
+| Safety-interlock / 2 | 6.37 → 7.14 | 2383.6 / 187.7 | 7.14 → 7.14 | 2169.7 / 185.2 |
+| Transmission / 2 | 7.14 → 7.14 | 2317.5 / 151.7 | 7.14 → 7.29 | 2134.3 / 148.8 |
+
+Scene preparation was faster in every pair. Total readiness was faster in every Safety-interlock pair and varied in Transmission. All warm runs recorded zero post-ready and combat compiles. The Transmission readiness measurements did not establish parity.
+
+All 16 native PNG pairs across the Relay Racks crowd, Swarm Junction crowd and Pyro overlap match byte for byte. The Crew Checkpoint Warden charge wind-up PNG also matches. I inspected the native 1920×1080 frames and the 480×270 views. The shader change introduces no visible difference in these scenes.
+
+[High trials](../../artifacts/nextgen/perf25-final-high/benchmark.json) · [Pyro High rerun](../../artifacts/nextgen/perf25-final-pyro-retry-2/benchmark.json) · [Low check](../../artifacts/nextgen/perf25-final-low/benchmark.json) · [Warm before](../../artifacts/nextgen/perf25-warm-before/rooms.json) · [Warm after](../../artifacts/nextgen/perf25-warm-after/rooms.json) · [Before gallery](../../artifacts/nextgen/perf25-capture-before/index.html) · [After gallery](../../artifacts/nextgen/perf25-capture-after/index.html) · [480×270 views](../../artifacts/nextgen/perf25/review-after-480.png)
+
+The native Pyro run on seed 1729 cleared all 12 requested rooms with zero errors and zero recorded defects. [Native campaign report](../../artifacts/nextgen/playtest/perf25-native-pyro/report.json)
