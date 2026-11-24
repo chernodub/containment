@@ -41,21 +41,29 @@ float bonePlane=smoothstep(.09,.15,dot(boneAlbedo,vec3(.2126,.7152,.0722)))*(1.0
 creatureBone=bonePlane;
 float strikingRegion=step(1.5,vActorRegion)*step(vActorRegion,5.5);
 float creatureStrike=mix(1.0,1.55,actorAttackLoad*strikingRegion*bonePlane);` : 'float creatureStrike=1.0;'}
-${friendly?'':`// SHADER25: one flat albedo per painted zone, set straight after the atlas sample so
-// status casts (frost) and death tints still colour it, as the marine's plates. Hue comes from the
-// atlas; value collapses to recess / shell / bone tiers with narrow steps, so the
-// painted gradients and gutter bleed inside each island no longer show.
-float atlasValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-float atlasBright=smoothstep(.115,.135,atlasValue);
-// Family body colour carries the hue; painted zones keep a third of their own
-// (bone and elite gold keep most of theirs) so plates read as one creature, not a patchwork.
+${friendly?'':`// SHADER25: one flat albedo per material zone, set straight after the atlas sample so
+// status casts (frost) and death tints still colour it, as the marine's plates.
+// SHADER25b: material zones come from a clean, unposterised atlas sample at the automatic
+// mip (painted strokes averaged, no posterise steps). Natural gaps in
+// the bakes' value distribution split dark armour, mid plate, warm flesh and bone;
+// each zone has one flat albedo, so the light alone makes its second value.
+#ifdef USE_MAP
+vec3 zoneAlbedo=texture2D(map,vMapUv,0.0).rgb*diffuse;
+#else
+vec3 zoneAlbedo=diffuseColor.rgb;
+#endif
+float zoneValue=dot(zoneAlbedo,vec3(.2126,.7152,.0722));
+float zoneMid=smoothstep(.075,.095,zoneValue),zoneFlesh=smoothstep(.19,.23,zoneValue),zoneBone=smoothstep(.40,.46,zoneValue);
+// Armour and plate lit (.040/.056) sit at or below the flesh shadow plane (.15 x .30).
+float zoneLevel=mix(mix(mix(.040,.056,zoneMid),.15,zoneFlesh),.165,zoneBone);
+// Family hue unifies the creature; zones keep most of their own hue, armour less chroma.
 vec3 familyHue=actorBodyHue/max(.005,dot(actorBodyHue,vec3(.2126,.7152,.0722)));
-vec3 atlasHue=mix(familyHue,diffuseColor.rgb/max(atlasValue,.001),mix(.26,.75,atlasBright));
-atlasHue=min(atlasHue/max(.05,dot(atlasHue,vec3(.2126,.7152,.0722))),vec3(2.4));
-float atlasTier=mix(.56,1.0,smoothstep(.022,.032,atlasValue))*mix(1.0,1.12,atlasBright);
-// Elites and champions wear a darker graphite body so their gold and bone plates stand out by value.
-atlasTier*=mix(1.0,.66,actorEliteBody*(1.0-atlasBright));
-diffuseColor.rgb=atlasHue*atlasTier*.15;`}`)
+vec3 zoneHue=mix(familyHue,zoneAlbedo/max(zoneValue,.001),.7);
+zoneHue=mix(vec3(1.),zoneHue,mix(.45,1.0,zoneFlesh));
+zoneHue=min(zoneHue/max(.05,dot(zoneHue,vec3(.2126,.7152,.0722))),vec3(2.4));
+// Elites and champions wear a darker body so gold and bone stand out by value.
+zoneLevel*=mix(1.0,.80,actorEliteBody*(1.0-zoneBone));
+diffuseColor.rgb=zoneHue*zoneLevel;`}`)
         .replace('#include <color_fragment>', `#include <color_fragment>
 ${friendly ? `// Keep the paint chromatic through the shared light bands.
 vec3 paintLuma=vec3(.2126,.7152,.0722);
@@ -111,7 +119,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v24-shader25:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v25-shader25b:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
