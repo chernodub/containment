@@ -341,6 +341,7 @@ export class AttackEffects {
    }
   }
   this.activeShooters.clear();
+  const relayVolley=game?.relayVolley;
   for (const enemy of enemies) {
    if (enemy.type !== 'spitter' || enemy.pod || enemy.health <= 0 || enemy.pendingAttack !== 'spit' || enemy.windupMs <= 0 || game?.getEscortRetreat(enemy.id)) continue;
    const angle = Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
