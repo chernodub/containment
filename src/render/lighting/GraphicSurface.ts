@@ -244,7 +244,14 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           graphicActorLight=mix(graphicShadowPlane,1.0,.45*smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing)+.55*smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));
           // CREATURE26: room light hue varies across the body with practical pools and shadow-map edges; on a creature
           // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
-          graphicActorHue=mix(vec3(1.),graphicActorHue,.3);}
+          graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
+#ifdef BRUTE_PLANES
+          if(bruteBody){
+            graphicActorLight=mix(.52,1.0,smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing));
+            graphicActorHue=vec3(1.);
+          }
+#endif
+        }
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
