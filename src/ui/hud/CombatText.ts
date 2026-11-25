@@ -212,8 +212,8 @@ export class CombatText {
         entry.node.dataset.settled = String(entry.lethal);
         entry.node.dataset.priority = String(priority);
         entry.node.hidden = false;
-        const label = kind === 'damage' ? this.damageLabel(entry, entry.amount) : statusLabels[status];
-        entry.label.textContent = kind === 'banked' ? `${Math.round(total)} banked` : kind === 'damage' ? this.damageLabel(entry, entry.displayed) : label;
+        const label = kind === 'banked' ? `${Math.round(total)} banked` : kind === 'damage' ? this.damageLabel(entry, entry.amount) : statusLabels[status];
+        entry.label.textContent = kind === 'damage' ? this.damageLabel(entry, entry.displayed) : label;
         if (kind === 'status') {entry.node.title = label; entry.node.setAttribute('aria-label', label);}
         else {entry.node.removeAttribute('title'); entry.node.removeAttribute('aria-label');}
         entry.glyph.hidden = kind !== 'status';
