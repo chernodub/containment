@@ -26,15 +26,17 @@ const strips:Record<string,readonly Strip[]>={
 
 function mountedStrips(id:string){
   const layout=incidentLanes[id],origin=layout??laneTerminal(id),source=roomValueProfile(id)?.landmark;
-  if(!strips[id]||!origin||!source)return;
+  if(!origin||!source)return;
   const angle=layout?Math.atan2(layout[3]-layout[1],layout[2]-layout[0]):0;
-  return {origin,angle,color:source.color,parts:strips[id]};
+  const end=layout?Math.hypot(layout[2]-layout[0],layout[3]-layout[1]):0;
+  const lamp:Strip=[end,0,18,14,7,0];
+  return {origin,angle,color:source.color,parts:strips[id]??[],lamp};
 }
 
 export function addMachineEmitters(root:Group,id:string){
   const mount=mountedStrips(id);if(!mount)return;
   const pieces=new IncidentPieces(),tone=new Color(mount.color).multiplyScalar(.53).getHex();
-  for(const [x,z,y,w,d,yaw] of mount.parts)pieces.box(x,y,z,w,.9,d,tone,yaw);
+  for(const [x,z,y,w,d,yaw] of [...mount.parts,mount.lamp])pieces.box(x,y,z,w,.9,d,tone,yaw);
   const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],new MeshBasicMaterial({vertexColors:true}));
   mesh.rotation.y=-mount.angle;mesh.castShadow=false;
 }
@@ -43,6 +45,11 @@ export function paintMachineSpill(c:CanvasRenderingContext2D,id:string){
   const mount=mountedStrips(id);if(!mount)return;
   c.save();c.translate(mount.origin[0],mount.origin[1]);c.rotate(mount.angle);
   const tint='#'+mount.color.toString(16).padStart(6,'0');
+  // Metal visor cuts off the rectangular work lamp at the edge of its service area.
+  c.save();c.translate(mount.lamp[0],mount.lamp[1]);
+  const pool=c.createLinearGradient(0,0,0,56);
+  pool.addColorStop(0,tint+'94');pool.addColorStop(1,tint+'22');
+  c.fillStyle=pool;c.fill(new Path2D('M-7 0H7L30 55H-31Z'));c.restore();
   for(const [x,z,,w,d,yaw] of mount.parts){
     c.save();c.translate(x,z);c.rotate(-yaw);c.scale(w*.55+15,d*.55+20);
     const glow=c.createRadialGradient(0,0,.08,0,0,1);
