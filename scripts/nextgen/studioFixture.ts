@@ -33,7 +33,7 @@ export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
   cameraDirection?:[number,number,number]; breachLight?:boolean;
-  card?:boolean; frameSubject?:boolean; webpQuality?:number;
+  card?:boolean; subjectHeight?:number; frameSubject?:boolean; webpQuality?:number;
   framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
@@ -142,7 +142,8 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             const shape=subject.family==='queen'?undefined:MELEE_ATTACKS[subject.family]?.shape;
             actor.setAttackState?.('strike',subject.frame??.45,subject.aim??-2,shape);
             actor.attack?.();
-            if(shot.breachLight&&subject.champion==='warden')actor.setEmissionRegion?.('warden-ram',.32);
+            if(subject.champion==='warden')actor.setBossState?.(0,0,250);
+            if(subject.champion==='matron')actor.setBossState?.(0,320,0);
           }
           if(subject.pose==='hit')actor.hit?.(.85,subject.aim??-2,true);
           if(subject.pose==='frozen')actor.setAffliction?.({chilled:true,frozen:true,burning:false,poisoned:false,shocked:false});
@@ -403,7 +404,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         }
       });
       const size=bounds.getSize(new T.Vector2()),middle=bounds.getCenter(new T.Vector2());
-      const frameHeight=Math.max(size.y/(shot.frameSubject?.8:.9),size.x/(aspect*(shot.frameSubject?.78:.98)));
+      const frameHeight=Math.max(size.y/(shot.subjectHeight??(shot.frameSubject?.8:.9)),size.x/(aspect*(shot.frameSubject?.78:.98)));
       camera.left=middle.x-frameHeight*aspect/2;camera.right=middle.x+frameHeight*aspect/2;
       camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
       camera.updateProjectionMatrix();

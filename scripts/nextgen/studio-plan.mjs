@@ -110,20 +110,20 @@ for(const {id,arena} of L8_CAPTURE_ROOMS){
 const lane={view:'gameplay',span:4.7};
 const roomLane=(room,x,z)=>({...lane,room,origin:[x/32,z/32]});
 const light=(color,mark)=>({kind:'light',color,intensity:8,distance:2.1,...mark});
-// First-junction cards share the isolated studio ground; the projectile points
-// back to the guarded plate or clutch without a second full-size silhouette.
+// Both first-junction paths descend to the Coolant Plant.
+const coolantDeck={room:"coolant-plant",origin:plan["route-coolant-plant"].origin,frameSubject:true,subjectHeight:.66};
 add('route-plate-breaker',[
-  {kind:'enemy',family:'brute',champion:'warden',pose:'attack',frame:.4,aim:1.38,x:.35,z:-.12},
+  {kind:'enemy',family:'brute',champion:'warden',pose:'attack',frame:.4,shadow:1.85,aim:.78,x:.35,z:-.12},
   {kind:'ordnance',weapon:'plasma',from:[-3.0,.46,1.04],x:-.38,y:.91,z:.94},
   light(0x74baff,{x:-.45,y:1.30,z:.64,intensity:5,distance:1.85}),
-],{span:4.0,focus:[0,1.24,0],cameraDirection:[0,.56,1]});
+],{...coolantDeck,span:4.0,focus:[0,1.24,0],cameraDirection:[0,.56,1]});
 add('route-brood',[
-  {kind:'enemy',family:'carrier',champion:'matron',aim:.63,x:-.5,z:-.18},
-  {kind:'pod',x:.7,z:.45,scale:.55,shadow:.33},
-  {kind:'pod',swollen:true,x:1.25,z:.36,scale:.68,shadow:.38},
-  {kind:'ordnance',weapon:'rocket',from:[3.5,1.92,.75],x:1.65,y:1.05,z:.53},
+  {kind:'enemy',family:'carrier',champion:'matron',pose:'attack',shadow:1.45,aim:2.35,x:-.5,z:-.18},
+  {kind:'pod',x:1.2,z:.85,scale:.95,shadow:.46},
+  {kind:'pod',swollen:true,x:2.05,z:.52,scale:1.12,shadow:.55},
+  {kind:'ordnance',weapon:'rocket',from:[4.45,1.92,.75],x:2.45,y:.94,z:.53},
   light(0xff9a5d,{x:1.55,y:.89,z:.56,intensity:2,distance:1.8}),
-],{span:4.58,focus:[0,1.65,0],cameraDirection:[0,1.05,1]});
+],{...coolantDeck,span:4.58,focus:[0,1.65,0],cameraDirection:[0,1.05,1]});
 add('route-cache',[supply('cache-open')],{frameSubject:true});
 add('route-locker',[{...supply('health'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.38,0]});
 add('route-armor',[{...supply('armor'),x:-.85},{...supply('grenade'),x:.78,z:.14}],{span:2.25,focus:[0,.32,0]});
