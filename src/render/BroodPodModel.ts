@@ -42,6 +42,17 @@ export function broodPodModel(): ActorModel {
  const cores=source.materials.filter(material=>material.name==='pod-core');
  for(const shell of source.materials.filter(m=>m.name==='brood-pod-shell')){
   shell.transparent=true; shell.opacity=.89; shell.roughness=.48;
+  // Only the shell takes the Matron's key. The separate core owns the hatch pulse.
+  const previous=shell.onBeforeCompile,cacheKey=shell.customProgramCacheKey();
+  shell.onBeforeCompile=(shader,renderer)=>{
+   previous.call(shell,shader,renderer);
+   shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    float podKey=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
+    reflectedLight.directDiffuse=diffuseColor.rgb*(.24+.76*step(-.14,podKey)+.45*step(.94,podKey));
+    reflectedLight.indirectDiffuse=vec3(0.);
+   `);
+  };
+  shell.customProgramCacheKey=()=>cacheKey+':brood-pod-planes';
  }
  const update=(ms:number,stage:PodStage)=>{
   if(closed)closed.visible=stage!=='opening';
