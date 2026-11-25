@@ -77,6 +77,16 @@ export function addLaneMachine(root:Group,id:string){
     }
     case 'transmission-chamber':
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
+      // An offset reflector cups the waveguide. Its exposed back has three radial ribs.
+      for(let i=0;i<16;i++){
+        const rim=(n:number):[number,number,number]=>{
+          const a=n*Math.PI/8;
+          return [-43+10*Math.cos(a),22+18*Math.cos(a),24*Math.sin(a)];
+        };
+        p.face([[-25,19,0],rim(i),rim(i+1)],i%4?0x91a4a6:0x778e94);
+        p.rod(rim(i),rim(i+1),1.5,edge);
+        if(i%5===0)p.rod(rim(i),[-53,24,0],1.2,metal);
+      }
       // Flared receiver horn with an exposed throat on the guide axis.
       for(const side of [-1,1]){
         p.face([[5,8,side*7],[-42,4,side*31],[-42,23,side*31],[5,18,side*7]],0xa9bbbe);
