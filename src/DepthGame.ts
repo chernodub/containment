@@ -643,15 +643,18 @@ export class DepthGame {
   }
  }
  if(this.node.templateId==='service-shaft-landing'){
-  const openingStalker=e.beat===0&&e.enemyId==='stalker';
-  const firstLunge=openingStalker&&e.spawnId.endsWith('spawn-0');
-  const secondLunge=openingStalker&&e.spawnId.endsWith('spawn-1');
+  const [first,second]=this.director.plan.schedule.filter(request=>request.enemyId==='stalker');
+  const firstLunge=e.spawnId===first?.spawnId;
+  const secondLunge=e.spawnId===second?.spawnId;
+  const farApproach={x:265,y:270};
+  if(firstLunge&&second)this.presentation.push({type:'enemy-warning',...farApproach,
+   radius:38,durationMs:1050,encounterCue:'flank',cueX:farApproach.x,cueY:farApproach.y});
   const repeat=e.beat===1&&e.enemyId==='crawler';
   if(firstLunge||secondLunge||repeat){
    const radius=enemyBodyRadius(e.enemyId,e.elite);
    const landing=firstLunge?this.player:{x:135,y:440};
    const sides=firstLunge?[1,-1]:[Number(e.spawnId.split('-').at(-1))%2?1:-1];
-   const point=secondLunge?{x:265,y:270}:sides.map(side=>({
+   const point=secondLunge?farApproach:sides.map(side=>({
     x:firstLunge?Math.max(78,Math.min(145,landing.x)):landing.x,
     y:landing.y+side*(firstLunge?145:185),
    })).find(point=>canTraverseExpedition(this.geometry,point,landing,radius)&&
