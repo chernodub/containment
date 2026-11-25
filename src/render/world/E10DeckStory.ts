@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {paintFightingDeck,paintDeckWetMask} from './FightingDeck';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
 
@@ -16,6 +17,12 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
     context.drawImage(image,column*cell+1,row*cell+1,cell-2,cell-2,-w/width*512,-d/depth*512,w/width*1024,d/depth*1024); context.restore();
   };
   const plan = SHIP_ARCHITECTURE_PLANS[t.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
+  if(plan){
+    context.save();context.scale(1024/(width*32),1024/(depth*32));
+    context.translate(-minX*32,-minZ*32);
+    paintFightingDeck(context,t,plan.arena);
+    context.restore();
+  }
   const start = plan?.arena ?? t.spawn, end = t.exit;
   const dx = (end.x-start.x)/32, dz = (end.y-start.y)/32, distance = Math.hypot(dx,dz), angle = Math.atan2(dz,dx)-Math.PI/2;
   const steps = Math.max(2,Math.ceil(distance/1.4));
@@ -56,6 +63,10 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
         polygon([[u-4,v-3],[u+9,v-6],[u+6,v+5],[u-3,v+8]].map(([x,z])=>point(x,z)),n%2?'#7c8088':'#3c4650');
       }
     }
+  }
+  if(plan){
+    context.save();context.scale(1024/(width*32),1024/(depth*32));
+    context.translate(-minX*32,-minZ*32);paintDeckWetMask(context,plan.arena);context.restore();
   }
   const make = (image:HTMLCanvasElement) => {
     const texture = new T.CanvasTexture(image); texture.name = 'e10-placed-evacuation-wear'; texture.colorSpace = T.SRGBColorSpace;

@@ -1,3 +1,6 @@
+import {paintLaneContacts} from './LaneContactPaint';
+import {paintMachineSpill} from './MachineEmitters';
+import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
 import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
@@ -80,7 +83,9 @@ function serviceJoints(c: CanvasRenderingContext2D, room: string): void {
 /** Bake contact shadows, service joints and traffic wear into one lit relief sheet. */
 export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): void {
   const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
-  function paintLights(c:CanvasRenderingContext2D){
+  function paintLights(c:CanvasRenderingContext2D, materialResponse=false){
+    if(materialResponse){c.save();c.globalAlpha=.47;paintFightingDeck(c,room,arena);c.restore();}
+    c.save();clipFightingDeck(c,room);paintMachineSpill(c,room.id);c.restore();
     for(const lamp of fixtures){
       if(!lamp)continue;
       c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
@@ -95,8 +100,10 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
+    paintFightingDeck(c,room,arena);
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
+    paintLaneContacts(c,room,root);
     const terminal=laneTerminal(room.id);
     if(terminal){
       c.save();c.translate(...terminal);c.scale(1,.69);
@@ -215,5 +222,5 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     c.restore();
-  }, .0214, paintLights);
+  }, .0214, c=>paintLights(c,true));
 }

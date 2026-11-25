@@ -18,13 +18,27 @@ export function addLaneMachine(root:Group,id:string){
   }
   switch(id){
     case 'relay-racks':
+      // An open cable trench exposes alternating removable combs along the aisle.
+      p.box(94,2,-49,158,4,47,rubber);
+      for(const side of [-1,1])p.box(94,5,-49+side*23,166,6,4,edge);
+      for(let x=24;x<168;x+=17)p.box(x,7,-49,7,4,42,metal);
+      p.box(9,4,-75,39,6,43,metal,.34);
       for(const z of [-7,0,7])run([[216,-56+z],[132,-56+z],[86,-12+z],[5,-12+z]],4,2.8,rubber);
       p.box(0,5,0,57,9,35,metal);p.box(0,10,-1,48,2,28,0x35474d);
       for(const x of [-16,-5,6,17])p.box(x,13,-1,7,6,22,0x697e77);
       p.box(0,12,18,29,5,4,edge);break;
     case 'service-shaft-landing':
       // A taut standing part meets the sheave, then doubles back to the sling.
-      run([[126,153],[8,9],[-6,-3],[-49,36]],5,4.4,0xb1a18a);
+      for(let i=0;i<16;i++){
+        const point=(t:number):[number,number,number]=>[126-120*t,4+17*(Math.cosh((t-.5)*2.4)-1),153-144*t];
+        p.rod(point(i/16),point((i+1)/16),3.3,0xb1a18a);
+      }
+      const coil:Pin[]=[];
+      for(let i=0;i<=48;i++){
+        const a=i*Math.PI/12,r=19+i*.31;
+        coil.push([-24+Math.cos(a)*r,7+Math.sin(a)*r*.78]);
+      }
+      run(coil,4,3.2,0x958875);
       p.rod([0,2,0],[0,12,0],21,rubber);
       p.rod([0,12,0],[0,16,0],18,edge);
       p.box(0,19,0,58,6,11,0xb3985c,.79);
@@ -78,6 +92,14 @@ export function addLaneMachine(root:Group,id:string){
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
       p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
+      for(const side of [-1,1]){
+        p.box(-59,5,side*36,140,9,16,metal);
+        for(let i=0;i<6;i++){
+          const x=-122+i*23+(side+1)*5;
+          p.face([[x,10,side*29],[x+19,10,side*29],[x+14,9,side*4],[x+4,9,side*4]],0xb0b0ad);
+          p.face([[x+4,9,side*4],[x+14,9,side*4],[x+14,2,side*4],[x+4,2,side*4]],rubber);
+        }
+      }
       for(let i=0;i<17;i++){
         const x=-104+i*9,z=10*Math.sin(i*.32);
         p.box(x,3,z,14,5,9,i%2?metal:0x555c60,.17*Math.cos(i*.32));
@@ -99,6 +121,10 @@ export function addLaneMachine(root:Group,id:string){
       for(let i=0;i<5;i++)p.box(-14+i*7,14,0,4,4,15,0x84ad9c);
       break;
     case 'coolant-plant':
+      // The split return header fans rivulets and ice plates sideways.
+      for(const [dx,dz] of [[-78,39],[-56,67],[-23,78],[18,66]]){
+        p.face([[-12,2,-15],[dx*.5-8,2,dz*.4],[dx,1,dz],[dx*.53+7,2,dz*.55],[5,3,-7]],0x95b7bb);
+      }
       for(const x of [-10,10])run([[-32+x,-144],[-32+x,-88],[x,-49],[x,0],[x+10,44]],2,2.6,metal);
       for(let i=0;i<10;i++){
         const x=-7+5*Math.sin(i*2),z=-48+i*9;

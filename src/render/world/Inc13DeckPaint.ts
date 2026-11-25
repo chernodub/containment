@@ -61,7 +61,9 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   const wet=/fluid|frozen|resin|diagnostic|swarm/.test(name);
   // These deposits sit over the biased named-space paint and trim.
   const layered=name==='inc13-cryo-fluid'||name==='inc13-frozen-discharge'||name==='inc13-containment-annulus-deck';
-  const bias=layered?-5:-1;
+  // The named-space slabs already use -2. Keep flush service inlays above
+  // those slabs at grazing angles while raised machine feet still occlude them.
+  const bias=layered||name==='frame16-deck-wear'?-5:-1;
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
   if(illumination){

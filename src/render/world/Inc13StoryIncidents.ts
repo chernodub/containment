@@ -58,10 +58,16 @@ export class IncidentPieces {
       geometry.setIndex(Array.from({length:start},(_,i)=>i));
       geometry.index!.setUsage(T.DynamicDrawUsage);
     }
+    const laneContactBounds=id.startsWith('lane-machine-')?this.parts.flatMap(part=>{
+      part.computeBoundingBox();const box=part.boundingBox!;
+      if(box.max.y<3||box.min.y>29||(box.max.x-box.min.x)*(box.max.z-box.min.z)<145)return [];
+      const bounds=box.clone();bounds.min.multiplyScalar(1/32);bounds.max.multiplyScalar(1/32);return [bounds];
+    }):undefined;
     this.parts.forEach(g=>g.dispose());geometry.scale(1/32,1/32,1/32);
     const material=finish??new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
     const mesh=new T.Mesh(geometry,material);mesh.name='inc13-'+id;mesh.position.set(x/32,0,z/32);
+    if(laneContactBounds)mesh.userData.laneContactBounds=laneContactBounds;
     mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;
   }
 }
@@ -301,6 +307,13 @@ const incidents:Record<string,Incident>={
       // The return tackle reaches the lower balcony in the incident-facing view.
       p.rod([-13,16,4],[-38,8,144],3.6,0xa29b7f);
       p.rod([-38,8,144],[-72,5,173],3.6,0x879783);
+      // A mostly upright sheave presents its open spokes to the incident camera.
+      const wheel=(a:number):Point3=>[-40+34*Math.cos(a),25+23*Math.sin(a),145-23*Math.sin(a)];
+      for(let i=0;i<24;i++){
+        const a=i*Math.PI/12;
+        p.rod(wheel(a),wheel(a+Math.PI/12),3.4,0xb8ae8c);
+        if(i%4===0)p.rod([-40,25,145],wheel(a),2.8,0xb6b3a0);
+      }
       p.box(-40,7,145,48,9,24,0x50675e,-.62);
       p.rod([-40,12,145],[-40,18,145],12,0xab9d75);
       p.box(-40,20,145,37,4,7,0xb9ad89,-.62);
