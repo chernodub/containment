@@ -295,18 +295,21 @@ class Creature:
         # Both rebuilt clubs skin to the shoulder. Pose that joint directly;
         # moving the legacy wrist IK alone barely moves the drawn knuckles.
         H,W=self.height,self.width
-        load=(.94+.06*t) if action=='m10-windup' else 0.
-        drive=1. if action=='m10-strike' else 1.-smooth((t-.75)/.25) if action=='m10-recovery' else 0.
-        self.move(self.center,SIDE*W*.09*load+FWD*W*.12*drive-UP*H*(.07*load+.12*drive))
-        self.rotate(self.center,UP,-.22*load+.27*drive)
+        load=(.78+.28*smooth(t)) if action=='m10-windup' else 0.
+        drive=between(t,[(0,.80),(.28,1.10),(.72,1.),(1,1.)]) if action=='m10-strike' else 1.-smooth((t-.75)/.25) if action=='m10-recovery' else 0.
+        slump=drive if action=='m10-recovery' else 0.
+        self.move(self.center,(-FWD*W*.14+UP*H*.09)*load + SIDE*W*.09*load+FWD*W*.12*drive-UP*H*(.07*load+.12*drive))
+        self.rotate(self.center,UP,-.34*load+.43*drive-.18*slump)
         self.rotate(self.center,SIDE,.14*load+.31*drive)
         support='shoulder.l'
         self.transform(support,self.base_matrices[support] @ self.m[support].inverted_safe())
-        self.rotate('shoulder.r',FWD,-1.10*load-.20*drive)
+        self.rotate('shoulder.r',FWD,-.88*load-.28*drive)
         self.rotate('shoulder.r',SIDE,.68*load-.55*drive)
-        self.move('shoulder.r',-SIDE*W*(.22*load+.09*drive)
-                  +FWD*W*(-.20*load+.30*drive)+UP*H*(.22*load-.07*drive))
-        self.move('head',FWD*W*.08*(load+drive)-UP*H*(.10*load+.16*drive))
+        self.move('shoulder.r',-SIDE*W*(.34*load+.26*drive)
+                  +FWD*W*(-.18*load+.51*drive)+UP*H*(.22*load-.07*drive))
+        self.move(support, (FWD*W*.08-UP*H*.16)*slump)
+        self.rotate(support,SIDE,.28*slump)
+        self.move('head',FWD*W*.08*(load+drive)-UP*H*(.10*load+.09*drive+.23*slump))
         self.rotate('head',UP,.16*load-.21*drive)
         for leg in self.legs:
             targets[leg['index']]=leg['rest']
@@ -494,7 +497,7 @@ class Creature:
         """WARDEN25 charge wind-up (sampled by anticipation): coil low behind the ram, hind legs set back and wide,
         the left hind foot scrapes twice, the club forefoot braces forward."""
         H,W=self.height,self.width
-        l=.94+.06*t
+        l=.71+.36*smooth(t)
         # Pitch around the midpoint of the two planted club fists. Their
         # common transverse axis stays fixed while the hips fold behind them.
         pivot=self.base_matrices[self.center].translation+FWD*W*.40-UP*H*.62
@@ -677,7 +680,7 @@ class Creature:
                     self.solve(arm,desired)
         elif action=='m10-wall-stun':
             slump=smooth(t)
-            self.move(self.center,FWD*W*(.12-.14*slump)-UP*H*(.10+.06*slump))
+            self.move(self.center,FWD*W*(.18-.20*slump)-UP*H*(.10+.06*slump))
             self.rotate(self.center,SIDE,.16+.04*slump)
             self.rotate(self.center,UP,.34*slump)
             self.rotate(self.center,FWD,.10+.20*slump)
@@ -698,7 +701,7 @@ class Creature:
             if self.family=='brute':self.club_swing(action,t,targets)
             elif self.family=='carrier':
                 load=.94+.06*t if action=='m10-windup' else 0.
-                drive=1. if action=='m10-strike' else 1.-smooth(t) if action=='m10-recovery' else 0.
+                drive=between(t,[(0,.80),(.28,1.10),(.72,1.),(1,1.)]) if action=='m10-strike' else 1.-smooth(t) if action=='m10-recovery' else 0.
                 self.carrier_brace(load,drive,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
             else:self.commitment(action,t,targets)
@@ -889,7 +892,7 @@ class Creature:
             self.rotate('neck_lo',UP,-.50*side)
             self.move(self.center,SIDE*W*.14*side-UP*H*.1)
         if ram == 'm10-ram-charge':
-            self.move(self.center,FWD*W*.23-UP*H*.05)
+            self.move(self.center,FWD*W*(.23+.035*math.cos(t*math.tau))-UP*H*.05)
             self.move('head',FWD*W*.13+UP*H*.025)
             self.rotate('head',SIDE,-.11)
             self.move('tail',-FWD*W*.13)

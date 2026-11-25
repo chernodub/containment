@@ -55,6 +55,7 @@ def paint_marks(name, co, normals, plate, bands):
     if name == "brute-body":
         bands[np.isin(plate, (50, 51))] = "lead"
     if name == "brute-regalia":
+        bands[plate == 64] = "plate"
         bands[(bands == "bone") & (plate != 51)] = "gilt"
 
 
@@ -119,9 +120,10 @@ def build(sk):
         (61, -1.42, 8.04, 1.61, 1.83, -34, "chest"),
         (63, -2.20, 6.73, 1.66, 1.60, -42, "tail"),
     ):
-        body.add(skull_plate((cx, 0, cz), (1, 0, 0), length, width, pitch, bone, pid, zone=ARMOR)[0])
+        body.add(S.Carapace((cx, 0, cz), (.58*length, .62*width, .19), frame((1, 0, -math.tan(math.radians(pitch)))), zone=ARMOR, bone=bone, plate=pid, hard=1))
     # --- head: low and forward, under one pale arrowhead skull plate --------------------------------------------
     body.add(Ellipsoid((2.32, 0, 7.55), (1.15, 0.95, 0.8), frame((1, 0, -0.15)), zone=FLESH, bone="head", k=0.12))
+    body.add(S.Carapace((1.65, 0, 7.68), (.34, 1.05, .52), frame((1,0,-.12)), zone=ARMOR, bone="head", plate=65, hard=1))
     plate, tip, rear, pf, pu, ps = skull_plate((2.68, 0, 8.39), (1, 0, 0), 2.72, 2.06, 15, "head", 50)
     body.add(plate)
     for s in (-1, 1):   # two dark eye slits angled in toward the point
@@ -134,8 +136,9 @@ def build(sk):
         sh_c = v3((0.3, 1.7 * s, 6.9))
         body.add(S.Box(sh_c, (.87, .77, .63), frame((1, .15 * s, -.20)), round=.40,
                        zone=FLESH, bone=f"shoulder.{side}", k=.06))
-        el = v3((0.38, 2.87 * s, 5.80))
-        fist = v3((2.05, 3.28 * s, 4.57))
+        body.add(S.Carapace(sh_c + v3((0, .10*s, .93)), (1.26, 1.04, .27), frame((1, .12*s, -.18), (0, .28*s, 1)), bone=f"shoulder.{side}", zone=ARMOR, plate=64, hard=1))
+        el = v3((-.21, 3.28 * s, 6.02))
+        fist = v3((2.15, 3.00 * s, 4.57))
         body.add(RoundCone(sh_c + v3((0.1, 0.3 * s, -0.4)), el, 1.00, 0.90, zone=FLESH,
                            bone=f"shoulder.{side}", k=0.035))
         body.add(S.Prism(el, fist, 1.02, .88, sides=6, up=(0, s, 0), roll=0, squash=.90,
@@ -158,5 +161,7 @@ def build(sk):
     for s, r0 in zip((-1, 1), rear):   # two pale horns swept back and out from the plate's rear corners
         pts = [r0 + pu * 0.05, r0 + v3((-0.32, 1.06 * s, -0.37)), r0 + v3((-1.28, 2.31 * s, -0.76)), r0 + v3((-2.70, 2.91 * s, -1.36))]
         regalia.add(S.Tube(pts, [0.44, 0.38, 0.24, 0.055], zone=BONE, bone="head", plate=51))
+    for sign, side in ((-1,"r"), (1,"l")):
+        regalia.add(S.Carapace((.15, 2.55*sign, 7.62), (1.38, 1.00, .26), frame((1, .18*sign, -.18), (0, .38*sign, 1)), zone=ARMOR, plate=64, hard=1, bone=f"shoulder.{side}"))
     boss = WARDEN.build(sk, a)
     return {"body": body, "regalia": regalia, "boss": boss}

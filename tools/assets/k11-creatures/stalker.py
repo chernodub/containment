@@ -50,6 +50,23 @@ def paint_marks(name, co, normals, plate, bands):
         bands[np.isin(plate, [30, 31, 59, 62, 502]) | upper_bevel] = "edge"
 
 
+def finish_skin(obj):
+    """Open the inner edge of the right scythe while keeping its outside reach."""
+    if obj.name != "stalker-body-low":
+        return
+    claw = obj.vertex_groups.get("claw.R")
+    if claw is None:
+        return
+    # The outer bevel includes the apex of the blade in the raised idle pose.
+    bevel = min(v.co.y for v in obj.data.vertices) + 0.30
+    for vertex in obj.data.vertices:
+        weight = sum(g.weight for g in vertex.groups if g.group == claw.index)
+        # Taper to zero at the wrist, and pin the outer cutting edge.
+        wrist = np.clip((0.45 - vertex.co.x) / 0.9, 0., 1.)
+        vertex.co.y -= weight * wrist * min(0.38, max(0., vertex.co.y - bevel) * 0.68)
+    obj.data.update()
+
+
 def build(sk):
     a = sk.aspect
     z = lambda x, y, zz: v3((x, y, zz * a))

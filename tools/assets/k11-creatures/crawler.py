@@ -49,6 +49,7 @@ def paint_marks(name, co, normals, plate, bands):
     x, y, z = co.T
     width = np.interp(x, [-1.02, -0.76, 0.20, 0.72], [0.035, 0.105, 0.075, 0.032])
     dorsal = (x > -1.02) & (x < 0.72) & (np.abs(y) < width) & (z > 0.49 * ASPECT)
+    bands[plate == 504] = "accent"
     bands[dorsal & (normals[:, 2] > 0.12)] = "accent"
 
 
@@ -130,8 +131,11 @@ def build(sk):
             shin = normalize(foot - knee)
             edge = v3((1.0, -0.35 * side, 0.6))
             # CREATURE19: forefeet splay forward and outward so the two raptor blades separate from the head
-            body.extend(A.blade(knee + shin * 0.04, foot + v3((0.14, 0.16 * side, 0.03)), edge, 0.16 * heavy, 0.03 * heavy, lo, zone=BONE, edge_zone=BONE,
-                                hook=0.45, serrations=3))
+            bite = A.blade(knee + shin * 0.04, foot + v3((0.14, 0.16 * side, 0.03)), edge, 0.16 * heavy, 0.03 * heavy, lo, zone=BONE, edge_zone=BONE,
+                                hook=0.45, serrations=3)
+            for segment in bite:
+                segment.plate = 504
+            body.extend(bite)
         else:
             body.extend(A.limb(hip, knee, foot, 0.165, 0.125, 0.04, up, lo, seed=sum(map(ord, leg)) % 50,
                                bend=0.03 * sk.aspect, tint=1.0))

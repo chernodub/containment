@@ -18,6 +18,8 @@ import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons'
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
 import {setGraphicShadowPlane} from './lighting/GraphicSurface';
+// Radians per bind-space unit. K11 skeletons use different authoring scales.
+const HIDE_FREQUENCY: Readonly<Partial<Record<string,number>>> = {crawler:50,stalker:25,spitter:15,carrier:7};
 // Shadow terminator, edge terminator, shadow gain and Carrier atlas flag.
 const BROOD_FORM: Readonly<Partial<Record<string, readonly [number, number, number, number]>>> = {
  crawler: [-.06,.94,.34,0], spitter: [-.24,.94,.38,0], stalker: [.26,.95,.32,0],
@@ -68,10 +70,18 @@ const species:Record<string,{asset:AssetName;span:number;height?:number}>={
  crawler:{asset:'dretch',span:ENEMY_SPAN.crawler},stalker:{asset:'basilisk',span:ENEMY_SPAN.stalker},spitter:{asset:'marauder',span:ENEMY_SPAN.spitter},
  carrier:{asset:'dragoon',span:ENEMY_SPAN.carrier},brute:{asset:'tyrant',span:ENEMY_SPAN.brute},queen:{asset:'tyrant',span:ENEMY_SPAN.queen},
 };
-const BRUTE_STAND_BOUNDS = {
- size: new T.Vector3(8.041213, 4.992038, 7.173330),
- center: new T.Vector3(.001445, 2.477302, .898714),
- minY: -.018717,
+// Reference stand envelopes keep edits to a claw or muzzle from rescaling the animal.
+const standBounds: Partial<Record<AssetName,{size:T.Vector3;center:T.Vector3;minY:number}>> = {
+ tyrant: {
+  size: new T.Vector3(8.041213, 4.992038, 7.173330),
+  center: new T.Vector3(.001445, 2.477302, .898714),
+  minY: -.018717,
+ },
+ basilisk: {
+  size: new T.Vector3(3.879815939802743, 2.098119851548299, 3.210807095892439),
+  center: new T.Vector3(0.06267397533740793, 1.0037272526236696, -0.06145616414854349),
+  minY: -0.04533267315047994,
+ },
 };
 const rigMetrics=new Map<string,{size:T.Vector3;center:T.Vector3;minY:number}>();
 /** Opt-in capture aid. Ordinary actors allocate no debug mesh/material or draw. */
@@ -94,9 +104,8 @@ function rig(name:AssetName,span:number,human=false,collisionRadius?:number){
   existing=mixer.clipAction(masked);actions.set(name,existing);return existing;
  };
  const idle=action('stand')??action('idle');idle?.play();if(human){const pose=action('shotgun_delta');pose?.play();if(pose)pose.paused=true;}mixer.update(0);root.updateMatrixWorld(true);
- // Shared rank origin for the original tyrant and its Warden promotion.
- const bruteAnchor=name==='tyrant' && source.materials.some(material=>material.userData.k11Original);
- let metrics=bruteAnchor?BRUTE_STAND_BOUNDS:rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{/* HERO24: rig kit (Arc mast, Cryo dewars) may stand above the helmet; the marine's scale stays fitted to the body. */if(object instanceof T.Mesh&&!(human&&/^k10-rig-/.test(object.name||object.parent?.name||'')))bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
+ const reference=standBounds[name];
+ let metrics=reference && source.materials.some(material=>material.userData.k11Original)?reference:rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{/* HERO24: rig kit (Arc mast, Cryo dewars) may stand above the helmet; the marine's scale stays fitted to the body. */if(object instanceof T.Mesh&&!(human&&/^k10-rig-/.test(object.name||object.parent?.name||'')))bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
  const {size,center,minY}=metrics,factor=span/(human?size.y:Math.max(size.x,size.z));
  // A collider is a circle: fitting only the widest axis lets diagonal legs and
  // thoraxes cross a touching neighbor. Preserve height, tighten horizontal stance.
@@ -156,7 +165,7 @@ export function alien(kind:string,elite=false):ActorModel{
  if(original && kind==='brute') for(const material of r.materials) material.defines={...material.defines,BRUTE_PLANES:1};
  const form=original && BROOD_FORM[kind];
  if(form)for(const material of r.materials)material.defines={...material.defines,BROOD_PLANES:1};
- const surface=actorSurface(r.materials,false,elite||kind==='queen');
+ const surface=actorSurface(r.materials,false,elite||kind==='queen',HIDE_FREQUENCY[kind]);
  let contactLife=0, contactKind=0;
  if(form)surface.form(...form);
  surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);
@@ -243,6 +252,8 @@ export function alien(kind:string,elite=false):ActorModel{
     wardenTurnRemaining=Math.max(0,wardenTurnRemaining-dt);
    }else{wardenTurnRemaining=0;r.root.rotation.y=yaw;}
   }
+  const statusFinish=status.frozen||status.chilled||status.burning||status.shocked||flash>=.25||deathCue!=='none';
+  if(original && kind==='brute')surface.formShadow(statusFinish?-2:0);
   if(form){
    // The broad side of a shell fills more of its projection as it turns.
    // Compensate the terminator without rotating the view-space key.
@@ -251,7 +262,7 @@ export function alien(kind:string,elite=false):ActorModel{
    if(kind==='crawler')shadow+=.46*Math.cos(yaw)+.12*Math.sin(yaw);
    if(kind==='stalker')shadow+=-.24*Math.cos(yaw)+.42*Math.sin(yaw);
    if(kind==='carrier')shadow=champion==='matron'?BROOD_FORM.matron![0]:shadow+.06*Math.sin(yaw);
-   surface.formShadow(status.frozen||status.chilled||status.burning||status.shocked||flash>=.25||deathCue!=='none'?-2:T.MathUtils.clamp(shadow,-.45,.55));
+   surface.formShadow(statusFinish?-2:T.MathUtils.clamp(shadow,-.45,.55));
   }
   if(champion==='warden' && bossStun>0 && !dead){
    authored.player.sample('m10-wall-stun',Math.min(1,(wallStunStartMs-bossStun)/100),dt,0);

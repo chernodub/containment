@@ -300,11 +300,25 @@ for name, sculpture in parts.items():
         attr = low.data.attributes.new("k11_region", "FLOAT2", "POINT")
         attr.data.foreach_set("vector", reg.ravel())
     import build_bands
+    plates = [(i, p) for i, p in enumerate(sculpture.prims) if isinstance(p, S.Carapace)]
+    if plates:
+        centers = np.asarray([tuple(f.center) for f in low.data.polygons], np.float32)
+        _, winner = sculpture.evaluate_points(centers, track=True)
+        facets = np.zeros_like(centers)
+        for i, plate in plates:
+            points = centers[winner == i]
+            # Each face gets the gradient of its analytic plane at the centroid.
+            for axis, offset in enumerate(np.eye(3, dtype=np.float32) * .0005):
+                facets[winner == i, axis] = plate.field(points + offset) - plate.field(points - offset)
+        facets /= np.maximum(np.linalg.norm(facets, axis=1, keepdims=True), 1e-8)
+        low.data.attributes.new("k11_facet", "FLOAT_VECTOR", "FACE").data.foreach_set("vector", facets.ravel())
     hw = build_bands.hard_weights(K.verts_np(low), sculpture)
     if hw is not None:   # CREATURE29: carried to the variants, read by form_normals, removed before export
         low.data.attributes.new("k11_hard", "FLOAT", "POINT").data.foreach_set("value", hw)
     if FLAT:
         flat_cells(low, sculpture)
+    if hasattr(M, "finish_skin"):
+        M.finish_skin(low)
     highs[name], lows[name] = high, low
     K.log(f"{name}: sculpted in {time.time() - started:.0f}s")
 
@@ -387,7 +401,20 @@ def form_normals(obj, mix, iterations):
         obj.data.attributes["k11_hard"].data.foreach_get("value", hard)
         obj.data.attributes.remove(obj.data.attributes["k11_hard"])
     n = build_bands.form_normals_np(obj, iterations, mix, hard=hard)
-    obj.data.normals_split_custom_set_from_vertices([tuple(map(float, v)) for v in n])
+    facets = obj.data.attributes.get("k11_facet")
+    if facets:
+        # A rim and its crown can share a vertex, but never a shading normal.
+        normals = np.zeros((len(obj.data.polygons), 3), np.float32)
+        facets.data.foreach_get("vector", normals.ravel())
+        obj.data.attributes.remove(facets)
+        loops = np.array([loop.vertex_index for loop in obj.data.loops])
+        corners = n[loops].copy()
+        for face, normal in zip(obj.data.polygons, normals):
+            if np.any(normal):
+                corners[face.loop_start:face.loop_start+face.loop_total] = normal
+        obj.data.normals_split_custom_set(corners.tolist())
+    else:
+        obj.data.normals_split_custom_set_from_vertices(n.tolist())
     obj.data.update()
     turn = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", n, true_n), -1, 1)))
     K.log(f"{obj.name}: form normals mix {mix} iter {iterations}: mean turn {turn.mean():.1f} deg, p90 {np.percentile(turn, 90):.1f}")

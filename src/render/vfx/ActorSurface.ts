@@ -2,8 +2,35 @@ import * as T from 'three';
 import {patchActorRegions} from '../ActorRegions';
 import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
+// Rest-space waves form shallow pores, parallel limb flutes and small sac dimples.
+const creatureHide = `
+#if defined(BROOD_PLANES) || defined(BRUTE_PLANES)
+#ifdef BRUTE_PLANES
+varying vec3 vPlateEdge;
+float plateEdgeRim(){
+  vec3 dx=dFdx(vPlateEdge),dy=dFdy(vPlateEdge);
+  vec3 gradient=max(sqrt(dx*dx+dy*dy),vec3(.00001));
+  vec3 onKey=step(vec3(.20),(.89*dx-.46*dy)/gradient);
+  vec3 rim=onKey*step(vPlateEdge,1.5*gradient);
+  return max(rim.x,max(rim.y,rim.z));
+}
+#endif
+uniform float actorHideFrequency;
+float hideFinish(vec3 position, bool limb, bool sac) {
+  vec3 p = position * actorHideFrequency * (sac ? 1.45 : 1.);
+  vec3 phase = vec3(dot(p,vec3(.84,.22,.50)), dot(p,vec3(-.32,.90,.31)), dot(p,vec3(.23,-.55,.80)));
+  vec3 footprint = fwidth(phase);
+  vec3 wave = cos(phase + .42*sin(phase.yzx*.51));
+  vec3 filtered = 1.-smoothstep(vec3(.85),vec3(2.75),footprint);
+  float pore = smoothstep(-.22,.77,(wave.x+wave.y+wave.z)/3.);
+  float contrast = limb ? wave.y*filtered.y : ((sac ? 2.*pore-1. : 1.-2.*pore))*min(filtered.x,min(filtered.y,filtered.z));
+  return .92+.08*contrast;
+}
+#endif
+`;
+
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
-export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false) {
+export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false, hideFrequency = 18) {
   const contact={value:new T.Vector3()};
   const form={value:new T.Vector4()};
   const warden={value:0};
@@ -30,12 +57,15 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorContact:contact,actorBroodForm:form,actorWarden:warden,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      if(material.defines?.BRUTE_PLANES){
+        shader.vertexShader='attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;');
+      }
+      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -97,8 +127,8 @@ if(bruteBody) {
   diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.027,.073,.044)*.79,actorWarden);
   creatureStrike=1.0;
 }
-// BRUTE32: the Brute's dorsal plates and skull-plate eye slits take the unused plate cell (6); they stay dark.
-if(bruteBody && actorWarden>.5 && band==6)diffuseColor.rgb*=.30;
+// Plate pigment follows the stepped lighting. Eye slits and status finishes retain their dark ink.
+if(bruteBody && actorWarden>.5 && band==6)diffuseColor.rgb*=actorBroodForm.x< -1. ? .30 : .96;
 if(bruteBody && actorWarden<.5){
   // Wrap armor around the fists in bind space. Its edge follows the skin
   // continuously between vertices, even on the low-detail mesh.
@@ -107,7 +137,8 @@ if(bruteBody && actorWarden<.5){
   bool forelimb=side>1.90 && sculpt.x>.58 && sculpt.z<6.4;
   bool knuckle=sculpt.x-.22*(sculpt.z-4.6)>1.62;
   bool darkArmor=forelimb?knuckle:band==6;
-  if(darkArmor)diffuseColor.rgb*=.30;
+  bool eyeSlit=band==6 && vActorRegion==2. && sculpt.x>2.28;
+  if(darkArmor)diffuseColor.rgb*=actorBroodForm.x< -1. || eyeSlit ? .30 : .96;
 }
 #endif`}`)
         .replace('#include <color_fragment>', `#include <color_fragment>

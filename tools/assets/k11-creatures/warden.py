@@ -1,6 +1,6 @@
 """The Warden is a low, broad ram on the shared tyrant skeleton."""
 
-from sdf import AnglePlate, Box, Prism, Ellipsoid, RoundCone, frame, v3, ARMOR, FLESH, CREST, ORGAN, MEMBRANE, SHELL
+from sdf import AnglePlate, Carapace, Box, Prism, Ellipsoid, RoundCone, frame, v3, ARMOR, FLESH, CREST, ORGAN, MEMBRANE, SHELL
 
 CROWN_PLATES = (450, 451)
 DORSAL_PLATES = (420, 421, 422, 423)
@@ -14,6 +14,9 @@ def build(sk, a):
         w.add(Ellipsoid(center, radii, frame((1, 0, tilt)), bone=bone, k=blend, **extras))
 
     def shingle(center, length, width, pitch, bone, number, zone):
+        if zone == ARMOR:
+            w.add(Carapace(center, (1.45*length, 1.18*width, .24), frame((-1, 0, -pitch)), bone=bone, zone=zone, plate=number, hard=1))
+            return
         w.add(AnglePlate(center, frame((-1, 0, -pitch)), length, width, .31,
                          keel=.26, rake=.66, taper=.58, bone=bone, zone=zone,
                          plate=number, hard=1.0))
@@ -39,8 +42,7 @@ def build(sk, a):
         w.add(Box(shoulder, (1.12, .75, .71), frame((1, .13*sign, -.24)),
                   round=.40, zone=SHELL, bone="chest", k=.12))
         cap = frame((-.96, -.12*sign, .24), (0, .30*sign, 1))
-        w.add(AnglePlate(shoulder + v3((.02, .18*sign, 1.02)), cap,
-                         1.22, 1.25, .49, keel=.38, rake=.32, taper=.73,
+        w.add(Carapace(shoulder + v3((.02, .18*sign, 1.02)), (1.49, 1.27, .38), cap,
                          zone=ARMOR, plate=424, hard=1, bone="chest"))
         w.add(RoundCone(shoulder, elbow, .91, .78, bone="chest", zone=FLESH, k=.12))
         w.add(Prism(elbow, wrist, 1.01, .76, sides=6, up=(0, sign, 0),
@@ -57,6 +59,7 @@ def build(sk, a):
         w.add(RoundCone(knee, foot, .71, .52, bone=f"foot.back.{side}", zone=FLESH))
         lobe(foot, (.84, .58, .45), f"foot.back.{side}", zone=ARMOR, plate=424)
 
+    w.add(Carapace((1.69, 0, 6.85), (.35, .87, .53), frame((1,0,-.12)), zone=ARMOR, plate=424, bone="chest", hard=1))
     lobe((1.79, 0, 6.45), (1.27, .61, .71), "chest", -.10, zone=MEMBRANE)
     lobe((3.08, 0, 6.33), (1.11, 1.03, .57), "head", -.12, zone=SHELL)
     shingle((3.12, 0, 7.02), 1.18, 1.24, -.12, "head", 450, CREST)
@@ -64,6 +67,9 @@ def build(sk, a):
     # Open jaws project beyond the neck. The mouth runs around the leading lip
     # and remains exposed at both corners when the prow is seen edge-on.
     lobe((4.27, 0, 5.65), (1.48, 1.13, .34), "head", -.21, zone=ARMOR, plate=424)
-    lobe((4.66, 0, 6.27), (1.08, 1.20, .67), "head", -.32,
+    for sign in (-1, 1):
+        w.add(Carapace((4.48, 1.14*sign, 6.15), (1.14, .32, .48),
+                       frame((1,-.21*sign,-.23)), zone=ARMOR, plate=424, bone="head", hard=1))
+    lobe((4.57, 0, 6.32), (1.14, 1.22, .66), "head", -.32,
          zone=ORGAN, name="warden-ram")
     return w

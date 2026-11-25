@@ -234,6 +234,15 @@ class Box(Prim):
         return outside + inside - self.round
 
 
+class Carapace(Box):
+    """Flat crown with clipped corners and a single sloping peripheral bevel."""
+    def field(self, P):
+        x, y, z = np.abs((P - self.c) @ self.R).T
+        hx, hy, hz = self.h
+        edge = np.maximum.reduce((x-hx, y-hy, (x-hx+y-hy+.34*min(hx,hy))*.7071))
+        return np.maximum.reduce((edge, z-hz, (edge+z-hz+.72*hz)*.7071))
+
+
 class Torus(Prim):
     def __init__(self, c, axis, major, minor, **kw):
         self.c, self.major, self.minor = v3(c), float(major), float(minor)

@@ -119,7 +119,7 @@ def build(sk):
         for t in (0.25, 0.75):   # sinew collars hold the duct to the neck plates
             body.add(S.Torus(path[i] + (path[i + 1] - path[i]) * t, path[i + 1] - path[i], 0.27 - 0.02 * i, 0.07, zone=SINEW,
                              bone=duct_bones[i], k=0.05))
-    body.add(RoundCone(mz0, mz1, 0.60, 0.55, zone=BONE, bone="jaw", plate=501, k=0.15))   # pale mortar mouth: the aiming face
+    body.add(RoundCone(mz0, mz1, 0.54, 0.76, zone=BONE, bone="jaw", plate=501, k=0.15))   # pale mortar mouth: the aiming face
     body.add(Ellipsoid(mz1, (0.30, 0.34, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
     body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.22, 0.27, 0.20 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
     for s in (-1, 1):

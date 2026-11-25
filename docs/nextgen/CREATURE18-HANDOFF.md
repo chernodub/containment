@@ -1091,3 +1091,205 @@ Stock Swarm Junction has no Matron. The last cell comes from the same crowd with
 All five families’ maximum sampled body lumas in calm and Swarm were equal to or below final19. Fixed screen coordinates in the composited images can differ more than the material values. Across nine measured views, 487 of 262,797 body coordinates rose by more than four levels after final antialiasing, with a largest rise of 48. The before-antialiasing display comparison is in `value-work/graded.txt`. The per-region distributions, sample counts and maxima are in `artifacts/nextgen/family35/value-work/luma.json`.
 
 The corrected gallery is `artifacts/nextgen/family35/sheets/index.html`. All 32 subjects have a native crop and a 480×270 frame, in final19 / first pass / corrected order. The marine remains the first actor to draw the eye in all three stock crowds. The weakest views are the console-obscured regular Crawler in its elite pair, the Stalker among the blue Relay Racks machinery and the fallen Matron overlapping the marine in the ragdoll frame. The production build passed after the correction.
+
+## HEAVY37
+
+The heavy shoulder and spinal plates now have clipped corners, a flat crown and a single bevel. The exporter writes the signed-distance plane normal at each plate triangle's centre into its three corners. The underlying skin retains smooth normals. The elite adds a lateral shoulder shingle on each side. The Warden's outer mandibles flank the amber-white throat, and a dark collar sits behind the prow. The existing ground pool still follows the head.
+
+The club elbow sits farther back and outboard. The Brute loads from 78% to 106% over its warning, twists after the wide strike and passes 10% beyond the planted reach before settling. The head drops and the supporting arm hangs during recovery. The Warden progressively compresses about the axis between its planted feet. Its existing charge cycle rocks forward on release and the chest bunches more deeply on impact.
+
+| Lineup measurement | final20 | HEAVY37 |
+|---|---|---|
+| Public height, regular / elite / Warden (m) | 3.030 / 3.273 / 4.500 | 3.030 / 3.271 / 4.500 |
+| Drawn height, same order (m) | 2.80 / 3.34 / 4.40 | 2.87 / 3.35 / 4.41 |
+| Native contact radii, same order | 42.90 / 55.77 / 64 | 42.90 / 55.77 / 64 |
+| Rig joints and fingerprint | 63 · `144d320c6cae75d7` | 63 · `144d320c6cae75d7` |
+
+The public elite height moved by −0.07% and the settled drawn height by +0.30%. The regular Brute's drawn height increased by 7 cm. The simulation diff against integration revision `29b04dc1` is empty. The measured rig, drawn heights and contact radii are in `artifacts/nextgen/heavy37/{rig.txt,final-lineup/trio.json,simulation.diff}`.
+
+The WARDEN34 connected-component measurement was repeated on the original 1920×1080 frames. Peak is display-space Rec.709 luma on a 0–255 scale. The largest area loss is 14.2% at wall stun. The calm area is 2.7% below final20 at the same peak.
+
+| Warden state | Lit maw pixels, final20 → HEAVY37 | Peak, final20 → HEAVY37 |
+|---|---|---|
+| Calm | 6,824 → 6,640 | 244 → 244 |
+| Charge windup | 3,538 → 3,462 | 244 → 244 |
+| Charge | 4,838 → 4,613 | 245 → 244 |
+| Wall stun | 3,386 → 2,905 | 243 → 243 |
+
+The [local comparison gallery](../../artifacts/nextgen/heavy37/index.html) links the native crops and 480×270 sheets in `artifacts/nextgen/heavy37/sheets/`. The original final20 gallery provides the left-hand room and lineup images. Release frames and isolated strips use new replays of the archived final20 fixture revision `a5a2c59d`. The horn-hidden silhouette suppresses the added head-bound regalia triangles on the elite for this comparison.
+
+| Sheet (native crop and 480×270) | Visual read |
+|---|---|
+| Lineup, colour | The Warden's shoulders, back and broad guards form large surfaces. The regular Brute's far guard merges sooner. All three face marks and the marine remain legible. |
+| Lineup, greyscale | The white throat and pale skulls separate from the armour. The darkest crown and flank sometimes collapse to one grey. |
+| Lineup, silhouette | Rank size and the Warden's low forward head are clear. The two club fighters share a stance. |
+| Lineup, horns hidden | The elite has a wider shoulder cap and a squarer outside shoulder. The silhouette difference is modest once the horns go. |
+| Brute calm | The near crown and the spine show separate faces. The pale skull reads first. |
+| Brute windup | The elbow makes a turn outside the skull. The fist and guard still touch from the frontal angle. The red sector stays clear. |
+| Brute recovery | The sloping back and far-wide planted club show the punish window. The low skull is difficult to pick out against the marine at contact in both versions. |
+| Brute behind | The back and shoulder crowns can be followed around the rear silhouette. The skull tip peeks beyond them. |
+| Brute side | The brow and near shoulder separate well. The far guard hides behind the nearer arm. |
+| Elite calm | The wide shoulder shelf sits behind the antler. The pale mark remains distinct. |
+| Elite windup | The elbow sits outside the horns and the supporting fist remains level. The horn can cut across the upper arm in projection. |
+| Elite recovery | The high back and low near fist make a longer silhouette. Marine overlap conceals part of the near fist and skull. |
+| Elite behind | The shoulder cap extends past the back ridge. The horn still gives the quickest rank read. |
+| Elite side | The broad guard, shoulder top and dark spinal crown read as separate planes. |
+| Warden calm | Prow, bright core and dark outer jaw can be traced into the shoulder. The collar is shortest on the far side. |
+| Warden windup | Both square shoulder tops sit above the braced limbs. The dark corners frame the throat inside the red capsule. |
+| Warden recovery | The body slumps around the contact point. The outlined marine and stun cue survive the overlap. |
+| Warden behind | The back plates give the heading and the warm pool locates the far end. The jaw-to-neck connection is partly occluded. |
+| Warden side | The near cheek has a dark edge below the prow. The collar separates the head from the near shoulder. |
+| Relay Racks shutter impact | Both native captures show the Warden at the shutter with its mark and stun indicator visible. The HEAVY37 marine is farther from contact. Encounter positions and effects differ between runs. |
+
+| Attack strip and release sheet | Review without warnings or gold recovery arcs |
+|---|---|
+| Brute | The loaded arm sits outboard and the torso leans through the three warning samples. Release reaches farthest down and forward. Recovery has a higher back, shorter reach and a hanging support arm. The skull can disappear behind the planted elbow. |
+| Elite | The same three phases separate. Its broader upper body fills more of the space between the loaded arm and the torso. The new rank shelf is easier to see in colour than black. |
+| Warden | The brace, forward thrust and slumped head separate. The compression develops more gradually than final20. Impact and charge are still close together in pure silhouette. |
+
+Native event observations use a 60 Hz step in Crew Checkpoint. Each entry gives milliseconds from encounter start for warning / release / recovery or wall impact / return to approach or end of stun.
+
+| Attack | final20 | HEAVY37 |
+|---|---|---|
+| Brute swing | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite swing | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden charge | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+
+The geometry exports the hard crown and bevel normals through the existing material. A consistently one-pixel, cool key-side rim would need shader work. The current key threshold selects facets by normal and has no screen-space width control. At small scale it sometimes leaves a dark crown and flank at almost the same display value.
+
+| Native Warden cycle sheet | Jaw, weight and player cues |
+|---|---|
+| Calm | The dark side of the jaw wraps the throat. The shoulder and back each have a broad single top. The rear of the prow meets the collar on the visible side. |
+| Charge windup | The near shoulder crown sits above a distinct dark elbow and planted fist. The charge capsule remains visible beyond the foot. |
+| Charge | The forward core and prow lead the braced limbs. The jaw-to-neck line is stronger on the outside of the turn. |
+| Wall stun | The lit core sits inside the black leading lip. The marine and stun indicator remain visible. The shoulder occludes part of the far jaw. |
+| Recovery | The maw remains forward as the torso rolls off the wall. The pool and the marine outline are legible. |
+
+The weakest frames are the regular Brute recovery (low skull behind the marine), the elite windup (horn cuts across the loaded shoulder), and Warden wall stun (the far jaw disappears at this bearing).
+
+The release sheets use compositor captures held on the first native strike tick. Direct canvas readback had returned an earlier frame on one rank and an empty frame on the other. Both ranks show the striking fist beyond the skull on the near side of the marine. In the elite release, the shelf above the planted arm reads more clearly than the elbow beneath it.
+
+The shutter sheet uses Arc because the final20 Breacher gallery has a windup capture only. The HEAVY37 Arc continuation starts from the recorded final20 Arc junction boundary, and captures the native shutter-broken event in Relay Racks. It cleared the ninth room with zero errors.
+
+The production build passed. Standard Breacher cleared all nine requested rooms on seed 1729 with fast stepping and a 180000 ms startup timeout. The [campaign report](../../artifacts/nextgen/playtest/heavy37-final-breacher/report.json) records zero errors. The runner returned exit status 1 for five room loads over five seconds. The additional Breacher impact sheet uses the final20 Arc shutter event at left and the Breacher's own shutter event at right. The marine and maw remain visible amid the Breacher effect, though the boss is nearer the top of the frame.
+
+## SKIN37
+
+The creature finish uses existing material draws. Three waves in skinned rest coordinates make shallow chitin pits, parallel limb grooves and a finer pattern on the sacs. Per-family spacing is a uniform because the K11 skeletons use different asset units. The pattern varies from .84 to 1 in linear diffuse light. Screen derivatives fade it to its mean as the pattern approaches a pixel. Atlas marks, bone and organ light keep their own finish. The key-side silhouette uses a hard grazing-angle step with a derivative-scaled width. Carrier leg ridges get an indigo pick and the forward face of the Matron sac enters its edge step sooner.
+
+The Crawler’s full raptorial claw faces carry the salmon atlas cell so the leading mark is wider than the dorsal stripe. The Spitter’s lime firing lip flares out from the narrower throat. The Stalker opens the inner edge of its right scythe at the wrist and keeps the outer cutting edge in place. A native stand envelope keeps the Stalker’s fit independent of its scythe. The Crawler retains its original claw extent. The three models ship through the K11 Blender build, model optimiser, existing 4.4.2 texture encoder and LOD packer.
+
+| Skin | Joints | Rig fingerprint | Clip fingerprint | Bind extent, final20 → integrated |
+|---|---:|---|---|---:|
+| Crawler | 46 | `a5106771e5de7166` | `5773d7205d045271` | 1.931424 |
+| Spitter | 57 | `d680757ef855e6d2` | `7ed6c55ce6bb5797` | 8.521052 |
+| Stalker | 38 | `f5d312e1089e1ba0` | `5b91424497863d14` | 3.998526 |
+| Carrier | 73 | `a9960f8e864ca52c` | `b22a85c2a1cb413b` | 18.013543 |
+| Matron | 73 | `a9960f8e864ca52c` | `b22a85c2a1cb413b` | 19.179160 |
+| Brute | 63 | `144d320c6cae75d7` | `f844c4fcb87f1d8b` | 9.216127 → 8.660892 |
+| Warden | 63 | `144d320c6cae75d7` | `f844c4fcb87f1d8b` | 8.088788 → 8.333847 |
+
+The pairwise rig and clip inventory is in `artifacts/nextgen/skin37/contracts.txt`. Sheets are in `artifacts/nextgen/skin37/sheets/`. Left is final20 and right is SKIN37. Walking strips use five consecutive 17 ms frames with final20 above SKIN37. The supplemental boots and walking references use the final20 game build in the same fixtures.
+
+The measurements below use displayed Rec.709 luma on a 0–255 scale. A matched G-buffer pass identifies the ivory marine plate and each family’s lit diffuse plane. The luma samples come from the production PNG. The integrated heavy columns use the crown step. The Warden’s hot maw, Matron’s sac marks and the wind-up outlines are outside the body sample.
+
+| P90 | Marine plate | Crawler | Spitter | Stalker | Carrier | Brute | Matron | Warden |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Swarm Junction | 181 | 111 | 87 | 58 | 55 | 89 | — | — |
+| Relay Racks | 183 | 111 | 83 | 71 | 57 | 89 | — | — |
+| Crew Checkpoint | 187 | 112 | 85 | 77 | 64 | 92 | — | — |
+| Matron calm | 195 | — | — | — | — | — | 76 | — |
+| Warden calm | 194 | — | — | — | — | — | — | 83 |
+
+The marine remains the brightest body in all three crowds. The Warden’s emissive maw can exceed his plate locally in its own encounter. This also occurs in final20. Per-room values and registered masks are in `artifacts/nextgen/skin37/planes/luma.txt` and `artifacts/nextgen/skin37/masks/`.
+
+All five brood families retain their final20 public height, posed mesh height and simulation radius to six decimals. The last two rows give the integrated HEAVY37 mesh at the same fixture time. Its public heights, contact radii and GLB rig fingerprints match final20. HEAVY37 supplies the new heavy geometry and presentation poses. Holding the outer .30 asset units of the Stalker bevel fixed preserves its raised apex as the inner edge opens. The measured values are also in `artifacts/nextgen/skin37/heights.txt`.
+
+| Family | Public height (m) | Posed height (m) | Simulation radius |
+|---|---:|---:|---:|
+| Crawler | .773644 | .997245 | 17.5 |
+| Spitter | 1.651721 | 1.586163 | 22.5 |
+| Stalker | 1.081849 | 1.516475 | 20.4 |
+| Carrier | 1.980371 | 1.798667 | 26.4 |
+| Matron | 5.295817 | 5.405493 | 46 |
+| Brute | 3.030000 | 2.950337 | 42.9 |
+| Warden | 4.500000 | 4.887294 | 64 |
+
+**Pose and crowd review.** Both scales are shown for each pose. The marks stay at least as easy to find as in final20. The reduced images show the large value planes and attack marks without a field of grain. The grooves are easiest to see across a Brute forearm. The small Crawler shell and the Carrier’s shaded feet show much less material detail. The cool rim is retained on all seven families. Its short runs can disappear into the existing silhouette ink at 480×270.
+
+| Sheet subject | Observation |
+|---|---|
+| Crawler calm | The dorsal stripe locates the animal and the salmon claw gives it a front. |
+| Crawler wind-up | Two broad salmon hooks flank the bite indicator. |
+| Spitter calm | The flared lime mouth sits between the thin forelimbs. The brighter back still competes with it. |
+| Spitter wind-up | The mouth and sightline share an axis. Red covers the centre of the lip. |
+| Stalker calm | The blue blade carries the outline. The narrow rear feet recede. |
+| Stalker wind-up | The blade stays distinct inside the white warning contour. |
+| Stalker waiting | Deck shows between the raised scythe and torso. The opening is small in the reduced frame. |
+| Carrier calm | Violet lobes sit above dark support legs. The cool pick catches the upper joints. |
+| Carrier wind-up | The extended sac, legs and two forward claws separate in profile. |
+| Matron calm | A lit top, darker front flank and short edge describe the sac. Speckle is subtle on its deepest violet. |
+| Matron wind-up | The long loaded sac retains its pink seam against the pod circles. |
+| Brute calm | Parallel forearm grooves cross broad jade planes. The bone face stays smooth. |
+| Brute wind-up | The raised arm carries its grooves into the white warning outline. |
+| Elite Brute calm | The horns remain the first rank cue above the textured forearms. |
+| Elite Brute wind-up | The loaded fists show grooves and the curved horn span remains continuous. |
+| Warden calm | The dark shoulder plates carry pits around the smooth bone prow and hot maw. |
+| Warden wind-up | The lit shoulders flank the charge core. The maw is the brightest small patch. |
+| Swarm Junction | The marine reads first. Salmon claws pick out biting Crawlers among dark violet Carriers. |
+| Relay Racks | The marine reads first. The small blue Stalker remains close in colour to the machinery. |
+| Crew Checkpoint | Five family silhouettes stay separate on the lighter deck and the marine leads in value. |
+| Ordered crowd | The loaded Crawlers have directional hooks. A Brute can still hide a nearby set of feet. |
+| Three Crawlers at the boots | Three native Crawlers surround the marine. The loaded left pair of claws reads at both scales. The right Crawler overlaps the gun. |
+
+
+| Additional proof | Observation |
+|---|---|
+| Crawler elite pair | The larger shell and rank brackets identify the elite. The forward salmon hooks separate the bite from the dorsal stripe on both animals. |
+| Spitter elite pair | The longer dorsal profile distinguishes the elite. The lime firing lips face the marine at both sizes. |
+| Stalker elite pair | The blue bevel separates the blade from the deck on both animals. The small regular retreats into the rack shadow. |
+| Carrier elite pair | The pink marks identify both sacs. Brackets and the broad crown distinguish the elite while the dark feet stay subordinate. |
+| Brute elite pair | The long bone horns distinguish the elite and the common crown and flank planes remain legible on both bodies. |
+
+| Walking strip | Five consecutive native frames |
+|---|---|
+| Brute | The grooves travel with the near forearm and pits track the crown as both lift and settle. The dark strip between two plates changes with their overlap. I saw no sliding grain or flashing speckles. |
+| Carrier | The fine sac finish stays with the violet lobe as it advances. The larger pink mark remains steadier and easier to follow than the feet. |
+
+### Heavy plate lighting
+
+The integrated Brute, elite and Warden use the HEAVY37 meshes and poses. A unit surface normal with world-up component ≥ .66 takes the crown step. The middle step requires up ≥ −.18 and upper-left key component ≥ .06. The remaining sides and undersides take the shadow step. Linear multipliers are 1.45, .64 and .17 respectively. The maximum equals the BRUTE33 edge gain. The projected width of a key-facing fold comes from the derivatives of its triangle edge coordinate. Coplanar triangles share a surface without a rim along the triangulation. The 1.5-pixel rim shares the crown ceiling.
+
+The A/B crops in `artifacts/nextgen/skin37/planes/ab-{matron,crawler}.png` put the shipping key split on the left and the up-first experiment on the right. On the Matron the up-first split adds a horizontal boundary across the near limb and broadens the cap. The key split follows the long axis of the sac. The Crawler changes little at encounter scale. All five smooth brood skins retain the FAMILY35 key.
+
+| Calm pose, display P90 | Crown HEAVY37 → SKIN37 | Key side | Shadow | Skull | Maw | Marine ivory |
+|---|---:|---:|---:|---:|---:|---:|
+| Brute | 50 → 92 | 78 → 61 | 29 → 31 | 147 → 147 | — | 195 → 195 |
+| Warden | 34 → 83 | 70 → 58 | 25 → 24 | 147 → 147 | 244 → 244 | 194 → 194 |
+
+The same registered plane masks select pixels in the HEAVY37 and SKIN37 production frames. The brighter crown in each lies below the BRUTE33 Crew Checkpoint bright edge (94) and well below the marine plate. Native size, poses and integration fingerprints are recorded in `artifacts/nextgen/skin37/planes/integrated-contracts.txt` and the per-family dimension files under `skin37/masks/`.
+
+| Three-column sheet in `skin37/sheets/planes-*` | Native and 480×270 observations |
+|---|---|
+| lineup-colour | The jade tops and vertical walls separate on all three heavies. The Warden’s dark underside carries the jaw. The marine’s ivory exceeds every jade plane. |
+| cycle-calm | Several stepped crowns can be counted behind the prow. The far wall is dark and the near wall catches the key. The hot mouth remains the brightest point. |
+| cycle-charge-windup | The leading crown and two shoulder tops make a staggered row into the capsule. The near elbow is darker and the dark underside separates the arm from the chest. |
+| brute-windup | The loaded arm shows a crown and a shaded inner wall beside the skull. The pale attack contour and marine plate remain brighter. |
+| brute-release | The extended fist shows a light upper surface and dark end cap. The supporting arm remains separate. The marine reads through the overlap. |
+| brute-recovery | The dorsal top remains legible above the long shadow flank. The marine and gun cover much of the low skull. |
+| swarm-junction | Separate tops and dark walls survive on the two forward Brutes. The smallest distant arm reads as two values. The marine remains the brightest body in the pack. |
+
+The three weakest frames are Brute recovery (the weapon obscures the low skull), the waiting Stalker at 480×270 (only a narrow deck gap survives) and the three-Crawler boots frame (the right-hand bite end overlaps the marine’s gun).
+
+### Desktop run
+
+Crew Checkpoint, Pyro, fixed resolution, 300 simulation ticks per tier. The three columns within each measurement are final20 / HEAVY37 / integrated SKIN37. CPU submit is the benchmark’s render-submission time, measured on the shared host.
+
+| Tier | Draws, median | Draws, peak | Combat shader compiles | CPU submit median (ms) | CPU submit P95 (ms) |
+|---|---|---|---|---|---|
+| High | 134 / 134 / 134 | 144 / 144 / 144 | 0 / 0 / 0 | 10.2 / 7.5 / 7.7 | 59.5 / 66.5 / 159.7 |
+| Low | 124 / 124 / 124 | 131 / 131 / 131 | 0 / 0 / 0 | 7.6 / 6.7 / 7.0 | 10.2 / 38.5 / 108.6 |
+
+HEAVY37 and SKIN37 also match on minimum, P95 and mean draw calls for both tiers. Compared with final20, their means are higher by one draw across 37 samples. The integrated P95 submit time increased on both tiers. The captures and campaign shared the machine during the run, so these timings include host contention. Reports are in `artifacts/nextgen/{skin37-fixed-before,skin37-heavy-control,skin37-integrated}/benchmark.json`.
+
+The final production build passed. Arc, seed 1729, cleared all eight rooms with zero errors and zero runner defects in the isolated replay (`artifacts/nextgen/playtest/skin37-solo-arc/report.json`). An earlier replay during the gallery captures also cleared eight rooms with zero runtime errors, but recorded slow room preparation in Passenger Vault and Residential Gallery. The review index links all 37 native sheets and all 35 reduced sheets. The two motion strips are native only.

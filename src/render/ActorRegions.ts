@@ -12,6 +12,51 @@ function boneRegion(name: string): number {
   return ACTOR_REGIONS.torso;
 }
 
+/** Barycentric edge distances on the heavy carapace. Only outer borders and
+ * real folds get a zero edge. Coplanar triangulation stays invisible. */
+/** Per-triangle edge coordinates for hard carapace folds. A constant one
+ * suppresses the rim across coplanar triangles and non-plate atlas cells. */
+function authorPlateEdges(geometry: T.BufferGeometry) {
+  const position = geometry.getAttribute('position');
+  const uv = geometry.getAttribute('uv');
+  const values = new Uint8Array(position.count * 3).fill(255);
+  const edges = new Map<string, { face: number; opposite: number; normal: T.Vector3 }>();
+  const a = new T.Vector3(), b = new T.Vector3(), c = new T.Vector3();
+  function expose(face: number, opposite: number) {
+    for (let corner = 0; corner < 3; corner++) {
+      if (corner !== opposite) values[(face + corner) * 3 + opposite] = 0;
+    }
+  }
+  for (let face = 0; face < position.count; face += 3) {
+    const cell = Math.floor(uv.getX(face) * 4) + 4 * (3 - Math.floor(uv.getY(face) * 4));
+    if (cell !== 6) continue;
+    a.fromBufferAttribute(position, face);
+    b.fromBufferAttribute(position, face + 1);
+    c.fromBufferAttribute(position, face + 2);
+    const keys = [a, b, c].map(v => [v.x, v.y, v.z].map(n => Math.round(n * 10000)).join(','));
+    // The heavy skin stores Z compressed by 1.8 in the bind mesh.
+    b.sub(a); c.sub(a);
+    b.z *= 1.8; c.z *= 1.8;
+    const normal = b.cross(c).normalize().clone();
+    for (let opposite = 0; opposite < 3; opposite++) {
+      const x = keys[(opposite + 1) % 3], y = keys[(opposite + 2) % 3];
+      const key = x < y ? x + '|' + y : y + '|' + x;
+      const other = edges.get(key);
+      if (!other) {
+        edges.set(key, { face, opposite, normal });
+        continue;
+      }
+      if (normal.dot(other.normal) < .78) {
+        expose(face, opposite);
+        expose(other.face, other.opposite);
+      }
+      edges.delete(key);
+    }
+  }
+  for (const edge of edges.values()) expose(edge.face, edge.opposite);
+  geometry.setAttribute('plateEdge', new T.Uint8BufferAttribute(values, 3, true));
+}
+
 /** Author once on asset templates before skin batching; clones share the prepared buffers. */
 export function authorActorRegions(root: T.Object3D, human: boolean): void {
   root.traverse(object => {
@@ -41,6 +86,7 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
       }
       regions.fill(region, triangle, Math.min(triangle + 3, count));
     }
+    if(/^k11-brute-/.test(object.name))authorPlateEdges(geometry);
     geometry.setAttribute('actorRegion', new T.BufferAttribute(regions, 1));
     // Reindex equal vertices including region: only seam vertices stay split.
     object.geometry = source.index ? mergeVertices(geometry,1e-6) : geometry;
