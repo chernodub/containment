@@ -420,13 +420,13 @@ export const SCENARIOS=[
   g.hurt(40,{x:g.player.x-80,y:g.player.y},{source:'enemy-contact',enemyFamily:'stalker'});
   d.refresh();
  }},
- {id:'play21-supply',state:'reward',phase:'reward',nativeKeys:[['Tab',0],['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async()=>{
+ ...[180,0].map(credits=>({id:credits?'play21-supply':'play21-supply-empty',setupArgument:credits,state:'reward',phase:'reward',nativeKeys:credits?[['Tab',0],['Tab',0]]:[['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async credits=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
   const g=d.game;
   g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'plate-breaker',junctions:{3:'direct'}}};
-  g.combat.setCredits(180);d.refresh();
- }},
+  g.combat.setCredits(credits);d.refresh();
+ }})),
  {id:'play21-self-blast',state:'playing',room:'passenger-vault',setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('passenger-vault',{rig:'breacher'});
