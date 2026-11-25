@@ -182,3 +182,55 @@ The production build passed. The [uninterrupted standard Arc campaign](../../art
 An earlier [seed-1729 Arc run](../../artifacts/nextgen/playtest/room29-delivery-arc/report.json) cleared 16 rooms before crawler contact killed the marine in Shielding Gate. The [checkpoint continuation](../../artifacts/nextgen/playtest/room29-arc-continued/report.json) replayed from the recorded Swarm Junction reward with the earned resources. It finished Overload Floor with 20 rooms cleared and zero runtime errors. Across both legs the runner recorded loading delays above five seconds in Passenger Vault, Residential Gallery and Manual Control Chamber. Those defects produced a nonzero runner exit even on completion.
 
 The [capture inventory](../../artifacts/nextgen/room29/captures.json) records the selected source for each of the 80 frames. Six machines received per-part cutaways after the first kiting review. Their four views were recaptured on 281c9456. The gallery retains the identical-room views from the preceding renderer build for the other fourteen rooms.
+
+## ROOM30
+
+The repeated berth, bay, stop and isolation lettering has been removed from the fighting deck. Each room retains one registration at the exit shoulder. Its artwork is 8 px high and uses a 10% multiply over the floor, equivalent to about 3–4% darkening before lighting. The outlines, rails and other non-text inlays still follow the clipped deck. Swarm Junction has shed shells near the infested pipe. Its repeated black open-lane tendrils have been removed.
+
+Freight’s restraint has torn at the buckle. Two runner scrapes lead to the cradle, and the filters in the crate window match the filters loose on the floor. Diagnostic’s missing bed rail lies across the caster trail. A rumpled sheet and a fallen five-footed drip stand sit beside the cradle. Transmission’s stripped feed exposes three conductors beside a flat reel and hooded inspection lamp.
+
+The inspection lamps at Crew Checkpoint, Shielding Gate and Transmission Chamber sit on the fallen queue post, detached gate tongue and cable reel respectively. In ship-plan coordinates the lamp centres are (509, 480), (761, 441) and (776, 578), respectively. Their distances from the authored arena centres are 2.23 m, 2.16 m and 2.44 m. The three fittings reach approximately 0.16 m, 0.21 m and 0.32 m above the deck. The fallen drip pole lies on its side, and its caster feet sit close to the floor. The hull caps now have a 0.24 m inner fascia beneath their lit top edge. The lane marks and lamp pools share the existing clipped deck draw at 0.0214 m. Fixed fittings use the existing room batches. On Overload Floor the insulated copper shoes follow the sheltered bank selected by the game, including after activation.
+
+### Production measurements
+
+Peak draws in one ten-second Arc run per cell are below. The previous build was local nextgen at 58de1ddf. The ROOM30 release was e26f2dca. Both benchmark runs recorded zero errors and zero combat shader compiles across all four cells. [Previous receipt](../../artifacts/nextgen/room30-before/benchmark.json) · [ROOM30 receipt](../../artifacts/nextgen/room30-final/benchmark.json)
+
+| Room | Tier | Previous | ROOM30 | Combat compiles |
+|---|---|---:|---:|---:|
+| Safety Interlock Station | High | 288 | 291 | 0 |
+| Safety Interlock Station | Low | 284 | 248 | 0 |
+| Transmission Chamber | High | 170 | 161 | 0 |
+| Transmission Chamber | Low | 158 | 148 | 0 |
+
+### Kiting review
+
+I compared final20 on the left and ROOM30 on the right, using the full frame at 480 × 270 and native-size details around the arena. I ignored all lettering to judge identity. The label count covers readable text or numerals painted on the deck. The HUD, wall signs and machine displays are excluded. “Harder” means the marine, a creature’s bright mark or a visible red warning took longer to find than in final20. These are observations from one staged fight per room.
+
+| Room | Named without labels? | Physical consequence in the lane | Legible deck labels | Harder? |
+|---|---|---|---:|---|
+| Awakening Bay | Yes | A pleated thaw liner lies in meltwater beneath the opened pod row. | 0 | No |
+| Passenger Vault | Yes | A scarf and separated shoes spill out beside the evacuation berths. | 0 | No |
+| Residential Gallery | Yes | Broken crockery and a tea spill sit beneath the tipped serving trolley. | 0 | No |
+| Communal Atrium | No | Spilled soil and detached leaves reach the irrigation fitting. At small size the leaves look like flakes. | 0 | No |
+| Crew Checkpoint | Yes | A queue post has fallen across its webbing below the scanner. Its little lamp catches the weighted foot. | 0 | No |
+| Armory | Yes | Loose cartridges scatter beyond the last linked round in the feed belt. | 0 | No |
+| Freight Hold | Yes | Two runner skids end at the cradle. A torn strap and loose filters cross the near lane. | 0 | No |
+| Breached Loading Bay | Yes | A split plate lifts along the fracture. Frost traces the bend toward the torn hull. | 0 | No |
+| Relay Racks | Yes | A broken cable comb trails bent copper contacts from the open rack trench. | 0 | No |
+| Transmission Chamber | Yes | A burnt channel leads to a severed feed and lit reel. The dish makes the identification at reduced size. | 0 | No |
+| Diagnostic Gallery | Yes | A snapped bed rail crosses a caster track beside the stripped cradle and fallen drip stand. | 0 | No |
+| Safety Interlock Station | No | A forked switch contact lies among porcelain chips. The loose contact could be a wrench. | 0 | No |
+| Coolant Plant | Yes | Runoff fans out from the header with a pale frost margin and a narrow reflection. | 0 | No |
+| Service Shaft Landing | Yes | A frayed sling curls across the deck beside the sheave and winch. | 0 | No |
+| Infested Workshop | Yes | Impeller fragments and curled swarf sit in front of the invaded bench. The vise and tool outlines carry at small size. | 0 | No |
+| Swarm Junction | Yes | Shed shell halves follow the pipe elbow out of the ribbed nest. | 0 | No |
+| Shielding Gate | Yes | A detached tooth and pin lie across scraped track slots below a surviving gate segment. | 0 | No |
+| Containment Annulus | Yes | A peeled gasket follows the concentric apron toward the breached seal. | 0 | No |
+| Manual Control Chamber | No | A keyed plug and trailing lanyard lead back to the reader. In the kiting view the assembly could still be a relay console. | 0 | No |
+| Overload Floor | Yes | A buckled bus and fragments of insulation follow the scorched feed from the reactor. | 0 | No |
+
+The weakest three are Communal Atrium, Safety Interlock Station and Manual Control Chamber. The leaf silhouettes, broken switch contact and keyed reader each convey a local accident, but I needed more context to identify those rooms in the reduced kiting view.
+
+[Colour and greyscale sheets and all previous/current pairs](../../artifacts/nextgen/room30/index.html) · [Sheltered bank during selection](../../artifacts/nextgen/room30-bank/play27-covered-bank-overload-floor.png)
+
+The production build passed. On Standard, the uninterrupted Arc campaign with seed 1729 cleared all twenty rooms and recorded zero errors and zero defects. All four capture manifests completed on e26f2dca with twenty frames apiece and zero failures. The gallery contains 80 original captures, 160 final20/current pairs and eight colour or greyscale contact sheets. [Arc campaign receipt](../../artifacts/nextgen/room30/arc-report.json) · [Capture inventory](../../artifacts/nextgen/room30/captures.json)
