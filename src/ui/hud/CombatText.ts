@@ -311,7 +311,7 @@ export class CombatText {
             // preserves each total while preventing cross-target text piles.
             const originX = x, originY = y;
             let placed = false;
-            for (let attempt = 0; attempt < (attacker ? 1 : 9); attempt++) {
+            for (let attempt = 0; attempt < (attacker && p.kind !== 'banked' ? 1 : 9); attempt++) {
                 const row = Math.floor((attempt + 1) / 3);
                 const side = attempt % 3;
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
