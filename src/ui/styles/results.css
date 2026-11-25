@@ -134,3 +134,11 @@
 .exchange-attack text { fill: currentColor; paint-order: stroke; stroke: #122027; stroke-width: 4; font: 600 19px var(--font-body); text-anchor: middle; }
 .exchange-exit { fill: none; stroke: #b5ffcb; stroke-width: 3; stroke-dasharray: 5 4; }
 .exchange-marine { fill: white; stroke: #14222b; stroke-width: 2; }
+
+#overlay .result-actions > aside.retry-lesson {
+  flex: 0 1 340px;
+  gap: 10px;
+  font-size: 14px;
+}
+#overlay .result-actions .retry-lesson-art { width: 120px; }
+#overlay .result-actions .retry-lesson p { margin: 0; }
