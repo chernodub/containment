@@ -444,7 +444,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const novice = profile === 'novice';
       const hasAmmo = id => ammo[id].magazine + ammo[id].reserve > 0;
       const lessonTarget = novice&&s.node?.templateId!=='passenger-vault' ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
-      const platedTarget = ammo&&hasAmmo('plasma')&&(lessonTarget||!novice) ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+      const platedTarget = ammo&&hasAmmo('plasma')&&(lessonTarget||!novice) ? lessonTarget??visible.filter(e=>(e.plasmaClear??e.clear)&&e.armor>0&&distance(e,s.player)<430)
         .sort((a,b)=>distance(a,s.player)-distance(b,s.player))[0] : undefined;
       if(platedTarget&&!plasmaAttempts.has(platedTarget.id)&&ammo.plasma.magazine>0&&!s.reloadingWeapons?.includes('plasma')){
         plasmaAttempts.add(platedTarget.id);

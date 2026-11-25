@@ -112,11 +112,11 @@ export type EnemySpawnRequestEvent = Readonly<{pod?:boolean;hatchMs?:number;beat
 }>;
 
 export type MeleeWarningEvent = Readonly<{type:'melee-warning';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape;durationMs:number}>;
-export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape}>;
+export type MeleeStrikeEvent = Readonly<{type:'melee-strike';arrivalSwing?:true;enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape}>;
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
-  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger'|'arrival-recovery';enemyId:number;x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -195,8 +195,9 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
+  commitmentDeniedAt?: number;
   feintMs?: number;
   braceMs?: number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
@@ -357,7 +358,7 @@ export class EnemySystem {
   moveBy(id:number,dx:number,dy:number,cancelAttack=true):{blocked:boolean} {
     this.#cachedSnapshot=null;
     const enemy=this.#enemies.get(id);
-    if(!enemy||!Number.isFinite(dx)||!Number.isFinite(dy))return {blocked:true};
+    if(!enemy||enemy.arrivalSwing||!Number.isFinite(dx)||!Number.isFinite(dy))return {blocked:true};
     if(cancelAttack&&(dx!==0||dy!==0))this.#cancelMelee(enemy);
     const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/8));
     if(steps>128)return {blocked:true};
@@ -372,7 +373,7 @@ export class EnemySystem {
   setSlow(id:number,multiplier:number):void {
     this.#cachedSnapshot=null;
     const enemy=this.#enemies.get(id);
-    if(enemy&&Number.isFinite(multiplier)){enemy.slowMultiplier=Math.max(0,Math.min(1,multiplier));enemy.speed=enemy.pod?0:enemy.baseSpeed*enemy.slowMultiplier;enemy.decisionCooldownRemainingMs=0;if(enemy.speed===0){enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}}
+    if(enemy&&!enemy.arrivalSwing&&Number.isFinite(multiplier)){enemy.slowMultiplier=Math.max(0,Math.min(1,multiplier));enemy.speed=enemy.pod?0:enemy.baseSpeed*enemy.slowMultiplier;enemy.decisionCooldownRemainingMs=0;if(enemy.speed===0){enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}}
   }
 
   spawn(type: StandardEnemyId, x: number, y: number, elite = false,options:EnemySpawnOptions={}): SpawnResult {
@@ -494,7 +495,7 @@ export class EnemySystem {
         else if(enemy.specialCooldownMs===0&&this.activeCount+this.reservedCount<MAX_ACTIVE_ENEMIES-2){enemy.broodRemainingMs=1000;enemy.broodDamage=0;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:'carrier',x:enemy.x,y:enemy.y,targetX:enemy.x,targetY:enemy.y,durationMs:1000}));}
       }
       if(enemy.speed===0||this.#launched?.(enemy.id))this.#cancelMelee(enemy);
-      if(enemy.meleePhase!=='approach'&&!enemy.attackSlot)this.#cancelMelee(enemy);
+      if(enemy.meleePhase!=='approach'&&!enemy.attackSlot&&!enemy.arrivalSwing)this.#cancelMelee(enemy);
 
       // Control overlaps owed melee rest on the hostile clock; it does not add
       // another grace period after thaw. Legacy clocks remain suspended below.
@@ -584,7 +585,7 @@ export class EnemySystem {
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
-    if (!enemy || !Number.isFinite(amount) || amount <= 0) {
+    if (!enemy || enemy.arrivalSwing || !Number.isFinite(amount) || amount <= 0) {
       return this.#damageResult(false, 0, 0, false, { x: 0, y: 0 }, []);
     }
 
@@ -671,7 +672,7 @@ export class EnemySystem {
 
   stagger(id:number,durationMs:number):void {
     const enemy=this.#enemies.get(id);
-    if(!enemy)return;
+    if(!enemy||enemy.arrivalSwing)return;
     this.#cachedSnapshot=null;
     this.#cancelMelee(enemy);
     enemy.stunRemainingMs=Math.max(enemy.stunRemainingMs,durationMs);
@@ -800,6 +801,12 @@ export class EnemySystem {
     enemy.camouflageRemainingMs -= remainingDelta;
   }
 
+  #permitsAttack(enemy:EnemyState,player:EnemyPlayerState,attack:'melee'|'ranged'|'charge',attempting=false){
+    if(this.#canCommit?.(enemy,player,this.#enemies.values(),attack,attempting)!==false)return true;
+    enemy.commitmentDeniedAt??=this.#readyTimeMs;
+    return this.#readyTimeMs-enemy.commitmentDeniedAt>=3000;
+  }
+
   #decide(enemy: EnemyState, player: EnemyPlayerState): void {
     if(enemy.speed===0||enemy.stunRemainingMs>0||enemy.pod||enemy.broodRemainingMs>0||enemy.windupMs>0||enemy.meleePhase!=='approach'){enemy.velocityX=enemy.velocityY=0;return;}
     if(enemy.chargeMs>0){const d=normalized(enemy.lockX,enemy.lockY);enemy.velocityX=d.x*ENEMY_ATTACK_SHAPES.chargeSpeed*this.#movement;enemy.velocityY=d.y*ENEMY_ATTACK_SHAPES.chargeSpeed*this.#movement;return;}
@@ -863,7 +870,7 @@ export class EnemySystem {
     if(engagementGoal){targetX=engagementGoal.x;targetY=engagementGoal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);}
 
     const attackKind=enemy.type==='spitter'?'ranged':'melee';
-    const waiting=!enemy.champion&&this.#canCommit?.(enemy,player,this.#enemies.values(),attackKind)===false;
+    const waiting=!enemy.champion&&!this.#permitsAttack(enemy,player,attackKind);
     const sight=(point:EnemyPlayerState)=>this.#canAttack?.({...point,type:enemy.type},player)!==false;
     if(!enemy.champion&&!sight(enemy)||waiting){
       const radius=enemy.type==='spitter'?SPITTER_MIN_RANGE+enemy.radius:enemy.type==='carrier'?170:
@@ -1161,7 +1168,7 @@ export class EnemySystem {
   #holdReadyContact(enemy:EnemyState,player:EnemyPlayerState):void {
     if(enemy.meleePhase!=='approach'||enemy.windupMs>0||enemy.chargeMs>0||!enemy.attackSlot||enemy.contactCooldownRemainingMs>0||this.#meleeStartGapMs>0)return;
     const profile=MELEE_ATTACKS[enemy.type];
-    if(this.#canCommit?.(enemy,player,this.#enemies.values(),'melee')===false)return;
+    if(!this.#permitsAttack(enemy,player,'melee'))return;
     if((profile.heavy?this.#heavyMeleeActive>=1:this.#smallMeleeActive>=this.#windups)||Math.hypot(enemy.x-player.x,enemy.y-player.y)>enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)+.5||this.#canAttack?.(enemy,player)===false)return;
     enemy.targetX=enemy.x;enemy.targetY=enemy.y;enemy.velocityX=enemy.velocityY=0;
     enemy.yieldMs=0;enemy.decisionCooldownRemainingMs=0;
@@ -1175,8 +1182,32 @@ export class EnemySystem {
   }
 
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
+  beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
+    const enemy=this.#enemies.get(id);
+    if(!enemy||enemy.type!=='brute')return [];
+    enemy.arrivalSwing=true;
+    enemy.meleePhase='windup';
+    enemy.meleeFacingLocked=true;
+    enemy.meleeRemainingMs=enemy.meleeDurationMs=this.#meleeWindup(enemy);
+    this.#aimMelee(enemy,player,true);
+    enemy.attackSlot=Object.freeze({angle:enemy.meleeAngle+Math.PI,radius:enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)});
+    this.#cachedSnapshot=null;
+    return [this.#meleeWarning(enemy)];
+  }
+
+  #meleeWindup(enemy:EnemyState){
+    return MELEE_ATTACKS[enemy.type].windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*
+      (enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);
+  }
+
+  #meleeWarning(enemy:EnemyState):EnemyEvent{
+    return freezeEvent({type:'melee-warning',enemyId:enemy.id,enemyType:enemy.type,
+      x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,
+      shape:enemy.meleeShape,durationMs:enemy.meleeDurationMs});
+  }
+
   #cancelMelee(enemy:EnemyState):void {
-    if(enemy.meleePhase==='approach')return;
+    if(enemy.meleePhase==='approach'||enemy.arrivalSwing)return;
     // Control releases the berth immediately. A resolved hit still owes its
     // remaining strike/recovery and full rest, without replaying that strike.
     const profile=MELEE_ATTACKS[enemy.type];
@@ -1214,16 +1245,18 @@ export class EnemySystem {
       enemy.meleeProgress=enemy.meleeDurationMs?Math.min(1,1-enemy.meleeRemainingMs/enemy.meleeDurationMs):1;
       if(enemy.meleeRemainingMs>0)break;
       if(enemy.meleePhase==='windup'){
-        if(this.#meleeStrikeGapMs>0){enemy.meleeRemainingMs=this.#meleeStrikeGapMs;break;}
+        if(this.#meleeStrikeGapMs>0&&!enemy.arrivalSwing){enemy.meleeRemainingMs=this.#meleeStrikeGapMs;break;}
         this.#meleeStrikeGapMs=450;
         enemy.meleePhase='strike';enemy.meleeProgress=0;enemy.meleeFacingLocked=true;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
-        events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
+        events.push(freezeEvent({type:'melee-strike',arrivalSwing:enemy.arrivalSwing,enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
         if(enemy.meleeConnected){
           events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
+        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+        enemy.arrivalSwing=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         enemy.recoveryPunished=false;
@@ -1248,23 +1281,24 @@ export class EnemySystem {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     const playerRadius = player.radius ?? DEFAULT_PLAYER_RADIUS;
     if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#meleeStartGapMs>0)return;
-    if(enemy.openingVolley){if(this.#canCommit?.(enemy,player,this.#enemies.values(),'ranged')===false)return;const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
+    if(enemy.openingVolley){if(!this.#permitsAttack(enemy,player,'ranged'))return;const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
-     if(this.#canCommit?.(enemy,player,this.#enemies.values(),'charge')===false)return;
+     if(!this.#permitsAttack(enemy,player,'charge'))return;
      if(enemy.firstWardenCharge&&distance>240)return;
      const openingAim=enemy.firstWardenCharge?this.#wardenOpeningAim?.(enemy,player):undefined;
      if(enemy.firstWardenCharge&&!openingAim&&distance>200)return;
      const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
-     const aim=openingAim??player;enemy.firstWardenCharge=undefined;
+     const aim=openingAim??player;enemy.firstWardenCharge=undefined;enemy.commitmentDeniedAt=undefined;
      this.#meleeStartGapMs=250;enemy.chargeHit=false;enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=aim.x-enemy.x;enemy.lockY=aim.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:aim.x,targetY:aim.y,durationMs:windup}));return;
     }
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false&&this.#canCommit?.(enemy,player,this.#enemies.values(),'melee',true)!==false){
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false&&this.#permitsAttack(enemy,player,'melee',true)){
+      enemy.commitmentDeniedAt=undefined;
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);
-      enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);
+      enemy.meleeDurationMs=enemy.meleeRemainingMs=this.#meleeWindup(enemy);
       for(const other of this.#enemies.values())if(other!==enemy&&other.meleePhase==='windup')
         enemy.meleeRemainingMs=Math.max(enemy.meleeRemainingMs,other.meleeRemainingMs+450);
       enemy.meleeDurationMs=enemy.meleeRemainingMs;
@@ -1272,7 +1306,7 @@ export class EnemySystem {
       enemy.contactCooldownRemainingMs=0;enemy.velocityX=enemy.velocityY=0;enemy.yieldMs=0;enemy.blockedMs=0;
       this.#meleeStartGapMs=250;
       if(melee.heavy)this.#heavyMeleeActive++;else this.#smallMeleeActive++;
-      events.push(freezeEvent({type:'melee-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape,durationMs:enemy.meleeDurationMs}));
+      events.push(this.#meleeWarning(enemy));
       return;
     }
 
@@ -1282,7 +1316,7 @@ export class EnemySystem {
       distance <= SPITTER_ATTACK_MAX_RANGE &&
       enemy.rangedCooldownRemainingMs === 0 && this.#canAttack?.(enemy,player)!==false
     ) {
-      if(this.#canCommit&& !this.#canCommit(enemy,player,this.#enemies.values(),'ranged'))return;
+      if(!this.#permitsAttack(enemy,player,'ranged'))return;
       if(this.#balance.specials||this.#canCommit){this.#windUpSpit(enemy,player,events);return;}
       events.push(
         freezeEvent({
@@ -1309,6 +1343,7 @@ export class EnemySystem {
   }
 
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
+    enemy.commitmentDeniedAt=undefined;
     this.#meleeStartGapMs=250;
     enemy.windupMs=this.#spitWindupMs;
     enemy.pendingAttack='spit';
