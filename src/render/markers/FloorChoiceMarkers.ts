@@ -18,7 +18,11 @@ export class FloorChoiceMarkers {
  });
  private readonly coverGlyphGeometry=new T.CircleGeometry(.48,6);
  private readonly coverGlyph=new T.Mesh(this.coverGlyphGeometry,this.materials[1]);
+ private readonly shutterGeometry=new T.BoxGeometry(1,1,1);
+ private readonly shutterMaterial=new T.MeshStandardMaterial({color:0x74513a,emissive:0xe78338,emissiveIntensity:.55});
+ private readonly shutterPanels=[new T.Mesh(this.shutterGeometry,this.shutterMaterial),new T.Mesh(this.shutterGeometry,this.shutterMaterial)];
  constructor(){
+  this.root.add(...this.shutterPanels);
   this.coverGlyph.rotation.x=-Math.PI/2;
   this.coverGlyph.visible=false;
   this.root.add(this.coverGlyph);
@@ -36,7 +40,13 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutter']){
+  this.shutterPanels.forEach((panel,index)=>{
+   panel.visible=!!shutter;
+   if(!shutter)return;
+   panel.position.set((shutter.x+shutter.width/2)/unit,index===0?.28:1.04,(shutter.y+shutter.height/2)/unit);
+   panel.scale.set(shutter.width/unit,index===0?.56:.48,shutter.height/unit);
+  });
   const covered=choices.find(choice=>choice.kind==='bank'&&choice.id==='1')??(siege?.selectedBank==='far'?siege:undefined);
   this.coverGlyph.visible=!!covered;
   if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
@@ -67,10 +77,10 @@ export class FloorChoiceMarkers {
    mesh.visible=!!choice;
    if(!choice)return;
    mesh.geometry=choice.kind==='failed-bank'?this.failedGeometry:this.geometry;
-   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.id==='0'?0:1];
+   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.kind==='reserve'||choice.id==='0'?0:1];
    mesh.position.set(choice.x/unit,.04,choice.y/unit);
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.coverGlyphGeometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }

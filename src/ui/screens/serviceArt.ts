@@ -3,6 +3,6 @@ import '../styles/requisition.css';
 import {studioImage} from '../studioArt';
 
 export function serviceArt(service: ServiceId): string {
-  const id = service === 'route-ammo' ? 'ammo' : service;
+  const id = service === 'route-ammo' ? 'ammo' : service === 'rig-return' ? 'upgrade' : service;
   return studioImage(`service-${id}`, 'service-illustration', 560, 224);
 }

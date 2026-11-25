@@ -65,6 +65,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge')=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
+  chargeObstacle?: (enemyId:number, from: {x:number;y:number}, to: {x:number;y:number}, radius:number) => boolean;
   canMove?: (context: CollisionSteeringContext) => boolean;
 }>;
 
@@ -269,6 +270,7 @@ export class EnemySystem {
   readonly #spatialHash = new SpatialHash<SpatialEnemy>(96);
   readonly #spatialEnemies = new Map<number, SpatialEnemy>();
   readonly #listeners = new Set<(event: EnemyEvent) => void>();
+  readonly #chargeObstacle?: EnemySystemOptions['chargeObstacle'];
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
   readonly #canCommit?: EnemySystemOptions['canCommit'];
@@ -311,6 +313,7 @@ export class EnemySystem {
     this.#canCommit=options.canCommit;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
+    this.#chargeObstacle=options.chargeObstacle;
     this.#canMove = options.canMove;
     this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
     this.#route = options.route;this.#canAttack=options.canAttack;this.#balance=options.balance??{health:1,damage:1,speed:1,eliteHealth:2,eliteDamage:2,specials:false};
@@ -1100,7 +1103,9 @@ export class EnemySystem {
     }else this.#slide.delete(enemy.id);
     if (movementX === 0 && movementY === 0) return;
 
-    if(enemy.champion==='warden'&&enemy.chargeMs>0&&!this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY)){enemy.wallStunAngle=Math.atan2(movementY,movementX);enemy.chargeMs=0;enemy.stunRemainingMs=WARDEN_WALL_STUN_MS;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
+    if(enemy.champion==='warden'&&enemy.chargeMs>0&&(
+      this.#chargeObstacle?.(enemy.id,enemy,{x:enemy.x+movementX,y:enemy.y+movementY},enemy.radius)||
+      !this.#movementAllowed(enemy,enemy.x+movementX,enemy.y+movementY))){enemy.wallStunAngle=Math.atan2(movementY,movementX);enemy.chargeMs=0;enemy.stunRemainingMs=WARDEN_WALL_STUN_MS;enemy.specialCooldownMs=5000;enemy.velocityX=enemy.velocityY=0;this.#cancelMelee(enemy);return;}
     const candidates = [
       { x: enemy.x + movementX, y: enemy.y + movementY },
       { x: enemy.x + movementX, y: enemy.y },

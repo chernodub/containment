@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;approachLeadMs?:number;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -38,7 +38,7 @@ export const PINCER_WINDOW_MS = 14000;
 
 export type EncounterSnapshot = Readonly<{
   phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
-  pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
+  reserve?: {breachId:string;remainingMs:number;leader:'Spitter'|'Brute'}; pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
 import {GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,type GuardianRoute} from "../roguelike/economy";
@@ -90,6 +90,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
+ const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
+ const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
@@ -122,7 +124,34 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
-  const sorted=schedule.splice(start).sort((a,b)=>a.atMs-b.atMs);schedule.push(...sorted);
+  const arrivals=schedule.splice(start);
+  if(node.templateId==='service-shaft-landing'&&beatIndex===0&&
+    arrivals[0]?.enemyId==='stalker'&&arrivals[1]?.enemyId==='stalker'){
+   const early=arrivals[0].atMs+100;
+   arrivals[1]=Object.freeze({...arrivals[1],atMs:early,approachLeadMs:arrivals[1].atMs-early+250});
+  }
+  if(beatIndex===reserveBeat){
+   const leader=arrivals.findIndex(request=>request.enemyId===reserveLeader);
+   const screen=arrivals.filter((request,index)=>index!==leader&&
+     request.role===(reserveLeader==='spitter'?'screen':'flanker'));
+   const reserve=screen.slice(-Math.ceil(screen.length/3));
+   if(leader>=0&&reserve.length){
+    arrivals[leader]=Object.freeze({...arrivals[leader],priority:true});
+    reserve.forEach((request,index)=>{
+     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,reinforcement:true,reserve:true,
+      breachId:reserve[0].breachId,atMs:9500+index*650});
+    });
+   }
+  }
+  if(node.templateId==='relay-racks'&&arrivals.some(request=>request.guardian==='warden')){
+   const escort=arrivals.findIndex(request=>request.enemyId==='crawler');
+   if(escort>=0){
+    const warden=arrivals.find(request=>request.guardian==='warden')!;
+    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:'spitter',role:'ranged',
+      atMs:warden.atMs+450,reinforcement:false,shutterSpitter:true});
+   }
+  }
+  schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
@@ -199,6 +228,7 @@ const events = (...values: EncounterEvent[]): readonly EncounterEvent[] => Objec
  */
 export class EncounterDirector {
   readonly plan: EncounterPlan;
+  readonly returnShotBeat: number;
   private readonly pincerFlanks = new Map<number, readonly EncounterSpawn[]>();
   private readonly breaches:readonly {id:string;x:number;y:number}[];
   private holdUntilMs=0;
@@ -219,8 +249,14 @@ export class EncounterDirector {
 
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
-    this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.plan = createEncounterPlan(options);
+    this.returnShotBeat=options.node.templateId==='communal-atrium'&&options.difficulty!=='veteran'
+      ? this.plan.beats?.findIndex(beat=>{
+        const arrivals=this.plan.schedule.slice(beat.start,beat.end);
+        return arrivals.some(enemy=>enemy.enemyId==='brute'&&enemy.role==='anchor')&&
+          arrivals.some(enemy=>enemy.enemyId==='crawler'||enemy.enemyId==='stalker'||enemy.enemyId==='spitter');
+      })??-1 : -1;
+    this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.holdUntilMs=options.holdUntilMs??0;
     this.breaches=options.breaches??[];
     this.plan.beats?.forEach((beat,index)=>{
@@ -258,7 +294,13 @@ export class EncounterDirector {
       elapsedMs: this.beatElapsedMs,
       flankers,
     } : undefined;
-    return Object.freeze({ pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
+    const beat=this.plan.beats?.[this.beatIndex];
+    const nextReserve=beat&&!this.defusedBeats.has(this.beatIndex)
+      ?this.plan.schedule.slice(this.dispatched,beat.end).find(request=>request.reserve):undefined;
+    const reserve=nextReserve?{breachId:nextReserve.breachId,
+      remainingMs:Math.max(0,nextReserve.atMs-this.beatElapsedMs),
+      leader:beat?.grammar==='crossfire'?'Spitter' as const:'Brute' as const}:undefined;
+    return Object.freeze({ reserve, pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
       remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,beatRemaining:Math.max(0,(this.plan.beats[this.beatIndex]?.end??this.dispatched)-this.dispatched),grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
   }
 
@@ -354,7 +396,7 @@ export class EncounterDirector {
         if(!heavyRecovered&&occupiedCount>0)break;
         this.rehearsalReleaseMs=this.beatElapsedMs;
       }else if(request.afterHeavyRecovery&&this.beatElapsedMs<(this.rehearsalReleaseMs??this.beatElapsedMs)+900)break;
-      const arrival=this.placeInterception(request,player);
+      const arrival=request.reserve?request:this.placeInterception(request,player);
       if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
         this.dispatched++;this.canceledReinforcements++;continue;
       }

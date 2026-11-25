@@ -1,6 +1,6 @@
 /** Deterministic decision helpers; these never call game actions. */
 export {BOT_POLICY_VERSION} from './bot-navigation-version.mjs';
-export const COVERED_RELAY_HEALTH_FRACTION = .6;
+export const COVERED_RELAY_HEALTH_FRACTION = .74;
 export const RIGS = ['breacher', 'cryo', 'pyro', 'arc'];
 const PATHS = {
   breacher: ['breacher', 'heavy-pellets', 'chain-reaction', 'seismic-impact', 'afterquake', 'reinforced-bulwark'],
@@ -207,7 +207,8 @@ export function chooseTarget(enemies, player, weaponRange = 0) {
     const score = e => (e.id === -1 ? 1000 : e.priority ? 850 : e.champion || e.id < 0 ? 600 : 0) + (e.pod ? 650 : e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
     const punish = e => !e.champion && e.exposedMs >= 150 && distance(e, player) <= weaponRange &&
       (e.type === 'brute' || e.type === 'carrier' || e.type === 'stalker');
-    return Number(punish(b)) - Number(punish(a)) || score(b) - score(a) || a.id - b.id;
+    const cancel = e => !!e.reserveLeader && distance(e, player) <= Math.min(weaponRange, 480);
+    return Number(punish(b)) - Number(punish(a)) || Number(cancel(b)) - Number(cancel(a)) || score(b) - score(a) || a.id - b.id;
   })[0];
 }
 /** Score legal movement endpoints for spacing, fire lanes and hazard avoidance. */
@@ -250,6 +251,7 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
     const ranged=visible.filter(e=>e.type==='spitter');
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
+    if(s.shutterBait&&c.waypoint)score-=distance(next,c.waypoint)*4;
     if(s.gate&&c.waypoint){score-=distance(next,c.waypoint)*4;score-=Math.max(0,distance(next,s.gate)-8)*4;}
     if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
     // Keep firing lanes only while a perceived target can be engaged.
@@ -417,6 +419,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const keys = chooseActions(perceived);
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player,s.weaponRange),keys);
       movement=conditionMovement;
+      if(s.shutterBait&&target?.id===s.shutterBait.wardenId&&target.health>target.maxHealth*.35&&!escape)target=undefined;
       if(s.gate&&distance(s.player,s.gate)<=s.gate.radius&&!escape)movement={dx:0,dy:0};
       if(profile==='novice') {
         const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
@@ -440,8 +443,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const current = s.combat.weapon;
       const novice = profile === 'novice';
       const hasAmmo = id => ammo[id].magazine + ammo[id].reserve > 0;
-      const lessonTarget = novice ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
-      const platedTarget = !novice&&ammo&&hasAmmo('plasma') ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+      const lessonTarget = novice&&s.node?.templateId!=='passenger-vault' ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
+      const platedTarget = ammo&&hasAmmo('plasma')&&(lessonTarget||!novice) ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
         .sort((a,b)=>distance(a,s.player)-distance(b,s.player))[0] : undefined;
       if(platedTarget&&!plasmaAttempts.has(platedTarget.id)&&ammo.plasma.magazine>0&&!s.reloadingWeapons?.includes('plasma')){
         plasmaAttempts.add(platedTarget.id);
@@ -474,6 +477,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
         else if (target && range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
           ready('shotgun')) desired = 'shotgun';
       }
+      if(lessonTarget&&platedTarget)desired='plasma';
       if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
       const sidegrade = desired !== 'rifle' && desired !== 'shotgun';
       // Baseline selection already uses delayed positions, so only specialised
