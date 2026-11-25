@@ -285,14 +285,32 @@ void main(){
    float delta=s-jitter;
    float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
-   float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   if(fxParam>3.5){
+    float split=sin(clamp((v-.30)/.65,0.,1.)*3.14159)*.68;
+    fork=(1.-smoothstep(.08,.15,abs(s-jitter-split)))*smoothstep(.29,.34,v);
+   }
+   float gate=(1.-smoothstep(fxParam>3.5?.23:.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
+   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+halo*.25)+(fxParam>3.5?vec3(1.5,.95,2.):fxColor*.6)*fork)*gate*fxIntensity;
    alpha=(bolt*.82+fork*.25+halo*.07)*gate;
   }else{
    float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
    emit=(hot*i0+vec3(3.,2.85,2.6)*core)*fxIntensity;
    alpha=i0*.12+core*.62;
   }
+ }else if(m<4.5 && fxParam>.5){
+  // Nova and Slam share the footprint, with cold needles or buckled deck seams.
+  float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853;
+  float front=R*smoothstep(0.,.045,age);
+  float behind=front-r;
+  float inside=smoothstep(-.005,.015,behind);
+  float rim=inside*(1.-smoothstep(.12,.27,behind));
+  float fade=1.-smoothstep(.05,.42,age);
+  float grain=fxNoise(fxWorld.xz*1.45+fxSeed);
+  float seam=(1.-smoothstep(.015,.115,abs(sin(a*(fxParam>1.5?6.:12.)+grain*.8))))*inside;
+  float core=(1.-smoothstep(.18,.85,r))*(1.-smoothstep(.033,.05,age));
+  alpha=(.25*inside+.60*rim)*fade;
+  base=mix(fxColor*.24,fxColor,rim);
+  emit=(mix(fxColor,vec3(.92),.35)*rim+fxColor*seam*.28)*fade*fxIntensity+vec3(core)*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
@@ -440,40 +458,20 @@ void main(){
   // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
-   // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
-   #ifdef HAS_ABILITY_PRIORITY_MASK
-   // Sample upstream along an uneven drift so protected footprints trail into the bank.
-   vec2 windUv=priorityClip.xy/priorityClip.w*.5+.5;
-   vec2 drift=vec2(.019,-.006)*(.55+.9*n);
-   vec4 wake=mix(texture2D(abilityPriorityMap,windUv-drift*.55),texture2D(abilityPriorityMap,windUv-drift*1.7),.5);
-   float shelter=max(max(prioritySample.r,prioritySample.b)*.45,max(wake.r,wake.b)*.52);
-   float shelterNoise=fxNoise(q*1.8+vec2(-t*.65,t*.21));
-   on*=1.-shelter*(.58+.35*shelterNoise);
-   // The green shoulder also contains circular wind-up and aim clearances.
-   // Warnings draw above the bank; keep a subdued veil under their fill.
-   prioritySample.g*=.28;
-   prioritySample.rba*=.08;
-   #endif
+   // The crests meet the native radius. Scallop the inner face of the ice.
+   float front=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float behind=front-r;
+   float width=.4+.2*pow(abs(sin(a*23.+n*4.)),3.);
+   float inside=smoothstep(0.,.025,behind);
+   float wall=inside*(1.-smoothstep(width-.08,width,behind));
+   float lip=1.-smoothstep(.06,width*.8,behind);
+   float needle=pow(abs(cos(a*31.+n*2.)),32.)*smoothstep(.62,.86,n);
+   float glaze=inside*(.036+.034*n+.06*needle);
    line=0.;
-   float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
-   float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
-   // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
-   float an=.22+.56*fxNoise(vec2(cos(a),sin(a))*2.6+fxSeed);
-   float jag=spread*(.62+.5*an)+teeth*smoothstep(R*.3,R,spread)-.2;
-   float inside=1.-smoothstep(jag-.04,jag,r);
-   float wall=smoothstep(jag-.35-.4*(spread/R),jag-.04,r)*inside;
-   float crack=0.;
-   if(fxLow<.5){
-    vec3 c=fxCells(q*.9+n*.8);
-    crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,n);
-   }
-   float pulseR=mod(max(0.,age-.7),2.)*R*.8;
-   float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
-   float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
-   float peak=1.-smoothstep(.18,.36,age);
-   alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
-   base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
-   emit=vec3(.15,.34,.43)*(wall*(.53+.75*roll)+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
+   alpha=glaze+wall*.83;
+   base=mix(vec3(.020,.052,.065),mix(vec3(.09,.54,.65),vec3(.89,.98,1.),lip),wall);
+   emit=wall*mix(vec3(.025,.17,.22),vec3(.38,.48,.52),lip)
+       +inside*needle*vec3(.018,.052,.065);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
@@ -527,7 +525,7 @@ void main(){
  if(groundSheet){
   float warning=prioritySample.g;
   float coverage=step(.004,alpha+dot(emit,vec3(.333)));
-  alpha=mix(alpha,.18*coverage,warning);
+  alpha=mix(alpha,(m>13.5 && fxArc<1.5 ? 0. : .18)*coverage,warning);
   emit=mix(emit,vec3(0.),warning);
  }
  #endif

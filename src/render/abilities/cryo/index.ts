@@ -53,7 +53,7 @@ class CryoPresentation implements AbilityPresentation {
       k.burst(px, .18, pz, 'cryo', 32, 5.2, .95);
       // VFX13: hard ice shock front racing to the exact radius, then crystalline frost creeping over the deck.
       const shock = k.fx.spawn(FxMode.Shock, px, pz, .42);
-      shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = 1.3;
+      shock.param = 1; shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = 1.3;
       const frost = k.fx.spawn(FxMode.Frost, px, pz, 6.5);
       frost.range = radius; frost.h0 = .036; frost.color = ICE;
       k.draw('spark', px, .6, pz, 1.4, 1.4, 1, CORE, 1);
