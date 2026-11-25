@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -327,12 +327,14 @@ export class EncounterDirector {
   private currentPhase: EncounterPhase = 'idle';
   private elapsedMs = 0;
   private dispatched = 0;
-  private coolantEntry?:string;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
+  private coolantEntry?:string;private interruptedBrood=false;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
+  private readonly coolantPlant:boolean;
   private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
+    this.coolantPlant=options.node.templateId==='coolant-plant';
     this.returnShotBeat=(options.node.templateId==='communal-atrium'||options.node.templateId==='diagnostic-gallery')&&options.difficulty!=='veteran'
       ? this.plan.beats?.findIndex(beat=>{
         const arrivals=this.plan.schedule.slice(beat.start,beat.end);
@@ -452,6 +454,7 @@ export class EncounterDirector {
     const current=this.plan.beats?.[beat];
     if(current?.consequence!=='brood')return 0;
     this.defusedBeats.add(beat);
+    if(this.coolantPlant)this.interruptedBrood=true;
     return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
   resolveCleanup(live:readonly {type:StandardEnemyId;role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
@@ -532,7 +535,11 @@ export class EncounterDirector {
         this.dispatched++;this.canceledReinforcements++;continue;
       }
       if(request.enemyId==='crawler')crawlerSlots--;
-      slots-=cost;batch.push(arrival);this.dispatched++;
+      const otherArm=beat.grammar==='pincer'&&this.interruptedBrood&&
+        (this.plan.schedule.slice(beat.start,beat.end).find(spawn=>spawn.breachId!==this.coolantEntry)?.breachId!==request.breachId);
+      const delayed=beat.grammar==='pincer'&&this.interruptedBrood&&
+        (this.coolantEntry!==undefined||otherArm);
+      slots-=cost;batch.push(delayed?{...arrival,hatchDelayMs:3500}:arrival);this.dispatched++;
     }
     return batch.length?Object.freeze(batch):EMPTY;
   }
@@ -562,6 +569,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }
