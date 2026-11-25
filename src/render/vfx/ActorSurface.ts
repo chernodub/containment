@@ -73,7 +73,8 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 // the face, weapon edge and elite trim. The legacy elite mantle uses gold.
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
-bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && band!=7;
+bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
+bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
   diffuseColor.rgb=vec3(.037,.108,.110);
   creatureStrike=1.0;
@@ -134,7 +135,11 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BRUTE_PLANES
-if(bruteBody){lanternEmission=vec3(0.);totalEmissiveRadiance=vec3(0.);keyRim*=actorReveal;}
+if(bruteBody){
+  lanternEmission=vec3(0.);
+  totalEmissiveRadiance=lanternEmission;
+  keyRim*=actorReveal;
+}
 #endif
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(${friendly?'actorDissolve,actorDissolve+.045,ash':'0.0,.03,ash'}):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
