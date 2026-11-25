@@ -178,6 +178,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const owned = new Set<string>();
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
     const onboardingObstacles: Array<{left:number;right:number;top:number;bottom:number}> = [];
+    let shutterImpact: {x: number; y: number; until: number; revision: number} | undefined;
     const actorBounds = { left: 0, right: 0, top: 0, bottom: 0 };
     const projected = {x: 0, y: 0, visible: false};
     const projectedRadius = {x: 0, y: 0, visible: false};
@@ -517,7 +518,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const weaponLesson=preferences().hints!==false?game.weaponLessonPrompt:undefined;
         const lessonDanger=game.enemies.snapshot.enemies.some(enemy=>enemy.meleePhase==='windup'||enemy.windupMs>0
             ||enemy.chargeMs>0||enemy.pod);
-        const prompts = [lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
+        const shutterCallout = shutterImpact?.revision === game.roomRevision && game.elapsed < shutterImpact.until
+            ? shutterImpact : undefined;
+        const prompts = [shutterCallout && 'shutter', lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
             weaponLesson && !lessonDanger && 'weapon-lesson', suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {
@@ -545,7 +548,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 || enemy.champion === 'matron' && !!enemy.broodRemainingMs || enemy.pod));
         const target = prompt === 'lesson' ? lessonTarget : prompt === 'brood' ? matron
             : prompt === 'weapon-lesson' ? weaponLesson?.target : prompt === 'weapon' ? situation?.target : prompt === 'objective' && !game.siege && !encounter.pincer ? encounterTarget : undefined;
-        const anchor = target && projectWorld(renderer, target.x, target.y, projected, prompt === 'brood' ? 2.65 : 1.4);
+        const point = prompt === 'shutter' ? shutterCallout : target;
+        const anchor = point && projectWorld(renderer, point.x, point.y, projected, prompt === 'brood' ? 2.65 : 1.4);
         let anchored = anchor && (projected.visible || prompt === 'brood'
             && projected.x > 0 && projected.x < innerWidth && projected.y > 0 && projected.y < innerHeight + 60);
         if (prompt === 'lesson' || prompt === 'weapon-lesson') {
@@ -562,10 +566,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             lessonAnchorKey = '';
         }
         const objectiveNode = nodes['room-objective'];
+        const aboveBody = !['lesson', 'weapon-lesson', 'weapon'].includes(prompt) && target
+            && projectActorBounds(renderer, target.id, target.x, target.y, target.radius, actorBounds)
+            ? actorBounds.top - 36 : undefined;
+        if (aboveBody !== undefined && aboveBody < 64) anchored = false;
         const coaching = prompt === 'lesson' || prompt === 'weapon-lesson' || prompt === 'weapon';
         const plate = weaponLesson?.target;
         objectiveNode.classList.toggle('plate-key-pulse', prompt==='weapon-lesson' && !!plate && plate.armor>0 && plate.armor<plate.maxArmor*.9);
-        text('room-objective', prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
+        text('room-objective', prompt === 'shutter' ? 'Shutter broken · lane open' : prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         objectiveNode.classList.toggle('anchored-objective', !!anchored || coaching);
         objectiveNode.classList.toggle('coaching-objective', coaching);
         if (coaching) {
@@ -604,7 +612,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         if (!coaching && anchored) {
             objectiveNode.style.left = `${Math.max(155, Math.min(innerWidth - 155, projected.x))}px`;
-            objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, projected.y - 20))}px`;
+            objectiveNode.style.top = `${Math.max(32, Math.min(innerHeight - getHudInsets().bottom - 12, aboveBody ?? projected.y - (prompt === 'shutter' ? 85 : 20)))}px`;
         }
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
@@ -653,6 +661,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     hud.effect = (event: HudEffect) => {
         if (disposed || game.status !== 'playing')
             return;
+        if (event.shutterBroken) {
+            shutterImpact = {x: event.x, y: event.y, until: game.elapsed + 2.4, revision: game.roomRevision};
+        }
         combatText.setEnabled(preferences().combatText !== false);
         combatText.setReduced(preferences().combatTextDensity === 'reduced');
         // Identified attacks are read from native snapshots, so death/cancel and
