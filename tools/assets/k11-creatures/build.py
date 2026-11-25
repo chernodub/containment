@@ -234,9 +234,7 @@ def srgb(c):
 def flat_cells(low, sculpture):
     """Per-face anatomy band -> UVs at the centre of that band's cell."""
     import build_bands
-    co = K.verts_np(low)
-    bands, zone, _ = build_bands.vertex_bands(co, sculpture, M)
-    bands = build_bands.merge_islands(co, bands, M.BAND_CELL)
+    bands, zone = build_bands.anatomy_planes(low, sculpture, M)
     bands[zone == S.EYE] = "eye"
     if sculpture.name.endswith("-elite"):
         hard = np.isin(zone, [S.SHELL, S.UNDER, S.ARMOR, S.CREST, S.CLAW, S.BONE, S.TOOTH])
@@ -268,7 +266,7 @@ def flat_atlas(size):
         x, y = (i % CELL_GRID) * c, (i // CELL_GRID) * c
         col = gold if name == "gold" else M.BANDS.get(name, M.BANDS.get("accent"))
         base[y:y + c, x:x + c, :3] = srgb(col)
-        g = M.GLOW["organ"] if name == "accent" else M.GLOW["eye"] if name == "eye" else (0, 0, 0)
+        g = M.GLOW["organ"] if name == "accent" else M.GLOW["eye"] if name == "eye" else M.GLOW.get(name, (0, 0, 0))
         glow[y:y + c, x:x + c, :3] = srgb(g)
     return base, glow, normal
 

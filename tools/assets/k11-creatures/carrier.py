@@ -32,6 +32,12 @@ BANDS = {
 }
 BANDS["lead"] = BANDS["bone"]
 BANDS["plate"] = BANDS["chitin"]
+# Keep the shared Matron atlas cells in place. The brood carriers use their own skin and sac cells.
+BANDS["gold"] = (0.90, 0.76, 0.42)
+BANDS["brood_skin"] = (0.8229, 0.2916, 0.7062)
+BANDS["sac_fold"] = (0.2776, 0.0892, 0.2386)
+BANDS["sac_skin"] = (0.5552, 0.1783, 0.4771)
+BANDS["sac_lobe"] = (0.8719, 0.2800, 0.7340)
 PLATE_BAND = {**{i: "plate" for i in range(1, 29)}, 50: "lead", 400: "lead", **{i: "plate" for i in range(401, 460)},
               **{i: "flesh" for i in range(90, 114)}}
 BAND_MAP = {"shell": "flesh"}
@@ -47,7 +53,22 @@ MATRON_PODS = []
 
 def glow_pods_for(name):
     return MATRON_PODS if name == "carrier-matron" else GLOW_PODS
-GLOW = {"organ": (0.9, 0.03, 0.45), "eye": (1.0, 0.3, 0.7)}
+GLOW = {"sac_lobe": (0.80, 0.04, 0.52), "sac_skin": (0.36, 0.02, 0.25), "organ": (0.9, 0.03, 0.45), "eye": (1.0, 0.3, 0.7)}
+
+
+def paint_marks(name, co, normals, plate, bands):
+    if name != "carrier-body":
+        return
+    bands[bands == "flesh"] = "brood_skin"
+    x, y, z = co.T
+    # The upper sac and its overlapping front mantle form one visible brood mass at game pitch.
+    sac = (np.abs(y) < 3.45) & ((x < -1.4) & (z > 8.1 * ASPECT) |
+                                (x < 2.6) & (z > 10.1 * ASPECT))
+    along = x + 0.24 * y * y - 0.38 * y
+    crease = np.minimum(np.abs(along + 4.65), np.abs(along + 1.45))
+    bands[sac] = "sac_skin"
+    bands[sac & (np.abs(y) < 2.6) & (z > 9.6 * ASPECT) & (crease > 0.68)] = "sac_lobe"
+    bands[sac & ((np.abs(y) > 2.9) | (crease < 0.31))] = "sac_fold"
 
 
 def build(sk):

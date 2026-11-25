@@ -18,16 +18,17 @@ VOXEL = 0.03
 TRIS = {"body": 9500, "elite": 1400}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16
 ATLAS = 1024
-GLOW_STRENGTH = 0.018   # CREATURE18: a lantern, not a glow blob
+GLOW_STRENGTH = 0.7524
 FORM_NORMALS = "proxy"
 FORM_MIX = 1.0
 BAND_CELL = 0.64
 BANDS = {
-    "chitin": (0.052, 0.056, 0.032), "flesh": (0.34, 0.32, 0.16), "bone": (0.73, 0.74, 0.68),
+    "chitin": (0.052, 0.056, 0.032), "flesh": (0.2696, 0.3147, 0.1057), "bone": (0.73, 0.74, 0.68),
     "accent": (0.35, 0.95, 0.08), "eye": (0.55, 1.0, 0.25),
 }
 BANDS["lead"] = BANDS["bone"]
 BANDS["plate"] = BANDS["chitin"]
+BANDS["muzzle"] = (0.76, 0.78, 0.61)
 PLATE_BAND = {50: "bone", **{i: "plate" for i in range(40, 44)},
               **{i: "flesh" for i in range(90, 114)}}
 BAND_MAP = {"shell": "chitin"}
@@ -37,7 +38,7 @@ PALETTE = {
     "organ": (0.35, 0.9, 0.08), "eye": (0.55, 1.0, 0.25), "crest": (0.5, 0.44, 0.28),
     "cavity": (0.02, 0.01, 0.005), "under": (0.08, 0.05, 0.025),
 }
-GLOW = {"organ": (0.2, 1.0, 0.02), "eye": (0.5, 1.0, 0.2)}
+GLOW = {"muzzle": (0.63, 0.90, 0.14), "organ": (0.2, 1.0, 0.02), "eye": (0.5, 1.0, 0.2)}
 
 
 def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, planted=True):
@@ -62,6 +63,16 @@ def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, pl
             prev = names[i - 1]
             body.extend(A.knuckle(p, radii[i] * 0.95, prev, name, pts[i - 1], q))
     return pts
+
+
+def paint_marks(name, co, normals, plate, bands):
+    if name == "spitter-body":
+        # Expose the flank of the pressure vessel between the dark shingle skirt and the acid ridge.
+        x, y, z = co.T
+        flank = (np.abs(x) < 1.55) & (np.abs(y) < 1.35) & (z > 3.55 * ASPECT)
+        bands[flank & np.isin(bands, ["chitin", "plate"])] = "flesh"
+        # The jaw collar and its forward lip stay legible while the neck folds.
+        bands[np.isin(plate, [50, 501])] = "muzzle"
 
 
 def build(sk):
@@ -108,7 +119,7 @@ def build(sk):
         for t in (0.25, 0.75):   # sinew collars hold the duct to the neck plates
             body.add(S.Torus(path[i] + (path[i + 1] - path[i]) * t, path[i + 1] - path[i], 0.27 - 0.02 * i, 0.07, zone=SINEW,
                              bone=duct_bones[i], k=0.05))
-    body.add(RoundCone(mz0, mz1, 0.60, 0.55, zone=BONE, bone="jaw", k=0.15))   # pale mortar mouth: the aiming face
+    body.add(RoundCone(mz0, mz1, 0.60, 0.55, zone=BONE, bone="jaw", plate=501, k=0.15))   # pale mortar mouth: the aiming face
     body.add(Ellipsoid(mz1, (0.30, 0.34, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
     body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.22, 0.27, 0.20 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
     for s in (-1, 1):

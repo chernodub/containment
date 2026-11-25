@@ -62,11 +62,18 @@ def merge_islands(co, bands, cell, keep=("accent", "eye")):
     return out
 
 
-def anatomy_rgb(obj, sculpture, M):
+def anatomy_planes(obj, sculpture, M):
     co = K.verts_np(obj)
-    bands, zone, _ = vertex_bands(co, sculpture, M)
+    bands, zone, plate = vertex_bands(co, sculpture, M)
     if getattr(M, "BAND_CELL", 0):
         bands = merge_islands(co, bands, M.BAND_CELL)
+    if hasattr(M, "paint_marks"):
+        M.paint_marks(sculpture.name, co, K.normals_np(obj), plate, bands)
+    return bands, zone
+
+
+def anatomy_rgb(obj, sculpture, M):
+    bands, zone = anatomy_planes(obj, sculpture, M)
     rgb = np.array([M.BANDS[b] for b in bands], np.float32)
     rgb[zone == S.EYE] = M.BANDS.get("eye", M.BANDS["accent"])
     if sculpture.name.endswith("-elite"):

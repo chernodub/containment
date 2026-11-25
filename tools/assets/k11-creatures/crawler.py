@@ -14,14 +14,15 @@ ASSET = "dretch"
 FAMILY = "crawler"
 ASPECT = 2.35            # in-game height / horizontal scale (design z multiplier)
 VOXEL = 0.0065
-TRIS = {"body": 7600, "elite": 1400}
+TRIS = {"body": 7600, "elite": 1400, "fins": 420}
+RANK_PARTS = {"elite": ["body", "elite", "fins"]}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elite drawn ~12% larger than the regular
 ATLAS = 1024
 FORM_NORMALS = "proxy"
 FORM_MIX = 1.0
 BAND_CELL = 0.15
 BANDS = {
-    "chitin": (0.072, 0.032, 0.028), "flesh": (0.51, 0.23, 0.18),
+    "chitin": (0.072, 0.032, 0.028), "flesh": (0.4990, 0.2444, 0.1263),
     "bone": (0.73, 0.69, 0.67), "accent": (0.88, 0.16, 0.32), "eye": (0.96, 0.36, 0.43),
 }
 BANDS["lead"] = BANDS["bone"]
@@ -36,8 +37,19 @@ PALETTE = {
     "organ": (0.9, 0.12, 0.012), "eye": (1.0, 0.40, 0.08), "crest": (0.58, 0.44, 0.27),
     "cavity": (0.03, 0.005, 0.006), "under": (0.10, 0.035, 0.022),
 }
-GLOW_STRENGTH = 0.075
+GLOW_STRENGTH = 1.3030
 GLOW = {"organ": (1.0, 0.18, 0.29), "eye": (1.0, 0.45, 0.10)}
+
+
+def paint_marks(name, co, normals, plate, bands):
+    if name != "crawler-body":
+        return
+    # Continue the dorsal organ across the articulated thorax and nose shield.
+    # A wider tail and pointed nose give the stripe a direction at gameplay mips.
+    x, y, z = co.T
+    width = np.interp(x, [-1.02, -0.76, 0.20, 0.72], [0.035, 0.105, 0.075, 0.032])
+    dorsal = (x > -1.02) & (x < 0.72) & (np.abs(y) < width) & (z > 0.49 * ASPECT)
+    bands[dorsal & (normals[:, 2] > 0.12)] = "accent"
 
 
 def build(sk):
@@ -141,4 +153,11 @@ def build(sk):
     # second lantern bulging from the thorax
     p, n = A.ellipsoid_surface(thorax_c, thorax_r, frame((1, 0, -0.15)), -0.15, 0.0)
     elite.extend(A.lantern(p - v3((0.12, 0, 0)), p + v3((0.12, 0, 0)), 0.1, chest, height=1.5, ribs=0.045))
-    return {"body": body, "elite": elite}
+    # A forked tail fan projects past the flank on either side of the dorsal stripe.
+    fins = S.Sculpture("crawler-fins")
+    for side in (-1, 1):
+        start = v3((-0.57, 0.26 * side, 0.66 * sk.aspect))
+        end = v3((-1.04, 0.87 * side, 0.60 * sk.aspect))
+        fins.extend(A.blade(start, end, (0.4, 0.1 * side, 0.8), 0.19, 0.052, tail,
+                            hook=0.25, serrations=0, zone=SHELL, edge_zone=BONE))
+    return {"body": body, "elite": elite, "fins": fins}

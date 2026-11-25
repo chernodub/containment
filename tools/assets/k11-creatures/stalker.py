@@ -16,19 +16,21 @@ ASSET = "basilisk"
 FAMILY = "stalker"
 ASPECT = 2.0
 VOXEL = 0.011
-TRIS = {"body": 8800, "elite": 1400}
+TRIS = {"body": 8800, "elite": 1400, "spur": 390}
+RANK_PARTS = {"elite": ["body", "elite", "spur"]}
 RANK_SCALE = {"elite": 1.12}   # ATTACK16: elites drawn ~12% larger than the regular (loader: base fit x rank scale)
 ATLAS = 1024
-GLOW_STRENGTH = 0.07
+GLOW_STRENGTH = 0.9012
 FORM_NORMALS = "proxy"
 FORM_MIX = 1.0
 BAND_CELL = 0.30
 BANDS = {
-    "chitin": (0.048, 0.042, 0.067), "flesh": (0.30, 0.26, 0.42), "bone": (0.68, 0.69, 0.73),
+    "chitin": (0.048, 0.042, 0.067), "flesh": (0.2348, 0.2017, 0.9900), "bone": (0.68, 0.69, 0.73),
     "accent": (0.55, 0.22, 1.0), "eye": (0.75, 0.45, 1.0),
 }
 BANDS["lead"] = BANDS["bone"]
 BANDS["plate"] = BANDS["chitin"]
+BANDS["edge"] = (0.70, 0.70, 0.75)
 PLATE_BAND = {1: "flesh", 2: "flesh", 59: "bone", 30: "bone", 31: "bone", 500: "plate",
               **{i: "flesh" for i in (*range(40, 56), *range(90, 100))}}
 BAND_MAP = {"armor": "flesh"}
@@ -38,7 +40,14 @@ PALETTE = {
     "organ": (0.55, 0.25, 1.0), "eye": (0.75, 0.45, 1.0), "crest": (0.46, 0.38, 0.36),
     "cavity": (0.02, 0.005, 0.01), "under": (0.05, 0.02, 0.03),
 }
-GLOW = {"organ": (0.55, 0.18, 1.0), "eye": (0.8, 0.45, 1.0)}
+GLOW = {"edge": (0.12, 0.15, 0.33), "organ": (0.55, 0.18, 1.0), "eye": (0.8, 0.45, 1.0)}
+
+
+def paint_marks(name, co, normals, plate, bands):
+    if name == "stalker-body":
+        # Restore the blade bevel and prow after the surrounding shell zones merge.
+        upper_bevel = (plate == 503) & (normals[:, 2] > 0.35)
+        bands[np.isin(plate, [30, 31, 59, 62, 502]) | upper_bevel] = "edge"
 
 
 def build(sk):
@@ -111,8 +120,12 @@ def build(sk):
         root = wr + v3((0.05, 0.12 * s, 0.05 * a))
         # CREATURE19: the off scythe is slimmer and both splay away from the flanks so the body shows between them
         tip = v3((-0.95, 1.38 * s, 1.0 * a)) if s < 0 else v3((-0.62, 1.4, 1.05 * a))   # same footprint radius
-        body.extend(A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), (0.52 * heavy) if s < 0 else 0.3, 0.06 * heavy, f"claw.{side}",
-                            hook=0.62, serrations=4, zone=BONE if s < 0 else MEMBRANE, edge_zone=BONE if s < 0 else MEMBRANE))
+        scythe = A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), (0.52 * heavy) if s < 0 else 0.3, 0.06 * heavy, f"claw.{side}",
+                            hook=0.62, serrations=4, zone=BONE if s < 0 else MEMBRANE, edge_zone=CREST if s < 0 else MEMBRANE)
+        for segment in scythe:
+            if s < 0:
+                segment.plate = 502 if segment.zone == CREST else 503
+        body.extend(scythe)
         # a short dark hook at the wrist keeps the joint and claw read
         body.add(RoundCone(wr, end + (wr - end) * 0.55, 0.07, 0.02, zone=CLAW, bone=f"claw.{side}", k=0.03))
         # flared shoulder hood: the pouncer's wide key silhouette
@@ -142,4 +155,8 @@ def build(sk):
     elite.extend(A.crest_spines(pts, nrm, 1.0 * a, 0.1, lambda p: bf(0), sweep=(-1, 0, 0.3)))   # CREATURE19: tall rank crest
     elite.extend(A.rank_mantle(ab_c, ab_r, ab_R, None, 0.0, scale=1.45, bone_fn=lambda u: bf(u)))   # CREATURE21
     elite.extend(A.rank_mantle(z(0.05, 0, 1.47), v3((0.44, 0.32, 0.21 * a)), frame((1, 0, 0.2)), "torso", 0.1, scale=1.3, plate=191))
-    return {"body": body, "elite": elite}
+    # A swept lateral hook leaves a notch outside the folded raptorial scythe.
+    spur = S.Sculpture("stalker-spur")
+    spur.extend(A.blade(wr, z(-1.12, -2.06, 1.24), (0.58, -0.8, 0.28),
+                        0.27, 0.072, "claw.R", hook=0.48, serrations=0, zone=SHELL, edge_zone=BONE))
+    return {"body": body, "elite": elite, "spur": spur}

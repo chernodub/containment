@@ -14,10 +14,19 @@ export const FAMILY_IDENTITY = Object.freeze({
   carrier: 0xb982c5,
   queen: 0x756b7d,
 });
-export const FAMILY_LANTERNS = Object.freeze({crawler:0xff276e, stalker:0x9570ff, spitter:0xa7ff42, brute:0xc8962a, carrier:0xf85de7, queen:0xea42af});
+export const FAMILY_LANTERNS = Object.freeze({crawler:0xff1a68, stalker:0x9e75ff, spitter:0xaaff44, brute:0xc8962a, carrier:0xf85de7, queen:0xea42af});
 export const ENEMY_BODY_COLORS = Object.freeze({crawler:0x43312b,brute:0x30232a,spitter:0x253229,stalker:0x292737,carrier:0x382b3b,queen:0x241c2a});
 /** SHADER25 body hue per family (luma is discarded; the shader sets the two value planes). */
-export const CREATURE_BODY_HUES = Object.freeze({crawler:0x944e42,brute:0x6b6c5e,spitter:0x737d48,stalker:0x696985,carrier:0x854e71,queen:0x6a4a66});
+export const CREATURE_BODY_HUES = Object.freeze({crawler:0xbb8864,brute:0x6b6c5e,spitter:0x8e985b,stalker:0x857cfe,carrier:0x854e71,queen:0x6a4a66});
+// Diffuse reflectance under warm and cool deck fill, in linear RGB. Emissive organs have their own pigment.
+type LinearRGB = readonly [number, number, number];
+type DeckPigment = {warm: LinearRGB; cool: LinearRGB; coolFlesh?: number};
+export const CREATURE_DECK_TINTS: Readonly<Partial<Record<string, DeckPigment>>> = {
+  crawler: {warm:[1, 1, .96], cool:[1.05, .97, .86]},
+  spitter: {warm:[.942, 1, .913], cool:[.832, 1.052, 1.140], coolFlesh:.13275},
+  stalker: {warm:[1.062, 1.197, .560], cool:[.610, 1.472, .229], coolFlesh:.09677},
+  carrier: {warm:[1, 1, 1], cool:[.919, 1.047, 1.083]},
+};
 export const RIG_ACCENTS = Object.freeze({breacher:0xffd063,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 
 export type ActorPart = {

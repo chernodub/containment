@@ -25,13 +25,13 @@ const SMALL_FAMILY_SHADOW_PLANE=.68;
 const WARDEN_STATURE=1.175;
 // Armour, plate, flesh, bone and the wet highlight on flesh.
 const CREATURE_ZONE_LEVELS: Readonly<Partial<Record<string, readonly [number, number, number, number, number]>>> = {
- crawler: [.050, .050, .105, .180, .08],
- stalker: [.052, .052, .115, .187, .06],
- spitter: [.048, .048, .105, .185, .10],
+ crawler: [.050, .050, .14308, .180, .08],
+ stalker: [.052, .052, .07121, .187, .06],
+ spitter: [.048, .048, .16245, .185, .10],
  carrier: [.050, .050, .108, .180, .075],
  brute: [.050, .050, .105, .190, .16],
 };
-import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,RIG_ACCENTS} from './ActorIdentity';
+import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,CREATURE_DECK_TINTS,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
@@ -136,10 +136,30 @@ export function alien(kind:string,elite=false):ActorModel{
   if(r.root.userData.affliction)r.root.userData.affliction.span=r.span;
  };
  fitFootprint();
+ const persistentMark=kind==='crawler'||kind==='spitter'||kind==='stalker';
  const organStrength=r.materials.map(m=>m.emissiveIntensity),emission=originalCreatureEmission(r.materials);
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.08);const value=kind==='brute'?.62:kind==='carrier'?.75:kind==='spitter'?.70:kind==='stalker'?.40:kind==='queen'?.28:.68;if(!original)for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
  const surface=actorSurface(r.materials,false,elite||kind==='queen');
  surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);
+ const deckTints=original && CREATURE_DECK_TINTS[kind];
+ let previousFog:T.Scene['fog']|undefined, previousMatron=false;
+ const applyDeckTint=(matron:boolean)=>{
+  if(!deckTints)return;
+  const parent=r.root.parent, fog=parent instanceof T.Scene?parent.fog:null;
+  if(fog===previousFog&&matron===previousMatron)return;
+  previousFog=fog;previousMatron=matron;
+  // Room fog carries the authored ambient palette. A greener fill shifts the skin towards its cool swatch.
+  const sky=fog?.color;
+  const cool=sky?T.MathUtils.clamp(5*(sky.g-sky.r)/Math.max(.001,sky.g),0,1):0;
+  const {warm,cool:cold,coolFlesh}=deckTints;
+  if(levels && coolFlesh!==undefined){
+   surface.zones(levels[0],levels[1],T.MathUtils.lerp(levels[2],coolFlesh,cool),levels[3],levels[4]);
+  }
+  for(const m of r.materials){
+   if(matron)m.color.setRGB(1,1,1);
+   else m.color.setRGB(T.MathUtils.lerp(warm[0],cold[0],cool),T.MathUtils.lerp(warm[1],cold[1],cool),T.MathUtils.lerp(warm[2],cold[2],cool));
+  }
+ };
  const levels=CREATURE_ZONE_LEVELS[kind];
  if(original && levels)surface.zones(...levels);
  if(kind==='crawler'||kind==='spitter'||kind==='stalker'){
@@ -181,7 +201,7 @@ export function alien(kind:string,elite=false):ActorModel{
    flash=Math.min(flash,.22);
    if(element==='kinetic')motion.beam(direction);
    if(dead){deathCue=authored.terminalCue(deathCue);surface.death(deathCue);surface.hit(0);surface.stage(stageLight*.36);surface.camouflage(.30);if(deathCue==='frost')frost?.use();r.root.userData.motionDeathCue=deathCue;}
-  },poseDeath(cue,progress){if(authored.elementalHold){surface.hit(0);surface.stage(stageLight*.36);surface.camouflage(.30);}motion.carryIntoFall(progress);return authored.death(cue,progress);},attack(){if(!dead&&!status.frozen){motion.attack();authored.attack();if(!motion.authored)r.attack();}},freeze(){if(dead)return;stunIndicator?.reset();emission.reset();identity.mesh.material.uniforms.identityStatus.value=status.frozen?1:status.burning?2:status.poisoned?3:0;deathCue=status.frozen?'frost':status.burning?'burn':status.poisoned?'acid':status.shocked?'arc':'none';deathCue=authored.terminalCue(deathCue);surface.death(deathCue);if(deathCue==='frost')frost?.use();r.root.userData.motionDeathCue=deathCue;dead=true;if(halo)halo.visible=false;surface.load(0);motion.freeze(true);emergence=emergenceDuration;r.root.updateWorldMatrix(true,true);corpseBounds.setFromObject(r.root,true);if(corpseBounds.min.y<r.root.position.y)r.body.position.y+=r.root.position.y-corpseBounds.min.y;status=NO_AFFLICTION;effects?.reset(deathCue==='frost');for(const [i,m] of r.materials.entries())m.emissiveIntensity=original?organStrength[i]*.30:0;surface.hit(0);surface.reveal(0);identity.update(0,0,champion,false,1,true);r.freeze();},stop:r.stop,prepare(){stunIndicator?.prepare(r.height);r.action('run');r.action('attack');r.action('pain1');r.action('pain2');r.action('pain');},reset(){castShadeTime=0;bossStun=0;brood=0;bossCharge=0;stageLight=1;emission.reset();authored.reset();liveCrack=false;frost?.reset();deathCue='none';terminalDissolve=0;r.root.userData.motionDeathProgress=0;motion.reset();r.reset();stunIndicator?.reset();r.root.userData.visualStatus=undefined;r.root.userData.motionDeathCue='none';surface.reset();if(halo)halo.visible=true;surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);identity.reset();identity.mesh.castShadow=identity.mesh.receiveShadow=false;windup=0;windupDuration=500;threatKind=null;champion=undefined;fitFootprint();alpha=1;flinch=0;emergence=0;r.body.position.y=restBodyY;flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();setColliderDebug(false);for(const [i,m] of r.materials.entries()){m.emissiveIntensity=original?organStrength[i]:0;if(original)m.emissive.setHex(0xffffff);}},hit(strength=1,direction=0,heavy=false,weapon){flash=Math.max(0,Math.min(1,strength));flinch=flash;motion.hit(strength,direction,heavy);authored.hit(strength,direction,heavy,weapon);if(!motion.authored&&strength>0&&!dead&&!status.frozen&&windup===0)r.react(heavy);},setThreat(ms,attack,rank,camouflage=1){if(threatKind&&!attack&&windup>0&&!status.frozen)motion.attack();const remaining=attack?Math.max(0,ms):0;if(attack&&(attack!==threatKind||remaining>windup)){windupDuration=Math.max(1,remaining);r.brace();}threatKind=attack;windup=remaining;if(champion!==rank)surface.identity(rank||elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,!!rank||elite,kind==='queen'?.48:undefined);champion=rank;if(halo)halo.visible=!rank&&!dead;fitFootprint(rank);alpha=camouflage;surface.camouflage(kind==='stalker'?alpha:1);},setExposed(v){exposed=v;if(kind!=="queen")surface.expose(v?1:0);},setAffliction(v){
+  },poseDeath(cue,progress){if(authored.elementalHold){surface.hit(0);surface.stage(stageLight*.36);surface.camouflage(.30);}motion.carryIntoFall(progress);return authored.death(cue,progress);},attack(){if(!dead&&!status.frozen){motion.attack();authored.attack();if(!motion.authored)r.attack();}},freeze(){if(dead)return;stunIndicator?.reset();emission.reset();identity.mesh.material.uniforms.identityStatus.value=status.frozen?1:status.burning?2:status.poisoned?3:0;deathCue=status.frozen?'frost':status.burning?'burn':status.poisoned?'acid':status.shocked?'arc':'none';deathCue=authored.terminalCue(deathCue);surface.death(deathCue);if(deathCue==='frost')frost?.use();r.root.userData.motionDeathCue=deathCue;dead=true;if(halo)halo.visible=false;surface.load(0);motion.freeze(true);emergence=emergenceDuration;r.root.updateWorldMatrix(true,true);corpseBounds.setFromObject(r.root,true);if(corpseBounds.min.y<r.root.position.y)r.body.position.y+=r.root.position.y-corpseBounds.min.y;status=NO_AFFLICTION;effects?.reset(deathCue==='frost');for(const [i,m] of r.materials.entries())m.emissiveIntensity=original?organStrength[i]*.30:0;surface.hit(0);surface.reveal(0);identity.update(0,0,champion,false,1,true);r.freeze();},stop:r.stop,prepare(){stunIndicator?.prepare(r.height);r.action('run');r.action('attack');r.action('pain1');r.action('pain2');r.action('pain');},reset(){castShadeTime=0;bossStun=0;brood=0;bossCharge=0;stageLight=1;emission.reset();authored.reset();liveCrack=false;frost?.reset();deathCue='none';terminalDissolve=0;r.root.userData.motionDeathProgress=0;motion.reset();r.reset();stunIndicator?.reset();r.root.userData.visualStatus=undefined;r.root.userData.motionDeathCue='none';surface.reset();if(halo)halo.visible=true;surface.identity(kind==='queen'?ENEMY_BODY_COLORS.queen:elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite,kind==='queen'?.48:undefined);identity.reset();identity.mesh.castShadow=identity.mesh.receiveShadow=false;windup=0;windupDuration=500;threatKind=null;champion=undefined;fitFootprint();alpha=1;flinch=0;emergence=0;r.body.position.y=restBodyY;flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();setColliderDebug(false);for(const [i,m] of r.materials.entries()){m.emissiveIntensity=original?organStrength[i]:0;if(original)m.emissive.setHex(0xffffff);}},hit(strength=1,direction=0,heavy=false,weapon){flash=Math.max(0,Math.min(1,strength));flinch=flash;motion.hit(strength,direction,heavy);authored.hit(strength,direction,heavy,weapon);if(!motion.authored&&strength>0&&!dead&&!status.frozen&&windup===0)r.react(heavy);},setThreat(ms,attack,rank,camouflage=1){applyDeckTint(rank==='matron');if(threatKind&&!attack&&windup>0&&!status.frozen)motion.attack();const remaining=attack?Math.max(0,ms):0;if(attack&&(attack!==threatKind||remaining>windup)){windupDuration=Math.max(1,remaining);r.brace();}threatKind=attack;windup=remaining;if(champion!==rank)surface.identity(rank||elite?0xc1d8e5:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,!!rank||elite,kind==='queen'?.48:undefined);champion=rank;if(halo)halo.visible=!rank&&!dead;fitFootprint(rank);alpha=camouflage;surface.camouflage(kind==='stalker'?alpha:1);},setExposed(v){exposed=v;if(kind!=="queen")surface.expose(v?1:0);},setAffliction(v){
   if(dead)return;status=v;identity.mesh.material.uniforms.identityStatus.value=v.frozen||v.chilled?1:v.burning?2:v.poisoned?3:0;
   effects?.set(v);r.mixer.timeScale=v.frozen?0:1;if(v.frozen)emergence=emergenceDuration;
  },
@@ -193,7 +213,22 @@ export function alien(kind:string,elite=false):ActorModel{
    if(liveCrack)frost?.use();else frost?.reset();
   }
   if(!dead&&bossStun===0){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);/* CREATURE22: the Matron arches and lowers her head while releasing a pod (presentation only). */if(champion==='matron'&&brood>0)authored.player.sample('m10-brood',.6,dt,.12);/* CREATURE23: hold the lifted carapace for the whole release *//* WARDEN25: the Warden loads and charges ram-first (presentation only; charge rules unchanged). */if(champion==='warden'){if(bossCharge>0)authored.player.sample('m10-ram-charge',(visualTime/.5)%1,dt,.1);else if(threatKind==='charge'&&windup>0)authored.player.sample('m10-ram-load',1-Math.min(1,windup/windupDuration),dt,.08);}}
-  if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);for(const [i,m] of r.materials.entries()){if(original){m.emissive.setHex(0xffffff);m.emissiveIntensity=organStrength[i]*(dead?.10:bossStun>0?.15:1+flash*.65+(elite?.28:0)+(champion==='matron'?1.45:champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0))+intensity;}else{if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}}emissiveHex=hex;}};
+  if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);
+  const boost=1+flash*.65+(elite?.28:0)+(champion==='matron'?1.45:champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0);
+  // The small directional marks hold their exposure as the pose changes.
+  // Compensate for the actor surface's higher emission gain on elite bodies.
+  const liveGain=persistentMark?(elite?1.8/2.3:1):boost;
+  for(const [i,m] of r.materials.entries()){
+   if(original){
+    m.emissive.setHex(0xffffff);
+    m.emissiveIntensity=organStrength[i]*(dead?.10:bossStun>0?.15:liveGain)+intensity;
+   }else{
+    if(hex!==emissiveHex)m.emissive.setHex(hex);
+    m.emissiveIntensity=intensity;
+   }
+  }
+  emissiveHex=hex;
+ }};
 }
 /** LIGHT13: the carried weapon reads mid-grey against a dark deck, never a black hole in the marine. */
 const liftedWeaponMaterials=new WeakSet<T.Material>(),weaponGrey=new T.Color(0x5d666f);

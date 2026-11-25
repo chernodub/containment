@@ -604,3 +604,64 @@ The CREATURE26 silhouette measurement erodes three pixels before sampling. In th
 The three body bands survive minification, but bent legs, the attack outline and overlapping actors can still break them into smaller shapes. The Crawler's slit and the Spitter's ridge are dimmer after the value correction. At 480×270 the Stalker's thin legs still recede into the purple floor. The marine's gun covers part of the mouth in the Spitter melee capture. The ranged wind-up row in Awakening Bay uses a shorter native firing lane to keep both actors visible. At 480×270 the red aiming line still draws the eye first. The Matron's p50 remains close to the deck. The pink stack and cavity rims carry the read there.
 
 The production build passed. The unassisted Arc desktop campaign cleared 12 rooms on seed 1729 with zero errors and zero recorded defects. The High Arc Relay Racks benchmark completed one 20-second trial per build with zero runtime compiles in either trial. Median frame time was 16.7 ms in both, with p95 of 25.0 ms before and 24.9 ms after. Host load differed substantially between trials. The raw benchmark receipts are in `artifacts/nextgen/c27-bench-{before,after}/benchmark.json`.
+
+## CREATURE28 — rank and facing at the game camera
+
+The Crawler has a single tapered pink stripe across the back of its russet shell. It reaches the nose shield and leaves the broad pale foreclaws visible. The elite carries a pair of swept tail fans. The Spitter's acid-green ridge ends in a separate lime mouth and collar. Its elite retains the raised dorsal fin. The Stalker's lavender head wedge and luminous bevel share the same tint, so the striking arm carries the facing mark from waiting into the lunge. Its elite has a second hooked scythe tip. The elite Carrier keeps its forked side cradles, which carry the brood outside the regular animal's outline.
+
+The elite Brute wears a low, three-tined pale-gold crown and a split right cleaver. The outer crown tines sweep forward and apart, exposing a tip even when the shoulders hide the centre. In the settled pose, projecting the shipped skin through the game camera in five-degree increments put crest pixels outside the rest of the silhouette at all 72 angles. The turn sheet fits the regular and elite to the same box and omits the halo. In the Crew Checkpoint lineup the new crest's p98 was 120 against a marine plate p90 of 180 (67%).
+
+### Heights and rig
+
+Live model heights in metres, rounded to six decimals. Each entry is regular / elite, followed by the champion where present. The comparison used the full-precision values from matching Crew Checkpoint lineups. The packed meshes also have identical vertical extents, joint names, parentage, local rest matrices and inverse bind matrices against integration commit `8f708dec`.
+
+| Family | Before | After |
+| --- | --- | --- |
+| Crawler | 0.773644 / 1.793735 | 0.773644 / 1.793735 |
+| Spitter | 1.651721 / 2.885776 | 1.651721 / 2.885776 |
+| Stalker | 1.081849 / 1.705099 | 1.081849 / 1.705099 |
+| Brute / Warden | 3.030000 / 3.285046 / 4.500000 | 3.030000 / 3.285046 / 4.500000 |
+| Carrier / Matron | 1.980371 / 3.253404 / 5.295817 | 1.980371 / 3.253404 / 5.295817 |
+
+The top of the settled skin also matched before and after at every sampled rank and idle phase. For example, the elite Brute's settled top was 3.3306445750276152 m in both builds.
+
+### Dark-floor values and proof
+
+These are sRGB luma percentiles from matching compact colour crops in the first Swarm Junction crowd frame. The creature columns give p98 of the family's coloured pixels. The marine column gives p90 of neutral plate pixels.
+
+| Gallery | Pink dorsal stripe | Acid-green mark | Violet mark | Marine plate |
+| --- | ---: | ---: | ---: | ---: |
+| final17 | 179 | 205 | 156 | 180 |
+| final18 | 106 | 109 | 107 | 180 |
+| CREATURE28 before colour follow-up | 179 | 175 | 151 | 180 |
+
+In the same Crawler crop the span of pink pixels above luma 127 grew from 34 native pixels in final17 to 69. Final17's Spitter mark exceeded the marine plate by 25. The first CREATURE28 pass preserved the marine ceiling and increased the area of the lit muzzle. The comparison still shows the Stalker as the least conspicuous of the three on plum, particularly where its folded blade points toward the camera. The lit bevel and head wedge move with the existing skin through wind-up.
+
+Open `artifacts/nextgen/creature28/sheets/` in this worktree. The three-way strips are `heavies`, `swarm-junction` and `relay-racks`, each with `-native.png` and `-480.png` variants. Each column uses the original full game frame or a 480×270 reduction. The heavies columns stack colour, greyscale and silhouette. The `crawler`, `spitter`, `stalker` and `brute` sheets pair integration and current calm and attack frames in Swarm Junction. The Spitter also has a native ranged-warning frame. The `elite-pairs` sheets cover all five families in Crew Checkpoint. The equal-height, ring-free regular/elite outlines are in `sheets/rank-contours.png` under the same CREATURE28 folder. The Brute turn is at `artifacts/nextgen/creature28/now/brute/lineup/turn.png`.
+
+The production type-check and build passed. Arc, seed 1729, cleared all 12 requested rooms in the desktop playtest with zero errors and zero reported defects. The recorded campaign is at `artifacts/nextgen/playtest/c28-arc/index.html`. The 51 exported animation clips across the five packed assets also matched the baseline in channel targets, interpolation, key times and sampled values.
+
+### Final17 colour follow-up
+
+The Crawler carries a glowing pink slit over a russet-orange back and pale forward claws. The Spitter pairs a lime flank with an acid-green ridge and lit mouth. The Stalker has a blue-violet body and a pale leading blade. Two curved dark folds divide the Carrier's violet-magenta sac into three lit lobes.
+
+For each room, both galleries use the first native crowd frame and the same 5×5-pixel patches. Each triplet gives HSV of the median red, green and blue channels, with hue in degrees and saturation and value in percent. The body and mark patches sample the Crawler flank and slit, Spitter flank and ridge, Stalker leading body plane and violet highlight, and Carrier shoulder and sac lobe.
+
+| Room | Family | Final17 body | Current body | Final17 mark | Current mark |
+| --- | --- | ---: | ---: | ---: | ---: |
+| swarm-junction | crawler | 17.3 / 43.4 / 59.6 | 17.3 / 43.4 / 59.6 | 349.9 / 36.0 / 96.9 | 349.5 / 36.8 / 96.9 |
+| swarm-junction | spitter | 71.7 / 39.8 / 40.4 | 72.6 / 40.2 / 42.0 | 81.2 / 32.4 / 82.4 | 79.7 / 31.9 / 82.4 |
+| swarm-junction | stalker | 230.8 / 47.7 / 42.7 | 230.9 / 47.7 / 43.5 | 253.3 / 24.3 / 87.1 | 253.3 / 24.2 / 87.5 |
+| swarm-junction | carrier | 313.6 / 30.3 / 56.9 | 313.3 / 30.6 / 57.6 | 312.0 / 30.6 / 57.6 | 312.2 / 32.2 / 59.6 |
+| relay-racks | crawler | 18.3 / 44.8 / 60.4 | 17.4 / 44.5 / 60.8 | 349.2 / 35.7 / 97.6 | 350.0 / 36.1 / 97.6 |
+| relay-racks | spitter | 84.9 / 39.8 / 40.4 | 87.0 / 38.8 / 40.4 | 81.5 / 31.5 / 83.5 | 79.4 / 30.7 / 83.1 |
+| relay-racks | stalker | 210.6 / 47.3 / 43.9 | 210.6 / 47.3 / 43.9 | 251.1 / 24.2 / 87.5 | 249.6 / 22.4 / 87.5 |
+| relay-racks | carrier | 304.7 / 27.1 / 54.9 | 305.9 / 28.3 / 56.9 | 308.6 / 29.2 / 56.5 | 305.5 / 29.5 / 58.4 |
+
+All 16 patches retain at least 92% of final17 saturation. The largest hue difference is 3.1° on the Relay Racks Carrier lobe. In Swarm Junction the four sampled body lumas are 114, 102, 68 and 114 in table order against a marine plate of 180. In Relay Racks they are 115, 96, 81 and 115 against 183. The lit body samples stay below 64% of the marine. The Spitter's emissive ridge matches final17 at 200 and 203 luma respectively under the approved exception. These fixed-patch measurements use a different statistic from the earlier p98 table.
+
+All regular and elite heights match the before and after values in the preceding height table. Mesh triangle positions, skin weights, joint rest transforms and the 51 animation clips matched the baseline. The Matron region in the matched Crew Checkpoint lineup had zero changed RGB pixels.
+
+Open `artifacts/nextgen/creature28/colour/sheets/` in this worktree. Both `swarm-junction` and `relay-racks` have `-native.png` and `-480.png` full-frame strips, `-crop.png` strips of native 640×620 windows, and `-now-640x620.png` single current windows. The three columns run final17, final18, current.
+
+The production build passed. Arc cleared all 12 rooms on seed 1729 with zero errors and zero reported defects. The final desktop campaign report is at `artifacts/nextgen/playtest/c28-colour-final-arc/index.html`.

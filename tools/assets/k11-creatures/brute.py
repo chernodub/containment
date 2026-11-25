@@ -16,9 +16,9 @@ ASSET = "tyrant"
 FAMILY = "brute"
 ASPECT = 1.8
 VOXEL = 0.024
-TRIS = {"body": 11500, "elite": 1600, "boss": 19900}   # WARDEN25: the Warden is one whole sculpture (warden.py)
+TRIS = {"body": 11500, "elite": 1600, "regalia": 1350, "boss": 19900}   # WARDEN25: the Warden is one whole sculpture (warden.py)
 RANK_SCALE = {"boss": 2.79, "elite": 1.12}   # CREATURE26: drawn reach ~2.3 m from centre (was 3.8 -> 2.99 m); height kept by WARDEN_STATURE in models.ts
-RANK_PARTS = {"boss": ["boss"]}   # WARDEN25: its own animal, not the Brute body plus a crown   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
+RANK_PARTS = {"elite": ["body", "elite", "regalia"], "boss": ["boss"]}   # WARDEN25: its own animal, not the Brute body plus a crown   # the Warden keeps its crown without the elite horn   # Brute Warden: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 2.0
 # CREATURE26: three value shapes in hues away from the blue-grey deck and from Pyro's orange: dark olive-slate
@@ -29,6 +29,7 @@ BANDS = {
 }
 BANDS["lead"] = BANDS["bone"]
 BANDS["plate"] = BANDS["chitin"]
+BANDS["gilt"] = (0.88, 0.58, 0.17)
 BAND_CELL = 0.3   # CREATURE26: merge value islands under ~3 cells (a sixth of the body width) into their surroundings
 FORM_NORMALS = "proxy"   # CREATURE26: shading normals from a Taubin-smoothed proxy (build.form_normals)
 FORM_MIX = 1.0   # CREATURE20: dark umber angular chest/arm armour over the ochre body   # CREATURE19: the head plate is the lightest body plane (which end is the head)
@@ -44,7 +45,12 @@ PALETTE = {
     "organ": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15), "crest": (0.44, 0.35, 0.26), "armor": (0.24, 0.12, 0.075), "flesh": (0.32, 0.05, 0.05),
     "cavity": (0.03, 0.005, 0.006), "under": (0.08, 0.03, 0.022),
 }
-GLOW = {"organ": (1.0, 0.36, 0.0), "eye": (1.0, 0.55, 0.08)}
+GLOW = {"gilt": (0.009, 0.006, 0.002), "organ": (1.0, 0.36, 0.0), "eye": (1.0, 0.55, 0.08)}
+
+
+def paint_marks(name, co, normals, plate, bands):
+    if name == "brute-regalia":
+        bands[bands == "bone"] = "gilt"
 
 
 def build(sk):
@@ -141,6 +147,21 @@ def build(sk):
     elite.extend(A.blade(wr_r + (end_r - wr_r) * 0.2, end_r + v3((1.55, -0.75, 0.3)), v3((0.45, -1.0, 0.6)), 1.15, 0.2, "claw.r",
                          hook=0.55, serrations=0, zone=ARMOR, edge_zone=BONE))
     elite.extend(A.rank_mantle(hind_c, hind_r, hind_R, "tail", 0.15))
+    # A low forward coronet and a second cleaver tine articulate with the original head and wrist.
+    # Mesh these separately so adding the silhouette does not re-decimate the rank's existing crest.
+    regalia = S.Sculpture("brute-regalia")
+    for side in (-1, 1):
+        root = head_c + z(0.08, side * 0.48, 0.35)
+        points = [root, root + z(0.44, side * 0.85, 0.23),
+                  root + z(1.15, side * 2.42, 0.36), root + z(2.02, side * 3.42, 0.36)]
+        regalia.add(S.Tube(points, [0.34, 0.42, 0.31, 0.055], zone=BONE, bone="head"))
+    prow = head_c + z(0.48, 0, 0.42)
+    regalia.add(S.Tube([prow, prow + z(0.68, 0, 0.14), prow + z(1.6, 0, 0.04)],
+                       [0.35, 0.33, 0.055], zone=BONE, bone="head"))
+    blade_root = wr_r + (end_r - wr_r) * 0.23
+    fork_tip = end_r + v3((0.40, -2.00, 0.10))
+    regalia.extend(A.blade(blade_root, fork_tip, v3((0.3, -1.0, 0.45)), 0.67, 0.18, "claw.r",
+                           hook=0.38, serrations=0, zone=ARMOR, edge_zone=BONE))
     # --- boss (Brute Warden): WARDEN25 its own asymmetric battering animal (warden.py)
     boss = WARDEN.build(sk, a)
-    return {"body": body, "elite": elite, "boss": boss}
+    return {"body": body, "elite": elite, "regalia": regalia, "boss": boss}
