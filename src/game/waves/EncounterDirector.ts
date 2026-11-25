@@ -58,6 +58,14 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   if(index>0)source.unshift(...source.splice(index,1));
   source[0]={...source[0],label:'Use the relay receiver as cover'};
  }
+ const galleryOpening=node.templateId==='diagnostic-gallery';
+ if(galleryOpening){
+  const index=source.findIndex(beat=>beat.grammar==='interception');
+  if(index>=0){
+   const [beat]=source.splice(index,1);
+   source.unshift({...beat,label:'Cut back around the recorder and return fire'});
+  }
+ }
  const route=node.depth===GUARDIAN_ROUTE_DEPTH?options.guardianRoute:undefined;
  if(route){
   const index=source.findIndex(beat=>beat.groups.some(group=>group.guardian==='warden'));
@@ -130,6 +138,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const early=arrivals[0].atMs+100;
    arrivals[1]=Object.freeze({...arrivals[1],atMs:early,approachLeadMs:arrivals[1].atMs-early+250});
   }
+  if(galleryOpening&&beatIndex===0){
+   for(let index=2;index<arrivals.length;index++){
+    const request=arrivals[index];
+    arrivals[index]=Object.freeze({...request,atMs:request.atMs+2400});
+   }
+  }
   if(beatIndex===reserveBeat){
    const leader=arrivals.findIndex(request=>request.enemyId===reserveLeader);
    const screen=arrivals.filter((request,index)=>index!==leader&&
@@ -156,7 +170,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:coverOpening?'Use the relay receiver as cover':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
@@ -250,7 +264,7 @@ export class EncounterDirector {
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
-    this.returnShotBeat=options.node.templateId==='communal-atrium'&&options.difficulty!=='veteran'
+    this.returnShotBeat=(options.node.templateId==='communal-atrium'||options.node.templateId==='diagnostic-gallery')&&options.difficulty!=='veteran'
       ? this.plan.beats?.findIndex(beat=>{
         const arrivals=this.plan.schedule.slice(beat.start,beat.end);
         return arrivals.some(enemy=>enemy.enemyId==='brute'&&enemy.role==='anchor')&&

@@ -386,7 +386,9 @@ export class DepthGame {
  }
  const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'){
-  const health=this.combat.snapshot.health;
+  const {health,armor}=this.combat.snapshot;
+  if(this.node.templateId==='diagnostic-gallery'&&health+armor<=12)
+   this.pickups.spawn('health',22,260,485);
   const recovery=this.node.depth===11&&health<50?35:this.node.templateId==='infested-workshop'&&health<=60?25:0;
   if(recovery){
    const entrance=this.moveCorpse({...this.player,radius:14},48,0);
@@ -649,6 +651,12 @@ export class DepthGame {
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
   }
  }
+ const galleryOpening=this.node.templateId==='diagnostic-gallery'&&e.beat===0;
+ if(galleryOpening){
+  const [anchor,flanker]=this.director.plan.schedule;
+  if(e.spawnId===anchor?.spawnId)({x,y}={x:505,y:325});
+  if(e.spawnId===flanker?.spawnId)({x,y}={x:550,y:527});
+ }
  if(this.node.templateId==='service-shaft-landing'){
   const [first,second]=this.director.plan.schedule.filter(request=>request.enemyId==='stalker');
   const firstLunge=e.spawnId===first?.spawnId;
@@ -697,7 +705,7 @@ export class DepthGame {
    const stage=wardenOpeningSpawn(this.geometry,this.player,Math.atan2(y-this.player.y,x-this.player.x),this.enemies.snapshot.enemies);
    if(stage){x=stage.x;y=stage.y;}
   }
- this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:e.rehearsalFlank?x:chosen.x,cueY:e.rehearsalFlank?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
+ this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650,encounterCue:e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:e.rehearsalFlank||galleryOpening?x:chosen.x,cueY:e.rehearsalFlank||galleryOpening?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
  skipAwakeningDrill(){if(this.status!=='playing')return;if(this.rigDrill&&!this.rigDrill.won)this.finishRigDrill();else if(this.dodgeDrill&&!this.dodgeDrill.confirmation)this.clearRoom();}
