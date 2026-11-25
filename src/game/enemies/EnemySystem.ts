@@ -112,11 +112,11 @@ export type EnemySpawnRequestEvent = Readonly<{pod?:boolean;hatchMs?:number;beat
 }>;
 
 export type MeleeWarningEvent = Readonly<{type:'melee-warning';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape;durationMs:number}>;
-export type MeleeStrikeEvent = Readonly<{type:'melee-strike';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape}>;
+export type MeleeStrikeEvent = Readonly<{type:'melee-strike';arrivalSwing?:true;enemyId:number;enemyType:StandardEnemyId;x:number;y:number;angle:number;shape:MeleeStrikeShape}>;
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
-  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger'|'arrival-recovery';enemyId:number;x:number;y:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -1249,12 +1249,13 @@ export class EnemySystem {
         this.#meleeStrikeGapMs=450;
         enemy.meleePhase='strike';enemy.meleeProgress=0;enemy.meleeFacingLocked=true;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
-        events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
+        events.push(freezeEvent({type:'melee-strike',arrivalSwing:enemy.arrivalSwing,enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
         if(enemy.meleeConnected){
           events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
+        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
         enemy.arrivalSwing=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
