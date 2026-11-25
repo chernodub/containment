@@ -35,7 +35,7 @@
 #overlay .requisition-item {
   display: grid;
   position: relative;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 84px minmax(0, 1fr);
   grid-template-rows: repeat(3, auto);
   align-content: start;
   align-items: start;
@@ -71,13 +71,13 @@
 #overlay .requisition-footer .primary { margin-left: auto; }
 #overlay .service-illustration {
   display: block;
-  width: 72px;
+  width: 84px;
   height: 64px;
   background: radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--service-color) 13%, #12252e), #0b1820 78%);
   color: var(--service-color);
 }
 
-#overlay img.service-illustration { object-fit: contain; background: #081820; }
+#overlay img.service-illustration { object-fit: cover; background: #081820; }
 
 #overlay .requisition-item[data-purchase='heal'] { --service-color: #9bf4bb; }
 #overlay .requisition-item[data-purchase='medkit'] { --service-color: #a9d7f6; }
@@ -92,9 +92,8 @@
 #overlay .requisition-item .requisition-medical-art img.service-illustration {
   position: absolute;
   inset: 32px auto auto 50%;
-  width: auto;
+  width: 100%;
   height: 64px;
-  max-width: 100%;
   margin: 0;
   padding: 0;
   transform: translate(-50%, -50%);
