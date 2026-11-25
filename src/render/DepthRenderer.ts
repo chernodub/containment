@@ -431,6 +431,7 @@ export class DepthRenderer {
  private releasedBerth:ReturnType<typeof attachReleasedBerth>|undefined;
  loadRoom(node:RunNode,environment:ShipEnvironment|undefined=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':undefined)){
   if(this.roomWarmPending){this.deferredRoom={node,environment};return;}
+  this.floorChoiceMarkers.resetReserve();
   this.cancelRoomPrefetch?.();this.cancelRoomPrefetch=undefined;this.prefetchKey='';
   const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0,materialProfiles:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
   const keyChanged=(this.roomEnvironment==='reactor')!==(environment==='reactor');
@@ -616,7 +617,7 @@ export class DepthRenderer {
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
-  if(this.roomKey!==game.node.id){this.floorChoiceMarkers.resetReserve();this.loadRoom(game.node);}
+  if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // RUN15 condition presentation consumes the room's deterministic state.
   const condition=menu?null:game.conditionState,blackout=condition?.condition.id==='dark';
   this.conditionVisuals.update(this.graphicsAblation==='conditions'?null:condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
