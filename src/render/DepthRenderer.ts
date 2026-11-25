@@ -610,6 +610,14 @@ export class DepthRenderer {
     this.effects.event({type:'boon',boon:'shield',x:near.x*UNIT,y:near.z*UNIT,radius:20});
    }
   }
+  if(effect.type==='arrival-wound'&&targetModel){
+   targetModel.root.userData.arrivalWoundGlow=Math.min(.8,(targetModel.root.userData.arrivalWoundGlow??0)+(effect.damage??0)/80);
+   targetModel.hit?.(Math.min(1,.2+(effect.damage??0)/65));
+  }
+  if(effect.type==='arrival-recovery'&&effect.id!==undefined){
+   const actor=this.actors.get(effect.id);
+   if(actor)actor.root.userData.arrivalWoundGlow=0;
+  }
   if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
   if(effect.type==='corpse'&&this.corpses[this.corpses.length-1]?.pendingEffect===effect)return;
   this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
@@ -640,7 +648,7 @@ export class DepthRenderer {
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
-  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame);
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;

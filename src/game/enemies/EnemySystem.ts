@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;broodSupply?:boolean;openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -63,6 +63,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
+  crawlerBiteCap?:number;
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge', attempting?:boolean)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
@@ -117,7 +118,8 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';arrivalSwing?:true;
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
-  | Readonly<{type:'melee-miss'|'recovery-stagger'|'arrival-recovery';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'arrival-wound'|'arrival-recovery';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;damage:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -131,7 +133,7 @@ export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 export type PodStage = 'sealed' | 'swelling' | 'opening';
 type ReadyBehaviour = "skitter" | "pace" | "step" | "brace" | "relocate";
 
-export type EnemySnapshot = Readonly<{laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type EnemySnapshot = Readonly<{arrivalBanked?:number;broodDestination?:'relay'|'supply';laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -196,7 +198,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -277,6 +279,7 @@ export class EnemySystem {
   readonly #ordinaryIdleScale:number;
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
+  readonly #crawlerBiteCap:number;
   readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
@@ -315,6 +318,7 @@ export class EnemySystem {
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
+    this.#crawlerBiteCap=options.crawlerBiteCap??Infinity;
     this.#ordinaryIdleScale=options.ordinaryIdleScale??1;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
@@ -401,7 +405,7 @@ export class EnemySystem {
     const reservedChildren =
       type === 'carrier' ? Math.min(CARRIER_CHILD_CAP, availableReservations) : 0;
     const state: EnemyState = {
-      openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
+      broodDestination:options.broodDestination,openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
       id: this.#nextId++,
       type,
       elite: elite === true,
@@ -586,13 +590,19 @@ export class EnemySystem {
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
-    if (!enemy || enemy.arrivalSwing || !Number.isFinite(amount) || amount <= 0) {
+    if (!enemy || (enemy.arrivalSwing&&!weaponHit) || !Number.isFinite(amount) || amount <= 0) {
       return this.#damageResult(false, 0, 0, false, { x: 0, y: 0 }, []);
     }
 
     const absorbedByArmor = Math.min(enemy.armor, amount);
     enemy.armor -= absorbedByArmor;
     const healthDamage = Math.min(enemy.health, amount - absorbedByArmor);
+    if(enemy.arrivalSwing){
+      const banked=Math.min(healthDamage,enemy.health-(enemy.arrivalDamage??0));
+      enemy.arrivalDamage=(enemy.arrivalDamage??0)+banked;
+      const events:EnemyEvent[]=banked>0?[freezeEvent({type:'arrival-wound',enemyId:id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:banked})]:[];
+      return this.#damageResult(true,absorbedByArmor,0,false,{x:0,y:0},events);
+    }
     enemy.health -= healthDamage;
     if(enemy.broodRemainingMs>0){enemy.broodDamage+=healthDamage+absorbedByArmor;if(enemy.broodDamage>=20){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}
     const died = enemy.health === 0;
@@ -724,7 +734,7 @@ export class EnemySystem {
 
   #snapshotEnemy(enemy: EnemyState): EnemySnapshot {
     return Object.freeze({
-      role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
+      arrivalBanked:enemy.arrivalSwing?enemy.arrivalDamage:undefined,broodDestination:enemy.pod?enemy.broodDestination:undefined,role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
       wallStunAngle:enemy.stunRemainingMs>0?enemy.wallStunAngle:undefined,
       id: enemy.id,
       type: enemy.type,
@@ -1186,7 +1196,7 @@ export class EnemySystem {
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
   beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
-    if(!enemy||enemy.type!=='brute')return [];
+    if(!enemy||(enemy.type!=='brute'&&enemy.lesson!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=true;
@@ -1254,10 +1264,10 @@ export class EnemySystem {
         events.push(freezeEvent({type:'melee-strike',arrivalSwing:enemy.arrivalSwing,enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
         if(enemy.meleeConnected){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)*(enemy.lesson==='stalker'?.65:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
-        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
         enemy.arrivalSwing=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
@@ -1296,7 +1306,10 @@ export class EnemySystem {
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false&&this.#permitsAttack(enemy,player,'melee',true)){
+    const crawlerSlots=enemy.type!=='crawler'||this.#smallMeleeActive<this.#crawlerBiteCap||
+      [...this.#enemies.values()].filter(other=>other.type==='crawler'&&
+        (other.meleePhase==='windup'||other.meleePhase==='strike')).length<this.#crawlerBiteCap;
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&crawlerSlots&&this.#canAttack?.(enemy,player)!==false&&this.#permitsAttack(enemy,player,'melee',true)){
       enemy.commitmentDeniedAt=undefined;
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);

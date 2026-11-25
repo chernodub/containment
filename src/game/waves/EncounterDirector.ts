@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -195,9 +195,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   if(shaftLanding){
    const protectedArrivals=beatIndex===0?2:1;
+   const pincerDelay=beat.grammar==='pincer'?1200:0;
    for(let index=protectedArrivals;index<arrivals.length;index++){
     const request=arrivals[index];
-    arrivals[index]=Object.freeze({...request,atMs:request.atMs+(index-protectedArrivals+1)*300});
+    arrivals[index]=Object.freeze({...request,atMs:request.atMs+pincerDelay+(index-protectedArrivals+1)*300});
    }
   }
   if(galleryOpening&&beatIndex===0){
@@ -326,12 +327,14 @@ export class EncounterDirector {
   private currentPhase: EncounterPhase = 'idle';
   private elapsedMs = 0;
   private dispatched = 0;
-  private coolantEntry?:string;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
+  private coolantEntry?:string;private interruptedBrood=false;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
+  private readonly coolantPlant:boolean;
   private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
+    this.coolantPlant=options.node.templateId==='coolant-plant';
     this.returnShotBeat=(options.node.templateId==='communal-atrium'||options.node.templateId==='diagnostic-gallery')&&options.difficulty!=='veteran'
       ? this.plan.beats?.findIndex(beat=>{
         const arrivals=this.plan.schedule.slice(beat.start,beat.end);
@@ -350,12 +353,14 @@ export class EncounterDirector {
   private readonly delayedLocks=new Set<number>();
   meleeLockDelays=0;
   canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
-    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean}):boolean {
+    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean;cover?:(point:{x:number;y:number},others:Iterable<EnemyCommitment>)=>boolean}):boolean {
     const active:EnemyCommitment[]=[];
+    const approaches:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
     for(const other of others){
       if(other.id===enemy.id)continue;
+      if(sidestep?.cover)approaches.push(other);
       if(other.champion==='warden'&&other.wallStunAngle!==undefined&&other.beat===enemy.beat&&!enemy.champion
         &&(other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
       if(sidestep&&attack==='melee'&&(other.meleePhase==='windup'||other.meleePhase==='strike'))active.push(other);
@@ -372,7 +377,7 @@ export class EncounterDirector {
       const clear=Array.from({length:16},(_,index)=>{
         const heading=angle+index*Math.PI/8;
         return {x:player.x+65*Math.cos(heading),y:player.y+65*Math.sin(heading)};
-      }).some(point=>sidestep.clear(point)&&
+      }).some(point=>sidestep.clear(point)&&(!sidestep.cover||sidestep.cover(point,approaches))&&
         !meleeStrikeContains(enemy.meleeShape,enemy.x,enemy.y,angle,point.x,point.y,sidestep.radius)&&
         active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
           other.meleeAngle,point.x,point.y,sidestep.radius)));
@@ -385,6 +390,12 @@ export class EncounterDirector {
     if(enemy.champion)return attack!=='charge'||melee<=this.tokens.meleeTokens-1;
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
+  }
+  markedClosedEntry(arrivalsPending:boolean){
+    if(!this.coolantEntry)return;
+    if(this.plan.beats?.slice(this.beatIndex+1).some(beat=>beat.grammar==='pincer'))return this.coolantEntry;
+    const current=this.plan.beats?.[this.beatIndex];
+    return current?.grammar==='pincer'&&(this.dispatched<current.end||arrivalsPending)?this.coolantEntry:undefined;
   }
   get rehearsalBeat(){return this.plan.beats?.[this.beatIndex]?.rehearseHeavy?this.beatIndex:undefined;}
   get phase(): EncounterPhase { return this.currentPhase; }
@@ -451,6 +462,7 @@ export class EncounterDirector {
     const current=this.plan.beats?.[beat];
     if(current?.consequence!=='brood')return 0;
     this.defusedBeats.add(beat);
+    if(this.coolantPlant)this.interruptedBrood=true;
     return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
   resolveCleanup(live:readonly {type:StandardEnemyId;role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
@@ -531,7 +543,11 @@ export class EncounterDirector {
         this.dispatched++;this.canceledReinforcements++;continue;
       }
       if(request.enemyId==='crawler')crawlerSlots--;
-      slots-=cost;batch.push(arrival);this.dispatched++;
+      const otherArm=beat.grammar==='pincer'&&this.interruptedBrood&&
+        (this.plan.schedule.slice(beat.start,beat.end).find(spawn=>spawn.breachId!==this.coolantEntry)?.breachId!==request.breachId);
+      const delayed=beat.grammar==='pincer'&&this.interruptedBrood&&
+        (this.coolantEntry!==undefined||otherArm);
+      slots-=cost;batch.push(delayed?{...arrival,hatchDelayMs:3500}:arrival);this.dispatched++;
     }
     return batch.length?Object.freeze(batch):EMPTY;
   }
@@ -561,6 +577,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

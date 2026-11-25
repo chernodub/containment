@@ -644,11 +644,13 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 ? game.geometry.breaches.filter(breach=>flank.flankers.some(enemy=>enemy.breachId===breach.id))
                     .map(breach=>({x:breach.x,y:breach.y,life:1,kind:'flank' as const,beat:encounter.beat??-1}))
                 : [];
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3, game.clipHostileLane);
+            const closed=game.markedClosedEntry;
+            const sealedLocation=closed?[{...closed,life:1,kind:'priority' as const,beat:encounter.beat??-1}]:[];
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations,...sealedLocation], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3, game.clipHostileLane);
         }
-        siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds, playing ? game.relayCoverPreview : undefined);
+        siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
         setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
-        targetMarkers.update(game, renderer, encounterCues.locations, onboarding.markedEnemyId);
+        targetMarkers.update(game, renderer, game.markedClosedEntry?[...encounterCues.locations,{...game.markedClosedEntry,life:1,kind:'priority',beat:encounter.beat??-1}]:encounterCues.locations, onboarding.markedEnemyId, preferences().combatText!==false);
         if (!playing && wasPlaying) {
             updateDockYield(false);
             for (const warning of warnings) warning.life = 0;

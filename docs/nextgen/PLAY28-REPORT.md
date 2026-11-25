@@ -273,3 +273,68 @@ The first cohort at `e31d4923` cleared 35 of 48 usual Standard campaigns, 41 of 
 The usual Standard cohort lands inside the 34–40 band, and the Story cohort exceeds the 20-clear floor. No stalls occurred in the 120 final-code cohort campaigns. The usual baselines are the lead's wave-29 results. The fresh comparison replay uses the `a5a2c59d` game and policy under the current simulator observer. The current game and policy also differ in pursuit, projectile clearance and the opening Brute attack, so the change in completions measures the release together with the repair step. [Usual Standard](../../artifacts/nextgen/playtest/play32-tip-usual/summary.json) · [Fresh Standard baseline](../../artifacts/nextgen/playtest/play32-fresh-baseline/summary.json) · [Fresh Standard PLAY32](../../artifacts/nextgen/playtest/play32-tip-fresh/summary.json)
 
 The final-code Pyro 1729 native replay also cleared all 20 rooms with zero errors or defects. Its Atrium arrival struck at 54.733 and recovered at 54.867 seconds. Its Gallery arrival struck at 273.850 and recovered at 273.983 seconds. Both missed. [Final-code Pyro report](../../artifacts/nextgen/playtest/play32-tip-native-pyro/report.json) · [Final-code Pyro trace](../../artifacts/nextgen/playtest/play32-tip-native-pyro/trace.ndjson)
+
+## PLAY33
+
+1. The Shaft pincer stages its arrivals along the outer edge of the existing shaft machinery and leaves a 1.2-second break after the first approach. The clearance check includes projectile lines and nearby live or announced approaches as well as committed strikes. The existing commitment deadline still releases waiting enemies.
+2. An arrival Brute loses armor normally to shots. Health damage accumulates as a banked wound, with a body glow and a separate damage number. The ordinary damage path applies the stored health damage when recovery begins and preserves the full committed swing.
+3. Residential Gallery's opening pair uses an optional armor pickup. The Stalker covers the pickup approach and the plated Brute guards the adjacent lane. Atrium samples a full circle of short openings and checks that the chosen position shares the marine's unobstructed side.
+4. Successfully interrupting Coolant Plant's Matron delays one open arm of the later pincer by 3.5 seconds. The hatch warning starts on dispatch, and the queued attackers gather behind its shutter.
+5. The reserve cutoff moves the priority crest to the closed entry and keeps its bearing on the HUD until the affected pincer has arrived. The Relay Racks gunner uses the bare-floor side of the shutter. Swarm Junction's marked pods carry the power and armor icons for their relay and supply stakes until they hatch or die. The same icon appears at the viewport edge if its pod is outside the view.
+6. The covered route's mark moved to its first protected foothold. Its preview line stops at the clipped cover lip. The cyan route arrows and secondary cover label were removed. The old Pyro near crossing landed at 731.467 seconds, followed by a fatal Stalker hit at 735.500 seconds. Arc 2718 reached the near bank at 813.100 seconds and took a fatal Crawler bite at 818.700 seconds. Both deaths followed several seconds of live pressure, so the arrival rules remain unchanged. [Pyro reference trace](/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final20/play/pyro/trace.ndjson) · [Arc 2718 reference trace](/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final20/play/arc-2718/trace.ndjson)
+7. Shaft, Coolant and Overload admit up to two simultaneous Crawler bites. The first eligible featured Spitter gets an early, telegraphed volley and the normal post-shot reposition. The roster and incoming damage values stay fixed.
+
+### Native receipts
+
+Pyro locked the Residential lunge at 33.350 seconds, struck at 34.033 and entered recovery at 34.117. Arc locked at 42.233, struck at 42.917 and entered recovery at 43.000. The lesson contact multiplier is 0.65. Pyro banked 88 health damage on the lesson Stalker before its strike. [Pyro lock frame](../../artifacts/nextgen/playtest/play33-release-pyro/r3-residential-gallery-side-on-lock.png) · [Arc lock frame](../../artifacts/nextgen/playtest/play33-release-arc/r3-residential-gallery-side-on-lock.png)
+
+Arc's first Atrium Brute was visible and had a clear line at the first wind-up sample, 63.633 seconds. Its armor fell from 412.72 to 332.72 before the 64.300-second strike and to 252.72 by the end of the strike. Pyro's first Atrium Brute was visible and clear at 53.433 and lost 80 armor before striking at 54.067. In Diagnostic Gallery, Arc stripped 160 armor before the 330.733 strike, and Pyro stripped 80 before the 284.700 strike. Neither Brute ran out of plate while the swing was protected. The targeted HUD replay showed “16 banked” over the protected Residential Stalker at 33.750. I inspected that frame at 1920×1080 and 480×270. [Arc trace](../../artifacts/nextgen/playtest/play33-release-arc/trace.ndjson) · [Pyro trace](../../artifacts/nextgen/playtest/play33-release-pyro/trace.ndjson) · [Banked label frame](../../artifacts/nextgen/playtest/play33-banked-pyro/r3-residential-gallery-banked-wound.png)
+
+| Sector | Arc 1729 previous / PLAY33 | Pyro 1729 previous / PLAY33 |
+|---|---:|---:|
+| 2 · Passenger Vault | 0.0 / 0.0 | 0.0 / 0.0 |
+| 3 · Residential Gallery | 0.0 / 0.0 | 0.0 / 0.0 |
+| 4 · Communal Atrium | 0.0 / 0.0 | 0.0 / 0.0 |
+
+Arc's Relay Racks checkpoint replay broke the corrected shutter at 213.333 seconds. The Spitter is separated from the Warden against bare deck. Pyro's Overload checkpoint replay showed the protected foothold at (778.4, 319.1) and the preview stopping at the cover lip at (833.7, 349.8) at 710.200 seconds. The preview waits until the marine approaches the relay, so the floor cue and lip are in the fight view. Both frames were inspected at 1920×1080 and 480×270. Pyro reached the far bank at 724.367 and finished at 730.317 without further suit loss after landing. [Shutter frame](../../artifacts/nextgen/playtest/play33-racks-arc/relay-racks-shutter-impact.png) · [Crossing frame](../../artifacts/nextgen/playtest/play33-cover-tip-pyro/r20-overload-floor-shelter-preview.png)
+
+Pyro's Shaft pincer first announced at 436.117 seconds in the checkpoint replay. The first pincer warning is on the outer side of the winch path. Arc cleared the Shaft with 40.9 suit lost after dying there with 116.7 lost in R25. Pyro's Shaft loss fell from 57.5 to 26.4, and its trace sampled at most one simultaneous Crawler bite there. The Coolant replay cut off four Crawlers at 403.500 seconds and sealed breach 1, removing one arm of the next pincer. The crest remained active through 425.017 seconds, when the pincer queue emptied. At 421.067, the camera showed the gathering hatch with five attackers still queued. [Shaft announcement](../../artifacts/nextgen/playtest/play33-shaft-tip-pyro/r14-service-shaft-landing-shaft-pincer.png) · [Coolant crest](../../artifacts/nextgen/playtest/play33-coolant-final-pyro/r13-coolant-plant-sealed-entry.png) · [Gathering hatch](../../artifacts/nextgen/playtest/play33-coolant-final-pyro/r13-coolant-plant-hatch-in-view.png) · [Delayed queue trace](../../artifacts/nextgen/playtest/play33-coolant-final-pyro/trace.ndjson)
+
+In Swarm Junction, both marked clutches were on screen at 531.517 seconds in the current Pyro checkpoint replay. The relay pod carried the power icon and the supply pod carried the armor icon. Arc's full Coolant loss fell from 135.3 to 49.3, while Pyro's increased from 8.9 to 103.4. The full Pyro trace sampled two simultaneous Crawler wind-ups or strikes at most in Coolant and recorded a 500 ms Spitter warning at 392.783. [Swarm Junction pod frame](../../artifacts/nextgen/playtest/play33-pods-tip-pyro/r16-swarm-junction-pod-destinations.png) · [Pyro incoming damage](../../artifacts/nextgen/playtest/play33-release-pyro/report.json) · [Arc incoming damage](../../artifacts/nextgen/playtest/play33-release-arc/report.json)
+
+### Deterministic cohorts
+
+| Cohort | Rig | PLAY32 clears | PLAY33 clears |
+|---|---|---:|---:|
+| Standard competent, usual | Breacher | 9/12 | 9/12 |
+| Standard competent, usual | Cryo | 8/12 | 9/12 |
+| Standard competent, usual | Pyro | 10/12 | 11/12 |
+| Standard competent, usual | Arc | 10/12 | 8/12 |
+| Standard competent, usual | All four | 37/48 | **37/48** |
+| Standard competent, fresh 101–124 | Breacher | 20/24 | 18/24 |
+| Standard competent, fresh 101–124 | Arc | 20/24 | 21/24 |
+| Standard competent, fresh 101–124 | Both | 40/48 | **39/48** |
+| Story novice, usual | Cryo | 11/12 | 12/12 |
+| Story novice, usual | Breacher | 12/12 | 10/12 |
+| Story novice, usual | Both | 23/24 | **22/24** |
+
+Across the 120 simulations, no run stalled. Standard was inside the 34–40 clear band and Story exceeded the 20-clear floor, so the PLAY32 repair amounts remain in force. [Usual Standard](../../artifacts/nextgen/playtest/play33-tip-usual/summary.json) · [Fresh Standard](../../artifacts/nextgen/playtest/play33-tip-fresh-101-124/summary.json) · [Story](../../artifacts/nextgen/playtest/play33-tip-story/summary.json)
+
+| Sector | PLAY32 suit loss across usual Standard | PLAY33 suit loss across usual Standard |
+|---|---:|---:|
+| 2 · Passenger Vault | 0.0 | 0.0 |
+| 3 · Residential Gallery | 0.0 | 54.1 |
+| 4 · Communal Atrium | 341.4 | 193.8 |
+
+Crawler and Stalker contact accounted for 58.7% of total suit loss in the matched PLAY32 simulator cohort and 64.7% in PLAY33. In the three modified rooms, the share went from 75.5% to 79.0% in the Shaft, 63.8% to 70.2% in Coolant and 55.4% to 56.5% in Overload. These simulator figures use the same seed and rig set on both builds. R25's 70.8% came from five native campaigns.
+
+### Verification
+
+The production build passed. Arc and Pyro 1729 each cleared all 20 rooms with zero runtime or runner errors and zero stalls. Arc finished at 928.233 seconds and Pyro at 720.933. The harness returned exit 1 due to five Arc and seven Pyro room-loading holds over five wall seconds. Pyro took the near bank at 714.133 and cleared without further suit loss. The complete campaigns used the earlier PLAY33 build. Focused native checkpoint replays verified the later banked label, Relay Racks placement, marked pods, delayed hatch, reserve lifetime and clipped shelter preview. The final sealed-crest contrast and separation adjustments were build-verified. [Arc campaign](../../artifacts/nextgen/playtest/play33-release-arc/report.json) · [Pyro campaign](../../artifacts/nextgen/playtest/play33-release-pyro/report.json)
+
+| Native Standard sample | R25 small-family contact share | PLAY33 small-family contact share |
+|---|---:|---:|
+| Arc and Pyro, seed 1729 | 79.1% | 59.7% |
+| All five R25 Standard campaigns | 70.8% | — |
+
+The matched native share divides 631.3 Crawler and Stalker contact damage by 1057.8 total suit damage. R25's matched sample ended earlier because Arc died in the Shaft. The deterministic cohort provides a second comparison with the same 48 starting configurations and a different result.
