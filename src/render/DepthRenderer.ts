@@ -121,7 +121,8 @@ export class DepthRenderer {
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
  private readonly hostileSocket = new T.Vector3();
- private readonly actorPosition = (id:number) => this.actors.get(id)?.root.position;
+ private readonly recoveryPosition = new T.Vector3();
+ private readonly actorPosition = (id:number) => this.actors.get(id)?.body.getWorldPosition(this.recoveryPosition);
  private readonly shooterSocket = (id:number) =>
   this.actors.get(id)?.root.getObjectByName('jaw')?.getWorldPosition(this.hostileSocket);
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
