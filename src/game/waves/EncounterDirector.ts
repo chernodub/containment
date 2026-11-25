@@ -433,9 +433,6 @@ export class EncounterDirector {
     let slots = Math.max(0, this.plan.concurrentCap - occupiedCount);
     while (slots>0 && this.dispatched < this.plan.totalSpawns) {
       const request = this.plan.schedule[this.dispatched];
-      if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
-        this.dispatched++;this.canceledReinforcements++;continue;
-      }
       const cost=request.enemyId==='carrier'?4:1;
       if (request.atMs > this.elapsedMs||cost>slots) break;
       slots-=cost;batch.push(request);

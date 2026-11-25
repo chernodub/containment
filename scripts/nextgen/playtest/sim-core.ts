@@ -325,7 +325,7 @@ export function runSimulation(options: SimOptions) {
         if (!room)
             return;
         const stats = game.stats;
-        Object.assign(room, { result, cleanupSeconds: Object.values<number>(room.cleanupByBeat ?? {}).reduce((sum, value) => sum + value, 0), topDamageSources:game.roomDamage, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
+        Object.assign(room, { result, meleeLockDelays:game.encounter.meleeLockDelays, cleanupSeconds: Object.values<number>(room.cleanupByBeat ?? {}).reduce((sum, value) => sum + value, 0), topDamageSources:game.roomDamage, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
             hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, firstHitElapsed:pressure.get(game.node.id)?.firstHitElapsed??null, timeToDeathFromFullHealth:result==='dead'&&lastFullHealthElapsed!==null?game.elapsed-lastFullHealthElapsed:null, timeToDeathFromFirstHit:result==='dead'&&pressure.get(game.node.id)?.firstHitElapsed!=null?game.elapsed-pressure.get(game.node.id)!.firstHitElapsed!:null, hitTimes:pressure.get(game.node.id)?.hitTimes??[], pressure: pressure.get(game.node.id)?.byFamily ?? {},
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),

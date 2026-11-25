@@ -236,7 +236,7 @@ async function probe(label) {
 }
 async function finishRoom(s,result) {
   if(!room||room.result!=='playing')return;
-  room.result=result;room.seconds=s.elapsed-room.startedElapsed;
+  room.meleeLockDelays=s.encounter.meleeLockDelays;room.result=result;room.seconds=s.elapsed-room.startedElapsed;
   room.damageTaken=s.stats.damageTaken-room.startStats.damageTaken;room.topDamageSources=s.topDamageSources;
   room.damageDealt=Object.fromEntries(Object.keys(s.stats.damageDealt).map(k=>[k,s.stats.damageDealt[k]-room.startStats.damageDealt[k]]));
   room.abilityUses=Object.fromEntries(Object.keys(s.stats.abilityUses).map(k=>[k,s.stats.abilityUses[k]-room.startStats.abilityUses[k]]));
@@ -406,10 +406,14 @@ try {
     }
     if(target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
     const freshEvents=newEventReceipts(previousEvents,s.events);previousEvents=s.events;
+    if(freshEvents.some(event=>event.shutterBroken)){
+      await shot('relay-racks-shutter-impact',s);
+      room.shutterImpact='relay-racks-shutter-impact.png';
+    }
     for(const e of freshEvents){if(e.type!=='ability'||!e.ability)continue;const a=e.ability,bucket=room.abilityReceipts[a.ability]??={phases:{},reportedDamage:0};bucket.phases[a.phase]=(bucket.phases[a.phase]??0)+1;bucket.reportedDamage+=a.totalDamage??0;if(a.phase==='denied')room.denials[a.denial]=(room.denials[a.denial]??0)+1;}
     const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:decision.stepMs,keys:actions,abilityAims:s.abilityAims,weapon:desired};
     report.inputs.push(input);
-    await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
+    await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{room:s.node.templateId,encounter:s.encounter,status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
     if(room.id==='relay-racks'&&!room.shutterBreak&&after.status==='playing'){
