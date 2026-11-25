@@ -249,7 +249,11 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
           if(wardenRam){graphicActorLight=mix(.75,1.,step(.55,graphicKeyFacing));graphicActorHue=vec3(1.);}
           if(bruteBody){
-            graphicActorLight=mix(.52,1.0,smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing));
+            // Lead pass: the shared key is nearly a camera headlight, which lit every plane a top-down view shows and
+            // left the one-hue body flat. A raking key from the upper left puts the right and lower flanks in shadow.
+            float bruteRake=dot(normalize(vNormal),vec3(-.63,.62,.47));
+            float bruteEdge=max(fwidth(bruteRake),.02);
+            graphicActorLight=mix(.42,1.0,smoothstep(.50-bruteEdge,.50+bruteEdge,bruteRake));
             graphicActorHue=vec3(1.);
           }
 #endif
