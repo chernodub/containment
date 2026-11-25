@@ -166,7 +166,7 @@ class PyroPresentation implements AbilityPresentation {
         for (const p of this.effects) if (p.live && p.kind === 'lob' && Math.hypot(p.tx - tx, p.tz - tz) < .02) p.live = false;
         kit.burst(tx, .25, tz, 'pyro', 36, 3.5, .65);
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
-        kit.scar('soot', tx, tz, radius, SOOT, 8);
+        kit.scar('fuel-rim', tx, tz, radius, SOOT, 10);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);
         kit.distort(tx, tz, radius * 1.1, .004, .65, true);
         kit.camera(.26);
@@ -486,11 +486,20 @@ class PyroPresentation implements AbilityPresentation {
     if (pool) pool.seen = true;
     for (let i = 0; i < pockets; i++) {
       const seed = zone.id * .71 + i * 2.39996;
+      const napalm = zone.ability === 'napalm-charge';
       const interior = i % 3 !== 1;
       const nearSuit = meltdown;
       const scatter = authoredVariation(seed);
-      const reach = nearSuit ? 1.18 + .36 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
-      const angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
+      let reach = nearSuit ? 1.18 + .36 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
+      let angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
+      if (napalm) {
+        // Triplets follow each of two diverging fuel runs. Outer pockets ignite last.
+        const cluster = Math.floor(i / 3);
+        const run = (Math.floor(cluster / 2) + .42 + .34 * scatter) / Math.ceil(pockets / 6);
+        reach = radius * run * Math.min(1, .15 + elapsed * 3.2);
+        angle = zone.id * .71 + (cluster % 2 ? .95 : -1.85) + .50 * run
+          + .16 * Math.sin(8 * run) + (i % 3 - 1) * .16;
+      }
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
       // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
@@ -512,12 +521,12 @@ class PyroPresentation implements AbilityPresentation {
       const step = Math.max(0, frame.dt) / .15;
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
-      const height = (.40 + .66 * scatter + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);
+      const height = ((napalm ? .18 + 1.45 * scatter * scatter : .40 + .66 * scatter) + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
       kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
         nearSuit || i % 4 === 1 ? CORE : FIRE, fade * visibility, 0,
-        .14 * Math.sin(clock * 2.6 + seed), POOL_FLAME_PHASE + i * 1.7 + scatter);
+        (napalm ? .58 * Math.sin(seed * 1.7) : 0) + .14 * Math.sin(clock * 2.6 + seed), POOL_FLAME_PHASE + i * 1.7 + scatter);
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
     }
@@ -544,7 +553,7 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.sustain(elapsed);
     // One charred footprint; the upright atlas flames above carry its height.
-    this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
+    this.surface(zone.id, 0, x, z, radius, zone.id * .71, Math.PI * 2, .035, .035, fade, true);
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 2); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;

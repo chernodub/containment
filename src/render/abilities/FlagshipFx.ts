@@ -395,6 +395,12 @@ void main(){
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }else if(m<8.5){
   burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+  vec2 local=(fxWorld.xz-fxOrigin.xz)/fxRange;
+  float radius=length(local), bend=.50*radius+.16*sin(8.*radius);
+  float heading=atan(local.y,local.x)-fxAngle-bend;
+  float river=1.-smoothstep(.004,.047,min(1.-cos(heading-.95),1.-cos(heading+1.85)));
+  float grain=fxNoise(fxWorld.xz*3.);
+  emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
