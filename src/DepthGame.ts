@@ -165,7 +165,12 @@ export class DepthGame {
     (enemy.type==='crawler'||enemy.type==='stalker'||enemy.type==='spitter')){
    for(const other of others)if(other.beat===enemy.beat&&other.type==='brute'&&other.role==='anchor')return false;
   }
-  return this.director.canCommit(enemy,player,others,attack);
+  return this.director.canCommit(enemy,player,others,attack,
+   this.difficulty==='standard'||this.difficulty==='story'?{
+    radius:this.player.radius,
+    clear:point=>canTraverseExpedition(this.geometry,player,point,this.player.radius)&&
+     !this.abilities?.blocksMovement(player,point,this.player.radius),
+   }:undefined);
  },canAttack:(a,b)=>(a.type==='spitter'?canTraverseExpedition(this.geometry,a,b,SPITTER_PROJECTILE_RADIUS):hasClearExpeditionShot(this.geometry,a,b))&&!this.abilities?.blocksMovement(a,b,0),chargeObstacle:(id,from,to,radius)=>{
    const shutter=this.relayShutter;
    if(!shutter||id!==this.rackShutter?.wardenId||!segmentIntersectsRect(from,to,

@@ -1,3 +1,4 @@
+import {meleeStrikeContains} from '../enemies/meleeAttacks';
 import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
@@ -37,7 +38,7 @@ export type PincerSnapshot = Readonly<{
 export const PINCER_WINDOW_MS = 14000;
 
 export type EncounterSnapshot = Readonly<{
-  phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
+  meleeLockDelays?:number; phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
   reserve?: {breachId:string;remainingMs:number;leader:'Spitter'|'Brute'}; pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
@@ -343,13 +344,18 @@ export class EncounterDirector {
         .filter(request=>request.reinforcement&&request.role==='flanker')));
     });
   }
-  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge'):boolean {
+  private readonly delayedLocks=new Set<number>();
+  meleeLockDelays=0;
+  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
+    sidestep?:{radius:number;clear:(point:{x:number;y:number})=>boolean}):boolean {
+    const active:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
     for(const other of others){
       if(other.id===enemy.id)continue;
       if(other.champion==='warden'&&other.wallStunAngle!==undefined&&other.beat===enemy.beat&&!enemy.champion
         &&(other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      if(sidestep&&attack==='melee'&&(other.meleePhase==='windup'||other.meleePhase==='strike'))active.push(other);
       if(other.champion){
         charging ||= other.pendingAttack==='charge'||other.chargeMs>0;
         continue;
@@ -358,6 +364,21 @@ export class EncounterDirector {
       if(other.meleePhase!=='approach'||other.pendingAttack==='charge'||other.chargeMs>0)
         melee+=other.type==='crawler'?.5:1;
     }
+    if(active.length&&sidestep?.clear){
+      const angle=Math.atan2(player.y-enemy.y,player.x-enemy.x);
+      const clear=Array.from({length:16},(_,index)=>{
+        const heading=angle+index*Math.PI/8;
+        return {x:player.x+65*Math.cos(heading),y:player.y+65*Math.sin(heading)};
+      }).some(point=>sidestep.clear(point)&&
+        !meleeStrikeContains(enemy.meleeShape,enemy.x,enemy.y,angle,point.x,point.y,sidestep.radius)&&
+        active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
+          other.meleeAngle,point.x,point.y,sidestep.radius)));
+      if(!clear){
+        if(!this.delayedLocks.has(enemy.id)){this.delayedLocks.add(enemy.id);this.meleeLockDelays++;}
+        return false;
+      }
+    }
+    this.delayedLocks.delete(enemy.id);
     if(enemy.champion)return attack!=='charge'||melee<=this.tokens.meleeTokens-1;
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
@@ -379,7 +400,7 @@ export class EncounterDirector {
     const reserve=nextReserve?{breachId:nextReserve.breachId,
       remainingMs:Math.max(0,nextReserve.atMs-this.beatElapsedMs),
       leader:beat?.grammar==='crossfire'?'Spitter' as const:'Brute' as const}:undefined;
-    return Object.freeze({ reserve, pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
+    return Object.freeze({ meleeLockDelays:this.meleeLockDelays, reserve, pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
       remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,beatRemaining:Math.max(0,(this.plan.beats[this.beatIndex]?.end??this.dispatched)-this.dispatched),grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
   }
 
@@ -533,6 +554,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

@@ -171,7 +171,7 @@ export type EnemySnapshot = Readonly<{laneCutter?:boolean;readyBehaviour?:ReadyB
 
 export const WARDEN_WALL_STUN_MS=1500;
 
-export type EnemyCommitment = Pick<EnemySnapshot,'id'|'type'|'role'|'beat'|'meleePhase'|'meleeAngle'|'x'|'y'|'champion'|'stunRemainingMs'|'wallStunAngle'|'meleeShape'|'pendingAttack'|'chargeMs'>;
+export type EnemyCommitment = Pick<EnemySnapshot,'id'|'type'|'role'|'beat'|'meleePhase'|'meleeAngle'|'meleeOriginX'|'meleeOriginY'|'x'|'y'|'champion'|'stunRemainingMs'|'wallStunAngle'|'meleeShape'|'pendingAttack'|'chargeMs'>;
 
 export type EnemySystemSnapshot = Readonly<{
   activeCount: number;
