@@ -33,6 +33,13 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
     float crust=iceCap*(1.-smoothstep(.24,.78,frostEdge))*statusFrost*statusFrost;
     outgoingLight*=1.-.28*(1.-iceCap)*statusFrost;
     outgoingLight=mix(outgoingLight,vec3(.17,.34,.42),crust*.68);
+    #ifdef BRUTE_PLANES
+    // Three chill stacks reach .87. Reserve the pale opaque skin for a full freeze.
+    if(statusFrost>.99 && bruteBody){
+      float frozenValue=dot(outgoingLight,vec3(.2126,.7152,.0722));
+      outgoingLight=(.075+.95*frozenValue)*vec3(.88,1.02,1.07);
+    }
+    #endif
     #include <opaque_fragment>
    `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v6';m.needsUpdate=true;
  }});
