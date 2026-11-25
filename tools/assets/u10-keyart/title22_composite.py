@@ -13,7 +13,7 @@ cast = [
     ('crawler', 1172, 669, 286, 55),
 ]
 # Match the foreground plate's shadow exposure. Hold the emissive peaks.
-levels = [(0, 3), (30, 9), (70, 26), (120, 62), (180, 128), (225, 207), (255, 247)]
+levels = [(0, 3), (30, 21), (70, 53), (120, 101), (180, 165), (225, 220), (255, 247)]
 curve = []
 for (x, y), (end_x, end_y) in zip(levels, levels[1:]):
     for value in range(x, end_x):
