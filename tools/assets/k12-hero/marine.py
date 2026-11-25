@@ -86,7 +86,7 @@ def build(joints, tails, high):
                 mask = obj.data.attributes.new('rig_paint', 'FLOAT', 'FACE')
                 up = obj.matrix_world.to_3x3().inverted().transposed()
                 for face in obj.data.polygons:
-                    mask.data[face.index].value = float(
+                    mask.data[face.index].value = 3.0 if name == 'ram shoe' else float(
                         painted or (module and (up @ face.normal).normalized().z > .35)
                     )
             part = zlib.crc32(name.encode()) & 0x7fffffff

@@ -38,6 +38,7 @@ function prepareMarinePaint(mesh: T.SkinnedMesh) {
     const equipment = bone === 'ribs' || bone?.startsWith('forearm');
     // The small pauldron cap and lame are rigid upper-arm parts on the rig skin.
     if (rigSkin && bone?.startsWith('upper_arm')) roles[i] = 1;
+    else if (painted === 3) roles[i] = 1; // Exposed edge of the shield backing.
     else if (bone === 'head') roles[i] = -1;
     else roles[i] = painted && equipment ? 2 : painted;
   }

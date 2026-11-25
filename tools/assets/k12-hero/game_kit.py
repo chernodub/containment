@@ -15,7 +15,7 @@ import materials as M
 # Old back-pack parts each new assembly replaces (they sat where the new kit stands).
 REPLACED = {
     'breacher': ('breacher ram barrel', 'breacher ram rod', 'ram gland', 'ram eye', 'ram gauntlet housing', 'ram gauntlet rod'),
-    'cryo': ('cryo dewar', 'dewar insulation band', 'dewar valve', 'dewar valve wheel', 'dewar gauge', 'gauge face'),
+    'cryo': ('cryo coolant hose', 'cryo dewar', 'dewar insulation band', 'dewar valve', 'dewar valve wheel', 'dewar gauge', 'gauge face'),
     'pyro': ('pyro fuel cell', 'fuel cell band', 'pyro exhaust stack', 'exhaust fin', 'pyro exhaust glow'),
     'arc': ('arc antenna', 'arc antenna tip'),
 }
@@ -49,8 +49,9 @@ def extend(suit, rig):
         along = (wrist - elbow).normalized()
         n = V((-.80, .20, .56))
         n = (n - along * n.dot(along)).normalized()
-        origin = elbow.lerp(wrist, .52) + n * .105
-        outline = [(x * 1.25, y * 1.15) for x, y in [(-.15, -.20), (-.08, -.27), (.10, -.25), (.15, -.15), (.15, .17), (.08, .24), (-.11, .23), (-.15, .15)]]
+        n = (along * .82 + n * .57).normalized()
+        origin = wrist + n * .10
+        outline = [(x * 1.86, y * .93) for x, y in [(-.15, -.20), (-.08, -.27), (.10, -.25), (.15, -.15), (.15, .17), (.08, .24), (-.11, .23), (-.15, .15)]]
         for name, scale, offset, depth, role in [('ram shoe', 1.0, 0, .050, 'gunmetal'),
                                                  ('kit24 paint strike face', .90, .034, .026, colour)]:
             obj = kit.prism(name, [(x * scale, y * scale) for x, y in outline], depth, origin + n * offset, n, -along, suit.col)
@@ -68,9 +69,9 @@ def extend(suit, rig):
             suit.add(kit.cylinder('ram piston', p0, p0 + along * .20, .019, 12 if hi else 6, suit.col), 'steel', 'forearm.L')
     elif rig == 'cryo':
         tops = []
-        for x, h in ((-.115, .66), (.115, .60)):
+        for x, h in ((-.19, .54), (.19, .54)):
             base = V((x, -.335, 1.30))
-            axis = V((x * .45, -.30, 1)).normalized()
+            axis = V((x * .88, -.38, 1)).normalized()
             prof = [(0, 0), (.070, 0), (.096, .035), (.098, .07), (.098, h - .07), (.090, h - .03), (.055, h), (0, h)]
             lathe('kit24 paint dewar', prof, base, axis, colour)
             for t in (.13, h - .16):
@@ -83,18 +84,37 @@ def extend(suit, rig):
         mid = (a + b) / 2
         tube('dewar return loop', [a + aa * .03, a + aa * .14 + V((.03, -.03, 0)), mid + V((0, -.08, .20)),
                                    b + ba * .14 + V((-.03, -.03, 0)), b + ba * .03], .026, 'rubber')
+        # Supply line on the firing side. Each section follows its mount,
+        # from the valve over the upper arm to the animated weapon receiver.
+        outlet = tops[1][0]
+        anchors = [outlet, outlet + V((.13, -.015, -.04)),
+                   suit.j['upper_arm.R'] + V((.12, 0, .04)),
+                   suit.j['forearm.R'] + V((.09, -.055, 0)),
+                   suit.j['hand.R'] + V((.06, -.04, -.04)), suit.j['tag_weapon']]
+        joints = ['ribs', 'ribs', 'upper_arm.R', 'forearm.R', 'hand.R', 'tag_weapon']
+        steps, sides = (7, 10) if hi else (4, 7)
+        path = kit.catmull(anchors, steps)
+        hose = kit.sweep('receiver coolant feed', path, .021, sides, collection=suit.col)
+        suit.add(hose, 'rubber')
+        groups = {name: hose.vertex_groups.new(name=name) for name in dict.fromkeys(joints)}
+        for row in range(len(path)):
+            segment = min(row // steps, len(anchors) - 2)
+            blend = row / steps - segment
+            vertices = list(range(row * sides, (row + 1) * sides))
+            groups[joints[segment]].add(vertices, 1 - blend, 'ADD')
+            groups[joints[segment + 1]].add(vertices, blend, 'ADD')
         # Back saddle the dewars stand in.
         obj = kit.prism('dewar saddle', [(-.22, -.05), (.22, -.05), (.20, .05), (-.20, .05)], .07, V((0, -.30, 1.33)), (0, -1, 0), (0, 0, 1), suit.col)
         suit.add(obj, 'gunmetal', 'ribs')
     elif rig == 'pyro':
         for s in (-1, 1):
-            base = V((s * .155, -.345, 1.28))
+            base = V((s * (.22 if s < 0 else .13), -.285, 1.26 if s < 0 else 1.08))
             lathe('kit24 paint fuel bottle', [(0, 0), (.075, 0), (.102, .04), (.104, .06), (.104, .30), (.088, .36), (.05, .385), (0, .385)],
                   base, (0, 0, 1), colour)
             suit.ring('fuel strap', base + V((0, 0, .21)), (0, 0, 1), .106, .036, 'gunmetal', 'ribs')
             # Flared exhaust stack rising from the bottle head, leaning out and back.
             a = base + V((0, 0, .37))
-            axis = V((s * .38, -.22, 1)).normalized()
+            axis = V((s * (.75 if s < 0 else .15), -.22, 1)).normalized()
             stack = lathe('pyro flared exhaust', [(.036, 0), (.044, .03), (.044, .25), (.058, .30), (.080, .36), (.082, .38), (.064, .38), (.050, .33)],
                           a, axis, 'heat', caps=False)
             heat = stack.data.attributes.new('k12_heat', 'FLOAT', 'POINT')
@@ -103,8 +123,8 @@ def extend(suit, rig):
             suit.ring('exhaust collar', a + axis * .06, axis, .050, .03, 'gunmetal', 'ribs')
             lathe('pyro exhaust glow', [(0, .336), (.060, .336), (.060, .346), (0, .346)], a, axis, 'fire_glow', segments=12 if hi else 8)   # closed puck: a zero-area disc shaded NaN (black squares in play)
     else:
-        base = V((-.10, -.30, 1.40))
-        axis = V((-.20, -.22, 1)).normalized()
+        base = V((-.19, -.255, 1.36))
+        axis = V((-.52, -.16, 1)).normalized()
         lathe('telescopic pylon', [(0, 0), (.060, 0), (.050, .26), (.030, .30), (.026, .78), (0, .78)], base, axis, 'steel')
         for k, z in enumerate((.30, .37, .44, .51, .58)):
             r = .092 - k * .006
