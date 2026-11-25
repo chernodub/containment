@@ -406,6 +406,11 @@ try {
     }
     if(target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
     const freshEvents=newEventReceipts(previousEvents,s.events);previousEvents=s.events;
+    if(freshEvents.some(event=>event.reserveCut)){
+      const name=`r${room.depth+1}-${room.id}-reserve-cut`;
+      await shot(name,s);
+      room.reserveCutFrame=`${name}.png`;
+    }
     if(freshEvents.some(event=>event.shutterBroken)){
       await shot('relay-racks-shutter-impact',s);
       room.shutterImpact='relay-racks-shutter-impact.png';
