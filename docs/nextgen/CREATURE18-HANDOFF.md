@@ -956,3 +956,18 @@ Open `artifacts/nextgen/family35/sheets/index.html`. Each named pair has a nativ
 | pod-ragdoll | The tipped sac and folded limbs read separately. The corpse crosses the marine and the red sector at this camera angle. |
 
 The three weakest views are Stalker behind (rear legs against dark steel), the elite Crawler pair (console occlusion), and Matron behind (marine and sac tip overlap). Native crops retain more limb anatomy than the downsampled room view. The final death and ragdoll comparisons use the browser compositor after GPU completion. The original helper returned the previous canvas on death and a cleared canvas on ragdoll.
+
+### Production verification
+
+The production build passed. The fixture set contains 15 family pose captures, three four-frame crowd bursts, five elite pairs and three individual pod-stage captures. All 26 final capture manifests have empty error and failure lists. The eight-stage native Matron sequence also completed without errors. The side-by-side gallery uses final19 as its visual baseline. Differences in the marine and the Brute predate FAMILY35.
+
+The Pyro Crew Checkpoint benchmark used the immediately preceding build, `6db0c5a1`, as the draw-call baseline. Each cell lists the maximum draw calls observed in each of three repeats.
+
+| Tier | Previous draws | FAMILY35 draws | Combat compiles, previous / FAMILY35 |
+|---|---|---|---|
+| High | 150, 149, 145 | 151, 149, 144 | 0 / 0 in every repeat |
+| Low | 138, 134, 132 | 133, 132, 133 | 0 / 0 in every repeat |
+
+The plain ten-second runs on this shared host sometimes ended before a complete kit rotation or before a frame sample. Both builds completed the six-trial comparison with the same `--seconds=10 --min-simulation-seconds=4` settings. The resulting reports have zero errors. The raw reports are `artifacts/nextgen/family35-previous/benchmark.json` and `artifacts/nextgen/family35/benchmark.json`. These are draw and shader counts under an active simulation.
+
+Pyro cleared all eight rooms through Breached Loading Bay on seed 1729 with the fast desktop runner. The isolated run exited 0 with zero errors and zero defect flags. Its receipt is `artifacts/nextgen/playtest/family35-pyro/report.json`. An earlier concurrent run also cleared all eight rooms and recorded two room-loading holds over five seconds.
