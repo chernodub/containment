@@ -292,12 +292,6 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     if (fade > 0) {
       kit.sustain(p.age);
-      for (let i = 0, count = kit.low ? 7 : 16; i < count; i++) {
-        const angle = p.angle + (authoredVariation(i + 1) - .5) * p.arc;
-        const reach = p.range * (.23 + .71 * i / count);
-        kit.draw('flame', p.x + Math.cos(angle) * reach, .42, p.z + Math.sin(angle) * reach,
-          .33, .40, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
-      }
       kit.sprite('glow', p.x + c*p.range*.48, .05, p.z + s*p.range*.48, p.range*.42, p.range*.27, FIRE, fade*.25, 0, 'ground-light');
       if (p.age < .12) for (const id of p.targetIds ?? []) {
         const actor=kit.statusActor(id);

@@ -94,18 +94,21 @@ export const TEXTURED_FIRE_GLSL = `
   if(t>1.||abs(theta)>1.)discard;
   // Gaps open just beyond the nozzle. Each lane bends, narrows and
   // extinguishes separately, including the two that describe the cone sides.
-  float wobble=.22*sin(t*8.+theta*4.-abilityTime*8.)+.10*sin(t*19.+theta*5.);
+  float grain=abilityNoise(vec2(t*18.-abilityTime*8.,theta*13.+17.));
+  float wobble=.34*sin(t*10.+theta*8.-abilityTime*8.)+.17*sin(t*22.-theta*6.)
+        +.19*(grain-.5);
   float lane=theta*3.4+wobble*smoothstep(.12,.55,t);
   float strand=floor(lane+.5);
   float seed=fract(sin(strand*41.7+1.)*734.31);
   float reach=.77+.22*seed;
   float along=t/reach;
   float width=(.20+.15*seed)*(1.-smoothstep(.57,1.,along))
-       +.05*sin(t*24.+seed*14.-abilityTime*9.);
+       +.09*sin(t*31.+seed*14.-abilityTime*9.)+.12*(grain-.48);
   float across=abs(lane-strand);
   float tongue=(1.-smoothstep(width,width+.045,across))*(1.-smoothstep(.93,1.,along));
   float muzzle=(1.-smoothstep(.10,.21,t))*(1.-smoothstep(.28,.90,abs(theta)));
-  coverage=max(tongue,muzzle)*smoothstep(.01,.055,t)*(1.-smoothstep(.93,1.,abs(theta)));
+  float tear=smoothstep(.38,.75,t)*smoothstep(.50,.62,grain)*smoothstep(.03,.20,across);
+  coverage=max(tongue*(1.-tear),muzzle)*smoothstep(.01,.055,t)*(1.-smoothstep(.93,1.,abs(theta)));
   float spine=1.-smoothstep(.025,.14,across);
   c=mix(vec3(.78,.16,.004),vec3(1.92,.60,.025),spine*(1.-along*.55));
   c=mix(c,vec3(2.6,1.85,.53),muzzle*(peak?1.:.58));
