@@ -58,3 +58,69 @@ The three staged High fights recorded 178 draws in Armory, 117 in Transmission a
 The standard Arc run with seed 1729 (room26-arc) cleared 20 rooms. The recorded outcome was complete, with 0 errors, 0 defects and a sampled peak of 273 draws. [Campaign receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/playtest/room26-arc/report.json)
 
 The campaign used the build before the last Workshop blister placement and Interlock contact-face edits. The final build, room captures and both delivery timing sweeps include those renderer-only edits.
+
+## ROOM27
+
+In the final18 arena sheet I see the diagonal connector and small lit end most clearly in Awakening Bay, Residential Gallery, Breached Loading Bay, Relay Racks, Diagnostic Gallery, Safety Interlock, Coolant Plant and Service Shaft Landing. Transmission also follows that arrangement, although its receiver already has a distinct fork. Shielding Gate runs across the view and has a different problem. The loose fitting reads more clearly than the gate that broke.
+
+| Recomposed room | What now crosses the lane |
+|---|---|
+| Service Shaft Landing | A sagging hoist line turns through a two-turn coil at the upper landing. An open six-spoke sheave stands on the lower landing where the incident camera crops the winch. |
+| Shielding Gate | Two broad, staggered rows of wedge teeth reveal the break between the gate leaves. |
+| Diagnostic Gallery | A patient cradle crosses beneath the probe. A divided headrest, side rails and two restraint straps show its scale. |
+| Awakening Bay | An open thaw blanket with raised bolsters spreads beside the berth hose. |
+| Residential Gallery | The rails carry a stopped service cart on four bogies. Its tray and raised stop occupy the middle of the track. |
+| Breached Loading Bay | An open-web gantry has fallen across the direction of travel. The deck shows through its diagonal braces. |
+| Relay Racks | A transverse cable trench exposes the rack combs. The displaced cover lies beside the trench. |
+| Coolant Plant | Four branches of ice fan sideways from the split return header. |
+| Safety Interlock | A row of broken stanchions extends across the isolator track. The posts lean at different heights. |
+
+All twenty rooms use their own palette on offset deck plates. The plates continue into the parts of the room where the native campaign kites away from the declared arena. Plate lips, inset grate bars and a drain give the deck shallow relief. A lighter traffic path crosses the arena beside a bolted hatch and a wet patch coloured by the local practical. The marks share the existing 0.0214 m deck skin. Contact paint follows the bounds of grounded kit pieces and individual lane-machine parts. A short cast shadow extends away from the key.
+
+Fourteen rooms gained emissive surfaces on the machinery and a local painted spill. The six retained treatments are Armory, Passenger Vault, Communal Atrium, Infested Workshop, Containment Annulus and Overload Floor. No pooled light was added.
+
+### ROOM27 evidence and verification
+
+- [All twenty arena pairs](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-review/l8-arena-calm-pairs.png)
+- [All twenty incident pairs](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-review/incident-facing-pairs.png)
+- [Native comparison gallery](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-review/index.html)
+- [Three native Cryo fights](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-review/native-fights.png)
+
+The sheets put final18 on the left and ROOM27 on the right. Each half is 480 × 270. The gallery also links 18 full-resolution pairs covering both views of the nine recomposed rooms.
+
+High is the larger draw count in the arena and incident captures. Low uses the calm spawn capture. The campaign peak samples include actors and effects. Fresh preparation is one measured entry per room on the shared host.
+
+| Room | High | Low | Native fight peak | final18 fresh (ms) | ROOM27 fresh (ms) |
+|---|---:|---:|---:|---:|---:|
+| awakening-bay | 107 | 100 | 136 | 2169 | 2029 |
+| passenger-vault | 87 | 78 | 111 | 1851 | 1582 |
+| residential-gallery | 83 | 74 | 109 | 1089 | 939 |
+| communal-atrium | 106 | 98 | 132 | 1462 | 1797 |
+| crew-checkpoint | 82 | 72 | 111 | 1079 | 956 |
+| armory | 97 | 171 | 184 | 1416 | 1259 |
+| freight-hold | 87 | 73 | 117 | 1369 | 1136 |
+| breached-loading-bay | 95 | 84 | 136 | 1939 | 1393 |
+| relay-racks | 108 | 98 | 147 | 1455 | 1008 |
+| transmission-chamber | 97 | 83 | 138 | 2164 | 1320 |
+| diagnostic-gallery | 89 | 67 | 139 | 2259 | 1680 |
+| safety-interlock-station | 156 | 113 | 261 | 4373 | 1437 |
+| coolant-plant | 88 | 73 | 160 | 933 | 874 |
+| service-shaft-landing | 84 | 80 | 142 | 1043 | 1244 |
+| infested-workshop | 118 | 92 | 198 | 1092 | 1061 |
+| swarm-junction | 70 | 56 | 123 | 956 | 897 |
+| shielding-gate | 220 | 95 | 271 | 2334 | 1268 |
+| containment-annulus | 98 | 75 | 166 | 5145 | 1607 |
+| manual-control-chamber | 107 | 100 | 212 | 3367 | 1340 |
+| overload-floor | 106 | 95 | 144 | 2193 | 2544 |
+
+Median fresh preparation changed from 1,657 to 1,294 ms. The baseline recorded 3 budget failures. All twenty ROOM27 entries met the budget and recorded zero combat shader compiles. The individual samples for Communal Atrium, Service Shaft Landing and Overload Floor were slower than their baseline entries. [Baseline](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-baseline/rooms.json) · [Delivery](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-quiet-prep/rooms.json)
+
+The median sampled local floor contrast was 8% of the sampled marine-to-deck difference across 20 arena views. This uses screenshot luminance and local floor patches. Bright prop edges, warnings and the dark parts of the marine affect individual samples. [Per-room measurements](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-review/floor-contrast.json)
+
+The production build passed. The standard, competent-profile Cryo campaign with seed 1729 cleared 20 rooms, finished with outcome complete, and recorded 0 errors and 0 defects. Highest sampled campaign draw count was 271. [Native campaign receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/playtest/room27-cryo/report.json)
+
+The Armory frame catches the Warden’s red sightline crossing the plate seams. In the Shaft frame, the red attack wedge covers the hoist lane. The Coolant frame catches eight enemies around the marine with an amber attack circle visible at the lower edge of the fight. [Armory](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/playtest/room27-cryo/r6-armory-pressure.png) · [Shaft](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/playtest/room27-cryo/r14-service-shaft-landing-pressure.png) · [Coolant](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/playtest/room27-cryo/r13-coolant-plant-pressure.png)
+
+The Shaft retake shows the lower wheel face-on above the marine. Transmission’s incident crop still leaves the mast high in the frame, and the pale feed is easier to pick out in the arena view. The intended third-place brightness hierarchy was judged visually. The floor-contrast sample measures deck contrast only.
+
+An earlier final-build preparation sweep overlapped the native campaign. Awakening Bay exceeded the 3,000 ms limit in that sweep (3,708 ms). The table uses the sweep after both campaign and capture finished. [Overlapping sweep](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-final-prep/rooms.json)
