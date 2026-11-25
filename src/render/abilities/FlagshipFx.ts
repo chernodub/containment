@@ -62,8 +62,8 @@ void main(){
   w=base+right*(s*W*(1.-.55*v))+vec3(0.,v*H,0.);
   fxLocal=vec2(s,v);fxSeg=seg+step(39.5,col)*.5;
  }else if(m>13.5){
-  // Climax disc (ground): u around, v centre to exact radius.
-  float a=g.x*6.2831853;float r=g.y*fxRange;
+  // Meltdown alone reserves a narrow apron for cosmetic cracks beyond its front.
+  float a=g.x*6.2831853;float r=g.y*fxRange*(fxArc==2.?1.18:1.);
   w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
  }else if(m>12.5){
   float a=g.x*6.2831853,polar=g.y*1.5707963;
@@ -487,12 +487,19 @@ void main(){
    #endif
    float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
-   float rays=pow(abs(cos(a*5.+.16*n)),9.);
-   float star=(1.-smoothstep(R*(.22+.55*rays),R*(.33+.65*rays),r))*peak;
-   float core=(1.-smoothstep(.25,1.20,r))*peak;
-   base=vec3(.16,.052,.008);
-   emit=vec3(1.65,.60,.041)*fissure*(.4+.6*heat)+vec3(2.8,1.62,.40)*star+vec3(2.,2.2,1.8)*core;
-   alpha=.14+.55*fissure+.82*star;
+   float normalized=r/R;
+   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n);
+   float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
+   float radial=abs(sin(a*5.+.60*n+.26*sin(r*2.)));
+   float finger=(1.-smoothstep(.018,.10,radial))*(1.-smoothstep(.91+n*.10,1.14,normalized));
+   float cracks=fissure*crust+finger*smoothstep(.42,.83,normalized);
+   float rays=pow(abs(cos(a*5.+.28*n)),12.);
+   float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
+   float core=(1.-smoothstep(.14,.55,r))*peak;
+   float front=(1.-smoothstep(.045,.16,abs(r-R+.08)))*(1.-smoothstep(.09,.17,age));
+   base=vec3(.055,.020,.004);
+   emit=vec3(1.65,.60,.041)*cracks*(.4+.6*heat)+vec3(2.4,1.2,.28)*star+vec3(2.,2.2,1.8)*core+vec3(1.65,.65,.08)*front;
+   alpha=.055*crust+.55*cracks+.65*star+.52*front;
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
