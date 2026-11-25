@@ -245,6 +245,18 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           // CREATURE26: room light hue varies across the body with practical pools and shadow-map edges; on a creature
           // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
           graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
+#ifdef BROOD_PLANES
+          if(broodFinish && broodBody){
+            float key=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
+            // Keep the atlas zone and deck tint as the upper bound for each fragment.
+            // The edge retains its original value. Both larger planes subtract light.
+            float lit=actorBroodForm.w==1. && !broodSac ? .74 : .92;
+            float shade=broodSac ? .61 : actorBroodForm.z;
+            float plane=mix(shade,lit,step(actorBroodForm.x,key));
+            graphicActorLight*=mix(plane,1.,step(actorBroodForm.y,key));
+            if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
+          }
+#endif
 #ifdef BRUTE_PLANES
           if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
           if(bruteBody){
