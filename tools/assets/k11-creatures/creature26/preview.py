@@ -39,6 +39,7 @@ key = -0.52 * right + 0.42 * cam_up + 0.74 * to_cam   # GraphicSurface creature 
 key /= np.linalg.norm(key)
 RGB = {}
 SKIN = {}
+HARD = {}
 MOTION = P.Motion(K.ROOT / f"public/assets/models/motion/{M.FAMILY}-motion.glb")
 
 
@@ -62,13 +63,14 @@ def mesh_for(name):
             for j, (b, wt) in enumerate(gs):
                 bones[v.index, j], w[v.index, j] = b, wt / tot
         SKIN[o.name] = (K.verts_np(o).copy(), bones, w)
+        HARD[o.name] = build_bands.hard_weights(K.verts_np(o), sc)
     return objs
 
 
 def shade(o, yaw):
     """Flat band colour x two light planes from the key, with Taubin form normals, as a point colour."""
     rgb = RGB[o.name]
-    n = build_bands.form_normals_np(o, 60)
+    n = build_bands.form_normals_np(o, 60, hard=HARD[o.name])
     c, s = math.cos(yaw), math.sin(yaw)
     Rz = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
     facing = (n @ Rz.T) @ key
@@ -107,6 +109,11 @@ for pose_name in POSES:
         for o, _ in objs_:
             rest, bones, w = SKIN[o.name]
             K.set_verts(o, rest if skin is None else P.pose_points(rest, M.ASPECT, bones, w, skin))
+        co_ = np.vstack([K.verts_np(o) for o, _ in objs_])
+        print("POSE", pose_name, name, "radial", round(float(np.max(np.linalg.norm(co_[:, :2], axis=1))), 3),
+              "top", round(float(co_[:, 2].max()), 3),
+              "top-at-rest", np.round(np.vstack([SKIN[o.name][0] for o, _ in objs_])[int(np.argmax(co_[:, 2]))], 2).tolist(),
+              "radial-at-rest", np.round(np.vstack([SKIN[o.name][0] for o, _ in objs_])[int(np.argmax(np.linalg.norm(co_[:, :2], axis=1)))], 2).tolist())
     for tag in FACINGS:
         yaw = YAW[tag]
         allo = []

@@ -135,8 +135,9 @@ class Prim:
     op = "add"
 
     def __init__(self, *, op="add", k=0.0, zone=SHELL, bone=None, tint=1.0, plate=0, name="", bounds=None,
-                 detail=1.0):
+                 detail=1.0, hard=0.0):
         self.op, self.k, self.zone, self.bone = op, float(k), zone, bone
+        self.hard = float(hard)   # CREATURE29: 1 = shade this primitive with its own facet normals, not the smoothed proxy
         self.tint, self.plate, self.name, self.detail = float(tint), int(plate), name, float(detail)
         self._bounds = bounds
 
@@ -341,6 +342,39 @@ class AnglePlate(Prim):
         x0 = L * 0.35
         slope = (H + T * 0.5) / (x0 + back)
         d = np.maximum(d, plane(-slope, 0.0, 1.0, H - slope * x0))
+        return d
+
+
+class Prism(Prim):
+    """CREATURE29: a hard-faceted limb segment: a tapered polygonal prism from ``a`` to ``b``.
+
+    ``r0``/``r1`` are the apothems at each end, ``sides`` the facet count, ``up`` the reference direction for the
+    first facet (rolled by ``roll`` radians), ``squash`` scales the cross-section along ``up`` (flat segments)."""
+
+    def __init__(self, a, b, r0, r1, sides=4, up=(0, 0, 1), roll=math.pi / 4, squash=1.0, **kw):
+        self.a, self.b = v3(a), v3(b)
+        self.r0, self.r1, self.sides, self.roll, self.squash = float(r0), float(r1), int(sides), float(roll), float(squash)
+        ax = self.b - self.a
+        self.L = max(float(np.linalg.norm(ax)), 1e-6)
+        self.u = ax / self.L
+        t = v3(up) - self.u * float(v3(up) @ self.u)
+        if float(np.linalg.norm(t)) < 1e-4:
+            t = np.cross(self.u, v3((0, 1, 0)))
+        self.t = normalize(t)
+        self.s = normalize(np.cross(self.t, self.u))
+        r = max(self.r0, self.r1) * 1.5 * max(1.0, self.squash)
+        super().__init__(bounds=(np.minimum(self.a, self.b) - r, np.maximum(self.a, self.b) + r), **kw)
+
+    def field(self, P):
+        q = P - self.a
+        x, y, z = q @ self.u, q @ self.s, (q @ self.t) / self.squash
+        slope = (self.r1 - self.r0) / self.L
+        r = self.r0 + slope * x
+        norm = math.sqrt(1 + slope * slope)
+        d = np.maximum(-x, x - self.L)
+        for i in range(self.sides):
+            th = self.roll + 2 * math.pi * i / self.sides
+            d = np.maximum(d, (y * math.cos(th) + z * math.sin(th) - r) / norm * min(1.0, self.squash))
         return d
 
 

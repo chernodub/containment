@@ -82,7 +82,15 @@ def anatomy_rgb(obj, sculpture, M):
     return bands, rgb
 
 
-def form_normals_np(obj, iterations, mix=1.0, normal_iterations=12):
+def hard_weights(co, sculpture):
+    """CREATURE29: per-vertex weight of the winning primitive's ``hard`` flag (faceted planes keep their own normals)."""
+    if not any(getattr(p, "hard", 0) > 0 for p in sculpture.prims):
+        return None
+    _, win = sculpture.evaluate_points(co, track=True)
+    return np.array([sculpture.prims[i].hard if i >= 0 else 0.0 for i in win], np.float32)
+
+
+def form_normals_np(obj, iterations, mix=1.0, normal_iterations=12, hard=None):
     """Taubin-smoothed copy's vertex normals (the CREATURE26 shading proxy), mixed with the true normals."""
     co, e, true_n = K.verts_np(obj), K.edges_np(obj), K.normals_np(obj)
     sm = co.copy()
@@ -98,4 +106,8 @@ def form_normals_np(obj, iterations, mix=1.0, normal_iterations=12):
     proxy_n = K.laplacian(proxy_n, e, len(co), normal_iterations, 0.5)
     proxy_n /= np.maximum(np.linalg.norm(proxy_n, axis=1, keepdims=True), 1e-6)
     n = mix * proxy_n + (1 - mix) * true_n
+    if hard is not None:   # CREATURE29: hard planes keep their facet normals so a plane reads as one lit or dark shape
+        h = np.clip(hard, 0, 1)[:, None]
+        n = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-6)
+        n = (1 - h) * n + h * true_n
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-6)

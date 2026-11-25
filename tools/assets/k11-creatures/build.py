@@ -299,6 +299,10 @@ for name, sculpture in parts.items():
                 reg[sel, ch] = np.maximum(reg[sel, ch], w)
         attr = low.data.attributes.new("k11_region", "FLOAT2", "POINT")
         attr.data.foreach_set("vector", reg.ravel())
+    import build_bands
+    hw = build_bands.hard_weights(K.verts_np(low), sculpture)
+    if hw is not None:   # CREATURE29: carried to the variants, read by form_normals, removed before export
+        low.data.attributes.new("k11_hard", "FLOAT", "POINT").data.foreach_set("value", hw)
     if FLAT:
         flat_cells(low, sculpture)
     highs[name], lows[name] = high, low
@@ -377,7 +381,12 @@ def form_normals(obj, mix, iterations):
     skinning deforms them; no shader input is added. mix = weight of the proxy against the true normals."""
     import build_bands
     true_n = K.normals_np(obj)
-    n = build_bands.form_normals_np(obj, iterations, mix)
+    hard = None
+    if "k11_hard" in obj.data.attributes:
+        hard = np.zeros(len(obj.data.vertices), np.float32)
+        obj.data.attributes["k11_hard"].data.foreach_get("value", hard)
+        obj.data.attributes.remove(obj.data.attributes["k11_hard"])
+    n = build_bands.form_normals_np(obj, iterations, mix, hard=hard)
     obj.data.normals_split_custom_set_from_vertices([tuple(map(float, v)) for v in n])
     obj.data.update()
     turn = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", n, true_n), -1, 1)))

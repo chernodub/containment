@@ -665,3 +665,75 @@ All regular and elite heights match the before and after values in the preceding
 Open `artifacts/nextgen/creature28/colour/sheets/` in this worktree. Both `swarm-junction` and `relay-racks` have `-native.png` and `-480.png` full-frame strips, `-crop.png` strips of native 640×620 windows, and `-now-640x620.png` single current windows. The three columns run final17, final18, current.
 
 The production build passed. Arc cleared all 12 rooms on seed 1729 with zero errors and zero reported defects. The final desktop campaign report is at `artifacts/nextgen/playtest/c28-colour-final-arc/index.html`.
+
+## CREATURE29 — Brute face and limbs, Warden body (geometry only)
+
+Base `bbff3592`. Lighting, colours, zone values, the creature shader, skeletons, bone names, joint rest positions and motion clips are unchanged. Only `tools/assets/k11-creatures/{brute,warden,sdf,build,build_bands}.py` and the packed `tyrant.glb` changed. The elite crest and forked cleaver (regalia) were not touched.
+
+**Brute head.** The head is one pale brow-to-snout plane with no keel. It slopes 18° down toward the target, is 2.0 design units wide and runs from just ahead of the yoke to past the old snout. It sits on a narrower dark skull, so its overhang shows as a dark recess. A dark crease sits along the brow, a mid-flesh hood wraps the back of the skull, and a recessed dark neck separates the hood from the yoke, which is narrower (side half-span 1.95 → 1.65). The tusks and mouth cut were removed: the cut showed through the plane as a dark spot.
+
+- Slope: steep planes sit on the light's .64 threshold and read as half pale, half grey. The flatter plane faces the fixed key at every heading.
+- Value: under the fixed palette, lit bone measures about 118 luma against lit flesh at 103 in Relay Racks. The plane has to be carried by the dark around it, not by value.
+- Recovery: in the recovery clip the head pitches into the chest. That pose shows only a small pale strip.
+
+**Brute limbs.** Every leg has the same parts, all with hard facet normals:
+- a four-sided faceted thigh
+- a knee knob
+- a faceted shin
+- a flat foot with three large claws
+
+Forearms are faceted segments with an elbow knob. The weapon elbow's geometry stands 1.35 units off the torso (was 0.72), while the wrist and cleaver keep their place. The masses lose their noise lumps. Both cleavers are built from four segments instead of nine scallops, which leaves four big notches.
+
+**Warden.** The round fist arm and the small hooked arm are replaced by two massive faceted forelimbs. Each has a shoulder, an elbow knob standing out and back, and a forearm. The forearm ends in a foot planted wide of the body with three big pale claws. The rest of the body changed as follows:
+- A dark keeled plate runs down the front of the chest.
+- The mid-body narrows into a waist.
+- The hind legs are hard-plane legs with knees and claws. The middle pair is tucked under the waist.
+- A dark faceted head wedge projects forward under the crest and lit maw. Both stay on their CREATURE26 anchor, so the maw keeps its baseline size and brightness. The first try moved them forward with the head, and the crest's forward point then covered the maw.
+- The ram shoulder is unchanged. The drawn reach is 2.31 m (was 2.30).
+
+**New tooling.**
+- `sdf.Prism`: a tapered polygonal segment.
+- `Prim(hard=…)`: a primitive shades with its own facet normals instead of the Taubin proxy. The weight is carried as `k11_hard` into `build.form_normals` and removed before export. The preview honours it.
+- `creature26/look.sh`: a four-pose preview sheet.
+- `creature26/iter29.sh`: build → ship → game build → lineup → crowd.
+- `creature26/rig.mjs`: rig fingerprint and mesh extents.
+- `creature26/proof29.mjs`: final18 | baseline | now sheets.
+- `creature26/grid.mjs` and `crops29.mjs`: contact sheets and capture crops.
+- `heavies.mjs` now also prints the public model heights at full precision.
+- The preview prints each pose's footprint radial and top, plus the rest-space vertex that sets them.
+
+### Heights, footprint and rig
+
+| | baseline | now |
+|---|---|---|
+| Model height Brute / elite / Warden (m) | 3.030000 / 3.285046 / 4.500000 | 3.030000 / 3.281961 / 4.500000 |
+| Lineup drawn height Brute / elite / Warden (m) | 2.79 / 3.33 / 4.41 | 2.79 / 3.33 / 4.39 |
+| Lineup radial (m) | 1.27 / 2.18 / 2.30 | 1.27 / 2.16 / 2.31 |
+| Idle footprint radial, design units (Brute / Warden) | 5.589 / 4.618 | ≈5.60 / 4.618 |
+
+- **Rig:** 63 joints, identical before and after. Hash `144d320c6cae75d7` covers names, parents, rest TRS and inverse binds.
+- **Runtime fit:** the runtime fits the Brute's horizontal scale to the idle footprint radial and its vertical scale to the idle top.
+  - The idle top is the hump crown. The hump and yoke therefore stay on their CREATURE26 anchor.
+  - The weapon cleaver tip is trimmed (×0.741) so the radial matches.
+- **Elite:** its model height comes from the live settled top, not the normalised one. The body edits moved it by 3 mm (−0.09 %).
+- **Warden:** its model height is held at 4.5 by the runtime. Its idle top (dorsal plate 400) moved by 0.1 % of a design unit through remeshing.
+
+### Proof
+
+The sheets are local, under `artifacts/nextgen/creature29/sheets/`. Each one has the columns final18 | baseline | now.
+
+| Sheet | Content |
+|---|---|
+| `1-swarm-junction-brutes-native` / `-480` | Swarm Junction crowd |
+| `2-relay-racks-brutes-native` / `-480` | Relay Racks crowd |
+| `3-loaded-brute-0{1..4}-native` | Crew Checkpoint brute attack |
+| `4-heavies-{colour,grey,silhouette}` / `-480` | Heavies lineup |
+| `5-warden-<state>-native` / `-480` | The seven Warden states |
+
+The production build passed. Breacher, seed 1729, `--fast`, cleared 12 rooms with 0 errors.
+
+**Still weak.**
+1. The pale head plane is only about 15 luma above lit flesh, so a Brute facing away from the camera still shows no head. The read depends on the dark border.
+2. In the loaded pose the cleaver still crosses in front of the belly from the game camera. The elbow offset opens floor only between the legs and the arm.
+3. The Warden's waist and head wedge are clear in side view. In the lineup the Warden faces away, so its silhouette row shows the forelimbs and legs but not the head.
+4. The recovery pose hides the Brute head.
