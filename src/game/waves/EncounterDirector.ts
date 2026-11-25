@@ -1,7 +1,7 @@
 import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
-import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
+import {storyBeats,storyOpening,openingBeat,openingRoll,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
 import {DIFFICULTIES,latePressureProgress,type DifficultyId} from '../difficulty';
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
@@ -88,8 +88,29 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     groups:[{...flank,count:1}]},{...beat,groups});
   }
  }
+ // Keep the contract in Coolant Plant and reserve Relay Racks for its shutter.
+ // Book only one guardian beyond the Plant, with a different final demand
+ // from the seeded Armory appointment.
+ const plantKind=options.guardianRoute==='brood'?'matron':'warden';
+ const armoryKind=plantKind==='matron'?'warden':'matron';
+ const finalDepth=plantKind==='warden'?-1:openingRoll(options.seed,15)%2===0?15:18;
+ const finalKind='matron';
+ const booked=node.depth===5?armoryKind:node.depth===8?'warden':
+  node.depth===GUARDIAN_ROUTE_DEPTH?plantKind:node.depth===finalDepth?finalKind:undefined;
  const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;
  if(extra)source.push(extra);
+ for(let index=0;index<source.length;index++){
+  const beat=source[index];
+  if(!beat.groups.some(group=>group.guardian))continue;
+  const guardian=beat===extra?undefined:booked;
+  if(guardian===beat.groups.find(group=>group.guardian)?.guardian)continue;
+  source[index]={...beat,
+   label:guardian==='warden'?'Bait the Warden into a wall':guardian==='matron'?'Break the Matron brood pods':'Break the escort before reinforcements',
+   consequence:guardian==='matron'?'brood':guardian?undefined:'leader',
+   groups:beat.groups.map(group=>group.guardian?{...group,
+    family:guardian==='warden'?'brute':'carrier',guardian}:group),
+  };
+ }
  const broodReserve=options.brood&&!source.some(beat=>beat.groups.some(group=>group.reinforcement))
   ?source.at(-1)?.groups.find(group=>!group.guardian&&!group.lesson&&!group.priority):undefined;
  const veteranLate=mode==='veteran'&&node.depth>=10;

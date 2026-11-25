@@ -20,7 +20,6 @@ import {COMBAT_VIEW_HEIGHT,combatFocusTarget} from '../../../src/render/camera/C
 import { roomFocus } from '../../../src/render/roomFraming';
 import { canOccupyExpedition, canTraverseExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
 import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
-import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
@@ -343,7 +342,7 @@ export function runSimulation(options: SimOptions) {
         }
         if (game.status !== 'playing') {
             if (game.status === 'reward' && ['medical', 'armory'].includes(game.node.kind) && game.expedition.run.completedNodeIds.includes(game.node.id) && !report.rooms.some(r => r.nodeId === game.node.id))
-                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian ?? progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
+                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
             input = { x: 0, y: 0, fire: false, angle: null, autoAim: false };
             screen = null;
             if (game.status === 'reward') {
@@ -382,7 +381,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian ?? progressionFor(game.node).guardianKind, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
                 startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
