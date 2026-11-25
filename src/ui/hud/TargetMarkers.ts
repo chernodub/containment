@@ -15,6 +15,7 @@ export class TargetMarkers {
     private readonly point = {x: 0, y: 0, visible: false};
     private readonly resistance = new Map<number,{started:number;active:boolean}>();
     private room = -1;
+    private readonly banked = document.createElement('div');
     private readonly broodIcons = {
         relay: document.createElement('div'),
         supply: document.createElement('div'),
@@ -26,6 +27,9 @@ export class TargetMarkers {
         this.canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none';
         this.canvas.hidden = true;
         host.prepend(this.canvas);
+        this.banked.className='banked-wound-marker';
+        this.banked.hidden=true;
+        host.append(this.banked);
         for(const [destination,marker] of Object.entries(this.broodIcons)){
             marker.innerHTML=icon(destination==='relay'?'overdrive':'armor');
             marker.style.cssText='position:absolute;width:26px;height:26px;color:#ccf8eb;background:#0d201f;border:1px solid #689e91;pointer-events:none';
@@ -34,9 +38,10 @@ export class TargetMarkers {
         }
     }
 
-    update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations'], hintTargetId: number | null) {
+    update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations'], hintTargetId: number | null, showDamage=true) {
         const ctx = this.context;
         this.canvas.hidden = game.status !== 'playing';
+        this.banked.hidden=true;
         for(const marker of Object.values(this.broodIcons))marker.hidden=true;
         if (!ctx || this.canvas.hidden) return;
         const width = getViewportWidth(renderer), height = getViewportHeight(renderer);
@@ -76,6 +81,14 @@ export class TargetMarkers {
         if (this.room !== game.roomRevision) {this.room=game.roomRevision;this.resistance.clear();}
         let tokens: CSSStyleDeclaration | undefined;
         for (const enemy of enemies) {
+            if(showDamage&&enemy.arrivalBanked&&projectActorBounds(renderer,enemy.id,enemy.x,enemy.y,enemy.radius,this.body)){
+                const x=(this.body.left+this.body.right)/2,y=this.body.top-24;
+                if(x>=65&&x<=width-65&&y>=32&&y<height&&!hudObstructs(x-60,y-12,x+60,y+12)){
+                    this.banked.textContent=`${Math.round(enemy.arrivalBanked)} banked`;
+                    this.banked.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`;
+                    this.banked.hidden=false;
+                }
+            }
             if (enemy.podStage) {
                 const point = projectWorld(renderer, enemy.x, enemy.y, this.point, .08);
                 if(enemy.broodDestination&&point.visible&&!hudObstructs(point.x-13,point.y+10,point.x+13,point.y+36)){
@@ -186,5 +199,5 @@ export class TargetMarkers {
         ctx.stroke();
     }
 
-    dispose() { this.canvas.remove(); for(const marker of Object.values(this.broodIcons))marker.remove(); }
+    dispose() { this.banked.remove(); this.canvas.remove(); for(const marker of Object.values(this.broodIcons))marker.remove(); }
 }

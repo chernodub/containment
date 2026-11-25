@@ -132,7 +132,7 @@ export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 export type PodStage = 'sealed' | 'swelling' | 'opening';
 type ReadyBehaviour = "skitter" | "pace" | "step" | "brace" | "relocate";
 
-export type EnemySnapshot = Readonly<{broodDestination?:'relay'|'supply';laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type EnemySnapshot = Readonly<{arrivalBanked?:number;broodDestination?:'relay'|'supply';laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -733,7 +733,7 @@ export class EnemySystem {
 
   #snapshotEnemy(enemy: EnemyState): EnemySnapshot {
     return Object.freeze({
-      broodDestination:enemy.pod?enemy.broodDestination:undefined,role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
+      arrivalBanked:enemy.arrivalSwing?enemy.arrivalDamage:undefined,broodDestination:enemy.pod?enemy.broodDestination:undefined,role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
       wallStunAngle:enemy.stunRemainingMs>0?enemy.wallStunAngle:undefined,
       id: enemy.id,
       type: enemy.type,

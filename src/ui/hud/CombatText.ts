@@ -141,10 +141,6 @@ export class CombatText {
     private showEffect(e: HudEffect, periodic = e.source === 'status'): void {
         const target = e.targetId ?? e.id;
         const element = e.source === 'weapon' ? 'weapon' : e.damageElement ?? e.element ?? (e.elements?.length === 1 ? e.elements[0] : undefined) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
-        if(e.type==='arrival-wound'&&e.damage){
-            this.add(e.x,e.y,target,e.damage,'banked','',false);
-            return;
-        }
         const victim = target === undefined ? null : this.locateTarget(target);
         const chip = e.source === 'weapon' && !e.lethal && !e.critical && !e.elite && !victim?.elite &&
             !(e.contact === 'armor' && victim?.armor === 0);
@@ -212,7 +208,7 @@ export class CombatText {
         entry.node.dataset.settled = String(entry.lethal);
         entry.node.dataset.priority = String(priority);
         entry.node.hidden = false;
-        const label = kind === 'banked' ? `${Math.round(total)} banked` : kind === 'damage' ? this.damageLabel(entry, entry.amount) : statusLabels[status];
+        const label = kind === 'damage' ? this.damageLabel(entry, entry.amount) : statusLabels[status];
         entry.label.textContent = kind === 'damage' ? this.damageLabel(entry, entry.displayed) : label;
         if (kind === 'status') {entry.node.title = label; entry.node.setAttribute('aria-label', label);}
         else {entry.node.removeAttribute('title'); entry.node.removeAttribute('aria-label');}
@@ -311,7 +307,7 @@ export class CombatText {
             // preserves each total while preventing cross-target text piles.
             const originX = x, originY = y;
             let placed = false;
-            for (let attempt = 0; attempt < (attacker && p.kind !== 'banked' ? 1 : 9); attempt++) {
+            for (let attempt = 0; attempt < (attacker ? 1 : 9); attempt++) {
                 const row = Math.floor((attempt + 1) / 3);
                 const side = attempt % 3;
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));

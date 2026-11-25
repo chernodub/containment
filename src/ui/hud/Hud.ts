@@ -650,7 +650,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
         setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);
-        targetMarkers.update(game, renderer, game.markedClosedEntry?[...encounterCues.locations,{...game.markedClosedEntry,life:1,kind:'priority',beat:encounter.beat??-1}]:encounterCues.locations, onboarding.markedEnemyId);
+        targetMarkers.update(game, renderer, game.markedClosedEntry?[...encounterCues.locations,{...game.markedClosedEntry,life:1,kind:'priority',beat:encounter.beat??-1}]:encounterCues.locations, onboarding.markedEnemyId, preferences().combatText!==false);
         if (!playing && wasPlaying) {
             updateDockYield(false);
             for (const warning of warnings) warning.life = 0;
