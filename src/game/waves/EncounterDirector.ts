@@ -347,7 +347,7 @@ export class EncounterDirector {
   private readonly delayedLocks=new Set<number>();
   meleeLockDelays=0;
   canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
-    sidestep?:{radius:number;clear:(point:{x:number;y:number})=>boolean}):boolean {
+    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean}):boolean {
     const active:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
@@ -374,11 +374,11 @@ export class EncounterDirector {
         active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
           other.meleeAngle,point.x,point.y,sidestep.radius)));
       if(!clear){
-        if(!this.delayedLocks.has(enemy.id)){this.delayedLocks.add(enemy.id);this.meleeLockDelays++;}
+        if(sidestep.attempting&&!this.delayedLocks.has(enemy.id)){this.delayedLocks.add(enemy.id);this.meleeLockDelays++;}
         return false;
       }
     }
-    this.delayedLocks.delete(enemy.id);
+    if(sidestep?.attempting)this.delayedLocks.delete(enemy.id);
     if(enemy.champion)return attack!=='charge'||melee<=this.tokens.meleeTokens-1;
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
