@@ -63,6 +63,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
+  crawlerBiteCap?:number;
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge', attempting?:boolean)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
@@ -277,6 +278,7 @@ export class EnemySystem {
   readonly #ordinaryIdleScale:number;
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
+  readonly #crawlerBiteCap:number;
   readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
@@ -315,6 +317,7 @@ export class EnemySystem {
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
+    this.#crawlerBiteCap=options.crawlerBiteCap??Infinity;
     this.#ordinaryIdleScale=options.ordinaryIdleScale??1;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
@@ -1301,7 +1304,10 @@ export class EnemySystem {
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false&&this.#permitsAttack(enemy,player,'melee',true)){
+    const crawlerSlots=enemy.type!=='crawler'||this.#smallMeleeActive<this.#crawlerBiteCap||
+      [...this.#enemies.values()].filter(other=>other.type==='crawler'&&
+        (other.meleePhase==='windup'||other.meleePhase==='strike')).length<this.#crawlerBiteCap;
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+(enemy.champion?0:enemy.radius-ENEMIES[enemy.type].radius)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&crawlerSlots&&this.#canAttack?.(enemy,player)!==false&&this.#permitsAttack(enemy,player,'melee',true)){
       enemy.commitmentDeniedAt=undefined;
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       this.#aimMelee(enemy,player,true);
