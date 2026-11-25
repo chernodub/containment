@@ -96,13 +96,21 @@ export const TEXTURED_FIRE_GLSL = `
   float lane=theta*3.8+t*.24*sin(t*10.-abilityTime*8.);
   float tooth=1.-abs(fract(lane+.5)*2.-1.);
   float roll=sin(floor(lane+.5)*2.7+abilityTime*5.+t*7.);
-  float reach=.60+.36*pow(tooth,.65)+.035*roll;
+  float strand=floor(lane+.5);
+  float reach=.48+.19*fract(sin(strand*41.7+1.)*734.31)+.27*pow(tooth,.8)+.055*roll;
+  float split=smoothstep(.48,.74,t)*smoothstep(.34,.70,abs(sin(t*21.-abilityTime*9.+strand)));
+  reach-=.14*split;
   float edge=reach-t;
   coverage=smoothstep(.0,.018,edge)*smoothstep(.015,.13,t)*(1.-smoothstep(.94,1.,abs(theta)));
+  coverage*=1.-smoothstep(.4,.68,t)*(1.-smoothstep(.06,.33,tooth));
+  #ifdef HAS_ABILITY_PRIORITY_MASK
+  coverage*=1.-.78*prioritySample.r;
+  #endif
   float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
   float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
   c=mix(vec3(.26,.005,0.),vec3(1.25,.13,0.),orange*(1.-smoothstep(.72,1.,abs(theta))));
   c=mix(c,vec3(1.48,.78,.002),flare*(1.-smoothstep(.72,1.,abs(theta))));
+  c=mix(c,vec3(2.1,1.1,.08),smoothstep(.79,.98,tooth)*(1.-smoothstep(.34,.82,t)));
   float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
   c=mix(c,vec3(2.2,1.65,.31),core);
  }else if(phase>=200.){

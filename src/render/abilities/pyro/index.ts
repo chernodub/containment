@@ -296,6 +296,14 @@ class PyroPresentation implements AbilityPresentation {
           .33, .40, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
       }
       kit.sprite('glow', p.x + c*p.range*.48, .05, p.z + s*p.range*.48, p.range*.42, p.range*.27, FIRE, fade*.25, 0, 'ground-light');
+      for (const id of p.targetIds ?? []) {
+        const actor=kit.statusActor(id);
+        if (!actor) continue;
+        const pos=actor.root.position, dx=p.x-pos.x, dz=p.z-pos.z;
+        const reach=(frame.game?.enemies.snapshot.enemies.find(e=>e.id===id)?.radius ?? 24)/UNIT/Math.max(.01,Math.hypot(dx,dz));
+        const strength=p.age<.10 ? 1 : .36*fade;
+        kit.sprite('glow',pos.x+dx*reach,actor.height*.56,pos.z+dz*reach,.29,.39,CORE,strength,id,'light');
+      }
       kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
       kit.impact();
     }
