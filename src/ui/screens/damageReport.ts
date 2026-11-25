@@ -1,10 +1,12 @@
 import {studioImage} from '../studioArt';
 import {getRoomDamage} from '../gameAdapter';
-import {MELEE_ATTACKS} from '../../game/enemies/meleeAttacks';
+import {MELEE_ATTACKS, meleeStrikeContains} from '../../game/enemies/meleeAttacks';
 import type {DepthGame} from '../../DepthGame';
+import type {AttackFootprint} from "../../game/enemies/LastExchange";
 import type {IncomingDamageReceipt, RunStatsSnapshot} from '../../game/abilities/RunStats';
 import {ENEMIES} from '../../game/enemies/catalog';
 import {generateRun} from '../../game/roguelike/run';
+import {canTraverseExpedition} from '../../game/world/expeditionGeometry';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {SACRIFICE_ENDING} from '../../game/roguelike/storyRooms';
 import {escapeHtml} from './initialTemplates';
@@ -85,4 +87,46 @@ export function retryLesson(game: DepthGame): string {
   if(!top||!key||key==='queen'||!Object.hasOwn(lessons,key))return '';
   const copy=lessons[key];
   return `<aside class="retry-lesson">${studioImage(`lesson-${key}`,'retry-lesson-art',320,180)}<p><b>Most damage — ${escapeHtml(top.guardian ? `${top.guardian==='warden'?'Warden':'Matron'} ${top.source==='enemy-charge'?'charge':'strike'}` : incomingDamageLabel(top))}</b><br>${escapeHtml(copy)}</p></aside>`;
+}
+
+/** Plot local collision geometry and the footprints retained by the death receipt. */
+export function lastExchangeDiagram(game: DepthGame): string {
+  const exchange = game.deathExchange;
+  if (!exchange) return '';
+  const {marine, fatal, attacks, blockers} = exchange;
+  const shapes = fatal ? [...attacks, fatal] : attacks;
+  const xy = (x: number, y: number) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+  const mapAttack = (attack: AttackFootprint) => {
+    const {shape, x, y, angle} = attack;
+    const point = (direction: number) => xy(x + Math.cos(direction) * shape.range, y + Math.sin(direction) * shape.range);
+    const body = shape.kind === 'line'
+      ? `<path d="M${xy(x,y)} L${point(angle)}" stroke-width="${shape.width}" stroke-linecap="round"/>`
+      : `<path d="M${xy(x,y)} L${point(angle-shape.halfAngle)} A${shape.range} ${shape.range} 0 0 1 ${point(angle+shape.halfAngle)} Z"/>`;
+    const labelX = Math.max(marine.x - 176, Math.min(marine.x + 176, x));
+    const labelY = Math.max(marine.y - 73, Math.min(marine.y + 90, y - 12));
+    return `<g class="exchange-attack" data-fatal="${attack === fatal}" data-committed="${attack.committed}">${body}<circle cx="${x}" cy="${y}" r="4"/><text x="${labelX}" y="${labelY}">${ENEMIES[attack.family].label}</text></g>`;
+  };
+  const contains = (attack: AttackFootprint, x: number, y: number) =>
+    meleeStrikeContains(attack.shape, attack.x, attack.y, attack.angle, x, y, marine.radius);
+  const escapes = fatal ? [1, -1].map(side => {
+    const angle = fatal.angle + side * Math.PI / 2;
+    const dx = Math.cos(angle) * 74, dy = Math.sin(angle) * 74;
+    const blocked = !canTraverseExpedition(game.geometry, marine, {x:marine.x+dx,y:marine.y+dy}, marine.radius)
+      || [0.25, .5, .75, 1].some(step => {
+      const x = marine.x + dx * step, y = marine.y + dy * step;
+      return attacks.some(attack => contains(attack, x, y)) || step === 1 && contains(fatal, x, y);
+    });
+    return {dx, dy, blocked};
+  }) : [];
+  const recommended = escapes.find(escape => !escape.blocked);
+  const lesson = recommended && escapes.some(escape => escape.blocked) ? 'Use the clear side of the strike.'
+    : recommended ? 'Leave the marked strike before it lands.'
+    : fatal && attacks.length ? 'Move before the lanes overlap.' : 'Review the marked attack lanes.';
+  const exit = recommended ? `<path class="exchange-exit" d="M0 0 L${xy(recommended.dx,recommended.dy)}"/><circle class="exchange-exit" cx="${recommended.dx}" cy="${recommended.dy}" r="5"/>` : '';
+  return `<figure class="last-exchange retry-lesson"><figcaption><b>Last exchange</b><span>${lesson}</span></figcaption>
+    <svg role="img" aria-label="Local map. White arrowhead: marine. Coral: fatal attack. Amber: other attack footprints. Green dotted line: clear side when available." viewBox="${marine.x-190} ${marine.y-93} 380 190">
+      ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
+      ${shapes.map(mapAttack).join('')}
+      <g transform="translate(${marine.x} ${marine.y})">${exit}<path class="exchange-marine" transform="rotate(${marine.angle * 180 / Math.PI})" d="M13 0 -9 -8 -6 0 -9 8Z"/></g>
+    </svg></figure>`;
 }

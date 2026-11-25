@@ -427,6 +427,26 @@ export const SCENARIOS=[
   g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'plate-breaker',junctions:{3:'direct'}}};
   g.combat.setCredits(credits);d.refresh();
  }})),
+ ...[
+  {credits:180,pair:true,tabs:3,id:'ui30-supply-pair'},
+  {credits:0,pair:true,tabs:2,id:'ui30-supply-pair-empty'},
+  {credits:180,pair:false,tabs:3,id:'ui30-supply-stock'},
+  {credits:0,pair:false,tabs:2,id:'ui30-supply-stock-empty'},
+  {credits:180,pair:true,tabs:5,id:'ui30-supply-pair-stock-focus'},
+ ].map(({id,tabs,...setupArgument})=>({
+  id,diagnosticOnly:true,state:'reward',phase:'reward',setupArgument,
+  nativeKeys:Array.from({length:tabs},()=>['Tab',0]),
+  required:['.route-supply','#purchase-route-ammo'],
+  setup:async ({credits,pair})=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
+   const g=d.game, run=g.expedition.run;
+   g.expedition={...g.expedition,run:{...run,guardianRoute:'plate-breaker',junctions:{3:'direct'}}};
+   g.combat.setCredits(credits);
+   if(!pair)g.purchaseService('rig-return','pilgrim-pylon');
+   d.refresh();
+  },
+ })),
  {id:'play21-self-blast',state:'playing',room:'passenger-vault',setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('passenger-vault',{rig:'breacher'});

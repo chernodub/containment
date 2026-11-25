@@ -73,6 +73,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
 export type ContactAttackEvent = Readonly<{
   type: 'contact-attack';
   attack?:'charge';
+  chargeFootprint?: {x:number;y:number;angle:number;shape:MeleeStrikeShape};
   enemyId: number;
   enemyType: StandardEnemyId;
   damage: number;
@@ -1130,7 +1131,8 @@ export class EnemySystem {
       if (!this.#movementAllowed(enemy, toX, toY)) continue;
       if(enemy.chargeMs>0&&!enemy.chargeHit){
         const dx=toX-enemy.x,dy=toY-enemy.y,den=dx*dx+dy*dy,t=den?clamp(((player.x-enemy.x)*dx+(player.y-enemy.y)*dy)/den,0,1):0;
-        if(Math.hypot(enemy.x+dx*t-player.x,enemy.y+dy*t-player.y)<=enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)){enemy.chargeHit=true;events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:enemy.contactDamage,attack:'charge'}));}
+        if(Math.hypot(enemy.x+dx*t-player.x,enemy.y+dy*t-player.y)<=enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)){enemy.chargeHit=true;events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:enemy.contactDamage,attack:'charge',
+          chargeFootprint:{x:enemy.x,y:enemy.y,angle:Math.atan2(dy,dx),shape:{kind:'line',range:Math.hypot(dx,dy),width:2*enemy.radius,halfAngle:0}}}));}
       }
       enemy.x = toX;
       enemy.y = toY;
