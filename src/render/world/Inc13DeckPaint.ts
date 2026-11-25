@@ -64,8 +64,11 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   // The named-space slabs already use -2. Keep flush service inlays above
   // those slabs at grazing angles while raised machine feet still occlude them.
   const bias=layered||name==='frame16-deck-wear'?-5:-1;
+  // Empty texels contribute no color. Skip the lit material work outside the
+  // painted deck, while keeping the filtered edges and every nonzero sample.
+  const alphaTest=name==='frame16-deck-wear'?1e-8:0;
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
-    transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
+    transparent:true,alphaTest,depthWrite:false,polygonOffset:true,polygonOffsetFactor:bias,polygonOffsetUnits:bias});
   if(illumination){
     const light=document.createElement('canvas');
     light.width=256;light.height=Math.round(256*depth/width);

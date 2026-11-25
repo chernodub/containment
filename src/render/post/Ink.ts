@@ -124,7 +124,7 @@ export const inkComposite = /* glsl */ `
  vec4 actorGeometry=texture2D(tGeometry,uv);actorGeometry.zw*=255.0;
  if(inkMode>.5) {
   vec4 geometry=actorGeometry;
-  float line=inkCoverage(uv,texture2D(tDepth,uv).x,geometry);
+  float line=inkCoverage(uv,centerDepth,geometry);
   geometry.w=mod(floor(geometry.w+.5),8.0);
   // Hot effects stay above ink; the line inherits a restrained local light tint.
   float hotYield=1.0-smoothstep(1.1,2.4,max(color.r,max(color.g,color.b)));

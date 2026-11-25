@@ -118,10 +118,11 @@ void main() {
   uv = clamp(uv, invSize, 1.0 - invSize);
   vec3 color = texture2D(tScene, uv).rgb;
   vec3 sharpColor=color;
+  float centerDepth=texture2D(tDepth,uv).x;
   if (lensEnabled > 0.5) {
     // Far-field-only gameplay defocus never softens actors inside the marine's
     // movement/aim neighborhood. Menu's close lens has a narrower focal zone.
-    float focalDepth=-viewPosition(uv,texture2D(tDepth,uv).x).z;
+    float focalDepth=-viewPosition(uv,centerDepth).z;
     float coc=smoothstep(mix(7.0,2.5,menuPresentation),mix(15.0,7.0,menuPresentation),abs(focalDepth-focusDistance));
     coc*=mix(smoothstep(.56,.93,abs(vUv.y-.5)*2.0),1.0,menuPresentation);
     if(coc>.001){
@@ -151,9 +152,8 @@ void main() {
   }
   if (bloomEnabled > 0.5) color += texture2D(tBloom, uv).rgb * 0.13;
   if (atmosphereEnabled > 0.5) {
-    float depth = texture2D(tDepth, uv).x;
-    if (depth < 0.999999) {
-      vec3 view = viewPosition(uv, depth);
+    if (centerDepth < 0.999999) {
+      vec3 view = viewPosition(uv, centerDepth);
       vec3 world = (cameraWorld * vec4(view, 1.0)).xyz;
       // Orthographic cameras sit far away: use camera-relative depth variation,
       // not absolute distance from the eye, which would blanket the whole room.
@@ -172,10 +172,12 @@ ${inkComposite}
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);
+  float packedClass=floor(actorGeometry.w+.5);
+  float actorClass=mod(packedClass,8.0);
   // Restore combustion chroma lost in the filmic shoulder. Only colored flame
   // texels in the live fan qualify; the white core and inked actors keep their grade.
-  if(flameGrade.z>0. && mod(floor(actorGeometry.w+.5),8.)<2.5 && sharpColor.r>.23){
-    vec3 world=(cameraWorld*vec4(viewPosition(uv,texture2D(tDepth,uv).x),1.)).xyz;
+  if(flameGrade.z>0. && actorClass<2.5 && sharpColor.r>.23){
+    vec3 world=(cameraWorld*vec4(viewPosition(uv,centerDepth),1.)).xyz;
     float local=1.-smoothstep(flameGrade.z*.85,flameGrade.z,distance(world.xz,flameGrade.xy));
     float green=sharpColor.g/max(.001,sharpColor.r);
     float fire=local*smoothstep(.035,.09,green)*(1.-smoothstep(.84,.98,green))
@@ -198,10 +200,8 @@ ${inkComposite}
     color *= 1.0 - vignette * 0.11;
   }
   // Roll graded creature highlights into a shoulder without crushing shadows.
-  float packedClass=floor(actorGeometry.w+.5);
-  float actorClass=mod(packedClass,8.0);
-  float region=floor(packedClass/8.0);
   if(actorClass>=4.0 && actorClass<=6.0){
+    float region=floor(packedClass/8.0);
     float value=dot(color,vec3(.2126,.7152,.0722));
     bool ornament=region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
