@@ -122,8 +122,8 @@ async function advance(milliseconds) {
 }
 
 let committedToCover=false;
-async function snapshot() {
-  const state=await page.evaluate(({coveredRelayHealthFraction,committedToCover}) => {
+async function snapshot(stagnantSince=Infinity) {
+  const state=await page.evaluate(({coveredRelayHealthFraction,committedToCover,stagnantSince}) => {
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     const project=(x,y,height=.65)=>{
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
@@ -144,8 +144,10 @@ async function snapshot() {
     const gate=g.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
     const shutterBait=g.shutterBait;
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);const waypoint=goal ? d.botWaypoint(goal)??goal : null;
-    const lookAhead=waypoint&&!enemies.some(e=>e.visible&&e.clear)
-      ?d.botPursuitLookAhead(waypoint,!!siege?.choosing&&!enemies.length&&!g.encounterRemaining):90;
+    const seeking=waypoint&&!enemies.some(e=>e.visible&&e.clear);
+    const pursuitRecovery=!!seeking&&g.node.templateId==='overload-floor'&&g.elapsed-stagnantSince>30;
+    const lookAhead=seeking
+      ?d.botPursuitLookAhead(waypoint,pursuitRecovery||!!siege?.choosing&&!enemies.length&&!g.encounterRemaining):90;
     const candidates=[];
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*lookAhead,y=g.player.y+dy/length*lookAhead;
@@ -170,7 +172,7 @@ async function snapshot() {
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
-  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover});
+  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover,stagnantSince});
   committedToCover=state.siege?.choosing===true&&state.siege.coveredIntent===true;
   return state;
 }
@@ -288,7 +290,7 @@ try {
   let previousSnapshot=null;const foundDefects=new Set();
   let loadingSince=null,loadingHost=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();
   while(performance.now()-wallStart<maxWallSeconds*1000) {
-    let s=await snapshot();last=s;
+    let s=await snapshot(stagnantSince);last=s;
     for(const defect of detectSnapshotDefects(s,previousSnapshot)){const key=[defect.kind,defect.room,defect.slot??defect.panel??defect.entity??''].join(':');if(foundDefects.has(key))continue;foundDefects.add(key);const stem=`defect-${report.defects.length}`;defect.evidence=`${stem}.png`;report.defects.push(defect);await shot(stem,s);}
     previousSnapshot=s;
     if(s.loading) {
@@ -410,6 +412,14 @@ try {
     await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
+    if(room.id==='relay-racks'&&!room.shutterBreak&&after.status==='playing'){
+      const impact=newEventReceipts(s.events,after.events).find(event=>event.type==='wall-slam'&&!event.wall);
+      if(impact){
+        const name='r9-relay-racks-shutter-break';
+        await shot(name,after);
+        room.shutterBreak={file:name+'.png',elapsed:after.elapsed,targetId:impact.targetId};
+      }
+    }
     if(jobCaptureDir&&after.status==='playing'&&capturedJobs.size<5){
       const events=newEventReceipts(s.events,after.events);
       for(const event of events){

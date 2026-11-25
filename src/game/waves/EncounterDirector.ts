@@ -1,7 +1,7 @@
 import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
-import {storyBeats,storyOpening,openingBeat,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
+import {storyBeats,storyOpening,openingBeat,openingRoll,DETOUR_BEATS,type EncounterGrammar,type EnemyRole,type Consequence,type Cleanup} from './authoredEncounters';
 import {DIFFICULTIES,latePressureProgress,type DifficultyId} from '../difficulty';
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;approachLeadMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -52,6 +52,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   const [beat]=source.splice(opening.index,1);
   source.unshift(openingBeat(node.depth,opening.index,beat,mode==='story'));
  }
+ const shutterOpening=node.templateId==='relay-racks';
  const coverOpening=node.templateId==='transmission-chamber';
  if(coverOpening){
   const index=source.findIndex(beat=>beat.grammar==='siege');
@@ -60,6 +61,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  }
  const galleryOpening=node.templateId==='diagnostic-gallery';
  const shaftLanding=node.templateId==='service-shaft-landing';
+ if(shutterOpening){
+  const index=source.findIndex(beat=>beat.groups.some(group=>group.guardian==='warden'));
+  if(index>0)source.unshift(...source.splice(index,1));
+ }
  if(galleryOpening){
   const index=source.findIndex(beat=>beat.grammar==='interception');
   if(index>=0){
@@ -88,8 +93,29 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     groups:[{...flank,count:1}]},{...beat,groups});
   }
  }
+ // Keep the contract in Coolant Plant and reserve Relay Racks for its shutter.
+ // Book only one guardian beyond the Plant, with a different final demand
+ // from the seeded Armory appointment.
+ const plantKind=options.guardianRoute==='brood'?'matron':'warden';
+ const armoryKind=plantKind==='matron'?'warden':'matron';
+ const finalDepth=plantKind==='warden'?-1:openingRoll(options.seed,15)%2===0?15:18;
+ const finalKind='matron';
+ const booked=node.depth===5?armoryKind:node.depth===8?'warden':
+  node.depth===GUARDIAN_ROUTE_DEPTH?plantKind:node.depth===finalDepth?finalKind:undefined;
  const extra=options.salvage?DETOUR_BEATS[node.depth]:undefined;
  if(extra)source.push(extra);
+ for(let index=0;index<source.length;index++){
+  const beat=source[index];
+  if(!beat.groups.some(group=>group.guardian))continue;
+  const guardian=beat===extra?undefined:booked;
+  if(guardian===beat.groups.find(group=>group.guardian)?.guardian)continue;
+  source[index]={...beat,
+   label:guardian==='warden'?'Bait the Warden into a wall':guardian==='matron'?'Break the Matron brood pods':'Break the escort before reinforcements',
+   consequence:guardian==='matron'?'brood':guardian?undefined:'leader',
+   groups:beat.groups.map(group=>group.guardian?{...group,
+    family:guardian==='warden'?'brute':'carrier',guardian}:group),
+  };
+ }
  const broodReserve=options.brood&&!source.some(beat=>beat.groups.some(group=>group.reinforcement))
   ?source.at(-1)?.groups.find(group=>!group.guardian&&!group.lesson&&!group.priority):undefined;
  const veteranLate=mode==='veteran'&&node.depth>=10;
@@ -101,6 +127,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
  const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
+ // Freight Hold already uses a split pincer. In the other early sectors,
+ // pick a featured actor from the existing exchanges without adding bodies.
+ const exchangeFamilies=['stalker','brute','stalker','brute',undefined,'stalker','brute','spitter'] as const;
+ const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
+ const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
+  group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
@@ -134,6 +166,20 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const arrivals=schedule.splice(start);
+  if(beatIndex===exchangeBeat){
+   const lead=arrivals.findIndex(request=>request.enemyId===exchangeFamily&&!request.guardian&&!request.reinforcement);
+   if(lead>=0){
+    const request=arrivals[lead];
+    arrivals[lead]=Object.freeze({...request,openingExchange:true,elite:request.elite||node.depth===3,
+     healthScale:(request.healthScale??1)*(node.depth===2?2.2:node.depth===3?1.45:1)});
+    const partner=exchangeFamily==='stalker'?arrivals.findIndex((other,index)=>
+     index!==lead&&other.enemyId==='stalker'&&!other.reinforcement):-1;
+    if(partner>=0){
+     const other=arrivals[partner];
+     arrivals[partner]=Object.freeze({...other,openingExchange:true,atMs:request.atMs+850,approachLeadMs:450});
+    }
+   }
+  }
   if(shaftLanding&&beatIndex===0&&
     arrivals[0]?.enemyId==='stalker'&&arrivals[1]?.enemyId==='stalker'){
    const early=arrivals[0].atMs+100;
@@ -183,7 +229,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:shutterOpening?'Bait the ram into the rack shutter':coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
@@ -274,6 +320,7 @@ export class EncounterDirector {
   private dispatched = 0;
   private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
+  private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
@@ -283,6 +330,7 @@ export class EncounterDirector {
         return arrivals.some(enemy=>enemy.enemyId==='brute'&&enemy.role==='anchor')&&
           arrivals.some(enemy=>enemy.enemyId==='crawler'||enemy.enemyId==='stalker'||enemy.enemyId==='spitter');
       })??-1 : -1;
+    this.withdrawLateScreen=options.difficulty==='standard'&&options.node.depth>=10;
     this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.holdUntilMs=options.holdUntilMs??0;
     this.breaches=options.breaches??[];
@@ -377,7 +425,7 @@ export class EncounterDirector {
     this.defusedBeats.add(beat);
     return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
-  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
+  resolveCleanup(live:readonly {type:StandardEnemyId;role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
     const beat=this.plan.beats?.[this.beatIndex];
     if(!beat||this.clearingBeat)return;
     if(!this.broken&&beat.consequence==='pincer'&&this.beatElapsedMs<PINCER_WINDOW_MS&&this.dispatched>beat.start
@@ -386,6 +434,11 @@ export class EncounterDirector {
     if(this.broken)return 'withdraw';
     if(beat.recallAfterLunge&&this.dispatched===beat.end&&!pending
       &&live.some(enemy=>enemy.role==='flanker'&&enemy.meleePhase==='recovery'))return 'withdraw';
+    if(this.withdrawLateScreen&&!pending&&this.dispatched===beat.end&&
+      (beat.grammar!=='siege'||siegeReady)&&live.length>0&&live.length<=3&&
+      live.every(enemy=>!enemy.priority&&(enemy.type==='crawler'||enemy.type==='stalker'))&&
+      this.plan.schedule.slice(beat.start,beat.end).some(request=>
+        request.priority||request.enemyId==='brute'||request.enemyId==='spitter'||request.enemyId==='carrier'))return 'withdraw';
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
