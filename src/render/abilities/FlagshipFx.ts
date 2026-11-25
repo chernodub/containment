@@ -474,6 +474,10 @@ void main(){
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
+   #ifdef HAS_ABILITY_PRIORITY_MASK
+   float warningDistance=texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5).g;
+   fissure*=mix(.5,1.,smoothstep(.08,.29,abs(warningDistance-.5)));
+   #endif
    float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float rays=pow(abs(cos(a*5.+.16*n)),9.);
