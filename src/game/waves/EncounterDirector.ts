@@ -127,9 +127,9 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
  const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
- // Pick one existing exchange per sector. Escalate the featured actor, with
- // the rest of that beat still arriving from its authored breaches.
- const exchangeFamilies=['stalker','brute','stalker','brute','spitter','stalker','brute','spitter'] as const;
+ // Freight Hold already uses a split pincer. In the other early sectors,
+ // pick a featured actor from the existing exchanges without adding bodies.
+ const exchangeFamilies=['stalker','brute','stalker','brute',undefined,'stalker','brute','spitter'] as const;
  const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
  const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
   group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;

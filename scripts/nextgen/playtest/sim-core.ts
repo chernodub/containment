@@ -265,8 +265,10 @@ export function runSimulation(options: SimOptions) {
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
-        const lookAhead = waypoint && !enemies.some(e => e.visible && e.clear)
-            ? botPursuitLookAhead(game,waypoint,90,!!siege?.choosing&&!enemies.length&&!game.encounterRemaining) : 90;
+        const seeking = waypoint && !enemies.some(e => e.visible && e.clear);
+        const pursuitRecovery=!!seeking&&game.node.templateId==='overload-floor'&&game.elapsed-lastProgressElapsed>30;
+        const lookAhead = seeking
+            ? botPursuitLookAhead(game,waypoint,90,pursuitRecovery||!!siege?.choosing&&!enemies.length&&!game.encounterRemaining) : 90;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * lookAhead, y = game.player.y + dy / len * lookAhead;
