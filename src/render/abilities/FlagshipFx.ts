@@ -441,6 +441,16 @@ void main(){
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
    // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
+   #ifdef HAS_ABILITY_PRIORITY_MASK
+   // Sample upstream along an uneven drift so protected footprints trail into the bank.
+   vec2 windUv=priorityClip.xy/priorityClip.w*.5+.5;
+   vec2 drift=vec2(.019,-.006)*(.55+.9*n);
+   vec4 wake=texture2D(abilityPriorityMap,windUv-drift);
+   float shelter=max(max(prioritySample.r,prioritySample.b)*.45,max(wake.r,wake.b)*.52);
+   float shelterNoise=fxNoise(q*1.8+vec2(-t*.65,t*.21));
+   on*=1.-shelter*(.58+.35*shelterNoise);
+   prioritySample.rba*=.14;
+   #endif
    line=0.;
    float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
@@ -460,7 +470,7 @@ void main(){
    float peak=1.-smoothstep(.18,.36,age);
    alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
    base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
-   emit=vec3(.15,.34,.43)*(wall*.9+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
+   emit=vec3(.15,.34,.43)*(wall*(.53+.75*roll)+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
