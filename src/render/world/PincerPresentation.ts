@@ -3,7 +3,6 @@ import { PINCER_WINDOW_MS } from '../../game/waves/EncounterDirector';
 import type { DepthGame } from '../../DepthGame';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
 import type { ActorModel } from '../models';
-import { registerOriginalInteriorCutaways, updateOriginalInteriorCutaways, type InteriorCutaway } from './OriginalInteriorCutaways';
 
 import { dashedRing } from '../markers/dashedRing';
 
@@ -27,13 +26,6 @@ export class PincerPresentation {
   }>();
   private readonly seams: T.Mesh[] = [];
   private readonly pinned = new WeakMap<ActorModel, number>();
-  private readonly crownCutaways = new WeakMap<ActorModel, {
-    root: T.Group; piece: InteriorCutaway; head: T.Object3D; scale: T.Vector3; cut: boolean;
-  }>();
-  private readonly noActors = new Map<number, ActorModel>();
-  private readonly crownPosition = new T.Vector3();
-  private readonly crownExtent = new T.Vector3(1.45, .9, 1.45);
-
   /** Gate and guardian meshes are created on demand after room readiness. */
   registerWarmup(register: (root: T.Object3D) => void) {
     const variants = new T.Group();
@@ -47,22 +39,16 @@ export class PincerPresentation {
     register(variants);
   }
 
-  bossPose(model: ActorModel, enemy: EnemySnapshot, game: DepthGame, unit: number, camera: T.Camera, marineHeight: number) {
+  bossPose(model: ActorModel, enemy: EnemySnapshot, game: DepthGame, unit: number) {
     const original = this.pinned.get(model);
     if (original !== undefined) {
       model.body.rotation.x = original;
       this.pinned.delete(model);
     }
-    const previousCutaway = this.crownCutaways.get(model);
-    if (previousCutaway?.cut) {
-      previousCutaway.head.scale.copy(previousCutaway.scale);
-      previousCutaway.cut = false;
-    }
     if (enemy.wallStunAngle !== undefined) {
       this.pinned.set(model, model.body.rotation.x);
       model.root.rotation.y = Math.PI / 2 - enemy.wallStunAngle;
       model.body.rotation.x += .10;
-      this.cutAwayCrown(model, game, camera, marineHeight);
     }
     if (enemy.champion === 'matron' && enemy.broodRemainingMs) {
       model.setEmissionRegion?.('matron-vents', .72 + 1.8 * (1 - enemy.broodRemainingMs / 1000));
@@ -86,33 +72,9 @@ export class PincerPresentation {
   }
 
   releaseActor(model: ActorModel) {
-    const cutaway=this.crownCutaways.get(model);
-    if(cutaway?.cut){cutaway.head.scale.copy(cutaway.scale);cutaway.cut=false;}
     const tilt=this.pinned.get(model);
     if(tilt!==undefined)model.body.rotation.x=tilt;
     this.pinned.delete(model);
-  }
-
-  private cutAwayCrown(model: ActorModel, game: DepthGame, camera: T.Camera, marineHeight: number) {
-    let cutaway = this.crownCutaways.get(model);
-    if (!cutaway) {
-      const head = model.root.getObjectByName('head');
-      if (!head) return;
-      const root = new T.Group();
-      const piece: InteriorCutaway = { bounds: new T.Box3(), parts: [], hidden: false };
-      registerOriginalInteriorCutaways(root,[piece]);
-      cutaway = { root, piece, head, scale: new T.Vector3(), cut: false };
-      this.crownCutaways.set(model,cutaway);
-    }
-    cutaway.head.getWorldPosition(this.crownPosition);
-    cutaway.piece.bounds.min.copy(this.crownPosition).sub(this.crownExtent);
-    cutaway.piece.bounds.max.copy(this.crownPosition).add(this.crownExtent);
-    updateOriginalInteriorCutaways(cutaway.root,camera,game.player,marineHeight,[],this.noActors);
-    if (cutaway.piece.hidden) {
-      cutaway.scale.copy(cutaway.head.scale);
-      cutaway.head.scale.multiplyScalar(.035);
-      cutaway.cut = true;
-    }
   }
 
   private readonly brood = new T.Group();

@@ -291,77 +291,47 @@ class Creature:
             turn=(end-pivot).normalized().rotation_difference(direction.normalized())
             self.rotate(name,turn.axis,turn.angle*weight)
 
-    def cleaver(self, action, t, targets):
-        # Tip targets are relative to the standing head. During extraction the
-        # centre can move around a planted blade without taking it along.
+    def club_swing(self, action, t, targets):
+        # Both rebuilt clubs skin to the shoulder. Pose that joint directly;
+        # moving the legacy wrist IK alone barely moves the drawn knuckles.
         H,W=self.height,self.width
-        if action=='m10-windup':
-            # Set the cleaver wide of the crown before lifting the wrist.
-            keys=[(0, .10,-.20,.03, .01),(.29, .70,.05,.10,.28),
-                  (.63,.98,-.13,.51,.76), (1,1.02,-.09,.56,.85)]
-        elif action=='m10-strike':
-            keys=[(0,.44,.71,-.17,-.48),(.28,.04,.82,-.64,-.83),
-                  (.74,-.44,.62,-.90,-1),(1,-.52,.47,-.89,-.88)]
-        else:
-            keys=[(0,-.52,.47,-.89,-.88),(.24,-.61,.34,-.96,-1.12),
-                  (.49,-.48,.69,-.72,-.82),(.75,.03,.38,-.54,-.31),(1,.28,.14,-.25,0)]
-        side,forward,height,twist=[between(t,[(k[0],k[i]) for k in keys]) for i in range(1,5)]
-        wind=action=='m10-windup'
-        sunk=(.045+.13*math.sin(math.pi*t)) if wind else .24*min(1,abs(twist))
-        self.rotate(self.center,UP,twist*.78*(.35 if wind else 1))   # CREATURE23: the long axis stays on the victim while loading
-        self.rotate(self.center,SIDE,-.23*twist)
-        self.rotate(self.center,FWD,(-.12 if wind else .24)*abs(twist))
-        self.move(self.center,-UP*H*sunk+SIDE*W*(.20 if wind else .055)*twist)
-        self.rotate('head',UP,(-.24 if wind else -.60)*twist)
-        self.rotate('head',SIDE,.62*max(0,-twist))
-        if action=='m10-recovery':
-            loaded=1-smooth((t-.68)/.32)
-            self.brute_head(loaded,.21*loaded)
-        if wind:   # CREATURE22: jaw forward and low under the raised cleaver
-            jaw=smooth(min(1,t/.6))
-            self.rotate('head',SIDE,.45*jaw)
-            self.move('head',FWD*W*.18*jaw-UP*H*.06*jaw)
-        head=self.base_matrices['head'].translation
-        for arm in self.arms:
-            if arm['index']<0:
-                arm=self.loaded_blade
-                goal=head-SIDE*W*side+FWD*W*forward+UP*H*height
-                if not wind:
-                    # Aim the end of the actual blade at the foot plane. The
-                    # legacy IK handle sits partway up this curved cleaver.
-                    deck=min(leg['rest'].dot(UP) for leg in self.legs)
-                    pin=(smooth(t/.20) if action=='m10-strike' else 1-smooth((t-.47)/.44))
-                    goal+=UP*(deck+H*.035-goal.dot(UP))*pin
-            else:
-                goal=arm['rest']+SIDE*W*(.12+.12*abs(twist))-FWD*W*.26*twist+UP*H*.20*twist
-                if not wind:
-                    tucked=head-FWD*W*.22+SIDE*W*.49-UP*H*.28
-                    goal=goal.lerp(tucked,min(1,abs(twist))*.76)
-            mix=smooth(t/.22) if wind else (1-smooth((t-.76)/.24)) if action=='m10-recovery' else 1
-            self.solve(arm,arm['rest'].lerp(goal,mix),14)
+        load=(.94+.06*t) if action=='m10-windup' else 0.
+        drive=1. if action=='m10-strike' else 1.-smooth((t-.75)/.25) if action=='m10-recovery' else 0.
+        self.move(self.center,SIDE*W*.09*load+FWD*W*.12*drive-UP*H*(.07*load+.12*drive))
+        self.rotate(self.center,UP,-.22*load+.27*drive)
+        self.rotate(self.center,SIDE,.14*load+.31*drive)
+        support='shoulder.l'
+        self.transform(support,self.base_matrices[support] @ self.m[support].inverted_safe())
+        self.rotate('shoulder.r',FWD,-1.10*load-.20*drive)
+        self.rotate('shoulder.r',SIDE,.68*load-.55*drive)
+        self.move('shoulder.r',-SIDE*W*(.22*load+.09*drive)
+                  +FWD*W*(-.20*load+.30*drive)+UP*H*(.22*load-.07*drive))
+        self.move('head',FWD*W*.08*(load+drive)-UP*H*(.10*load+.16*drive))
+        self.rotate('head',UP,.16*load-.21*drive)
         for leg in self.legs:
-            i=leg['index']
-            catch=max(0,-twist) if i==1 else 0
-            targets[i]=leg['rest']+FWD*W*.21*catch+SIDE*W*(.08 if i%2 else -.05)*abs(twist)
+            targets[leg['index']]=leg['rest']
 
     def aiming_limbs(self, action, t, targets):
         # Crawler has a front leg pair; the Spitter aims with its neck/jaw
         # and carries the leading forelimb clear of the firing line.
         wind=action=='m10-windup'
         if wind:
-            load=between(t,[(0,.13),(.28,.54),(.59,.79),(1,1)]);reach=0
+            load=.94+.06*t;reach=0
         elif action=='m10-strike':
             load=0;reach=between(t,[(0,1),(.26,1.14),(1,.86)])
         else:
             load=0;reach=between(t,[(0,.86),(.32,1),(.64,.67),(1,0)])
         H,W=self.height,self.width
-        self.rotate(self.center,UP,(.39 if self.family=='crawler' else 0.)*load*.35-.31*reach)   # CREATURE23: face the victim
+        if self.family=='crawler':self.rotate(self.center,UP,.14*load-.31*reach)   # CREATURE23: face the victim
         self.rotate(self.center,FWD,-.32*load+.27*reach)
         self.rotate(self.center,SIDE,.29*load+.32*reach)
-        self.rotate('head',UP,-.39*load+.24*reach)
-        self.move(self.center,SIDE*W*.16*load-UP*H*(.13*load+.18*reach))
+        if self.family=='crawler':self.rotate('head',UP,-.39*load+.24*reach)
+        self.move(self.center,(-UP*H*.10+(SIDE*W*.16 if self.family=='crawler' else -FWD*W*.10))*load-UP*H*.12*reach)
         self.mouth(.98*load+.87*reach)
         if self.family=='crawler':
+            self.move('tail',UP*H*.48*load-FWD*W*.12*load)
+            self.rotate('tail',SIDE,.40*load)
+            self.move(self.center,FWD*W*.23*reach)
             self.rotate(self.center,UP,.12*load-.47*reach)
             self.rotate(self.center,FWD,-.34*load+.43*reach)
             for leg in self.legs:
@@ -370,17 +340,39 @@ class Creature:
                     lead=i==0
                     # Spread both front hooks along the deck.
                     targets[i]=leg['rest']+SIDE*W*(-.70 if lead else .61)*load+SIDE*W*(-.29 if lead else .09)*reach
-                    targets[i]+=FWD*W*((.17 if lead else .13)*load+(.62 if lead else .04)*reach)
-                    targets[i]+=UP*H*((.16 if lead else .06)*load+.07*reach)
+                    targets[i]+=FWD*W*((.17 if lead else .13)*load+(.76 if lead else .35)*reach)
+                    targets[i]+=UP*H*((.36 if lead else .26)*load+.07*reach)
             if load>0:self.move('head',FWD*W*.10*load)
         else:
-            self.rotate('spine2',SIDE,-.52*load+.27*reach)
-            self.move('neck',-FWD*W*.32*load+UP*H*.14*load)
-            self.rotate('head',SIDE,-.23*load)
+            self.squash('bum',1+.28*load,1+.26*load,1-.10*load)
+            self.rotate('spine2',SIDE,.23*load-.15*reach)
+            self.move('neck',FWD*W*(.38*reach-.16*load)-UP*H*.14*load)
+            self.rotate('head',SIDE,.22*load-.14*reach)
             for arm in self.arms:
                 side=arm['index']
                 self.solve(arm,arm['rest']+SIDE*W*side*(.23*load+.07*reach)+
                            UP*H*(.45 if side<0 else .10)*load+FWD*W*(.31*reach-.11*load),14)
+
+    def carrier_brace(self, load, drive, targets):
+        H,W=self.height,self.width
+        self.move(self.center,FWD*W*(.24*drive-.13*load)-UP*H*.15*drive)
+        self.rotate(self.center,SIDE,.30*load+.18*drive)
+        self.rotate('body.002',SIDE,.23*load-.31*drive)
+        self.rotate('tail',SIDE,.53*load-.46*drive)
+        self.move('tail',UP*H*.22*load-FWD*W*.10*load)
+        self.squash('tail',1+.15*load,1+.10*load,1-.08*load)
+        self.move('head',FWD*W*.16*drive)
+        for leg in self.legs:
+            i=leg['index']
+            goal=leg['rest'].copy()
+            if i<2:
+                side=1 if i else -1
+                goal+=SIDE*W*side*(.34*load+.12*drive)
+                goal+=UP*H*(.39 if i==0 else .28)*load+FWD*W*(.37*drive-.14*load)
+            targets[i]=goal
+        for arm in self.arms:
+            side=arm['index']
+            self.solve(arm,arm['rest']+SIDE*W*side*.23*load+UP*H*.38*load+FWD*W*.36*drive,14)
 
     def commitment(self, action, t, targets):
         """Cock, open, release, bury, then extract on the three native clocks."""
@@ -502,9 +494,14 @@ class Creature:
         """WARDEN25 charge wind-up (sampled by anticipation): coil low behind the ram, hind legs set back and wide,
         the left hind foot scrapes twice, the club forefoot braces forward."""
         H,W=self.height,self.width
-        l=smooth(min(1,t/.55))
-        self.ram_lean(l*1.15)
-        self.move(self.center,-FWD*W*.05*l)
+        l=.94+.06*t
+        # Pitch around the midpoint of the two planted club fists. Their
+        # common transverse axis stays fixed while the hips fold behind them.
+        pivot=self.base_matrices[self.center].translation+FWD*W*.40-UP*H*.62
+        self.transform(self.center,Matrix.Translation(pivot) @ Quaternion(SIDE,.30*l).to_matrix().to_4x4() @ Matrix.Translation(-pivot))
+        self.move('tail',-FWD*W*.23*l-UP*H*.11*l)
+        self.move('head',-FWD*W*.11*l-UP*H*.045*l)
+        self.rotate('head',SIDE,-.12*l)
         scrape=max(0.,math.sin(math.pi*min(1,max(0,(t-.35)/.5))*2)) if t>.35 else 0
         for leg in self.legs:
             i=leg['index']
@@ -568,7 +565,8 @@ class Creature:
             self.mouth(.70*load)
         else:
             self.rotate(self.center,FWD,.18*wave)
-            self.rotate('tail',SIDE,-.38*load)
+            self.rotate('tail',SIDE,-.44*load)
+            self.move(self.center,FWD*W*.07-UP*H*.08)
             self.squash('tail',1+.13*load,1-.23*load,1-.12*load)
         for leg in self.legs:
             i=leg['index']
@@ -584,6 +582,20 @@ class Creature:
         H,W = self.height,self.width
         crawler = self.family == 'crawler'
         targets = {}
+        if action=='m10-exposed' and self.family=='brute':
+            self.club_swing('m10-recovery',t,targets)
+            self.plant(targets)
+            self.commit()
+            return
+        if action=='m10-feint' and self.family!='stalker':
+            self.pose('m10-windup',0,1.)
+            half_load=.52*between(t,[(0,0),(.34,1),(.48,.92),(.83,0),(1,0)])
+            self.m={n:self.idle_start[n].lerp(m,half_load) for n,m in self.m.items()}
+            back=between(t,[(0,0),(.40,0),(.65,1),(.94,0)])
+            self.rotate(self.center,UP,-.17*back)
+            self.move(self.center,(-FWD*.08+SIDE*.07)*W*back)
+            self.commit()
+            return
         if action=='m10-exposed':
             # Keep the impact footprint until the final fifth of native recovery.
             release=smooth((t-.79)/.21)
@@ -664,16 +676,15 @@ class Creature:
                     desired=arm['rest']+UP*H*.12+FWD*W*.09*math.sin(phase+arm['index']*math.pi/2)
                     self.solve(arm,desired)
         elif action=='m10-wall-stun':
-            # WARDEN25: slumped onto the ram shoulder against the wall. The body rolls onto its armoured right side and
-            # yaws the ram into the wall, so the bare ochre left flank turns up and back toward the room; the head drops
-            # back off the ram and turns away from the wall, crown up.
-            self.move(self.center,-UP*H*.16-FWD*W*.02)
-            self.rotate(self.center,SIDE,.20)
-            self.rotate(self.center,UP,.34)
-            self.rotate(self.center,FWD,.30)
-            self.rotate('head',UP,.55)
-            self.rotate('head',SIDE,-.30)
-            self.move('head',-FWD*W*.10+UP*H*.06+SIDE*W*.08)
+            slump=smooth(t)
+            self.move(self.center,FWD*W*(.12-.14*slump)-UP*H*(.10+.06*slump))
+            self.rotate(self.center,SIDE,.16+.04*slump)
+            self.rotate(self.center,UP,.34*slump)
+            self.rotate(self.center,FWD,.10+.20*slump)
+            self.move('tail',FWD*W*.26*(1-slump))
+            self.move('head',FWD*W*(.11-.21*slump)+UP*H*.06+SIDE*W*.08*slump)
+            self.rotate('head',UP,.55*slump)
+            self.rotate('head',SIDE,-.26-.04*slump)
             for arm in self.arms:
                 if arm['index']<0:   # club forefoot braced on the wall foot
                     self.solve(arm,arm['rest']+FWD*W*.22-UP*H*.12,16)
@@ -684,19 +695,15 @@ class Creature:
                 left=leg['rest'].dot(SIDE)>self.base_matrices[self.center].translation.dot(SIDE)
                 targets[i]=leg['rest']+SIDE*W*(.16 if left else -.04)+FWD*W*(.08 if i<2 else -.06)
         elif action in ('m10-windup','m10-strike','m10-recovery'):
-            if self.family=='brute':self.cleaver(action,t,targets)
+            if self.family=='brute':self.club_swing(action,t,targets)
+            elif self.family=='carrier':
+                load=.94+.06*t if action=='m10-windup' else 0.
+                drive=1. if action=='m10-strike' else 1.-smooth(t) if action=='m10-recovery' else 0.
+                self.carrier_brace(load,drive,targets)
             elif self.family in ('crawler','spitter'):self.aiming_limbs(action,t,targets)
             else:self.commitment(action,t,targets)
         elif self.family=='carrier' and action=='m10-brood':
-            # CREATURE22 Matron pod release: abdomen arches up, head lowers, legs brace wide
-            arch=between(t,[(0,0),(.35,1),(.8,1),(1,.85)])
-            self.rotate('tail',SIDE,.62*arch)   # CREATURE23: the carapace lifts clear of the floor where the pod emerges
-            self.rotate('body.002',SIDE,.26*arch)
-            self.rotate('head',SIDE,.42*arch)
-            self.move(self.center,UP*H*.06*arch)
-            for leg in self.legs:
-                i=leg['index'];side=-1 if i%2==0 else 1
-                targets[i]=leg['rest']+SIDE*W*side*.10*arch
+            self.carrier_brace(1.-smooth((t-.70)/.30),smooth((t-.70)/.30),targets)
         elif self.family=='carrier' and action=='m10-stagger':
             tip=between(t,[(0,0),(.12,.82),(.28,1),(.49,.91),(.73,.61),(.89,-.10),(1,0)])
             step=between(t,[(0,0),(.18,0),(.37,1),(.65,.85),(1,0)])
@@ -882,11 +889,12 @@ class Creature:
             self.rotate('neck_lo',UP,-.50*side)
             self.move(self.center,SIDE*W*.14*side-UP*H*.1)
         if ram == 'm10-ram-charge':
-            self.ram_lean(1.0)
+            self.move(self.center,FWD*W*.23-UP*H*.05)
+            self.move('head',FWD*W*.13+UP*H*.025)
+            self.rotate('head',SIDE,-.11)
+            self.move('tail',-FWD*W*.13)
         self.plant(targets)
-        if action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
-        if self.family=='brute' and action=='m10-windup':
-            self.load_cleaver(self.loaded_blade,smooth((t-.15)/.47))
+        if self.family!='brute' and action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
             settle=smooth((t*seconds-(seconds-.08))/.08)
             if settle>0:

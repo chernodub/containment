@@ -239,3 +239,45 @@ Local comparisons are in `artifacts/nextgen/motion29/`, with integration revisio
 The production build passed. Standard Breacher cleared ten rooms through Transmission Chamber on seed 1729, with zero runner errors, zero recorded defects and exit status 0. The campaign receipt is `artifacts/nextgen/playtest/motion29-breacher/report.json`.
 
 The before and after Crew Checkpoint benchmarks each recorded 158 resident programs and zero combat shader compiles.
+
+## MOTION36
+
+The Brute now swings from the shoulder that carries its fist on the rebuilt mesh. The opposite knuckles support the load. The head drops as the fist goes through, and the fist stays ahead during exposed recovery. The Warden braces wide, compresses behind its prow, drives off the forelimbs and bunches at the wall. Its impact settles into the exposed slump over 100 ms of native stun. A legacy camera cutaway used to shrink the whole head when it covered the marine. Removing that cutaway kept the maw visible through impact and slump. The marine retains its occlusion outline.
+
+The Carrier and Matron lift their front legs as the sac rears over their planted legs. A completed brood delivery drops the Matron forward. The Crawler raises its hindquarters and cocks the hooks. The Spitter pumps the abdomen and lowers its head along the firing line. Ordinary feints sample about half the loaded reach and return with a lateral offset. The Stalker retains its shipped motion bank.
+
+The [local proof index](../../artifacts/nextgen/motion36/index.html) links each attack's colour strip, black silhouette and native room frames. The isolated strips sample waiting, ordinary feint and return where applicable, then 0%, 50% and 98% of warning, release and follow-through. Each pair has native and 480×270-equivalent actor pixels. The room frames use the production camera and native AI in Crew Checkpoint. Each family has a full-resolution warning-onset and release PNG. The Warden also has separate impact and slump frames. final19 uses the archived runtime and assets at `f4f54aa7`, so intervening creature remodels also appear in the comparisons.
+
+| Attack | 480×270 silhouette and hold | In-room player cues |
+|---|---|---|
+| Brute swing | Round waiting stance, one fist outside the raised shoulder, then a long diagonal reach. The load holds and clears the rear leg at the sampled facing. | The skull, red sector and marine read through the swing. |
+| Elite swing | The same three shapes read through the hold with the ground halo hidden. | The horns identify the elite when the planted fist covers the near shoulder. |
+| Warden charge | Wide compressed brace holds, then the prow advances and the legs drive. Impact bunches the back before the head rolls into the slump. | The maw, charge lane and stun marker stay visible. The outlined marine overlaps the near shoulder in the slump. |
+| Carrier melee | The half-lift feint returns short. The high sac and spread front legs hold through warning, then the body drops forward. | The sac remains readable. On contact the marine covers one front foot. |
+| Matron melee | Low waiting body, tall held rear and broad forward drop are distinct. | The melee sector and the marine remain visible under the raised front legs. |
+| Matron brood | The sac holds high from brood onset until delivery, then falls forward in one beat. | The pod sites remain visible. The load resembles the Matron's melee load in isolation. |
+| Crawler bite | The low wait, raised rear with cocked hooks and short forward plunge separate. The rear holds through the warning. | In the frontal strike the marine covers much of the released Crawler. The sector still reads. |
+| Spitter melee | The high abdomen and cocked forelimb hold, then the head and forelimb extend together. | The lime mark points down the sector. The frontal contact hides the far forelimb. |
+| Spitter shot | Pumped warning holds along the firing line. Release is narrower and closer to the waiting outline than the melee lunge. | The lime mark, shot and target warning carry the direction at range. |
+| Stalker thrust | The existing blade rise and horizontal thrust separate. The blade reaches full height late in the warning. | The thrust lane and the marine remain readable. |
+
+The following are first observed ticks in milliseconds from the start of each staged encounter, rounded at 60 Hz. Columns give warning onset / strike or delivery / recovery or wall impact / first return to approach or end of stun. The ranged shot and brood have independent cooldowns. The fourth melee timestamp can include overlapping behaviour and does not measure authored clip duration.
+
+| Attack | final19 (ms) | MOTION36 (ms) |
+|---|---|---|
+| Brute swing | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite swing | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden charge | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+| Carrier melee | 17 / 683 / 800 / 1100 | 17 / 683 / 800 / 1100 |
+| Matron melee | 17 / 650 / 767 / 2100 | 17 / 650 / 767 / 2100 |
+| Matron brood | 1083 / 2100 | 1083 / 2100 |
+| Crawler bite | 33 / 367 / 433 / 600 | 33 / 367 / 433 / 600 |
+| Spitter melee | 17 / 417 / 517 / 750 | 17 / 417 / 517 / 750 |
+| Spitter shot | 17 / 517 | 17 / 517 |
+| Stalker thrust | 17 / 483 / 567 / 950 | 17 / 483 / 567 / 950 |
+
+The first brood pod became visible at 2533 ms in both runs. The paired event records are in `artifacts/nextgen/motion36/native-{final19,now}/manifest.json`. The diff against FAMILY35 is empty for `src/game/`, `src/DepthGame.ts` and the Stalker bank. The pose changes use the existing simulation clocks and hit shapes.
+
+The production build passed. Standard Cryo cleared ten rooms through Transmission Chamber on seed 1729 with fast stepping and a 180000 ms startup timeout. The runner exited 0 with zero errors and zero recorded defects. The [campaign receipt](../../artifacts/nextgen/playtest/motion36-final-cryo/report.json) includes the individual room loading holds.
+
+The weakest poses are the Crawler's frontal contact, where it passes behind the marine, the Spitter's ranged release, whose outline quickly approaches waiting, and the Matron's brood load, whose high sac also signals melee. The native brood sites and the shot remain important for identifying those attacks.
