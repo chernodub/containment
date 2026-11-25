@@ -75,7 +75,7 @@ ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && band!=7;
 if(bruteBody) {
-  diffuseColor.rgb=vec3(.115,.067,.040);
+  diffuseColor.rgb=vec3(.037,.108,.110);
   creatureStrike=1.0;
 }
 #endif`}`)
