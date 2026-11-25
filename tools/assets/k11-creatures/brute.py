@@ -37,7 +37,7 @@ FORM_MIX = 1.0   # CREATURE20: dark umber angular chest/arm armour over the ochr
 BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "chitin"}
 # dorsal shingle row (hump 90/93, hind 20/23/26/29) joins the dark armour: a hard spine over ochre flanks
 # CREATURE26: yoke and back shingles join the dark saddle; head plane and weapon-arm edge are bone; jaw and the off-arm guard dark
-PLATE_BAND = {**{i: "chitin" for i in (*WARDEN.RAM_PLATES, *WARDEN.RAM_DARK)}, **{i: "lead" for i in WARDEN.CROWN_PLATES},
+PLATE_BAND = {**{i: "plate" for i in (*WARDEN.DORSAL_PLATES, 424)}, **{i: "lead" for i in WARDEN.CROWN_PLATES},
               300: "chitin", 20: "chitin", 21: "chitin", 310: "bone", 311: "chitin", 50: "lead", 55: "chitin",
               **{i: "flesh" for i in range(90, 100)},
               51: "lead", 60: "plate", 61: "plate", 62: "plate", 63: "plate", 64: "plate", 65: "plate"}   # BRUTE32: elite horns face-pale; dorsal plates, eye slits dark
@@ -132,12 +132,14 @@ def build(sk):
     # --- forelimbs: equal, knuckle-walking; forearm thicker than upper arm, club fist planted forward and out ------
     for s, side in ((-1, "r"), (1, "l")):
         sh_c = v3((0.3, 1.7 * s, 6.9))
-        body.add(Ellipsoid(sh_c, (1.3, 1.2, 1.1), frame((1, 0.15 * s, 0.1)), zone=FLESH, bone=f"shoulder.{side}", k=0.035))
+        body.add(S.Box(sh_c, (.87, .77, .63), frame((1, .15 * s, -.20)), round=.40,
+                       zone=FLESH, bone=f"shoulder.{side}", k=.06))
         el = v3((0.38, 2.87 * s, 5.80))
         fist = v3((2.05, 3.28 * s, 4.57))
         body.add(RoundCone(sh_c + v3((0.1, 0.3 * s, -0.4)), el, 1.00, 0.90, zone=FLESH,
                            bone=f"shoulder.{side}", k=0.035))
-        body.add(RoundCone(el, fist, 1.14, 0.97, zone=FLESH, bone=f"shoulder.{side}", k=0.12))
+        body.add(S.Prism(el, fist, 1.02, .88, sides=6, up=(0, s, 0), roll=0, squash=.90,
+                         zone=FLESH, bone=f"shoulder.{side}", k=.14))
         body.add(Ellipsoid(fist + v3((0.2, 0.05 * s, 0)), (1.16, 1.28, 0.98), frame((1, 0.2 * s, 0.25)), zone=FLESH,
                            bone=f"shoulder.{side}", k=0.035))
         body.add(skull_plate(fist + v3((0.46, 0.12 * s, 1.01)), (1, 0, 0), 2.15, 2.0, 16,

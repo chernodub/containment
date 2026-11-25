@@ -870,3 +870,94 @@ Local directory `artifacts/nextgen/brute33/sheets/`. Each stem below has a `-nat
 The weakest frames are Relay Racks for the upper limb overlap, the rear pose for separation of the three individual plates, and frozen for the loss of internal contrast.
 
 The production build passed. The twelve final scenario manifests contain 18 captured frames and zero errors. Breacher cleared eight rooms through Breached Loading Bay on seed 1729 with the requested fast desktop runner and zero errors.
+
+## WARDEN34
+
+The Warden uses the BRUTE33 shoulder and forearm silhouette, with a longer neck, four dark dorsal plates and a two-piece bone prow. A curved amber lip sits above a separate dark chin. A small floor spill tracks the foremost skinned point of the lip. Body pixels use the Brute's three hard light steps with a darker jade albedo. The prow uses the Brute skull's full-lit bone region. The charge and wall-stun poses use the shipped clips.
+
+### Desktop capture set
+
+Each first-pass stem in `artifacts/nextgen/warden34/first-pass/sheets/` has a `-native.png` crop at original pixel scale and a `-480.png` pair of full frames. The left column is final19 and the right column is WARDEN34. The Crew Checkpoint charge-cycle gallery follows the same staged encounter and takes the first frame observed in each native state. Its canvas includes the actor health bar and stun mark. The behind and side fixtures and the native campaign include the DOM HUD as well.
+
+| Source | Sheet stems |
+|---|---|
+| Crew Checkpoint charge cycle | 1-calm, 2-charge-windup, 3-charge, 4-wall-stun, 5-recovery |
+| Crew Checkpoint camera fixtures | 6-behind, 7-side |
+| Native Heavy lineup | 8-heavies |
+| Relay Racks native Breacher campaign | 9-shutter-impact |
+
+### Lineup and material measurements
+
+The previous column is the merged BRUTE33 on `6db0c5a1`. Drawn dimensions are deformed mesh dimensions from the Crew Checkpoint lineup. The Warden's drawn height increased 0.69%. The public height and native radius are unchanged. The diff under `src/DepthGame.ts` and `src/game/` is empty.
+
+| Measurement (regular / elite / Warden) | Previous | WARDEN34 |
+|---|---|---|
+| Public height (m) | 3.03 / 3.273329 / 4.50 | 3.03 / 3.273329 / 4.50 |
+| Drawn height (m) | 2.80 / 3.34 / 4.37 | 2.80 / 3.34 / 4.40 |
+| Drawn radial (m) | 1.24 / 1.66 / 2.22 | 1.24 / 1.66 / 2.26 |
+| Native contact radius (simulation units) | 42.90 / 55.77 / 64.00 | 42.90 / 55.77 / 64.00 |
+| Rig joints and hash | 63, `144d320c6cae75d7` | 63, `144d320c6cae75d7` |
+| Twelve clip channels and samples | `f844c4fcb87f1d8b` | `f844c4fcb87f1d8b` |
+
+The regular, elite and low-detail mesh fingerprints match before and after (`bfadae6232c491cb`, `cd2f0ffae8e0388c`, `a32607b094c236c1`). The packed and plain exports share the same rig fingerprint. A native chill application produced the dark blue-green glaze. A freeze application returned `controlResisted: true`, leaving the boss chilled under the existing control-resistance rule.
+
+| Crew Checkpoint | Prow / visible Warden pixels | Prow share | Shadow / body pixels | Shadow share |
+|---|---:|---:|---:|---:|
+| Calm | 10,215 / 106,221 | 9.62% | 45,436 / 94,593 | 48.03% |
+| Charge windup | 8,524 / 100,324 | 8.50% | 33,849 / 90,904 | 37.24% |
+
+Counts come from a diagnostic copy of the production shader with distinct colors for the selected planes. Prow share includes body, prow and maw in its denominator. Shadow share excludes prow and maw and includes the thin lit edge. Both exclude the floor spill and UI. The calm Warden presents more shadow than the Brute at the same thresholds.
+
+### Reading the sheets at 480×270
+
+| Sheet | Heading, maw, family resemblance and player cues |
+|---|---|
+| Calm | The prow points right and the amber curve sits beneath it. Shoulder, forearm and dorsal plates give the family read. The marine stays clear. |
+| Charge windup | The nose points up-left into the red capsule. A narrow amber lip survives at its tip. The planted near arm clears the central floor wedge and the capsule edge stays visible. |
+| Charge | The prow still leads up-left, with a sliver of amber at its leading corner. The shoulder partly covers the jaw. The marine and the small foreground enemies stay legible. |
+| Wall-stun | The mouth points left. The dropped head, broad planted brace and exposed back remain distinct. The stun ring and health tick sit above the body and the marine retains the occlusion outline. |
+| Recovery | The first released frame keeps the head to the left of the near forearm. The amber jaw and the marine outline both read. The Warden follows the native change in aim over 0.24 s using the existing wall-stun pose. The stun mark clears immediately. |
+| Behind | The pale nose gives an immediate leftward heading. The mouth is the small amber crescent at its left edge. The shoulder and plates still read behind the marine. |
+| Side | The prow, open chin and floor spill all point right. The silhouette separates the neck from the forequarter, although the far forearm sits behind the near one. The marine remains clear of the glow. |
+| Heavies | All three heads point right. The Warden shares the Brutes' dark fists, stepped flank light and pale face. Its low jaw and amber spill identify the boss without covering the elite's rank ring. |
+| Relay Racks shutter impact | The prow points down-left and the amber jaw is exposed beneath it. The wide shoulders still identify the Brute family. The health bar and stun ring clear the ridge, the shutter callout sits to the left and the marine is visible below. |
+
+At 480×270 I could identify the heading within a second in all nine sheets. The weakest are charge, where only the corner of the maw shows, behind, where the lip is a few pixels deep, and shutter impact, where foreground scenery cuts across the near planted limb. None obscures the charge capsule, stun mark, health bar or marine relative to final19.
+
+The production build passed. The unassisted native Breacher campaign on seed 1729 cleared all nine rooms and recorded the Relay Racks shutter break at 195.35 s. The report has zero errors. The runner exited 1 because it separately flagged loading delays of 11.10 s in Passenger Vault and 6.08 s in Residential Gallery. The full report is `artifacts/nextgen/playtest/warden34-release/report.json`. All five native charge-cycle frames, both camera fixtures and the lineup completed without capture errors.
+
+### WARDEN34 revision after lead review
+
+First pass `2bccc6a5`. The emitting surface now fills the jaw above the dark lower mandible. A near-white core and amber rim carry across the prow tip in oblique views. The organ has an explicit emission-region assignment so the final grade preserves its value during wall-stun. A small hard-edged amber pool tracks the animated lip on the floor. Its forward offset clears the planted elbow in the rear camera.
+
+The Warden's shoulder wedges carry dark pauldrons. Each elbow ends in a short guard above a tapered hexagonal forearm, a rounded block fist and a dark knuckle plate. A pitched ridge supports the four dorsal plates. The shared regular and elite Brute sculpture also uses a bevelled shoulder and a flattened forearm through the elbow. The updated lineup shows both beside the Warden.
+
+At full native resolution, the lit maw was measured as one connected component in the visible head. The same RGB thresholds select bright warm pixels in each original PNG (red ≥170, green ≥107, red ≥ green ≥ blue, plus red minus blue ≥9 or blue ≥215). The floor pool, detached halo and other actors are excluded. Peak display value is the highest Rec.709-weighted sum of the displayed sRGB bytes, on a 0–255 scale.
+
+| State | Lit maw pixels, final19 | Revised | Peak display value, final19 | Revised |
+|---|---:|---:|---:|---:|
+| Calm | 2,337 | 6,824 | 234 | 244 |
+| Charge windup | 1,980 | 4,720 | 234 | 244 |
+| Charge | 1,552 | 3,582 | 234 | 244 |
+| Wall-stun | 1,539 | 5,411 | 166 | 243 |
+| Behind | 1,820 | 4,075 | 234 | 244 |
+
+The calm core peaks at RGB 246/244/240. The calm pool spans 73 × 49 native pixels with peak display value 118, against 244 for the maw. The pale prow occupies 9.10% of the visible Warden in calm and 8.11% in windup. The shadow plane occupies 46.02% and 38.68% of the jade body respectively. The final lineup measures 3.03 / 3.273329 / 4.50 m public height, 2.80 / 3.34 / 4.40 m drawn height and 42.90 / 55.77 / 64 native contact radii, in regular / elite / Warden order. The rig retains 63 joints and hash `144d320c6cae75d7`. All twelve clips retain hash `f844c4fcb87f1d8b`. There are no simulation edits.
+
+The revised comparisons are in `artifacts/nextgen/warden34/sheets/` and `artifacts/nextgen/warden34/revision/sheets/`. Each numbered stem has a native crop and a full-frame 480×270 comparison, ordered final19 | WARDEN34 first pass | revised. The close crop of the two smaller heavies is `artifacts/nextgen/warden34/revision/brute-pair-native.png`.
+
+| Sheet | First-glance read at 480×270 |
+|---|---|
+| 1-calm | Right. The white core sits at the nose and the amber pool is smaller and dimmer. The marine and health bar both clear the lit jaw. |
+| 2-charge-windup | Up-left. The jaw leads into the capsule. Its red boundary and the floor gap between the planted limbs remain visible. |
+| 3-charge | Up-left. The prow covers the inner edge of the maw, but the white leading corner identifies the aim point. The marine and smaller enemies stay distinct. |
+| 4-wall-stun | Left. Both the white core and amber rim survive the stun dimming. The health tick and stun ring clear the ridge, and the marine's outline is still visible. |
+| 5-recovery | Left. The jaw stays outside the near forearm while the head turns. The stun ring clears on release and the marine's outline remains readable. |
+| 6-behind | Up-left. The maw is visible beyond the prow, with a small amber pool ahead of the near elbow. The marine and HUD stay clear. |
+| 7-side | Right. The mouth and neck separate from the near shoulder. The far arm is foreshortened, and the marine remains visible beyond the pool. |
+| 8-heavies | All three point right. The squared shoulders and forearms carry across the ranks. The Warden's amber-white jaw and the elite's swept horns remain distinct. |
+| 9-shutter-impact | Left. The foreshortened white core is the first mark on the Warden. The off-body shutter callout, stun ring, health bar and marine are all clear in the native Breacher encounter. |
+
+I found the heading and could point to the maw within a second on all nine sheets. The three weakest views are calm, where the open jaw looks roundest, charge, where the prow masks part of the core, and shutter impact, where the nearly edge-on jaw is narrowest and the dark shoulder plates lose contrast against the room.
+
+The production build passed. The unassisted Breacher run on seed 1729 cleared all nine rooms with zero errors and captured the shutter break at 196.00 simulation seconds. The runner exited 1 for one loading-delay flag, 5.23 s in Residential Gallery. The report is `artifacts/nextgen/playtest/warden34-revision-final/report.json`.

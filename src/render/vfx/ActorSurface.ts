@@ -74,20 +74,17 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
-// The leading carapace and ram face ride the chest. Select the armour
-// above the right shoulder seam in the sculpture's Z-up bind pose.
-bool shoulderCap=band==0 && vActorRegion==1.0 && actorPosition.y<-.95 && actorPosition.z>3.55;
-bool wardenRam=actorWarden>.5 && (vK11EmissionRegion.x>.5 || shoulderCap);
-bool wardenMaw=actorWarden>.5 && band==3 && vActorRegion==2.0;
-bool bruteFace=actorWarden<.5 && band==5;
+bool wardenMaw=actorWarden>.5 && band==3;
+if(wardenMaw)diffuseColor.rgb=vec3(.025,.012,.005);
+bool bruteFace=band==5;
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
-if(wardenRam)diffuseColor.rgb=vec3(.215,.198,.154);
-bool bruteBody=actorWarden>.5 ? !wardenRam && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
+bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
-  diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.025,.094,.049)*.79,actorWarden);
+  diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.027,.073,.044)*.79,actorWarden);
   creatureStrike=1.0;
 }
 // BRUTE32: the Brute's dorsal plates and skull-plate eye slits take the unused plate cell (6); they stay dark.
+if(bruteBody && actorWarden>.5 && band==6)diffuseColor.rgb*=.30;
 if(bruteBody && actorWarden<.5){
   // Wrap armor around the fists in bind space. Its edge follows the skin
   // continuously between vertices, even on the low-detail mesh.
@@ -172,7 +169,12 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BRUTE_PLANES
-if(bruteBody || wardenRam){
+if(wardenMaw){
+  float core=smoothstep(.64,.80,max(dot(normalize(normal),normalize(vViewPosition)),0.));
+  lanternEmission=mix(vec3(1.30,.41,.045),vec3(5.6,4.8,3.35),core)*(1.+.18*actorAttackLoad)*mix(.88,1.,actorStageLight)*actorCamouflage*(1.-actorDissolve);
+  totalEmissiveRadiance=lanternEmission;
+}
+if(bruteBody || (bruteFace && actorWarden>.5)){
   lanternEmission=vec3(0.);
   totalEmissiveRadiance=lanternEmission;
   keyRim*=actorReveal;

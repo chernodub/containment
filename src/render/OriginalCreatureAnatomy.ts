@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {wardenMawSpill} from './WardenMawSpill';
 import {AnatomicalFrost} from './motion/AnatomicalFrost';
 
 export type Rank = 'base' | 'elite' | 'boss';
@@ -176,6 +177,7 @@ export function originalCreatureIdentity(root: T.Group, kind: string, elite: boo
   if (!original) return;
   const skin = consolidate(root, elite);
   if (!skin || kind === 'queen') return;
+  let spill: ReturnType<typeof wardenMawSpill> | undefined;
   const uniforms: Record<string, T.IUniform> = {};
   for (const name of ['Study', 'Charge', 'StageLight', 'Pulse', 'Time', 'Shimmer', 'Elite', 'Champion', 'Exposed', 'Opening', 'Windup', 'OrganMotion', 'Dissolve', 'Status', 'Alpha', 'Death']) {
     uniforms['identity' + name] = {value: ['StageLight', 'Pulse', 'Alpha'].includes(name) ? 1 : 0};
@@ -199,6 +201,10 @@ export function originalCreatureIdentity(root: T.Group, kind: string, elite: boo
     mesh,
     update(time: number, windup: number, champion: string | undefined, exposed: boolean, alpha: number, dead: boolean) {
       if (!dead) select(skin, champion ? 'boss' : elite ? 'elite' : 'base');
+      if(champion==='warden' && !dead && !spill && skin.variants.boss) {
+        spill=wardenMawSpill(root,skin.mesh,skin.variants.boss);
+      }
+      spill?.(champion==='warden' && !dead);
       uniforms.identityTime.value = time;
       uniforms.identityWindup.value = windup;
       uniforms.identityChampion.value = champion === 'warden' ? 1 : champion === 'matron' ? 2 : 0;
@@ -209,6 +215,7 @@ export function originalCreatureIdentity(root: T.Group, kind: string, elite: boo
     },
     reset() {
       select(skin, elite ? 'elite' : 'base', true);
+      spill?.(false);
       mesh.visible = false;
       for (const name of ['Dissolve', 'Status', 'Opening', 'Windup', 'Champion', 'Exposed', 'Death']) uniforms['identity' + name].value = 0;
       uniforms.identityStageLight.value = uniforms.identityPulse.value = uniforms.identityAlpha.value = 1;

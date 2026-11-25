@@ -247,16 +247,9 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
 #ifdef BRUTE_PLANES
           if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
-          if(wardenRam){graphicActorLight=mix(.75,1.,step(.55,graphicKeyFacing));graphicActorHue=vec3(1.);}
           if(bruteBody){
-            if(actorWarden<.5){
-              float key=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
-              graphicActorLight=.19+.81*step(.225,key)+.45*step(.94,key);
-            }else{
-              float bruteRake=dot(normalize(vNormal),vec3(-.63,.62,.47));
-              float bruteEdge=max(fwidth(bruteRake),.02);
-              graphicActorLight=mix(.42,1.0,smoothstep(.50-bruteEdge,.50+bruteEdge,bruteRake));
-            }
+            float key=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
+            graphicActorLight=.19+.81*step(.225,key)+.45*step(.94,key);
             graphicActorHue=vec3(1.);
           }
 #endif
