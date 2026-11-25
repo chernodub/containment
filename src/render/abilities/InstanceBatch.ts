@@ -230,7 +230,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  ${kind === 'flame' || kind === 'smoke' ? `
  // All remaining alpha factors are <=1; these texels cannot survive the existing final cutoff.
  if(a<.004)discard;
- if(softCamera.w>.5&&phase>=64.){
+ if(softCamera.w>.5&&phase>=64.&&phase<504.){
   float d=texture2D(softDepth,screen).r;
   float sceneDistance=softCamera.z>.5?softCamera.x*softCamera.y/(softCamera.y-(softCamera.y-softCamera.x)*d):mix(softCamera.x,softCamera.y,d);
   a*=smoothstep(0.,.28,sceneDistance-viewDepth);
@@ -300,7 +300,8 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
       const depth = Math.max(.1, -(view[2] * x + view[6] * y + view[10] * z + view[14]));
       const perspective = projection[15] === 0;
       // The sector occupies halfArc / (2 sin(halfArc)) of its bounding rectangle.
-      const coverageFraction = fireFan ? (variant - FIRE_FAN_PHASE) / (2 * Math.sin(variant - FIRE_FAN_PHASE)) : 1;
+      const halfArc = (variant - FIRE_FAN_PHASE) % 4;
+      const coverageFraction = fireFan ? halfArc / (2 * Math.sin(halfArc)) : 1;
       const area = coverageFraction * Math.abs(sx * sy * projection[0] * projection[5]) / (perspective ? depth * depth : 1);
       if (this.coverage + area > this.maxCoverage) return;
       this.coverage += area;

@@ -87,7 +87,8 @@ export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
  float coverage;
  if(phase>=${FIRE_FAN_PHASE}.){
-  float halfArc=phase-${FIRE_FAN_PHASE}.;
+  bool peak=phase>=${FIRE_FAN_PHASE + 4}.;
+  float halfArc=mod(phase-${FIRE_FAN_PHASE}.,4.);
   vec2 ray=vec2(p.x*sin(halfArc),fireUv.y);
   float t=length(ray),theta=atan(ray.x,max(.0001,ray.y))/halfArc;
   if(t>1.||abs(theta)>1.)discard;
@@ -113,6 +114,16 @@ export const TEXTURED_FIRE_GLSL = `
   c=mix(c,vec3(2.1,1.1,.08),smoothstep(.79,.98,tooth)*(1.-smoothstep(.34,.82,t)));
   float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
   c=mix(c,vec3(2.2,1.65,.31),core);
+  if(peak){
+   float inner=1.-smoothstep(.48,.63,t);
+   float axis=(1.-smoothstep(.22,.48,abs(theta)))*(1.-smoothstep(.30,.39,t));
+   coverage=mix(coverage,1.-smoothstep(.94,1.,abs(theta)),inner);
+   c=mix(c,mix(vec3(2.3,.65,.025),vec3(3.7,3.05,1.42),axis),inner);
+   #ifdef HAS_ABILITY_PRIORITY_MASK
+   // The exact actor stencil protects the suit and victims at impact.
+   prioritySample.rb*=1.-inner;
+   #endif
+  }
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);

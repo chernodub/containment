@@ -304,7 +304,7 @@ class PyroPresentation implements AbilityPresentation {
         const strength=p.age<.10 ? 1 : .36*fade;
         kit.sprite('glow',pos.x+dx*reach,actor.height*.56,pos.z+dz*reach,.29,.39,CORE,strength,id,'light');
       }
-      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z);
+      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z, p.age <= .14);
       kit.impact();
     }
     // Compact white-yellow muzzle core, only for the first beats.

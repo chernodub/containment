@@ -378,7 +378,7 @@ export class ElementKit {
     }
     /** Overlapping atlas tongues follow rays from the native origin through the entire hit sector. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
-        height: number, sourceX: number, sourceZ: number): void {
+        height: number, sourceX: number, sourceZ: number, peak: boolean): void {
         const c = Math.cos(angle), s = Math.sin(angle);
         this.services?.presentation?.setFlameGrade?.(x + c * radius * .5, z + s * radius * .5, radius * .82);
         this.flowFlame(sourceX, height, sourceZ, x + c * radius * .23, height,
@@ -387,7 +387,7 @@ export class ElementKit {
         const halfArc = arc * .5;
         this.draw('flame', x + c * radius * .5, height, z + s * radius * .5,
             radius * Math.sin(halfArc), radius * .5, 1, 0xff872b, opacity,
-            angle, 0, FIRE_FAN_PHASE + halfArc);
+            angle, 0, FIRE_FAN_PHASE + (peak ? 4 : 0) + halfArc);
     }
 
     /** Short authored flame card aligned to the actual three-dimensional flow. */
