@@ -4,7 +4,7 @@ import type { HudEffect } from './effects';
 import {hudObstructs, presentationObstructs} from './layout';
 import {icon} from '../icons';
 import {damageToken} from '../damageTokens';
-export const COMBAT_TEXT_CAPACITY = 6;
+export const COMBAT_TEXT_CAPACITY = 8;
 export const COMBAT_TEXT_MERGE_SECONDS = .25;
 type Float = {
     node: HTMLDivElement;
@@ -52,6 +52,7 @@ export class CombatText {
     private readonly pool: Float[] = [];
     private readonly pendingAbilityHits: HudEffect[] = [];
     private readonly clusterPoint: ScreenPoint = {x:0,y:0,visible:false};
+    private readonly periodicHits = new Map<number, {effect: HudEffect; remaining: number}>();
     private readonly castHits = new Map<string, HudEffect[]>();
     // Half-integers keep synthetic anchors distinct from native enemy and nest IDs.
     private clusterId = -.5;
@@ -88,6 +89,7 @@ export class CombatText {
     effect(e: HudEffect): void {
         if (!this.enabled || this.disposed)
             return;
+        if (e.type === 'hit' && e.source === 'status' && this.queuePeriodic(e)) return;
         if (e.type === 'hit' && e.source === 'ability') {
             this.pendingAbilityHits.push(e);
             return;
@@ -104,7 +106,9 @@ export class CombatText {
                 const matched = this.castHits.get(key) ?? [];
                 let remaining = 0;
                 for (const hit of this.pendingAbilityHits) {
-                    if (event.targetIds.includes(hit.targetId ?? hit.id ?? Infinity)) matched.push(hit);
+                    if (event.targetIds.includes(hit.targetId ?? hit.id ?? Infinity)) {
+                        if (event.phase !== 'tick' || !this.queuePeriodic(hit)) matched.push(hit);
+                    }
                     else this.pendingAbilityHits[remaining++] = hit;
                 }
                 this.pendingAbilityHits.length = remaining;
@@ -112,6 +116,20 @@ export class CombatText {
             }
         }
         this.showEffect(e);
+    }
+    private queuePeriodic(effect: HudEffect): boolean {
+        const target = effect.targetId ?? effect.id;
+        const damage = effect.damage;
+        if (target === undefined || damage === undefined || !Number.isFinite(damage) || damage <= 0) return false;
+        const pending = this.periodicHits.get(target);
+        const combined = {...effect, source:'status', damage:damage + (pending?.effect.damage ?? 0)};
+        if (effect.lethal) {
+            this.periodicHits.delete(target);
+            this.showEffect(combined);
+        } else {
+            this.periodicHits.set(target, {effect:combined, remaining:pending?.remaining ?? .5});
+        }
+        return true;
     }
     private showClusters(hits: readonly HudEffect[]): void {
         const clusters: {x:number;y:number;hits:HudEffect[]}[] = [];
@@ -166,10 +184,10 @@ export class CombatText {
         if (killed) return;
         const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && sameTarget(p)) : undefined;
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
-        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && sameTarget(p));
-        const merge = !!entry && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS;
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && sameTarget(p) && (p.source === 'status') === periodic);
+        const merge = !periodic && !!entry && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS;
         const total = (merge ? entry!.amount : 0) + amount;
-        const priority = lethal ? 3 : critical || total >= 30 ? 2 : kind === 'damage' ? 1 : 0;
+        const priority = lethal ? 4 : !periodic && (critical || total >= 30) ? 3 : !periodic && kind === 'damage' ? 2 : periodic ? 1 : 0;
         if (!entry) entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
             // Kills outrank substantial hits, which outrank routine ticks/chips.
@@ -226,7 +244,8 @@ export class CombatText {
         entry.node.dataset.lethal = String(entry.lethal);
     }
     private damageLabel(entry: Float, amount: number): string {
-        const value = entry.repeats > 1 ? `${Math.round(entry.repeatAmount)} ×${entry.repeats}` : entry.clusterSize > 1 ? `${Math.round(amount)} (${entry.clusterSize} hits)` : String(Math.round(amount));
+        const hits = Math.max(entry.clusterSize, entry.repeats);
+        const value = hits > 1 ? `${Math.round(amount)} (${hits} hits)` : String(Math.round(amount));
         return entry.lethal ? `${value} ×` : value;
     }
     tick(dt: number, player: {
@@ -241,9 +260,15 @@ export class CombatText {
         this.castHits.clear();
         if (this.pendingAbilityHits.length) this.showClusters(this.pendingAbilityHits);
         this.pendingAbilityHits.length = 0;
+        for (const [target, pending] of this.periodicHits) {
+            pending.remaining -= dt;
+            if (pending.remaining > 0) continue;
+            this.periodicHits.delete(target);
+            this.showEffect(pending.effect);
+        }
         const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
         for (const p of this.pool) p.placed = false;
-        for (const p of this.pool) {
+        for (const p of [...this.pool].sort((a,b) => b.priority-a.priority || b.amount-a.amount)) {
             if (p.life <= 0)
                 continue;
             p.life = Math.max(0, p.life - dt);
@@ -331,7 +356,7 @@ export class CombatText {
             p.node.style.opacity = String(Math.min(1, p.life / .2));
         }
     }
-    clear(): void { this.castHits.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
+    clear(): void { this.castHits.clear(); this.periodicHits.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
         p.life = 0;
         p.node.hidden = true;
     } }
