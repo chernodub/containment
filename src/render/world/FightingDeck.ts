@@ -35,13 +35,13 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   c.save();clipFightingDeck(c,room);c.globalCompositeOperation='source-over';
   const rgb=profile.tint, seed=[...room.id].reduce((a,b)=>a+b.charCodeAt(0),0);
   const tint=(gain:number,alpha:number)=>'rgba('+[16,8,0].map(s=>Math.round(((rgb>>s)&255)*gain)).join(',')+','+alpha+')';
-  const width=105+seed%37,depth=64+seed%23;
+  const width=93+seed%68,depth=58+seed%39;
   for(let row=-1;row*depth<room.height;row++)for(let col=-1;col*width<room.width;col++){
     const x=col*width+(row%2)*width*.48,y=row*depth;
     const variation=(Math.abs(row*11+col*7+seed)%5)*.026;
     c.fillStyle=tint(.43+variation,.54);c.fillRect(x+2,y+2,width-3,depth-3);
     c.fillStyle='rgba(13,23,27,.50)';c.fillRect(x,y,width,2);c.fillRect(x,y,2,depth);
-    c.fillStyle=tint(.68,.38);c.fillRect(x+3,y+2,width-6,1.5);
+    c.fillStyle=tint(.72,.53);c.fillRect(x+3,y+2,width-6,2.5);
   }
   // Lapped pedestrian finish follows the route through the room. The scuffed
   // centre feathers into neighbouring plates instead of a painted lane stripe.
@@ -51,7 +51,8 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   worn.addColorStop(0,tint(.7,0));worn.addColorStop(.38,tint(.96,.49));
   worn.addColorStop(.68,tint(.94,.41));worn.addColorStop(1,tint(.7,0));
   c.fillStyle=worn;c.fillRect(-room.width,-49,2*room.width,98);
-  for(const x of [-122,85]){
+  c.scale(1,seed%2?1:-1);
+  for(const x of [-122+seed%22,85-seed%17]){
     c.fillStyle=tint(.18,.72);c.fillRect(x,-67,59,20);
     c.fillStyle=tint(.61,.66);
     for(let u=3;u<57;u+=8)c.fillRect(x+u,-65,3,16);
