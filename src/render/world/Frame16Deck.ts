@@ -1,4 +1,5 @@
-import {paintFightingDeck} from './FightingDeck';
+import {paintMachineSpill} from './MachineEmitters';
+import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
 import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
@@ -82,6 +83,7 @@ function serviceJoints(c: CanvasRenderingContext2D, room: string): void {
 export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): void {
   const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
   function paintLights(c:CanvasRenderingContext2D){
+    c.save();clipFightingDeck(c,room);paintMachineSpill(c,room.id);c.restore();
     for(const lamp of fixtures){
       if(!lamp)continue;
       c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);

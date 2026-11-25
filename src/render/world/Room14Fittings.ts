@@ -1,3 +1,4 @@
+import {addMachineEmitters} from './MachineEmitters';
 import {addLaneMachine} from './LaneMachines';
 import {addLaneIncident} from './LaneIncidents';
 import {addFrame16Incidents} from './Frame16Incidents';
@@ -41,6 +42,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   addFrame16Incidents(root,id);
   addLaneIncident(root,id);
   addLaneMachine(root,id);
+  addMachineEmitters(root,id);
   const room = ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES];
   addFrame16Deck(root,room,plan.arena);
   // A recessed diffuser follows the top of each original hull module.
