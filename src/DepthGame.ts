@@ -391,7 +391,7 @@ export class DepthGame {
   const {health,armor}=this.combat.snapshot;
   const suit=health+armor;
   if(this.node.templateId==='diagnostic-gallery'&&suit<=70)
-   this.pickups.spawn('health',suit<=12?65:18,260,485);
+   this.pickups.spawn('health',suit<=12?65:25,260,485);
   const recovery=this.node.depth===11&&health<50?35:this.node.templateId==='infested-workshop'&&health<=60?25:0;
   if(recovery){
    const entrance=this.moveCorpse({...this.player,radius:14},48,0);
