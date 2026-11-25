@@ -17,7 +17,10 @@ export type EncounterSpawn = Readonly<{
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
   healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
 }>;
-export type EncounterEvent = EncounterSpawn
+export type ReserveCut = Readonly<{
+  type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
+}>;
+export type EncounterEvent = EncounterSpawn | ReserveCut
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
@@ -476,15 +479,20 @@ export class EncounterDirector {
   reportPriorityDefeated(beat:number){
     if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
     const plan=this.plan.beats?.[beat];
-    const reserve=this.plan.schedule.slice(this.dispatched,plan?.end??this.dispatched).filter(request=>request.reserve);
+    const cut=this.reserveCut(beat);
     this.defusedBeats.add(beat);
     if(plan?.consequence==='leader')this.breakBeat(plan.end);
+    return cut;
+  }
+  private reserveCut(beat:number):ReserveCut|undefined {
+    const end=this.plan.beats?.[beat]?.end??this.dispatched;
+    const reserve=this.plan.schedule.slice(this.dispatched,end).filter(request=>request.reserve);
     if(!reserve.length)return;
     if(reserve[0].enemyId==='crawler'){
       const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
       if(pincer)this.coolantEntry=this.plan.schedule[pincer.start].breachId;
     }
-    return {breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
+    return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
   }
   cancelNextReinforcements():void { this.skipReinforcements=true; }
   private rehearsalReleaseMs?:number;
@@ -505,6 +513,8 @@ export class EncounterDirector {
       const request=this.plan.schedule[this.dispatched];
       if(request.reinforcement&&this.skipReinforcements&&!this.defusedBeats.has(this.beatIndex)){
         this.skipReinforcements=false;this.skippedReinforcementBeat=this.beatIndex;
+        const cut=this.reserveCut(this.beatIndex);
+        if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
