@@ -135,7 +135,7 @@ export class DepthGame {
   }
   return fallback;
  }
- private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean}|undefined;
+ private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean;openedAt?:number}|undefined;
  get relayShutterFrame(){
   return this.rackShutter?{x:459,y:202,width:18,height:96,broken:this.rackShutter.broken}:undefined;
  }
@@ -176,9 +176,10 @@ export class DepthGame {
    if(!shutter||id!==this.rackShutter?.wardenId||!segmentIntersectsRect(from,to,
      {x:shutter.x-radius,y:shutter.y-radius,width:shutter.width+2*radius,height:shutter.height+2*radius}))return false;
    this.rackShutter.broken=true;
+   this.rackShutter.openedAt=this.elapsed;
    this.presentation.push({type:'wall-slam',shutterBroken:true,x:shutter.x+shutter.width/2,y:shutter.y+shutter.height/2,targetId:id});
    return true;
-  },canMove:c=>!(this.isShutterProtected(c.enemyId)&&Math.hypot(c.fromX-510,c.fromY-250)<42)&&canTraverseExpedition(this.geometry,{x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius)&&!this.abilities?.blocksMovement({x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius),route:(e,p)=>this.navigation.waypoint(e,p,1)});}
+  },canMove:c=>!(this.rackShutter?.spitterId===c.enemyId&&(this.isShutterProtected(c.enemyId)||this.elapsed-(this.rackShutter.openedAt??-Infinity)<3)&&Math.hypot(c.fromX-510,c.fromY-250)<42)&&canTraverseExpedition(this.geometry,{x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius)&&!this.abilities?.blocksMovement({x:c.fromX,y:c.fromY},{x:c.toX,y:c.toY},c.radius),route:(e,p)=>this.navigation.waypoint(e,p,1)});}
  private makeMutations(){return new MutationRuntime(this.combat,{player:()=>this.player,targets:()=>this.targets(),damage:(id,n,source)=>this.damage(id,n,undefined,source??'boon'),move:(id,x,y)=>this.shoveEnemy(id,x,y),moveCorpse:(t,x,y)=>{const m=this.moveCorpse(t,x,y);this.presentation.push({type:'sync-corpse',id:t.id,x:m.x,y:m.y});return m;},setSlow:(id,m)=>{if(id>0)this.enemies.setSlow(id,m);else if(id===-1)this.bossSlow=Math.max(.65,m);},launchCollision:(from,target,wall)=>{if(this.roomCondition?.slick(from)||this.roomCondition?.slick(target))this.damage(target.id,wall?12:6,undefined,'boon');},canAffect:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),boonEffect:(boon,x,y,targetX,targetY,radius,durationMs)=>this.presentation.push({type:'boon',boon,x,y,targetX,targetY,radius,durationMs}),wallSlam:(from,to,impulse)=>{const c=wallContact(this.geometry,from,to,from.radius);this.presentation.push({type:'wall-slam',x:c.x,y:c.y,wall:c.normal,targetId:from.id,vx:to.x-from.x,vy:to.y-from.y,impulse});},effect:(x,y,radius)=>this.presentation.push({type:'explosion',x,y,radius})});}
  private abilityPulseDamage=0;
  private makeAbilities(){return new AbilitySystem({roomDepth:()=>this.node.depth,enabled:()=>this.status==='playing',overdriveRoomLimit:()=>this.expedition.run.version===3&&this.node.depth!==9&&this.node.depth!==19?1:Infinity,placementRevision:()=>this.geometry,dashDistanceScale:p=>this.roomCondition?.slick(p)?1.5:1,chainThrough:(a,b)=>this.roomCondition?.condition.id==='conduit'&&this.roomCondition.zones.some(z=>onConditionZone(a,z)&&onConditionZone(b,z))||false,advance:ms=>this.mutations.update(ms),player:()=>this.player,targets:()=>this.targets(),visible:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),traverse:(a,b,r)=>canTraverseExpedition(this.geometry,a,b,r),movePlayer:(dx,dy)=>{const p=this.moveCorpse(this.player,dx,dy);this.player.x=p.x;this.player.y=p.y;},damage:(target,n)=>{const r=this.damage(target.id,n,undefined,'ability');this.abilityPulseDamage+=r.damage;if(r.died)this.mutations.kill(target,'direct');return r.died;},statuses:id=>this.mutations.statuses(id),consumeBurn:id=>this.mutations.consumeBurn(id),impede:t=>this.mutations.impedeWithFire(t),status:(t,k,n)=>this.mutations.applyAbilityStatus(t,k,n),launch:(t,x,y)=>this.mutations.launchAbility(t,x,y),arc:(t,others)=>this.mutations.abilityArc(t,others),has:id=>this.combat.hasMutation(id),upgraded:id=>this.expedition.build.augmentUpgrades?.includes(id)??false,reload:()=>{if(this.combat.instantReload())this.mutations.completedReload(this.player);},emit:(ability,x,y)=>{const measured=ability.targetIds&&['tick','impact','burst','link','dash-end'].includes(ability.phase);const totalDamage=measured?this.abilityPulseDamage:undefined;if(measured)this.abilityPulseDamage=0;this.observeRigDrill(ability);this.presentation.push({type:'ability',ability:totalDamage===undefined?ability:{...ability,totalDamage},x,y});}});}
@@ -631,7 +632,7 @@ export class DepthGame {
    if(origin){const ringDistance=Math.hypot(p.x-origin.x,p.y-origin.y);if(ringDistance<BOSS_BODIES.matron.hatchRingMin||ringDistance>BOSS_BODIES.matron.hatchRingMax)continue;}
    // I13: rooted pods cannot separate themselves; reserve a clear native body circle.
    if(podNeighbors){let occupied=false;for(const neighbor of podNeighbors)if(Math.hypot(p.x-neighbor.x,p.y-neighbor.y)<radius+neighbor.radius+.5){occupied=true;break;}if(occupied)continue;}
-   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.closeIngress||options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
+   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.closeIngress?6:options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
     // A legal circle inside an isolated pocket is not an entrance. The pending
     // request rotates to another open breach when no connected candidate fits.
     if(checkIngress&&!this.eliteBruteIngress?.reachable(p,radius+2))continue;
@@ -717,7 +718,7 @@ export class DepthGame {
  if(firstHeavy||e.rehearsalFlank||e.openingExchange&&!e.lesson&&e.enemyId!=='spitter'){
   const bearing=Math.atan2(y-this.player.y,x-this.player.x);
   const radius=enemyBodyRadius(e.enemyId,e.elite);
-  const distance=firstHeavy?112:e.openingExchange?(e.enemyId==='brute'?178:150):144;
+  const distance=firstHeavy?84:e.openingExchange?(e.enemyId==='brute'?178:150):144;
   for(const offset of [0,.5,-.5,1,-1,1.5,-1.5,Math.PI]){
    const heading=bearing+offset,point={x:this.player.x+Math.cos(heading)*distance,y:this.player.y+Math.sin(heading)*distance};
    if(!canOccupyExpedition(this.geometry,point,radius)||!hasClearExpeditionShot(this.geometry,this.player,point))continue;

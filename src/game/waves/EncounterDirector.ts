@@ -161,7 +161,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
-    const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
+    const side=reserveLeader==='spitter'&&beat.grammar==='pincer'?ordinal%2:role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
     const shaftOpening=shaftLanding&&beatIndex===0;
     const rehearsalFlank=beat.rehearseHeavy&&group.role==='flanker'&&index===0;
