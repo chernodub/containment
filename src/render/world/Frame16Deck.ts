@@ -1,6 +1,6 @@
 import {paintLaneContacts} from './LaneContactPaint';
 import {paintMachineSpill} from './MachineEmitters';
-import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
+import {clipFightingDeck} from './FightingDeck';
 import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
@@ -99,7 +99,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
-    paintFightingDeck(c,room,arena);
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
     paintLaneContacts(c,room,root);

@@ -129,7 +129,7 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
       diffuseColor.rgb*=e10Value*mix(e10FillTint,e10KeyTint,e10Pool);
       #ifdef USE_EMISSIVEMAP
         vec3 e10Story=texture2D(emissiveMap,e10RoomUV).rgb;
-        diffuseColor.rgb*=mix(vec3(1.0),e10Story,mix(.78,.22,e10Calm));
+        diffuseColor.rgb*=mix(vec3(1.0),e10Story,mix(.78,.66,e10Calm));
       #endif
     `);
     shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','// Placed deck wear uses the native sampler in the base-colour path.');
@@ -138,7 +138,7 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
       reflectedLight.indirectDiffuse+=e10AccentTint*e10Irradiance.b*.12;
     `);
   };
-  material.customProgramCacheKey=()=>key+':e10-deck-hood-aperture';material.needsUpdate=true;
+  material.customProgramCacheKey=()=>key+':e10-deck-service-plates';material.needsUpdate=true;
 }
 
 /** Both image resolutions decode during readiness; switching is synchronous. */
