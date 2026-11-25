@@ -321,9 +321,15 @@ class PyroPresentation implements AbilityPresentation {
           if (score>best) { best=score; this.hitPosition.set(m[12],m[13],m[14]); }
         }
         const hit=this.hitPosition, age=p.age/.12;
-        kit.draw('contact',hit.x,hit.y,hit.z,.38,.38,1,CORE,(1.-age*.55)*kit.flashIntensity,0,id*.71,900+age);
+        const variation=authoredVariation(id*1.73);
+        const side=id%2 ? 1 : -1;
+        const outward=.17+.12*variation;
+        const hx=hit.x+dx/distance*outward, hz=hit.z+dz/distance*outward;
+        kit.draw('contact',hx,hit.y,hz,.25+.09*variation,.30,1,CORE,(1.-age*.55)*kit.flashIntensity,0,id*.71,900+age);
+        kit.draw('contact',hx+side*dz/distance*.22,hit.y+.16,hz-side*dx/distance*.22,
+          .12,.24,1,HOT,(1.-age)*.88,0,side*.72,900+age);
       }
-      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z, p.age <= .14);
+      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z, p.age <= .15);
       kit.impact();
     }
     // Compact white-yellow muzzle core, only for the first beats.
