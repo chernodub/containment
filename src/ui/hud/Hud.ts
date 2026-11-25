@@ -356,7 +356,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const drill = getAwakeningDrill(game);
         const lesson = !!drill || game.augmentDrillActive || game.coverLessonActive && !game.siege;
         lessonActive = playing && lesson;
-        const objective = game.encounterObjective || cue || getRoomOpening(game)
+        const objective = encounterCues.reserveResult || game.encounterObjective || cue || getRoomOpening(game)
             || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '');
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');

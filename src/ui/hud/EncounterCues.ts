@@ -4,10 +4,18 @@ type Cue = {x: number; y: number; life: number; kind: HudEffect['encounterCue'];
 
 export class EncounterCues {
     readonly locations: Cue[] = Array.from({length: 3}, () => ({x: 0, y: 0, life: 0, kind: undefined, beat: -1}));
+    private reserveCut = '';
+    private reserveLife = 0;
+    get reserveResult() { return this.reserveLife > 0 ? this.reserveCut : ''; }
     private canceled = 0;
     private beat = -1;
 
     effect(event: HudEffect, beat: number) {
+        if (event.reserveCut) {
+            const {count, family} = event.reserveCut;
+            this.reserveCut = `${count} ${family[0].toUpperCase()}${family.slice(1)}${count === 1 ? '' : 's'} cut off`;
+            this.reserveLife = 3;
+        }
         const kind = event.encounterCue;
         if (!kind) return;
         const x = event.cueX ?? event.x, y = event.cueY ?? event.y;
@@ -51,10 +59,12 @@ export class EncounterCues {
     }
 
     tick(dt: number) {
+        this.reserveLife = Math.max(0, this.reserveLife - dt);
         for (const cue of this.locations) cue.life = Math.max(0, cue.life - dt);
     }
 
     clear() {
+        this.reserveLife = 0;
         this.beat = -1;
         this.canceled = 0;
         for (const cue of this.locations) this.set(cue, 0, 0, 0, undefined, -1);

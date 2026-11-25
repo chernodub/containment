@@ -126,6 +126,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
+ if(reserveLeader==='spitter'){
+  const pincer=source.findIndex(beat=>beat.grammar==='pincer');
+  if(pincer>=0)source.push(...source.splice(pincer,1));
+ }
  const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
  // Freight Hold already uses a split pincer. In the other early sectors,
  // pick a featured actor from the existing exchanges without adding bodies.
@@ -318,7 +322,7 @@ export class EncounterDirector {
   private currentPhase: EncounterPhase = 'idle';
   private elapsedMs = 0;
   private dispatched = 0;
-  private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
+  private coolantEntry?:string;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
   private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
@@ -408,6 +412,9 @@ export class EncounterDirector {
     let slots = Math.max(0, this.plan.concurrentCap - occupiedCount);
     while (slots>0 && this.dispatched < this.plan.totalSpawns) {
       const request = this.plan.schedule[this.dispatched];
+      if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
       const cost=request.enemyId==='carrier'?4:1;
       if (request.atMs > this.elapsedMs||cost>slots) break;
       slots-=cost;batch.push(request);
@@ -448,7 +455,19 @@ export class EncounterDirector {
     this.dispatched=end;
   }
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
-  reportPriorityDefeated(beat:number):void {if(Number.isSafeInteger(beat)&&beat===this.beatIndex){this.defusedBeats.add(beat);const plan=this.plan.beats?.[beat];if(plan?.consequence==='leader')this.breakBeat(plan.end);}}
+  reportPriorityDefeated(beat:number){
+    if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
+    const plan=this.plan.beats?.[beat];
+    const reserve=this.plan.schedule.slice(this.dispatched,plan?.end??this.dispatched).filter(request=>request.reserve);
+    this.defusedBeats.add(beat);
+    if(plan?.consequence==='leader')this.breakBeat(plan.end);
+    if(!reserve.length)return;
+    if(reserve[0].enemyId==='crawler'){
+      const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
+      if(pincer)this.coolantEntry=this.plan.schedule[pincer.start].breachId;
+    }
+    return {breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
+  }
   cancelNextReinforcements():void { this.skipReinforcements=true; }
   private rehearsalReleaseMs?:number;
   private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean,crawlerSlots:number):readonly EncounterEvent[]{
@@ -470,6 +489,9 @@ export class EncounterDirector {
         this.skipReinforcements=false;this.skippedReinforcementBeat=this.beatIndex;
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
+      if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
       const cost=request.enemyId==='carrier'?4:1;
       if(request.atMs>this.beatElapsedMs||cost>slots||request.enemyId==='crawler'&&crawlerSlots===0)break;
       if(request.rehearsalFlank){
@@ -511,6 +533,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

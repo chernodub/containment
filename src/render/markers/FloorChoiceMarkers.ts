@@ -21,7 +21,25 @@ export class FloorChoiceMarkers {
  private readonly shutterGeometry=new T.BoxGeometry(1,1,1);
  private readonly shutterMaterial=new T.MeshStandardMaterial({color:0x74513a,emissive:0xe78338,emissiveIntensity:.55});
  private readonly shutterPanels=[new T.Mesh(this.shutterGeometry,this.shutterMaterial),new T.Mesh(this.shutterGeometry,this.shutterMaterial)];
+ private readonly grilles=Array.from({length:2},()=>new T.Mesh(this.shutterGeometry,this.shutterMaterial));
+ private reserve?:{x:number;y:number;life:number;entry?:string};
+ closeReserve(x:number,y:number,entry?:string){this.reserve={x,y,life:3,entry};}
+ resetReserve(){this.reserve=undefined;}
+ updateReserve(breaches:DepthGame['geometry']['breaches'],unit:number,dt:number){
+  const reserve=this.reserve;
+  if(reserve)reserve.life=Math.max(0,reserve.life-dt);
+  const entry=breaches.find(point=>point.id===reserve?.entry);
+  this.grilles.forEach((mesh,index)=>{
+   const point=index===0?reserve&&reserve.life>0?reserve:undefined:entry;
+   mesh.visible=!!point;
+   if(!point)return;
+   const height=index===0?Math.min(1.4,(3-reserve!.life)*7):1.4;
+   mesh.position.set(point.x/unit,1.4-height/2,point.y/unit);
+   mesh.scale.set(.17,height,1.45);
+  });
+ }
  constructor(){
+  this.root.add(...this.grilles);
   this.root.add(...this.shutterPanels);
   this.coverGlyph.rotation.x=-Math.PI/2;
   this.coverGlyph.visible=false;

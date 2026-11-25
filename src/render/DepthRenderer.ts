@@ -574,6 +574,10 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
+  if(effect.reserveCut){
+   this.floorChoiceMarkers.closeReserve(effect.x,effect.y,effect.reserveCut.closedEntry);
+   return;
+  }
   this.overdriveReactions.event(effect,this.actors,this.corpses,this.interimAbilities.kit ?? undefined);
   const hold=combatPresentationHoldSeconds(effect);if(hold)this.presentationHold?.request(hold,this.options.screenShake,!!this.motionQuery?.matches);
   if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
@@ -612,7 +616,7 @@ export class DepthRenderer {
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
-  if(this.roomKey!==game.node.id)this.loadRoom(game.node);
+  if(this.roomKey!==game.node.id){this.floorChoiceMarkers.resetReserve();this.loadRoom(game.node);}
   // RUN15 condition presentation consumes the room's deterministic state.
   const condition=menu?null:game.conditionState,blackout=condition?.condition.id==='dark';
   this.conditionVisuals.update(this.graphicsAblation==='conditions'?null:condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
@@ -634,6 +638,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
+  this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutter);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
