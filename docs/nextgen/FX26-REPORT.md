@@ -92,3 +92,40 @@ The comparison sheets place the handoff above the revision. Each row shows the p
 The comparison capture produced 18 panels with zero errors. In the residual column, Flashfire and Overload show Stalker 7 at the marine with its narrow red warning. Afterburn shows Brute 6 at the left end of the trail. Whiteout and Meltdown show Brute 6 immediately right of the marine, with its red sector opening left. Napalm shows Brute 6 beside that sector and Spitter 2 aiming from the upper right.
 
 The final production build passed. Both seed-1729 campaigns cleared ten rooms with zero errors and zero reported defects. I stopped an earlier Pyro run after changing the final color grade and restarted on the shipping build. [Pyro campaign](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/playtest/fx26-verified-pyro/index.html) · [Cryo campaign](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/playtest/fx26-verified-cryo/index.html)
+
+## FX27
+
+Whiteout's frost bank samples the protection mask twice upstream. The wind stretches the shelter across the floor and the moving frost noise breaks up its edge. The bank keeps a thin veil under the red warnings. A first pass still showed the outline of the warning shoulder, so the final pass also softens that channel. The rolling front and cracks share one disc.
+
+Flashfire has independently paced strands, darker edges, short hot center lines and gaps in the outer half. The fan yields at each victim. A small yellow-white contact appears on the side facing the marine and fades to a warm rim. The target keeps its own coloring through the impact. Afterburn and Napalm share the hotter amber flame palette. Opaque marine pixels now block the player's Pyro effects, including at the feet. Warning priority suppresses fire inside hostile telegraphs, with a 50% upper bound per fragment.
+
+Meltdown keeps its star, moving pressure ring and one residual disc. Its amber fissures drop to half strength at the warning boundary before the shared warning clearance applies. Overload forks each native hop over the target, flashes the contact white for two updates and leaves a violet crack. The first revision still looked faint at 480 pixels because the hops were spread 95 ms apart. The final chain spaces them 16 ms apart so several branches appear together at peak.
+
+Each sheet places final18 on top and FX27 below. The columns show the peak, the wind-up during the residual, the resting frame and the dense overlap for that rig. The fourth column uses the final18 Crew Checkpoint fixture. A first capture used the repository's Communal Atrium default and was excluded from the pairs.
+
+| Power | Native panels | 480 × 270 panels |
+| --- | --- | --- |
+| Whiteout | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/whiteout-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/whiteout-480.png) |
+| Flashfire | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/flashfire-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/flashfire-480.png) |
+| Afterburn | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/afterburn-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/afterburn-480.png) |
+| Napalm-Charge | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/napalm-charge-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/napalm-charge-480.png) |
+| Meltdown | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/meltdown-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/meltdown-480.png) |
+| Overload | [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/overload-1920.png) | [Small](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/overload-480.png) |
+
+Each rig ran on High in Safety-interlock Station for 15 seconds against the preserved `8f708dec` build and then `2c4d1efb`. The runner recorded load on the shared host.
+
+| Rig | Median frame ms | P95 frame ms | Peak draws | Combat compiles | Starting load |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Pyro | 41.5 → 42.7 | 100.0 → 117.7 | 297 → 295 | 0 → 0 | 9.02 → 13.43 |
+| Cryo | 33.3 → 16.7 | 58.6 → 49.6 | 289 → 266 | 0 → 0 | 9.37 → 13.32 |
+| Arc | 16.9 → 16.7 | 42.6 → 50.0 | 282 → 273 | 0 → 0 | 9.94 → 10.64 |
+
+The three High trials stayed below 330 draws and recorded zero combat shader compilations. Pyro took 1.2 ms longer at the median and 17.7 ms longer at P95. Arc also had a longer P95. A single pair on this shared host cannot establish the cause.
+
+The additional Armory Overdrive sheet shows three consecutive active frames and the dense Pyro overlap. [Native](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/overdrive-1920.png) · [480 × 270](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/overdrive-480.png)
+
+The native Workshop pair shows final18 on the left and FX27 on the right. The current Pyro bot resumed the earned room-14 reward and cleared Workshop. Each panel is the highest-pressure sample from its own fight, so the marine and enemies occupy different positions. [Native Workshop](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/workshop-1920.png) · [480 × 270](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/fx27-pairs/workshop-480.png)
+
+The production build passed. The matched gallery produced 45 frames with zero capture failures and zero runtime errors. All three seed-1729 campaigns cleared ten rooms with zero errors and zero reported defects. [Pyro](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/playtest/fx27-pyro/index.html) · [Cryo](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/playtest/fx27-cryo/index.html) · [Arc](/Users/chernodub/.t3/worktrees/containment-game/t3-917e2513-55d87e0cd6c93b1c/artifacts/nextgen/playtest/fx27-arc/index.html)
+
+At 480 pixels the Overload branches carry the peak. The resting violet scorch is faint on the dark checkpoint floor. The 50% cap applies per fragment. The review did not measure the combined opacity of overlapping fire and warning layers.
