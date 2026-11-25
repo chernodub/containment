@@ -58,10 +58,15 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutter']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame']){
   this.shutterPanels.forEach((panel,index)=>{
    panel.visible=!!shutter;
    if(!shutter)return;
+   if(shutter.broken){
+    panel.position.set((shutter.x+shutter.width/2)/unit,.06,(shutter.y+shutter.height*(index===0?.12:.88))/unit);
+    panel.scale.set(.65,.12,.35);
+    return;
+   }
    panel.position.set((shutter.x+shutter.width/2)/unit,index===0?.28:1.04,(shutter.y+shutter.height/2)/unit);
    panel.scale.set(shutter.width/unit,index===0?.56:.48,shutter.height/unit);
   });

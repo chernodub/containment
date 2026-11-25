@@ -639,7 +639,7 @@ export class DepthRenderer {
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
-  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutter);
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
