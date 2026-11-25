@@ -884,3 +884,75 @@ The four K11 source skins already export smoothed proxy normals. In the shipped 
 | Stalker | 38 | `f5d312e1089e1ba0` | 3.998526 |
 | Carrier | 73 | `a9960f8e864ca52c` | 18.013543 |
 | Carrier Matron | 73 | `a9960f8e864ca52c` | 19.179160 |
+
+### Native dimensions
+
+Each entry is shared by `6db0c5a1` and FAMILY35. The five calm views use the same Crew Checkpoint pose, seed and native camera in both builds. Drawn height and radial reach come from the transformed vertices of each visible skinned mesh. The public attachment height and the simulation contact radius are independent measurements. The paired native crops are in `artifacts/nextgen/family35/sheets/lineup.png`.
+
+| Family | Public height (m) | Drawn height (m) | Drawn radial (m) | Contact radius (simulation units) |
+|---|---:|---:|---:|---:|
+| Crawler | 0.77364 | 0.99724 | 0.60386 | 17.50 |
+| Spitter | 1.65172 | 1.58616 | 0.66924 | 22.50 |
+| Stalker | 1.08185 | 1.51648 | 0.70998 | 20.40 |
+| Carrier | 1.98037 | 1.92600 | 0.76715 | 26.40 |
+| Carrier Matron | 5.29582 | 5.40549 | 1.27829 | 46.00 |
+
+### Form light and marks
+
+The key is normalized view-space (−.78, .40, .48). The diffuse gains are .24 in shadow and 1 on the lit plane. The edge gain in the table is the total gain. Crawler and Stalker have elongated bodies with very different projected areas when seen end-on and broadside. Their shadow thresholds follow the displayed heading. Carrier needs a smaller correction. In the table, c and s are cosine and sine of the rendered root yaw in radians. The cutoff is clamped to [−.45, .55]. The edge threshold stays fixed at every heading.
+
+| Family | Shadow cutoff | Edge cutoff / gain | Calm | Windup | Swarm Junction | Relay Racks | Crew Checkpoint |
+|---|---|---|---:|---:|---:|---:|---:|
+| Crawler | −.06 + .46c + .12s | .94 / 1.34 | 41.8% | 38.8% | 35.4% | 40.0% | 37.4% |
+| Spitter | −.24 | .94 / 1.38 | 39.2% | 36.8% | 38.9% | 39.8% | 38.8% |
+| Stalker | .26 − .24c + .42s | .95 / 1.32 | 43.9% | 37.7% | 37.7% | 39.8% | 31.9% |
+| Carrier | −.04 + .06s | .93 / 1.40 | 40.2% | 37.0% | 37.6% | 39.4% | 42.8% |
+| Carrier Matron | −.20 | .94 / 1.45 | 32.5% | 36.1% | — | — | 43.3%¹ |
+
+¹ The three stock crowds contain regular Carriers. The Matron sample is the Crew Checkpoint sealed-pod encounter with escorts, 21,156 shadow fragments out of 48,894 visible Matron body fragments. Shares aggregate the visible members of each family per frame. Individual headings can fall outside the band. The windup Crawler escort in that supplemental pod frame gives 6.4%, with its thin pale attack contour still intact.
+
+An ignored diagnostic distribution wrote the actual shader step into the geometry buffer. Counts exclude bones, rank trim, organ marks, occluded surfaces, the marine and effects. The first crowd frame is the measured one. The readback uses the internal render resolution, including adaptive scale where active. Exact counts and the paired display samples are in `artifacts/nextgen/family35/pixels.txt`. Sampling a displayed screenshot at a sampled fragment is approximate where final AA or ink covers a thin edge.
+
+The bright marks keep their authored coverage. In the calm views their median display luma (final19 → FAMILY35, Rec.709 on 8-bit RGB) was 182 → 182 for Crawler, 192 → 193 for Spitter, 136 → 140 for Stalker, 117 → 121 for Carrier, and 131 → 158 for Matron. Median lit-body values were 111, 74, 65, 93 and 99 respectively. The corresponding marine 90th-percentile samples were 182–183. The thin edge resolves best on the Matron sac. On tiny appendages the ink can cover it at 480×270, but the larger shell patches hold together without visible sparkle.
+
+The regular body selects chitin, flesh and plate cells. Carrier adds the brood skin, folds and sac skin. Violet lobes, the acid muzzle, the blade bevel and the salmon stripe take their own full-value finish. Frozen, chilled, burning, shocked and hit-flash presentations bypass the new body treatment. The pod shell uses the Matron key while the core keeps its native hatch pulse. The Matron sequence recorded zero programs created after preparation.
+
+### Sheet review
+
+Open `artifacts/nextgen/family35/sheets/index.html`. Each named pair has a native crop and a 480×270 full-frame comparison, ordered final19 then FAMILY35. The crowds show four of these families plus Brutes. The pod stages show the fifth family alongside regular escorts. The regular and Matron silhouettes are distinguishable in the same frame by the Matron's long, raised sac.
+
+| Sheet stem | What reads at room scale |
+|---|---|
+| crawler-calm | The salmon stripe divides a raised shell from its dark right flank. The mandibles stay clear underneath. |
+| crawler-windup | The shell still turns behind the intact white attack contour. The red line crosses the low jaw. |
+| crawler-behind | The stripe remains easy to pick up as it bends down the far shell. The legs separate at native size. |
+| spitter-calm | The lime ridge and muzzle remain the quickest cues. Olive flanks turn around a narrow frontal profile. |
+| spitter-windup | The loaded animal keeps its lime jaw and white outline. The darker flank is visible between the muzzle and the warning outline. |
+| spitter-behind | The bright acid vessel stays centered above the darker folded legs. |
+| stalker-calm | The blade edge remains bright against the dark thorax. The far arm is thin at 480. |
+| stalker-windup | The blade and raised abdomen read separately inside the warning outline. |
+| stalker-behind | The lavender mark survives. The rear legs are the weakest small-family detail on the slate floor. |
+| carrier-calm | Both pink lobes rise above the darker legs. The marine draws the eye first. |
+| carrier-windup | The forward legs turn under the lobes. The pink mark survives the white attack contour. |
+| carrier-behind | The rear sac shows a lit top, violet mark and folded dark side. |
+| matron-calm | The long sac has a broad lit top, dark flank and bright key-side sliver. The pink seams stay legible. |
+| matron-windup | The flank turns even inside the attack contour. The pink mark remains clear between the danger discs. |
+| matron-behind | The sac mass and shoulder vents read. The projected marine overlaps the upper tip in both versions. |
+| value14-crowd-swarm-junction | Marine and red sector first. The stripe, violet sacs, lime muzzle and blue blade separate the four smaller families against the purple floor. |
+| value14-crowd-relay-racks | Marine first. The teal machinery competes with the smallest blue Stalker. The warm stripe and pink sac remain easy to find. |
+| value14-crowd-crew-checkpoint | Marine first. Spitter and Stalker stay distinct by hue and posture. The Carrier reads as two lobes over legs. |
+| gallery-elite-pair-crawler | The elite shell and stripe read. The console hides most of the regular in both frames. |
+| gallery-elite-pair-spitter | The lime plane identifies both animals. The larger crest separates the elite from its partner. |
+| gallery-elite-pair-stalker | The blue blade edge survives on both. The ring and wider silhouette distinguish the elite. |
+| gallery-elite-pair-carrier | The regular's pink lobes read against the dark flank. The elite adds the crown above them. |
+| gallery-elite-pair-brute | The inherited BRUTE33 bone face and horns remain clear. The central marine stays brighter. |
+| pod-calm | The long Matron sac and short escort sacs remain distinct across the room. |
+| pod-brood | The loaded sac keeps a lit left face and a dark right edge. Warning rings remain visible. |
+| pod-pod-sealed | The rounded clutch shells separate from the red core and the dark contact floor. |
+| pod-pod-swelling | The shells expand around the bright cores. The Matron's flank remains readable behind them. |
+| pod-pod-opening | Open mouths and the violet interiors make the opening distinct from swelling. |
+| pod-hatched | Small salmon hatchlings replace the cups. The Matron and regular Carrier still read independently. |
+| pod-death | The fallen sac lies across the left side. Its lit cap and pink spots stay separate from the upright escort. |
+| pod-ragdoll | The tipped sac and folded limbs read separately. The corpse crosses the marine and the red sector at this camera angle. |
+
+The three weakest views are Stalker behind (rear legs against dark steel), the elite Crawler pair (console occlusion), and Matron behind (marine and sac tip overlap). Native crops retain more limb anatomy than the downsampled room view. The final death and ragdoll comparisons use the browser compositor after GPU completion. The original helper returned the previous canvas on death and a cleared canvas on ragdoll.
