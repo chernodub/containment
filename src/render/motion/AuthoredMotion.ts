@@ -41,7 +41,7 @@ function reactionLayer(clip: T.AnimationClip): T.AnimationClip {
         const rifle = clip.name.startsWith('m10-hit-rifle-');
         layer.tracks = layer.tracks.filter(track =>
             (track.name.endsWith('.quaternion') && !/^(?:ik|eye|antenna|finger|tongue)/i.test(track.name))
-            || (rifle && /^(?:chest|torso|body|bum)\.position$/.test(track.name)));
+            || (rifle && /^(?:chest|torso|body|bum|head|leg[0-5]_upper|arm_up[RL]|hand[RL]|upper_arm[RL])\.position$/.test(track.name)));
         T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
         reactionLayers.set(clip, layer);
     }
@@ -501,12 +501,22 @@ export class AuthoredEnemyMotion {
     private get recoveryClip(): string {
         return this.ordinary && this.player.has('m10-exposed') ? 'm10-exposed' : 'm10-recovery';
     }
+    private waitingClip = 'm10-waiting';
+    private staggerAge = 1;
+    stagger(): void {
+        if (this.family === 'brute') this.staggerAge = 0;
+    }
     private waitOffset = 0;
     private feintProgress: number | undefined;
     seedWaiting(id: number): void {
+        this.waitingClip = id % 2 && this.player.has('m10-waiting-low') ? 'm10-waiting-low' : 'm10-waiting';
         this.waitOffset = (Math.imul(id, 0x9e3779b1) >>> 0) / 0x100000000;
     }
-    setWaitingState(waiting: boolean, feintProgress?: number, ordinary = true): void {
+    private paceSide = 0;
+    private planted = false;
+    setWaitingState(waiting: boolean, feintProgress?: number, ordinary = true, paceSide = 0, planted = false): void {
+        this.paceSide = paceSide;
+        this.planted = planted;
         this.ordinary = ordinary;
         this.waiting = waiting;
         this.feintProgress = feintProgress;
@@ -542,7 +552,7 @@ export class AuthoredEnemyMotion {
             if (weapon === 'rifle') {
                 const followUp = this.rifleContactAge < .20;
                 this.rifleContactAge = 0;
-                if (followUp && this.rifle && !this.repeated && this.hitAge < .18) return;
+                if (this.rifle && this.hitAge === 0) return;
                 this.repeated = followUp;
             } else if (this.hitAge > 0) this.repeated = this.hitAge < .20;
             this.hitAge = 0;
@@ -569,6 +579,7 @@ export class AuthoredEnemyMotion {
         }
         this.age += dt;
         this.hitAge += dt;
+        this.staggerAge += dt;
         this.rifleContactAge += dt;
         this.attackAge += dt;
         // Only pose evaluation is suspended. Native phase inputs and all local
@@ -576,10 +587,14 @@ export class AuthoredEnemyMotion {
         if (!this.visible) return true;
         // A fresh native warning/strike must remain visible after thaw even
         // when an older hit reaction was held by the frozen visual clock.
+        if (this.staggerAge < .35 && this.feedback > 0) {
+            this.clearReaction();
+            return this.player.sample('m10-stagger',this.staggerAge/.35,dt,.016,this.feedback);
+        }
         const hit = this.family === 'carrier' && this.repeated && this.heavy ? 'm10-stagger'
-            : (this.rifle && !this.repeated ? RIFLE_HITS : this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
+            : (this.rifle ? RIFLE_HITS : this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
         const durationHit = this.player.duration(hit);
-        const reactionWeight = this.feedback * (this.rifle && this.repeated ? .23 : 1);
+        const reactionWeight = this.feedback * (this.rifle && this.repeated ? .78 : 1);
         const reacting = this.hitAge < durationHit;
         const elementClip = !this.elementalHold ? '' : this.element === 'arc' ? 'm10-overdrive-arc'
             : this.element === 'fire' ? 'm10-overdrive-fire' : this.element === 'kinetic' ? 'm10-overdrive-kinetic' : '';
@@ -600,14 +615,9 @@ export class AuthoredEnemyMotion {
             return this.player.sample(base, progress, dt, this.phase === 'strike' ? 0 : .025);
         }
         if (this.rifle && reacting && !elementClip) {
-            const base = this.attackAge < .16 ? 'm10-strike' : this.attackAge < .55 ? this.recoveryClip
-                : moving > .3 ? 'm10-run' : 'm10-idle';
-            const cycle = this.player.duration(base);
-            const progress = this.attackAge < .16 ? this.attackAge / .16 : this.attackAge < .55
-                ? (this.attackAge - .16) / .39 : (time * (moving > .3 ? speed : 1) % cycle) / cycle;
             this.player.beginBatch();
             this.player.clearUpper();
-            this.player.sample(base, progress, dt, .04);
+            this.sampleApproach(time,dt,moving,speed,shocked,burning);
             this.player.overlay(hit, this.hitAge / durationHit, reactionWeight);
             this.player.endBatch();
             this.layered = true;
@@ -619,6 +629,9 @@ export class AuthoredEnemyMotion {
         if (elementClip) return this.player.sample(elementClip, this.contactPose(this.elementAge,false), dt, .025, this.feedback);
         if (reacting)
             return this.player.sample(hit, this.hitAge / durationHit, dt, this.rifle ? .009 : .026, this.feedback);
+        return this.sampleApproach(time,dt,moving,speed,shocked,burning);
+    }
+    private sampleApproach(time:number,dt:number,moving:number,speed:number,shocked:boolean,burning:boolean):boolean {
         if (this.attackAge < .16)
             return this.player.sample('m10-strike', this.attackAge / .16, dt, .02);
         if (this.attackAge < .55)
@@ -628,19 +641,23 @@ export class AuthoredEnemyMotion {
             return this.player.sample('m10-spawn', this.age / spawnDuration, dt);
         if(this.feintProgress !== undefined && !shocked && !burning && this.player.has('m10-feint'))
             return this.player.sample('m10-feint',this.feintProgress,dt,.025,this.feedback);
-        const name = shocked && this.feedback > 0 ? 'm10-shocked' : burning && this.feedback > 0 ? 'm10-burning' : this.waiting && this.player.has('m10-waiting') ? 'm10-waiting' : moving > .3 ? 'm10-run' : 'm10-idle';
+        if (this.paceSide && !shocked && !burning) {
+            const pace = this.paceSide > 0 ? 'm10-pace-right' : 'm10-pace-left';
+            return this.player.sample(pace,this.planted ? .25 : (this.age / this.player.duration(pace)) % 1,dt,.045);
+        }
+        const name = shocked && this.feedback > 0 ? 'm10-shocked' : burning && this.feedback > 0 ? 'm10-burning' : this.waiting && this.player.has('m10-waiting') ? this.waitingClip : moving > .3 ? 'm10-run' : 'm10-idle';
         const duration = this.player.duration(name);
         // Only renderer-managed waiting locomotion samples at30Hz. Native time,
         // roots and facing stay full rate; combat/status/spawn branches above
         // bypass this pose-only LOD, as do berth owners and direct rig studies.
         let poseDelta = dt;
-        if (this.renderManaged && this.quietLocomotion && (name === 'm10-idle' || name === 'm10-run' || name === 'm10-waiting')) {
+        if (this.renderManaged && this.quietLocomotion && (name === 'm10-idle' || name === 'm10-run' || name === this.waitingClip)) {
             const continuing = this.player.isCurrent(name);
             if (continuing && time - this.idlePoseTime < 1 / 30 - 1e-6) return true;
             poseDelta = continuing ? Math.min(.05, Math.max(dt, time - this.idlePoseTime)) : dt;
             this.idlePoseTime = time;
         }
-        const cycle = name === 'm10-waiting' ? (this.age / duration + this.waitOffset) % 1 : (time * (moving > .3 ? speed : 1) % duration) / duration;
+        const cycle = name === this.waitingClip ? (this.age / duration + this.waitOffset) % 1 : (time * (moving > .3 ? speed : 1) % duration) / duration;
         return this.player.sample(name, cycle, poseDelta, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
     }
     private clearReaction(): void {
@@ -691,6 +708,7 @@ export class AuthoredEnemyMotion {
     reset(): void {
         this.player.reset();
         this.previous = undefined;
+        this.staggerAge = 1;
         this.setWaitingState(false);
         this.age = 0;
         this.element = undefined; this.elementAge = 10;

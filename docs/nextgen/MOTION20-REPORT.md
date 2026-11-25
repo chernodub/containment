@@ -194,3 +194,34 @@ npm run capture -- --label=motion25-crowds --scenarios=play25-ordered-crowd,play
 For the before strips, use the same collection with `--dist` pointing to a production build of `4ea56510`. The matched five-second High Crew Checkpoint CPU-submission benchmarks in `motion25-bench-before/` and `motion25-bench-final/` both recorded 141 draws, 153 programs and zero mid-fight compilations.
 
 The clean install and production build passed. Both strip manifests report zero errors. The six-room Breacher playtest with seed 1729, fast stepping and a 180000 ms startup timeout cleared all six rooms with zero errors and zero recorded defects. Its report is `artifacts/nextgen/playtest/motion25-breacher/report.json`.
+
+## MOTION28
+
+The Brute shifts onto its supporting side and cocks the cleaver outside and above the shoulder shell. Its first punished recovery uses the native recovery-stagger receipt to start a 350 ms backward step and head toss. The Crawler loads low and spreads both front hooks along the deck. The Stalker draws one blade back and high. The Spitter retracts the neck and opens its mouth. The Carrier raises its forelimbs while its remaining legs brace the sac.
+
+Brute, Stalker and Crawler IDs select between the existing waiting loop and a second, lower stance weighted to the opposite side. Each family's feint pulls the trunk back before resetting. The lane assignment lives in the enemy system. Several Stalkers can report pace simultaneously, so the snapshot also identifies which one owns the cut. That animal turns its chest toward its route, counterturns the neck, and holds a planted gait sample near the destination until travel or the native wind-up takes over. Plant duration depends on the route and when the attack slot opens.
+
+Crawler, Stalker, Spitter and Carrier use eight-tick directional rifle clips (133 ms). The head and near limb kick along the shot direction, with the reaction added to the current movement or attack pose. A subsequent round can restart the flinch. The heavier shotgun clips keep their original timing. The Breacher presents the dark shoe and its forearm attachment in calm, aim, dash and ram. The plate shoulder rotates forward during the ram. The receiver obscures the lower edge of the shoe at full extension. The Crawler's claw spread and the Spitter's open mouth are easiest to see in the native frames. At 480 × 270 the Brute cleaver and Stalker blade remain the clearest loaded silhouettes.
+
+The local review index is `artifacts/nextgen/motion28-proof/index.html`. Each pair shows final18 at left and MOTION28 at right. The final18 manifest identifies revision `8f708dec`. The baseline was rebuilt from that revision to capture the additional views. Room dressing and creature colours also differ between final18 and the MOTION28 integration base. The loaded room frames sample each family at 80–84% of its native wind-up. The isolated studies drive the production rig with explicit inputs. They show poses, while the room manifests record encounter phases and damage receipts.
+
+The sheets `loaded`, `packs`, `impacts`, `calm` and `rigs` each have `-native.png` and `-480.png` views under the review index. The six family and marine `*-clips.png` sheets cover all 39 strip pairs. The individual pairs under `strips/` preserve the source pixels. The specimen inputs and capture setup for the in-room comparisons live alongside the index in `fixtures.mjs`. Neither meshes nor attack windows were rebuilt for these studies.
+
+Rebuild the selected motion tracks and capture the strips from the repository root.
+
+```sh
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/enemy_actions.py -- --families=crawler,stalker,brute,spitter,carrier --clips=m10-windup,m10-feint,m10-waiting-low
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/enemy_actions.py -- --families=stalker '--clips=m10-pace-*'
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/enemy_actions.py -- --families=crawler,stalker,spitter,carrier '--clips=m10-hit-rifle-*'
+blender -b -t 4 --python-exit-code 1 -P tools/assets/m10-motion/enemy_actions.py -- --families=brute --clips=m10-stagger
+npm run build
+node scripts/nextgen/m9-motion.mjs --collection=motion28 --subjects=marine,crawler,stalker,brute,spitter,carrier --steps=3 --out=artifacts/nextgen/motion28-strips
+```
+
+Both strip manifests contain 39 captures with zero errors. In each room comparison, the first rifle round dealt 16 damage to each of the four surviving targets. The Brute frame follows the native recovery-stagger receipt from shooting during exposed recovery. The Breacher combat still samples its tactical cast, which retains the painted side of the plate. The calm pair and the dash and ram strips show the dark shoe.
+
+The production build passed. The fixed-resolution 300-tick Crew Checkpoint benchmark recorded 133 median, 141 p95 and 142 peak draws on final18, with 157 resident programs. MOTION28 recorded 134 median, 142 p95 and 143 peak draws, with 158 resident programs. Both recorded zero combat compiles. These are CPU-submission figures across two integration revisions. The local receipts are in `motion28-bench-before/benchmark.json` and `motion28-bench-now/benchmark.json` under the evidence root.
+
+On seed 1729, Standard Arc cleared 12 rooms with zero errors and zero defects. The first Breacher campaign also cleared 12 rooms with zero errors. Its runner returned status 1 for a 6.53-second Diagnostic Gallery load during concurrent capture work. The reports are in `artifacts/nextgen/playtest/arc-1729/` and `artifacts/nextgen/playtest/breacher-1729/`.
+
+The final-build Breacher repeat cleared all 12 rooms with zero errors, zero defects and exit status 0. Diagnostic Gallery loaded in 817 ms. Its receipt is `artifacts/nextgen/playtest/motion28-final-breacher/report.json`.

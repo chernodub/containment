@@ -583,6 +583,7 @@ export class DepthRenderer {
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
   }
+  if(effect.type==='recovery-stagger'&&effect.id!==undefined)this.actors.get(effect.id)?.recoveryStagger?.();
   if(effect.type==='enemy-attack'){if(effect.id===-1)this.queen?.attack?.();else this.actors.get(effect.id!)?.attack?.();}
   let motionDeathCue:'none'|'frost'|'burn'|'arc'|'acid'='none';
   if(effect.type==='corpse'){
@@ -679,7 +680,10 @@ export class DepthRenderer {
    const waiting=!!e.readyBehaviour||ordinary&&!e.attackSlot&&!e.pendingAttack&&e.meleePhase==='approach'&&
      (e.engagement==='waiting'||ranged)&&Math.hypot(e.x-p.x,e.y-p.y)<(ranged?440:e.meleeShape.range+110);
    const feintProgress='feintProgress' in e&&typeof e.feintProgress==='number'?e.feintProgress:undefined;
-   model.setWaitingState?.(waiting,ordinary?feintProgress:undefined,ordinary);
+   const laneCut=e.laneCutter&&e.readyBehaviour==='pace';
+   const dx=e.targetX-e.x,dy=e.targetY-e.y;
+   const paceSide=laneCut?((p.x-e.x)*dy-(p.y-e.y)*dx>=0?1:-1):0;
+   model.setWaitingState?.(waiting,ordinary?feintProgress:undefined,ordinary,paceSide,laneCut&&Math.hypot(dx,dy)<e.radius);
    model.setAttackState?.(e.meleePhase,e.meleeProgress,e.meleeAngle,e.meleeShape);this.actorPoseBounds.center.set(e.x/UNIT,model.height*.5,e.y/UNIT);this.actorPoseBounds.radius=Math.hypot(model.height*.6,e.radius/UNIT*1.35)+.4+/* C10: footprint-scaled presentation travel culling. */ ((e.type==='stalker'||e.type==='crawler')&&e.meleePhase!=='approach'?e.meleeShape.range/UNIT:0);model.root.userData.perf13CullRadius=this.actorPoseBounds.radius;model.setMotionVisible?.(this.actorPoseFrustum.intersectsSphere(this.actorPoseBounds),e.engagement==='waiting'&&e.meleePhase==='approach'&&!status.chilled&&!status.burning&&!status.poisoned&&!status.frozen&&!status.shocked);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;const pose=this.pincerPresentation.retreatPose(model,game,e,UNIT,enemyMotionAim(e,p),Math.hypot(e.velocityX,e.velocityY)>2?1:.12,this.playerVelocity);model.animate(this.time+e.id,pose.stride,pose.angle,0,0,this.playerVelocity);this.pincerPresentation.bossPose(model,e,game,UNIT,this.camera,this.player.height);setActorLOD(model.root,!e.pod&&!e.elite&&!e.champion&&(this.actorLODStudy==='low'||this.actorLODStudy!=='full'&&(e.x-p.x)**2+(e.y-p.y)**2>Math.max((3*UNIT)**2,this.lodDistances[3])));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.pincerPresentation.releaseActor(model);this.actorPool.release(model);this.actors.delete(id);}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;if(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS)continue;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;this.actors.get(e.id)?.setPlateOpen?.(e.maxArmor>0?Math.floor(3*(1-e.armor/e.maxArmor))/3:0);bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;

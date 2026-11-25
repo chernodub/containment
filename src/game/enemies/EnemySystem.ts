@@ -129,7 +129,7 @@ export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 export type PodStage = 'sealed' | 'swelling' | 'opening';
 type ReadyBehaviour = "skitter" | "pace" | "step" | "brace" | "relocate";
 
-export type EnemySnapshot = Readonly<{readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type EnemySnapshot = Readonly<{laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -736,6 +736,7 @@ export class EnemySystem {
       maxArmor: enemy.maxArmor,
       radius: enemy.radius,
       speed: enemy.speed*this.#movement,
+      laneCutter:enemy.readyBehaviour==='pace'&&this.#laneStalkers.get(enemy.beat)===enemy.id,
       readyBehaviour:enemy.meleePhase==='approach'&&!enemy.windupMs&&enemy.speed>0&&enemy.stunRemainingMs===0?enemy.readyBehaviour:undefined,
       feintProgress:enemy.feintMs&&enemy.meleePhase==='approach'&&!enemy.windupMs?1-enemy.feintMs/250:undefined,
       exposedMs:enemy.meleePhase==='recovery'?enemy.meleeRemainingMs:0,

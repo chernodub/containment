@@ -31,7 +31,8 @@ const actionFilter=option('actions','all').split(',');
 const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const studyAim=Number(option('aim',0))*Math.PI/180;assert(Number.isFinite(studyAim),'Invalid aim angle');
 const travelOption=option('travel',null),travelOverrideAngle=travelOption===null?null:Number(travelOption)*Math.PI/180;assert(travelOverrideAngle===null||Number.isFinite(travelOverrideAngle),'Invalid travel angle');
-const motion25=option('collection','')==='motion25';
+const motion28=option('collection','')==='motion28';
+const motion25=motion28||option('collection','')==='motion25';
 const motion16=option('collection','')==='motion16';
 const motion14=motion25||motion16||option('collection','')==='motion14';
 const frames=motion25?12:motion14?30:Number(option('frames',12)),steps=Number(option('steps',4));
@@ -53,6 +54,16 @@ if(motion16){
 if(motion25){
  reel.marine=['idle','run-0','run-90','run-180','run-270','stop-start','aim','fire-shotgun','fire-rifle'];
  for(const family of ['crawler','stalker','brute','spitter','carrier'])reel[family]=['waiting','feint','strike','recovery'];
+}
+if(motion28){
+ reel.marine=['idle','aim','dash','cast-ram'];
+ for(const family of ['crawler','stalker','brute','spitter','carrier']){
+  reel[family]=['attack','feint'];
+  if(['crawler','brute','stalker'].includes(family))reel[family].push('waiting-left','waiting-low');
+  if(family==='stalker')reel[family].push('pace-left','pace-right');
+  if(family==='brute')reel[family].push('exposed-stagger');
+  else reel[family].push(...['front','right','back','left'].map(side=>'rifle-'+side));
+ }
 }
 const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn',...['pistol','rifle','shotgun','plasma','rocket'].flatMap(w=>[`weapon-hit-${w}`,`weapon-kill-${w}`])];
 const manifest={version:1,meleeProfiles:MELEE_ATTACKS,eliteWindupScale:ELITE_MELEE_WINDUP_SCALE,eliteRecoveryScale:ELITE_MELEE_RECOVERY_SCALE,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
@@ -82,6 +93,7 @@ try{
     const human=subject==='marine',crowd=subject==='crowd',family=crowd?'crawler':subject.split('-')[0],elite=subject.includes('-elite'),champion=subject.includes('-warden')?'warden':subject.includes('-matron')?'matron':undefined;
     const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetRig=model.setRig,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
     model.reset?.();model.setAttackState?.('approach',0,0);model.setDead?.(false);model.setAction?.('',0);model.setMotionSeed?.([...subject].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,1729));model.setMotionOptions?.(1,false);model.setStageLight?.(.65);model.setFlashIntensity?.(1);
+    if(action.startsWith('waiting-'))model.setMotionSeed?.(action==='waiting-low'?1:2);
     if(human){
      model.setRig?.(action.startsWith('idle-')?action.slice(5):'breacher');
      d.m9MarineRest??=[];if(!d.m9MarineRest.length)model.root.traverse(o=>{if(o.isBone)d.m9MarineRest.push({bone:o,p:o.position.clone(),q:o.quaternion.clone(),s:o.scale.clone()});});
@@ -137,6 +149,8 @@ try{
     let roomView=false;
 
     const profile=profiles[family];
+    const rifleSide=action.startsWith('rifle-')?['front','right','back','left'].indexOf(action.slice(6)):-1;
+    const hitDirection=rifleSide>=0?studyAim+Math.PI+rifleSide*Math.PI/2:action==='side-hit'?0:Math.PI/2;
     const studySeconds=action==='feint'?.25:action==='strike'?profile.strikeMs/1000:action==='recovery'?profile.recoveryMs/1000:frames*steps/60;
     const chainStart={x:0,y:0,z:0};
     try{
@@ -162,6 +176,19 @@ try{
         model.setAction?.(ability,phase);
        }
        if(action==='aim')model.setAimPitch?.(-.12);
+       if(action.startsWith('waiting-'))model.setWaitingState?.(true);
+       if(action.startsWith('pace-')){
+        moving=phase<.78?1:0;
+        model.setWaitingState?.(true,undefined,true,action==='pace-right'?1:-1,!moving);
+       }
+       if(action==='exposed-stagger'){
+        model.setAttackState?.('recovery',phase,0,profile.shape);
+        if(tick===steps)model.recoveryStagger?.();
+       }
+       if(action.startsWith('rifle-')){
+        moving=1;vx=({crawler:150,spitter:78,stalker:125,carrier:70})[family];
+        if(tick===steps)model.hit?.(1,hitDirection,false,'rifle');
+       }
        if(action==='waiting'||action==='feint')model.setWaitingState?.(action==='waiting',action==='feint'?phase:undefined,true);
        if(action==='strike'||action==='recovery')model.setAttackState?.(action,phase,0,profile.shape);
        if(action==='attack'){
@@ -270,7 +297,7 @@ try{
      const mask=document.createElement('canvas');mask.width=canvas.width;mask.height=canvas.height;const mc=mask.getContext('2d');mc.fillStyle='black';mc.fillRect(0,0,mask.width,mask.height);
      for(let i=0;i<frameCanvases.length;i++){const f=frameCanvases[i],fc=f.canvas.getContext('2d'),pixels=fc.getImageData(0,0,f.canvas.width,f.canvas.height),bg=pixels.data.slice(0,3);for(let n=0;n<pixels.data.length;n+=4){const on=Math.max(Math.abs(pixels.data[n]-bg[0]),Math.abs(pixels.data[n+1]-bg[1]),Math.abs(pixels.data[n+2]-bg[2]))>12;pixels.data[n]=pixels.data[n+1]=pixels.data[n+2]=on?255:0;pixels.data[n+3]=255;}const tile=document.createElement('canvas');tile.width=f.canvas.width;tile.height=f.canvas.height;tile.getContext('2d').putImageData(pixels,0,0);mc.drawImage(tile,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY);}
      d.m9Clock=timeBase+1.5+frames*steps/60;
-     return {room:roomStrip?.toDataURL('image/webp',.86).split(',')[1],frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,fired:shotNumber,source:'presentation-only projectile replay and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:currentWeapon,aim:studyAim,travelOverrideAngle:human?travelOverrideAngle:null,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:shotPeriod,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
+     return {room:roomStrip?.toDataURL('image/webp',.86).split(',')[1],frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,fired:shotNumber,source:'presentation-only projectile replay and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:rifleSide>=0?'rifle':currentWeapon,aim:studyAim,travelOverrideAngle:human?travelOverrideAngle:null,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:shotPeriod,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
      Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human){model.equip=oldEquip;model.setRig=oldSetRig;}r.scene.onBeforeRender=oldSceneHook;

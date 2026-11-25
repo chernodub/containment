@@ -272,10 +272,9 @@ class Creature:
         # centre can move around a planted blade without taking it along.
         H,W=self.height,self.width
         if action=='m10-windup':
-            # CREATURE22: the cleaver loads wide and high, clear of the crown, leaving a dark gap under the arm
-            # CREATURE23: the cleaver loads forward and low beside the jaw, pointing at the victim, a deck gap behind it
+            # Set the cleaver wide of the crown before lifting the wrist.
             keys=[(0, .10,-.20,.03, .01),(.29, .70,.05,.10,.28),
-                  (.63,.62,.42,.08,.52), (1,.58,.66,.04,.85)]
+                  (.63,.98,-.13,.51,.76), (1,1.02,-.09,.56,.85)]
         elif action=='m10-strike':
             keys=[(0,.44,.71,-.17,-.48),(.28,.04,.82,-.64,-.83),
                   (.74,-.44,.62,-.90,-1),(1,-.52,.47,-.89,-.88)]
@@ -288,8 +287,8 @@ class Creature:
         self.rotate(self.center,UP,twist*.78*(.35 if wind else 1))   # CREATURE23: the long axis stays on the victim while loading
         self.rotate(self.center,SIDE,-.23*twist)
         self.rotate(self.center,FWD,(-.12 if wind else .24)*abs(twist))
-        self.move(self.center,-UP*H*sunk+SIDE*W*.055*twist)
-        self.rotate('head',UP,-.60*twist)
+        self.move(self.center,-UP*H*sunk+SIDE*W*(.20 if wind else .055)*twist)
+        self.rotate('head',UP,(-.24 if wind else -.60)*twist)
         self.rotate('head',SIDE,.62*max(0,-twist))
         if wind:   # CREATURE22: jaw forward and low under the raised cleaver
             jaw=smooth(min(1,t/.6))
@@ -333,8 +332,8 @@ class Creature:
         self.rotate(self.center,FWD,-.32*load+.27*reach)
         self.rotate(self.center,SIDE,.29*load+.32*reach)
         self.rotate('head',UP,-.39*load+.24*reach)
-        self.move(self.center,-UP*H*(.13*load+.18*reach))
-        self.mouth(.62*load+.87*reach)
+        self.move(self.center,SIDE*W*.16*load-UP*H*(.13*load+.18*reach))
+        self.mouth(.98*load+.87*reach)
         if self.family=='crawler':
             self.rotate(self.center,UP,.12*load-.47*reach)
             self.rotate(self.center,FWD,-.34*load+.43*reach)
@@ -342,15 +341,14 @@ class Creature:
                 i=leg['index']
                 if i in (0,5):
                     lead=i==0
-                    # CREATURE22: the striking foreleg is drawn wide and back (a gap beside the shield), not over the head
-                    # CREATURE23: the striking hook projects forward beside the jaw, low, a gap between it and the head
-                    targets[i]=leg['rest']+SIDE*W*(-.42 if lead else .24)*load+SIDE*W*(-.29 if lead else .09)*reach
-                    targets[i]+=FWD*W*((.62 if lead else .14)*load+(.62 if lead else .04)*reach)
+                    # Spread both front hooks along the deck.
+                    targets[i]=leg['rest']+SIDE*W*(-.70 if lead else .61)*load+SIDE*W*(-.29 if lead else .09)*reach
+                    targets[i]+=FWD*W*((.17 if lead else .13)*load+(.62 if lead else .04)*reach)
                     targets[i]+=UP*H*((.16 if lead else .06)*load+.07*reach)
             if load>0:self.move('head',FWD*W*.10*load)
         else:
             self.rotate('spine2',SIDE,-.52*load+.27*reach)
-            self.move('neck',FWD*W*.18*load)   # CREATURE23: gland and mouth thrust toward the victim
+            self.move('neck',-FWD*W*.32*load+UP*H*.14*load)
             self.rotate('head',SIDE,-.23*load)
             for arm in self.arms:
                 side=arm['index']
@@ -384,7 +382,7 @@ class Creature:
         self.rotate(self.center,UP,(.48 if brute else .23)*pull*(.3 if wind else 1))
         self.rotate(self.center,FWD,(-.20 if brute else .19)*load-.22*bury)
         self.move(self.center,-UP*H*((.23 if stalker else .12)*load+.18*bury)
-                  -FWD*W*.043*load)
+                  +(SIDE*.18-FWD*.043)*W*load)
         if stalker and wind:   # CREATURE22: head and leading plate thrust forward clear of the body
             self.move('neck_hi',FWD*W*.30*load)
             self.rotate('neck_lo',SIDE,.30*load)
@@ -405,9 +403,8 @@ class Creature:
                 self.rotate(arm['bones'][0],FWD,side*((.80 if lead else .36)*open_arm-.20*bury))   # CREATURE22: loaded shoulder rolls out
                 # Swing the wrist away from the crown before raising the edge.
                 sweep=between(t,[(0,.26),(.32,.42),(.64,.62),(1,.70)]) if wind else 0
-                # CREATURE23: the striking scythe tip projects ahead of the head toward the victim, slightly wide and
-                # low, leaving a deck-coloured gap between blade and head
-                ready=head+FWD*W*(sweep if lead else .22)+SIDE*W*side*(.62 if lead else .38)+UP*H*(.02 if lead else -.41)
+                # Draw the leading blade back and high above the outside shoulder.
+                ready=head+FWD*W*(-sweep if lead else .22)+SIDE*W*side*(.86 if lead else .38)+UP*H*(.60 if lead else -.41)
                 contact=head+FWD*W*(1.02 if lead else .13)+SIDE*W*side*(.54 if lead else -.02)-UP*H*(.34+.31*bury)
             elif brute:
                 ready=head-FWD*W*(.24 if lead else .11)+SIDE*W*side*(.61 if lead else .36)+UP*H*(.62 if lead else .12)
@@ -415,7 +412,7 @@ class Creature:
                 contact=bed+FWD*W*(.55 if lead else .12)+SIDE*W*side*(.37 if lead else .46)-UP*H*(.84 if lead else .24)
                 self.rotate('head',SIDE,.13*bury if lead else 0)
             else:
-                ready=head+FWD*W*(.58 if lead else -.10)+SIDE*W*side*(.48 if lead else .24)+UP*H*(.04 if lead else .05)   # CREATURE23: hooked member forward
+                ready=head+FWD*W*(.58 if lead else -.10)+SIDE*W*side*(.48 if lead else .24)+UP*H*(.58 if lead else .42)
                 contact=head+FWD*W*(.68 if lead else .33)+SIDE*W*side*(.05 if lead else .36)-UP*H*.38
             reach=open_arm if lead else open_arm**1.5
             self.solve(arm,arm['rest'].lerp(ready,reach).lerp(contact,min(1.12,drive+.26*bury)),14)
@@ -583,15 +580,21 @@ class Creature:
         if action=='m10-feint':
             self.pose('m10-windup',min(1,t/.54)/3,1.)
             release=smooth((t-.54)/.46)
+            recoil=between(t,[(0,0),(.45,0),(.68,1),(.79,.9),(1,0)])
+            self.move(self.center,-FWD*W*.31*recoil+UP*H*.14*recoil)
+            self.rotate(self.center,SIDE,-.38*recoil)
             self.m={n:m.lerp(self.idle_start[n],release) for n,m in self.m.items()}
             self.commit()
             return
         ram = action if action in ('m10-ram-load', 'm10-ram-charge') else ''
-        if ram == 'm10-ram-charge':
+        if ram == 'm10-ram-charge' or action.startswith('m10-pace-'):
             action = 'm10-run'
         if ram == 'm10-ram-load':
             self.ram_load(t, targets)
-        elif action=='m10-waiting':
+        elif action in ('m10-waiting','m10-waiting-low'):
+            if action=='m10-waiting-low':
+                self.move(self.center,-SIDE*W*.22-UP*H*.21)
+                self.rotate(self.center,FWD,-.32)
             self.waiting(t,targets)
         elif action == 'm10-idle':
             breath=math.sin(t*math.tau)
@@ -680,6 +683,14 @@ class Creature:
             for arm in self.arms:
                 side=arm['index']
                 self.solve(arm,arm['rest']+SIDE*W*.25*side*tip-UP*H*.19*tip)
+        elif self.family=='brute' and action=='m10-stagger':
+            kick=between(t,[(0,0),(.17,1),(.45,.92),(.73,.62),(1,0)])
+            self.move(self.center,-FWD*W*.40*kick+UP*H*.08*kick)
+            self.rotate(self.center,SIDE,-.45*kick)
+            self.rotate('head',SIDE,-.78*kick)
+            for leg in self.legs:
+                if leg['index']%2:
+                    targets[leg['index']]=leg['rest']-FWD*W*.55*kick+UP*H*.30*math.sin(t*math.pi)*kick
         elif action.startswith('m10-hit-') or action=='m10-stagger':
             rifle='-rifle-' in action
             heavy='heavy' in action or action=='m10-stagger'
@@ -703,7 +714,14 @@ class Creature:
             turn=(.83 if heavy else .47) if crawler else (.34 if heavy else .18)
             if rifle:
                 turn = (.83 if crawler else .69) * (1 if direction in ('front','right') else -1)
-                self.move(self.center,-vector*W*.16*catch)
+                if self.family=='brute':
+                    self.move(self.center,-vector*W*.16*catch)
+                else:
+                    self.move(self.center,vector*W*.19*hit)
+                    self.move('head',vector*W*.19*hit+UP*H*.07*hit)
+                    limbs=self.arms or self.legs
+                    near=min(limbs,key=lambda limb:limb['rest'].dot(vector))
+                    self.move(near['bones'][0],vector*W*.23*hit)
                 self.rotate(self.center,FWD,(.30 if direction in ('right','front') else -.30)*catch)
             self.rotate(self.center,UP,turn*hit+(.29*catch if crawler and heavy else 0))
             if crawler:
@@ -828,6 +846,11 @@ class Creature:
                 tip=self.m[arm['bones'][-1]] @ arm['tip_local']
                 land=arm['rest']+SIDE*W*side*.29+FWD*W*(.27 if side<0 else -.13)
                 self.solve(arm,tip.lerp(land,fall))
+        if self.current_action.startswith('m10-pace-'):
+            side=1 if self.current_action.endswith('right') else -1
+            self.rotate('chest',UP,.73*side)
+            self.rotate('neck_lo',UP,-.50*side)
+            self.move(self.center,SIDE*W*.14*side-UP*H*.1)
         if ram == 'm10-ram-charge':
             self.ram_lean(1.0)
         self.plant(targets)
@@ -849,7 +872,12 @@ DURATIONS = {
     'm10-death-kinetic':.40,
     'm10-spawn':1.1,
 }
-FAMILY_CLIPS = {'carrier': {'m10-brood': .6}, 'brute': {'m10-ram-load': 1.0, 'm10-ram-charge': .5}}   # WARDEN25: Warden ram clips   # CREATURE22: family-only clips
+FAMILY_CLIPS = {
+    'crawler': {'m10-waiting-low':1.6},
+    'stalker': {'m10-waiting-low':1.6, 'm10-pace-left':.64, 'm10-pace-right':.64},
+    'brute': {'m10-waiting-low':1.6, 'm10-ram-load':1.0, 'm10-ram-charge':.5},
+    'carrier': {'m10-brood':.6},
+}
 
 
 def author(family, patterns=None):
@@ -863,7 +891,7 @@ def author(family, patterns=None):
     if family in ('stalker','crawler','brute','carrier','spitter'):
         for direction in ('front','right','back','left'):
             name=f'm10-hit-rifle-{direction}'
-            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.18
+            if not patterns or any(fnmatchcase(name,p) for p in patterns): takes[name]=.18 if family=='brute' else 8/60
     for name,seconds in takes.items():
         new_action(arm,name,seconds)
         last=1+round(seconds*60)
