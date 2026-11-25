@@ -1,5 +1,6 @@
 import * as T from 'three';
-import {paintFightingDeck,paintDeckWetMask} from './FightingDeck';
+import {paintFightingDeck,paintDeckWetMask,clipFightingDeck} from './FightingDeck';
+import {coolantRunoff} from './LaneAftermath';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
 
@@ -66,7 +67,13 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
   }
   if(plan){
     context.save();context.scale(1024/(width*32),1024/(depth*32));
-    context.translate(-minX*32,-minZ*32);paintDeckWetMask(context,plan.arena);context.restore();
+    context.translate(-minX*32,-minZ*32);paintDeckWetMask(context,plan.arena);
+    if(t.id==='coolant-plant'){
+      clipFightingDeck(context,t);context.translate(plan.arena.x,plan.arena.y);
+      context.globalCompositeOperation='destination-out';context.fillStyle='rgba(0,0,0,.78)';
+      context.fill(new Path2D(coolantRunoff));
+    }
+    context.restore();
   }
   const make = (image:HTMLCanvasElement) => {
     const texture = new T.CanvasTexture(image); texture.name = 'e10-placed-evacuation-wear'; texture.colorSpace = T.SRGBColorSpace;
