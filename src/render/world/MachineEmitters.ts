@@ -24,13 +24,21 @@ const strips:Record<string,readonly Strip[]>={
   'manual-control-chamber':[[-107,26,7.4,69,4,-.025]],
 };
 
+// Deck-level inspection lamps recovered with the failed hardware. Positions are
+// relative to the same terminal as the matching fittings, in ship-plan units.
+const inspectionLamps:Record<string,Strip>={
+  'transmission-chamber':[99,43,9.7,13,4,0],
+  'crew-checkpoint':[76,66,4.2,17,5,-.27],
+  'shielding-gate':[92,-64,6.2,13,4,.18],
+};
+
 function mountedStrips(id:string){
   const layout=incidentLanes[id],origin=layout??laneTerminal(id),source=roomValueProfile(id)?.landmark;
   if(!origin||!source)return;
   const angle=layout?Math.atan2(layout[3]-layout[1],layout[2]-layout[0]):0;
   const end=layout?Math.hypot(layout[2]-layout[0],layout[3]-layout[1]):0;
   const lamp:Strip=[end,0,18,14,7,0];
-  return {origin,angle,color:source.color,parts:strips[id]??[],lamp};
+  return {origin,angle,color:source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
 }
 
 export function addMachineEmitters(root:Group,id:string){
@@ -42,6 +50,11 @@ export function addMachineEmitters(root:Group,id:string){
   pieces.box(x,y/2,z,4,y,4,0x414b4d);
   pieces.box(x,y-1,z,18,3,10,0x606563);
   for(const [x,z,y,w,d,yaw] of [...mount.parts,mount.lamp])pieces.box(x,y,z,w,.9,d,tone,yaw);
+  if(mount.inspection){
+    const [x,z,y,w,d,yaw]=mount.inspection;
+    pieces.box(x,y-1,z,w+5,2,d+4,0x434d50,yaw);
+    pieces.box(x,y+.3,z,w,.7,d,tone,yaw);
+  }
   const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],new MeshBasicMaterial({vertexColors:true}));
   mesh.rotation.y=-mount.angle;mesh.castShadow=false;
 }
@@ -55,6 +68,13 @@ export function paintMachineSpill(c:CanvasRenderingContext2D,id:string){
   const pool=c.createLinearGradient(0,0,0,56);
   pool.addColorStop(0,tint+'94');pool.addColorStop(1,tint+'22');
   c.fillStyle=pool;c.fill(new Path2D('M-7 0H7L30 55H-31Z'));c.restore();
+  if(mount.inspection){
+    const [x,z,,,,yaw]=mount.inspection;
+    c.save();c.translate(x,z);c.rotate(-yaw+.48);
+    const throwLight=c.createLinearGradient(0,0,0,59);
+    throwLight.addColorStop(0,tint+'bc');throwLight.addColorStop(.64,tint+'57');throwLight.addColorStop(1,tint+'18');
+    c.fillStyle=throwLight;c.fill(new Path2D('M-8 0H8L35 59H-30Z'));c.restore();
+  }
   for(const [x,z,,w,d,yaw] of mount.parts){
     c.save();c.translate(x,z);c.rotate(-yaw);c.scale(w*.55+15,d*.55+20);
     const glow=c.createRadialGradient(0,0,.08,0,0,1);

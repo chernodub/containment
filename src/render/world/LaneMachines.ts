@@ -76,6 +76,11 @@ export function addLaneMachine(root:Group,id:string){
       break;
     }
     case 'transmission-chamber':
+      // Flat reel beside the severed line; the broken end curls back on the flanges.
+      p.rod([99,1,43],[99,3,43],22,rubber);p.rod([99,3,43],[99,6,43],18,0x81755d);
+      p.rod([99,6,43],[99,8,43],21,metal);p.rod([99,8,43],[99,9,43],8,rubber);
+      for(const x of [-12,12])p.box(99+x,8.6,43,5,1,16,rubber,.5);
+      run([[101,61],[89,69],[67,67],[61,56],[69,44]],2,2.1,0x8d806c);
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
       // An offset reflector cups the waveguide. Its exposed back has three radial ribs.
       for(let i=0;i<16;i++){

@@ -174,6 +174,14 @@ export function addFrame16Incidents(root: Group, id: string) {
         pieces.rod([-53,8,z],[-38,26,z-3],3.6,0xb29a76);
         pieces.rod([-38,26,z-3],[-17,7,z-5],2.8,0x7b776d);
       }
+      // The inspection face is split open. Three filter cartridges and their
+      // folded packing comb remain tethered to the crate beneath the chafe sleeve.
+      pieces.face([[-5,139,3],[48,122,16],[41,120,34],[-12,137,21]],0x364744);
+      for(let i=0;i<3;i++){
+        const x=i*15-5,h=138-i*4.9,z=10+i*3.9;
+        pieces.rod([x,h+1,z],[x-4,h+1,z+14],4.7,0x879b88);
+        pieces.rod([x-3,h+1,z+11],[x-4,h+1,z+14],5.1,0xbbae8a);
+      }
       pieces.finish(root, 'torn-pallet', 474, 447);
       break;
   }

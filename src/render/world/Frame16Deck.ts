@@ -1,3 +1,4 @@
+import {paintLaneAftermath} from './LaneAftermath';
 import {paintLaneContacts} from './LaneContactPaint';
 import {paintMachineSpill} from './MachineEmitters';
 import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
@@ -205,6 +206,8 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     c.translate(arena.x, arena.y);
     serviceJoints(c, room.id);
     c.restore();
+
+    c.save();clipFightingDeck(c,room);paintLaneAftermath(c,room.id,arena);c.restore();
 
     const dx = arena.x - room.spawn.x, dy = arena.y - room.spawn.y;
     c.translate(room.spawn.x, room.spawn.y);
