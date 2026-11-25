@@ -32,6 +32,8 @@ export class ExchangeHistory {
       if (event.type === 'melee-strike' || event.type === 'melee-warning') {
         this.add({owner:event.enemyId, family:event.enemyType, x:event.x, y:event.y,
           angle:event.angle, shape:event.shape, at, committed:event.type === 'melee-strike'});
+      } else if (event.type === 'contact-attack' && event.chargeFootprint) {
+        this.add({owner:event.enemyId, family:event.enemyType, ...event.chargeFootprint, at, committed:true});
       } else if (event.type === 'hazard-attack') {
         const dx = event.targetX - event.sourceX, dy = event.targetY - event.sourceY;
         this.add({owner:event.enemyId, family:event.enemyType, x:event.sourceX, y:event.sourceY,

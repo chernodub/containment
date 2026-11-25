@@ -6,6 +6,7 @@ import type {AttackFootprint} from "../../game/enemies/LastExchange";
 import type {IncomingDamageReceipt, RunStatsSnapshot} from '../../game/abilities/RunStats';
 import {ENEMIES} from '../../game/enemies/catalog';
 import {generateRun} from '../../game/roguelike/run';
+import {canTraverseExpedition} from '../../game/world/expeditionGeometry';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {SACRIFICE_ENDING} from '../../game/roguelike/storyRooms';
 import {escapeHtml} from './initialTemplates';
@@ -110,16 +111,15 @@ export function lastExchangeDiagram(game: DepthGame): string {
   const escapes = fatal ? [1, -1].map(side => {
     const angle = fatal.angle + side * Math.PI / 2;
     const dx = Math.cos(angle) * 74, dy = Math.sin(angle) * 74;
-    const blocked = [0.25, .5, .75, 1].some(step => {
+    const blocked = !canTraverseExpedition(game.geometry, marine, {x:marine.x+dx,y:marine.y+dy}, marine.radius)
+      || [0.25, .5, .75, 1].some(step => {
       const x = marine.x + dx * step, y = marine.y + dy * step;
-      return blockers.some(b => x >= b.x-marine.radius && x <= b.x+b.width+marine.radius
-        && y >= b.y-marine.radius && y <= b.y+b.height+marine.radius)
-        || attacks.some(attack => contains(attack, x, y)) || step === 1 && contains(fatal, x, y);
+      return attacks.some(attack => contains(attack, x, y)) || step === 1 && contains(fatal, x, y);
     });
     return {dx, dy, blocked};
   }) : [];
   const recommended = escapes.find(escape => !escape.blocked);
-  const lesson = recommended && escapes.some(escape => escape.blocked) ? 'Use the clear side of the lunge.'
+  const lesson = recommended && escapes.some(escape => escape.blocked) ? 'Use the clear side of the strike.'
     : recommended ? 'Leave the marked strike before it lands.'
     : fatal && attacks.length ? 'Move before the lanes overlap.' : 'Review the marked attack lanes.';
   const exit = recommended ? `<path class="exchange-exit" d="M0 0 L${xy(recommended.dx,recommended.dy)}"/><circle class="exchange-exit" cx="${recommended.dx}" cy="${recommended.dy}" r="5"/>` : '';

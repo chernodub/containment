@@ -119,13 +119,13 @@
 #overlay .debrief-panel[data-outcome=dead] .result-actions { gap: 12px; flex-wrap: wrap; }
 #overlay .last-exchange {
   display: grid;
-  grid-template-columns: 105px 190px;
+  grid-template-columns: 105px 250px;
   gap: 8px;
   align-items: center;
   margin: 0;
 }
 #overlay .last-exchange figcaption span { display: block; margin-top: 5px; font-size: 13px; color: #c7d9e1; }
-#overlay .last-exchange svg { width: 190px; height: 95px; background: #0c1a20; border: 1px solid #57666e; }
+#overlay .last-exchange svg { width: 250px; height: 125px; background: #0c1a20; border: 1px solid #57666e; }
 .exchange-cover { fill: #39454d; stroke: #7e8a90; }
 .exchange-attack { color: #edbd78; }
 .exchange-attack[data-fatal=true] { color: #ff826b; }
