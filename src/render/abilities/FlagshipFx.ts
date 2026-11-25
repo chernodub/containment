@@ -7,8 +7,8 @@ import { ELEMENT_COLORS } from './types';
  * shock rings, frost, Overdrive floor states). Every pooled mesh shares the
  * same geometry and shader source; modes are uniforms, so warm-up compiles a
  * single program and combat never creates one. Shapes are generated in the
- * vertex shader from the exact simulated cone/strip/radius numbers and never
- * exceed them (the muzzle pull-in only moves the narrow apex inward).
+ * vertex shader from native footprints. Meltdown reserves a narrow cosmetic
+ * apron beyond its hard detonation front.
  */
 export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14, Tongues: 15 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
