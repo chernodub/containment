@@ -238,17 +238,30 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         // The plane is chosen by a fixed screen key from the upper left (the rake the old
         // gradient used), so every room splits a dorsal dome into one lit and one shadow plane.
         else if(graphicSurfaceKind.x>.5){
-          float graphicKeyFacing=dot(normalize(vNormal),vec3(-.52,.42,.74));
+          vec3 graphicActorNormal=normalize(vNormal);
+          float graphicKeyFacing=dot(graphicActorNormal,vec3(-.52,.42,.74));
           float graphicTerminator=max(fwidth(graphicKeyFacing),.02);
-          // CREATURE26: one narrow half-tone step (facing .55-.64) between the planes reads as turning form, not a cut.
-          graphicActorLight=mix(graphicShadowPlane,1.0,.45*smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing)+.55*smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));
-          // CREATURE26: room light hue varies across the body with practical pools and shadow-map edges; on a creature
-          // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
-          graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
+#ifdef BRUTE_PLANES
+          if(bruteFace){
+            graphicActorLight=1.0;
+            graphicActorHue=vec3(1.);
+          }else if(bruteBody){
+            float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
+            graphicActorLight=.19+.81*step(.225,key)+.45*step(.94,key);
+            graphicActorHue=vec3(1.);
+          }else
+#endif
+          {
+            // CREATURE26: one narrow half-tone step (facing .55-.64) between the planes reads as turning form, not a cut.
+            graphicActorLight=mix(graphicShadowPlane,1.0,.45*smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing)+.55*smoothstep(.64-graphicTerminator,.64+graphicTerminator,graphicKeyFacing));
+            // CREATURE26: room light hue varies across the body with practical pools and shadow-map edges; on a creature
+            // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
+            graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
+          }
 #ifdef BROOD_PLANES
           float broodHide=hideFinish(actorPosition,vActorRegion>=3. && vActorRegion<=5. && !broodSac,broodSac);
           if(broodFinish && broodBody){
-            float key=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
+            float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
             // Keep the atlas zone and deck tint as the upper bound for each fragment.
             // The edge retains its original value. Both larger planes subtract light.
             float lit=actorBroodForm.w==1. && !broodSac ? .74 : .92;
