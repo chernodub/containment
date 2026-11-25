@@ -74,11 +74,17 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
+// The leading carapace and ram face ride the chest. Select the armour
+// above the right shoulder seam in the sculpture's Z-up bind pose.
+bool shoulderCap=band==0 && vActorRegion==1.0 && actorPosition.y<-.95 && actorPosition.z>3.55;
+bool wardenRam=actorWarden>.5 && (vK11EmissionRegion.x>.5 || shoulderCap);
+bool wardenMaw=actorWarden>.5 && band==3 && vActorRegion==2.0;
 bool bruteFace=actorWarden<.5 && band==5;
 if(bruteFace)diffuseColor.rgb=vec3(.181,.183,.172);
-bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && !eliteTrim;
+if(wardenRam)diffuseColor.rgb=vec3(.215,.198,.154);
+bool bruteBody=actorWarden>.5 ? !wardenRam && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
-  diffuseColor.rgb=vec3(.025,.094,.049);
+  diffuseColor.rgb=vec3(.025,.094,.049)*mix(1.0,.79,actorWarden);
   creatureStrike=1.0;
 }
 #endif`}`)
@@ -151,7 +157,7 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BRUTE_PLANES
-if(bruteBody){
+if(bruteBody || wardenRam){
   lanternEmission=vec3(0.);
   totalEmissiveRadiance=lanternEmission;
   keyRim*=actorReveal;
