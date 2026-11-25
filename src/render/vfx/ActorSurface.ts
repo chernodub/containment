@@ -83,10 +83,12 @@ diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));
 // Forward is -X in the Z-up bind pose. The luminous brow bends across
 // the front of the crown so its closed end points along the gaze.
 float helmet=step(vRigPaint,-.5);
-float browDistance=abs(actorPosition.x+.78-.38*abs(actorPosition.y));
-float browSpan=step(abs(actorPosition.y),.90)*step(13.10,actorPosition.z)*helmet;
-float visorBand=(1.-smoothstep(.10,.16,browDistance))*browSpan;
-diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.012,.065,.082),(1.-smoothstep(.21,.26,browDistance))*browSpan);` : ''}
+float browDistance=abs(actorPosition.x+.74-.72*abs(actorPosition.y));
+float browSpan=step(abs(actorPosition.y),.90)*step(12.90,actorPosition.z)*helmet;
+float visorBand=(1.-smoothstep(.19,.25,browDistance))*browSpan;
+float cowl=helmet*smoothstep(12.9,13.3,actorPosition.z);
+diffuseColor.rgb*=mix(1.,.33,cowl);
+diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.012,.044,.06),(1.-smoothstep(.35,.41,browDistance))*browSpan);` : ''}
 ${friendly?'':'diffuseColor.rgb*=creatureStrike;'}
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorShedShoulder>.5 && plateHeight>.66 && actorPosition.z-actorPlateBounds.z>actorPlateBounds.w*.46 && abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y*.87)discard;
@@ -119,7 +121,7 @@ ${friendly ? `// SHADE15: one even self-light over the whole suit.
 float browLight=smoothstep(.04,.30,min(totalEmissiveRadiance.g,totalEmissiveRadiance.b)-totalEmissiveRadiance.r)*smoothstep(11.4,12.2,actorPosition.z);
 float domePaint=step(.5,vRigPaint)*(1.-equipmentPaint)*smoothstep(9.0,10.2,actorPosition.z);
 float signatureEdge=smoothstep(.08,.55,actorRim)*max(browLight,domePaint);
-totalEmissiveRadiance=mix(totalEmissiveRadiance*.48,vec3(.12,.95,1.12),max(visorBand,browLight*helmet))*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
+totalEmissiveRadiance=mix(totalEmissiveRadiance*.48,vec3(.035,1.05,1.20),max(visorBand,browLight*helmet))*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
 totalEmissiveRadiance+=vec3(.72,.77,.80)*signatureEdge*(1.0-actorDissolve);` : `float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);
 // SHADER25: a thin cool rim on the key-light side of the silhouette only.
 vec3 creatureKey=vec3(-.52,.42,.74); // the shared screen key of the two light planes
