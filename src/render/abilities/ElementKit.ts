@@ -60,7 +60,11 @@ type Decal = {
     width: number;
     kind: number;
 };
-export interface StatusActor { readonly root: T.Object3D; readonly height: number }
+export interface StatusActor {
+    readonly root: T.Object3D;
+    readonly height: number;
+    elementContact?(element: AbilityElement): void;
+}
 export interface AbilityServices {
     /** Read-only actor lookup for exact presentation bounds and status ownership. */
     statusActor?: (id: number) => StatusActor | undefined;

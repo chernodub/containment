@@ -70,6 +70,7 @@ class SystemPresentation implements AbilityPresentation {
     let count = 0;
     for (const id of event.targetIds) {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
+      k.statusActor(id)?.elementContact?.(event.element);
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
@@ -86,7 +87,7 @@ class SystemPresentation implements AbilityPresentation {
         receipt.landed = false;
       }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
+      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .48 : .54; receipt.emitted = false;
     }
   }
 
