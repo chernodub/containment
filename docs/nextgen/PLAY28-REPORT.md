@@ -101,3 +101,65 @@ Baseline on `ebf21186`. Medians use all visited rooms, including fatal rooms. Th
 | Sectors 1–10 share | 37.9% | 33.4% | 27.9% | 32.4% |
 
 Standard cleared 43 of 48, with Breacher 9, Cryo 11, Pyro 11 and Arc 12. No stall or death before sector 6 occurred.
+
+The pooled baseline was already near the requested 25–35% band. The 9% figure in R23-B was from one native Cryo campaign. Sectors 3 and 4 had a zero median across all four rigs, while Transmission Chamber exceeded 46 suit points on every rig.
+
+On Standard, sectors 3–10 use an existing Stalker, Brute, Stalker, Brute, split pincer, Stalker, Brute and Spitter exchange, respectively. Residential Gallery's lesson target has more time to reach its first attack, the Atrium has an elite anchor and close arrivals are signalled where the enemy will enter. A paired flanker gets a later approach and lock. Spitters use the existing machinery-cover placement. Neither the tutorial sectors nor the authored body count change. Story skips this tuning.
+
+From sector 11 on Standard, up to three ordinary Crawlers or Stalkers can withdraw once the featured group has been defeated and the last scheduled arrivals have entered. Siege beats keep their charge requirement. Withdrawal uses the existing retreat animation and reduced cleanup credit. The change removes the last contact opportunities in mixed beats and preserves active pressure during the featured fight.
+
+Relay Racks books its Warden and shutter at the start. The Warden enters from the east side of the rack, and the bot approaches from the west aisle. Coolant Plant keeps its earlier route contract. The Armory booking accounts for the contract, and the Brood route seeds its final Matron in Swarm Junction or Manual-control Chamber. Extra guardian slots become ordinary brood leaders.
+
+| Arc seed | Previous | Now |
+|---:|---|---|
+| 1729 | 6 Warden, 9 Warden, 13 Matron, 16 Matron, 19 Warden | 6 Warden, 9 Warden, 13 Matron, 16 Matron |
+| 2718 | 6 Warden, 9 Warden, 13 Warden, 16 Matron, 19 Warden | 6 Matron, 9 Warden, 13 Warden |
+| 7 | 6 Warden, 9 Warden, 13 Matron, 16 Matron, 19 Warden | 6 Warden, 9 Warden, 13 Matron, 16 Matron |
+| 11 | 6 Warden, 9 Warden, 13 Matron, 16 Matron, 19 Warden | 6 Warden, 9 Warden, 13 Matron, 16 Matron |
+| 23 | 6 Warden, 9 Warden, 13 Matron, 16 Matron, 19 Warden | 6 Warden, 9 Warden, 13 Matron, 19 Matron |
+
+### Standard competent suit loss
+
+Each cell is previous → now.
+
+| Sector | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| 1 | 5.0 → 5.0 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 |
+| 2 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 |
+| 3 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 |
+| 4 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 | 0.0 → 0.0 |
+| 5 | 0.0 → 32.1 | 31.6 → 29.5 | 24.3 → 7.6 | 8.4 → 15.6 |
+| 6 | 38.3 → 25.2 | 39.4 → 23.1 | 18.1 → 10.8 | 11.6 → 11.6 |
+| 7 | 6.3 → 12.6 | 36.0 → 51.7 | 12.6 → 12.9 | 26.5 → 14.0 |
+| 8 | 33.8 → 14.1 | 48.7 → 40.3 | 27.7 → 25.8 | 38.7 → 33.4 |
+| 9 | 37.7 → 26.8 | 39.0 → 64.7 | 41.1 → 28.9 | 36.4 → 11.8 |
+| 10 | 71.0 → 58.9 | 68.5 → 65.5 | 47.7 → 48.1 | 46.6 → 43.1 |
+| 11 | 17.2 → 12.6 | 27.8 → 37.5 | 18.4 → 23.5 | 17.2 → 21.2 |
+| 12 | 44.8 → 37.0 | 55.0 → 62.5 | 28.2 → 32.3 | 34.3 → 35.7 |
+| 13 | 49.0 → 59.2 | 79.7 → 100.8 | 64.8 → 38.0 | 39.1 → 38.4 |
+| 14 | 35.6 → 55.8 | 58.7 → 78.8 | 47.3 → 38.6 | 29.3 → 25.8 |
+| 15 | 6.3 → 27.7 | 27.7 → 63.2 | 25.2 → 36.3 | 13.9 → 28.6 |
+| 16 | 54.8 → 54.9 | 81.2 → 68.0 | 58.8 → 42.2 | 39.9 → 62.1 |
+| 17 | 28.4 → 37.6 | 31.6 → 41.2 | 44.2 → 41.1 | 36.6 → 51.8 |
+| 18 | 45.0 → 20.1 | 25.2 → 26.4 | 15.9 → 12.3 | 11.0 → 12.6 |
+| 19 | 37.1 → 40.3 | 79.0 → 104.2 | 53.7 → 28.6 | 43.6 → 27.7 |
+| 20 | 83.2 → 82.1 | 92.3 → 76.4 | 90.5 → 61.2 | 55.8 → 63.7 |
+| Sectors 1–10 share | 37.9% → 33.4% | 33.4% → 32.3% | 27.9% → 29.7% | 32.4% → 30.1% |
+
+The revised cohort cleared 41 of 48. Breacher cleared 8, Cryo 11, Pyro 11 and Arc 11. The earliest death was in sector 10. Cryo 23 and Pyro 512 originally stalled at the covered reactor bend. Both cleared their targeted replays after the bot was allowed to shorten its probe toward the waypoint during stalled pursuit. The table and clear counts include those replays.
+
+The first half accounted for 32.9% → 31.6% of pooled suit loss. All four rigs finished inside the 25–35% band, and Standard finished one clear over the 34–40 target. Sectors 3 and 4 still had zero median loss on each rig. Among the 39 runs that cleared on both revisions, mean suit loss per run moved from 214.3 to 202.2 in sectors 1–10 and from 472.3 to 487.2 in sectors 11–20. Late Crawler and Stalker contact across entire rooms rose from 302.0 to 327.8 per matched clear. These room ledgers do not isolate post-featured cleanup, so the withdrawal rule does not establish the intended damage transfer.
+
+Story novice cleared 22 of 24 with zero stalls. Cryo and Breacher each cleared 11 of 12.
+
+[Standard Breacher](../../artifacts/nextgen/playtest/play30-now-breacher/summary.json) · [Standard Cryo](../../artifacts/nextgen/playtest/play30-now-cryo/summary.json) · [Standard Pyro](../../artifacts/nextgen/playtest/play30-now-pyro/summary.json) · [Standard Arc](../../artifacts/nextgen/playtest/play30-now-arc/summary.json) · [Cryo replay](../../artifacts/nextgen/playtest/play30-finale-narrow/summary.json) · [Pyro replay](../../artifacts/nextgen/playtest/play30-finale-pyro/summary.json) · [Story](../../artifacts/nextgen/playtest/play30-now-story/summary.json)
+
+On fresh Standard seeds 101–124, Breacher cleared 23 of 24 and Arc cleared 22 of 24. Both cohorts recorded zero stalls. Breacher had the fewest clears in the usual cohort. Arc represented the three-way tie at the top because it had led the baseline. The fresh result gives no basis for weakening Arc or strengthening Breacher on the usual seeds alone. [Fresh Breacher](../../artifacts/nextgen/playtest/play30-now-fresh/summary.json) · [Fresh Arc](../../artifacts/nextgen/playtest/play30-fresh-arc/summary.json)
+
+### Native shutter
+
+Arc 2718's first Relay Racks charge locked at 224.53 seconds and broke the panel at 228.12 seconds, about nine seconds into the sector. The native capture shows 1.45 seconds of wall stun remaining. I reviewed it at 1920×1080 and 480×270. The Warden is partly clipped at the top of the impact frame. [Before the charge](../../artifacts/nextgen/playtest/play30-native-retry/r9-relay-racks-mid.png) · [Shutter impact frame](../../artifacts/nextgen/playtest/play30-native-retry/r9-relay-racks-shutter-break.png)
+
+The native Standard Arc 2718 campaign cleared all 20 sectors with zero runner errors. The production build passed with the Vite chunk-size warning. [Complete native campaign](../../artifacts/nextgen/playtest/play30-native-retry/index.html)
+
+The next pacing pass should focus on the first committed attack in Residential Gallery and Communal Atrium, then shorten late melee cleanup closer to the featured kill. A repeat guardian still needs a concrete room-specific objective on routes where the Relay Racks shutter is the first Warden's feature.
