@@ -645,8 +645,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     .map(breach=>({x:breach.x,y:breach.y,life:1,kind:'flank' as const,beat:encounter.beat??-1}))
                 : [];
             const closed=game.markedClosedEntry;
-            if(closed)flankLocations.push({...closed,life:1,kind:'flank',beat:encounter.beat??-1});
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3, game.clipHostileLane);
+            const sealedLocation=closed?[{...closed,life:1,kind:'priority' as const,beat:encounter.beat??-1}]:[];
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, [...encounterCues.locations,...flankLocations,...sealedLocation], encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3, game.clipHostileLane);
         }
         siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
         setHudCoachedTarget(renderer, playing ? onboarding.markedEnemyId ?? (prompt === 'weapon' ? situation?.target?.id ?? null : null) : null);

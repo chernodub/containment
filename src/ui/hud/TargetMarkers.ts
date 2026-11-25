@@ -67,6 +67,7 @@ export class TargetMarkers {
             ctx.strokeStyle = cue.kind === 'priority' ? '#81c8b7' : '#fff0ce';
             ctx.globalAlpha = cue.life * .8;
             ctx.lineWidth = 2;
+            if(cue.kind==='priority'){this.crest(ctx,point.x,point.y);ctx.globalAlpha=1;continue;}
             ctx.beginPath();
             ctx.ellipse(point.x, point.y, 20 + (1 - cue.life) * 16, 9 + (1 - cue.life) * 8, 0, 0, Math.PI * 2);
             ctx.stroke();
@@ -154,16 +155,7 @@ export class TargetMarkers {
             if (enemy.priority) {
                 ctx.strokeStyle = paleCrest;
                 ctx.lineWidth = 2.8;
-                ctx.beginPath();
-                ctx.moveTo(x - 13, y - 7);
-                ctx.lineTo(x - 10, y + 4);
-                ctx.lineTo(x + 10, y + 4);
-                ctx.lineTo(x + 13, y - 7);
-                ctx.lineTo(x + 5, y - 2);
-                ctx.lineTo(x, y - 10);
-                ctx.lineTo(x - 5, y - 2);
-                ctx.closePath();
-                ctx.stroke();
+                this.crest(ctx,x,y);
             }
             if (enemy.controlResistant) {
                 const iconX = x + (enemy.priority ? 23 : 0);
@@ -179,6 +171,19 @@ export class TargetMarkers {
                 ctx.stroke();
             }
         }
+    }
+
+    private crest(ctx:CanvasRenderingContext2D,x:number,y:number){
+        ctx.beginPath();
+        ctx.moveTo(x-13,y-7);
+        ctx.lineTo(x-10,y+4);
+        ctx.lineTo(x+10,y+4);
+        ctx.lineTo(x+13,y-7);
+        ctx.lineTo(x+5,y-2);
+        ctx.lineTo(x,y-10);
+        ctx.lineTo(x-5,y-2);
+        ctx.closePath();
+        ctx.stroke();
     }
 
     dispose() { this.canvas.remove(); for(const marker of Object.values(this.broodIcons))marker.remove(); }
