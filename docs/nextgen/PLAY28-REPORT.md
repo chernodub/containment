@@ -223,3 +223,51 @@ Arc 2718 finished the last two rooms from its earned Containment Annulus checkpo
 | 2 · Passenger Vault | 0.0 / 0.0 / 0.0 | 0.0 / 0.0 |
 | 3 · Residential Gallery | 0.0 / 0.0 / 0.0 | 0.0 / 0.0 |
 | 4 · Communal Atrium | 0.0 / 2.3 / 0.0 | 0.0 / 0.0 |
+
+## PLAY32
+
+### Workshop stall
+
+The prescribed Standard competent Pyro 99 replay reproduced `no-combat-progress-45s` in Infested Workshop. The two Brute-radius routes from the gantry returned the Brutes' own positions. Neither anchor was in attack range, and the director recorded zero delayed melee locks. The visible Brute had a rifle-clear lane but no plasma-clear lane. The input trace held Fire on plasma while the movement scorer rewarded the incorrectly clear position. This was a projectile-clearance mismatch in both bot backends. The bot did attempt to fire.
+
+The lower gantry mouth is 96 units longer, and ordinary Brutes now get the same connected-ingress screening as elites, with separate body clearances. The navigation grid keeps its planning margin, and an enemy tangent to a solid can leave it on a physical-radius sweep. At the two original stopped poses, the corrected routes return (976, 688) and (1104, 656). Coordination holds and rehearsal admission have three-second ceilings. The bot uses the equipped weapon's projectile radius for line of fire and checks plasma separately before choosing it for plates. Pyro 99 cleared Workshop and finished the campaign after the first fix. [Reproduction](../../artifacts/nextgen/playtest/play32-stall/pyro-99.json) · [First fixed replay](../../artifacts/nextgen/playtest/play32-stall-fixed/pyro-99.json)
+
+### Arrival swings
+
+The first Brute in Communal Atrium and Diagnostic Gallery appears in a committed swing after the breach warning. The native melee state machine uses the same wind-up, strike shape, damage and recovery for the Brute's rank. The opening locks aim at emergence. Damage, knockback and stagger cannot interrupt that one arrival swing. The Brute becomes vulnerable on entering recovery and the light-enemy hold continues through the return-shot window.
+
+| Native rig and seed | Atrium strike / recovery, seconds | Atrium suit loss | Gallery strike / recovery, seconds | Gallery suit loss |
+|---|---:|---:|---:|---:|
+| Breacher 1729 | 62.467 / 62.600 | 0 | 309.600 / 309.800 | 0 |
+| Cryo 1729 | 52.400 / 52.533 | 0 | 296.433 / 296.567 | 0 |
+| Pyro 1729 | 54.733 / 54.933 | 0 | 282.550 / 282.767 | 45 |
+| Arc 1729 | 61.900 / 62.083 | 0 | 323.317 / 323.450 | 0 |
+| Arc 2718 | 57.850 / 58.050 | 0 | 327.467 / 327.583 | 0 |
+
+Recovery values use the native phase-transition receipt when available and the first sampled recovery otherwise. Suit loss uses the damage ledger at the strike. Pyro uses the full native campaign. The other observations replay the rooms from earned, compatible checkpoints. [Pyro campaign trace](../../artifacts/nextgen/playtest/pyro-1729/trace.ndjson) · [Breacher Atrium trace](../../artifacts/nextgen/playtest/play32-atrium-breacher-receipts/trace.ndjson) · [Breacher Gallery trace](../../artifacts/nextgen/playtest/play32-gallery-breacher/trace.ndjson) · [Cryo Atrium trace](../../artifacts/nextgen/playtest/play32-atrium-cryo-receipts/trace.ndjson) · [Cryo Gallery trace](../../artifacts/nextgen/playtest/play32-gallery-cryo/trace.ndjson) · [Arc 1729 Atrium trace](../../artifacts/nextgen/playtest/play32-atrium-arc/trace.ndjson) · [Arc 1729 Gallery trace](../../artifacts/nextgen/playtest/play32-gallery-arc/trace.ndjson) · [Arc 2718 Atrium trace](../../artifacts/nextgen/playtest/play32-atrium-arc-2718/trace.ndjson) · [Arc 2718 Gallery trace](../../artifacts/nextgen/playtest/play32-gallery-arc-2718/trace.ndjson)
+
+### Standard repairs
+
+Standard supply-stop purchases now restore up to 25 health or 20 armor, down from 35 and 30 at the existing prices. Story and Veteran retain their previous amounts. The shop displays the actual amount on the card. In the lead's Pyro 11 report, suit rose by 80 between Safety Interlock and Coolant Plant and by 65 between Manual Control and Overload Floor. The latter matches a full paid health repair plus an armor patch. The ten-point reduction per purchase targets that recovery. [Lead Pyro 11](/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/playtest/lead-w29-standard-pyro/pyro-11.json)
+
+### Verification
+
+The production build passed with Vite's chunk-size warning. The exact Pyro 1729 native command cleared all 20 rooms with zero errors or defects. It ran before the tangent-body navigation follow-up. The final-code Pyro 99 simulator replay also cleared Workshop and finished with no stall. [Pyro native campaign](../../artifacts/nextgen/playtest/pyro-1729/report.json) · [Pyro 99 final-code replay](../../artifacts/nextgen/playtest/play32-stall-tip/pyro-99.json)
+
+The first cohort at `e31d4923` cleared 35 of 48 usual Standard campaigns, 41 of 48 fresh Standard campaigns and 22 of 24 usual Story campaigns, with zero stalls. The complete Story replay after the navigation follow-up cleared 23 of 24, with Cryo 11 of 12 and Breacher 12 of 12. [Story summary](../../artifacts/nextgen/playtest/play32-tip-story/summary.json)
+
+| Cohort | Rig | Previous clears | PLAY32 clears |
+|---|---|---:|---:|
+| Standard competent, usual | Breacher | 11/12 | 9/12 |
+| Standard competent, usual | Cryo | 11/12 | 8/12 |
+| Standard competent, usual | Pyro | 11/12 | 10/12 |
+| Standard competent, usual | Arc | 11/12 | 10/12 |
+| Standard competent, usual | All four | 44/48 | **37/48** |
+| Standard competent, fresh 101–124 | Breacher | 22/24 | 20/24 |
+| Standard competent, fresh 101–124 | Pyro | 24/24 | 24/24 |
+| Standard competent, fresh 101–124 | Both | 46/48 | **44/48** |
+| Story novice, usual | Cryo | 12/12 | 11/12 |
+| Story novice, usual | Breacher | 12/12 | 12/12 |
+| Story novice, usual | Both | 24/24 | **23/24** |
+
+The usual Standard cohort lands inside the 34–40 band, and the Story cohort exceeds the 20-clear floor. No stalls occurred in the 120 final-code cohort campaigns. The usual baselines are the lead's wave-29 results. The fresh comparison replay uses the `a5a2c59d` game and policy under the current simulator observer. The current game and policy also differ in pursuit, projectile clearance and the opening Brute attack, so the change in completions measures the release together with the repair step. [Usual Standard](../../artifacts/nextgen/playtest/play32-tip-usual/summary.json) · [Fresh Standard baseline](../../artifacts/nextgen/playtest/play32-fresh-baseline/summary.json) · [Fresh Standard PLAY32](../../artifacts/nextgen/playtest/play32-tip-fresh/summary.json)
