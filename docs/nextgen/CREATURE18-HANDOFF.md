@@ -870,3 +870,17 @@ Local directory `artifacts/nextgen/brute33/sheets/`. Each stem below has a `-nat
 The weakest frames are Relay Racks for the upper limb overlap, the rear pose for separation of the three individual plates, and frozen for the loss of internal contrast.
 
 The production build passed. The twelve final scenario manifests contain 18 captured frames and zero errors. Breacher cleared eight rooms through Breached Loading Bay on seed 1729 with the requested fast desktop runner and zero errors.
+
+## FAMILY35
+
+### Skin and rig
+
+The four K11 source skins already export smoothed proxy normals. In the shipped base meshes the median maximum turn between corner normals of a triangle is 11.7° for Crawler, 17.3° for Spitter, 17.1° for Stalker and 17.6° for Carrier. The separate Matron skin measures 15.6°. None has a measurable population of triangles with all three corner normals within 0.2°. The input and output use identical GLBs, including their normal streams, hard plate boundaries, clips and bind transforms.
+
+| Family | Joints | Rig fingerprint | Bind mesh height, asset units |
+|---|---:|---|---:|
+| Crawler | 46 | `a5106771e5de7166` | 1.931424 |
+| Spitter | 57 | `d680757ef855e6d2` | 8.521052 |
+| Stalker | 38 | `f5d312e1089e1ba0` | 3.998526 |
+| Carrier | 73 | `a9960f8e864ca52c` | 18.013543 |
+| Carrier Matron | 73 | `a9960f8e864ca52c` | 19.179160 |
