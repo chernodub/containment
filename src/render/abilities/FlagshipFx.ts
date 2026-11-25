@@ -1,4 +1,3 @@
-import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 import * as T from 'three';
 import { ELEMENT_COLORS } from './types';
 
@@ -397,13 +396,18 @@ void main(){
   base=vec3(.008,.011,.014);
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }else if(m<8.5){
-  burnSurface(burnDistance(fxWorld.xz),fxWorld.xz,base,emit,alpha);
+  float edge=burnDistance(fxWorld.xz);
   vec2 local=(fxWorld.xz-fxOrigin.xz)/fxRange;
   float radius=length(local), bend=.50*radius+.16*sin(8.*radius);
-  float heading=atan(local.y,local.x)-fxAngle-bend;
+  float angle=atan(local.y,local.x);
+  bool napalm=fxArc>6.;
+  // Sections of the native lip remain exposed between scallops of burnt fuel.
+  if(napalm)edge+=fxRange*.14*smoothstep(.0,.85,sin(angle*5.+.65)+.45*sin(angle*13.));
+  burnSurface(edge,fxWorld.xz,base,emit,alpha);
+  float heading=angle-fxAngle-bend;
   float river=1.-smoothstep(.004,.047,min(1.-cos(heading-.95),1.-cos(heading+1.85)));
   float grain=fxNoise(fxWorld.xz*3.);
-  emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
+  if(napalm)emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
@@ -713,8 +717,7 @@ export class FlagshipFx {
       (u.fxHeight.value as T.Vector2).set(slot.h0, slot.h1); u.fxParam.value = slot.param;
       (u.fxColor.value as T.Color).copy(this.color.setHex(slot.color));
       u.fxIntensity.value = slot.intensity * (.4 + .6 * this.flashIntensity); u.fxLow.value = this.low ? 1 : 0;
-      slot.mesh.renderOrder = slot.mode === FxMode.Shock && slot.param > .5
-        ? FRIENDLY_GROUND_ORDER : MODE_ORDER[slot.mode] ?? 2;
+      slot.mesh.renderOrder = MODE_ORDER[slot.mode] ?? 2;
       slot.mesh.visible = true;
     }
   }

@@ -547,7 +547,7 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.sustain(elapsed);
     // One charred footprint; the upright atlas flames above carry its height.
-    this.surface(zone.id, 0, x, z, radius, zone.id * .71, Math.PI * 2, .035, .035, fade, true);
+    this.surface(zone.id, 0, x, z, radius, zone.id * .71, zone.ability === 'napalm-charge' ? Math.PI * 2 : 0, .035, .035, fade, true);
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 2); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;
