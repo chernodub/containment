@@ -248,11 +248,13 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
 #ifdef BROOD_PLANES
           if(broodFinish && broodBody){
             float key=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
-            graphicActorLight=.24+.76*step(actorBroodForm.x,key)+actorBroodForm.z*step(actorBroodForm.y,key);
-            graphicActorHue=vec3(1.);
-          }else if(broodFinish && broodMark){
-            graphicActorLight=1.;
-            graphicActorHue=max(vec3(1.),graphicActorHue);
+            // Keep the atlas zone and deck tint as the upper bound for each fragment.
+            // The edge retains its original value. Both larger planes subtract light.
+            float lit=actorBroodForm.w==1. && !broodSac ? .74 : .92;
+            float shade=broodSac ? .61 : actorBroodForm.z;
+            float plane=mix(shade,lit,step(actorBroodForm.x,key));
+            graphicActorLight*=mix(plane,1.,step(actorBroodForm.y,key));
+            if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
           }
 #endif
 #ifdef BRUTE_PLANES

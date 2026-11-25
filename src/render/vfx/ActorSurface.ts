@@ -76,13 +76,10 @@ ivec2 broodCell=ivec2(floor(vMapUv*4.0));
 int broodBand=broodCell.x+4*(3-broodCell.y);
 bool broodBody=broodBand<=1 || broodBand==6 || (actorBroodForm.w==1. && broodBand>=8 && broodBand<=10);
 bool broodFinish=actorBroodForm.x>=-1.;
-bool broodMark=broodBand==3 || broodBand==4 || (actorBroodForm.w==2. && broodBand==7) || (actorBroodForm.w==1. && broodBand==11);
-if(broodFinish && broodBody){
-  float bodyFloor=actorBroodForm.w==1.?.095:.125;
-  diffuseColor.rgb=zoneHue*max(zoneLevel,bodyFloor);
-}
-// The sac mark needs enough separation from its newly lit flank at room scale.
-if(broodFinish && broodMark && actorBroodForm.w==1.)diffuseColor.rgb+=vec3(.15,.027,.095);
+// The Matron's distal sac follows the tip joint (torso region). Select
+// its raised hind volume in the skin's Z-up bind pose, clear of the legs.
+bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
+bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRegion==7. || sacTip);
 #endif
 #ifdef BRUTE_PLANES
 // Flat atlas cells in GLTF's top-down UV order. Bone, lead and gilt carry
@@ -205,7 +202,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     patchActorRegions(material,friendly);
   }
   return {
-    form(shadow:number,edge:number,gain:number,carrier:number){form.value.set(shadow,edge,gain,carrier);},
+    form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
     warden(active:boolean) { warden.value=active?1:0; },
     castShade(value:number) { castShade.value=value; },

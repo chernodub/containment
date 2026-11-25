@@ -17,9 +17,9 @@ import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons'
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
 import {setGraphicShadowPlane} from './lighting/GraphicSurface';
-// Shadow terminator, edge terminator, edge gain and atlas layout (0 stripe, 1 sac, 2 blade/muzzle).
+// Shadow terminator, edge terminator, shadow gain and Carrier atlas flag.
 const BROOD_FORM: Readonly<Partial<Record<string, readonly [number, number, number, number]>>> = {
- crawler: [-.06,.94,.34,0], spitter: [-.24,.94,.38,2], stalker: [.26,.95,.32,2],
+ crawler: [-.06,.94,.34,0], spitter: [-.24,.94,.38,0], stalker: [.26,.95,.32,0],
  carrier: [-.04,.93,.40,1], matron: [-.20,.94,.45,1],
 };
 /** SHADER25b: small families keep a lighter shadow plane so they stay findable on the darkest decks. */

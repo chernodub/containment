@@ -873,6 +873,8 @@ The production build passed. The twelve final scenario manifests contain 18 capt
 
 ## FAMILY35
 
+The corrected values and three-column gallery are recorded under **Carrier value correction** below.
+
 ### Skin and rig
 
 The four K11 source skins already export smoothed proxy normals. In the shipped base meshes the median maximum turn between corner normals of a triangle is 11.7° for Crawler, 17.3° for Spitter, 17.1° for Stalker and 17.6° for Carrier. The separate Matron skin measures 15.6°. None has a measurable population of triangles with all three corner normals within 0.2°. The input and output use identical GLBs, including their normal streams, hard plate boundaries, clips and bind transforms.
@@ -897,7 +899,7 @@ Each entry is shared by `6db0c5a1` and FAMILY35. The five calm views use the sam
 | Carrier | 1.98037 | 1.92600 | 0.76715 | 26.40 |
 | Carrier Matron | 5.29582 | 5.40549 | 1.27829 | 46.00 |
 
-### Form light and marks
+### First-pass form light and marks
 
 The key is normalized view-space (−.78, .40, .48). The diffuse gains are .24 in shadow and 1 on the lit plane. The edge gain in the table is the total gain. Crawler and Stalker have elongated bodies with very different projected areas when seen end-on and broadside. Their shadow thresholds follow the displayed heading. Carrier needs a smaller correction. In the table, c and s are cosine and sine of the rendered root yaw in radians. The cutoff is clamped to [−.45, .55]. The edge threshold stays fixed at every heading.
 
@@ -917,9 +919,9 @@ The bright marks keep their authored coverage. In the calm views their median di
 
 The regular body selects chitin, flesh and plate cells. Carrier adds the brood skin, folds and sac skin. Violet lobes, the acid muzzle, the blade bevel and the salmon stripe take their own full-value finish. Frozen, chilled, burning, shocked and hit-flash presentations bypass the new body treatment. The pod shell uses the Matron key while the core keeps its native hatch pulse. The Matron sequence recorded zero programs created after preparation.
 
-### Sheet review
+### First-pass sheet review
 
-Open `artifacts/nextgen/family35/sheets/index.html`. Each named pair has a native crop and a 480×270 full-frame comparison, ordered final19 then FAMILY35. The crowds show four of these families plus Brutes. The pod stages show the fifth family alongside regular escorts. The regular and Matron silhouettes are distinguishable in the same frame by the Matron's long, raised sac.
+Open `artifacts/nextgen/family35/first-pass-sheets/index.html`. Each named pair has a native crop and a 480×270 full-frame comparison, ordered final19 then FAMILY35. The crowds show four of these families plus Brutes. The pod stages show the fifth family alongside regular escorts. The regular and Matron silhouettes are distinguishable in the same frame by the Matron's long, raised sac.
 
 | Sheet stem | What reads at room scale |
 |---|---|
@@ -957,7 +959,7 @@ Open `artifacts/nextgen/family35/sheets/index.html`. Each named pair has a nativ
 
 The three weakest views are Stalker behind (rear legs against dark steel), the elite Crawler pair (console occlusion), and Matron behind (marine and sac tip overlap). Native crops retain more limb anatomy than the downsampled room view. The final death and ragdoll comparisons use the browser compositor after GPU completion. The original helper returned the previous canvas on death and a cleared canvas on ragdoll.
 
-### Production verification
+### First-pass production verification
 
 The production build passed. The fixture set contains 15 family pose captures, three four-frame crowd bursts, five elite pairs and three individual pod-stage captures. All 26 final capture manifests have empty error and failure lists. The eight-stage native Matron sequence also completed without errors. The side-by-side gallery uses final19 as its visual baseline. Differences in the marine and the Brute predate FAMILY35.
 
@@ -971,3 +973,30 @@ The Pyro Crew Checkpoint benchmark used the immediately preceding build, `6db0c5
 The plain ten-second runs on this shared host sometimes ended before a complete kit rotation or before a frame sample. Both builds completed the six-trial comparison with the same `--seconds=10 --min-simulation-seconds=4` settings. The resulting reports have zero errors. The raw reports are `artifacts/nextgen/family35-previous/benchmark.json` and `artifacts/nextgen/family35/benchmark.json`. These are draw and shader counts under an active simulation.
 
 Pyro cleared all eight rooms through Breached Loading Bay on seed 1729 with the fast desktop runner. The isolated run exited 0 with zero errors and zero defect flags. Its receipt is `artifacts/nextgen/playtest/family35-pyro/report.json`. An earlier concurrent run also cleared all eight rooms and recorded two room-loading holds over five seconds.
+
+### Carrier value correction
+
+The first pass raised the Carrier’s calm body P90 from 73 to 101. The minimum diffuse albedo affected the dark legs as well as the sac. The corrected shader keeps the authored pigment and room cast, applies the hard planes as reductions, and leaves the original mark finish intact. The calibrated thresholds above still select the same planes. The lit multiplier is 0.92 on general body and sac, and 0.74 on Carrier and Matron legs and underside. The narrow edge retains the original local value. Crawler, Spitter and Stalker shadow multipliers are 0.34, 0.38 and 0.32. Carrier and Matron support shadows use 0.40 and 0.45, and both sacs use 0.61. The sacs also attenuate red and green by 2% and 16%. Their raised rear tips receive the same treatment. Pod shells use 0.45, 0.92 and 1.0 with their cores retained.
+
+Registered material and plane masks isolate visible skin from marks, brackets, effects and scenery. Measurements use display RGB and Rec.709 luma coefficients on a 0–255 scale. Each cell below follows the gallery column order.
+
+| Body P90 | Calm, final19 / first / corrected | Swarm Junction, final19 / first / corrected |
+|---|---:|---:|
+| Crawler | 116 / 116 / 114 | 112 / 114 / 110 |
+| Spitter | 95 / 108 / 88 | 93 / 107 / 85 |
+| Stalker | 80 / 97 / 76 | 60 / 93 / 56 |
+| Carrier | 73 / 101 / 63 | 63 / 95 / 54 |
+| Matron | 77 / 101 / 68 | 60 / 96 / 53 |
+
+Stock Swarm Junction has no Matron. The last cell comes from the same crowd with its second Carrier promoted to Matron in all three builds. In the calm frame, Carrier lit-leg median luma is 38 / 89 / 32 and lit-sac median is 70 / 103 / 64. Matron lit-leg median is 51 / 99 / 42 and lit-sac median is 36 / 99 / 32. Median lit-sac HSV saturation went from 30% to 19% to 34% for Carrier and from 23% to 12% to 31% for Matron.
+
+| Corrected P90 | Marine ivory plate | Crawler lit | Spitter lit | Stalker lit | Carrier lit | Matron lit |
+|---|---:|---:|---:|---:|---:|---:|
+| Swarm Junction | 181 | 112 | 89 | 60 | 56 | absent |
+| Relay Racks | 183 | 112 | 86 | 73 | 57 | absent |
+| Crew Checkpoint | 186 | 113 | 88 | 80 | 65 | absent |
+| Supplemental Swarm | 181 | 112 | 90 | 60 | 59 | 58 |
+
+All five families’ maximum sampled body lumas in calm and Swarm were equal to or below final19. Fixed screen coordinates in the composited images can differ more than the material values. Across nine measured views, 487 of 262,797 body coordinates rose by more than four levels after final antialiasing, with a largest rise of 48. The before-antialiasing display comparison is in `value-work/graded.txt`. The per-region distributions, sample counts and maxima are in `artifacts/nextgen/family35/value-work/luma.json`.
+
+The corrected gallery is `artifacts/nextgen/family35/sheets/index.html`. All 32 subjects have a native crop and a 480×270 frame, in final19 / first pass / corrected order. The marine remains the first actor to draw the eye in all three stock crowds. The weakest views are the console-obscured regular Crawler in its elite pair, the Stalker among the blue Relay Racks machinery and the fallen Matron overlapping the marine in the ragdoll frame. The production build passed after the correction.
