@@ -193,7 +193,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       plate('M-22 -13 L17 -13 24 -6 24 12 -22 12Z','#949489');
       plate('M-16 -8 L17 -8 17 7 -16 7Z','#354247');
       plate('M-12 -3 L13 -3 13 1 -12 1Z','#a5a799');
-      c.fillStyle='#999b90';c.font='bold 14px Barlow, sans-serif';c.fillText('TIE 7',-18,28);
       c.restore();
     }
     const track=scars[room.id];

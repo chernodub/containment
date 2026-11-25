@@ -165,8 +165,9 @@ export function paintServiceDeck(c:Brush,room:RoomTemplate,arena:Point):void {
   c.restore();
   // Print the registration on the approach to the exit, facing along the room.
   const dx=arena.x-room.exit.x,dy=arena.y-room.exit.y,length=Math.max(1,Math.hypot(dx,dy));
-  c.save();c.translate(room.exit.x+dx/length*85,room.exit.y+dy/length*85);
-  c.rotate(yaw);c.globalAlpha=.28;c.fillStyle='#a8aea2';c.font='bold 19px Barlow, sans-serif';
+  c.save();c.translate(room.exit.x+dx/length*40-dy/length*38,room.exit.y+dy/length*40+dx/length*38);
+  c.rotate(yaw);c.globalCompositeOperation='multiply';c.globalAlpha=.10;
+  c.fillStyle='#a6aea4';c.font='8px Barlow, sans-serif';
   c.textAlign='center';c.fillText(label,0,0);
   c.restore();
 }
