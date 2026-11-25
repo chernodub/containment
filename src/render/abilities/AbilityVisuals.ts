@@ -73,7 +73,7 @@ export class AbilityVisuals extends AbilityGeometry {
         this.system?.event(event, x, y);
     }
     private readonly castMaterials = new Set<T.Material>();
-    private protectVictims = false;
+    private protectionMask = 0;
 
     override update(snapshot: AbilitiesSnapshot | undefined, dt: number, visible = true, game?: DepthGame, marine?: T.Object3D, camera?: T.Camera, marineBody?: T.Object3D): void {
         if (this.dead)
@@ -86,10 +86,15 @@ export class AbilityVisuals extends AbilityGeometry {
         if (!visible && this.wasVisible)
             this.clear();
         this.wasVisible = visible;
-        const protect = snapshot?.rig === 'pyro' || snapshot?.rig === 'arc';
-        if (this.protectVictims !== protect) {
-            this.protectVictims = protect;
-            for (const material of this.castMaterials) material.stencilWrite = protect;
+        const protect = snapshot?.rig === 'pyro' ? 3 : snapshot?.rig === 'arc' ? 1 : 0;
+        if (this.protectionMask !== protect) {
+            this.protectionMask = protect;
+            for (const material of this.castMaterials) {
+                material.stencilWrite = protect !== 0;
+                material.stencilFunc = T.EqualStencilFunc;
+                material.stencilRef = 0;
+                material.stencilFuncMask = protect;
+            }
         }
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
 

@@ -479,8 +479,8 @@ void main(){
    float rays=pow(abs(cos(a*5.+.16*n)),9.);
    float star=(1.-smoothstep(R*(.22+.55*rays),R*(.33+.65*rays),r))*peak;
    float core=(1.-smoothstep(.25,1.20,r))*peak;
-   base=vec3(.13,.027,.009);
-   emit=vec3(1.38,.27,.018)*fissure*(.4+.6*heat)+vec3(2.7,.85,.14)*star+vec3(2.,2.2,1.8)*core;
+   base=vec3(.16,.052,.008);
+   emit=vec3(1.65,.60,.041)*fissure*(.4+.6*heat)+vec3(2.8,1.62,.40)*star+vec3(2.,2.2,1.8)*core;
    alpha=.14+.55*fissure+.82*star;
    line=0.;
   }else{

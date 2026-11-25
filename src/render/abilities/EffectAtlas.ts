@@ -108,8 +108,8 @@ export const TEXTURED_FIRE_GLSL = `
   #endif
   float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
   float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
-  c=mix(vec3(.26,.005,0.),vec3(1.25,.13,0.),orange*(1.-smoothstep(.72,1.,abs(theta))));
-  c=mix(c,vec3(1.48,.78,.002),flare*(1.-smoothstep(.72,1.,abs(theta))));
+  c=mix(vec3(.42,.077,.002),vec3(1.55,.41,.009),orange*(1.-smoothstep(.72,1.,abs(theta))));
+  c=mix(c,vec3(2.1,1.42,.30),flare*(1.-smoothstep(.72,1.,abs(theta))));
   c=mix(c,vec3(2.1,1.1,.08),smoothstep(.79,.98,tooth)*(1.-smoothstep(.34,.82,t)));
   float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
   c=mix(c,vec3(2.2,1.65,.31),core);
@@ -148,8 +148,8 @@ export const TEXTURED_FIRE_GLSL = `
   coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
   float body=smoothstep(.08,.23,t)*(1.-smoothstep(.82,1.,side));
   float tip=smoothstep(.6,.72,t+.08*sin(signedSide*3.+seed));
-  c=mix(vec3(.27,.012,.003),vec3(1.35,.15,0.),body);
-  c=mix(c,vec3(1.7,.91,.004),tip*body);
+  c=mix(vec3(.38,.068,.002),vec3(1.65,.40,.009),body);
+  c=mix(c,vec3(2.4,1.72,.38),tip*body);
  }
  a*=coverage;
  // Every path hides all four card edges, including the source end of a jet.
