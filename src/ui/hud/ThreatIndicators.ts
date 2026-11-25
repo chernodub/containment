@@ -240,7 +240,7 @@ export class ThreatIndicators {
         const score = (shotCharge >= 0 ? 2000000 : attacking ? 1000000 : (tactical === 'arrival'||tactical==='sealed') ? 10000 : 0) - distance + rank[kind] * 5;
         let candidate: Candidate | undefined;
         for (const existing of this.candidates)
-            if (shotCharge<0 && existing.shotCharge<0 && existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
+            if (tactical!=='sealed' && existing.tactical!=='sealed' && shotCharge<0 && existing.shotCharge<0 && existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
                 candidate = existing;
                 break;
             }
@@ -414,7 +414,7 @@ export class ThreatIndicators {
             marker.count.hidden = count <= 1;
             marker.count.textContent = count > 1 ? String(count) : '';
             marker.node.dataset.count = String(count);
-            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${shot ? candidate.inFlight ? ', incoming projectile' : candidate.shotBlocked ? ', shot blocked by cover' : ', shot charging' : candidate.attacking ? ', attacking' : ''}`);
+            marker.node.setAttribute('aria-label', candidate.tactical==='sealed'?'Sealed entry':`${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${shot ? candidate.inFlight ? ', incoming projectile' : candidate.shotBlocked ? ', shot blocked by cover' : ', shot charging' : candidate.attacking ? ', attacking' : ''}`);
         }
     }
     tick(dt: number): void {

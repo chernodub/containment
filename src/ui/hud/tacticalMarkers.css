@@ -25,6 +25,12 @@
 .threat-marker[data-tactical=arrival] .threat-type,
 .threat-marker[data-tactical=cleanup] .threat-type {fill:#071017;stroke:#eac786;stroke-width:2.8;width:26px;height:26px;left:9px;top:9px;}
 
+.threat-marker[data-tactical=sealed] { opacity: .95; }
+.threat-marker[data-tactical=sealed] .threat-chevron { fill:#13252c;stroke:#dbe8f1; }
+.threat-marker[data-tactical=sealed] .threat-type {
+    fill:#13252c;stroke:#dbe8f1;stroke-width:2.8;width:26px;height:26px;left:9px;top:9px;
+}
+
 #room-objective.plate-key-pulse {
     animation: plate-key-pulse .7s ease-out 2 alternate;
 }
