@@ -8,7 +8,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
   const [sx,sz,ex,ez]=layout;
   const L=Math.hypot(ex-sx,ez-sz),angle=Math.atan2(ez-sz,ex-sx);
   const p=new IncidentPieces(), steel=0x859694, iron=0x4e6061, boot=0x354447;
-  const ochre=0x9c8666, ice=0x8caeb1, green=0x617a58;
+  const ochre=0x9c8666, ice=0x8caeb1, green=0xbda271;
   function box(x:number,y:number,z:number,w:number,h:number,d:number,color:number,turn=0){
     p.box(x,y,z,w,h,d,color,turn);
   }
@@ -37,11 +37,10 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       box(L+6,12,0,26,5,8,steel);break;
     }
     case 'passenger-vault':
-      box(L/2,4,0,L,8,35,boot);rails(18);
-      for(let x=8;x<L;x+=13)pipe(x,-14,x,14,8,3,iron);
-      for(const [x,z,t,c] of [[L-34,0,.12,ochre],[L+2,17,-.48,0x657784]]){
-        box(x,12,z,33,13,19,c,t);box(x,19,z,4,2,19,boot,t);
-        box(x+3,18,z-10,11,3,4,steel,t);
+      // Three waiting berths sit across the old transfer axis, each with a pillow and foot latch.
+      for(const x of [L-109,L-59,L-9]){
+        box(x,5,0,43,8,84,iron);box(x,10,0,36,5,74,0x849897);
+        box(x,15,-28,28,7,14,ice);box(x,13,26,40,3,7,ochre);
       }
       // A child's coat spills over the open case, sleeves hanging off both edges.
       p.face([[L-50,20,-8],[L-39,22,-13],[L-33,21,-6],[L-25,22,-10],[L-13,12,1],[L-19,10,6],[L-27,18,1],[L-25,19,16],[L-45,20,19],[L-47,16,4],[L-54,11,8],[L-59,10,4]],0xbb8067);
@@ -63,28 +62,27 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       p.rod([L+12,8,2],[L+17,8,4],15,0x9a8b70);
       for(let i=0;i<9;i++){
         const a=i*2.4,tip=L+22+Math.cos(a)*19,z=5+Math.sin(a)*18;
-        p.face([[L+12,8,3],[tip-4,6,z-4],[tip,11,z],[tip+6,5,z+4]],i%2?green:0x86926d);
+        p.face([[L+12,8,3],[tip-4,6,z-4],[tip,11,z],[tip+6,5,z+4]],i%2?green:0xd8bea2);
       }break;
     case 'freight-hold':
-      rails(17);
-      for(let x=12;x<L;x+=38)box(x,4,0,9,6,36,iron);
-      for(const z of [-17,17]){box(L-10,8,z,43,11,9,ochre);box(L-3,15,z,22,3,9,steel);}
-      box(L-22,8,0,10,10,42,boot);
+      box(L-37,4,0,106,7,93,boot);
+      for(const z of [-42,42]){
+        box(L-40,9,z,110,10,8,ochre);
+        p.rod([L-86,10,z],[L-72,39,z*.75],5,steel);
+        p.rod([L+8,10,z],[L+26,19,z*1.35],4,iron);
+      }
       for(const [x,z,t] of [[L-6,0,0],[L+10,4,.25],[L+27,18,-.43],[L+43,28,.72]]){
         box(x,5,z,11,10,26,0x9cae91,t);
         box(x,11,z,10,2,8,0xd8c693,t);
       }
       break;
     case 'breached-loading-bay':
-      for(const s of [-1,1]){
-        pipe(0,s*6,L*.46,s*20,5,3.8,0x8a8271);
-        pipe(L*.46,s*20,L,s*8,4,3.8,0x8a8271);
+      for(let i=0;i<6;i++){
+        const x=i*L/6,z=Math.sin(i*1.8)*12;
+        p.face([[x,1,z-34],[x+L/6,1,z-28],[x+L/6,7+i,z+3],[x,3+i,z]],iron);
+        pipe(x,z,x+L/6,z+3,4+i,2.2,steel);
       }
-      // Fallen open-web gantry spans the direction of travel.
-      for(const x of [L-49,L-21])box(x,7,0,6,10,138,iron);
-      for(let i=0;i<6;i++)pipe(L-49,-68+i*22,L-21,-46+i*22,8,3.4,steel);
-      box(L,4,0,34,7,32,iron);disc(L,7,0,10,10,boot);
-      box(L,18,0,31,5,10,steel,.32);break;
+      break;
     case 'diagnostic-gallery':
       box(L/2,3,0,L,6,14,iron);box(L/2,7,0,L,2,5,steel);
       disc(L,5,0,15,7,boot);disc(L,12,0,10,4,steel);
@@ -101,6 +99,10 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const x of [L-2,L+36])pipe(x,43,x,120,17,3.5,steel);
       for(const x of [L+7,L+27])box(x,19,41,9,8,15,ice);
       for(const z of [72,103])box(L+17,18,z,40,2,6,boot);
+      for(let i=0;i<12;i++){
+        const point=(n:number):[number,number,number]=>[L+17+30*Math.cos(n*Math.PI/12),11+34*Math.sin(n*Math.PI/12),61];
+        p.rod(point(i),point(i+1),4,ice);
+      }
       break;
     case 'safety-interlock-station':
       box(L/2,3,0,L,5,23,boot);rails(12);

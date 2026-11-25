@@ -1,3 +1,4 @@
+import {paintRoomFunction} from './RoomFunctionMarks';
 import type {Point,RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
 import {roomValueProfile} from '../lighting/RoomValueStandard';
@@ -43,31 +44,6 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
     c.fillStyle='rgba(13,23,27,.50)';c.fillRect(x,y,width,2);c.fillRect(x,y,2,depth);
     c.fillStyle=tint(.72,.53);c.fillRect(x+3,y+2,width-6,2.5);
   }
-  // Lapped pedestrian finish follows the route through the room. The scuffed
-  // centre feathers into neighbouring plates instead of a painted lane stripe.
-  c.save();c.translate(arena.x,arena.y);
-  c.rotate(Math.atan2(room.exit.y-room.spawn.y,room.exit.x-room.spawn.x));
-  const worn=c.createLinearGradient(0,-49,0,49);
-  worn.addColorStop(0,tint(.7,0));worn.addColorStop(.38,tint(.96,.49));
-  worn.addColorStop(.68,tint(.94,.41));worn.addColorStop(1,tint(.7,0));
-  c.fillStyle=worn;c.fillRect(-room.width,-49,2*room.width,98);
-  c.scale(1,seed%2?1:-1);
-  for(const x of [-122+seed%22,85-seed%17]){
-    c.fillStyle=tint(.18,.72);c.fillRect(x,-67,59,20);
-    c.fillStyle=tint(.61,.66);
-    for(let u=3;u<57;u+=8)c.fillRect(x+u,-65,3,16);
-    c.fillRect(x,-47,59,2);
-  }
-  c.fillStyle=tint(.2,.65);c.fillRect(-122,-54,201,4);
-  c.fillStyle=tint(.55,.62);c.fillRect(-63,-51,145,1.5);
-  c.strokeStyle=tint(.19,.64);c.lineWidth=3;c.strokeRect(-42,46,66,45);
-  c.fillStyle=tint(.62,.55);
-  for(const x of [-37,19])for(const y of [51,86])c.fillRect(x,y,3,3);
-  c.restore();
-  const light=profile.landmark.color;
-  const wet=c.createLinearGradient(-28,-18,41,9);
-  wet.addColorStop(0,'rgba(17,26,28,.49)');wet.addColorStop(.54,'#'+light.toString(16).padStart(6,'0')+'49');wet.addColorStop(1,'rgba(23,31,34,.4)');
-  c.translate(arena.x-64,arena.y+29);c.fillStyle=wet;
-  c.fill(wetContour());
+  paintRoomFunction(c,room,arena);
   c.restore();
 }
