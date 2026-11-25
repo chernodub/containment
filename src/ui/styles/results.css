@@ -112,3 +112,25 @@
 #overlay .panel.debrief-panel .hero-stats [data-stat]>b {font-size:clamp(32px,3.3vw,60px);}
 #overlay .panel.debrief-panel :is(.telemetry-heading,.result-stats,.result-secondary,.damage-source-legend,.incoming-breakdown) :is(span,small),
 #overlay .panel.debrief-panel .damage-source-note {font-size:14px;}
+
+#overlay .debrief-panel[data-outcome=dead] {
+  background: linear-gradient(140deg, #292329, #111b22 58%);
+}
+#overlay .debrief-panel[data-outcome=dead] .result-actions { gap: 12px; flex-wrap: wrap; }
+#overlay .last-exchange {
+  display: grid;
+  grid-template-columns: 105px 190px;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+#overlay .last-exchange figcaption span { display: block; margin-top: 5px; font-size: 13px; color: #c7d9e1; }
+#overlay .last-exchange svg { width: 190px; height: 95px; background: #0c1a20; border: 1px solid #57666e; }
+.exchange-cover { fill: #39454d; stroke: #7e8a90; }
+.exchange-attack { color: #edbd78; }
+.exchange-attack[data-fatal=true] { color: #ff826b; }
+.exchange-attack[data-committed=false] path { stroke-dasharray: 5 4; }
+.exchange-attack path, .exchange-attack circle { fill: currentColor; stroke: currentColor; opacity: .48; }
+.exchange-attack text { fill: currentColor; paint-order: stroke; stroke: #122027; stroke-width: 4; font: 600 19px var(--font-body); text-anchor: middle; }
+.exchange-exit { fill: none; stroke: #b5ffcb; stroke-width: 3; stroke-dasharray: 5 4; }
+.exchange-marine { fill: white; stroke: #14222b; stroke-width: 2; }
