@@ -45,6 +45,20 @@ export class TargetMarkers {
         if (this.canvas.height !== height) this.canvas.height = height;
         if (this.painted) ctx.clearRect(0, 0, width, height);
         this.painted = false;
+        const preview=game.relayCoverPreview;
+        if(preview){
+            const start=projectWorld(renderer,preview.from.x,preview.from.y,{x:0,y:0,visible:false},.15);
+            const stop=projectWorld(renderer,preview.x,preview.y,this.point,.15);
+            if(start.visible&&stop.visible){
+                this.painted=true;
+                ctx.strokeStyle='#ff9c77';
+                ctx.lineWidth=2;
+                ctx.beginPath();
+                ctx.moveTo(start.x,start.y);
+                ctx.lineTo(stop.x,stop.y);
+                ctx.stroke();
+            }
+        }
         for (const cue of cues) {
             if (cue.life <= 0) continue;
             const point = projectWorld(renderer, cue.x, cue.y, this.point, .12);

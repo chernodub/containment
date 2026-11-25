@@ -287,15 +287,20 @@ export class DepthGame {
  }
  readonly clipHostileLane=(from:{x:number;y:number},to:{x:number;y:number})=>
   clipExpeditionLane(this.geometry,from,to,SPITTER_PROJECTILE_RADIUS,(a,b,radius)=>this.abilities.blocksMovement(a,b,radius));
- private coverPreview?:{x:number;y:number;until:number};
+ get relayShelter(){
+  if(this.node.templateId!=='overload-floor'||!this.relayCoverPreview&&!this.crossingRequired||this.relayBank)return;
+  return this.relayShelterStep;
+ }
+ private relayShelterStep?:{x:number;y:number};
+ private coverPreview?:{x:number;y:number;from:{x:number;y:number};until:number};
  get relayCoverPreview(){return this.coverPreview&&this.elapsed<this.coverPreview.until?this.coverPreview:undefined;}
  private previewRelayCover(){
-  const bank=this.relayBanks[1];
+  const bank=this.relayShelterStep;
   if(!bank)return;
   const source=this.siegePoint;
   const lane=clipExpeditionLane(this.geometry,source,bank,SPITTER_PROJECTILE_RADIUS);
   if(!lane.blocked)return;
-  this.coverPreview={...lane.point,until:this.elapsed+4};
+  this.coverPreview={...lane.point,from:source,until:this.elapsed+4};
   const angle=Math.atan2(bank.y-source.y,bank.x-source.x);
   this.bullets.push({preview:true,x:source.x,y:source.y,life:ENEMY_ATTACK_SHAPES.spitterProjectileLife,kind:'hazard',
    request:{weaponId:'plasma',damage:0,speed:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed,radius:SPITTER_PROJECTILE_RADIUS,angle,penetration:1,splashRadius:0,knockback:0},
@@ -409,7 +414,7 @@ export class DepthGame {
  private enterRoom(start=true){this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
  this.gateStaged=false;this.gateHold=undefined;this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
- this.relayBanks=[];this.relayRoutes=[];
+ this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
  if(this.node.templateId==='overload-floor'){
   const reachable=(point:{x:number;y:number})=>this.navigation.reachable(point);
   const [near]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&hasClearExpeditionShot(this.geometry,this.siegePoint,p),292,388);
@@ -419,6 +424,17 @@ export class DepthGame {
   this.relayBanks=near&&far?[near,far]:floorChoicePair(this.geometry,this.siegePoint,reachable,304,496);
   const routes=new FacilityNavigation(this.geometry);
   this.relayRoutes=this.relayBanks.map(bank=>this.relayRoute(bank,routes));
+  const covered=this.relayRoutes[1];
+  if(covered)for(let i=1;i<covered.length&&!this.relayShelterStep;i++){
+   const from=covered[i-1],to=covered[i],steps=Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/12);
+   for(let step=1;step<=steps;step++){
+    const point={x:from.x+(to.x-from.x)*step/steps,y:from.y+(to.y-from.y)*step/steps};
+    if(clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS).blocked){
+     this.relayShelterStep=point;
+     break;
+    }
+   }
+  }
  }
  const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'){

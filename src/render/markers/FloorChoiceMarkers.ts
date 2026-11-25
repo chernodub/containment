@@ -58,7 +58,7 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame'],covered?:DepthGame['relayShelter']){
   this.shutterPanels.forEach((panel,index)=>{
    panel.visible=!!shutter;
    if(!shutter)return;
@@ -70,11 +70,10 @@ export class FloorChoiceMarkers {
    panel.position.set((shutter.x+shutter.width/2)/unit,index===0?.28:1.04,(shutter.y+shutter.height/2)/unit);
    panel.scale.set(shutter.width/unit,index===0?.56:.48,shutter.height/unit);
   });
-  const covered=choices.find(choice=>choice.kind==='bank'&&choice.id==='1')??(siege?.selectedBank==='far'?siege:undefined);
   this.coverGlyph.visible=!!covered;
   if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
   this.routes.forEach((mesh,index)=>{
-   const path=approaches[index];
+   const path=index===0?approaches[0]:undefined;
    let count=0;
    for(let i=1;path&&i<path.length;i++){
     const from=path[i-1],to=path[i],dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
@@ -97,7 +96,7 @@ export class FloorChoiceMarkers {
   });
   this.pads.forEach((mesh,index)=>{
    const choice=choices[index];
-   mesh.visible=!!choice;
+   mesh.visible=!!choice&&!(covered&&choice.kind==='bank'&&choice.id==='1');
    if(!choice)return;
    mesh.geometry=choice.kind==='failed-bank'?this.failedGeometry:this.geometry;
    mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.kind==='reserve'||choice.id==='0'?0:1];
