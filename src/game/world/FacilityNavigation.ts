@@ -70,12 +70,18 @@ export class FacilityNavigation {
       if(committed.stalled<8)return {...committed.point};
     }
     this.commitments.delete(enemy);
-    let current=this.closest(enemy,true,this.clearance>30?enemy.radius+2:enemy.radius);if(current<0)return enemy;
+    const margin=this.clearance>30?enemy.radius+2:enemy.radius;
+    let current=this.closest(enemy,true,margin);
+    // Collision can leave a legal body tangent to a rack. The grid keeps its
+    // clearance margin, but the first leg can move that body off the edge.
+    const sweep=current<0?enemy.radius:enemy.radius+2;
+    if(current<0)current=this.closest(enemy,true,sweep);
+    if(current<0)return enemy;
     let target=point(current);
     for(let n=0;n<7;n++){
       let next:number|undefined,best=this.distance[current];for(const candidate of neighbors(current)){const d=this.distance[candidate];if(d>=0&&d<best){next=candidate;best=d;}}
       if(next===undefined)break;
-      const candidate=point(next);if(!this.clear(enemy,candidate,enemy.radius+2))break;
+      const candidate=point(next);if(!this.clear(enemy,candidate,sweep))break;
       current=next;target=candidate;
     }
     const remaining=Math.hypot(target.x-enemy.x,target.y-enemy.y);
