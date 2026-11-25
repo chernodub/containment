@@ -227,7 +227,7 @@ class ArcPresentation implements AbilityPresentation {
         d.fired = true;
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
-          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
+          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, d.overload ? .195 : Math.min(.55, d.life * .53));
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload ? (d.delay === 0 ? 1.38 : 1.05) : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = d.overload ? 4 : 3; arc.color = VIOLET; arc.intensity = .86;
           if (d.overload) {
@@ -244,7 +244,7 @@ class ArcPresentation implements AbilityPresentation {
             k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, d.overload ? .23 : .048, .18, true);
           }
         }
-        if (d.overload) k.scar('crack',d.x,d.z,1.05,0xa46aff,1.15,d.seed);
+        if (d.overload) k.scar('star', d.x, d.z, 1.12, 0xa46aff, 1.05, d.seed);
         const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
         node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = 1.2;
         k.flash(d.x, d.z, VIOLET, 5, 2.4, 3, .08);
