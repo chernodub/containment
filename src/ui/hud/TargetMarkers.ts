@@ -3,6 +3,7 @@ import type {DepthGame} from '../../DepthGame';
 import type {DepthRenderer} from '../../render/DepthRenderer';
 import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds} from '../gameAdapter';
 import {hudObstructs, presentationObstructs} from './layout';
+import {threatEdgePoint} from './ThreatIndicators';
 
 import type {EncounterCues} from './EncounterCues';
 
@@ -13,6 +14,8 @@ export class TargetMarkers {
     private readonly canvas = document.createElement('canvas');
     private readonly context = this.canvas.getContext('2d');
     private readonly point = {x: 0, y: 0, visible: false};
+    private readonly marine = {x: 0, y: 0, visible: false};
+    private readonly edge = {x: 0, y: 0};
     private readonly resistance = new Map<number,{started:number;active:boolean}>();
     private room = -1;
     private readonly banked = document.createElement('div');
@@ -95,10 +98,18 @@ export class TargetMarkers {
             }
             if (enemy.podStage) {
                 const point = projectWorld(renderer, enemy.x, enemy.y, this.point, .08);
-                if(enemy.broodDestination&&point.visible&&!hudObstructs(point.x-13,point.y+10,point.x+13,point.y+36)){
-                    const marker=this.broodIcons[enemy.broodDestination];
-                    marker.style.transform=`translate(${point.x-13}px,${point.y+10}px)`;
-                    marker.hidden=false;
+                if(enemy.broodDestination&&Number.isFinite(point.x)&&Number.isFinite(point.y)){
+                    let x=point.x,y=point.y+23;
+                    if(!point.visible){
+                        const p=projectWorld(renderer,game.player.x,game.player.y,this.marine,.08);
+                        const bearing=Math.atan2(point.y-p.y,point.x-p.x);
+                        ({x,y}=threatEdgePoint(p.x,p.y,bearing,width,height,this.edge));
+                    }
+                    if(!hudObstructs(x-13,y-13,x+13,y+13)){
+                        const marker=this.broodIcons[enemy.broodDestination];
+                        marker.style.transform=`translate(${x-13}px,${y-13}px)`;
+                        marker.hidden=false;
+                    }
                 }
                 if (point.visible) {
                     tokens ??= getComputedStyle(this.canvas);
