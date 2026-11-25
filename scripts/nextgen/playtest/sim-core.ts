@@ -252,10 +252,11 @@ export function runSimulation(options: SimOptions) {
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const objective=game.siege;
     const suit=game.combat.snapshot;
-    const takeCover=objective?.nearBank
-      ? suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*COVERED_RELAY_HEALTH_FRACTION
-        || (objective.nearLaneWindup&&!game.abilities.snapshot.slots?.dash?.ready)
-      : suit.health<suit.maxHealth*COVERED_RELAY_HEALTH_FRACTION;
+    const suitFraction=(suit.health+suit.armor)/(suit.maxHealth+suit.maxArmor);
+    const dashReady=game.abilities.snapshot.slots?.dash?.ready;
+    const takeCover=suitFraction<COVERED_RELAY_HEALTH_FRACTION ||
+      (!dashReady&&objective?.nearLaneWindup) ||
+      (!!objective?.nearMeleePressure&&(suitFraction<.78||!dashReady));
     const bank=takeCover?objective?.farBank:objective?.nearBank;
     const siege=bank?{...objective!,...bank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];

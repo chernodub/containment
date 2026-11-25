@@ -284,6 +284,13 @@ export class DepthGame {
   return {beat:encounter.beat??0,x:target.x,y:target.y,radius:crossing?68:220,durationMs:12000,
    selectedBank:crossing&&this.relayBank?(this.relayBank.x===this.relayBanks[0].x&&this.relayBank.y===this.relayBanks[0].y?'near':'far'):undefined,
    nearLaneWindup:this.relayVolley!==undefined,
+   nearMeleePressure:crossing&&!this.relayBank&&this.enemies.snapshot.enemies.some(enemy=>{
+    if(enemy.health<=0||enemy.pod||enemy.type==='spitter')return false;
+    const near=this.relayBanks[0],dx=near.x-this.siegePoint.x,dy=near.y-this.siegePoint.y;
+    const along=Math.max(0,Math.min(1,((enemy.x-this.siegePoint.x)*dx+(enemy.y-this.siegePoint.y)*dy)/(dx*dx+dy*dy)));
+    const intercept={x:this.siegePoint.x+dx*along,y:this.siegePoint.y+dy*along};
+    return Math.hypot(enemy.x-intercept.x,enemy.y-intercept.y)<135&&hasClearExpeditionShot(this.geometry,enemy,intercept);
+   }),
    nearBank:crossing&&!this.relayBank?this.relayBanks[0]:undefined,
    remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000,crossing,choosing:crossing&&!this.relayBank,farBank:crossing&&!this.relayBank?this.relayBanks[1]:undefined};
  }
@@ -342,7 +349,8 @@ export class DepthGame {
   const reachable=(point:{x:number;y:number})=>this.navigation.reachable(point);
   const [near]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&hasClearExpeditionShot(this.geometry,this.siegePoint,p),292,388);
   const [far]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&!hasClearExpeditionShot(this.geometry,this.siegePoint,p)
-   &&(!near||Math.hypot(p.x-near.x,p.y-near.y)>250),704,864);
+   &&(!near||(p.y-this.siegePoint.y)*(near.y-this.siegePoint.y)<0
+    &&Math.hypot(p.x-near.x,p.y-near.y)>450),704,864);
   this.relayBanks=near&&far?[near,far]:floorChoicePair(this.geometry,this.siegePoint,reachable,304,496);
   const routes=new FacilityNavigation(this.geometry);
   this.relayRoutes=this.relayBanks.map(bank=>this.relayRoute(bank,routes));

@@ -133,8 +133,11 @@ async function snapshot() {
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const objective=g.siege;
     const suit=g.combat.snapshot;
-    const takeCover=suit.health+suit.armor<(suit.maxHealth+suit.maxArmor)*coveredRelayHealthFraction
-      || (objective?.nearLaneWindup&&!g.abilities.snapshot.slots?.dash?.ready);
+    const suitFraction=(suit.health+suit.armor)/(suit.maxHealth+suit.maxArmor);
+    const dashReady=g.abilities.snapshot.slots?.dash?.ready;
+    const takeCover=suitFraction<coveredRelayHealthFraction ||
+      (!dashReady&&objective?.nearLaneWindup) ||
+      (!!objective?.nearMeleePressure&&(suitFraction<.78||!dashReady));
     const bank=takeCover?objective?.farBank:objective?.nearBank;
     const siege=bank?{...objective,...bank}:objective;
     const gate=g.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
