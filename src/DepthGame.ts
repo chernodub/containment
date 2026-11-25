@@ -388,8 +388,9 @@ export class DepthGame {
  const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'){
   const {health,armor}=this.combat.snapshot;
-  if(this.node.templateId==='diagnostic-gallery'&&health+armor<=12)
-   this.pickups.spawn('health',65,260,485);
+  const suit=health+armor;
+  if(this.node.templateId==='diagnostic-gallery'&&suit<=70)
+   this.pickups.spawn('health',Math.min(65,90-suit),260,485);
   const recovery=this.node.depth===11&&health<50?35:this.node.templateId==='infested-workshop'&&health<=60?25:0;
   if(recovery){
    const entrance=this.moveCorpse({...this.player,radius:14},48,0);
