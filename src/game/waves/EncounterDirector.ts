@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;approachLeadMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -101,6 +101,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
  const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
+ // Pick one existing exchange per sector. Escalate the featured actor, with
+ // the rest of that beat still arriving from its authored breaches.
+ const exchangeFamilies=['stalker','brute','stalker','brute','spitter','stalker','brute','spitter'] as const;
+ const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
+ const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
+  group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
@@ -134,6 +140,20 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const arrivals=schedule.splice(start);
+  if(beatIndex===exchangeBeat){
+   const lead=arrivals.findIndex(request=>request.enemyId===exchangeFamily&&!request.guardian&&!request.reinforcement);
+   if(lead>=0){
+    const request=arrivals[lead];
+    arrivals[lead]=Object.freeze({...request,openingExchange:true,elite:request.elite||node.depth===3,
+     healthScale:(request.healthScale??1)*(node.depth===2?2.2:node.depth===3?1.45:1)});
+    const partner=exchangeFamily==='stalker'?arrivals.findIndex((other,index)=>
+     index!==lead&&other.enemyId==='stalker'&&!other.reinforcement):-1;
+    if(partner>=0){
+     const other=arrivals[partner];
+     arrivals[partner]=Object.freeze({...other,openingExchange:true,atMs:request.atMs+850,approachLeadMs:450});
+    }
+   }
+  }
   if(shaftLanding&&beatIndex===0&&
     arrivals[0]?.enemyId==='stalker'&&arrivals[1]?.enemyId==='stalker'){
    const early=arrivals[0].atMs+100;
