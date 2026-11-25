@@ -385,9 +385,13 @@ export class DepthGame {
   this.relayRoutes=this.relayBanks.map(bank=>this.relayRoute(bank,routes));
  }
  const condition=this.condition;this.roomCondition=condition?new RoomConditionRuntime(condition,this.geometry,this.expedition.run.seed+this.node.depth):null;this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
- if(this.expedition.run.version===3&&this.difficulty==='story'&&this.node.depth===11&&this.combat.snapshot.health<50){
-  const entrance=this.moveCorpse({...this.player,radius:14},48,0);
-  this.pickups.spawn('health',35,entrance.x,entrance.y);
+ if(this.expedition.run.version===3&&this.difficulty==='story'){
+  const health=this.combat.snapshot.health;
+  const recovery=this.node.depth===11&&health<50?35:this.node.templateId==='infested-workshop'&&health<=60?25:0;
+  if(recovery){
+   const entrance=this.moveCorpse({...this.player,radius:14},48,0);
+   this.pickups.spawn('health',recovery,entrance.x,entrance.y);
+  }
  }
  if(start){this.stageRigDrill();this.placeConditionEggs();if(this.node.depth===15&&this.expedition.run.junctions?.[11]==='salvage')this.abilities.addCharge(3000);this.combat.replenishReserves();if(familyBonuses(this.expedition.build).recovery)this.combat.restoreArmor(6);this.encounterEvents(this.director.start());}}
  pause(){if(this.status==='playing'){this.status='paused';this.player.moving=false;}}
