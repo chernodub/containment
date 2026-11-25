@@ -92,6 +92,7 @@ export class DepthGame {
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private shaftApproach?:{id:number;readyAt:number};
+ private residentialLane?:{plate:{x:number;y:number}};
  private shaftIngress?:{beat:number;deckY:number;x:number};
  private platedLessonTarget:number|undefined;
  private promptedWeapons=0;
@@ -404,7 +405,7 @@ export class DepthGame {
   this.newRun(undefined,{rig:build.rig,difficulty:this.difficulty,version:run.version,startingBoon:run.version===3?build.mutations[0]:undefined});
   return true;
  }
- private enterRoom(start=true){this.broodSupply=undefined;this.broodChoiceUsed=false;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
+ private enterRoom(start=true){this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
  this.gateStaged=false;this.gateHold=undefined;this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];
@@ -650,7 +651,7 @@ export class DepthGame {
    if(origin){const ringDistance=Math.hypot(p.x-origin.x,p.y-origin.y);if(ringDistance<BOSS_BODIES.matron.hatchRingMin||ringDistance>BOSS_BODIES.matron.hatchRingMax)continue;}
    // I13: rooted pods cannot separate themselves; reserve a clear native body circle.
    if(podNeighbors){let occupied=false;for(const neighbor of podNeighbors)if(Math.hypot(p.x-neighbor.x,p.y-neighbor.y)<radius+neighbor.radius+.5){occupied=true;break;}if(occupied)continue;}
-   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.closeIngress?6:options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
+   if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.closeIngress?0:options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
     // A legal circle inside an isolated pocket is not an entrance. The pending
     // request rotates to another open breach when no connected candidate fits.
     if(checkIngress&&!ingress?.reachable(p,radius+2))continue;
@@ -743,24 +744,16 @@ export class DepthGame {
   const bearing=Math.atan2(y-this.player.y,x-this.player.x);
   const radius=enemyBodyRadius(e.enemyId,e.elite);
   const distance=firstHeavy?84:e.openingExchange?(e.enemyId==='brute'?178:150):144;
-  for(const offset of [0,.5,-.5,1,-1,1.5,-1.5,Math.PI]){
+  for(const offset of (firstHeavy?Array.from({length:16},(_,i)=>i*Math.PI/8):[0,.5,-.5,1,-1,1.5,-1.5,Math.PI])){
    const heading=bearing+offset,point={x:this.player.x+Math.cos(heading)*distance,y:this.player.y+Math.sin(heading)*distance};
-   if(!canOccupyExpedition(this.geometry,point,radius)||!hasClearExpeditionShot(this.geometry,this.player,point))continue;
+   if(!canOccupyExpedition(this.geometry,point,radius)||!hasClearExpeditionShot(this.geometry,this.player,point)||
+    firstHeavy&&!canTraverseExpedition(this.geometry,point,this.player,this.player.radius))continue;
    ({x,y}=point);
    break;
   }
  }
- if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0){
-  const stalker=this.enemies.snapshot.enemies.find(enemy=>enemy.lesson==='stalker');
-  const bearing=stalker?Math.atan2(stalker.y-this.player.y,stalker.x-this.player.x):this.player.angle;
-  const radius=enemyBodyRadius(e.enemyId,e.elite);
-  for(const distance of [194,158,132]){
-   const point=[1,-1,1.5,-1.5,2,-2,.5,-.5,0,Math.PI].map(offset=>({
-    x:this.player.x+Math.cos(bearing+offset)*distance,y:this.player.y+Math.sin(bearing+offset)*distance,
-   })).find(point=>canOccupyExpedition(this.geometry,point,radius)&&
-    hasClearExpeditionShot(this.geometry,this.player,point)&&(!stalker||Math.hypot(point.x-stalker.x,point.y-stalker.y)>radius+stalker.radius));
-   if(point){({x,y}=point);break;}
-  }
+ if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0&&this.residentialLane){
+  ({x,y}=this.residentialLane.plate);
  }
  if(e.lesson){
   const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
@@ -779,7 +772,23 @@ export class DepthGame {
    },this.player.radius));
   }):undefined;
   const point=nearCover??sidestep??legal[0];
-  if(point)({x,y}=point);
+  if(point){
+   ({x,y}=point);
+   if(e.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
+    const angle=Math.atan2(point.y-this.player.y,point.x-this.player.x);
+    for(const side of [1,-1]){
+     const plate={x:point.x+Math.cos(angle)*70-Math.sin(angle)*side*88,
+      y:point.y+Math.sin(angle)*70+Math.cos(angle)*side*88};
+     const reward={x:plate.x+Math.cos(angle)*78,y:plate.y+Math.sin(angle)*78};
+     if(!canOccupyExpedition(this.geometry,plate,enemyBodyRadius('brute',true))||
+      !canTraverseExpedition(this.geometry,this.player,reward,this.player.radius)||
+      !hasClearExpeditionShot(this.geometry,this.player,plate))continue;
+     this.residentialLane={plate};
+     this.pickups.spawn('armor',20,reward.x,reward.y);
+     break;
+    }
+   }
+  }
  }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
   if(guardian==='warden'&&this.expedition.run.version===3&&!this.relayShutter){
