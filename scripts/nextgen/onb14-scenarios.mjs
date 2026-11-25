@@ -54,7 +54,7 @@ async function stagePod(phase){
 
 export const ONB14_SCENARIOS=[
   ...['before','during','after'].map(phase=>({diagnosticOnly:true,id:`onb14-drill-${phase}`,state:'playing',room:'awakening-bay',setup:stageDrill,setupArgument:phase})),
-  ...['crawler','stalker','spitter'].map(family=>({diagnosticOnly:true,id:`onb14-death-${family}`,state:'dead',required:['#retry-rig','.retry-lesson'],setup:stageDeath,setupArgument:family})),
+  ...['crawler','stalker','spitter'].map(family=>({diagnosticOnly:true,id:`onb14-death-${family}`,state:'dead',nativeKeys:[['Tab',0],['Tab',0]],required:['#retry-rig','.retry-lesson'],setup:stageDeath,setupArgument:family})),
   ...['sealed','swelling','opening'].map(phase=>({diagnosticOnly:true,id:`onb14-pod-${phase}`,state:'playing',room:'awakening-bay',setup:stagePod,setupArgument:phase})),
 ];
 
