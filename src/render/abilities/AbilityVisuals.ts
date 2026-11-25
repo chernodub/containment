@@ -93,7 +93,7 @@ export class AbilityVisuals extends AbilityGeometry {
                 material.stencilWrite = protect !== 0 && !(protect === 1 && material === this.kit.ribbons.mesh.material);
                 material.stencilFunc = T.EqualStencilFunc;
                 material.stencilRef = 0;
-                material.stencilFuncMask = protect;
+                material.stencilFuncMask = material === this.kit.batches.contact.mesh.material ? 2 : protect;
             }
         }
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;

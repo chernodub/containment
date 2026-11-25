@@ -137,7 +137,9 @@ export class ElementKit {
     constructor(root: T.Object3D) {
         root.add(this.root);
         this.root.name = 'ability-element-kit';
-        this.batches = { shard: new InstanceBatch(this.root, 'shard', 512, this.atlas), spark: new InstanceBatch(this.root, 'spark', 512, this.atlas), smoke: new InstanceBatch(this.root, 'smoke', 192, this.atlas), flame: new InstanceBatch(this.root, 'flame', 384, this.atlas), solid: new InstanceBatch(this.root, 'solid', 512, this.atlas), ghost: new InstanceBatch(this.root, 'ghost', 128, this.atlas), decal: new InstanceBatch(this.root, 'decal', 64, this.atlas), front: new InstanceBatch(this.root, 'front', 64, this.atlas) };
+        this.batches = { contact: new InstanceBatch(this.root, 'spark', 32, this.atlas), shard: new InstanceBatch(this.root, 'shard', 512, this.atlas), spark: new InstanceBatch(this.root, 'spark', 512, this.atlas), smoke: new InstanceBatch(this.root, 'smoke', 192, this.atlas), flame: new InstanceBatch(this.root, 'flame', 384, this.atlas), solid: new InstanceBatch(this.root, 'solid', 512, this.atlas), ghost: new InstanceBatch(this.root, 'ghost', 128, this.atlas), decal: new InstanceBatch(this.root, 'decal', 64, this.atlas), front: new InstanceBatch(this.root, 'front', 64, this.atlas) };
+        this.batches.contact.mesh.renderOrder = 6;
+        (this.batches.contact.mesh.material as T.ShaderMaterial).depthTest = false;
     }
     setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
@@ -378,7 +380,7 @@ export class ElementKit {
     }
     /** Overlapping atlas tongues follow rays from the native origin through the entire hit sector. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity: number,
-        height: number, sourceX: number, sourceZ: number): void {
+        height: number, sourceX: number, sourceZ: number, peak: boolean): void {
         const c = Math.cos(angle), s = Math.sin(angle);
         this.services?.presentation?.setFlameGrade?.(x + c * radius * .5, z + s * radius * .5, radius * .82);
         this.flowFlame(sourceX, height, sourceZ, x + c * radius * .23, height,
@@ -387,7 +389,7 @@ export class ElementKit {
         const halfArc = arc * .5;
         this.draw('flame', x + c * radius * .5, height, z + s * radius * .5,
             radius * Math.sin(halfArc), radius * .5, 1, 0xff872b, opacity,
-            angle, 0, FIRE_FAN_PHASE + halfArc);
+            angle, 0, FIRE_FAN_PHASE + (peak ? 4 : 0) + halfArc);
     }
 
     /** Short authored flame card aligned to the actual three-dimensional flow. */
