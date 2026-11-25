@@ -54,13 +54,17 @@ export class TargetMarkers {
         if(preview){
             const start=projectWorld(renderer,preview.from.x,preview.from.y,{x:0,y:0,visible:false},.15);
             const stop=projectWorld(renderer,preview.x,preview.y,this.point,.15);
-            if(start.visible&&stop.visible){
+            if(stop.visible&&Number.isFinite(start.x)&&Number.isFinite(start.y)){
                 this.painted=true;
                 ctx.strokeStyle='#ff9c77';
                 ctx.lineWidth=2;
                 ctx.beginPath();
                 ctx.moveTo(start.x,start.y);
                 ctx.lineTo(stop.x,stop.y);
+                const angle=Math.atan2(stop.y-start.y,stop.x-start.x);
+                const dx=5*Math.sin(angle),dy=5*Math.cos(angle);
+                ctx.moveTo(stop.x-dx,stop.y+dy);
+                ctx.lineTo(stop.x+dx,stop.y-dy);
                 ctx.stroke();
             }
         }

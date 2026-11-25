@@ -396,7 +396,12 @@ export class DepthGame {
   }
   const siege=this.siege;
   if(!siege)return;
-  if(this.siegeBeat!==siege.beat){this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;this.relayBank=undefined;if(this.node.templateId==='overload-floor')this.previewRelayCover();}
+  if(this.siegeBeat!==siege.beat){
+   this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;
+   this.relayBank=undefined;this.coverPreview=undefined;
+  }
+  if(this.node.templateId==='overload-floor'&&!this.coverPreview&&!siege.crossing&&
+   Math.hypot(this.player.x-this.siegePoint.x,this.player.y-this.siegePoint.y)<=320)this.previewRelayCover();
   if(!siege.choosing&&Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius){
    const floor=this.node.templateId==='overload-floor'&&this.relayBanks.length&&!this.relayBank?4000:0;
    this.siegeRemainingMs=Math.max(floor,this.siegeRemainingMs-ms);
