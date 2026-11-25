@@ -96,7 +96,18 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       // Patient cradle crosses the probe axis. A scalloped headrest and paired
       // restraint straps interrupt the continuous pale upholstered bed.
       box(L+17,7,79,47,9,105,iron);box(L+17,14,79,39,6,99,0x9fb9b2);
-      for(const x of [L-2,L+36])pipe(x,43,x,120,17,3.5,steel);
+      pipe(L-2,43,L-2,120,17,3.5,steel);pipe(L+36,43,L+36,71,17,3.5,steel);
+      // Crumpled sheet pulled off one side, retaining the hollow at the pillow.
+      p.face([[L-1,18,83],[L+11,24,71],[L+23,20,80],[L+38,17,72],[L+43,5,103],[L+24,18,105],[L+5,19,98]],0x749995);
+      p.face([[L+11,24,71],[L+24,22,86],[L+43,5,103],[L+29,19,98]],0xa4b7a7);
+      // Toppled drip pole: five caster feet, collapsed pole, bag and trailing tube.
+      for(let i=0;i<5;i++){
+        const a=i*Math.PI*.4;
+        p.rod([L+48,4,111],[L+48+13*Math.cos(a),2,111+13*Math.sin(a)],1.9,iron);
+      }
+      p.rod([L+48,4,111],[L+82,4,69],2.1,steel);
+      box(L+84,4,73,12,4,17,0xa0bcb3,.35);
+      pipe(L+86,81,L+74,98,2,1.1,ice);
       for(const x of [L+7,L+27])box(x,19,41,9,8,15,ice);
       for(const z of [72,103])box(L+17,18,z,40,2,6,boot);
       for(let i=0;i<12;i++){

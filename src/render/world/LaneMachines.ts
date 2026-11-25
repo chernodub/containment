@@ -76,6 +76,11 @@ export function addLaneMachine(root:Group,id:string){
       break;
     }
     case 'transmission-chamber':
+      // Flat reel beside the severed line; the broken end curls back on the flanges.
+      p.rod([99,1,43],[99,3,43],22,rubber);p.rod([99,3,43],[99,6,43],18,0x81755d);
+      p.rod([99,6,43],[99,8,43],21,metal);p.rod([99,8,43],[99,9,43],8,rubber);
+      for(const x of [-12,12])p.box(99+x,8.6,43,5,1,16,rubber,.5);
+      run([[101,61],[89,69],[67,67],[61,56],[69,44]],2,2.1,0x8d806c);
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
       // An offset reflector cups the waveguide. Its exposed back has three radial ribs.
       for(let i=0;i<16;i++){
@@ -97,6 +102,10 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
+      // A toppled queue post rests on its weighted shoe below the recessed lamp.
+      p.rod([76,1,66],[76,3,66],14,rubber);
+      p.rod([76,3,66],[42,4,54],3,edge);
+      p.box(76,3,66,22,3,13,metal,-.27);
       for(const z of [-23,23])p.box(8,20,z,9,39,8,metal);
       p.box(8,41,0,12,7,55,edge);
       p.box(34,4,-9,112,7,35,rubber,.20);
@@ -104,6 +113,10 @@ export function addLaneMachine(root:Group,id:string){
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
       p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
+      // Detached tongue and pin rest beneath the inspection lamp.
+      p.face([[70,2,-54],[103,4,-76],[117,5,-66],[94,4,-45]],metal);
+      p.rod([79,3,-54],[102,3,-70],3,edge);
+      p.box(92,4,-64,18,4,10,rubber,.18);
       p.face([[-133,4,-37],[-133,42,-37],[-100,42,-37],[-84,22,-37],[-84,4,-37]],metal);
       p.rod([-133,42,-37],[-100,42,-37],4,edge);
       for(const side of [-1,1]){

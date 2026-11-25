@@ -1,3 +1,4 @@
+import {paintLaneAftermath} from './LaneAftermath';
 import {paintLaneContacts} from './LaneContactPaint';
 import {paintMachineSpill} from './MachineEmitters';
 import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
@@ -5,7 +6,6 @@ import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorkli
 import type {Group} from 'three';
 import type {Point, RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
-import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {paintServiceDeck} from './ServiceDeckMarkings';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 
@@ -119,32 +119,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     paintLights(c);
-    // Scuffed wheel tracks taper toward the workshop light. Their bend is
-    // offset from the straight sightline so the marine stays on clear deck.
-    const source = roomValueProfile(room.id)?.landmark?.at;
-    if (source) {
-      const dx = source[0] - room.spawn.x, dy = source[1] - room.spawn.y;
-      const length = Math.max(1, Math.hypot(dx, dy));
-      const nx = -dy / length, ny = dx / length;
-      c.save();
-      for (const offset of [14, 26]) {
-        c.beginPath();
-        c.moveTo(room.spawn.x + nx * offset, room.spawn.y + ny * offset);
-        c.bezierCurveTo(room.spawn.x + dx * .43 + nx * (offset + 35),
-          room.spawn.y + dy * .43 + ny * (offset + 35),
-          source[0] - dx * .28 + nx * (offset - 24),
-          source[1] - dy * .28 + ny * (offset - 24), source[0] + nx * offset, source[1] + ny * offset);
-        c.strokeStyle = 'rgba(12,18,19,.51)';
-        c.lineWidth = offset === 14 ? 7 : 3.5;
-        c.stroke();
-        c.setLineDash([19, 9, 6, 17]);
-        c.strokeStyle = 'rgba(132,137,131,.27)';
-        c.lineWidth = 1.6;
-        c.stroke();
-        c.setLineDash([]);
-      }
-      c.restore();
-    }
     c.save();
     const scars:Record<string,number[][]>={
       'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
@@ -193,7 +167,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       plate('M-22 -13 L17 -13 24 -6 24 12 -22 12Z','#949489');
       plate('M-16 -8 L17 -8 17 7 -16 7Z','#354247');
       plate('M-12 -3 L13 -3 13 1 -12 1Z','#a5a799');
-      c.fillStyle='#999b90';c.font='bold 14px Barlow, sans-serif';c.fillText('TIE 7',-18,28);
       c.restore();
     }
     const track=scars[room.id];
@@ -206,6 +179,8 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     c.translate(arena.x, arena.y);
     serviceJoints(c, room.id);
     c.restore();
+
+    c.save();clipFightingDeck(c,room);paintLaneAftermath(c,room.id,arena);c.restore();
 
     const dx = arena.x - room.spawn.x, dy = arena.y - room.spawn.y;
     c.translate(room.spawn.x, room.spawn.y);
