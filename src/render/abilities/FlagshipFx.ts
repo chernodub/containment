@@ -445,11 +445,14 @@ void main(){
    // Sample upstream along an uneven drift so protected footprints trail into the bank.
    vec2 windUv=priorityClip.xy/priorityClip.w*.5+.5;
    vec2 drift=vec2(.019,-.006)*(.55+.9*n);
-   vec4 wake=texture2D(abilityPriorityMap,windUv-drift);
+   vec4 wake=mix(texture2D(abilityPriorityMap,windUv-drift*.55),texture2D(abilityPriorityMap,windUv-drift*1.7),.5);
    float shelter=max(max(prioritySample.r,prioritySample.b)*.45,max(wake.r,wake.b)*.52);
    float shelterNoise=fxNoise(q*1.8+vec2(-t*.65,t*.21));
    on*=1.-shelter*(.58+.35*shelterNoise);
-   prioritySample.rba*=.14;
+   // The green shoulder also contains circular wind-up and aim clearances.
+   // Warnings draw above the bank; keep a subdued veil under their fill.
+   prioritySample.g*=.28;
+   prioritySample.rba*=.08;
    #endif
    line=0.;
    float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
