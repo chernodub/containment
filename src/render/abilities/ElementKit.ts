@@ -13,7 +13,7 @@ import { InstanceBatch, type Primitive } from './InstanceBatch';
 import { authoredVariation } from './GraphicLanguage';
 import { FlagshipFx } from './FlagshipFx';
 export const ABILITY_VFX_LIMITS = Object.freeze({ particles: 768, rings: 64, beams: 64, decals: 32, instances: 2048 });
-export type ScarKind = 'crack' | 'frost' | 'trench' | 'fan' | 'star' | 'soot' | 'skid';
+export type ScarKind = keyof typeof SCAR_KIND;
 const SCAR_KIND = { crack: 0, frost: 1, trench: 2, fan: 3, star: 4, soot: 5, skid: 15, 'fuel-rim': 16 } as const;
 type Particle = {
     live: boolean;
