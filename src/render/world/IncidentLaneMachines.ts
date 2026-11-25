@@ -30,6 +30,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
         pipe(x,z,end,side,5,6,boot);pipe(x,z+6,end,side+6,3,2.6,ice);
         box(x,6,z,9,11,15,steel);
       }
+      // Empty thaw blanket lies open along the hose, with two raised bolsters.
+      box(L-37,4,22,80,6,46,0x749c9d,-.16);
+      for(const z of [4,41])pipe(L-72,z-6,L-4,z+5,7,4.5,ice);
       disc(L,1,0,20,5,iron);disc(L,6,0,14,6,ice);
       box(L+6,12,0,26,5,8,steel);break;
     }
@@ -44,7 +47,11 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       p.face([[L-50,20,-8],[L-39,22,-13],[L-33,21,-6],[L-25,22,-10],[L-13,12,1],[L-19,10,6],[L-27,18,1],[L-25,19,16],[L-45,20,19],[L-47,16,4],[L-54,11,8],[L-59,10,4]],0xbb8067);
       break;
     case 'residential-gallery':
-      rails(10);box(L,6,0,44,8,26,iron,.1);
+      rails(21);
+      for(const x of [L-110,L-40])for(const z of [-21,21])disc(x,2,z,9,7,iron);
+      box(L-75,10,0,94,8,52,ochre);box(L-75,15,0,83,3,42,steel);
+      box(L-116,19,0,6,12,50,iron);
+      box(L,6,0,44,8,26,iron,.1);
       for(const x of [L-16,L+16])for(const z of [-10,10])
         p.rod([x,7,z],[x,16,z],2,steel);
       box(L,16,0,44,3,27,ochre);disc(L-9,18,2,7,2,0xa5aea4);
@@ -73,6 +80,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
         pipe(0,s*6,L*.46,s*20,5,3.8,0x8a8271);
         pipe(L*.46,s*20,L,s*8,4,3.8,0x8a8271);
       }
+      // Fallen open-web gantry spans the direction of travel.
+      for(const x of [L-49,L-21])box(x,7,0,6,10,138,iron);
+      for(let i=0;i<6;i++)pipe(L-49,-68+i*22,L-21,-46+i*22,8,3.4,steel);
       box(L,4,0,34,7,32,iron);disc(L,7,0,10,10,boot);
       box(L,18,0,31,5,10,steel,.32);break;
     case 'diagnostic-gallery':
@@ -84,12 +94,25 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       disc(L+26,1,41,20,4,iron);
       p.rod([L+37,4,46],[L+37,22,46],4,steel);
       p.rod([L+37,22,46],[L+21,22,40],3,steel);
-      disc(L+21,14,40,6,8,ice);break;
+      disc(L+21,14,40,6,8,ice);
+      // Patient cradle crosses the probe axis. A scalloped headrest and paired
+      // restraint straps interrupt the continuous pale upholstered bed.
+      box(L+17,7,79,47,9,105,iron);box(L+17,14,79,39,6,99,0x9fb9b2);
+      for(const x of [L-2,L+36])pipe(x,43,x,120,17,3.5,steel);
+      for(const x of [L+7,L+27])box(x,19,41,9,8,15,ice);
+      for(const z of [72,103])box(L+17,18,z,40,2,6,boot);
+      break;
     case 'safety-interlock-station':
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);
       for(const x of [L-28,L-10,L+8])box(x,8,0,8,9,26,steel);
-      box(L+13,5,0,12,9,36,iron);break;
+      box(L+13,5,0,12,9,36,iron);
+      for(let i=0;i<4;i++){
+        const x=L-49,z=i*32-33;
+        disc(x,1,z,10,4,iron);
+        p.rod([x,5,z],[x+8+i*5,21-i*3,z+6],4,ochre);
+      }
+      break;
     case 'infested-workshop':
       box(L/2,4,0,L,6,29,iron);rails(15);
       for(let i=0;i<15;i++){

@@ -301,6 +301,13 @@ const incidents:Record<string,Incident>={
       // The return tackle reaches the lower balcony in the incident-facing view.
       p.rod([-13,16,4],[-38,8,144],3.6,0xa29b7f);
       p.rod([-38,8,144],[-72,5,173],3.6,0x879783);
+      // A mostly upright sheave presents its open spokes to the incident camera.
+      const wheel=(a:number):Point3=>[-40+32*Math.cos(a),25+23*Math.sin(a),145+18*Math.sin(a)];
+      for(let i=0;i<24;i++){
+        const a=i*Math.PI/12;
+        p.rod(wheel(a),wheel(a+Math.PI/12),3.4,0xb8ae8c);
+        if(i%4===0)p.rod([-40,25,145],wheel(a),2.3,0x86958c);
+      }
       p.box(-40,7,145,48,9,24,0x50675e,-.62);
       p.rod([-40,12,145],[-40,18,145],12,0xab9d75);
       p.box(-40,20,145,37,4,7,0xb9ad89,-.62);
