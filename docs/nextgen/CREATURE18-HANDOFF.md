@@ -740,11 +740,13 @@ The production build passed. Breacher, seed 1729, `--fast`, cleared 12 rooms wit
 
 ## BRUTE30
 
+The initial slate-teal pass is recorded below. The follow-up at the end of this section specifies the shipped jade palette and Warden finish.
+
 The regular and elite Brute now share a slate-teal body. The existing atlas identifies the brow, cleaver edge and elite trim. Across the other cells, one upper-left key splits the body into a lit plane and a shadow at 52% of its linear value. The brow holds its value as the head turns. In the Crew Checkpoint lineup, the regular Brute and elite both measured 120 at p98 against 181 at p90 on the marine. Rebuild the shipped shading with `npm run build`.
 
 **Hue choice.** In the native Swarm Junction crop, umber draws my eye to the shoulder first. At 480×270 it groups with the orange Crawlers. With slate teal I find the pale wedge first on the two Brutes facing down-screen, and the raised arm first on the one turning away. The same teal holds together against the brown Safety-interlock floor and the plum Infested Workshop floor. I used Infested Workshop for the dark-floor comparison because it had the lowest median spawn-floor value in the twenty-room FRAME16 survey.
 
-**Silhouette and boss.** The regular cleavers already have four segments. The extra points at the flank in the rear view come from the forelimbs and splayed feet overlapping. I kept the silhouette. A further pass would separate the wrist and foot in projection through the turn, which calls for a pose change. The rear view still relies on the paired shoulders to convey facing. I also tried flattening the Warden's body values. At quarter size the raised ram shoulder merged with the chest beside the lit maw. The shipped Warden keeps the original shading.
+**Silhouette and boss.** The regular cleavers already have four segments. The extra points at the flank in the rear view come from the forelimbs and splayed feet overlapping. I kept the silhouette. A further pass would separate the wrist and foot in projection through the turn, which calls for a pose change. The rear view still relies on the paired shoulders to convey facing. I also tried flattening the Warden's body values. At quarter size the raised ram shoulder merged with the chest beside the lit maw. The first pass kept the original Warden shading.
 
 **Combat cues.** The side and rear rows hold the same pose and change its presentation yaw. The windup uses the native red arc. The recovery rows follow a missed swing and the first rifle hit in the punish window, with both the recovery-stagger and hit receipts. The pale-gold brackets remain visible around the teal body. The head can narrow to a sliver from the side, and the thin cleaver tip still needs the windup silhouette at quarter size.
 
@@ -763,3 +765,9 @@ The production build passed. Breacher cleared six rooms through Armory on seed 1
 Deep jade replaces slate teal. In the Swarm Junction crowd I find the pale brow first on the two forward-facing Brutes. The moss and fern studies approach the Spitter's yellow-green, especially at quarter size. Jade separates from the blue Awakening Bay deck and the brown Safety-interlock station. Communal Atrium is the closest match: the jade lit plane and black outline carry the shoulders against the duller olive floor there.
 
 The matched Cryo row shows a frozen Brute on the left, a chilled one in the middle and a clear one on the right. The stock overlap chills both left actors. The comparison applies a native freeze to the left one, and the three snapshot receipts confirm the states. A full freeze lifts and desaturates the skin. Chill retains the blue glaze and clear skin stays green. The brown control uses the final18 Brute asset and its former zone shading in the current encounter. The Pyro and Arc rows use the same camera and simulation instant across hues.
+
+**Warden.** The boss uses the family's jade at 79% of the regular body's linear value. The pale bone plate spans the authored ram face and the upper carapace of the leading shoulder. During the charge windup the plate stays visible above the chest, immediately beside the luminous maw. I kept this version. The small light on the back is gone, leaving the maw as the brightest point. In wall-stun the shoulder turns edge-on and reads as a shorter pale bar below the stun indicator. The material changes use the existing mesh, skin and clips.
+
+Rebuild with `npm run build`. The follow-up sheets are in `artifacts/nextgen/brute31/`: `green-candidates.png`, `status.png`, `four-floors.png` and `warden.png`. Each includes native crops and complete 480×270 frames.
+
+The production build passed. Cryo cleared five rooms through Crew Checkpoint on seed 1729 in fast mode with zero runner errors.
