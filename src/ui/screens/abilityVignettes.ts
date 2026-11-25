@@ -145,3 +145,11 @@ export function transformationPreview(id: string, upgraded = false): string {
     : `Access to ${AUGMENT_BOONS[partner].name}.`;
   return `<span class="transformation-preview"><b class="transformation-title">Transforms: ${transformation.target}</b><span class="reward-combat-preview"><span><small>Before</small>${renderVignette(transformation.before)}</span><b aria-hidden="true">→</b><span><small>After</small>${renderVignette(after)}</span></span><span class="transformation-loss"><b>Gives up</b> ${loss}</span></span>`;
 }
+
+
+/** The shared comparison column shows each displaced ability once. */
+export function supplyTransformation(id: AugmentId, phase: 'before' | 'after'): string {
+  const change = transformations[id];
+  if (!change) return '';
+  return `<span class="supply-transformation"><small>${phase === 'before' ? change.target : 'After'}</small>${renderVignette(change[phase])}</span>`;
+}

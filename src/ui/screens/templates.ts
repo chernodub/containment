@@ -30,7 +30,7 @@ import {boonBenefit, boonNumbers} from '../boonBenefits';
 import {rewardArt} from '../rewardArt';
 import {formatDistance, playerFacingText, playerFacingStat} from '../units';
 import {serviceArt} from './serviceArt';
-import {abilityVignette, transformationPreview} from './abilityVignettes';
+import {abilityVignette, transformationPreview, supplyTransformation} from './abilityVignettes';
 import {completionEnding, incomingDamageReport, retryLesson} from './damageReport';
 import {pauseRoomRecords} from '../storyPresentation';
 import {rigPortrait, marinePortrait, RIG_FANTASIES} from './rigPortraits';
@@ -210,11 +210,12 @@ export function shopScreen(game: DepthGame): string {
   };
   const amounts = {heal: `+${repair.heal} HP`, armor: `+${repair.armor} armor`, ammo: '+130 rounds', medkit: '+1 medkit',
     grenade: '+2 grenades', reroll: '+1 reroll', upgrade: '+1 upgrade', revive: '+1 revive', 'route-ammo': '', 'rig-return': ''};
-  const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='rig-return'||game.returningRigAugments.length>0)&&(id!=='revive'||game.node.depth===18&&run.version===3))
-    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='rig-return'?game.returningRigAugments.map(upgrade=>({id,upgrade})):id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
+  const pair=game.returningRigAugments;
+  const cards=(upgradesOnly:boolean)=>SERVICE_IDS.filter(id=>id!=='route-ammo'&&id!=='rig-return'&&(id==='upgrade')===upgradesOnly&&(id!=='revive'||game.node.depth===18&&run.version===3))
+    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]} >(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
-    const name=id==='rig-return'&&upgrade?MUTATION_CATALOG[upgrade].name:id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
+    const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
     let status=`${stock} in stock`;
     if(!stock) status='Sold out';
     else if(!enabled) {
@@ -227,12 +228,22 @@ export function shopScreen(game: DepthGame): string {
     const medicalLabel=id==='heal'?'Immediate':id==='medkit'?'Inventory':undefined;
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
       ${medicalLabel?`<span class="requisition-medical-art">${serviceArt(id)}<span class="requisition-medical-label">${medicalLabel}</span></span>`:serviceArt(id)}
-      <span class="requisition-title-row"><strong class="requisition-name">${escapeHtml(name)}</strong><span class="requisition-terms"><b class="requisition-amount">${amounts[id]}</b><span class="requisition-price">${cost} CR</span></span></span>
-      <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(id==='rig-return'?(MUTATION_CATALOG[upgrade].whatChanges ?? MUTATION_CATALOG[upgrade].description):AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
-      ${upgrade?transformationPreview(upgrade,id==='upgrade'):''}
+      <span class="requisition-title-row"><span class="requisition-terms"><b class="requisition-amount">${amounts[id]}</b><span class="requisition-price">${cost} CR</span></span><strong class="requisition-name">${escapeHtml(name)}</strong></span>
+      <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
+  const pairOption=(id:AugmentId)=>`<button id="purchase-${id}" class="supply-doctrine-option" data-purchase="rig-return" data-augment="${id}" ${game.canPurchaseService('rig-return',id)?'':'disabled'}>
+    <strong>${escapeHtml(MUTATION_CATALOG[id].name)}</strong>
+    <span>${escapeHtml(playerFacingText(MUTATION_CATALOG[id].whatChanges ?? MUTATION_CATALOG[id].description))}</span>
+    ${supplyTransformation(id,'after')}
+  </button>`;
+  const pairRow=pair.length===2?`<section class="supply-doctrine" aria-label="Free · choose one">
+    <h3>Free · choose one</h3>
+    ${pairOption(pair[0])}
+    <div class="supply-original"><small>Before</small>${pair.map(id=>supplyTransformation(id,'before')).join('')}</div>
+    ${pairOption(pair[1])}
+  </section>`:'';
   const route=game.node.depth===GUARDIAN_SUPPLY_DEPTH?run.guardianRoute:undefined;
   const supply=route?GUARDIAN_SUPPLIES[route]:undefined;
   const supplyCost=serviceCost('route-ammo',game.node.depth);
@@ -254,7 +265,11 @@ export function shopScreen(game: DepthGame): string {
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
     ${routeSupply}
-    <div class="service-shop requisition-grid" role="group" aria-label="Supplies for purchase">${cards}</div>
+    ${pairRow}
+    <div class="service-shop requisition-groups">
+      <section aria-label="Consumables"><h3>Consumables</h3><div class="requisition-grid">${cards(false)}</div></section>
+      <section class="requisition-upgrades" aria-label="Paid upgrades"><h3>Paid upgrades</h3><div class="requisition-grid">${cards(true)}</div></section>
+    </div>
     <footer class="requisition-footer">
       <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
       <button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button>
