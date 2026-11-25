@@ -15,7 +15,7 @@ export class OverdriveReactions {
   event(effect: GameEffect, actors: ReadonlyMap<number,ActorModel>, corpses: readonly {id:number;model:ActorModel}[], kit?: ElementKit) {
     const ability = effect.ability;
     if (ability?.phase === 'impact' && (ability.element === 'pyro' || ability.ability === 'whiteout')) {
-      for (const id of ability.targetIds ?? []) this.target(id, actors, corpses)?.shadeCastPeak?.();
+      if (ability.ability !== 'flashfire') for (const id of ability.targetIds ?? []) this.target(id, actors, corpses)?.shadeCastPeak?.();
       const shape = ABILITY_CATALOG[ability.ability].shape;
       if (shape.kind === 'circle') {
         const placed = ability.ability === 'napalm-charge';

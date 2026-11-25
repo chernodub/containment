@@ -441,6 +441,19 @@ void main(){
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
    // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
+   #ifdef HAS_ABILITY_PRIORITY_MASK
+   // Sample upstream along an uneven drift so protected footprints trail into the bank.
+   vec2 windUv=priorityClip.xy/priorityClip.w*.5+.5;
+   vec2 drift=vec2(.019,-.006)*(.55+.9*n);
+   vec4 wake=mix(texture2D(abilityPriorityMap,windUv-drift*.55),texture2D(abilityPriorityMap,windUv-drift*1.7),.5);
+   float shelter=max(max(prioritySample.r,prioritySample.b)*.45,max(wake.r,wake.b)*.52);
+   float shelterNoise=fxNoise(q*1.8+vec2(-t*.65,t*.21));
+   on*=1.-shelter*(.58+.35*shelterNoise);
+   // The green shoulder also contains circular wind-up and aim clearances.
+   // Warnings draw above the bank; keep a subdued veil under their fill.
+   prioritySample.g*=.28;
+   prioritySample.rba*=.08;
+   #endif
    line=0.;
    float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
    float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
@@ -460,17 +473,21 @@ void main(){
    float peak=1.-smoothstep(.18,.36,age);
    alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
    base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
-   emit=vec3(.15,.34,.43)*(wall*.9+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
+   emit=vec3(.15,.34,.43)*(wall*(.53+.75*roll)+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
+   #ifdef HAS_ABILITY_PRIORITY_MASK
+   float warningDistance=texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5).g;
+   fissure*=mix(.5,1.,smoothstep(.08,.29,abs(warningDistance-.5)));
+   #endif
    float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float rays=pow(abs(cos(a*5.+.16*n)),9.);
    float star=(1.-smoothstep(R*(.22+.55*rays),R*(.33+.65*rays),r))*peak;
    float core=(1.-smoothstep(.25,1.20,r))*peak;
-   base=vec3(.13,.027,.009);
-   emit=vec3(1.38,.27,.018)*fissure*(.4+.6*heat)+vec3(2.7,.85,.14)*star+vec3(2.,2.2,1.8)*core;
+   base=vec3(.16,.052,.008);
+   emit=vec3(1.65,.60,.041)*fissure*(.4+.6*heat)+vec3(2.8,1.62,.40)*star+vec3(2.,2.2,1.8)*core;
    alpha=.14+.55*fissure+.82*star;
    line=0.;
   }else{

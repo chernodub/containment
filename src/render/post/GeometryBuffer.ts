@@ -157,8 +157,8 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
       // The closest opaque surface owns bit zero of the HDR scene stencil.
       if (!material.transparent && material.depthWrite && !effect) {
         material.stencilWrite = true;
-        material.stencilWriteMask = 1;
-        material.stencilRef = kind && kind >= GEOMETRY_CLASSES.enemy ? 1 : 0;
+        material.stencilWriteMask = 3;
+        material.stencilRef = kind && kind >= GEOMETRY_CLASSES.enemy ? 1 : kind === GEOMETRY_CLASSES.marine ? 2 : 0;
         material.stencilZPass = ReplaceStencilOp;
       }
       material.userData.containmentInkBlock=inkBlock;

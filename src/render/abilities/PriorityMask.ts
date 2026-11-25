@@ -42,7 +42,7 @@ export function bindPriorityMask(material: T.ShaderMaterial, texture: T.Texture,
  float marineCover=prioritySample.b;
  #endif
  gl_FragColor.a=min(gl_FragColor.a,.07+.93*(1.-marineCover));
- gl_FragColor.a*=1.-prioritySample.g;
+ gl_FragColor.a=min(gl_FragColor.a*(1.-prioritySample.g),1.-.5*step(.5,prioritySample.g));
  gl_FragColor.a*=1.-priority*${attribute ? 'priorityWeight' : '1.'};
  if(gl_FragColor.a<.004)discard;
  #include <tonemapping_fragment>`);

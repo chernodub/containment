@@ -94,7 +94,7 @@ class ArcPresentation implements AbilityPresentation {
         // Links of a native chain arrive synchronously; presentation adds the hop rhythm only.
         if (k.time - this.chainAt > .03) this.chainHop = 0;
         this.chainAt = k.time;
-        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .095);
+        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .016);
       } else if (event.phase === 'impact') {
         const last = this.discharges[(this.nextDischarge + this.discharges.length - 1) % this.discharges.length];
         if (last.live && last.age === 0 && last.victimId === event.targetIds?.[event.targetIds.length - 1]) {
@@ -230,17 +230,21 @@ class ArcPresentation implements AbilityPresentation {
           const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, Math.min(.55, d.life * .53));
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload && d.delay === 0 ? 1.38 : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
-          if (d.overload && d.delay === 0) {
-            k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .38, .23, true);
+          if (d.overload) {
+            const bendX=(d.sx+d.x)*.5-dz/length*.24, bendZ=(d.sz+d.z)*.5+dx/length*.24;
+            const crest=Math.max(d.sy,d.ty)+.92;
+            k.heavyBeam(d.sx,d.sy,d.sz,bendX,crest,bendZ,VIOLET,.39,.25,true);
+            k.heavyBeam(bendX,crest,bendZ,d.x,d.ty+.14,d.z,0xe2d1ff,.32,.25,true);
           }
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
             const bx = d.sx + dx * t - dz / length * side * .18;
             const bz = d.sz + dz * t + dx / length * side * .18;
-            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, d.overload ? .144 : .048, .18, true);
+            k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, d.overload ? .23 : .048, .18, true);
           }
         }
+        if (d.overload) k.scar('crack',d.x,d.z,.78,VIOLET,2.1,d.seed);
         const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
         node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = 1.2;
         k.flash(d.x, d.z, VIOLET, 5, 2.4, 3, .08);
@@ -255,6 +259,8 @@ class ArcPresentation implements AbilityPresentation {
         k.impact();
         k.sprite('glow', d.x, d.ty, d.z, firstContact ? .70 : .52, firstContact ? .85 : .6, VIOLET, k.flashIntensity, d.seed, 'light');
         k.sustain(d.age - d.delay);
+        if (d.overload && d.contactFrames < 2)
+          k.sprite('glow',d.x,d.ty+.32,d.z,.86,.64,0xffffff,k.flashIntensity,d.seed,'light');
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');
