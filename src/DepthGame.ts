@@ -9,7 +9,7 @@ import {segmentIntersectsRect} from './game/input/aimAssist';
 import {ROCKET_ARM_DISTANCE} from './game/combat/catalog';
 import {AWAKENING_DRILL} from './game/waves/authoredEncounters';
 import {BOSS_BODIES,guardianRadius} from './game/enemies/bossDefinitions';
-import {SERVICE_IDS,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
+import {SERVICE_IDS,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
 import {addMutation,upgradeBuildAugment} from './game/roguelike/builds';
 import {markExpeditionAllocation,recordExpeditionPurchase} from './game/roguelike/expedition';
 import {DIFFICULTIES,difficultyId,incomingDamageLimit,latePressureProgress,type DifficultyId} from './game/difficulty';
@@ -465,8 +465,8 @@ export class DepthGame {
   const returning=this.returningRigAugments.find(id=>id===augment);
   if((purchase==='rig-return'&&!returning)||(purchase==='upgrade'&&!upgrade)||!this.canPurchaseService(purchase,augment))return false;
   this.allocateService();const before=this.combat.getRunResources();let build=this.expedition.build;
-  if(purchase==='heal')this.combat.restoreHealth(35);
-  else if(purchase==='armor')this.combat.restoreArmor(30);
+  if(purchase==='heal')this.combat.restoreHealth(serviceRepairAmounts(this.difficulty).heal);
+  else if(purchase==='armor')this.combat.restoreArmor(serviceRepairAmounts(this.difficulty).armor);
   else if(purchase==='ammo')this.combat.refillShopAmmo();
   else if(purchase==='route-ammo'&&this.expedition.run.guardianRoute){
    const supply=GUARDIAN_SUPPLIES[this.expedition.run.guardianRoute];

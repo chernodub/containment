@@ -4,7 +4,7 @@ import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {GUARDIAN_ROUTES,GUARDIAN_ROUTE_DEPTH,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
-import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
+import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
 export type {ContinueSummary} from './initialTemplates';
@@ -195,9 +195,10 @@ export function shopScreen(game: DepthGame): string {
   const run=game.expedition.run, resources=game.combat.snapshot;
   const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
   const upgrades=availableAugmentUpgrades(game.expedition.build);
+  const repair=serviceRepairAmounts(game.difficulty);
   const outcomes = {
-    heal: 'Restore up to 35 health.',
-    armor: 'Restore up to 30 armor.',
+    heal: `Restore up to ${repair.heal} health.`,
+    armor: `Restore up to ${repair.armor} armor.`,
     ammo: '80 rifle · 16 shells · 32 plasma · 2 rockets.',
     medkit: 'Add one medkit.',
     grenade: 'Add up to two grenades.',
@@ -207,7 +208,7 @@ export function shopScreen(game: DepthGame): string {
     'rig-return':SERVICE_CATALOG['rig-return'].description,
     'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
-  const amounts = {heal: '+35 HP', armor: '+30 armor', ammo: '+130 rounds', medkit: '+1 medkit',
+  const amounts = {heal: `+${repair.heal} HP`, armor: `+${repair.armor} armor`, ammo: '+130 rounds', medkit: '+1 medkit',
     grenade: '+2 grenades', reroll: '+1 reroll', upgrade: '+1 upgrade', revive: '+1 revive', 'route-ammo': '', 'rig-return': ''};
   const cards=SERVICE_IDS.filter(id=>id!=='route-ammo'&&(id!=='rig-return'||game.returningRigAugments.length>0)&&(id!=='revive'||game.node.depth===18&&run.version===3))
     .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='rig-return'?game.returningRigAugments.map(upgrade=>({id,upgrade})):id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
