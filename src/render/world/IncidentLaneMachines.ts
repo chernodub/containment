@@ -158,6 +158,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const x of [-22,-11,0,11,22])pipe(L+x,-15,L+x,15,10,4,0xffb56c);
       break;
   }
-  const mesh=p.finish(root,'lane-machine-'+id,sx,sz);
+  const articulated=['diagnostic-gallery','freight-hold','infested-workshop'].includes(id);
+  const mesh=p.finish(root,'lane-machine-'+id,sx,sz,undefined,articulated);
   mesh.rotation.y=-angle;
 }
