@@ -74,6 +74,8 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
+bool bruteFace=actorWarden<.5 && band==5;
+if(bruteFace)diffuseColor.rgb=vec3(.181,.183,.172);
 bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
   diffuseColor.rgb=vec3(.037,.108,.110);

@@ -246,6 +246,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           // that painted camouflage patches. Keep a third of the room cast so rooms still tint the body.
           graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
 #ifdef BRUTE_PLANES
+          if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
           if(bruteBody){
             graphicActorLight=mix(.52,1.0,smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing));
             graphicActorHue=vec3(1.);
