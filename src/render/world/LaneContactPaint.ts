@@ -12,8 +12,8 @@ export function paintLaneContacts(c:CanvasRenderingContext2D,room:RoomTemplate,r
     const x=(hi[0]+lo[0])*16,z=(hi[2]+lo[2])*16;
     // The interior directional key is above the northwest quarter. The
     // reactor key is local, so its shadows fan out from the core.
-    const reactor=room.environment==='reactor';
-    const dx=reactor?x-25.9*32:4,dz=reactor?z-11.2*32:3;
+    const reactor=room.id==='manual-control-chamber'||room.id==='overload-floor';
+    const dx=reactor?x-(room.id==='overload-floor'?700:449):4,dz=reactor?z-(room.id==='overload-floor'?508:572):3;
     const reach=Math.min(42,height*(reactor?.43:.20)),len=Math.hypot(dx,dz)||1;
     c.save();c.translate(x,z);
     c.fillStyle='rgba(7,12,16,.28)';c.beginPath();
