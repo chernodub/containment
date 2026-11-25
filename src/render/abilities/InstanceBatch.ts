@@ -269,7 +269,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
  ${kind === 'flame' ? `#ifdef HAS_ABILITY_PRIORITY_MASK
- a=min(a,1.-.4*prioritySample.r);
+ if(phase>=0.)a=min(a,1.-.4*prioritySample.r);
  #endif` : ''}
 
  if(a<.004)discard;gl_FragColor=vec4(c,a);
@@ -407,7 +407,8 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    const bodyEmber = this.kind === 'flame' && variant < 0;
+    this.phase.setX(i, bodyEmber || this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
     if((this.kind==='flame'||this.kind==='smoke')&&variant>=64)this.softDepthDemand=true;
   }

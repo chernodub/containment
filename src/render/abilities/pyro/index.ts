@@ -41,7 +41,7 @@ class PyroPresentation implements AbilityPresentation {
   }));
   private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, seed: -1, slot: undefined as FxSlot | undefined }));
   private readonly burnYield = Array.from({ length: 32 }, () => ({
-    zone: -1, seen: false, weight: new Float32Array(18),
+    zone: -1, seen: false, gain: 1, weight: new Float32Array(18),
   }));
   private next = 0;
 
@@ -470,14 +470,24 @@ class PyroPresentation implements AbilityPresentation {
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
     const meltdown = zone.ability === 'meltdown';
+    const hasContact = frame.game?.enemies.snapshot.enemies.some(enemy => enemy.health > 0 &&
+      (enemy.x - zone.x) ** 2 + (enemy.y - zone.y) ** 2 <= zone.radius ** 2);
+    // Keep the fuel running between victims while reserving its hottest value
+    // for the skin-bound ember after ignition.
+    const desiredGain = hasContact ? 1 - .68 * Math.min(1, Math.max(0, (elapsed - .05) / .10)) : 1;
     const pockets = meltdown ? 6 : kit.low ? 9 : 18;
     const clock = kit.reducedMotion ? 0 : kit.time;
     let pool = this.burnYield.find(entry => entry.zone === zone.id);
     if (!pool) {
       pool = this.burnYield.find(entry => entry.zone === -1);
-      if (pool) { pool.zone = zone.id; pool.weight.fill(0); }
+      if (pool) { pool.zone = zone.id; pool.gain = 1; pool.weight.fill(0); }
     }
-    if (pool) pool.seen = true;
+    if (pool) {
+      pool.seen = true;
+      const step = Math.max(0, frame.dt) * 8;
+      pool.gain += Math.min(step, Math.max(-step, desiredGain - pool.gain));
+    }
+    const flameGain = pool?.gain ?? desiredGain;
     for (let i = 0; i < pockets; i++) {
       const seed = zone.id * .71 + i * 2.39996;
       const napalm = zone.ability === 'napalm-charge';
@@ -519,7 +529,7 @@ class PyroPresentation implements AbilityPresentation {
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
       kit.draw('flame', px, .08 + height * .5, pz, width, height * .56, 1,
-        nearSuit || i % 4 === 1 ? CORE : FIRE, fade * visibility, 0,
+        nearSuit || i % 4 === 1 ? CORE : FIRE, fade * visibility * flameGain, 0,
         (napalm ? .58 * Math.sin(seed * 1.7) : 0) + .14 * Math.sin(clock * 2.6 + seed), POOL_FLAME_PHASE + i * 1.7 + scatter);
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
         kit.mote('spark', px, height * .75, pz, .12, 1.35 + scatter, .08, .045, .7, HOT);
@@ -535,7 +545,7 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 21 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
-      this.meltdown(zone, x, z, fade, frame, emit);
+      this.meltdown(zone, x, z, fade * flameGain, frame, emit);
       if (shimmer) {
         const player = frame.game?.player;
         const angle = player && Math.hypot(player.vx, player.vy) > 18

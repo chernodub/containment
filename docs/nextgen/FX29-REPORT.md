@@ -68,3 +68,51 @@ Nova and Slam use 18–22.5% source alpha for the glaze at peak and a darker pig
 The production build passed. Both benchmarks rendered 600 matched ticks at fixed resolution in Crew Checkpoint. [Baseline benchmark](../../artifacts/nextgen/fx30-base-bench/benchmark.json) · [FX30 benchmark](../../artifacts/nextgen/fx30-final-bench/benchmark.json)
 
 The [native Pyro campaign](../../artifacts/nextgen/playtest/fx30-final-pyro/index.html) cleared all eight requested rooms on seed 1729 with zero errors or recorded defects. In the close-contact Meltdown pair, both small bodies are individually visible at the right of the marine. The red sector remains legible across the centre.
+
+## FX31
+
+The [comparison gallery](../../artifacts/nextgen/fx31/index.html) puts final20 on the left and FX31 on the right. Each 480 × 270 panel opens the 1920 × 1080 originals side by side. The six casts use the same Crew Checkpoint setup, native hit logic, peak offset and 300 ms advance as final20. Each overlap starts with a native crawler windup in a twenty-enemy encounter. The sampled frames contain eighteen to twenty visible enemies.
+
+| Power | Material on the deck | Contact and readability at 480 × 270 |
+| --- | --- | --- |
+| Whiteout | Yes. Wind moves snow across cracked plates of frost. The snow thickens near obstructions and its lip breaks into clumps. | Pale deposits follow limbs inside the black outlines. The red projectile, marine, floor lanes and exposed family marks remain distinct. The crowd on the top edge partly leaves the view. |
+| Cryo Nova | Yes. A jagged field of frost forms under the rising shard clusters. Large deck panels return as the crust thins. | Chilled limbs and bone marks stand out against the settled ice. The red warning at the lower edge is legible. The six native contacts include overlapping bodies. |
+| Seismic Slam | Yes. Buckled plates lift in the dust, then leave a darker field of faulted steel at +300 ms. The letters beneath the plates remain visible. | The airborne victims pick up amber on their sides. The red projectile crosses the field clearly. The uppermost of the eleven struck bodies travels partly off screen. |
+| Meltdown | Yes. Hot channels run along islands of cooling skin and out through an uneven ember edge. | The marine and red warning are clear. The native impact has zero targets, so there is no struck body to highlight at peak. One target takes damage on the next sampled tick. |
+| Overload | Yes. A narrow fork of violet and char crosses the deck below each airborne discharge. It fades over about one second. | The early lance is the brightest element. Its branches subside before +300 ms, leaving the endpoints and a darker route visible. The lower red warning remains clear. |
+| Napalm | Yes. FX30’s two rivulets and soot rim carry the fire. Burning actors receive a separate flicker at an animated joint. | The red sector and later red lane remain readable over the fuel. Bodies in the foreground crowd partially overlap. |
+
+The floor shaders peak near 0.42 source alpha across their main mass. Noise, individual facets and seams vary their local value. The same collision rectangles shape pile-up near obstacles, while opaque geometry supplies the occlusion. Earlier proof showed two rectangular voids when the shader discarded fragments against collision bounds. The reviewed version removes that discard. The actor material leaves the family organ paint and a loaded striking limb clear. The native receipt holds its contact light for 620 ms, fading over the final 220 ms. Status light can persist after that.
+
+I could locate the marine and the visible red warnings in each comparison. I could not identify every creature’s mark within one second in the dense pack. Bodies overlap and some leave the viewport during knockback. None of the six powers showed a flat floor tint, a continuous bright perimeter, or a clearance hole around an actor in the matched panels. Native target indicators and hostile warning arcs remain visible.
+
+| Dense capture, peak / +300 ms | Final20 draws | FX31 draws |
+| --- | ---: | ---: |
+| Whiteout | 124 / 121 | 124 / 121 |
+| Cryo Nova | 124 / 125 | 124 / 125 |
+| Seismic Slam | 126 / 120 | 125 / 120 |
+| Meltdown | 127 / 129 | 127 / 128 |
+| Overload | 126 / 124 | 126 / 124 |
+| Napalm | 124 / 123 | 124 / 123 |
+
+In the +300 ms panels, the strongest cold and impact accents I could trace were on the frozen or airborne bodies. Overload’s live lance wins the peak frame. The faint fork is visible between the marine and the victims at +300 ms. Meltdown’s surviving crawler is warm along the edge beside its pink mark, although the moving fissures still draw my eye first in that frame. Napalm puts lit coals on the struck silhouettes, with some exposed fuel tips still bright between targets. I would not describe either Pyro frame as having every brightest pixel on a victim.
+
+The [native Passenger Vault comparison](../../artifacts/nextgen/fx31/native-pyro-final-mid-1920.png) pairs the midpoint of two separate seed-1729 fights. The FX31 snapshot records a visible burning brute. Its outer leg stays outlined against the pool, with a glowing patch following the bend at the joint. The free-standing tongues are part of the fuel pool. The native marine positions differ between the two playthroughs. [Joint detail](../../artifacts/nextgen/fx31/native-burning-detail.png) · [Native snapshot](../../artifacts/nextgen/playtest/fx31-native-result/r2-passenger-vault-mid.json)
+
+The production build passed. The seed-1729 Cryo campaign cleared all eight requested rooms with zero browser, console or gameplay errors. The runner also recorded three room-load diagnostics in Awakening Bay, Passenger Vault and Residential Gallery and returned a nonzero status for those diagnostics. [Campaign report](../../artifacts/nextgen/playtest/fx31-cryo-final/report.json)
+
+| Hostile-warning overlap | Final20 draws | FX31 draws |
+| --- | ---: | ---: |
+| Cryo | 107 | 106 |
+| Breacher | 101 | 101 |
+| Arc | 103 | 102 |
+| Pyro | 108 | 108 |
+
+The Crew Checkpoint benchmark used 600 fixed ticks per rig and tier at fixed resolution. Every run recorded zero mid-combat shader compilations. The final Cryo and Pyro measurements repeat those rigs after the visual review adjustments. [Baseline](../../artifacts/nextgen/fx31-base-bench/benchmark.json) · [Four-rig benchmark](../../artifacts/nextgen/fx31-bench/benchmark.json) · [Cryo repeat](../../artifacts/nextgen/fx31-cryo-verified-bench/benchmark.json) · [Final Pyro repeat](../../artifacts/nextgen/fx31-result-bench/benchmark.json)
+
+| Rig | High peak draws, before → FX31 | Low peak draws, before → FX31 | Combat compiles, High / Low |
+| --- | ---: | ---: | ---: |
+| Cryo | 146 → 146 | 133 → 133 | 0 / 0 |
+| Pyro | 159 → 159 | 145 → 145 | 0 / 0 |
+| Breacher | 143 → 142 | 134 → 133 | 0 / 0 |
+| Arc | 155 → 155 | 144 → 144 | 0 / 0 |

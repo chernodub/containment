@@ -86,7 +86,16 @@ export const FIRE_FAN_PHASE = 500;
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
  float coverage;
- if(phase>=${FIRE_FAN_PHASE}.){
+ if(phase<-.5){
+  // A cracked coal bonded to a joint, with a short flame curling off it.
+  float t=fireUv.y;
+  float bend=.19*sin(5.*t+abilityTime*8.-phase)*t;
+  float width=mix(.63,.055,t);
+  float edge=abs(p.x-bend)/width;
+  coverage=(1.-smoothstep(.65,1.,edge))*smoothstep(.01,.13,t)*(1.-smoothstep(.82,1.,t));
+  float coal=(1.-smoothstep(.18,.64,edge))*(1.-smoothstep(.36,.78,t));
+  c=mix(vec3(1.45,.21,.012),vec3(7.,5.,2.8),coal);
+ }else if(phase>=${FIRE_FAN_PHASE}.){
   bool peak=phase>=${FIRE_FAN_PHASE + 4}.;
   float halfArc=mod(phase-${FIRE_FAN_PHASE}.,4.);
   vec2 ray=vec2(p.x*sin(halfArc),fireUv.y);

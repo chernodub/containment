@@ -159,12 +159,13 @@ float ceiling=.25;
 if(bruteFace)ceiling=.355;
 #endif
 float bounded=min(bodyValue,ceiling);
-outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*actorCastShade)+lanternEmission*(1.-.55*actorCastShade);
+float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
+outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
 if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
- float edge=smoothstep(.07,.56,actorRim);
+ float edge=smoothstep(.025,.34,actorRim);
  vec3 p=actorPosition;
  float vein=sin(dot(p,vec3(1.67,.86,1.22))+.65*sin(p.z*2.1));
  float energy;
@@ -183,7 +184,16 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
   energy=edge*(.26+.74*smoothstep(-.45,.58,vein));
   accent=vec3(1.29,.90,.47);
  }
- outgoingLight+=accent*energy*safe*actorContact.y*(.65+.35*actorFlashIntensity);
+ // Faceted armour can face the camera squarely. Leave a broken contact
+ // patch on those planes too, particularly on the outer joints.
+ float deposit=smoothstep(.48,.94,vein)*(.25+.52*limb);
+ outgoingLight+=accent*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
+ if(actorContact.x>1.5 && actorContact.x<2.5){
+  // The pale centre of a live coal follows the skin even as a limb turns
+  // its edge away from the camera. Its narrow footprint keeps the ink clear.
+  float coal=(1.-smoothstep(.09,.39,abs(vein-.30)))*max(.42,edge);
+  outgoingLight+=vec3(4.2,2.9,1.2)*coal*safe*actorContact.y;
+ }
 }`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>

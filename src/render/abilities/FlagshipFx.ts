@@ -162,14 +162,13 @@ float deckClearance(vec2 p){
 }
 void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out vec3 emit,out float alpha){
  float clear=deckClearance(p);
- if(clear<0.)discard;
- float bank=1.-smoothstep(.04,1.05,clear);
+ float bank=1.-smoothstep(.04,1.05,abs(clear));
  vec2 wind=vec2(.19,-.08)*(storm?fxTime:0.);
  float grain=fxFbm(p*vec2(.72,1.25)+wind+fxSeed);
  vec3 cells=fxCells(p*(storm?.95:1.35)+.45*grain);
  float crust=smoothstep(.25,.68,grain+.22*(cells.z-.5)+bank*.23);
  float facet=smoothstep(.012,.13,cells.y-cells.x);
- float back=front-r-(1.-crust)*.56;
+ float back=front-r-(1.-crust)*.56-bank*(.18+.5*grain);
  float bed=smoothstep(-.015,.17,back);
  float ridge=(1.-smoothstep(.06,.36+.35*bank,back))*bed*crust;
  float peak=1.-smoothstep(storm?.40:.12,storm?1.1:.54,age);
@@ -332,12 +331,12 @@ void main(){
   if(fxParam<1.5){
    frostBed(fxWorld.xz,r,front,age,false,base,emit,alpha);
   }else{
-   if(deckClearance(fxWorld.xz)<0.)discard;
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
    vec3 tile=fxCells(p*vec2(.81,1.12)+grit*.27);
    float face=smoothstep(.012,.11,tile.y-tile.x);
-   float back=front-r-(1.-tile.z)*.42;
+   float bank=1.-smoothstep(0.,.65,abs(deckClearance(fxWorld.xz)));
+   float back=front-r-(1.-tile.z)*(.42+.72*bank);
    float material=smoothstep(-.015,.13,back);
    float dust=smoothstep(.33,.70,grit+tile.x*.12);
    base=mix(vec3(.036,.021,.013),vec3(.12,.092,.059),face*(.2+.8*tile.z));
@@ -346,7 +345,8 @@ void main(){
    alpha=.42*material*(.83+.28*dust);
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
-  float settle=1.-smoothstep(.17,.46,age);
+  float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)
+    :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.60,2.2,age));
   alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
@@ -520,7 +520,8 @@ void main(){
    float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
-   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n);
+   float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
+   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
    float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
    float radial=abs(sin(a*5.+.60*n+.26*sin(r*2.)));
    float finger=(1.-smoothstep(.018,.10,radial))*(1.-smoothstep(.91+n*.10,1.14,normalized));
@@ -528,7 +529,6 @@ void main(){
    float rays=pow(abs(cos(a*5.+.28*n)),12.);
    float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
    float core=(1.-smoothstep(.14,.55,r))*peak;
-   if(deckClearance(fxWorld.xz)<0.)discard;
    float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
    float skin=smoothstep(.30,.68,lava+cell.z*.16);
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);

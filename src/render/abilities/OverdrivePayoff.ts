@@ -55,7 +55,7 @@ export class OverdrivePayoff {
         k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, 0x5799b0);
       }
     } else if (event.ability === 'meltdown') {
-      const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
+      const column = k.fx.spawn(FxMode.Pillar, px, pz, .14);
       column.param = 1; column.range = .82; column.h0 = .05; column.h1 = 2.9; column.color = HOT; column.intensity = 1.3;
       k.flash(px, pz, HOT, 28, 9, 6, .12);
       k.flash(px, pz, FIRE, 16, 8, 5, .7);

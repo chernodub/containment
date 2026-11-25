@@ -275,12 +275,15 @@ class SystemPresentation implements AbilityPresentation {
   private burning(root: T.Object3D | undefined, radius: number, height: number, seed: number): void {
     if (!root) return;
     const joints = this.joints(root);
-    const anchor = joints.find(joint => /shin|calf|thigh|hip/i.test(joint.name)) ?? joints[seed % joints.length];
+    const anchor = joints.find(joint => /shin|calf|back_mid|leg[45]_lower/i.test(joint.name)) ?? joints[Math.abs(seed) % joints.length];
     if (!anchor) return;
     const m = anchor.matrixWorld.elements, k = this.kit;
     const flicker = k.reducedMotion ? .6 : .55 + .45 * Math.sin(k.time * 21 + seed);
-    k.flowFlame(m[12], m[13], m[14], m[12] + radius * .18, m[13] + height * (.08 + .11 * flicker),
-      m[14] + radius * .12, radius * .15, seed, .62 + .24 * flicker, false);
+    // Lift the wick onto the outer skin of the joint. A bone origin sits
+    // inside the opaque mesh, particularly on the crawler's bent rear leg.
+    const wick = m[13] + height * .10;
+    k.impact();
+    k.jointEmber(m[12], wick, m[14], radius, Math.max(.24, height * (.18 + .17 * flicker)), seed);
   }
 
   private joints(root: T.Object3D): T.Object3D[] {
