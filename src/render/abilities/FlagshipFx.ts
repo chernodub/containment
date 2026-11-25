@@ -440,40 +440,20 @@ void main(){
   // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
-   // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
-   #ifdef HAS_ABILITY_PRIORITY_MASK
-   // Sample upstream along an uneven drift so protected footprints trail into the bank.
-   vec2 windUv=priorityClip.xy/priorityClip.w*.5+.5;
-   vec2 drift=vec2(.019,-.006)*(.55+.9*n);
-   vec4 wake=mix(texture2D(abilityPriorityMap,windUv-drift*.55),texture2D(abilityPriorityMap,windUv-drift*1.7),.5);
-   float shelter=max(max(prioritySample.r,prioritySample.b)*.45,max(wake.r,wake.b)*.52);
-   float shelterNoise=fxNoise(q*1.8+vec2(-t*.65,t*.21));
-   on*=1.-shelter*(.58+.35*shelterNoise);
-   // The green shoulder also contains circular wind-up and aim clearances.
-   // Warnings draw above the bank; keep a subdued veil under their fill.
-   prioritySample.g*=.28;
-   prioritySample.rba*=.08;
-   #endif
+   // The crests meet the native radius. Scallop the inner face of the ice.
+   float front=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float behind=front-r;
+   float width=.4+.2*pow(abs(sin(a*23.+n*4.)),3.);
+   float inside=smoothstep(0.,.025,behind);
+   float wall=inside*(1.-smoothstep(width-.08,width,behind));
+   float lip=1.-smoothstep(.06,width*.8,behind);
+   float needle=pow(abs(cos(a*31.+n*2.)),32.)*smoothstep(.62,.86,n);
+   float glaze=inside*(.036+.034*n+.06*needle);
    line=0.;
-   float spread=R*(1.-pow(1.-clamp(age/.12,0.,1.),2.));
-   float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
-   // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
-   float an=.22+.56*fxNoise(vec2(cos(a),sin(a))*2.6+fxSeed);
-   float jag=spread*(.62+.5*an)+teeth*smoothstep(R*.3,R,spread)-.2;
-   float inside=1.-smoothstep(jag-.04,jag,r);
-   float wall=smoothstep(jag-.35-.4*(spread/R),jag-.04,r)*inside;
-   float crack=0.;
-   if(fxLow<.5){
-    vec3 c=fxCells(q*.9+n*.8);
-    crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,n);
-   }
-   float pulseR=mod(max(0.,age-.7),2.)*R*.8;
-   float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
-   float roll=fxNoise(q*1.1+vec2(t*.36,-t*.28)+n);
-   float peak=1.-smoothstep(.18,.36,age);
-   alpha=inside*(.84+.07*roll+.05*peak)+wall*.27;
-   base=mix(vec3(.048,.13,.19),vec3(.20,.37,.44),roll);
-   emit=vec3(.15,.34,.43)*(wall*(.53+.75*roll)+inside*(crack*.26+pulse*.18))*smoothstep(.4,1.2,r);
+   alpha=glaze+wall*.83;
+   base=mix(vec3(.020,.052,.065),mix(vec3(.09,.54,.65),vec3(.89,.98,1.),lip),wall);
+   emit=wall*mix(vec3(.025,.17,.22),vec3(.38,.48,.52),lip)
+       +inside*needle*vec3(.018,.052,.065);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
@@ -527,7 +507,7 @@ void main(){
  if(groundSheet){
   float warning=prioritySample.g;
   float coverage=step(.004,alpha+dot(emit,vec3(.333)));
-  alpha=mix(alpha,.18*coverage,warning);
+  alpha=mix(alpha,(m>13.5 && fxArc<1.5 ? 0. : .18)*coverage,warning);
   emit=mix(emit,vec3(0.),warning);
  }
  #endif
