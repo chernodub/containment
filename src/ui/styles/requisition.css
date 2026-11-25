@@ -201,3 +201,12 @@
 #overlay .supply-original > small { grid-column: 1 / -1; }
 #overlay .supply-transformation small { display: block; font-size: 12px; }
 #overlay .supply-transformation .ability-vignette { display: block; width: 100%; height: 43px; color: #b8ecdb; }
+
+@media (max-width: 1150px) {
+  #overlay .service-shop.requisition-groups {
+    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  }
+  #overlay .requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #overlay .requisition-upgrades .requisition-grid { grid-template-columns: minmax(0, 1fr); }
+  #overlay .requisition-title-row .requisition-terms { flex-wrap: wrap; gap: 3px 8px; }
+}
