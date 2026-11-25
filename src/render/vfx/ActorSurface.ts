@@ -28,7 +28,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
       if (!friendly) Object.assign(shader.uniforms, {actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
-      shader.vertexShader = (friendly ? 'attribute float _rig_paint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=_rig_paint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
+      shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
@@ -74,7 +74,14 @@ vec3 paintedCeramic=vec3(.74,.78,.82)*actorRigColor;
 float darkestPaint=min(paintedCeramic.r,min(paintedCeramic.g,paintedCeramic.b));
 paintedCeramic=max(vec3(0.),paintedCeramic-darkestPaint);
 paintedCeramic*=max(1.0,.38/max(.01,dot(paintedCeramic,paintLuma)));
-diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));` : ''}
+diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));
+// Forward is -X in the Z-up bind pose. The luminous brow bends across
+// the front of the crown so its closed end points along the gaze.
+float helmet=step(vRigPaint,-.5);
+float browDistance=abs(actorPosition.x+.78-.38*abs(actorPosition.y));
+float browSpan=step(abs(actorPosition.y),.90)*step(13.10,actorPosition.z)*helmet;
+float visorBand=(1.-smoothstep(.10,.16,browDistance))*browSpan;
+diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.012,.065,.082),(1.-smoothstep(.21,.26,browDistance))*browSpan);` : ''}
 ${friendly?'':'diffuseColor.rgb*=creatureStrike;'}
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorShedShoulder>.5 && plateHeight>.66 && actorPosition.z-actorPlateBounds.z>actorPlateBounds.w*.46 && abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y*.87)discard;
@@ -107,7 +114,7 @@ ${friendly ? `// SHADE15: one even self-light over the whole suit.
 float browLight=smoothstep(.04,.30,min(totalEmissiveRadiance.g,totalEmissiveRadiance.b)-totalEmissiveRadiance.r)*smoothstep(11.4,12.2,actorPosition.z);
 float domePaint=step(.5,vRigPaint)*smoothstep(9.0,10.2,actorPosition.z);
 float signatureEdge=smoothstep(.08,.55,actorRim)*max(browLight,domePaint);
-totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
+totalEmissiveRadiance=mix(totalEmissiveRadiance*.48,vec3(.12,.95,1.12),max(visorBand,browLight*helmet))*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
 totalEmissiveRadiance+=vec3(.72,.77,.80)*signatureEdge*(1.0-actorDissolve);` : `float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);
 // SHADER25: a thin cool rim on the key-light side of the silhouette only.
 vec3 creatureKey=vec3(-.52,.42,.74); // the shared screen key of the two light planes
@@ -126,7 +133,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-v15-motion22:marine' : 'actor-surface-v26-creature26:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-v26-creature26:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
