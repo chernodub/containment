@@ -137,12 +137,7 @@ export class DepthGame {
   const shutter=this.relayShutter,warden=this.rackShutter?.wardenId;
   const enemy=warden===undefined?undefined:this.enemies.getSnapshot(warden);
   if(!shutter||!enemy||enemy.pendingAttack||enemy.chargeMs)return;
-  const x=shutter.x+shutter.width/2,y=shutter.y+shutter.height/2;
-  const dx=x-enemy.x,dy=y-enemy.y,distance=Math.hypot(dx,dy);
-  if(distance<40||distance>340)return;
-  const point={x:x+dx/distance*64,y:y+dy/distance*64};
-  if(canOccupyExpedition(this.geometry,point,this.player.radius)&&hasClearExpeditionShot(this.geometry,enemy,point))
-   return {...point,wardenId:enemy.id};
+  return {x:shutter.x-70,y:shutter.y+shutter.height/2,wardenId:enemy.id};
  }
  private makeEnemies(){return new EnemySystem({readySeed:this.expedition.run.seed,spitWindupMs:this.condition?.id==='dark'?650:500,slick:p=>this.roomCondition?.slick(p)??false,difficulty:()=>{
   const mode=this.difficulty,d=DIFFICULTIES[mode];
@@ -639,7 +634,10 @@ export class DepthGame {
  private encounterEvents(events:readonly EncounterEvent[]){for(const e of events){if(e.type==='spawn-request'){const chosen=this.geometry.breaches.find(b=>b.id===e.breachId)??this.geometry.breaches[0];
  let x=chosen.x+(chosen.facing==='east'?56:-56),y=chosen.y;
  let openingVolley:EnemySpawnOptions['openingVolley'];
- if(this.node.templateId==='relay-racks'&&e.guardian==='warden')this.rackShutter={broken:false};
+ if(this.node.templateId==='relay-racks'&&e.guardian==='warden'){
+  this.rackShutter={broken:false};
+  ({x,y}={x:650,y:216});
+ }
  if(e.shutterSpitter){x=554;y=216;}
  if(!e.shutterSpitter&&e.enemyId==='spitter'&&(!this.coverLesson||this.coverLesson.learned)){
   const covers=(ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[]).filter(rect=>!this.stagedCover.has(rect));
@@ -713,7 +711,7 @@ export class DepthGame {
   if(point)({x,y}=point);
  }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
-  if(guardian==='warden'&&this.expedition.run.version===3){
+  if(guardian==='warden'&&this.expedition.run.version===3&&!this.relayShutter){
    const stage=wardenOpeningSpawn(this.geometry,this.player,Math.atan2(y-this.player.y,x-this.player.x),this.enemies.snapshot.enemies);
    if(stage){x=stage.x;y=stage.y;}
   }

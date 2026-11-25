@@ -410,6 +410,14 @@ try {
     await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
+    if(room.id==='relay-racks'&&!room.shutterBreak&&after.status==='playing'){
+      const impact=newEventReceipts(s.events,after.events).find(event=>event.type==='wall-slam');
+      if(impact){
+        const name='r9-relay-racks-shutter-break';
+        await shot(name,after);
+        room.shutterBreak={file:name+'.png',elapsed:after.elapsed,targetId:impact.targetId};
+      }
+    }
     if(jobCaptureDir&&after.status==='playing'&&capturedJobs.size<5){
       const events=newEventReceipts(s.events,after.events);
       for(const event of events){

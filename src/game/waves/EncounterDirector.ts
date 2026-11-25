@@ -60,6 +60,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  }
  const galleryOpening=node.templateId==='diagnostic-gallery';
  const shaftLanding=node.templateId==='service-shaft-landing';
+ if(node.templateId==='relay-racks'){
+  const index=source.findIndex(beat=>beat.groups.some(group=>group.guardian==='warden'));
+  if(index>0)source.unshift(...source.splice(index,1));
+ }
  if(galleryOpening){
   const index=source.findIndex(beat=>beat.grammar==='interception');
   if(index>=0){
