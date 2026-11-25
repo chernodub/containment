@@ -588,16 +588,20 @@ export class DepthGame {
   }
  }
  if(this.node.templateId==='service-shaft-landing'){
-  const firstLunge=e.beat===0&&e.enemyId==='stalker'&&e.spawnId.endsWith('spawn-0');
+  const openingStalker=e.beat===0&&e.enemyId==='stalker';
+  const firstLunge=openingStalker&&e.spawnId.endsWith('spawn-0');
+  const secondLunge=openingStalker&&e.spawnId.endsWith('spawn-1');
   const repeat=e.beat===1&&e.enemyId==='crawler';
-  if(firstLunge||repeat){
+  if(firstLunge||secondLunge||repeat){
    const radius=enemyBodyRadius(e.enemyId,e.elite);
    const landing=firstLunge?this.player:{x:135,y:440};
    const sides=firstLunge?[1,-1]:[Number(e.spawnId.split('-').at(-1))%2?1:-1];
-   const point=sides.map(side=>({x:landing.x,y:landing.y+side*(firstLunge?145:185)})).find(point=>
-    canTraverseExpedition(this.geometry,point,landing,radius)&&
-    (!firstLunge||[-1,1].some(side=>canTraverseExpedition(this.geometry,landing,{x:landing.x+side*100,y:landing.y},this.player.radius))));
-   if(point)({x,y}=point);
+   const point=secondLunge?{x:265,y:270}:sides.map(side=>({
+    x:firstLunge?Math.max(78,Math.min(145,landing.x)):landing.x,
+    y:landing.y+side*(firstLunge?145:185),
+   })).find(point=>canTraverseExpedition(this.geometry,point,landing,radius)&&
+    (!firstLunge||canTraverseExpedition(this.geometry,landing,{x:landing.x+this.player.radius*2,y:landing.y},this.player.radius)));
+   if(point&&canOccupyExpedition(this.geometry,point,radius))({x,y}=point);
   }
  }
  if(e.rehearsalFlank){
