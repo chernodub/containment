@@ -25,13 +25,22 @@ const stamps:Record<string,Stamp>={
   'infested-workshop':{pitch:[178,144],grooves:'M22 36q0 19 17 17l37 38 8 -9 -37 -36q4 -18 -13 -19l7 12 -9 6Z M89 41l17 -15 14 15 -8 8 -5 -5 -35 39 -5 -5 35 -39 -5 -5Z'},
   'swarm-junction':{pitch:[214,154],grooves:'M0 92Q36 73 58 88T110 72Q125 43 155 57T214 48 M46 84q24 -26 49 -21 M97 87q21 11 32 37 M144 55q7 -14 22 -17',inset:'M60 85q24 -15 38 -6 -22 14 -38 6Z M132 60q10 -22 24 -17 -8 19 -24 17Z'},
   'shielding-gate':{pitch:[202,161],grooves:'M0 38H202 M0 45H202 M0 104H202 M0 111H202',inset:'M49 37h42v10H49Z M124 103h42v10h-42Z'},
-  'containment-annulus':{pitch:[251,202],grooves:'M0 41Q122 130 251 41 M0 55Q122 145 251 55 M0 87Q122 176 251 87 M116 85v14 M128 87v14'},
   'manual-control-chamber':{pitch:[182,156],grooves:'M0 65H57l24 -26h51 M0 72h62l24 -26h46 M116 32h39v24h-39Z M39 73v30h52',label:'BUS'},
   'overload-floor':{pitch:[178,137],grooves:'M0 34h43l18 18h57l18 -18h42 M0 42h40l18 18h63l18 -18h39 M63 78h53 M63 84h53',label:'BANK'},
 };
 
 export function paintRoomFunction(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Point){
   const stamp=stamps[room.id];
+  if(room.id==='containment-annulus'){
+    // These witness lines share the centre of the sealed core.
+    c.save();c.strokeStyle='rgba(152,165,156,.54)';c.lineWidth=3;
+    for(let radius=160;radius<990;radius+=87){
+      for(const offset of [0,9]){
+        c.beginPath();c.ellipse(800,520,radius+offset,(radius+offset)*.76,0,0,2*Math.PI);c.stroke();
+      }
+    }
+    c.restore();return;
+  }
   if(!stamp)return;
   const [w,h]=stamp.pitch, grooves=new Path2D(stamp.grooves),inset=new Path2D(stamp.inset??'');
   c.save();c.translate(arena.x%w-w/2,arena.y%h-h/2);

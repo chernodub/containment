@@ -116,15 +116,22 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       }
       break;
     case 'infested-workshop':
-      box(L/2,4,0,L,6,29,iron);rails(15);
-      for(let i=0;i<15;i++){
-        const x=L-16+i*2,z=12*Math.sin(i*.8)+i*.6;
-        pipe(x,z,x+8,z+5*Math.cos(i),7,2.6,i%3?steel:ochre);
-      }
-      box(L+10,3,0,39,4,42,boot);break;
+      for(const x of [L-37,L+12])for(const z of [-14,15])box(x,11,z,6,22,6,iron);
+      box(L-12,23,0,67,5,41,steel);
+      // The split impeller is still clamped in the vise. Tendrils reach one jaw.
+      disc(L-12,26,0,13,3,boot);
+      for(let i=0;i<5;i++)box(L-12+9*Math.cos(i*1.26),30,9*Math.sin(i*1.26),15,5,5,ochre,-i*1.26);
+      for(const x of [L-32,L+7])box(x,29,0,6,8,18,iron);
+      for(let i=0;i<4;i++)p.rod([L-82+i*5,2,-30+i*4],[L-36,26,-14+i*4],2+i*.4,0x846a7d);
+      break;
     case 'swarm-junction':
       pipe(0,0,L,0,6,9,iron);pipe(L*.68,0,L-4,-34,6,7,iron);
       for(let x=14;x<L;x+=32)pipe(x,0,x+5,0,6,11,steel);
+      for(let i=0;i<9;i++){
+        const x=L*.36+i*8,z=9*Math.sin(i*.8);
+        p.rod([x,9,z-12],[x+8,16,z+5],4,0x846d81);
+        disc(x+5,14,z+5,5+i%3,5,0x9c818e);
+      }
       disc(L,1,0,17,8,boot);
       for(let i=0;i<5;i++)box(L-9+i*4,10,0,2.5,4,23,0x977e91);
       break;

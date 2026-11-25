@@ -42,10 +42,10 @@ export function addInc13Manual(root: T.Group): void {
   }
   frame.finish(root,'master-station',449,556).scale.x=.70;
   for(const bank of [phosphor,failing]){
-    const lit=new T.MeshBasicMaterial({color:bank===failing?0x82c3b7:0xb5dbda,vertexColors:true,side:T.DoubleSide});
+    const lit=new T.MeshBasicMaterial({color:bank===failing?0x52675f:0xb5dbda,vertexColors:true,side:T.DoubleSide});
     const mesh=bank.finish(root,'station-phosphor',449,556,lit);
     mesh.scale.x=.70;mesh.castShadow=false;
-    if(bank===failing)mesh.onBeforeRender=()=>{lit.color.setScalar(Math.sin(environmentClock.value*9)>.77?.22:.91);};
+    if(bank===failing)mesh.onBeforeRender=()=>{lit.color.setScalar(Math.sin(environmentClock.value*9)>.77?.16:.41);};
 
   }
   paintIncidentDeck(root,'room14-manual-cable',[407,548,91,114],c=>{
