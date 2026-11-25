@@ -71,3 +71,33 @@ The final Standard competent cohort cleared 39 of 48 with zero stalls. Cryo clea
 I replayed the final six native rooms on the tuned build from the earned Shaft reward checkpoint. Cryo 1729 finished the continuation with 20 credited rooms, zero errors and zero defects. [Native continuation](../../artifacts/nextgen/playtest/play29-release-native-continuation/index.html)
 
 The focused High-tier desktop benchmark finished both rooms without errors. [Benchmark record](../../artifacts/nextgen/play29-desktop-bench/benchmark.json)
+
+## PLAY30
+
+Baseline on `ebf21186`. Medians use all visited rooms, including fatal rooms. The share divides pooled suit loss from sectors 1–10 by pooled suit loss across the campaign.
+
+| Sector | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| 1 | 5.0 | 0.0 | 0.0 | 0.0 |
+| 2 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 3 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 4 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 5 | 0.0 | 31.6 | 24.3 | 8.4 |
+| 6 | 38.3 | 39.4 | 18.1 | 11.6 |
+| 7 | 6.3 | 36.0 | 12.6 | 26.5 |
+| 8 | 33.8 | 48.7 | 27.7 | 38.7 |
+| 9 | 37.7 | 39.0 | 41.1 | 36.4 |
+| 10 | 71.0 | 68.5 | 47.7 | 46.6 |
+| 11 | 17.2 | 27.8 | 18.4 | 17.2 |
+| 12 | 44.8 | 55.0 | 28.2 | 34.3 |
+| 13 | 49.0 | 79.7 | 64.8 | 39.1 |
+| 14 | 35.6 | 58.7 | 47.3 | 29.3 |
+| 15 | 6.3 | 27.7 | 25.2 | 13.9 |
+| 16 | 54.8 | 81.2 | 58.8 | 39.9 |
+| 17 | 28.4 | 31.6 | 44.2 | 36.6 |
+| 18 | 45.0 | 25.2 | 15.9 | 11.0 |
+| 19 | 37.1 | 79.0 | 53.7 | 43.6 |
+| 20 | 83.2 | 92.3 | 90.5 | 55.8 |
+| Sectors 1–10 share | 37.9% | 33.4% | 27.9% | 32.4% |
+
+Standard cleared 43 of 48, with Breacher 9, Cryo 11, Pyro 11 and Arc 12. No stall or death before sector 6 occurred.
