@@ -647,7 +647,8 @@ export class DepthGame {
    this.coverLesson=lesson;
    this.stagedCover.add(lesson.cover);
    ({x,y}=lesson.shooter);
-   if(this.node.templateId==='transmission-chamber'&&e.spawnId.endsWith('spawn-0'))openingVolley=lesson.pickup;
+   if(this.node.templateId==='passenger-vault'||
+      this.node.templateId==='transmission-chamber'&&e.spawnId.endsWith('spawn-0'))openingVolley=lesson.pickup;
    const pickup=lesson.pickup;
    if(this.node.depth<=2)this.pickups.spawn('armor',15,pickup.x,pickup.y);
    else this.pickups.spawn('credits',60,pickup.x,pickup.y);
@@ -702,7 +703,7 @@ export class DepthGame {
  }
  if(e.lesson){
   const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
-  const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:[0,.5,-.5,1,-1];
+  const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:e.lesson==='stalker'?[1,-1,1.5,-1.5,.5,-.5,0]:[0,.5,-.5,1,-1];
   const legal=offsets.map(offset=>{
    const angle=this.player.angle+offset;
    return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};
@@ -710,7 +711,13 @@ export class DepthGame {
   const cover=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const nearCover=e.lesson==='brute'?legal.find(point=>cover.some(rect=>
    Math.hypot(Math.max(rect.x-point.x,0,point.x-rect.x-rect.width),Math.max(rect.y-point.y,0,point.y-rect.y-rect.height))<55)):undefined;
-  const point=nearCover??legal[0];
+  const sidestep=e.lesson==='stalker'?legal.find(point=>{
+   const angle=Math.atan2(point.y-this.player.y,point.x-this.player.x)+Math.PI/2;
+   return [-1,1].some(side=>canTraverseExpedition(this.geometry,this.player,{
+    x:this.player.x+side*65*Math.cos(angle),y:this.player.y+side*65*Math.sin(angle),
+   },this.player.radius));
+  }):undefined;
+  const point=nearCover??sidestep??legal[0];
   if(point)({x,y}=point);
  }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
