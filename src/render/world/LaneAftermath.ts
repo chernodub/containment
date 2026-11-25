@@ -17,6 +17,44 @@ function fragment(c:Brush,path:string,color:string){
 export function paintLaneAftermath(c:Brush,id:string,arena:Point){
   c.save();c.translate(arena.x,arena.y);c.lineCap='round';c.lineJoin='round';
   switch(id){
+    case 'awakening-bay':
+      // An opened pod has shed its foil liner. Water follows the flattened pleats.
+      patch(c,'M-67 -12Q-42 -9 -43 7T-23 22Q7 23 20 55Q8 50 -6 46T-39 34Q-55 25 -67 -12Z','#647e80');
+      fragment(c,'M-58 -6l22 5 10 11 25 6 18 23 -20 -3 -14 4 -14 -13 -16 -5Z','#94a8a2');
+      for(const d of ['M-49 1l17 12 11 2','M-32 14l16 13 14 2','M-17 20l14 11 13 5'])seam(c,d,2,'#637f83');
+      break;
+    case 'passenger-vault':
+      // A knitted scarf has caught on the berth latch; a pair of shoes fell apart.
+      fragment(c,'M39 15Q17 24 15 41T-13 54Q-38 50 -55 63L-62 52Q-42 39 -18 43T3 28Q12 14 34 9Z','#a28b73');
+      for(const x of [-53,-47,-40])seam(c,`M${x} 48l5 11`,2,'#666d68');
+      for(const [x,y,a] of [[-19,20,.4],[-43,28,-.7]]){
+        c.save();c.translate(x,y);c.rotate(a);fragment(c,'M-6 -9Q-1 -14 5 -9L7 4Q12 14 3 16Q-8 17 -7 8Z','#727575');
+        patch(c,'M-3 -6q3 -4 6 0v7h-6Z','#3d4546');c.restore();
+      }break;
+    case 'residential-gallery':
+      patch(c,'M48 -5Q39 14 14 18T-45 39Q-33 56 -9 43T45 24Z','#635d55');
+      fragment(c,'M-30 19Q-8 2 5 25L-10 25 -16 35Z','#adb1a4');
+      fragment(c,'M-14 39l8 -10 15 0Q6 45 -14 39Z','#979f99');
+      fragment(c,'M22 18l-4 -12 8 -7 11 4 3 12 -10 7Z','#959d92');
+      seam(c,'M35 3q15 -5 8 9l-5 2',3,'#9aa399');break;
+    case 'communal-atrium':
+      patch(c,'M42 54Q18 46 9 36T-32 17L-22 12 -50 3 -39 -4 -61 -14Q-34 -19 -14 -7T29 9Q49 26 42 54Z','#615547');
+      for(let i=0;i<29;i++){
+        const x=25-i*2.65+8*Math.sin(i*4),y=31-i*1.65+15*Math.sin(i*1.87);
+        c.save();c.translate(x,y);c.rotate(i*2.4);fragment(c,'M-7 0Q-2 -7 9 -3Q6 4 -7 0Z',i%4===0?'#baa699':'#88967b');c.restore();
+      }break;
+    case 'crew-checkpoint':
+      seam(c,'M-39 6Q-2 16 21 32T58 39',7,'#716b5c');
+      fragment(c,'M-37 -2l13 3 8 8 -6 8 -15 -2 -9 -9Z','#85877b');
+      seam(c,'M-33 6l39 14',5,'#a3a79a');break;
+    case 'armory':
+      for(const [x,y,a] of [[-30,-21,.4],[-15,-12,.9],[12,-7,-.3],[19,10,-1],[33,27,.3],[55,22,.8]]){
+        c.save();c.translate(x,y);c.rotate(a);fragment(c,'M-8 -3h13l5 3 -5 3h-13Z','#a79570');c.fillStyle='#626657';c.fillRect(-6,-3,2,6);c.restore();
+      }break;
+    case 'breached-loading-bay':
+      patch(c,'M-28 -109L-15 -64 -18 -46 5 -22 4 -9 29 10 46 52 25 19 9 14 -8 -9 -11 -23 -28 -41 -23 -65Z','#38454b');
+      fragment(c,'M-17 -52l23 23 12 31 -18 -20 -7 -1Z','#879ca0');
+      for(const d of ['M-9 -26Q-32 -60 -35 -110','M14 3Q-13 -28 -16 -63','M29 18Q10 2 2 -14'])seam(c,d,2.6,'#a2b3b2');break;
     case 'freight-hold':
       // The runners lead to the actual cargo cradle at (741,725).
       for(const offset of [-18,19]){

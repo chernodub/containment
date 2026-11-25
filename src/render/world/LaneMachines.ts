@@ -102,6 +102,10 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
+      // A toppled queue post rests on its weighted shoe below the recessed lamp.
+      p.rod([76,1,66],[76,3,66],14,rubber);
+      p.rod([76,3,66],[42,4,54],3,edge);
+      p.box(76,3,66,22,3,13,metal,-.27);
       for(const z of [-23,23])p.box(8,20,z,9,39,8,metal);
       p.box(8,41,0,12,7,55,edge);
       p.box(34,4,-9,112,7,35,rubber,.20);
