@@ -757,3 +757,9 @@ The regular and elite Brute now share a slate-teal body. The existing atlas iden
 The local review sheets under `artifacts/nextgen/brute30/` are `candidates.png`, `do-no-harm.png`, `three-room.png` and `warden-trial.png`. Each pairs native crops with 480×270 room frames. The baseline is `783c5f4`.
 
 The production build passed. Breacher cleared six rooms through Armory on seed 1729 in fast mode, with zero runner errors. The Crew Checkpoint High Breacher benchmark recorded zero combat shader compilations.
+
+### Hue and status follow-up
+
+Deep jade replaces slate teal. In the Swarm Junction crowd I find the pale brow first on the two forward-facing Brutes. The moss and fern studies approach the Spitter's yellow-green, especially at quarter size. Jade separates from the blue Awakening Bay deck and the brown Safety-interlock station. Communal Atrium is the closest match: the jade lit plane and black outline carry the shoulders against the duller olive floor there.
+
+The matched Cryo row shows a frozen Brute on the left, a chilled one in the middle and a clear one on the right. The stock overlap chills both left actors. The comparison applies a native freeze to the left one, and the three snapshot receipts confirm the states. A full freeze lifts and desaturates the skin. Chill retains the blue glaze and clear skin stays green. The brown control uses the final18 Brute asset and its former zone shading in the current encounter. The Pyro and Arc rows use the same camera and simulation instant across hues.
