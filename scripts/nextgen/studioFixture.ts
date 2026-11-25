@@ -33,7 +33,7 @@ export type StudioShot = {
   width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
   cameraDirection?:[number,number,number]; breachLight?:boolean;
-  card?:boolean; frameSubject?:boolean; webpQuality?:number;
+  card?:boolean; subjectHeight?:number; frameSubject?:boolean; webpQuality?:number;
   framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
@@ -142,7 +142,8 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             const shape=subject.family==='queen'?undefined:MELEE_ATTACKS[subject.family]?.shape;
             actor.setAttackState?.('strike',subject.frame??.45,subject.aim??-2,shape);
             actor.attack?.();
-            if(shot.breachLight&&subject.champion==='warden')actor.setEmissionRegion?.('warden-ram',.32);
+            if(subject.champion==='warden')actor.setBossState?.(0,0,250);
+            if(subject.champion==='matron')actor.setBossState?.(0,320,0);
           }
           if(subject.pose==='hit')actor.hit?.(.85,subject.aim??-2,true);
           if(subject.pose==='frozen')actor.setAffliction?.({chilled:true,frozen:true,burning:false,poisoned:false,shocked:false});
@@ -160,7 +161,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         }
         case 'ordnance': {
           const plasma=subject.weapon==='plasma';
-          const flash=new T.MeshBasicMaterial({color:plasma?0xc2ecff:0xffc174});
+          const flash=new T.MeshBasicMaterial({color:plasma?0xe9faff:0xffc174});
           const wake=new T.MeshStandardMaterial({color:plasma?0x348bf3:0x705052,
             emissive:plasma?0x369eff:0x403b40,emissiveIntensity:plasma?1.3:.48});
           const group=new T.Group();
@@ -174,8 +175,10 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             disposable.push(()=>mesh.geometry.dispose());
           };
           if(plasma){
-            streak(new T.Vector3(),tail,.065,.01,wake);
-            streak(new T.Vector3(),tail.clone().multiplyScalar(.87),.03,.009,flash);
+            streak(new T.Vector3(),tail,.15,.035,wake);
+            // Offset the hot channel to the camera side so the blue wake cannot bury it.
+            const core=new T.Vector3(0,.048,.09);
+            streak(core,tail.clone().multiplyScalar(.88).add(core),.095,.015,flash);
             const sparks=[[-.31,.29,.18],[-.15,.16,.44],[.04,.36,.22],[.16,.14,.31],[-.29,-.12,.24],[.11,-.23,.37]];
             for(const offset of sparks){
               const end=new T.Vector3(...offset);
@@ -403,7 +406,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
         }
       });
       const size=bounds.getSize(new T.Vector2()),middle=bounds.getCenter(new T.Vector2());
-      const frameHeight=Math.max(size.y/(shot.frameSubject?.8:.9),size.x/(aspect*(shot.frameSubject?.78:.98)));
+      const frameHeight=Math.max(size.y/(shot.subjectHeight??(shot.frameSubject?.8:.9)),size.x/(aspect*(shot.frameSubject?.78:.98)));
       camera.left=middle.x-frameHeight*aspect/2;camera.right=middle.x+frameHeight*aspect/2;
       camera.bottom=middle.y-frameHeight/2;camera.top=middle.y+frameHeight/2;
       camera.updateProjectionMatrix();
@@ -447,6 +450,38 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
       const gradient=ctx.createRadialGradient(shot.width*.5,shot.height*.56,shot.height*.16,shot.width*.5,shot.height*.56,shot.width*.63);
       gradient.addColorStop(0,'transparent');gradient.addColorStop(1,'rgba(1,8,12,.69)');
       ctx.fillStyle=gradient;ctx.fillRect(0,0,shot.width,shot.height);
+    }
+    // Plasma lights the plate at contact. Project the hot core from the same
+    // endpoints as the studio mesh so the glow follows changes to the crop.
+    for(const subject of shot.subjects){
+      if(subject.kind!=='ordnance'||subject.weapon!=='plasma')continue;
+      const project=(point:T.Vector3)=>{
+        point.add(stage.position).project(camera);
+        return [(point.x+1)*shot.width/2,(1-point.y)*shot.height/2] as const;
+      };
+      const [x,y]=project(new T.Vector3(subject.x,subject.y,subject.z));
+      const [tx,ty]=project(new T.Vector3(...subject.from));
+      ctx.save();
+      ctx.globalCompositeOperation='screen';
+      ctx.lineCap='round';
+      const wake=ctx.createLinearGradient(tx,ty,x,y);
+      wake.addColorStop(0,'rgba(67,175,255,0)');
+      wake.addColorStop(.5,'rgba(52,169,255,.40)');
+      wake.addColorStop(1,'#c7f7ff');
+      ctx.strokeStyle=wake;
+      ctx.lineWidth=shot.height*.012;
+      ctx.shadowColor='#2d9dff';
+      ctx.shadowBlur=shot.height*.029;
+      ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(x,y);ctx.stroke();
+      const radius=shot.height*.096;
+      const impact=ctx.createRadialGradient(x,y,0,x,y,radius);
+      impact.addColorStop(0,'#f1feff');
+      impact.addColorStop(.07,'#a8eeff');
+      impact.addColorStop(.23,'rgba(53,174,255,.58)');
+      impact.addColorStop(1,'rgba(36,134,255,0)');
+      ctx.shadowBlur=0;ctx.fillStyle=impact;
+      ctx.fillRect(x-radius,y-radius,radius*2,radius*2);
+      ctx.restore();
     }
     if(shot.transparent){
       const foreground=ctx.getImageData(0,0,shot.width,shot.height);

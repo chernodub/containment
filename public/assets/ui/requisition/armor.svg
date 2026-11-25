@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 112">
+<defs>
+ <radialGradient id="floor"><stop stop-color="#314650"/><stop offset="1" stop-color="#101d25"/></radialGradient>
+ <radialGradient id="shadow"><stop stop-color="#02090e"/><stop offset=".62" stop-color="#071015"/><stop offset="1" stop-color="#14242c" stop-opacity="0"/></radialGradient>
+ <linearGradient id="metal" x2=".8" y2="1"><stop stop-color="#cedbe0"/><stop offset=".35" stop-color="#8aadb8"/><stop offset=".64" stop-color="#486571"/><stop offset="1" stop-color="#263c48"/></linearGradient>
+ <linearGradient id="brass"><stop stop-color="#75542f"/><stop offset=".28" stop-color="#f1d89c"/><stop offset=".52" stop-color="#bb9254"/><stop offset="1" stop-color="#62442e"/></linearGradient>
+</defs>
+<rect width="280" height="112" fill="url(#floor)"/>
+<path d="M0 95l280-21m-252 38 61-23m127-9 64 13" fill="none" stroke="#13232c"/>
+<ellipse cx="145" cy="91" rx="82" ry="14" fill="url(#shadow)"/>
+<g stroke="#101a21" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+<g transform="rotate(-9 140 55)">
+<path fill="#31414c" d="M99 18l12-6 16 7 24 1 14-9 16 7-3 22 10 13-9 40-39 10-45-15-6-35 12-16z"/>
+<path fill="url(#metal)" d="M100 30l13-9q10 15 27 14 16 1 26-13l13 8-5 22-33 13-40-13z"/>
+<path fill="#6d8891" d="M99 58l41 13 36-12-2 12-34 13-39-14z"/>
+<path fill="#4f6772" d="M102 77l38 12 33-12-2 10-31 11-35-12z"/>
+<path fill="none" stroke="#d7e7e7" d="M104 34l9-5m-8 18 31 11m11 0 18-7"/>
+<path fill="#dfad60" d="M95 47l8 2 2 7-9-3zm82-3 7-2-2 8-7 2z"/></g>
+</g></svg>

@@ -124,7 +124,7 @@ try{
  await mkdir(out,{recursive:true});await buildIfNeeded();
  const assets=(await readdir(resolve(dist,'assets'))).filter(file=>/\.(js|css)$/.test(file));
  manifest.appAssets=Object.fromEntries(await Promise.all(assets.map(async file=>[file,createHash('sha256').update(await readFile(resolve(dist,'assets',file))).digest('hex')])));
- const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav','.woff2':'font/woff2'};
+ const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav','.woff2':'font/woff2'};
  server=createServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(dist,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(dist+'/')){res.writeHead(404).end();return;}try{const bytes=await readFile(file);res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(bytes);}catch{res.writeHead(404).end();}});
  await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});const origin=`http://127.0.0.1:${server.address().port}`;
  browser=await launch();context=await browser.newContext({viewport,deviceScaleFactor:dpr});

@@ -9,7 +9,8 @@ const args=process.argv.slice(2);
 const argument=args.find(arg=>!arg.startsWith('--out='));
 const directory=args.find(arg=>arg.startsWith('--out='))?.slice(6);
 const filter=argument?.startsWith('--only=')?new RegExp(argument.slice(7)):null;
-const description=filter?undefined:argument;
+const creatureCards=argument==='--creature-cards';
+const description=filter||creatureCards?undefined:argument;
 const shots=description?JSON.parse(await readFile(description,'utf8')):plan;
 const dist=resolve('dist'), out=directory?resolve(directory):resolve('public/assets/ui/studio',description?'custom':'.');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png'};
@@ -26,8 +27,10 @@ let browser, page;
 try{
   let room;
   await mkdir(out,{recursive:true});
-  const manifest=filter&&!directory?JSON.parse(await readFile(resolve(out,'manifest.json'),'utf8')):{};
-  const entries=Object.entries(shots).filter(([name])=>!filter||filter.test(name));
+  const manifest=(filter||creatureCards)&&!directory?JSON.parse(await readFile(resolve(out,'manifest.json'),'utf8')):{};
+  const entries=Object.entries(shots).filter(([name,shot])=>creatureCards
+    ? shot.subjects?.some(subject=>subject.kind==='enemy'||subject.kind==='pod')
+    : !filter||filter.test(name));
   const portraits=entries.filter(([,shot])=>shot.source==='selection24');
   if(portraits.length){
     const blender=(script,args)=>execFileSync('blender',['-b','--python-exit-code','1','-P','tools/assets/k12-hero/'+script,'--',...args],{stdio:'inherit'});

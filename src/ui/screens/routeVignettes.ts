@@ -29,10 +29,13 @@ const roomCrops = new Set<string>([
 export function routeVignette(template: TemplateId, key?: string, threat?: string): string {
   const subject = threat ? `threat-${threat}`
     : key && Object.hasOwn(AUGMENT_UPGRADE_RULES,key) ? `workshop-${key}` : key ?? template;
+  if (subject === 'brood' || subject === 'plate-breaker') {
+    return studioImage(`route-${subject}`, 'route-illustration', 1120, 476);
+  }
   const crop = roomCrops.has(template) ? template : undefined;
   const room = crop ? studioImage(`route-${crop}`, 'route-room-crop', 1120, 476) : '';
   const creature = threat || subject.startsWith('workshop-')
-    || ['brood', 'plate-breaker', 'protected-passage', 'legacy-queen'].includes(subject);
+    || ['protected-passage', 'legacy-queen'].includes(subject);
   return creature
     ? room + studioImage(`route-${subject}`, 'route-illustration route-creature', 1120, 476)
     : studioImage(`route-${subject}`, 'route-illustration', 1120, 476);

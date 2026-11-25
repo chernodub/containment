@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 112">
+<defs>
+ <radialGradient id="floor"><stop stop-color="#314650"/><stop offset="1" stop-color="#101d25"/></radialGradient>
+ <radialGradient id="shadow"><stop stop-color="#02090e"/><stop offset=".62" stop-color="#071015"/><stop offset="1" stop-color="#14242c" stop-opacity="0"/></radialGradient>
+ <linearGradient id="metal" x2=".8" y2="1"><stop stop-color="#cedbe0"/><stop offset=".35" stop-color="#8aadb8"/><stop offset=".64" stop-color="#486571"/><stop offset="1" stop-color="#263c48"/></linearGradient>
+ <linearGradient id="brass"><stop stop-color="#75542f"/><stop offset=".28" stop-color="#f1d89c"/><stop offset=".52" stop-color="#bb9254"/><stop offset="1" stop-color="#62442e"/></linearGradient>
+</defs>
+<rect width="280" height="112" fill="url(#floor)"/>
+<path d="M0 95l280-21m-252 38 61-23m127-9 64 13" fill="none" stroke="#13232c"/>
+<ellipse cx="145" cy="91" rx="82" ry="14" fill="url(#shadow)"/>
+<g stroke="#101a21" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+<g transform="translate(91 8) rotate(-19)"><path fill="#ae7154" d="M-6 34l1-12 6-14q3-3 4 1l2 14-1 13z"/><path fill="url(#brass)" d="M-8 32l16 1-1 42-17-1z"/><path fill="#e7c688" d="M-11 71l19 1-1 6-19-1z"/></g><g transform="translate(110 3) rotate(-13)"><path fill="#ae7154" d="M-6 34l1-12 6-14q3-3 4 1l2 14-1 13z"/><path fill="url(#brass)" d="M-8 32l16 1-1 42-17-1z"/><path fill="#e7c688" d="M-11 71l19 1-1 6-19-1z"/></g><g transform="translate(130 1) rotate(-6)"><path fill="#ae7154" d="M-6 34l1-12 6-14q3-3 4 1l2 14-1 13z"/><path fill="url(#brass)" d="M-8 32l16 1-1 42-17-1z"/><path fill="#e7c688" d="M-11 71l19 1-1 6-19-1z"/></g><g transform="translate(151 3) rotate(4)"><path fill="#ae7154" d="M-6 34l1-12 6-14q3-3 4 1l2 14-1 13z"/><path fill="url(#brass)" d="M-8 32l16 1-1 42-17-1z"/><path fill="#e7c688" d="M-11 71l19 1-1 6-19-1z"/></g><g transform="translate(175 11) rotate(18)"><path fill="#ae7154" d="M-6 34l1-12 6-14q3-3 4 1l2 14-1 13z"/><path fill="url(#brass)" d="M-8 32l16 1-1 42-17-1z"/><path fill="#e7c688" d="M-11 71l19 1-1 6-19-1z"/></g><path fill="#4a5557" d="M85 58q57 9 102 5l-3 12q-55 5-97-5z"/><path stroke="#acbbc0" fill="none" d="M91 62l21 3m10 1 18 1m12 1 22-1"/>
+</g></svg>

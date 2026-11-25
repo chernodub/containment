@@ -5,6 +5,8 @@ from PIL import Image
 
 raw = Path(sys.argv[1])
 ui = Path(__file__).resolve().parents[3] / 'public/assets/ui/u10'
+out = next((Path(arg.split('=', 1)[1]) for arg in sys.argv[2:] if arg.startswith('--out=')), ui)
+out.mkdir(exist_ok=True, parents=True)
 resize = Image.Resampling.LANCZOS
 size = (2560, 1440)
 background = next((Path(arg.split('=', 1)[1]) for arg in sys.argv[2:]
@@ -15,11 +17,11 @@ if background:
         raise ValueError(f'Background must be rendered at {size}')
     for width in (2560, 1280):
         plate = hull.resize((width, width * 9 // 16), resize)
-        plate.save(ui / f'background-{width}.webp', quality=86, method=6)
+        plate.save(out / f'background-{width}.webp', quality=86, method=6)
         if width == 1280:
             plate.quantize(colors=256, method=Image.Quantize.FASTOCTREE).save(
-                ui / 'background-1280.png', optimize=True)
-frame = Image.open(ui / 'background-2560.webp').convert('RGBA')
+                out / 'background-1280.png', optimize=True)
+frame = Image.open((out if background else ui) / 'background-2560.webp').convert('RGBA')
 
 for name in ('midground', 'hero', 'foreground', 'fog'):
     if name == 'hero' and '--keep-hero' in sys.argv[2:]:
@@ -30,10 +32,10 @@ for name in ('midground', 'hero', 'foreground', 'fog'):
             raise ValueError(f'{name} must be rendered at {size}')
         for width in (2560, 1280):
             plate = layer.resize((width, width * 9 // 16), resize)
-            plate.save(ui / f'{name}-{width}.webp', quality=86, method=6)
+            plate.save(out / f'{name}-{width}.webp', quality=86, method=6)
             if width == 1280:
                 plate.quantize(colors=256, method=Image.Quantize.FASTOCTREE).save(
-                    ui / f'{name}-1280.png', optimize=True)
+                    out / f'{name}-1280.png', optimize=True)
     else:
         width = 1280 if name == 'fog' else 2560
         layer = Image.open(ui / f'{name}-{width}.webp').convert('RGBA').resize(size, resize)
@@ -43,6 +45,6 @@ for name in ('midground', 'hero', 'foreground', 'fog'):
 
 for width in (2560, 1920, 1280):
     image = frame.convert('RGB').resize((width, width * 9 // 16), resize)
-    image.save(ui / f'title-{width}.webp', quality=86, method=6)
+    image.save(out / f'title-{width}.webp', quality=86, method=6)
     if width == 1280:
-        image.save(ui / 'title-1280.jpg', quality=87, optimize=True)
+        image.save(out / 'title-1280.jpg', quality=87, optimize=True)
