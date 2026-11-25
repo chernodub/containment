@@ -1,3 +1,4 @@
+import {icon} from '../icons';
 import type {DepthGame} from '../../DepthGame';
 import type {DepthRenderer} from '../../render/DepthRenderer';
 import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds} from '../gameAdapter';
@@ -14,6 +15,10 @@ export class TargetMarkers {
     private readonly point = {x: 0, y: 0, visible: false};
     private readonly resistance = new Map<number,{started:number;active:boolean}>();
     private room = -1;
+    private readonly broodIcons = {
+        relay: document.createElement('div'),
+        supply: document.createElement('div'),
+    };
     private painted = false;
     private readonly body = {left: 0, top: 0, right: 0, bottom: 0};
 
@@ -21,11 +26,18 @@ export class TargetMarkers {
         this.canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none';
         this.canvas.hidden = true;
         host.prepend(this.canvas);
+        for(const [destination,marker] of Object.entries(this.broodIcons)){
+            marker.innerHTML=icon(destination==='relay'?'overdrive':'armor');
+            marker.style.cssText='position:absolute;width:26px;height:26px;color:#ccf8eb;background:#0d201f;border:1px solid #689e91;pointer-events:none';
+            marker.hidden=true;
+            host.append(marker);
+        }
     }
 
     update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations'], hintTargetId: number | null) {
         const ctx = this.context;
         this.canvas.hidden = game.status !== 'playing';
+        for(const marker of Object.values(this.broodIcons))marker.hidden=true;
         if (!ctx || this.canvas.hidden) return;
         const width = getViewportWidth(renderer), height = getViewportHeight(renderer);
         const enemies = game.enemies.snapshot.enemies;
@@ -51,6 +63,11 @@ export class TargetMarkers {
         for (const enemy of enemies) {
             if (enemy.podStage) {
                 const point = projectWorld(renderer, enemy.x, enemy.y, this.point, .08);
+                if(enemy.broodDestination&&point.visible&&!hudObstructs(point.x-13,point.y+10,point.x+13,point.y+36)){
+                    const marker=this.broodIcons[enemy.broodDestination];
+                    marker.style.transform=`translate(${point.x-13}px,${point.y+10}px)`;
+                    marker.hidden=false;
+                }
                 if (point.visible) {
                     tokens ??= getComputedStyle(this.canvas);
                     this.painted=true;
@@ -150,5 +167,5 @@ export class TargetMarkers {
         }
     }
 
-    dispose() { this.canvas.remove(); }
+    dispose() { this.canvas.remove(); for(const marker of Object.values(this.broodIcons))marker.remove(); }
 }
