@@ -102,6 +102,7 @@ export class AbilityVisuals extends AbilityGeometry {
         if (visible) for (const zone of snapshot?.zones ?? []) if (zone.ability === 'whiteout' && zone.remainingMs > 0) {
             this.kit.rings.setColdDominance(zone.x / 32, zone.y / 32, zone.radius / 32); break;
         }
+        if (game) this.kit.fx.blockers = game.geometry.blockers;
         this.kit.begin(dt);
         super.update(visible ? snapshot : undefined, dt, visible);
         const f = this.frame;
