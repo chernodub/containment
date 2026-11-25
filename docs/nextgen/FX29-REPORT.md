@@ -37,3 +37,5 @@ The production build passed. The requested ten-second Cryo benchmark ran three t
 The real-time Low maximum exceeded baseline by one draw. The follow-up used the same native benchmark driver with fixed timing and resolution. It recorded 133 peak draws and zero combat compiles on both builds. The matched power captures also stayed within their previous draw counts.
 
 [Real-time baseline](../../artifacts/nextgen/fx29-before/benchmark.json) · [Real-time FX29](../../artifacts/nextgen/fx29/benchmark.json) · [Fixed baseline](../../artifacts/nextgen/fx29-low-fixed-before/benchmark.json) · [Fixed FX29](../../artifacts/nextgen/fx29-low-fixed-now/benchmark.json)
+
+The [seed-1729 native Cryo campaign](../../artifacts/nextgen/playtest/fx29-cryo/index.html) cleared fourteen rooms and entered Infested Workshop. It reached the runner's one-hour wall limit with zero recorded errors or defects. Full campaign completion remains unverified.
