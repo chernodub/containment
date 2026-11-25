@@ -57,6 +57,7 @@ export type CollisionSteeringContext = Readonly<{
 export type EnemySpawnOptions=Readonly<{openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
+  ordinaryIdleScale?:number;
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
@@ -271,6 +272,7 @@ export class EnemySystem {
   readonly #spatialEnemies = new Map<number, SpatialEnemy>();
   readonly #listeners = new Set<(event: EnemyEvent) => void>();
   readonly #chargeObstacle?: EnemySystemOptions['chargeObstacle'];
+  readonly #ordinaryIdleScale:number;
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
   readonly #canCommit?: EnemySystemOptions['canCommit'];
@@ -311,6 +313,7 @@ export class EnemySystem {
     this.#openingWindup=options.openingWindup??1;
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
+    this.#ordinaryIdleScale=options.ordinaryIdleScale??1;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
     this.#chargeObstacle=options.chargeObstacle;
@@ -499,7 +502,7 @@ export class EnemySystem {
       if(enemy.speed===0||enemy.stunRemainingMs>0||enemy.pod||enemy.broodRemainingMs>0)continue;
       enemy.rangedCooldownRemainingMs = Math.max(
         0,
-        enemy.rangedCooldownRemainingMs - timerDelta/this.#rest,
+        enemy.rangedCooldownRemainingMs - timerDelta/this.#rest/(enemy.champion?1:this.#ordinaryIdleScale),
       );
       enemy.decisionCooldownRemainingMs = Math.max(
         0,
@@ -1230,7 +1233,7 @@ export class EnemySystem {
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }
       }else{
-        enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest;
+        enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest*(enemy.champion?1:this.#ordinaryIdleScale);
         this.#yieldMeleeBerth(enemy);
       }
       if(remaining<=0)break;

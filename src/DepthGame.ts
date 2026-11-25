@@ -148,7 +148,8 @@ export class DepthGame {
   const mode=this.difficulty,d=DIFFICULTIES[mode];
   const lateWindups=Math.round(d.windups*(1+(d.lateWindups-1)*latePressureProgress(this.node.depth,mode,this.expedition.run.version===3)))/d.windups;
   return {...d,lateWindups};
- },openingWindup:this.node.depth===0?1.5:1,lateDifficulty:this.node.depth>=10,canSeePlayer:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),launched:id=>this.mutations?.isLaunched(id)??false,immovables:()=>{const q=this.boss.snapshot;return q.active?[{x:q.x,y:q.y,radius:92,health:q.health},...q.nests.map(n=>({x:n.x,y:n.y,radius:28,health:n.health}))]:[];},balance:progressionFor(this.node),wardenOpeningAim:this.expedition.run.version===3?(enemy,player)=>this.relayShutter?undefined:wardenOpeningAim(this.geometry,enemy,player):undefined,canCommit:(enemy,player,others,attack)=>{
+ },ordinaryIdleScale:this.difficulty==='standard'&&this.node.depth>=14?.86:1,
+ openingWindup:this.node.depth===0?1.5:1,lateDifficulty:this.node.depth>=10,canSeePlayer:(a,b)=>hasClearExpeditionShot(this.geometry,a,b),launched:id=>this.mutations?.isLaunched(id)??false,immovables:()=>{const q=this.boss.snapshot;return q.active?[{x:q.x,y:q.y,radius:92,health:q.health},...q.nests.map(n=>({x:n.x,y:n.y,radius:28,health:n.health}))]:[];},balance:progressionFor(this.node),wardenOpeningAim:this.expedition.run.version===3?(enemy,player)=>this.relayShutter?undefined:wardenOpeningAim(this.geometry,enemy,player):undefined,canCommit:(enemy,player,others,attack)=>{
   if(this.shaftApproach?.id===enemy.id&&this.elapsed<this.shaftApproach.readyAt)return false;
   if(!this.relayHeavyRecovered&&enemy.beat===this.director.returnShotBeat&&
     (enemy.type==='crawler'||enemy.type==='stalker'||enemy.type==='spitter')){
