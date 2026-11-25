@@ -737,3 +737,23 @@ The production build passed. Breacher, seed 1729, `--fast`, cleared 12 rooms wit
 2. In the loaded pose the cleaver still crosses in front of the belly from the game camera. The elbow offset opens floor only between the legs and the arm.
 3. The Warden's waist and head wedge are clear in side view. In the lineup the Warden faces away, so its silhouette row shows the forelimbs and legs but not the head.
 4. The recovery pose hides the Brute head.
+
+## BRUTE30
+
+The regular and elite Brute now share a slate-teal body. The existing atlas identifies the brow, cleaver edge and elite trim. Across the other cells, one upper-left key splits the body into a lit plane and a shadow at 52% of its linear value. The brow holds its value as the head turns. In the Crew Checkpoint lineup, the regular Brute and elite both measured 120 at p98 against 181 at p90 on the marine. Rebuild the shipped shading with `npm run build`.
+
+**Hue choice.** In the native Swarm Junction crop, umber draws my eye to the shoulder first. At 480×270 it groups with the orange Crawlers. With slate teal I find the pale wedge first on the two Brutes facing down-screen, and the raised arm first on the one turning away. The same teal holds together against the brown Safety-interlock floor and the plum Infested Workshop floor. I used Infested Workshop for the dark-floor comparison because it had the lowest median spawn-floor value in the twenty-room FRAME16 survey.
+
+**Silhouette and boss.** The regular cleavers already have four segments. The extra points at the flank in the rear view come from the forelimbs and splayed feet overlapping. I kept the silhouette. A further pass would separate the wrist and foot in projection through the turn, which calls for a pose change. The rear view still relies on the paired shoulders to convey facing. I also tried flattening the Warden's body values. At quarter size the raised ram shoulder merged with the chest beside the lit maw. The shipped Warden keeps the original shading.
+
+**Combat cues.** The side and rear rows hold the same pose and change its presentation yaw. The windup uses the native red arc. The recovery rows follow a missed swing and the first rifle hit in the punish window, with both the recovery-stagger and hit receipts. The pale-gold brackets remain visible around the teal body. The head can narrow to a sliver from the side, and the thin cleaver tip still needs the windup silhouette at quarter size.
+
+| Model | Public height in metres, previous → now | Drawn footprint radius in metres, previous → now |
+|---|---:|---:|
+| Brute | 3.030000 → 3.030000 | 1.27 → 1.27 |
+| Elite Brute | 3.281961 → 3.281961 | 2.16 → 2.16 |
+| Warden | 4.500000 → 4.500000 | 2.31 → 2.31 |
+
+The local review sheets under `artifacts/nextgen/brute30/` are `candidates.png`, `do-no-harm.png`, `three-room.png` and `warden-trial.png`. Each pairs native crops with 480×270 room frames. The baseline is `783c5f4`.
+
+The production build passed. Breacher cleared six rooms through Armory on seed 1729 in fast mode, with zero runner errors. The Crew Checkpoint High Breacher benchmark recorded zero combat shader compilations.
