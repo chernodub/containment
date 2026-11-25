@@ -227,7 +227,7 @@ export function shopScreen(game: DepthGame): string {
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
       ${medicalLabel?`<span class="requisition-medical-art">${serviceArt(id)}<span class="requisition-medical-label">${medicalLabel}</span></span>`:serviceArt(id)}
       <span class="requisition-title-row"><strong class="requisition-name">${escapeHtml(name)}</strong><span class="requisition-terms"><b class="requisition-amount">${amounts[id]}</b><span class="requisition-price">${cost} CR</span></span></span>
-      <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(id==='rig-return'?MUTATION_CATALOG[upgrade].description:AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
+      <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(id==='rig-return'?(MUTATION_CATALOG[upgrade].whatChanges ?? MUTATION_CATALOG[upgrade].description):AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
       ${upgrade?transformationPreview(upgrade,id==='upgrade'):''}
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
