@@ -409,7 +409,8 @@ try {
     const evidence={
       'banked-wound':freshEvents.some(event=>event.type==='arrival-wound'),
       'side-on-lock':room.id==='residential-gallery'&&freshEvents.some(event=>event.family==='stalker'&&event.type==='enemy-warning'),
-      'shaft-pincer':room.id==='service-shaft-landing'&&s.encounter.grammar==='pincer'&&(s.encounter.meleeLockDelays??0)>0,
+      'shaft-pincer':room.id==='service-shaft-landing'&&s.encounter.grammar==='pincer'&&
+        freshEvents.some(event=>event.type==='enemy-warning'&&event.family===undefined&&event.durationMs===650),
       'delayed-hatch':(s.delayedPincerHatch?.arrivals.length??0)>=2,
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
