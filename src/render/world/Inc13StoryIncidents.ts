@@ -58,10 +58,16 @@ export class IncidentPieces {
       geometry.setIndex(Array.from({length:start},(_,i)=>i));
       geometry.index!.setUsage(T.DynamicDrawUsage);
     }
+    const laneContactBounds=id.startsWith('lane-machine-')?this.parts.flatMap(part=>{
+      part.computeBoundingBox();const box=part.boundingBox!;
+      if(box.max.y<3||box.min.y>29||(box.max.x-box.min.x)*(box.max.z-box.min.z)<145)return [];
+      const bounds=box.clone();bounds.min.multiplyScalar(1/32);bounds.max.multiplyScalar(1/32);return [bounds];
+    }):undefined;
     this.parts.forEach(g=>g.dispose());geometry.scale(1/32,1/32,1/32);
     const material=finish??new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
     const mesh=new T.Mesh(geometry,material);mesh.name='inc13-'+id;mesh.position.set(x/32,0,z/32);
+    if(laneContactBounds)mesh.userData.laneContactBounds=laneContactBounds;
     mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;
   }
 }

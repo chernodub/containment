@@ -1,3 +1,4 @@
+import {paintLaneContacts} from './LaneContactPaint';
 import {paintMachineSpill} from './MachineEmitters';
 import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
 import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
@@ -101,6 +102,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     paintFightingDeck(c,room,arena);
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
+    paintLaneContacts(c,room,root);
     const terminal=laneTerminal(room.id);
     if(terminal){
       c.save();c.translate(...terminal);c.scale(1,.69);

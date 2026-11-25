@@ -13,13 +13,12 @@ export function clipFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate){
   }
   if(!room.boundary)hull.rect(0,0,room.width,room.height);
   c.clip(hull,'evenodd');
-  const solids=new Path2D();
-  solids.rect(0,0,room.width,room.height);
   for(const r of [...room.obstacles,...room.incidentObstacles??[],...shipInteriorFurnishings(room).flatMap(f=>f.colliders)]){
+    const solids=new Path2D();solids.rect(0,0,room.width,room.height);
     solids.moveTo(r.x,r.y);solids.lineTo(r.x,r.y+r.height);
     solids.lineTo(r.x+r.width,r.y+r.height);solids.lineTo(r.x+r.width,r.y);solids.closePath();
+    c.clip(solids,'evenodd');
   }
-  c.clip(solids,'evenodd');
 }
 
 export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Point){
@@ -57,7 +56,7 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   for(const x of [-37,19])for(const y of [51,86])c.fillRect(x,y,3,3);
   c.restore();
   const light=profile.landmark.color;
-  const wet=c.createLinearGradient(arena.x-92,arena.y+11,arena.x-23,arena.y+38);
+  const wet=c.createLinearGradient(-28,-18,41,9);
   wet.addColorStop(0,'rgba(17,26,28,.49)');wet.addColorStop(.54,'#'+light.toString(16).padStart(6,'0')+'49');wet.addColorStop(1,'rgba(23,31,34,.4)');
   c.translate(arena.x-64,arena.y+29);c.fillStyle=wet;
   c.fill(new Path2D('M-37 0 Q-35 -8 -15 -6 Q-2 -12 7 -7 Q34 -9 38 -1 Q34 4 14 3 Q0 10 -19 5 Q-39 8 -37 0Z'));
