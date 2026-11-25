@@ -113,6 +113,10 @@ export function addLaneMachine(root:Group,id:string){
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
       p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
+      // Detached tongue and pin rest beneath the inspection lamp.
+      p.face([[70,2,-54],[103,4,-76],[117,5,-66],[94,4,-45]],metal);
+      p.rod([79,3,-54],[102,3,-70],3,edge);
+      p.box(92,4,-64,18,4,10,rubber,.18);
       p.face([[-133,4,-37],[-133,42,-37],[-100,42,-37],[-84,22,-37],[-84,4,-37]],metal);
       p.rod([-133,42,-37],[-100,42,-37],4,edge);
       for(const side of [-1,1]){

@@ -48,6 +48,8 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   // A recessed diffuser follows the top of each original hull module.
   // Keep the line outboard of the deck, with a short break at each joint.
   const rim: number[] = [];
+  const colors:number[]=[];
+  const cap=new T.Color(0x778482), fascia=new T.Color(0x39484a), underside=new T.Color(0x212d31);
   const hull = room.boundary ?? [];
   for (let i = 0; i < hull.length; i++) {
     const a = hull[i], b = hull[(i + 1) % hull.length];
@@ -59,13 +61,19 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     for (let j = 0; j < count; j++) {
       const start = length*j/count+.08, end = length*(j+1)/count-.08;
       const near = point(start,.18), far = point(end,.26);
-      rim.push(...near,...point(end,.18),...far,...near,...far,...point(start,.26));
+      const innerEnd=point(end,.18);
+      rim.push(...near,...innerEnd,...far,...near,...far,...point(start,.26));
+      for(let k=0;k<6;k++)colors.push(cap.r,cap.g,cap.b);
+      const lowerStart=[near[0],y-.24,near[2]], lowerEnd=[innerEnd[0],y-.24,innerEnd[2]];
+      rim.push(...near,...lowerStart,...lowerEnd,...near,...lowerEnd,...innerEnd);
+      for(const tone of [fascia,underside,underside,fascia,underside,fascia])colors.push(tone.r,tone.g,tone.b);
     }
   }
   if (rim.length) {
     const geometry = new T.BufferGeometry();
     geometry.setAttribute('position', new T.Float32BufferAttribute(rim,3));
-    const material = new T.MeshBasicMaterial({color:0x667577});
+    geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+    const material = new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide});
     material.userData.actorMaterial = true;
     const mesh = new T.Mesh(geometry,material);
     mesh.name = 'hull-cap-diffusers';

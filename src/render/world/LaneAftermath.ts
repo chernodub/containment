@@ -85,6 +85,22 @@ export function paintLaneAftermath(c:Brush,id:string,arena:Point){
         fragment(c,'M-14 3Q-10 -18 6 -14Q19 -8 16 2L9 -2 5 5 0 0 -5 6Z','#968978');
         seam(c,'M-8 -4q6 -10 14 -7',2,'#b0a18b');c.restore();
       }break;
+    case 'shielding-gate':
+      seam(c,'M-24 19Q-6 7 14 -3T55 -40',8,'#454c52');
+      seam(c,'M-20 19Q-1 8 18 -5T55 -36',2.4,'#a2aba0');
+      fragment(c,'M7 -16l20 -9 4 5 -21 10Z','#7f8989');break;
+    case 'containment-annulus':
+      fragment(c,'M43 29Q4 19 -32 1T-78 -39L-69 -42Q-56 -19 -26 -8T45 18L37 22Z','#79847e');
+      seam(c,'M-73 -38Q-57 -10 -28 -2T37 23',2.8,'#a0ac9e');
+      patch(c,'M33 26Q11 31 -11 17T-52 8Q-26 6 -6 20T33 26Z','#4c6265');break;
+    case 'manual-control-chamber':
+      seam(c,'M20 24Q-6 2 -21 18T-62 11Q-63 -8 -44 -5',4,'#928473');
+      fragment(c,'M-48 -8l4 -6 12 1 6 9 -5 7 -9 -2 -3 -6Z','#a09a80');
+      patch(c,'M-36 -9l6 4 -4 4 -6 -5Z','#414d51');break;
+    case 'overload-floor':
+      patch(c,'M31 59Q23 31 1 21T-32 3L-49 -18 -30 -15 -14 -1 4 3 13 16 27 18 44 45Z','#4d4d4a');
+      fragment(c,'M37 53L24 29 7 26 -4 10 -25 7 -39 -8 -34 -11 -18 0 1 3 13 19 30 21 44 47Z','#96816b');
+      for(const [x,y] of [[13,30],[-6,16],[-31,5]]){c.save();c.translate(x,y);fragment(c,'M-6 -3l13 2 -2 5 -12 -1Z','#8a9390');c.restore();}break;
     case 'freight-hold':
       // The runners lead to the actual cargo cradle at (741,725).
       for(const offset of [-18,19]){
