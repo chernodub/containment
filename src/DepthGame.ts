@@ -172,6 +172,18 @@ export class DepthGame {
   return this.director.canCommit(enemy,player,others,attack,
    this.difficulty==='standard'||this.difficulty==='story'?{
     radius:this.player.radius,attempting,
+    ...(this.node.templateId==='service-shaft-landing'&&this.encounter.grammar==='pincer'?{
+     cover:(point:{x:number;y:number},pack:Iterable<EnemyCommitment>)=>{
+      for(const threat of pack){
+       if(threat.type==='spitter'&&Math.hypot(point.x-threat.x,point.y-threat.y)<480&&
+        canTraverseExpedition(this.geometry,threat,point,SPITTER_PROJECTILE_RADIUS))return false;
+       if(threat.id!==enemy.id&&threat.meleePhase==='approach'&&
+        Math.hypot(point.x-threat.x,point.y-threat.y)<100&&
+        canTraverseExpedition(this.geometry,threat,point,this.player.radius))return false;
+      }
+      return true;
+     },
+    }:{}),
     clear:point=>canTraverseExpedition(this.geometry,player,point,this.player.radius)&&
      !this.abilities?.blocksMovement(player,point,this.player.radius),
    }:undefined);
@@ -718,8 +730,10 @@ export class DepthGame {
     beat:e.beat,deckY:this.player.y<440?125:775,x:Math.min(1080,Math.max(510,this.player.x+255)),
    };
    const ingress=this.shaftIngress;
+   // Feed the pincer along the outer shoulder of the existing shaft wall.
+   const deckY=e.grammar==='pincer'?(ingress.deckY<440?102:798):ingress.deckY;
    const offsets=[0,-38,38];
-   const point=offsets.map(offset=>({x:ingress.x,y:ingress.deckY+offset})).find(point=>
+   const point=offsets.map(offset=>({x:ingress.x,y:deckY+offset})).find(point=>
     canOccupyExpedition(this.geometry,point,radius)&&
     Math.hypot(point.x-this.player.x,point.y-this.player.y)>radius+this.player.radius+80);
    if(point)({x,y}=point);

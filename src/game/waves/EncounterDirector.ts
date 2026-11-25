@@ -195,9 +195,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   if(shaftLanding){
    const protectedArrivals=beatIndex===0?2:1;
+   const pincerDelay=beat.grammar==='pincer'?1200:0;
    for(let index=protectedArrivals;index<arrivals.length;index++){
     const request=arrivals[index];
-    arrivals[index]=Object.freeze({...request,atMs:request.atMs+(index-protectedArrivals+1)*300});
+    arrivals[index]=Object.freeze({...request,atMs:request.atMs+pincerDelay+(index-protectedArrivals+1)*300});
    }
   }
   if(galleryOpening&&beatIndex===0){
@@ -350,7 +351,7 @@ export class EncounterDirector {
   private readonly delayedLocks=new Set<number>();
   meleeLockDelays=0;
   canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
-    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean}):boolean {
+    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean;cover?:(point:{x:number;y:number},others:Iterable<EnemyCommitment>)=>boolean}):boolean {
     const active:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
@@ -372,7 +373,7 @@ export class EncounterDirector {
       const clear=Array.from({length:16},(_,index)=>{
         const heading=angle+index*Math.PI/8;
         return {x:player.x+65*Math.cos(heading),y:player.y+65*Math.sin(heading)};
-      }).some(point=>sidestep.clear(point)&&
+      }).some(point=>sidestep.clear(point)&&(!sidestep.cover||sidestep.cover(point,others))&&
         !meleeStrikeContains(enemy.meleeShape,enemy.x,enemy.y,angle,point.x,point.y,sidestep.radius)&&
         active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
           other.meleeAngle,point.x,point.y,sidestep.radius)));
