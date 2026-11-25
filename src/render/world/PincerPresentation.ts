@@ -24,6 +24,7 @@ export class PincerPresentation {
     silhouettes: {root:T.Group; arrival:number}[];
     countdown: T.Mesh;
   }>();
+  private delayedGate?:ReturnType<PincerPresentation['createGate']>;
   private readonly seams: T.Mesh[] = [];
   private readonly pinned = new WeakMap<ActorModel, number>();
   /** Gate and guardian meshes are created on demand after room readiness. */
@@ -157,6 +158,7 @@ export class PincerPresentation {
         gate.root.add(silhouette);
       }
     }
+    this.updateDelayedGate(menu?undefined:game.delayedPincerHatch,unit);
     this.exit.visible = pincer?.state === 'sealed';
     if (!pincer) return;
     if (this.exit.visible) {
@@ -180,6 +182,34 @@ export class PincerPresentation {
           (i - (gate.silhouettes.length - 1) / 2) * .51);
       });
     }
+  }
+
+  private updateDelayedGate(hatch:DepthGame['delayedPincerHatch'],unit:number){
+    if(!hatch){
+      if(this.delayedGate)this.delayedGate.root.visible=false;
+      return;
+    }
+    const gate=this.delayedGate??=this.createGate();
+    const {breach,arrivals}=hatch;
+    gate.root.visible=true;
+    gate.root.position.set(breach.x/unit+(breach.facing==='east'?.5:-.5),0,breach.y/unit);
+    gate.root.rotation.y=breach.facing==='east'?0:Math.PI;
+    const remaining=arrivals[0];
+    gate.shutter.position.y=Math.max(0,1.4*(1-remaining/650));
+    gate.countdown.geometry.setDrawRange(0,Math.ceil(48*Math.min(1,remaining/4150))*6);
+    while(gate.silhouettes.length<arrivals.length){
+      const root=this.makeSilhouette();
+      gate.silhouettes.push({root,arrival:0});
+      gate.root.add(root);
+    }
+    gate.silhouettes.forEach(({root},index)=>{
+      root.visible=index<arrivals.length;
+      if(!root.visible)return;
+      const waiting=arrivals[index];
+      const advance=Math.max(0,1-waiting/650);
+      root.position.set(-.72+advance*1.3,Math.sin(waiting/120)*.06,
+        (index-(arrivals.length-1)/2)*.36);
+    });
   }
 
   private lastPodRoom = -1;
@@ -270,6 +300,7 @@ export class PincerPresentation {
   dispose() {
     this.root.removeFromParent();
     for (const gate of this.gates.values()) gate.countdown.geometry.dispose();
+    this.delayedGate?.countdown.geometry.dispose();
     for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal, this.track]) resource.dispose();
   }
 }
