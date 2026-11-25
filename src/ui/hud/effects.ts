@@ -1,6 +1,8 @@
+import type {GameEffect} from '../../DepthGame';
 import type { AbilityEvent } from '../../game/abilities/contract';
 /** Optional presentation metadata is consumed only when the simulation supplies it. */
 export type HudEffect = Readonly<{
+    reserveCut?: GameEffect['reserveCut'];
     shutterBroken?: true;
     selfBlast?: {distance:number;radius:number};
   type: string;

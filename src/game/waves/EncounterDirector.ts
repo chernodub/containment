@@ -1,3 +1,4 @@
+import {meleeStrikeContains} from '../enemies/meleeAttacks';
 import {WARDEN_WALL_STUN_MS,type EnemyCommitment} from '../enemies/EnemySystem';
 import {ENEMY_FAMILY_SCALE} from '../enemies/catalog';
 import type {DetourChoice} from '../roguelike/economy';
@@ -16,7 +17,10 @@ export type EncounterSpawn = Readonly<{
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
   healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;
 }>;
-export type EncounterEvent = EncounterSpawn
+export type ReserveCut = Readonly<{
+  type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
+}>;
+export type EncounterEvent = EncounterSpawn | ReserveCut
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
@@ -37,7 +41,7 @@ export type PincerSnapshot = Readonly<{
 export const PINCER_WINDOW_MS = 14000;
 
 export type EncounterSnapshot = Readonly<{
-  phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
+  meleeLockDelays?:number; phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
   reserve?: {breachId:string;remainingMs:number;leader:'Spitter'|'Brute'}; pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
@@ -126,6 +130,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const reserveLeader=node.templateId==='coolant-plant'?'spitter':node.templateId==='infested-workshop'?'brute':undefined;
+ if(reserveLeader==='spitter'){
+  const pincer=source.findIndex(beat=>beat.grammar==='pincer');
+  if(pincer>=0)source.push(...source.splice(pincer,1));
+ }
  const reserveBeat=source.findIndex(beat=>reserveLeader==='spitter'?beat.grammar==='crossfire':reserveLeader==='brute'&&beat.grammar==='interception');
  // Freight Hold already uses a split pincer. In the other early sectors,
  // pick a featured actor from the existing exchanges without adding bodies.
@@ -156,7 +164,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
-    const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
+    const side=reserveLeader==='spitter'&&beat.grammar==='pincer'?ordinal%2:role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side+(node.depth<3?opening?.index??0:0)+(group.guardian?beat.breachOffset??0:0))%ids.length];
     const shaftOpening=shaftLanding&&beatIndex===0;
     const rehearsalFlank=beat.rehearseHeavy&&group.role==='flanker'&&index===0;
@@ -318,7 +326,7 @@ export class EncounterDirector {
   private currentPhase: EncounterPhase = 'idle';
   private elapsedMs = 0;
   private dispatched = 0;
-  private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
+  private coolantEntry?:string;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
   private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
@@ -339,13 +347,18 @@ export class EncounterDirector {
         .filter(request=>request.reinforcement&&request.role==='flanker')));
     });
   }
-  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge'):boolean {
+  private readonly delayedLocks=new Set<number>();
+  meleeLockDelays=0;
+  canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
+    sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean}):boolean {
+    const active:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
     for(const other of others){
       if(other.id===enemy.id)continue;
       if(other.champion==='warden'&&other.wallStunAngle!==undefined&&other.beat===enemy.beat&&!enemy.champion
         &&(other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
+      if(sidestep&&attack==='melee'&&(other.meleePhase==='windup'||other.meleePhase==='strike'))active.push(other);
       if(other.champion){
         charging ||= other.pendingAttack==='charge'||other.chargeMs>0;
         continue;
@@ -354,6 +367,21 @@ export class EncounterDirector {
       if(other.meleePhase!=='approach'||other.pendingAttack==='charge'||other.chargeMs>0)
         melee+=other.type==='crawler'?.5:1;
     }
+    if(active.length&&sidestep?.clear){
+      const angle=Math.atan2(player.y-enemy.y,player.x-enemy.x);
+      const clear=Array.from({length:16},(_,index)=>{
+        const heading=angle+index*Math.PI/8;
+        return {x:player.x+65*Math.cos(heading),y:player.y+65*Math.sin(heading)};
+      }).some(point=>sidestep.clear(point)&&
+        !meleeStrikeContains(enemy.meleeShape,enemy.x,enemy.y,angle,point.x,point.y,sidestep.radius)&&
+        active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
+          other.meleeAngle,point.x,point.y,sidestep.radius)));
+      if(!clear){
+        if(sidestep.attempting&&!this.delayedLocks.has(enemy.id)){this.delayedLocks.add(enemy.id);this.meleeLockDelays++;}
+        return false;
+      }
+    }
+    if(sidestep?.attempting)this.delayedLocks.delete(enemy.id);
     if(enemy.champion)return attack!=='charge'||melee<=this.tokens.meleeTokens-1;
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
@@ -375,7 +403,7 @@ export class EncounterDirector {
     const reserve=nextReserve?{breachId:nextReserve.breachId,
       remainingMs:Math.max(0,nextReserve.atMs-this.beatElapsedMs),
       leader:beat?.grammar==='crossfire'?'Spitter' as const:'Brute' as const}:undefined;
-    return Object.freeze({ reserve, pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
+    return Object.freeze({ meleeLockDelays:this.meleeLockDelays, reserve, pincer, phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
       remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,beatRemaining:Math.max(0,(this.plan.beats[this.beatIndex]?.end??this.dispatched)-this.dispatched),grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
   }
 
@@ -448,7 +476,24 @@ export class EncounterDirector {
     this.dispatched=end;
   }
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
-  reportPriorityDefeated(beat:number):void {if(Number.isSafeInteger(beat)&&beat===this.beatIndex){this.defusedBeats.add(beat);const plan=this.plan.beats?.[beat];if(plan?.consequence==='leader')this.breakBeat(plan.end);}}
+  reportPriorityDefeated(beat:number){
+    if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
+    const plan=this.plan.beats?.[beat];
+    const cut=this.reserveCut(beat);
+    this.defusedBeats.add(beat);
+    if(plan?.consequence==='leader')this.breakBeat(plan.end);
+    return cut;
+  }
+  private reserveCut(beat:number):ReserveCut|undefined {
+    const end=this.plan.beats?.[beat]?.end??this.dispatched;
+    const reserve=this.plan.schedule.slice(this.dispatched,end).filter(request=>request.reserve);
+    if(!reserve.length)return;
+    if(reserve[0].enemyId==='crawler'){
+      const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
+      if(pincer)this.coolantEntry=this.plan.schedule[pincer.start].breachId;
+    }
+    return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
+  }
   cancelNextReinforcements():void { this.skipReinforcements=true; }
   private rehearsalReleaseMs?:number;
   private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean,crawlerSlots:number):readonly EncounterEvent[]{
@@ -468,8 +513,13 @@ export class EncounterDirector {
       const request=this.plan.schedule[this.dispatched];
       if(request.reinforcement&&this.skipReinforcements&&!this.defusedBeats.has(this.beatIndex)){
         this.skipReinforcements=false;this.skippedReinforcementBeat=this.beatIndex;
+        const cut=this.reserveCut(this.beatIndex);
+        if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
+      if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
       const cost=request.enemyId==='carrier'?4:1;
       if(request.atMs>this.beatElapsedMs||cost>slots||request.enemyId==='crawler'&&crawlerSlots===0)break;
       if(request.rehearsalFlank){
@@ -511,6 +561,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

@@ -356,7 +356,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const drill = getAwakeningDrill(game);
         const lesson = !!drill || game.augmentDrillActive || game.coverLessonActive && !game.siege;
         lessonActive = playing && lesson;
-        const objective = game.encounterObjective || cue || getRoomOpening(game)
+        const objective = encounterCues.reserveResult || game.encounterObjective || cue || getRoomOpening(game)
             || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? '');
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
@@ -520,7 +520,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             ||enemy.chargeMs>0||enemy.pod);
         const shutterCallout = shutterImpact?.revision === game.roomRevision && game.elapsed < shutterImpact.until
             ? shutterImpact : undefined;
-        const prompts = [shutterCallout && 'shutter', lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
+        const prompts = [encounterCues.reserveResult && 'objective', shutterCallout && 'shutter', lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
             weaponLesson && !lessonDanger && 'weapon-lesson', suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {

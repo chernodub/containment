@@ -21,7 +21,25 @@ export class FloorChoiceMarkers {
  private readonly shutterGeometry=new T.BoxGeometry(1,1,1);
  private readonly shutterMaterial=new T.MeshStandardMaterial({color:0x74513a,emissive:0xe78338,emissiveIntensity:.55});
  private readonly shutterPanels=[new T.Mesh(this.shutterGeometry,this.shutterMaterial),new T.Mesh(this.shutterGeometry,this.shutterMaterial)];
+ private readonly grilles=Array.from({length:2},()=>new T.Mesh(this.shutterGeometry,this.shutterMaterial));
+ private reserve?:{x:number;y:number;life:number;entry?:string};
+ closeReserve(x:number,y:number,entry?:string){this.reserve={x,y,life:3,entry};}
+ resetReserve(){this.reserve=undefined;}
+ updateReserve(breaches:DepthGame['geometry']['breaches'],unit:number,dt:number){
+  const reserve=this.reserve;
+  if(reserve)reserve.life=Math.max(0,reserve.life-dt);
+  const entry=breaches.find(point=>point.id===reserve?.entry);
+  this.grilles.forEach((mesh,index)=>{
+   const point=index===0?reserve&&reserve.life>0?reserve:undefined:entry;
+   mesh.visible=!!point;
+   if(!point)return;
+   const height=index===0?Math.min(1.4,(3-reserve!.life)*7):1.4;
+   mesh.position.set(point.x/unit,1.4-height/2,point.y/unit);
+   mesh.scale.set(.17,height,1.45);
+  });
+ }
  constructor(){
+  this.root.add(...this.grilles);
   this.root.add(...this.shutterPanels);
   this.coverGlyph.rotation.x=-Math.PI/2;
   this.coverGlyph.visible=false;
@@ -40,10 +58,15 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutter']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame']){
   this.shutterPanels.forEach((panel,index)=>{
    panel.visible=!!shutter;
    if(!shutter)return;
+   if(shutter.broken){
+    panel.position.set((shutter.x+shutter.width/2)/unit,.06,(shutter.y+shutter.height*(index===0?.12:.88))/unit);
+    panel.scale.set(.65,.12,.35);
+    return;
+   }
    panel.position.set((shutter.x+shutter.width/2)/unit,index===0?.28:1.04,(shutter.y+shutter.height/2)/unit);
    panel.scale.set(shutter.width/unit,index===0?.56:.48,shutter.height/unit);
   });

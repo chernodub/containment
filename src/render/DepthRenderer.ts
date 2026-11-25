@@ -431,6 +431,7 @@ export class DepthRenderer {
  private releasedBerth:ReturnType<typeof attachReleasedBerth>|undefined;
  loadRoom(node:RunNode,environment:ShipEnvironment|undefined=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':undefined)){
   if(this.roomWarmPending){this.deferredRoom={node,environment};return;}
+  this.floorChoiceMarkers.resetReserve();
   this.cancelRoomPrefetch?.();this.cancelRoomPrefetch=undefined;this.prefetchKey='';
   const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0,materialProfiles:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
   const keyChanged=(this.roomEnvironment==='reactor')!==(environment==='reactor');
@@ -574,6 +575,10 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
+  if(effect.reserveCut){
+   this.floorChoiceMarkers.closeReserve(effect.x,effect.y,effect.reserveCut.closedEntry);
+   return;
+  }
   this.overdriveReactions.event(effect,this.actors,this.corpses,this.interimAbilities.kit ?? undefined);
   const hold=combatPresentationHoldSeconds(effect);if(hold)this.presentationHold?.request(hold,this.options.screenShake,!!this.motionQuery?.matches);
   if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
@@ -634,7 +639,8 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
-  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutter);
+  this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
+  this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?[]:game.relayApproaches,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
