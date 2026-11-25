@@ -21,10 +21,18 @@ export function clipFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate){
   }
 }
 
+const wetContour=()=>new Path2D('M-37 0 Q-35 -8 -15 -6 Q-2 -12 7 -7 Q34 -9 38 -1 Q34 4 14 3 Q0 10 -19 5 Q-39 8 -37 0Z');
+
+export function paintDeckWetMask(c:CanvasRenderingContext2D,arena:Point){
+  c.save();c.translate(arena.x-64,arena.y+29);
+  c.globalCompositeOperation='destination-out';c.fillStyle='rgba(0,0,0,.78)';
+  c.fill(wetContour());c.restore();
+}
+
 export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Point){
   const profile=roomValueProfile(room.id);
   if(!profile?.landmark)return;
-  c.save();clipFightingDeck(c,room);
+  c.save();clipFightingDeck(c,room);c.globalCompositeOperation='source-over';
   const rgb=profile.tint, seed=[...room.id].reduce((a,b)=>a+b.charCodeAt(0),0);
   const tint=(gain:number,alpha:number)=>'rgba('+[16,8,0].map(s=>Math.round(((rgb>>s)&255)*gain)).join(',')+','+alpha+')';
   const width=105+seed%37,depth=64+seed%23;
@@ -40,8 +48,8 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   c.save();c.translate(arena.x,arena.y);
   c.rotate(Math.atan2(room.exit.y-room.spawn.y,room.exit.x-room.spawn.x));
   const worn=c.createLinearGradient(0,-49,0,49);
-  worn.addColorStop(0,tint(.7,0));worn.addColorStop(.38,tint(.72,.27));
-  worn.addColorStop(.68,tint(.71,.24));worn.addColorStop(1,tint(.7,0));
+  worn.addColorStop(0,tint(.7,0));worn.addColorStop(.38,tint(.96,.49));
+  worn.addColorStop(.68,tint(.94,.41));worn.addColorStop(1,tint(.7,0));
   c.fillStyle=worn;c.fillRect(-room.width,-49,2*room.width,98);
   for(const x of [-122,85]){
     c.fillStyle=tint(.18,.72);c.fillRect(x,-67,59,20);
@@ -59,6 +67,6 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   const wet=c.createLinearGradient(-28,-18,41,9);
   wet.addColorStop(0,'rgba(17,26,28,.49)');wet.addColorStop(.54,'#'+light.toString(16).padStart(6,'0')+'49');wet.addColorStop(1,'rgba(23,31,34,.4)');
   c.translate(arena.x-64,arena.y+29);c.fillStyle=wet;
-  c.fill(new Path2D('M-37 0 Q-35 -8 -15 -6 Q-2 -12 7 -7 Q34 -9 38 -1 Q34 4 14 3 Q0 10 -19 5 Q-39 8 -37 0Z'));
+  c.fill(wetContour());
   c.restore();
 }

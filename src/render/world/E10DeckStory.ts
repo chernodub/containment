@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {paintFightingDeck} from './FightingDeck';
+import {paintFightingDeck,paintDeckWetMask} from './FightingDeck';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
 
@@ -63,6 +63,10 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
         polygon([[u-4,v-3],[u+9,v-6],[u+6,v+5],[u-3,v+8]].map(([x,z])=>point(x,z)),n%2?'#7c8088':'#3c4650');
       }
     }
+  }
+  if(plan){
+    context.save();context.scale(1024/(width*32),1024/(depth*32));
+    context.translate(-minX*32,-minZ*32);paintDeckWetMask(context,plan.arena);context.restore();
   }
   const make = (image:HTMLCanvasElement) => {
     const texture = new T.CanvasTexture(image); texture.name = 'e10-placed-evacuation-wear'; texture.colorSpace = T.SRGBColorSpace;

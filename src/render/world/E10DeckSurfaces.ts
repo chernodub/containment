@@ -127,11 +127,15 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
         e10Value=mix(light13Floor.z,mix(light13Floor.y,light13Floor.x,e10Pool),e10Irradiance.g)*mix(1.0,light13Perimeter.z,light13Outer*(1.0-e10Pool*.85));
       }
       diffuseColor.rgb*=e10Value*mix(e10FillTint,e10KeyTint,e10Pool);
+      float e10Wet=0.0;
       #ifdef USE_EMISSIVEMAP
-        vec3 e10Story=texture2D(emissiveMap,e10RoomUV).rgb;
+        vec4 e10Paint=texture2D(emissiveMap,e10RoomUV);
+        e10Wet=1.0-e10Paint.a;
+        vec3 e10Story=e10Paint.rgb;
         diffuseColor.rgb*=mix(vec3(1.0),e10Story,mix(.78,.66,e10Calm));
       #endif
     `);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.22,e10Wet);');
     shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','// Placed deck wear uses the native sampler in the base-colour path.');
     shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       reflectedLight.indirectDiffuse+=diffuseColor.rgb*(.025+.035*e10Pool);
