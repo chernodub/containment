@@ -208,11 +208,12 @@ export function shopScreen(game: DepthGame): string {
     'rig-return':SERVICE_CATALOG['rig-return'].description,
     'route-ammo':SERVICE_CATALOG['route-ammo'].description,
   };
-  const amounts = {heal: `+${repair.heal} HP`, armor: `+${repair.armor} armor`, ammo: '+130 rounds', medkit: '+1 medkit',
-    grenade: '+2 grenades', reroll: '+1 reroll', upgrade: '+1 upgrade', revive: '+1 revive', 'route-ammo': '', 'rig-return': ''};
+  const amounts = {heal: [repair.heal, 'HP'], armor: [repair.armor, 'armor'], ammo: [130, 'rounds'],
+    medkit: [1, 'medkit'], grenade: [2, 'grenades'], reroll: [1, 'reroll'], upgrade: [1, 'upgrade'],
+    revive: [1, 'revive'], 'route-ammo': [0, ''], 'rig-return': [0, '']} as const;
   const pair=game.returningRigAugments;
   const cards=(upgradesOnly:boolean)=>SERVICE_IDS.filter(id=>id!=='route-ammo'&&id!=='rig-return'&&(id==='upgrade')===upgradesOnly&&(id!=='revive'||game.node.depth===18&&run.version===3))
-    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]} >(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
+    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
     .map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
     const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
@@ -225,10 +226,11 @@ export function shopScreen(game: DepthGame): string {
       else if(id==='reroll') status='Reroll bank full';
       else status='Full after allocation';
     }
+    const [gain, unit]=amounts[id];
     const medicalLabel=id==='heal'?'Immediate':id==='medkit'?'Inventory':undefined;
     return `<button id="purchase-${upgrade??id}" class="requisition-item" data-purchase="${id}" ${upgrade?`data-augment="${upgrade}"`: ''} ${enabled?'':'disabled'}>
       ${medicalLabel?`<span class="requisition-medical-art">${serviceArt(id)}<span class="requisition-medical-label">${medicalLabel}</span></span>`:serviceArt(id)}
-      <span class="requisition-title-row"><span class="requisition-terms"><b class="requisition-amount">${amounts[id]}</b><span class="requisition-price">${cost} CR</span></span><strong class="requisition-name">${escapeHtml(name)}</strong></span>
+      <span class="requisition-title-row"><span class="requisition-terms"><b class="requisition-amount">+${gain} <small>${unit}</small></b><span class="requisition-price">${cost} <small>CR</small></span></span><strong class="requisition-name">${escapeHtml(name)}</strong></span>
       <span class="requisition-outcome">${escapeHtml(upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):outcomes[id])}</span>
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;

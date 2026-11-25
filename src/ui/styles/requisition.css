@@ -25,13 +25,6 @@
 #overlay .requisition-credits b { font: 600 36px/1 var(--font-display); }
 #overlay .requisition-credits svg { width: 24px; height: 24px; }
 #overlay .requisition-inventory { margin: 10px 0 14px; color: #bfd4dd; }
-#overlay .service-shop.requisition-grid {
-  display: grid;
-  padding: 0;
-  border: 0;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
 #overlay .requisition-item {
   display: grid;
   position: relative;
@@ -124,26 +117,12 @@
 #overlay .requisition-item > :is(.requisition-title-row, .requisition-outcome, .requisition-item-footer) {
   grid-column: 2;
 }
-#overlay .requisition-item .transformation-preview {
-  position: absolute;
-  inset: auto 0 calc(100% + 4px);
-  z-index: 1;
-  visibility: hidden;
-  pointer-events: none;
-  padding: 8px;
-  border: 1px solid var(--service-color);
-  background: #101e28;
-}
-#overlay .requisition-item:is(:hover, :focus-visible) .transformation-preview {
-  visibility: visible;
-}
 #overlay .requisition-panel .route-supply { margin-bottom: 10px; }
 
 @media (max-height: 820px) {
   #overlay .requisition-header h2 { font-size: 36px; }
   #overlay .requisition-inventory { margin: 6px 0 8px; }
   #overlay .requisition-panel .route-supply { padding: 5px 10px; }
-  #overlay .service-shop.requisition-grid { gap: 6px; }
   #overlay .requisition-item { padding: 5px; }
   #overlay .requisition-footer { margin-top: 8px; }
 }
@@ -175,7 +154,8 @@
 #overlay .requisition-item { padding: 5px; }
 #overlay .requisition-title-row { display: grid; }
 #overlay .requisition-name { font-size: 17px; }
-#overlay .requisition-amount, #overlay .requisition-price { font-size: 22px; }
+#overlay .requisition-title-row :is(.requisition-amount, .requisition-price) { font-size: 27px; }
+#overlay .requisition-title-row .requisition-terms small { font-size: 15px; }
 #overlay .requisition-item:disabled { color: #b8cbd5; }
 #overlay .requisition-item:disabled .requisition-terms { opacity: .84; }
 #overlay .requisition-item-footer { padding-top: 3px; }
@@ -194,7 +174,7 @@
   background: #183632;
   border: 1px solid #69a691;
 }
-#overlay .supply-doctrine h3 { grid-column: 1 / -1; color: #bdf7dc; margin: 0; font-size: 21px; }
+#overlay .supply-doctrine h3 { grid-column: 1 / -1; color: #bdf7dc; margin: 0; font-size: 24px; }
 #overlay .supply-doctrine-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(90px, 1fr);
