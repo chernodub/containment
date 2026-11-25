@@ -127,7 +127,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   get encounterTuningEnabled(){return I5_ENCOUNTER_TUNING_ENABLED;},
   get encounterGuardian(){return game.encounterGuardian;},
   /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
-  botPursuitLookAhead(target:{x:number;y:number}){return botPursuitLookAhead(game,target,90);},
+  botPursuitLookAhead(target:{x:number;y:number},requireProgress=false){return botPursuitLookAhead(game,target,90,requireProgress);},
   botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){

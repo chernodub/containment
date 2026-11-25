@@ -175,16 +175,19 @@ export function botWaypoint(game: BotGame, target: Point): Point | null {
 }
 
 /** Shorten only blocked pursuit probes. A legal straight approach retains the normal look-ahead. */
-export function botPursuitLookAhead(game: BotGame, waypoint:Point, normal:number):number {
+export function botPursuitLookAhead(game: BotGame, waypoint:Point, normal:number, requireProgress=false):number {
   const {player,geometry}=game;
   const distanceToWaypoint=distance(player,waypoint);
-  if(distanceToWaypoint<normal)return Math.max(8,distanceToWaypoint);
+  if(!requireProgress&&distanceToWaypoint<normal)return Math.max(8,distanceToWaypoint);
+  const initial=Math.max(8,Math.min(normal,distanceToWaypoint));
   const approach=Math.atan2(waypoint.y-player.y,waypoint.x-player.x);
-  for(const length of [normal,48,24,12]){
+  for(const length of [initial,48,24,12,8]){
+    if(length>initial||!requireProgress&&length===8)continue;
     for(const offset of [0,Math.PI/4,-Math.PI/4]){
       const angle=Math.round((approach+offset)/(Math.PI/4))*(Math.PI/4);
       const end={x:player.x+Math.cos(angle)*length,y:player.y+Math.sin(angle)*length};
-      if(canTraverseExpedition(geometry,player,end,player.radius))return length;
+      if((!requireProgress||distance(end,waypoint)<distanceToWaypoint)
+        &&canTraverseExpedition(geometry,player,end,player.radius))return length;
     }
   }
   return 12;
