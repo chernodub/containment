@@ -523,9 +523,9 @@ export class EncounterDirector {
       const cost=request.enemyId==='carrier'?4:1;
       if(request.atMs>this.beatElapsedMs||cost>slots||request.enemyId==='crawler'&&crawlerSlots===0)break;
       if(request.rehearsalFlank){
-        if(!heavyRecovered&&occupiedCount>0)break;
+        if(!heavyRecovered&&occupiedCount>0&&this.beatElapsedMs<request.atMs+3000)break;
         this.rehearsalReleaseMs=this.beatElapsedMs;
-      }else if(request.afterHeavyRecovery&&this.beatElapsedMs<(this.rehearsalReleaseMs??this.beatElapsedMs)+900)break;
+      }else if(request.afterHeavyRecovery&&this.beatElapsedMs<(this.rehearsalReleaseMs??request.atMs+3000)+900)break;
       const arrival=request.reserve?request:this.placeInterception(request,player);
       if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
         this.dispatched++;this.canceledReinforcements++;continue;

@@ -22,7 +22,7 @@ const workshopMouths=Object.freeze([
  aperture('Loading to work threshold','wide workbay mouth',p(260,340),p(260,640),[gate('Loading dock','Work floor',260,340,260,480),gate('Loading dock','Work floor',260,500,260,640)]),
  aperture('Lathe service workbay front','wide workbay mouth',p(272,324),p(560,324),[gate('Lathe service workbay','Work floor',272,324,412,324),gate('Lathe service workbay','Work floor',420,324,560,324)]),
  aperture('Tool workbay front','wide workbay mouth',p(584,288),p(876,288),[gate('Tool workbay','Work floor',584,288,724,288),gate('Tool workbay','Work floor',736,288,876,288)]),
- aperture('Gantry workbay front','wide workbay mouth',p(888,300),p(888,600),[gate('Work floor','Gantry workbay',888,300,888,440),gate('Work floor','Gantry workbay',888,460,888,600)]),
+ aperture('Gantry workbay front','wide workbay mouth',p(888,300),p(888,696),[gate('Work floor','Gantry workbay',888,300,888,440),gate('Work floor','Gantry workbay',888,460,888,696)]),
  aperture('Rear service workbay front','wide workbay mouth',p(484,812),p(876,812),[gate('Work floor','Rear service workbay',484,812,664,812),gate('Work floor','Rear service workbay',696,812,876,812)]),
 ]);
 const safetyDoors=Object.freeze([
@@ -47,7 +47,7 @@ export const SHIP_FINAL_PARTITION_PLANS:Readonly<Record<string,ShipPlan>>=Object
    // Keep all four V11 source machinery reservations. Connected cheeks make
    // a real loading threshold; the gantry is an open-front service workbay.
    // Fill its former60-unit L interior, not an extra equipment island.
-   voids:[wall(560,0,24,340),wall(1020,440,100,120),wall(460,800,24,200),wall(248,160,24,20),wall(248,320,24,20),wall(248,640,24,160),wall(876,0,24,300),wall(876,600,24,400)],
+   voids:[wall(560,0,24,340),wall(1020,440,100,120),wall(460,800,24,200),wall(248,160,24,20),wall(248,320,24,20),wall(248,640,24,160),wall(876,0,24,300),wall(876,696,24,304)],
   }),
   spaces:Object.freeze([space('Loading dock',0,0,248,800,100,500),space('Work floor',272,300,604,500,650,500),space('Lathe service workbay',272,160,288,180,416,230),space('Tool workbay',584,0,292,300,800,180),space('Gantry workbay',900,0,380,800,1180,640),space('Rear service workbay',484,800,392,200,650,880)]),
   openings:Object.freeze(workshopMouths.flatMap(m=>m.lanes)),

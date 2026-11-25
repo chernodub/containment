@@ -88,7 +88,7 @@ export class DepthGame {
    if(slots[slot].ready)this.lastAbilityReady[slot]=this.elapsed;
  }
  private plateRifleHits=0;
- private eliteBruteIngress?:FacilityNavigation;
+ private bruteIngress=new Map<number,FacilityNavigation>();
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private shaftApproach?:{id:number;readyAt:number};
@@ -393,7 +393,7 @@ export class DepthGame {
   return true;
  }
  private enterRoom(start=true){this.broodSupply=undefined;this.broodChoiceUsed=false;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
- this.gateStaged=false;this.gateHold=undefined;this.eliteBruteIngress=undefined;
+ this.gateStaged=false;this.gateHold=undefined;this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];
  if(this.node.templateId==='overload-floor'){
@@ -621,10 +621,12 @@ export class DepthGame {
  targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
  private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={},shutterSpitter?:true,approachLeadMs?:number){
   const radius=guardianRadius(guardian,enemyBodyRadius(type,elite)),origin=options.podOrigin;
-  const checkIngress=this.expedition.run.version===3&&type==='brute'&&elite&&!guardian;
-  if(checkIngress&&!this.eliteBruteIngress){
-   this.eliteBruteIngress=new FacilityNavigation(this.geometry,Math.ceil(radius+2));
-   this.eliteBruteIngress.prepare(this.geometry.playerSpawn,1);
+  const checkIngress=this.expedition.run.version===3&&type==='brute'&&!guardian;
+  let ingress=this.bruteIngress.get(radius);
+  if(checkIngress&&!ingress){
+   ingress=new FacilityNavigation(this.geometry,Math.ceil(radius+2));
+   ingress.prepare(this.geometry.playerSpawn,1);
+   this.bruteIngress.set(radius,ingress);
   }
   const podNeighbors=origin?this.enemies.snapshot.enemies:undefined;
   // I13 pod retries search the entire authored hatch annulus, never a remote breach.
@@ -639,7 +641,7 @@ export class DepthGame {
    if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+(options.pod?0:options.closeIngress?6:options.lesson||guardian==='warden'?20:80)&&canOccupyExpedition(this.geometry,p,radius)){
     // A legal circle inside an isolated pocket is not an entrance. The pending
     // request rotates to another open breach when no connected candidate fits.
-    if(checkIngress&&!this.eliteBruteIngress?.reachable(p,radius+2))continue;
+    if(checkIngress&&!ingress?.reachable(p,radius+2))continue;
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
      if(guardian)this.enemies.promote(result.enemy.id,guardian);

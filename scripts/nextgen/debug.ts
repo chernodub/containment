@@ -109,8 +109,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   spawn(type:StandardEnemyId,x:number,y:number,elite=false){const radius=ENEMIES[type]?.radius;if(!radius||!canOccupyExpedition(game.geometry,{x,y},radius)||Math.hypot(x-game.player.x,y-game.player.y)<radius+game.player.radius+12)return false;const result=game.enemies.spawn(type,x,y,elite);return result.spawned?result.enemy.id:false;},
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
   botWeaponRange:()=>WEAPONS[game.combat.snapshot.weaponId].projectileSpeed*2,
-  botShotClear(x:number,y:number,from:{x:number;y:number}=game.player){
-    return canTraverseExpedition(game.geometry,from,{x,y},WEAPONS.rifle.projectileRadius);
+  botShotClear(x:number,y:number,from:{x:number;y:number}=game.player, weapon=game.combat.snapshot.weaponId){
+    return canTraverseExpedition(game.geometry,from,{x,y},WEAPONS[weapon].projectileRadius);
   },
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
   /** The runner verifies this build's shared policy before collecting a cohort. */
