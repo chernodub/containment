@@ -10,9 +10,9 @@ From the repository root, with npm dependencies, Playwright Chromium and Python 
 tools/assets/u10-keyart/title28.sh
 ```
 
-The full pass took 116 seconds on this M1 Pro. It builds the game, photographs the three title actors through the game renderer, composites them with the shipped marine and hull, and regenerates every studio card whose subjects include an enemy or brood pod. Run `npm run build` afterward to package the new images into dist. Title and settings still load static artwork.
+The full follow-up rebuild took 106 seconds on the M1 Pro. The command uses the production actor pool for the title and every card containing an enemy or brood pod. It writes composition A to the shipped UI directory and B’s replacement plates to `artifacts/nextgen/title28-studio/alternate/u10/`. Run `npm run build` afterward to package the images. Title and settings still load static artwork.
 
-The Warden uses its ram-charge pose. The Crawler’s pink stripe and the marine’s visor survive reduction to 480×270. The “07” shell is now gunmetal. The Warden’s overlapping dark upper plates still merge at small size, and its flat shading is conspicuous next to the marine. Both guardian cards use the Coolant Plant pump gallery, with the principal actor framed to 66% of image height. The Matron’s clutch reads more easily than the thin incoming plasma bolt. Other route variants retain their existing compositions.
+The Warden route uses the same Coolant Plant gallery as the Matron. The larger profile exposes the near shoulder plate. A blue-white plasma core and a pool of light meet on that plate. The rear leg still overlaps the torso at card size.
 
 Five original ink illustrations replace the armor, ammo, grenade, reroll and upgrade goods. The marked medical vial and case already read at card size. The disabled shop treatment suppresses the new colours. The Stalker lesson on the death screen uses the updated creature. The selector and ending captures match baseline pixel for pixel.
 
@@ -21,3 +21,5 @@ The production build and all six desktop captures completed. In `artifacts/nextg
 ## Backlit title studies
 
 I would ship A. At 480×270 I read the title first, the amber maw second, then the swept crest and forward limb against the opening. A leaves daylight between the Crawler and crest. In B the larger, lower Warden pushes the maw towards the bottom edge and the Crawler meets the crest. A twelve-heading study of each current heavy favoured the Warden for its projecting crest and illuminated maw. Both compositions use the studio alpha for the rim and discard the shell colours.
+
+The four-way sheets in `artifacts/nextgen/title28-followup-sheets/` read baseline, first TITLE28, A, B. The route and shop pairs in that directory compare first TITLE28 with the follow-up. All have native and 480×270 versions.
