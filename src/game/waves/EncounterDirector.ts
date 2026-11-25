@@ -294,6 +294,7 @@ export class EncounterDirector {
   private dispatched = 0;
   private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
+  private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
@@ -303,6 +304,7 @@ export class EncounterDirector {
         return arrivals.some(enemy=>enemy.enemyId==='brute'&&enemy.role==='anchor')&&
           arrivals.some(enemy=>enemy.enemyId==='crawler'||enemy.enemyId==='stalker'||enemy.enemyId==='spitter');
       })??-1 : -1;
+    this.withdrawLateScreen=options.difficulty==='standard'&&options.node.depth>=10;
     this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.holdUntilMs=options.holdUntilMs??0;
     this.breaches=options.breaches??[];
@@ -397,7 +399,7 @@ export class EncounterDirector {
     this.defusedBeats.add(beat);
     return this.plan.schedule.slice(this.dispatched,current.end).filter(request=>request.reinforcement).length;
   }
-  resolveCleanup(live:readonly {role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
+  resolveCleanup(live:readonly {type:StandardEnemyId;role?:EnemyRole;priority?:boolean;meleePhase?:string}[],pending:number,siegeReady:boolean):Cleanup|undefined {
     const beat=this.plan.beats?.[this.beatIndex];
     if(!beat||this.clearingBeat)return;
     if(!this.broken&&beat.consequence==='pincer'&&this.beatElapsedMs<PINCER_WINDOW_MS&&this.dispatched>beat.start
@@ -406,6 +408,11 @@ export class EncounterDirector {
     if(this.broken)return 'withdraw';
     if(beat.recallAfterLunge&&this.dispatched===beat.end&&!pending
       &&live.some(enemy=>enemy.role==='flanker'&&enemy.meleePhase==='recovery'))return 'withdraw';
+    if(this.withdrawLateScreen&&!pending&&this.dispatched===beat.end&&
+      (beat.grammar!=='siege'||siegeReady)&&live.length>0&&live.length<=3&&
+      live.every(enemy=>!enemy.priority&&(enemy.type==='crawler'||enemy.type==='stalker'))&&
+      this.plan.schedule.slice(beat.start,beat.end).some(request=>
+        request.priority||request.enemyId==='brute'||request.enemyId==='spitter'||request.enemyId==='carrier'))return 'withdraw';
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
