@@ -26,7 +26,9 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  const support=ray.intersectObject(world,true).find(hit=>hit.point.y>.2);if(!support)throw Error('Warning gantry support has no physical cabinet roof');
  source.y=support.point.y;
  const height=BOARD_HEIGHT,panelHeight=BOARD_DEPTH,width=3.6,ceiling=6.8,forward=height*19/26*32;
- const centers=[{x:t.spawn.x+220,z:t.spawn.y+forward},{x:plan.arena.x+(id==='safety-interlock-station'?108:96),z:plan.arena.y+forward}];
+ const interlock=id==='safety-interlock-station';
+ // Keep the interlock entry face clear of the objective HUD and floor controls.
+ const centers=[{x:t.spawn.x+(interlock?135:220),z:t.spawn.y+forward-(interlock?55:0)},{x:plan.arena.x+(interlock?108:96),z:plan.arena.y+forward}];
  if(Math.hypot(centers[0].x-centers[1].x,centers[0].z-centers[1].z)<170)centers.splice(0,1);
  // Keep the first diagnostic face inside the HUD-safe window while kiting
  // along the right inspection lane; the second face protects the arena mark.
