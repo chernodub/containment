@@ -610,6 +610,7 @@ export class DepthRenderer {
     this.effects.event({type:'boon',boon:'shield',x:near.x*UNIT,y:near.z*UNIT,radius:20});
    }
   }
+  if(effect.type==='arrival-wound')targetModel?.hit?.(Math.min(1,.2+(effect.damage??0)/65));
   if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
   if(effect.type==='corpse'&&this.corpses[this.corpses.length-1]?.pendingEffect===effect)return;
   this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));

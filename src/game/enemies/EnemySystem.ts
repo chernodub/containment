@@ -116,7 +116,8 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';arrivalSwing?:true;
 
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
-  | Readonly<{type:'melee-miss'|'recovery-stagger'|'arrival-recovery';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
+  | Readonly<{type:'arrival-wound'|'arrival-recovery';enemyId:number;x:number;y:number;damage:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -195,7 +196,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -585,13 +586,19 @@ export class EnemySystem {
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
-    if (!enemy || enemy.arrivalSwing || !Number.isFinite(amount) || amount <= 0) {
+    if (!enemy || (enemy.arrivalSwing&&!weaponHit) || !Number.isFinite(amount) || amount <= 0) {
       return this.#damageResult(false, 0, 0, false, { x: 0, y: 0 }, []);
     }
 
     const absorbedByArmor = Math.min(enemy.armor, amount);
     enemy.armor -= absorbedByArmor;
     const healthDamage = Math.min(enemy.health, amount - absorbedByArmor);
+    if(enemy.arrivalSwing){
+      const banked=Math.min(healthDamage,enemy.health-(enemy.arrivalDamage??0));
+      enemy.arrivalDamage=(enemy.arrivalDamage??0)+banked;
+      const events:EnemyEvent[]=banked>0?[freezeEvent({type:'arrival-wound',enemyId:id,x:enemy.x,y:enemy.y,damage:banked})]:[];
+      return this.#damageResult(true,absorbedByArmor,0,false,{x:0,y:0},events);
+    }
     enemy.health -= healthDamage;
     if(enemy.broodRemainingMs>0){enemy.broodDamage+=healthDamage+absorbedByArmor;if(enemy.broodDamage>=20){enemy.broodRemainingMs=0;enemy.specialCooldownMs=4000;}}
     const died = enemy.health === 0;
@@ -1255,7 +1262,7 @@ export class EnemySystem {
           events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
-        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
+        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
         enemy.arrivalSwing=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
