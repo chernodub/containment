@@ -1,5 +1,6 @@
 import * as T from 'three';
-import { ELEMENT_COLORS } from './types';
+import type { Rect } from '../../game/roguelike/types';
+import { ELEMENT_COLORS, UNIT } from './types';
 
 /**
  * VFX13/VFX14 surfaces: one retained procedural program for the hero
@@ -146,6 +147,34 @@ float burnDistance(vec2 p){
  }
  if(owner!=burnOwner)discard;
  return nearest;
+}
+// Nearby wall and machinery skirts contribute actual accumulation edges.
+uniform vec4 deckBlockers[12];
+uniform int deckBlockerCount;
+float deckClearance(vec2 p){
+ float nearest=20.;
+ for(int i=0;i<12;i++){
+  if(i>=deckBlockerCount)break;
+  vec2 q=abs(p-deckBlockers[i].xy)-deckBlockers[i].zw;
+  nearest=min(nearest,length(max(q,0.))+min(max(q.x,q.y),0.));
+ }
+ return nearest;
+}
+void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out vec3 emit,out float alpha){
+ float clear=deckClearance(p);
+ float bank=1.-smoothstep(.04,1.05,abs(clear));
+ vec2 wind=vec2(.19,-.08)*(storm?fxTime:0.);
+ float grain=fxFbm(p*vec2(.72,1.25)+wind+fxSeed);
+ vec3 cells=fxCells(p*(storm?.95:1.35)+.45*grain);
+ float crust=smoothstep(.25,.68,grain+.22*(cells.z-.5)+bank*.23);
+ float facet=smoothstep(.012,.13,cells.y-cells.x);
+ float back=front-r-(1.-crust)*.56-bank*(.18+.5*grain);
+ float bed=smoothstep(-.015,.17,back);
+ float ridge=(1.-smoothstep(.06,.36+.35*bank,back))*bed*crust;
+ float peak=1.-smoothstep(storm?.40:.12,storm?1.1:.54,age);
+ alpha=bed*mix(.16,.42,peak)*(.82+.28*crust);
+ base=mix(vec3(.010,.029,.045),vec3(.115,.228,.245),crust*facet);
+ emit=vec3(.027,.063,.075)*crust*(1.-facet)*bed+vec3(.045,.112,.134)*ridge;
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
  // All pools sample the same deck coordinates, including at ownership seams.
@@ -298,21 +327,27 @@ void main(){
    alpha=i0*.12+core*.62;
   }
  }else if(m<4.5 && fxParam>.5){
-  // Nova and Slam share the footprint, with cold needles or buckled deck seams.
-  float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853;
-  float front=R*smoothstep(0.,.045,age);
-  float behind=front-r;
-  float inside=smoothstep(-.005,.015,behind);
-  float rim=inside*(1.-smoothstep(.12,.27,behind));
-  float fade=1.-smoothstep(.05,.42,age);
-  float grain=fxNoise(fxWorld.xz*1.45+fxSeed);
-  float seam=(1.-smoothstep(.015,.115,abs(sin(a*(fxParam>1.5?6.:12.)+grain*.8))))*inside;
-  float core=(1.-smoothstep(.18,.85,r))*(1.-smoothstep(.033,.05,age));
-  // Compose the glaze in the deck's dark value range. The pooled material
-  // tone-maps premultiplied RGB, so a bright base washes out even low alpha.
-  alpha=((.18+.045*grain)*inside+.60*rim)*fade;
-  base=mix(fxColor*(.012+.014*grain),fxColor,rim);
-  emit=(mix(fxColor,vec3(.92),.35)*rim+fxColor*seam*.28)*fade*fxIntensity+vec3(core)*fxIntensity;
+  float r=fxLocal.y,front=fxRange*smoothstep(0.,.055,age);
+  if(fxParam<1.5){
+   frostBed(fxWorld.xz,r,front,age,false,base,emit,alpha);
+  }else{
+   vec2 p=fxWorld.xz-fxOrigin.xz;
+   float grit=fxFbm(p*1.3+fxSeed);
+   vec3 tile=fxCells(p*vec2(.81,1.12)+grit*.27);
+   float face=smoothstep(.012,.11,tile.y-tile.x);
+   float bank=1.-smoothstep(0.,.65,abs(deckClearance(fxWorld.xz)));
+   float back=front-r-(1.-tile.z)*(.42+.72*bank);
+   float material=smoothstep(-.015,.13,back);
+   float dust=smoothstep(.33,.70,grit+tile.x*.12);
+   base=mix(vec3(.036,.021,.013),vec3(.12,.092,.059),face*(.2+.8*tile.z));
+   base+=vec3(.035,.022,.010)*dust;
+   emit=vec3(.17,.085,.023)*(1.-face)*smoothstep(.29,.65,grit)*material;
+   alpha=.42*material*(.83+.28*dust);
+  }
+  float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
+  float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)
+    :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.60,2.2,age));
+  alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
@@ -471,20 +506,10 @@ void main(){
   // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
   float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
   if(el<1.5){
-   // The crests meet the native radius. Scallop the inner face of the ice.
    float front=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
-   float behind=front-r;
-   float width=.4+.2*pow(abs(sin(a*23.+n*4.)),3.);
-   float inside=smoothstep(0.,.025,behind);
-   float wall=inside*(1.-smoothstep(width-.08,width,behind));
-   float lip=1.-smoothstep(.06,width*.8,behind);
-   float needle=pow(abs(cos(a*31.+n*2.)),32.)*smoothstep(.62,.86,n);
-   float glaze=inside*(.036+.034*n+.06*needle);
+   frostBed(fxWorld.xz,r,front,age,true,base,emit,alpha);
+   emit+=vec3(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
    line=0.;
-   alpha=glaze+wall*.83;
-   base=mix(vec3(.020,.052,.065),mix(vec3(.09,.54,.65),vec3(.89,.98,1.),lip),wall);
-   emit=wall*mix(vec3(.025,.17,.22),vec3(.38,.48,.52),lip)
-       +inside*needle*vec3(.018,.052,.065);
   }else if(el<2.5){
    vec3 cell=fxCells(q*1.25+.32*n);
    float fissure=1.-smoothstep(.018,.095,cell.y-cell.x);
@@ -495,7 +520,8 @@ void main(){
    float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
-   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n);
+   float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
+   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
    float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
    float radial=abs(sin(a*5.+.60*n+.26*sin(r*2.)));
    float finger=(1.-smoothstep(.018,.10,radial))*(1.-smoothstep(.91+n*.10,1.14,normalized));
@@ -503,10 +529,13 @@ void main(){
    float rays=pow(abs(cos(a*5.+.28*n)),12.);
    float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
    float core=(1.-smoothstep(.14,.55,r))*peak;
-   float front=(1.-smoothstep(.045,.16,abs(r-R+.08)))*(1.-smoothstep(.09,.17,age));
-   base=vec3(.055,.020,.004);
-   emit=vec3(1.65,.60,.041)*cracks*(.4+.6*heat)+vec3(2.4,1.2,.28)*star+vec3(2.,2.2,1.8)*core+vec3(1.65,.65,.08)*front;
-   alpha=.055*crust+.55*cracks+.65*star+.52*front;
+   float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
+   float skin=smoothstep(.30,.68,lava+cell.z*.16);
+   float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
+   base=mix(vec3(.25,.081,.012),vec3(.033,.017,.012),skin);
+   emit=vec3(.42,.093,.006)*crust*(1.-skin)+vec3(.67,.21,.018)*(cracks*.75+ember*.48);
+   emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
+   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.20*cracks+.12*ember;
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -543,7 +572,7 @@ void main(){
  // Ground sheets keep a flat, quiet tint underneath the warning.
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
- if(m>3.5 && m<4.5 && fxParam>.5)prioritySample=vec4(0.);
+ if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
   float warning=prioritySample.g;
@@ -615,12 +644,14 @@ export class FlagshipFx {
   private time = 0;
   private readonly color = new T.Color();
 
+  blockers: readonly Rect[] = [];
   constructor(parent: T.Object3D, capacity = 32) {
     this.root.name = 'ability-flagship-fx';
     // PlaneGeometry spans [-.5,.5]; the shader reads only uv, but bounds must be finite.
     for (let i = 0; i < capacity; i++) {
       const material = new T.ShaderMaterial({
         uniforms: {
+          deckBlockers: { value: Array.from({length:12},()=>new T.Vector4()) }, deckBlockerCount: {value:0},
           burnDiscs: { value: this.burnDiscs }, burnCount: { value: 0 }, burnOwner: { value: -1 },
           coldAxes: { value: this.coldAxes }, coldRadii: { value: this.coldRadii }, coldCount: { value: 0 }, coldOwner: { value: -1 },
           fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
@@ -707,6 +738,18 @@ export class FlagshipFx {
           const f = fields[i];
           if (f.x === slot.x && f.z === slot.z && f.range === slot.range) { owner = i; break; }
         }
+      }
+      if ((slot.mode === FxMode.Shock && slot.param > .5) || (slot.mode === FxMode.Climax && slot.arc < 2.5)) {
+        const boxes: T.Vector4[] = u.deckBlockers.value;
+        let count = 0;
+        for (const rect of this.blockers) {
+          const hw = rect.width / (2*UNIT), hd = rect.height / (2*UNIT);
+          const cx = rect.x / UNIT + hw, cz = rect.y / UNIT + hd;
+          if (Math.abs(cx-slot.x)>hw+slot.range+1 || Math.abs(cz-slot.z)>hd+slot.range+1) continue;
+          boxes[count++].set(cx,cz,hw,hd);
+          if (count===boxes.length) break;
+        }
+        u.deckBlockerCount.value=count;
       }
       u.burnOwner.value = this.burnSlots.indexOf(slot); u.burnCount.value = this.burnSlots.length;
       u.coldOwner.value = owner; u.coldCount.value = fields.length;

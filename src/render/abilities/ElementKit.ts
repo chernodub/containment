@@ -14,7 +14,7 @@ import { authoredVariation } from './GraphicLanguage';
 import { FlagshipFx } from './FlagshipFx';
 export const ABILITY_VFX_LIMITS = Object.freeze({ particles: 768, rings: 64, beams: 64, decals: 32, instances: 2048 });
 export type ScarKind = keyof typeof SCAR_KIND;
-const SCAR_KIND = { crack: 0, frost: 1, trench: 2, fan: 3, star: 4, soot: 5, skid: 15, 'fuel-rim': 16 } as const;
+const SCAR_KIND = { crack: 0, frost: 1, trench: 2, fan: 3, star: 4, soot: 5, skid: 15, 'fuel-rim': 16, 'arc-track': 17 } as const;
 type Particle = {
     live: boolean;
     kind: Primitive;
@@ -60,7 +60,11 @@ type Decal = {
     width: number;
     kind: number;
 };
-export interface StatusActor { readonly root: T.Object3D; readonly height: number }
+export interface StatusActor {
+    readonly root: T.Object3D;
+    readonly height: number;
+    elementContact?(element: AbilityElement): void;
+}
 export interface AbilityServices {
     /** Read-only actor lookup for exact presentation bounds and status ownership. */
     statusActor?: (id: number) => StatusActor | undefined;
@@ -395,6 +399,14 @@ export class ElementKit {
     /** Short authored flame card aligned to the actual three-dimensional flow. */
     flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
         this.flowCard('flame', x, y, z, tx, ty, tz, width, core ? 0xffedb5 : 0xff7a2e, opacity, 100 + Math.abs(seed) % 64);
+    }
+    /** Place the ember on the camera-facing skin of its posed joint. */
+    jointEmber(x: number, y: number, z: number, radius: number, height: number, seed: number): void {
+        const lift = this.flowView.set(this.viewPosition.x - x, this.viewPosition.y - y, this.viewPosition.z - z)
+            .normalize().multiplyScalar(radius * .54);
+        x += lift.x; y += lift.y; z += lift.z;
+        this.flowCard('flame', x, y, z, x + radius * .20, y + height, z + radius * .13,
+            Math.max(.10, radius * .27), 0xffeabb, 1, -1 - Math.abs(seed % 63));
     }
     /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
     boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {

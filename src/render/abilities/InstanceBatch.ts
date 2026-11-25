@@ -131,6 +131,18 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant==17.){
+  float along=uvLocal.x;
+  float spread=sin(along*3.14159);
+  float bend=(abs(fract(along*5.3)*2.-1.)-.5)*.48*spread;
+  float offset=p.y-bend;
+  float split=sin(clamp((along-.30)/.66,0.,1.)*3.14159)*.63;
+  float distanceToTrack=min(abs(offset),abs(offset-split));
+  float coal=1.-smoothstep(.20,.34,distanceToTrack);
+  float vein=1.-smoothstep(.055,.14,distanceToTrack);
+  a*=coal*smoothstep(.0,.04,along)*(1.-smoothstep(.96,1.,along));
+  c=mix(vec3(.032,.013,.038),vec3(.56,.21,.82),vein*(.48+.50*n));
+ }
  else if(variant==16.){
   float edge=.89+.075*sin(5.*a0+.65)+.035*sin(13.*a0)+.02*(n-.5);
   a*=(1.-smoothstep(edge-.035,edge,d))*(.14+.68*smoothstep(edge-.22,edge-.07,d))*(.35+.65*n);
@@ -257,7 +269,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
  ${kind === 'flame' ? `#ifdef HAS_ABILITY_PRIORITY_MASK
- a=min(a,1.-.4*prioritySample.r);
+ if(phase>=0.)a=min(a,1.-.4*prioritySample.r);
  #endif` : ''}
 
  if(a<.004)discard;gl_FragColor=vec4(c,a);
@@ -395,7 +407,8 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    const bodyEmber = this.kind === 'flame' && variant < 0;
+    this.phase.setX(i, bodyEmber || this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
     if((this.kind==='flame'||this.kind==='smoke')&&variant>=64)this.softDepthDemand=true;
   }

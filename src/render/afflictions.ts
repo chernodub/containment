@@ -97,15 +97,13 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
   a.setXYZW(mesh.count,(frame%cols)/cols+ix,1-(Math.floor(frame/cols)+1)/rows+iy,1/cols-2*ix,1/rows-2*iy);mesh.geometry.getAttribute('particleAlpha').setX(mesh.count,alpha);this.put(mesh,x,y,z,w,h,1,camera);
  }
  update(roots:Iterable<T.Object3D>,camera:T.Camera,time:number,abilityOwners?:{has(root:T.Object3D):boolean}){
-  if(this.options.reducedMotion)time=0;const low=this.options.tier==='low',fireCount=low?3:6,poisonCount=low?2:4,emberCount=low?2:6,dropCount=low?2:4;
+  if(this.options.reducedMotion)time=0;const low=this.options.tier==='low',poisonCount=low?2:4,emberCount=low?2:6,dropCount=low?2:4;
   for(const mesh of this.meshes)mesh.count=0;let actors=0;
   for(const root of roots){const d=root.userData.affliction as Attachment|undefined;if(!d||!root.visible)continue;const s=d.status;if(!(s.burning||s.poisoned||s.chilled||s.frozen))continue;if(actors++>=this.capacity)break;
    root.getWorldPosition(this.pos);const {x,y,z}=this.pos,r=d.span*.29,h=d.height,t=time+d.phase;
    // Stagger short buoyant tongues and slower vapor wisps. Fade before wrapping the
    // presentation-clock cycle, so replenishment never pops a full rectangular card.
-   if(s.burning&&!abilityOwners?.has(root)){for(let i=0;i<fireCount;i++){const p=(t/(.75+(i%3)*.1)+i/fireCount)%1,a=i*2.399+d.phase,variation=.85+(i%3)*.075;
-    this.card(this.fire,x+Math.cos(a+p*.35)*r*.65,y+h*(.4+p*.45),z+Math.sin(a)*r*.55,d.span*.19*variation,Math.max(h*.65,.45)*variation,t+i*.51,camera,Math.sin(p*Math.PI));
-   }for(let i=0;i<emberCount;i++){const p=(t/(.55+(i%3)*.08)+i/emberCount)%1,a=i*2.4+d.phase,size=.018+(i%3)*.006;
+   if(s.burning&&!abilityOwners?.has(root)){for(let i=0;i<emberCount;i++){const p=(t/(.55+(i%3)*.08)+i/emberCount)%1,a=i*2.4+d.phase,size=.018+(i%3)*.006;
     this.embers.geometry.getAttribute('particleAlpha').setX(this.embers.count,Math.sin(p*Math.PI)*(1-p));
     this.put(this.embers,x+Math.cos(a+p)*r*.7,y+h*(.55+p*.65),z+Math.sin(a+p*.4)*r*.6,size*(1-p*.4),size*1.7*(1-p*.4),1,camera);
    }}

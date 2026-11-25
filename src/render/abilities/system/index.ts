@@ -70,6 +70,7 @@ class SystemPresentation implements AbilityPresentation {
     let count = 0;
     for (const id of event.targetIds) {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
+      k.statusActor(id)?.elementContact?.(event.element);
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
@@ -86,7 +87,7 @@ class SystemPresentation implements AbilityPresentation {
         receipt.landed = false;
       }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
+      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .48 : .54; receipt.emitted = false;
     }
   }
 
@@ -180,7 +181,7 @@ class SystemPresentation implements AbilityPresentation {
     }
     if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
     else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
-    if (status?.burning || receipt?.element === 'pyro') this.burning(x, z, radius, height, enemy.id, receipt?.element === 'pyro' ? receipt : undefined);
+    if (status?.burning || receipt?.element === 'pyro') this.burning(actor?.root, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {
       if (!receipt.emitted && dt > 0) {
@@ -271,18 +272,18 @@ class SystemPresentation implements AbilityPresentation {
     }
   }
 
-  private burning(x: number, z: number, radius: number, height: number, seed: number, receipt?: Receipt): void {
-    const k = this.kit, asymmetry = Math.sin(seed * 2.39996);
-    const phase = receipt ? k.time - receipt.ignition : k.time + seed * .37;
-    const travel = k.reducedMotion ? .55 : (phase * 1.65) % 1;
-    const pulse = receipt ? Math.max(0, 1 - receipt.age / .18) : 0;
-    const incoming = receipt ? Math.atan2(receipt.sourceZ - z, receipt.sourceX - x) : seed;
-    const growth = .68 + .32 * travel;
-    const a = incoming + (asymmetry < 0 ? -1 : 1) * travel * 1.9;
-    const end = a + .63 + asymmetry * .4, h = height * (.18 + .56 * travel);
-    k.flowFlame(x + Math.cos(a) * radius * .8, h, z + Math.sin(a) * radius * .8,
-      x + Math.cos(end) * radius, h + height * (.36 + .12 * asymmetry) * growth,
-      z + Math.sin(end) * radius, radius * .38 * growth, seed, .81 + .19 * pulse, pulse > .45);
+  private burning(root: T.Object3D | undefined, radius: number, height: number, seed: number): void {
+    if (!root) return;
+    const joints = this.joints(root);
+    const anchor = joints.find(joint => /shin|calf|back_mid|leg[45]_lower/i.test(joint.name)) ?? joints[Math.abs(seed) % joints.length];
+    if (!anchor) return;
+    const m = anchor.matrixWorld.elements, k = this.kit;
+    const flicker = k.reducedMotion ? .6 : .55 + .45 * Math.sin(k.time * 21 + seed);
+    // Lift the wick onto the outer skin of the joint. A bone origin sits
+    // inside the opaque mesh, particularly on the crawler's bent rear leg.
+    const wick = m[13] + height * .10;
+    k.impact();
+    k.jointEmber(m[12], wick, m[14], radius, Math.max(.24, height * (.18 + .17 * flicker)), seed);
   }
 
   private joints(root: T.Object3D): T.Object3D[] {
