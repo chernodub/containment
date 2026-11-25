@@ -67,7 +67,7 @@ export class FloorChoiceMarkers {
    mesh.visible=!!choice;
    if(!choice)return;
    mesh.geometry=choice.kind==='failed-bank'?this.failedGeometry:this.geometry;
-   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.id==='0'?0:1];
+   mesh.material=choice.kind==='failed-bank'?this.failed:this.materials[choice.kind==='gate'||choice.kind==='reserve'||choice.id==='0'?0:1];
    mesh.position.set(choice.x/unit,.04,choice.y/unit);
    mesh.scale.setScalar(choice.radius/unit);
   });
