@@ -726,6 +726,18 @@ export class DepthGame {
    break;
   }
  }
+ if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0){
+  const stalker=this.enemies.snapshot.enemies.find(enemy=>enemy.lesson==='stalker');
+  const bearing=stalker?Math.atan2(stalker.y-this.player.y,stalker.x-this.player.x):this.player.angle;
+  const radius=enemyBodyRadius(e.enemyId,e.elite);
+  for(const distance of [194,158,132]){
+   const point=[1,-1,1.5,-1.5,2,-2,.5,-.5,0,Math.PI].map(offset=>({
+    x:this.player.x+Math.cos(bearing+offset)*distance,y:this.player.y+Math.sin(bearing+offset)*distance,
+   })).find(point=>canOccupyExpedition(this.geometry,point,radius)&&
+    hasClearExpeditionShot(this.geometry,this.player,point)&&(!stalker||Math.hypot(point.x-stalker.x,point.y-stalker.y)>radius+stalker.radius));
+   if(point){({x,y}=point);break;}
+  }
+ }
  if(e.lesson){
   const distance=e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
   const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:e.lesson==='stalker'?[1,-1,1.5,-1.5,.5,-.5,0]:[0,.5,-.5,1,-1];
