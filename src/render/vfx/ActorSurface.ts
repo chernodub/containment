@@ -78,7 +78,7 @@ bool bruteFace=actorWarden<.5 && band==5;
 if(bruteFace)diffuseColor.rgb=vec3(.181,.183,.172);
 bool bruteBody=actorWarden<.5 && band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
-  diffuseColor.rgb=vec3(.037,.108,.110);
+  diffuseColor.rgb=vec3(.025,.094,.049);
   creatureStrike=1.0;
 }
 #endif`}`)
