@@ -30,12 +30,16 @@ function prepareMarinePaint(mesh: T.SkinnedMesh) {
   const paint = geometry.getAttribute('_rig_paint');
   const joints = geometry.getAttribute('skinIndex');
   if (!paint || !joints) return;
+  const rigSkin = mesh.name.startsWith('k10-rig-');
   const roles = new Float32Array(paint.count);
   for (let i = 0; i < roles.length; i++) {
     const bone = mesh.skeleton.bones[joints.getX(i)]?.name;
     const painted = paint.getX(i);
     const equipment = bone === 'ribs' || bone?.startsWith('forearm');
-    roles[i] = bone === 'head' ? -1 : painted && equipment ? 2 : painted;
+    // The small pauldron cap and lame are rigid upper-arm parts on the rig skin.
+    if (rigSkin && bone?.startsWith('upper_arm')) roles[i] = 1;
+    else if (bone === 'head') roles[i] = -1;
+    else roles[i] = painted && equipment ? 2 : painted;
   }
   geometry.setAttribute('marinePaint', new T.BufferAttribute(roles, 1));
 }
