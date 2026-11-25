@@ -771,3 +771,102 @@ The matched Cryo row shows a frozen Brute on the left, a chilled one in the midd
 Rebuild with `npm run build`. The follow-up sheets are in `artifacts/nextgen/brute31/`: `green-candidates.png`, `status.png`, `four-floors.png` and `warden.png`. Each includes native crops and complete 480×270 frames.
 
 The production build passed. Cryo cleared five rooms through Crew Checkpoint on seed 1729 in fast mode with zero runner errors.
+
+## BRUTE32 — Brute body rebuilt for the game camera
+
+Base `ec79403e`. Only `tools/assets/k11-creatures/{brute,build_bands}.py`, `creature26/preview.py`, one shader line in `src/render/vfx/ActorSurface.ts` and the packed `tyrant.glb` (and `plain/tyrant.glb`) changed. The Warden sculpture, palette, lighting constants, skeleton and clips are untouched; the Warden mesh in the GLB has the same vertex count and extents.
+
+**What the body is made of.** `brute.build` is now about forty lines of smooth primitives, symmetric about the heading:
+- trunk: chest, a hump between the shoulders (its crown is still the idle top), a waist, smaller hips;
+- two shoulder masses, the widest point (≈5.8 units across against ≈2.1 for the hips);
+- two equal forelimbs: upper arm (r .90→.85) blended shoulder→claw, a forearm that is thicker (r 1.05→.92) and rigid on the claw bone, and a round club fist (1.38×1.25×1.1) planted forward and out. Floor shows between each forearm and the chest. No cleavers, claws, tusks, spikes or notches;
+- two short hind legs (thigh, shin, foot pad) on the back-leg bones. The front-leg and feeding-arm bones carry no geometry;
+- head: one low lobe ahead of the shoulders under a pale arrowhead skull plate (`skull_plate()`: an `AnglePlate` with the trailing point along the heading, 3.0 long × 2.4 wide, tilted 15° nose-down, hard facets, plate 50 → `lead` → `bruteFace`). It projects ≈2.8 of its 3.0 length ahead of the shoulder front. Two dark eye slits (plate 62);
+- two dark dorsal plates down the spine, also arrowheads (plates 60/61, hard facets).
+Everything except the skull plate, the slits and the dorsal plates shades with smooth proxy normals.
+
+**Zones.** The skull plate (and the elite horns, plate 51, kept out of the regalia gilt by `paint_marks`) sits in the `lead` cell = `bruteFace`. Everything else is `bruteBody`. There was no dark cell left inside `bruteBody`, so dorsal plates and eye slits use the unused `plate` cell (6) and one line in `ActorSurface.ts` multiplies `bruteBody` by .4 there for the regular Brute only (`actorWarden<.5`). `BAND_KEEP` in `brute.py` (read by `build_bands.merge_islands`) keeps the small slits from being merged away. Frozen, chilled and clear Brutes still differ (sheets 10–12): a full freeze is pale grey, chill stays blue-teal, clear stays jade.
+
+**Elite.** Same body. Rank is two pale horns swept back and out from the plate's rear corners (regalia, `bruteFace`) plus the existing rank mantle on the hips. The forked cleaver, the coronet and the three-tine crest are gone (the crest was symmetric but cluttered the plate). The horns are kept low so they stay under the hump crown and the elite height does not move.
+
+**Tools.** `preview.py` accepts `--facings=h0..h7` (45° steps). The eight-heading silhouette check at 96 px tall (idle and windup) is in the scratch loop only; in idle the head plate, both forelimbs and the body are separate lobes in 7 of 8 headings (the rear view joins the head to the hump).
+
+### Heights, footprint and rig
+
+| | previous | now |
+|---|---|---|
+| Model height Brute / elite / Warden (m) | 3.030000 / 3.281961 / 4.500000 | 3.030000 / 3.283239 / 4.500000 |
+| Lineup drawn height Brute / elite / Warden (m) | 2.79 / 3.33 / 4.39 | 2.80 / 3.33 / 4.37 |
+| Lineup radial Brute / elite (m) | 1.27 / 2.16 | 1.26 / 1.69 (cleaver gone) |
+| Idle footprint radial, design units (sets horizontal fit) | 5.597 (cleaver tip) | 5.594 (left fist) |
+| Idle top, design units (sets vertical fit) | 9.192 (hump crown) | 9.199 (hump crown) |
+| Rig | 63 joints, `144d320c6cae75d7` | 63 joints, `144d320c6cae75d7` |
+| Body triangles (LOD0 / low) | 11500 / — | 11500 / 5300 |
+
+The idle radial now comes from a fist instead of the cleaver tip, so hit shapes and drawn size stay put. The Warden lineup numbers wobble by 0.01–0.02 between lineup runs; its mesh did not change.
+
+### Proof
+
+Local sheets under `artifacts/nextgen/brute32/sheets/`, each `<n>-<name>-native.png` (crop) and `-480.png` (full frame at 480×270), previous (final19) | now:
+`1-swarm-junction`, `2-relay-racks`, `3-brute-calm`, `4-brute-windup`, `5-brute-recovery`, `6-brute-behind`, `7-brute-side`, `8-elite-brute-calm`, `9-elite-brute-windup`, `10/11/12-status-{unfrozen,chilled,frozen}`. The creatures28 ids live in final19's `capture-fixtures.mjs` (not in `scripts/nextgen`); it was copied to the worktree's ignored `artifacts/nextgen/final19/` and run once per scenario (`artifacts/nextgen/brute32/cap.sh`). Sheets: `node artifacts/nextgen/brute32/sheets.mjs`.
+
+Production build passed. Breacher, seed 1729, 8 rooms, `--fast`: 0 errors.
+
+**Still weak.**
+1. The skull plate is grey, not white: `bruteFace` is fixed at .181 albedo, so it reads by shape and size, not by value. It is the right size now, but at 480×270 it is a light-grey chip.
+2. The forelimbs are long because the idle radial has to stay 5.597 and only the fists can reach it. In the loaded crowd poses the upper arm stretches between the shoulder and claw bones and reads rubbery.
+3. Elite at calm: the low horns lie nearly in the plate's plane and read only as a wider plate; the elite is clear in windup but at calm the brackets carry the rank.
+4. The windup frame shows a symmetric arch; the rising arm only reads later in the clip, so the red arc carries the telegraph.
+5. Hind legs are mostly hidden under the hips from the game camera.
+
+## BRUTE33
+
+Base `563aa5ea`. The regular and elite share a smaller, raised warm-bone arrowhead, two inset eye slits, broad shoulder sockets, short upper arms, heavy forearms, dark knuckles and three overlapping dorsal shingles. The forelimbs follow their shoulder joints through the strike. The elite's swept horns replace the rank mantle. Its public height fell 0.30%.
+
+The renderer uses the BRUTE32 stand-frame bounds as the shared tyrant anchor. Regular and elite use declared idle fit dimensions in the centered, grounded rig, so moving a fist no longer rescales the body. Warden uses its measured idle fit. The diff against BRUTE32 has no simulation or hit-shape edits. The native lineup returned the same contact radii of 42.90, 55.77 and 64.00 simulation units. The decoded Warden mesh attributes and indices match the baseline (`82d8b036dd1d7cf4`), as do the channels and samples of all 12 clips (`f844c4fcb87f1d8b`).
+
+| Crew Checkpoint lineup | BRUTE32 | BRUTE33 |
+|---|---|---|
+| Model height, regular / elite / Warden (m) | 3.030000 / 3.283239 / 4.500000 | 3.030000 / 3.273329 / 4.500000 |
+| Drawn height, same order (m) | 2.80 / 3.33 / 4.37 | 2.80 / 3.34 / 4.37 |
+| Drawn radial, same order (m) | 1.26 / 1.69 / 2.22 | 1.24 / 1.66 / 2.22 |
+| Rig, joints and fingerprint | 63, `144d320c6cae75d7` | 63, `144d320c6cae75d7` |
+
+### Form light and bone value
+
+The view-space key points upper left. Two hard thresholds at .225 and .94 select linear gains of .19, 1.00 and 1.45. The jade lit albedo is (.027, .073, .044). Region 29 carries only the skull and horn pixels to the final grade. Their separate value ceiling lets warm bone survive both the forward material and the creature highlight compression.
+
+The counts below use paired 1920×1080 captures. A local diagnostic copy colored each visible body fragment by its selected shader step and gave bone a fourth color. The denominator includes shadow, lit and edge pixels. HUD, floor and skull are excluded. Display luma is the median Rec.709-weighted RGB byte value sampled at the corresponding pixels in the normal screenshot. Classification at antialiased edges is approximate.
+
+| Frame | Shadow / body pixels | Shadow share | Display luma, shadow / lit / edge | Bone luma | Bone share including skull |
+|---|---:|---:|---|---:|---:|
+| Crew Checkpoint calm | 9,378 / 21,615 | 43.4% | 24 / 73 / 92 | 146 | 9.8% |
+| Crew Checkpoint windup | 8,082 / 21,560 | 37.5% | 26 / 74 / 94 | 146 | 9.6% |
+| Swarm Junction, first frame | 12,794 / 34,378 | 37.2% | 18 / 72 / 90 | 146 | 10.1% |
+
+Lit marine armor samples ranged from 182–196 in Crew Checkpoint and 178–180 in Swarm Junction. That puts bone at about 75–80% and 81–82% respectively. In the full crowd frame I see the marine and red arc first. The jade separates from lime Spitters and the blue Cryo glaze. The shoulder and head remain legible on the blue Awakening Bay deck, brown Safety-interlock deck and purple Infested Workshop floor. Communal Atrium gives the least hue separation, where the bone and dark body edge do more work.
+
+For another family, export skinned normals that turn smoothly across each large volume, retaining hard normals on plates. Give the diffuse body, dark armor, face mark and emissive organs stable, distinct atlas cells. In its material branch, split only the body by the dot product of the normalized view-space skin normal and the key. Pick the two thresholds against that family's captured poses. Keep organ emission, status finish and hit cues outside that selection. A bright mark also needs its own final-grade region if the shared highlight ceiling clips it.
+
+### Sheet review
+
+Local directory `artifacts/nextgen/brute33/sheets/`. Each stem below has a `-native.png` crop and a `-480.png` full-frame sheet, ordered final19 | brute32 | brute33. The heading judgments are a visual first glance at 480×270.
+
+| Sheet stem | Heading, anatomy and player cues |
+|---|---|
+| 1-swarm-junction | All three headings read. The back row has the thinnest head. Marine, arc and foreground Crawlers stay clear. |
+| 2-relay-racks | All three read. The upper animal's raised limb and rear leg overlap in projection, while the fists of the lower pair separate. The small enemies remain distinct. |
+| 3-brute-calm | The plate points down-left. Shoulder, forearm and dark fist read separately. The marine holds the brighter values. |
+| 4-brute-windup | Forward heading reads between the fists. The sockets frame the skull. The red sector still carries the attack timing. |
+| 5-brute-recovery | The narrow plate points toward the marine. The near fist clears the recovery brackets and the rifle remains visible. |
+| 6-brute-behind | The far plate gives the heading immediately. The back shows an armored ridge, although the lowest shingle merges with the hip shadow. Marine and rear silhouette separate. |
+| 7-brute-side | The projecting nose gives the heading. The near forearm, fist and hind foot overlap more than in the calm pose. The marine stays clear. |
+| 8-elite-brute-calm | The face gives the heading and the lateral horns give rank before the ring. The near horn crosses the shoulder. |
+| 9-elite-brute-windup | Face and horns read head-on. The fists sit outside the face and both the red arc and rank ring remain visible. |
+| 10-status-unfrozen | Three headings read in jade. The dark fists and head remain distinct beside the smaller warm creatures. |
+| 11-status-chilled | Three headings read through the blue glaze. The shadow flanks, ice particles and small creatures remain visible. |
+| 12-status-frozen | The pale held Brute separates from its chilled neighbors. The skull still gives direction, though opaque frost hides much of the shoulder detail. |
+
+The weakest frames are Relay Racks for the upper limb overlap, the rear pose for separation of the three individual plates, and frozen for the loss of internal contrast.
+
+The production build passed. The twelve final scenario manifests contain 18 captured frames and zero errors. Breacher cleared eight rooms through Breached Loading Bay on seed 1729 with the requested fast desktop runner and zero errors.

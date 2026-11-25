@@ -117,6 +117,9 @@ float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
  // Reserved region for the emitting texels of the authored organ mask.
  if(lanternPeak>.04)geometryRegion=30.;
 #endif
+#ifdef BRUTE_PLANES
+ if(bruteFace)geometryRegion=29.;
+#endif
 containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, vec2(containmentIdentity.x,containmentIdentity.y+8.0*geometryRegion) / 255.0);
 `);
   };

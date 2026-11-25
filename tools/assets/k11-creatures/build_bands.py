@@ -66,7 +66,7 @@ def anatomy_planes(obj, sculpture, M):
     co = K.verts_np(obj)
     bands, zone, plate = vertex_bands(co, sculpture, M)
     if getattr(M, "BAND_CELL", 0):
-        bands = merge_islands(co, bands, M.BAND_CELL)
+        bands = merge_islands(co, bands, M.BAND_CELL, getattr(M, "BAND_KEEP", ("accent", "eye")))
     if hasattr(M, "paint_marks"):
         M.paint_marks(sculpture.name, co, K.normals_np(obj), plate, bands)
     return bands, zone

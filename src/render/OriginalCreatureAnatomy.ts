@@ -256,6 +256,10 @@ export function originalCreatureRankScale(family: string, rank: Rank): number {
 export function originalCreatureRankHeight(family: string, rank: Rank): number {
   return rankHeights.get(family)?.[rank] ?? 0;
 }
+// The 5.597 radial and 9.199 top sculpture references, measured in the
+// centered and grounded game rig before jitter, in exported asset units.
+const BRUTE_IDLE_FIT = { radius: 4.9607, top: 5.3362, eliteTop: 5.4715 } as const;
+
 /** Construction-only fixed M10 idle sample; never depends on the first combat pose. */
 export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, clips: readonly T.AnimationClip[], family: string, radius: number) {
   const key = family + ':' + radius;
@@ -274,11 +278,16 @@ export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, cli
     if (!(object instanceof T.SkinnedMesh)) return;
     const rank = rankOf(object.name);if(!rank)return;
     let radial = 0, top = -Infinity;
-    const positions = object.geometry.getAttribute('position');
-    for(let i=0;i<positions.count;i++) {
-      object.getVertexPosition(i,point).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
-      radial = Math.max(radial,Math.hypot(point.x,point.z));
-      top = Math.max(top, point.y);
+    if (family === 'brute' && rank !== 'boss') {
+      radial = BRUTE_IDLE_FIT.radius * asset.scale.x;
+      top = (rank === 'elite' ? BRUTE_IDLE_FIT.eliteTop : BRUTE_IDLE_FIT.top) * asset.scale.y;
+    } else {
+      const positions = object.geometry.getAttribute('position');
+      for(let i=0;i<positions.count;i++) {
+        object.getVertexPosition(i,point).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
+        radial = Math.max(radial,Math.hypot(point.x,point.z));
+        top = Math.max(top, point.y);
+      }
     }
     const scale = Number(object.userData.k11RankScale) || 1;
     const scales = rankScales.get(family) ?? {};scales[rank] = scale;rankScales.set(family, scales);

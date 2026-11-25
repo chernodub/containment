@@ -62,6 +62,11 @@ const species:Record<string,{asset:AssetName;span:number;height?:number}>={
  crawler:{asset:'dretch',span:ENEMY_SPAN.crawler},stalker:{asset:'basilisk',span:ENEMY_SPAN.stalker},spitter:{asset:'marauder',span:ENEMY_SPAN.spitter},
  carrier:{asset:'dragoon',span:ENEMY_SPAN.carrier},brute:{asset:'tyrant',span:ENEMY_SPAN.brute},queen:{asset:'tyrant',span:ENEMY_SPAN.queen},
 };
+const BRUTE_STAND_BOUNDS = {
+ size: new T.Vector3(8.041213, 4.992038, 7.173330),
+ center: new T.Vector3(.001445, 2.477302, .898714),
+ minY: -.018717,
+};
 const rigMetrics=new Map<string,{size:T.Vector3;center:T.Vector3;minY:number}>();
 /** Opt-in capture aid. Ordinary actors allocate no debug mesh/material or draw. */
 function colliderDebug(root:T.Group,defaultRadius:number){
@@ -83,7 +88,9 @@ function rig(name:AssetName,span:number,human=false,collisionRadius?:number){
   existing=mixer.clipAction(masked);actions.set(name,existing);return existing;
  };
  const idle=action('stand')??action('idle');idle?.play();if(human){const pose=action('shotgun_delta');pose?.play();if(pose)pose.paused=true;}mixer.update(0);root.updateMatrixWorld(true);
- let metrics=rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{/* HERO24: rig kit (Arc mast, Cryo dewars) may stand above the helmet; the marine's scale stays fitted to the body. */if(object instanceof T.Mesh&&!(human&&/^k10-rig-/.test(object.name||object.parent?.name||'')))bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
+ // Shared rank origin for the original tyrant and its Warden promotion.
+ const bruteAnchor=name==='tyrant' && source.materials.some(material=>material.userData.k11Original);
+ let metrics=bruteAnchor?BRUTE_STAND_BOUNDS:rigMetrics.get(name);if(!metrics){const bounds=new T.Box3();root.traverseVisible(object=>{/* HERO24: rig kit (Arc mast, Cryo dewars) may stand above the helmet; the marine's scale stays fitted to the body. */if(object instanceof T.Mesh&&!(human&&/^k10-rig-/.test(object.name||object.parent?.name||'')))bounds.expandByObject(object,true);});metrics={size:bounds.getSize(new T.Vector3()),center:bounds.getCenter(new T.Vector3()),minY:bounds.min.y};rigMetrics.set(name,metrics);}
  const {size,center,minY}=metrics,factor=span/(human?size.y:Math.max(size.x,size.z));
  // A collider is a circle: fitting only the widest axis lets diagonal legs and
  // thoraxes cross a touching neighbor. Preserve height, tighten horizontal stance.

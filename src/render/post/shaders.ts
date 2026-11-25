@@ -206,7 +206,8 @@ ${inkComposite}
     bool ornament=region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
     if(!ornament && !danger && value>.145){
-      float bounded=.145+.057*(1.-exp(-(value-.145)/.057));
+      // Region 29 is the Brute bone mark. Preserve warm ivory through the final grade.
+      float bounded=region==29.0?min(value,.29):.145+.057*(1.-exp(-(value-.145)/.057));
       color*=bounded/value;
     }
   }

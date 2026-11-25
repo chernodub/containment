@@ -2392,7 +2392,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 9736,
+    "bytes": 10064,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2454,7 +2454,7 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 9548,
+    "bytes": 9148,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2543,7 +2543,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 11650,
+    "bytes": 10994,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2643,7 +2643,7 @@
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 19174,
+    "bytes": 21732,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2651,8 +2651,8 @@
       "subjects": [
         {
           "kind": "enemy",
-          "family": "brute",
-          "champion": "warden",
+          "family": "carrier",
+          "champion": "matron",
           "aim": 2.3
         }
       ],
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 27226,
+    "bytes": 28604,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2719,7 +2719,7 @@
   },
   "route-relay-racks": {
     "file": "route-relay-racks.webp",
-    "bytes": 13034,
+    "bytes": 13938,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2727,7 +2727,8 @@
       "subjects": [
         {
           "kind": "enemy",
-          "family": "spitter",
+          "family": "brute",
+          "champion": "warden",
           "aim": 2.3
         }
       ],
@@ -2769,7 +2770,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 12094,
+    "bytes": 11354,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2794,7 +2795,7 @@
   },
   "route-safety-interlock-station": {
     "file": "route-safety-interlock-station.webp",
-    "bytes": 10830,
+    "bytes": 10814,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2819,7 +2820,7 @@
   },
   "route-coolant-plant": {
     "file": "route-coolant-plant.webp",
-    "bytes": 20304,
+    "bytes": 20296,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2894,7 +2895,7 @@
   },
   "route-swarm-junction": {
     "file": "route-swarm-junction.webp",
-    "bytes": 25892,
+    "bytes": 20416,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2903,7 +2904,6 @@
         {
           "kind": "enemy",
           "family": "carrier",
-          "champion": "matron",
           "aim": 2.3
         }
       ],
@@ -2970,7 +2970,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 10332,
+    "bytes": 10178,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3092,7 +3092,7 @@
   },
   "route-warden-cache": {
     "file": "route-warden-cache.webp",
-    "bytes": 26506,
+    "bytes": 26072,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3780,7 +3780,7 @@
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 8738,
+    "bytes": 8604,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3828,7 +3828,7 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 24856,
+    "bytes": 23788,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3891,7 +3891,7 @@
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 25550,
+    "bytes": 25558,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3968,7 +3968,7 @@
   },
   "route-legacy-queen": {
     "file": "route-legacy-queen.webp",
-    "bytes": 8972,
+    "bytes": 9424,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4048,7 +4048,7 @@
   },
   "route-threat-brute": {
     "file": "route-threat-brute.webp",
-    "bytes": 8716,
+    "bytes": 8578,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4088,7 +4088,7 @@
   },
   "route-threat-warden": {
     "file": "route-threat-warden.webp",
-    "bytes": 7250,
+    "bytes": 7258,
     "shot": {
       "width": 1120,
       "height": 476,

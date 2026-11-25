@@ -99,7 +99,7 @@ scene.render.film_transparent = False
 scene.world = bpy.data.worlds.new("w")
 scene.world.color = (0.035, 0.045, 0.055)
 cam = K.camera("ORTHO")
-YAW = {"left": math.pi, "down": -math.pi / 2, "right": 0.0, "up": math.pi / 2}
+YAW = {"left": math.pi, "down": -math.pi / 2, "right": 0.0, "up": math.pi / 2, **{f"h{k}": k * math.pi / 4 for k in range(8)}}
 for pose_name in POSES:
     skin = None
     if pose_name != "rest":

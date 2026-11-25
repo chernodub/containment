@@ -80,12 +80,23 @@ bool shoulderCap=band==0 && vActorRegion==1.0 && actorPosition.y<-.95 && actorPo
 bool wardenRam=actorWarden>.5 && (vK11EmissionRegion.x>.5 || shoulderCap);
 bool wardenMaw=actorWarden>.5 && band==3 && vActorRegion==2.0;
 bool bruteFace=actorWarden<.5 && band==5;
-if(bruteFace)diffuseColor.rgb=vec3(.181,.183,.172);
+if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 if(wardenRam)diffuseColor.rgb=vec3(.215,.198,.154);
 bool bruteBody=actorWarden>.5 ? !wardenRam && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
-  diffuseColor.rgb=vec3(.025,.094,.049)*mix(1.0,.79,actorWarden);
+  diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.025,.094,.049)*.79,actorWarden);
   creatureStrike=1.0;
+}
+// BRUTE32: the Brute's dorsal plates and skull-plate eye slits take the unused plate cell (6); they stay dark.
+if(bruteBody && actorWarden<.5){
+  // Wrap armor around the fists in bind space. Its edge follows the skin
+  // continuously between vertices, even on the low-detail mesh.
+  vec3 sculpt=actorPosition*vec3(1.,1.,1.8);
+  float side=abs(sculpt.y);
+  bool forelimb=side>1.90 && sculpt.x>.58 && sculpt.z<6.4;
+  bool knuckle=sculpt.x-.22*(sculpt.z-4.6)>1.62;
+  bool darkArmor=forelimb?knuckle:band==6;
+  if(darkArmor)diffuseColor.rgb*=.30;
 }
 #endif`}`)
         .replace('#include <color_fragment>', `#include <color_fragment>
@@ -132,7 +143,11 @@ ${friendly ? '// SHADE15: room light keeps only a slight colour cast on the mari
 // Organ emission is exempt; rim, status colour and the hit rim share the budget.
 vec3 creatureBody=max(outgoingLight-lanternEmission,vec3(0.));
 float bodyValue=dot(creatureBody,vec3(.2126,.7152,.0722));
-float bounded=min(bodyValue,.25);
+float ceiling=.25;
+#ifdef BRUTE_PLANES
+if(bruteFace)ceiling=.355;
+#endif
+float bounded=min(bodyValue,ceiling);
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*actorCastShade)+lanternEmission*(1.-.55*actorCastShade);`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
