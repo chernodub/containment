@@ -531,7 +531,6 @@ class PyroPresentation implements AbilityPresentation {
       const dist = (ex-x)**2 + (ez-z)**2;
       if (enemy.health <= 0 || dist > radius*radius || enemy.meleePhase !== 'approach' || enemy.windupMs > 0 || enemy.chargeMs > 0) continue;
       const foot = enemy.radius / UNIT * .66;
-      kit.draw('flame', ex+foot, .23, ez, .19, .28, 1, CORE, fade*.88, 0, .2, POOL_FLAME_PHASE+enemy.id%31);
       if (dist < nearest) { nearest=dist; lx=ex+foot; lz=ez+.22; }
     }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 21 : 15)*fade,Math.min(8,radius*2),3,.48);
