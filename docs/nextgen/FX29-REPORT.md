@@ -39,3 +39,32 @@ The real-time Low maximum exceeded baseline by one draw. The follow-up used the 
 [Real-time baseline](../../artifacts/nextgen/fx29-before/benchmark.json) · [Real-time FX29](../../artifacts/nextgen/fx29/benchmark.json) · [Fixed baseline](../../artifacts/nextgen/fx29-low-fixed-before/benchmark.json) · [Fixed FX29](../../artifacts/nextgen/fx29-low-fixed-now/benchmark.json)
 
 The [seed-1729 native Cryo campaign](../../artifacts/nextgen/playtest/fx29-cryo/index.html) cleared fourteen rooms and entered Infested Workshop. It reached the runner's one-hour wall limit with zero recorded errors or defects. Full campaign completion remains unverified.
+
+## FX30
+
+The [FX30 gallery](../../artifacts/nextgen/fx30/index.html) pairs the same casts on 73c92179 and the revised build. Every pair opens at native size. The ten dense-fight panels cover peak and +300 ms for five powers. Additional pairs show the Pyro overlap, the open Manual Control Chamber pool, the pool 100 ms after ignition, the cooled soot, and small actors close to Meltdown. The open pool and cooled frame use the same cast.
+
+| Power | Struck bodies and bright marks at 480 × 270 | Warnings and visible geometry | First 150 ms after impact |
+| --- | --- | --- | --- |
+| Flashfire | I can separate the two near-side bursts and see the exposed markings between tongues. I cannot count all 12 native targets by eye in the dense pack. | The overlap shows the red sector beside the marine. The hot core ends at about one fifth of the reach. Gaps, curved tips and torn edges break up the long sides. | The direction, spread and reach read from the outer tongues at 45 ms. |
+| Napalm | I can pick out the exposed creatures and their marks. The two large bodies and the foreground cluster overlap several of the 10 targets on the sampled tick. | The red sector at peak and red lane at +300 ms survive. Two curved runs of fuel carry clusters of low and tall leaning flames. Breaks and recesses interrupt the pool lip. The soot is subtle on dark steel after burnout. | The 100 ms frame shows the rounded damage footprint before the outer clusters finish lighting. |
+| Meltdown | The dense activation has zero impact target IDs. Its next sampled tick has one. The separate close-contact cast shows how the compact central glare reads beside small bodies. | Red projectile cues and the lower red warning remain visible. The hard circle marks detonation. By +300 ms the fissures run through a broken crust edge and taper independently. | The hard front shows the actual radius at 45 ms. Cosmetic fissure tips can extend beyond it. |
+| Cryo Nova | I can see individual icy outlines, exposed marks and bars. The 6 native targets overlap enough that I cannot match every mark to a target at a glance. | The red warnings stay readable. The cyan front is deliberately circular. Deck seams run through the glaze to the marine's boots without a circular clearance pocket. | The front and thin radial ice lines show the area at 45 ms. |
+| Seismic Slam | I can see flung bodies and their exposed marks. I cannot visually separate all 11 native targets in the upper cluster. | The red projectile remains visible. The gold radius and amber cracks remain crisp while the lettering shows through the interior. The circular actor pockets are gone. | The gold front shows the visible footprint at 150 ms. The viewport crops part of its left edge. |
+
+Nova and Slam use 18–22.5% source alpha for the glaze at peak and a darker pigment for the deck. The bright cracks and leading front are separate terms. These floor effects rely on actor depth and warning draw order. The native hit shapes and timings stay the same.
+
+| Matched draw calls | Previous | FX30 |
+| --- | ---: | ---: |
+| Flashfire, peak / +300 ms | 124 / 123 | 124 / 123 |
+| Napalm, peak / +300 ms | 124 / 123 | 124 / 123 |
+| Meltdown, peak / +300 ms | 128 / 130 | 127 / 129 |
+| Cryo Nova, peak / +300 ms | 124 / 125 | 124 / 125 |
+| Seismic Slam, peak / +300 ms | 126 / 120 | 126 / 120 |
+| High Pyro benchmark, peak | 159 | 159 |
+| Low Pyro benchmark, peak | 145 | 145 |
+| Mid-combat shader compilations, High / Low | 0 / 0 | 0 / 0 |
+
+The production build passed. Both benchmarks rendered 600 matched ticks at fixed resolution in Crew Checkpoint. [Baseline benchmark](../../artifacts/nextgen/fx30-base-bench/benchmark.json) · [FX30 benchmark](../../artifacts/nextgen/fx30-final-bench/benchmark.json)
+
+The [native Pyro campaign](../../artifacts/nextgen/playtest/fx30-final-pyro/index.html) cleared all eight requested rooms on seed 1729 with zero errors or recorded defects. In the close-contact Meltdown pair, both small bodies are individually visible at the right of the marine. The red sector remains legible across the centre.

@@ -92,38 +92,26 @@ export const TEXTURED_FIRE_GLSL = `
   vec2 ray=vec2(p.x*sin(halfArc),fireUv.y);
   float t=length(ray),theta=atan(ray.x,max(.0001,ray.y))/halfArc;
   if(t>1.||abs(theta)>1.)discard;
-  // Map overlapping tongue silhouettes into polar lanes. The edge lanes
-  // share the same normalized range and animate independently of cast age.
-  float lane=theta*3.8+t*.24*sin(t*10.-abilityTime*8.);
-  float tooth=1.-abs(fract(lane+.5)*2.-1.);
-  float roll=sin(floor(lane+.5)*2.7+abilityTime*5.+t*7.);
+  // Gaps open just beyond the nozzle. Each lane bends, narrows and
+  // extinguishes separately, including the two that describe the cone sides.
+  float grain=abilityNoise(vec2(t*18.-abilityTime*8.,theta*13.+17.));
+  float wobble=.34*sin(t*10.+theta*8.-abilityTime*8.)+.17*sin(t*22.-theta*6.)
+        +.19*(grain-.5);
+  float lane=theta*3.4+wobble*smoothstep(.12,.55,t);
   float strand=floor(lane+.5);
-  float reach=.48+.19*fract(sin(strand*41.7+1.)*734.31)+.27*pow(tooth,.8)+.055*roll;
-  float split=smoothstep(.48,.74,t)*smoothstep(.34,.70,abs(sin(t*21.-abilityTime*9.+strand)));
-  reach-=.14*split;
-  float edge=reach-t;
-  coverage=smoothstep(.0,.018,edge)*smoothstep(.015,.13,t)*(1.-smoothstep(.94,1.,abs(theta)));
-  coverage*=1.-smoothstep(.4,.68,t)*(1.-smoothstep(.06,.33,tooth));
-  #ifdef HAS_ABILITY_PRIORITY_MASK
-  coverage*=1.-.78*prioritySample.r;
-  #endif
-  float orange=smoothstep(.035,.18,tooth+.18*roll)*smoothstep(.04,.24,t);
-  float flare=smoothstep(.64,.78,t/reach)*smoothstep(.18,.64,tooth);
-  c=mix(vec3(.42,.077,.002),vec3(1.55,.41,.009),orange*(1.-smoothstep(.72,1.,abs(theta))));
-  c=mix(c,vec3(2.1,1.42,.30),flare*(1.-smoothstep(.72,1.,abs(theta))));
-  c=mix(c,vec3(2.1,1.1,.08),smoothstep(.79,.98,tooth)*(1.-smoothstep(.34,.82,t)));
-  float core=(1.-smoothstep(.06,.24,abs(theta)))*(1.-smoothstep(.20,.42,t));
-  c=mix(c,vec3(2.2,1.65,.31),core);
-  if(peak){
-   float inner=1.-smoothstep(.48,.63,t);
-   float axis=(1.-smoothstep(.22,.48,abs(theta)))*(1.-smoothstep(.30,.39,t));
-   coverage=mix(coverage,1.-smoothstep(.94,1.,abs(theta)),inner);
-   c=mix(c,mix(vec3(2.3,.65,.025),vec3(3.7,3.05,1.42),axis),inner);
-   #ifdef HAS_ABILITY_PRIORITY_MASK
-   // The exact actor stencil protects the suit and victims at impact.
-   prioritySample.rb*=1.-inner;
-   #endif
-  }
+  float seed=fract(sin(strand*41.7+1.)*734.31);
+  float reach=.77+.22*seed;
+  float along=t/reach;
+  float width=(.20+.15*seed)*(1.-smoothstep(.57,1.,along))
+       +.09*sin(t*31.+seed*14.-abilityTime*9.)+.12*(grain-.48);
+  float across=abs(lane-strand);
+  float tongue=(1.-smoothstep(width,width+.045,across))*(1.-smoothstep(.93,1.,along));
+  float muzzle=(1.-smoothstep(.10,.21,t))*(1.-smoothstep(.28,.90,abs(theta)));
+  float tear=smoothstep(.38,.75,t)*smoothstep(.50,.62,grain)*smoothstep(.03,.20,across);
+  coverage=max(tongue*(1.-tear),muzzle)*smoothstep(.01,.055,t)*(1.-smoothstep(.93,1.,abs(theta)));
+  float spine=1.-smoothstep(.025,.14,across);
+  c=mix(vec3(.78,.16,.004),vec3(1.92,.60,.025),spine*(1.-along*.55));
+  c=mix(c,vec3(2.6,1.85,.53),muzzle*(peak?1.:.58));
  }else if(phase>=200.){
   vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
   coverage=graphicCoverage(fire.a);

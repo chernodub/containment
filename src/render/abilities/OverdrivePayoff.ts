@@ -165,10 +165,6 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
-    if (active && this.rig === 'pyro' && this.age < .65) {
-      const progress = this.age / .65;
-      this.kit.front(this.x, this.z, this.radius * 2.5, progress, HOT, .14, 1 - progress, 1);
-    }
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);
       this.crawl(game, dt);
