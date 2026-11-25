@@ -1,3 +1,4 @@
+import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 import * as T from 'three';
 import { ELEMENT_COLORS } from './types';
 
@@ -308,8 +309,10 @@ void main(){
   float grain=fxNoise(fxWorld.xz*1.45+fxSeed);
   float seam=(1.-smoothstep(.015,.115,abs(sin(a*(fxParam>1.5?6.:12.)+grain*.8))))*inside;
   float core=(1.-smoothstep(.18,.85,r))*(1.-smoothstep(.033,.05,age));
-  alpha=(.25*inside+.60*rim)*fade;
-  base=mix(fxColor*.24,fxColor,rim);
+  // Compose the glaze in the deck's dark value range. The pooled material
+  // tone-maps premultiplied RGB, so a bright base washes out even low alpha.
+  alpha=((.18+.045*grain)*inside+.60*rim)*fade;
+  base=mix(fxColor*(.012+.014*grain),fxColor,rim);
   emit=(mix(fxColor,vec3(.92),.35)*rim+fxColor*seam*.28)*fade*fxIntensity+vec3(core)*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
@@ -534,6 +537,9 @@ void main(){
  }
  #ifdef HAS_ABILITY_PRIORITY_MASK
  // Ground sheets keep a flat, quiet tint underneath the warning.
+ // These depth-tested deck decals are sorted below the hostile warnings.
+ // The exact actor depth silhouettes supply coverage, including at the feet.
+ if(m>3.5 && m<4.5 && fxParam>.5)prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
   float warning=prioritySample.g;
@@ -707,7 +713,8 @@ export class FlagshipFx {
       (u.fxHeight.value as T.Vector2).set(slot.h0, slot.h1); u.fxParam.value = slot.param;
       (u.fxColor.value as T.Color).copy(this.color.setHex(slot.color));
       u.fxIntensity.value = slot.intensity * (.4 + .6 * this.flashIntensity); u.fxLow.value = this.low ? 1 : 0;
-      slot.mesh.renderOrder = MODE_ORDER[slot.mode] ?? 2;
+      slot.mesh.renderOrder = slot.mode === FxMode.Shock && slot.param > .5
+        ? FRIENDLY_GROUND_ORDER : MODE_ORDER[slot.mode] ?? 2;
       slot.mesh.visible = true;
     }
   }
