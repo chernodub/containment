@@ -41,7 +41,7 @@ export function detourOffers(run:RunState){
   : DIRECT;
  return [protectedRoute,{id:'salvage' as const,...deal}];
 }
-export type ServiceId='heal'|'armor'|'ammo'|'medkit'|'grenade'|'reroll'|'upgrade'|'revive'|'route-ammo';
+export type ServiceId='heal'|'armor'|'ammo'|'medkit'|'grenade'|'reroll'|'upgrade'|'revive'|'route-ammo'|'rig-return';
 export const SERVICE_CATALOG=Object.freeze({
  heal:Object.freeze({name:'Repair health',description:'Restore up to 35 health.',cost:90,stock:2}),
  armor:Object.freeze({name:'Patch armor',description:'Restore up to 30 armor.',cost:80,stock:2}),
@@ -50,10 +50,11 @@ export const SERVICE_CATALOG=Object.freeze({
  grenade:Object.freeze({name:'Grenades',description:'Up to two grenades to break a crowded approach (capacity 6).',cost:90,stock:1}),
  reroll:Object.freeze({name:'Draft reroll',description:'Bank one free reroll for a later boon choice.',cost:100,stock:1}),
  upgrade:Object.freeze({name:'Upgrade an augment',description:'Improve an installed augment immediately.',cost:240,stock:1}),
+ 'rig-return':Object.freeze({name:'Install a rig augment',description:'Choose one of the two mutually exclusive rig augments.',cost:0,stock:1}),
  'route-ammo':Object.freeze({name:'Guardian supplies',description:'Ammunition for Coolant Plant.',cost:35,stock:1}),
  revive:Object.freeze({name:'Emergency resuscitation',description:'Survive one lethal hit in the finale and return with 45 health.',cost:610,stock:1}),
 });
 export const SERVICE_IDS=Object.freeze(Object.keys(SERVICE_CATALOG) as ServiceId[]);
-export function serviceCost(id:ServiceId,depth:number){if(depth===3&&id==='medkit')return 35;if(depth===3&&id==='grenade')return 20;return SERVICE_CATALOG[id].cost+Math.floor(depth/4)*10;}
-export function serviceStock(run:RunState,id:ServiceId){if(id==='route-ammo'&&(!run.guardianRoute||run.completedNodeIds.length!==GUARDIAN_SUPPLY_DEPTH+1))return 0;if(id==='revive'&&(run.version!==3||run.completedNodeIds.length!==19))return 0;return Math.max(0,SERVICE_CATALOG[id].stock-(run.service?.nodeId===run.currentNodeId?run.service.purchases.filter(x=>x===id).length:0));}
+export function serviceCost(id:ServiceId,depth:number){if(id==='rig-return')return 0;if(depth===3&&id==='medkit')return 35;if(depth===3&&id==='grenade')return 20;return SERVICE_CATALOG[id].cost+Math.floor(depth/4)*10;}
+export function serviceStock(run:RunState,id:ServiceId){if(id==='rig-return'&&(run.version!==3||run.completedNodeIds.length!==8))return 0;if(id==='route-ammo'&&(!run.guardianRoute||run.completedNodeIds.length!==GUARDIAN_SUPPLY_DEPTH+1))return 0;if(id==='revive'&&(run.version!==3||run.completedNodeIds.length!==19))return 0;return Math.max(0,SERVICE_CATALOG[id].stock-(run.service?.nodeId===run.currentNodeId?run.service.purchases.filter(x=>x===id).length:0));}
 export function availableAugmentUpgrades(build:BuildState){return build.mutations.filter(id=>Object.hasOwn(AUGMENT_UPGRADE_RULES,id)&&!build.augmentUpgrades?.includes(id as typeof AUGMENT_IDS[number])) as (typeof AUGMENT_IDS[number])[];}

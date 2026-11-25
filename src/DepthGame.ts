@@ -1,7 +1,7 @@
 import {floorChoicePair} from './game/waves/FloorChoices';
 import {wardenOpeningAim,wardenOpeningSpawn} from './game/waves/WardenOpening';
 import {demonstratedAugment,RIG_DRILL_PROMPTS} from './game/waves/RigDrill';
-import {TRANSFORMATIVE_AUGMENT_IDS,type AugmentId} from './game/abilities/augmentCatalog';
+import {TRANSFORMATIVE_AUGMENT_PAIRS,TRANSFORMATIVE_AUGMENT_IDS,type AugmentId} from './game/abilities/augmentCatalog';
 import {EARLY_LOCKER} from './game/roguelike/economy';
 import {ROOM_TEMPLATES} from './game/roguelike/roomTemplates';
 import {stageCoverLesson,type CoverLesson} from './game/waves/CoverLesson';
@@ -10,7 +10,7 @@ import {ROCKET_ARM_DISTANCE} from './game/combat/catalog';
 import {AWAKENING_DRILL} from './game/waves/authoredEncounters';
 import {BOSS_BODIES,guardianRadius} from './game/enemies/bossDefinitions';
 import {SERVICE_IDS,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
-import {upgradeBuildAugment} from './game/roguelike/builds';
+import {addMutation,upgradeBuildAugment} from './game/roguelike/builds';
 import {markExpeditionAllocation,recordExpeditionPurchase} from './game/roguelike/expedition';
 import {DIFFICULTIES,difficultyId,incomingDamageLimit,latePressureProgress,type DifficultyId} from './game/difficulty';
 import {meleeStrikeContains, type MeleeStrikeShape} from './game/enemies/meleeAttacks';
@@ -404,9 +404,15 @@ export class DepthGame {
   else if(this.node.reward==='supplies'){combat.collectAmmoPack(false);combat.collectAmmoPack(false);combat.addGrenades(1);}
  }
  private allocateService(){this.serviceAllocation(this.combat);this.expedition=markExpeditionAllocation(this.expedition,this.combat.getRunResources());}
+ get returningRigAugments(){
+  const build=this.expedition.build;
+  const pair=TRANSFORMATIVE_AUGMENT_PAIRS[build.rig??'breacher'];
+  return serviceStock(this.expedition.run,'rig-return')&&!pair.some(id=>build.mutations.includes(id))?pair:[];
+ }
  canPurchaseService(purchase:ServiceId,augment?:string){
   if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward)||this.combat.snapshot.dead||!SERVICE_IDS.includes(purchase))return false;
   if(!serviceStock(this.expedition.run,purchase)||this.combat.snapshot.credits<serviceCost(purchase,this.node.depth))return false;
+  if(purchase==='rig-return')return this.returningRigAugments.some(id=>augment===undefined||id===augment);
   const preview=new CombatSystem();preview.setBuild(this.expedition.build);if(!preview.restoreRunResources(this.combat.getRunResources()))return false;this.serviceAllocation(preview);
   if(purchase==='heal')return preview.snapshot.health<100;
   if(purchase==='armor')return preview.snapshot.armor<preview.mutationResources().maxArmor;
@@ -425,7 +431,8 @@ export class DepthGame {
  }
  purchaseService(purchase:ServiceId,augment?:string){
   const upgrade=availableAugmentUpgrades(this.expedition.build).find(id=>id===augment);
-  if((purchase==='upgrade'&&!upgrade)||!this.canPurchaseService(purchase,augment))return false;
+  const returning=this.returningRigAugments.find(id=>id===augment);
+  if((purchase==='rig-return'&&!returning)||(purchase==='upgrade'&&!upgrade)||!this.canPurchaseService(purchase,augment))return false;
   this.allocateService();const before=this.combat.getRunResources();let build=this.expedition.build;
   if(purchase==='heal')this.combat.restoreHealth(35);
   else if(purchase==='armor')this.combat.restoreArmor(30);
@@ -436,6 +443,7 @@ export class DepthGame {
   }
   else if(purchase==='medkit')this.combat.restoreRunResources({...before,medkits:Math.min(6,before.medkits+1)});
   else if(purchase==='grenade')this.combat.addGrenades(2);
+  else if(purchase==='rig-return')build=addMutation(build,returning!);
   else if(purchase==='upgrade')build=upgradeBuildAugment(build,upgrade!);
   this.combat.setCredits(before.credits-serviceCost(purchase,this.node.depth));
   this.expedition=recordExpeditionPurchase(this.expedition,purchase,this.combat.getRunResources(),build);this.combat.setBuild(build);this.save();return true;
@@ -891,11 +899,12 @@ export class DepthGame {
     const start={x:from.x-previous.x-mx*i/steps,y:from.y-previous.y-my*i/steps},end={x:next.x-previous.x-mx*(i+1)/steps,y:next.y-previous.y-my*(i+1)/steps};
     return {t,entry:sweptCircle(start,end,{x:0,y:0},radius+b.request.radius)};}).filter(c=>c.entry!==null&&hasClearExpeditionShot(this.geometry,from,c.t)&&canTraverseExpedition(this.geometry,from,{x:from.x+(next.x-from.x)*c.entry,y:from.y+(next.y-from.y)*c.entry},b.request.radius)).sort((a,b)=>a.entry!-b.entry!);
    for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
+    const firstStrip=this.expedition.run.version===3&&!((this.expedition.run.weaponLessons??0)&1);
     this.completeWeaponLesson(1);
-    if(t.id===this.platedLessonTarget&&!r.died){
+    if(firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
      this.combat.setCredits(this.combat.snapshot.credits+15);
      this.runStats.recordCredits(15);
-     this.enemies.stagger(t.id,1100);
+     if(!r.died)this.enemies.stagger(t.id,this.difficulty==='story'?1600:1100);
      this.presentation.push({type:'boon',boon:'shield',x:t.x,y:t.y,targetId:t.id});
     }
    }if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor){

@@ -443,8 +443,8 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const current = s.combat.weapon;
       const novice = profile === 'novice';
       const hasAmmo = id => ammo[id].magazine + ammo[id].reserve > 0;
-      const lessonTarget = novice ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
-      const platedTarget = !novice&&ammo&&hasAmmo('plasma') ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
+      const lessonTarget = novice&&s.node?.templateId!=='passenger-vault' ? undefined : visible.find(e=>e.id===s.plateLessonTarget&&e.armor>0&&e.clear);
+      const platedTarget = ammo&&hasAmmo('plasma')&&(lessonTarget||!novice) ? lessonTarget??visible.filter(e=>e.clear&&e.armor>0&&distance(e,s.player)<430)
         .sort((a,b)=>distance(a,s.player)-distance(b,s.player))[0] : undefined;
       if(platedTarget&&!plasmaAttempts.has(platedTarget.id)&&ammo.plasma.magazine>0&&!s.reloadingWeapons?.includes('plasma')){
         plasmaAttempts.add(platedTarget.id);
@@ -477,6 +477,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
         else if (target && range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
           ready('shotgun')) desired = 'shotgun';
       }
+      if(lessonTarget&&platedTarget)desired='plasma';
       if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
       const sidegrade = desired !== 'rifle' && desired !== 'shotgun';
       // Baseline selection already uses delayed positions, so only specialised
