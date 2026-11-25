@@ -939,10 +939,10 @@ export class DepthGame {
    for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
     const firstStrip=this.expedition.run.version===3&&!((this.expedition.run.weaponLessons??0)&1);
     this.completeWeaponLesson(1);
-    if(firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
+    if(this.node.templateId==='residential-gallery'||firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
      this.combat.setCredits(this.combat.snapshot.credits+15);
      this.runStats.recordCredits(15);
-     if(!r.died)this.enemies.stagger(t.id,this.difficulty==='story'?1600:1100);
+     if(!r.died)this.enemies.stagger(t.id,this.difficulty==='story'||this.node.templateId==='residential-gallery'?1600:1100);
      this.presentation.push({type:'boon',boon:'shield',x:t.x,y:t.y,targetId:t.id});
     }
    }if(b.request.weaponId==='rifle'&&t.id===this.platedLessonTarget&&r.absorbedByArmor>0&&!r.died&&this.enemies.getSnapshot(t.id)?.armor){
