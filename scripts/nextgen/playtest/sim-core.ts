@@ -246,7 +246,7 @@ export function runSimulation(options: SimOptions) {
     let progressSignature = '', lastProgressElapsed = 0;
     function snapshot() {
         const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => canTraverseExpedition(game.geometry, from, { x, y }, weaponCatalog.rifle.projectileRadius);
-        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority, clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
+        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,vulnerable:!game.isShutterProtected(e.id), clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
@@ -260,7 +260,8 @@ export function runSimulation(options: SimOptions) {
     const bank=takeCover?objective?.farBank:objective?.nearBank;
     const siege=bank?{...objective!,...bank}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
-    const goal=gate??(siege&&siege.remainingMs>0?siege:nearest);
+    const shutterBait=game.shutterBait;
+    const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
         const lookAhead = waypoint && !enemies.some(e => e.visible && e.clear)
@@ -277,7 +278,7 @@ export function runSimulation(options: SimOptions) {
             candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});

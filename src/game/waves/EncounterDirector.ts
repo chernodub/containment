@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -136,6 +136,14 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      arrivals[arrivals.indexOf(request)]=Object.freeze({...request,reinforcement:true,reserve:true,
       breachId:reserve[0].breachId,atMs:9500+index*650});
     });
+   }
+  }
+  if(node.templateId==='relay-racks'&&arrivals.some(request=>request.guardian==='warden')){
+   const escort=arrivals.findIndex(request=>request.enemyId==='crawler');
+   if(escort>=0){
+    const warden=arrivals.find(request=>request.guardian==='warden')!;
+    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:'spitter',role:'ranged',
+      atMs:warden.atMs+450,reinforcement:false,shutterSpitter:true});
    }
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
