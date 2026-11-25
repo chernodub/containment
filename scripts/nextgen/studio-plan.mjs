@@ -113,10 +113,10 @@ const light=(color,mark)=>({kind:'light',color,intensity:8,distance:2.1,...mark}
 // Both first-junction paths descend to the Coolant Plant.
 const coolantDeck={room:"coolant-plant",origin:plan["route-coolant-plant"].origin,frameSubject:true,subjectHeight:.66};
 add('route-plate-breaker',[
-  {kind:'enemy',family:'brute',champion:'warden',pose:'attack',frame:.4,shadow:1.85,aim:.78,x:.35,z:-.12},
-  {kind:'ordnance',weapon:'plasma',from:[-3.0,.46,1.04],x:-.38,y:.91,z:.94},
-  light(0x74baff,{x:-.45,y:1.30,z:.64,intensity:5,distance:1.85}),
-],{...coolantDeck,span:4.0,focus:[0,1.24,0],cameraDirection:[0,.56,1]});
+  {kind:'enemy',family:'brute',champion:'warden',pose:'attack',frame:.4,shadow:1.85,aim:5.68,x:.35,z:-.12},
+  {kind:'ordnance',weapon:'plasma',from:[-4.5,.62,1.75],x:.42,y:2.10,z:.92},
+  light(0x74baff,{x:.24,y:2.38,z:1.08,intensity:7,distance:2.45}),
+],{...coolantDeck,subjectHeight:.90,span:4.0,focus:[0,1.24,0],cameraDirection:[0,.83,1]});
 add('route-brood',[
   {kind:'enemy',family:'carrier',champion:'matron',pose:'attack',shadow:1.45,aim:2.35,x:-.5,z:-.18},
   {kind:'pod',x:1.2,z:.85,scale:.95,shadow:.46},
