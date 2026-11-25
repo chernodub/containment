@@ -36,3 +36,13 @@ The final Standard competent pass cleared 40 of 48 with zero stalls. Breacher cl
 - Cryo took the near bank on 23, 99, 512, 4096 and 65537. It took the covered bank on 7, 11, 256, 1024, 2025, 6561 and 9001. [Cryo results](../../artifacts/nextgen/playtest/play28-final-standard-cryo/summary.json)
 - Pyro took the near bank on 7, 99, 512, 6561 and 65537. It took the covered bank on 23, 256, 1024, 4096 and 9001. Seeds 11 and 2025 died before choosing. [Pyro results](../../artifacts/nextgen/playtest/play28-final-standard-pyro/summary.json)
 - Arc took the near bank on 7, 99 and 6561. It took the covered bank on 11, 23, 256, 512, 1024, 2025 and 65537. Seeds 4096 and 9001 died before choosing. [Arc results](../../artifacts/nextgen/playtest/play28-final-standard-arc/summary.json)
+
+## PLAY29
+
+The merged baseline was `fcb90090`. Story novice Cryo cleared 20 of 24 fresh seeds. Seeds 106, 118 and 124 died in Diagnostic Gallery, and seed 121 died in Manual-control Chamber. The three Gallery deaths were contact attacks. None of the fatal samples had a move rejected by Glacier.
+
+- Seed 106 arrived with 3.5 health and no armour. Its first hit was a Crawler strike at about (561, 352), north of the recorder. The floor provided a north escape, but the Crawler had about 20 ms left before impact. Dash had a charge. Nova had 7.4 seconds left, Glacier 17.1 seconds, and Whiteout had no charge.
+- Seed 118 arrived with 1.0 health and 3.0 armour. Its first hit was a Crawler strike at about (1097, 343), in the east threshold. The floor provided a south escape. The bot was moving west as the Crawler locked from the north. Dash had a charge. Nova had 9.0 seconds left, Glacier 16.9 seconds, and Whiteout had no charge.
+- Seed 124 arrived with 42.6 health and no armour. Four Crawler hits near the east wall accounted for 35.3 loss. The final 7.4 came from a Stalker on the service return at about (433, 847), where west and north were open. Dash had 1.5 seconds left, Nova 2.3 seconds, Glacier 15.7 seconds, and Whiteout had no charge.
+
+The earlier Standard death cluster did not reproduce in the Gallery. Cryo 7 cleared it with 12.6 Crawler damage. Cryo 99 cleared it with 55.3 loss, including 34.7 Stalker and 20.7 Spitter damage, then died in the Shaft. Cryo 65537 cleared it with 64.5 loss, including 34.7 Stalker, 17.2 Spitter and 12.6 Crawler damage. Seeds 7 and 65537 finished their campaigns. [Fresh baseline](../../artifacts/nextgen/playtest/play29-base-fresh/summary.json) · [Fatal traces](../../artifacts/nextgen/playtest/play29-base-fatal/summary.json) · [Standard replays](../../artifacts/nextgen/playtest/play29-base-standard/summary.json)
