@@ -77,7 +77,12 @@ int broodBand=broodCell.x+4*(3-broodCell.y);
 bool broodBody=broodBand<=1 || broodBand==6 || (actorBroodForm.w==1. && broodBand>=8 && broodBand<=10);
 bool broodFinish=actorBroodForm.x>=-1.;
 bool broodMark=broodBand==3 || broodBand==4 || (actorBroodForm.w==2. && broodBand==7) || (actorBroodForm.w==1. && broodBand==11);
-if(broodFinish && broodBody)diffuseColor.rgb=zoneHue*max(zoneLevel,.125);
+if(broodFinish && broodBody){
+  float bodyFloor=actorBroodForm.w==1.?.095:.125;
+  diffuseColor.rgb=zoneHue*max(zoneLevel,bodyFloor);
+}
+// The sac mark needs enough separation from its newly lit flank at room scale.
+if(broodFinish && broodMark && actorBroodForm.w==1.)diffuseColor.rgb+=vec3(.15,.027,.095);
 #endif
 #ifdef BRUTE_PLANES
 // Flat atlas cells in GLTF's top-down UV order. Bone, lead and gilt carry

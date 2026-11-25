@@ -48,7 +48,7 @@ export function broodPodModel(): ActorModel {
    previous.call(shell,shader,renderer);
    shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
     float podKey=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)));
-    reflectedLight.directDiffuse=diffuseColor.rgb*(.24+.76*step(-.14,podKey)+.45*step(.94,podKey));
+    reflectedLight.directDiffuse=diffuseColor.rgb*(.24+.76*step(-.20,podKey)+.45*step(.94,podKey));
     reflectedLight.indirectDiffuse=vec3(0.);
    `);
   };
