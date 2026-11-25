@@ -247,6 +247,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
 #ifdef BRUTE_PLANES
           if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
+          if(wardenRam){graphicActorLight=mix(.75,1.,step(.55,graphicKeyFacing));graphicActorHue=vec3(1.);}
           if(bruteBody){
             graphicActorLight=mix(.52,1.0,smoothstep(.55-graphicTerminator,.55+graphicTerminator,graphicKeyFacing));
             graphicActorHue=vec3(1.);
