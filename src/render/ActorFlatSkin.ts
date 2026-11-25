@@ -23,6 +23,27 @@ function ordinaryOpaqueSkin(mesh: T.SkinnedMesh): boolean {
     && material.onBeforeRender === T.Material.prototype.onBeforeRender;
 }
 
+/** One bind-pose value per vertex, shared by every animated marine instance. */
+function prepareMarinePaint(mesh: T.SkinnedMesh) {
+  const geometry = mesh.geometry;
+  if (geometry.hasAttribute('marinePaint')) return;
+  const paint = geometry.getAttribute('_rig_paint');
+  const joints = geometry.getAttribute('skinIndex');
+  if (!paint || !joints) return;
+  const rigSkin = mesh.name.startsWith('k10-rig-');
+  const roles = new Float32Array(paint.count);
+  for (let i = 0; i < roles.length; i++) {
+    const bone = mesh.skeleton.bones[joints.getX(i)]?.name;
+    const painted = paint.getX(i);
+    const equipment = bone === 'ribs' || bone?.startsWith('forearm');
+    // The small pauldron cap and lame are rigid upper-arm parts on the rig skin.
+    if (rigSkin && bone?.startsWith('upper_arm')) roles[i] = 1;
+    else if (bone === 'head') roles[i] = -1;
+    else roles[i] = painted && equipment ? 2 : painted;
+  }
+  geometry.setAttribute('marinePaint', new T.BufferAttribute(roles, 1));
+}
+
 /** Replace photographic skin finishes once, after semantic regions are authored. */
 export function prepareFlatActorSkin(
   root: T.Object3D,
@@ -41,6 +62,7 @@ export function prepareFlatActorSkin(
     root.traverse(object => {
       if (!(object instanceof T.Mesh)) return;
       count++;
+      if (object instanceof T.SkinnedMesh) prepareMarinePaint(object);
       // Title presentation patches each mesh finish; variants need independent
       // material owners while keeping their atlas textures shared.
       object.material = Array.isArray(object.material)
