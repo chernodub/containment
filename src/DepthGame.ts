@@ -186,7 +186,9 @@ export class DepthGame {
         Math.hypot(point.x-threat.x,point.y-threat.y)<100&&
         canTraverseExpedition(this.geometry,threat,point,this.player.radius))return false;
       }
-      return true;
+      return !this.pending.some(next=>next.options?.beat===enemy.beat&&next.delay<=900&&
+       Math.hypot(point.x-next.x,point.y-next.y)<110&&
+       canTraverseExpedition(this.geometry,next,point,this.player.radius));
      },
     }:{}),
     clear:point=>canTraverseExpedition(this.geometry,player,point,this.player.radius)&&

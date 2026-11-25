@@ -355,10 +355,12 @@ export class EncounterDirector {
   canCommit(enemy:EnemyCommitment,player:{x:number;y:number},others:Iterable<EnemyCommitment>,attack:'melee'|'ranged'|'charge',
     sidestep?:{radius:number;attempting?:boolean;clear:(point:{x:number;y:number})=>boolean;cover?:(point:{x:number;y:number},others:Iterable<EnemyCommitment>)=>boolean}):boolean {
     const active:EnemyCommitment[]=[];
+    const approaches:EnemyCommitment[]=[];
     let melee=0,ranged=0;
     let charging=false;
     for(const other of others){
       if(other.id===enemy.id)continue;
+      if(sidestep?.cover)approaches.push(other);
       if(other.champion==='warden'&&other.wallStunAngle!==undefined&&other.beat===enemy.beat&&!enemy.champion
         &&(other.stunRemainingMs??0)>WARDEN_WALL_STUN_MS-800&&Math.hypot(enemy.x-other.x,enemy.y-other.y)<=150)return false;
       if(sidestep&&attack==='melee'&&(other.meleePhase==='windup'||other.meleePhase==='strike'))active.push(other);
@@ -375,7 +377,7 @@ export class EncounterDirector {
       const clear=Array.from({length:16},(_,index)=>{
         const heading=angle+index*Math.PI/8;
         return {x:player.x+65*Math.cos(heading),y:player.y+65*Math.sin(heading)};
-      }).some(point=>sidestep.clear(point)&&(!sidestep.cover||sidestep.cover(point,others))&&
+      }).some(point=>sidestep.clear(point)&&(!sidestep.cover||sidestep.cover(point,approaches))&&
         !meleeStrikeContains(enemy.meleeShape,enemy.x,enemy.y,angle,point.x,point.y,sidestep.radius)&&
         active.every(other=>!meleeStrikeContains(other.meleeShape,other.meleeOriginX,other.meleeOriginY,
           other.meleeAngle,point.x,point.y,sidestep.radius)));
