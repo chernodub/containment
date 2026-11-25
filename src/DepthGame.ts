@@ -283,7 +283,12 @@ export class DepthGame {
   const breach=this.geometry.breaches.find(point=>point.id===arrivals[0]?.delayedHatch);
   return breach?{breach,arrivals:arrivals.map(spawn=>spawn.delay)}:undefined;
  }
- get markedClosedEntry(){return this.geometry.breaches.find(b=>b.id===this.director.markedClosedEntry);}
+ get markedClosedEntry(){
+  const encounter=this.director.snapshot;
+  const pending=encounter.grammar==='pincer'&&this.pending.some(spawn=>spawn.options?.beat===encounter.beat);
+  const id=this.director.markedClosedEntry(pending);
+  return id===undefined?undefined:this.geometry.breaches.find(breach=>breach.id===id);
+ }
  get closedFlank(){return this.director.closedFlank;}
  private relayRoutes:{x:number;y:number}[][]=[];
  get relayApproaches(){return this.crossingRequired&&!this.relayBank?this.relayRoutes:[];}

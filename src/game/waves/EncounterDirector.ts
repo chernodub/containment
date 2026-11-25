@@ -391,11 +391,11 @@ export class EncounterDirector {
     if(attack==='ranged')return ranged<this.tokens.rangedTokens;
     return melee+(enemy.type==='crawler'?.5:1)<=this.tokens.meleeTokens-Number(charging);
   }
-  get markedClosedEntry(){
+  markedClosedEntry(arrivalsPending:boolean){
     if(!this.coolantEntry)return;
     if(this.plan.beats?.slice(this.beatIndex+1).some(beat=>beat.grammar==='pincer'))return this.coolantEntry;
     const current=this.plan.beats?.[this.beatIndex];
-    return current?.grammar==='pincer'&&this.dispatched<current.end?this.coolantEntry:undefined;
+    return current?.grammar==='pincer'&&(this.dispatched<current.end||arrivalsPending)?this.coolantEntry:undefined;
   }
   get rehearsalBeat(){return this.plan.beats?.[this.beatIndex]?.rehearseHeavy?this.beatIndex:undefined;}
   get phase(): EncounterPhase { return this.currentPhase; }
