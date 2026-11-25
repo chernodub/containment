@@ -74,6 +74,11 @@ vec3 paintedCeramic=vec3(.74,.78,.82)*actorRigColor;
 float darkestPaint=min(paintedCeramic.r,min(paintedCeramic.g,paintedCeramic.b));
 paintedCeramic=max(vec3(0.),paintedCeramic-darkestPaint);
 paintedCeramic*=max(1.0,.38/max(.01,dot(paintedCeramic,paintLuma)));
+// The ram face and dorsal modules reuse the shoulder paint mask. Keep
+// their rig pigment on a narrow transverse band over graphite enamel.
+float equipmentPaint=step(1.5,vRigPaint);
+vec3 equipmentColour=mix(vec3(.09,.105,.115),paintedCeramic,.09+.55*step(abs(actorPosition.z-9.7),.12));
+paintedCeramic=mix(paintedCeramic,equipmentColour,equipmentPaint);
 diffuseColor.rgb=mix(diffuseColor.rgb,paintedCeramic,step(.5,vRigPaint));
 // Forward is -X in the Z-up bind pose. The luminous brow bends across
 // the front of the crown so its closed end points along the gaze.
@@ -112,7 +117,7 @@ float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0
 ${friendly ? `// SHADE15: one even self-light over the whole suit.
 // The shipped marine stores its bind pose in Z-up authoring units.
 float browLight=smoothstep(.04,.30,min(totalEmissiveRadiance.g,totalEmissiveRadiance.b)-totalEmissiveRadiance.r)*smoothstep(11.4,12.2,actorPosition.z);
-float domePaint=step(.5,vRigPaint)*smoothstep(9.0,10.2,actorPosition.z);
+float domePaint=step(.5,vRigPaint)*(1.-equipmentPaint)*smoothstep(9.0,10.2,actorPosition.z);
 float signatureEdge=smoothstep(.08,.55,actorRim)*max(browLight,domePaint);
 totalEmissiveRadiance=mix(totalEmissiveRadiance*.48,vec3(.12,.95,1.12),max(visorBand,browLight*helmet))*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
 totalEmissiveRadiance+=vec3(.72,.77,.80)*signatureEdge*(1.0-actorDissolve);` : `float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);

@@ -33,7 +33,9 @@ function prepareMarinePaint(mesh: T.SkinnedMesh) {
   const roles = new Float32Array(paint.count);
   for (let i = 0; i < roles.length; i++) {
     const bone = mesh.skeleton.bones[joints.getX(i)]?.name;
-    roles[i] = bone === 'head' ? -1 : paint.getX(i);
+    const painted = paint.getX(i);
+    const equipment = bone === 'ribs' || bone?.startsWith('forearm');
+    roles[i] = bone === 'head' ? -1 : painted && equipment ? 2 : painted;
   }
   geometry.setAttribute('marinePaint', new T.BufferAttribute(roles, 1));
 }
