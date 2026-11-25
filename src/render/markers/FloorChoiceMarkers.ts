@@ -1,7 +1,30 @@
 import * as T from 'three';
 import type {DepthGame} from '../../DepthGame';
 
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {dashedRing} from './dashedRing';
+
+// Insulated copper shoes belong to the sheltered bank. Keep its hexagonal
+// floor signal in the same mesh and follow the native selection after activation.
+function coveredBankHead(){
+ const parts:T.BufferGeometry[]=[];
+ const colors:number[]=[];
+ function part(shape:T.BufferGeometry,tint:number){
+  const geometry=shape.toNonIndexed();shape.dispose();
+  parts.push(geometry);
+  const color=new T.Color(tint);
+  for(let i=0;i<geometry.attributes.position.count;i++)colors.push(color.r,color.g,color.b);
+ }
+ part(new T.CircleGeometry(.48,6).rotateX(-Math.PI/2),0x8debff);
+ for(const side of [-1,1]){
+  part(new T.BoxGeometry(.24,.07,1.5).translate(side*.81,.01,0),0x515d62);
+  part(new T.BoxGeometry(.12,.08,1.27).translate(side*.81,.065,0),0x9b866a);
+  for(const z of [-.53,0,.53])part(new T.BoxGeometry(.31,.11,.14).translate(side*.81,.09,z),0x808c87);
+ }
+ const head=mergeGeometries(parts)!;
+ parts.forEach(g=>g.dispose());head.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+ return head;
+}
 
 export class FloorChoiceMarkers {
  readonly root=new T.Group();
@@ -16,8 +39,9 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
   mesh.renderOrder=-2;mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
  });
- private readonly coverGlyphGeometry=new T.CircleGeometry(.48,6);
- private readonly coverGlyph=new T.Mesh(this.coverGlyphGeometry,this.materials[1]);
+ private readonly coverGlyphGeometry=coveredBankHead();
+ private readonly bankMaterial=new T.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.72,toneMapped:false,depthWrite:false});
+ private readonly coverGlyph=new T.Mesh(this.coverGlyphGeometry,this.bankMaterial);
  private readonly shutterGeometry=new T.BoxGeometry(1,1,1);
  private readonly shutterMaterial=new T.MeshStandardMaterial({color:0x74513a,emissive:0xe78338,emissiveIntensity:.55});
  private readonly shutterPanels=[new T.Mesh(this.shutterGeometry,this.shutterMaterial),new T.Mesh(this.shutterGeometry,this.shutterMaterial)];
@@ -41,7 +65,6 @@ export class FloorChoiceMarkers {
  constructor(){
   this.root.add(...this.grilles);
   this.root.add(...this.shutterPanels);
-  this.coverGlyph.rotation.x=-Math.PI/2;
   this.coverGlyph.visible=false;
   this.root.add(this.coverGlyph);
  }
@@ -105,5 +128,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }

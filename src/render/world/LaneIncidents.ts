@@ -208,23 +208,26 @@ export function addLaneIncident(root:T.Group,id:string){
     case 'manual-control-chamber': {
       // The berth repeater uses a pillow, dark canopy and separate life lamp per passenger.
       p.box(0,11,0,114,21,34,iron);
-      const lamps:Pin[]=[];
+      const lamps:Pin[]=[[-117,33,-13]];
       for(let i=0;i<5;i++){
         const x=-44+i*22;
-        p.box(x,23,0,18,5,28,steel);
+        p.box(x,23,0,18,5,28,0x56646a);
         p.box(x,26,0,13,3,20,0x324956);
-        p.box(x,29,-7,10,3,6,0xd1d6c6);
-        lamps.push([x,28,9]);
+        p.box(x,29,-7,10,3,6,0x8e9993);
+        p.box(x,28,9,8,1,3,0x718a7c);
       }
       for(const z of [-5,4])cable(p,[[-56,15,z],[-68,5,z+2],[-84,4,z-12],[-105,14,z-13],[-117,27,z-14]],2.6,brass);
       for(const x of [-49,0,49])p.box(x,20,17,14,8,4,0x394641);
       p.box(-117,26,-13,21,7,21,iron);
-      p.rod([-123,30,-12],[-109,30,-12],3,cut);
+      // The removable key bridges the reader between protective raised cheeks.
+      for(const x of [-129,-105])p.box(x,31,-13,4,7,25,steel);
+      p.box(-117,30,-13,18,2,22,0x46554f);
+      p.rod([-122,32,-5],[-116,32,3],2.4,brass);
       // Fit the vault's actual occupied-window image into each status bezel.
       const windows=Array.from({length:5},(_,i)=>new T.PlaneGeometry(14/32,20/32)
         .rotateX(-Math.PI/2).translate((547+i*22)/32,28/32,585/32));
       const texture=passengerObservationTexture();
-      const material=new T.MeshBasicMaterial({map:texture,color:0xa5c3c3});
+      const material=new T.MeshBasicMaterial({map:texture,color:0x738e8f});
       material.userData.actorMaterial=true;
       material.addEventListener('dispose',()=>texture.dispose());
       const bank=new T.Mesh(mergeGeometries(windows)!,material);
