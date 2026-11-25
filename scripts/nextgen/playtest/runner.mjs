@@ -145,7 +145,7 @@ async function snapshot() {
     const shutterBait=g.shutterBait;
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);const waypoint=goal ? d.botWaypoint(goal)??goal : null;
     const lookAhead=waypoint&&!enemies.some(e=>e.visible&&e.clear)
-      ?d.botPursuitLookAhead(waypoint):90;
+      ?d.botPursuitLookAhead(waypoint,!!siege?.choosing&&!enemies.length&&!g.encounterRemaining):90;
     const candidates=[];
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*lookAhead,y=g.player.y+dy/length*lookAhead;

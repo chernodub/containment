@@ -267,7 +267,7 @@ export function runSimulation(options: SimOptions) {
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
         const lookAhead = waypoint && !enemies.some(e => e.visible && e.clear)
-            ? botPursuitLookAhead(game,waypoint,90) : 90;
+            ? botPursuitLookAhead(game,waypoint,90,!!siege?.choosing&&!enemies.length&&!game.encounterRemaining) : 90;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * lookAhead, y = game.player.y + dy / len * lookAhead;
@@ -275,9 +275,8 @@ export function runSimulation(options: SimOptions) {
             for (let i = 1; i <= 6; i++)
                 if (!canOccupyExpedition(game.geometry, { x: game.player.x + (x - game.player.x) * i / 6, y: game.player.y + (y - game.player.y) * i / 6 }, game.player.radius))
                     legal = false;
-            if (game.abilities.blocksMovement(game.player, { x, y }, game.player.radius))
-                legal = false;
-            candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
+            const blockedByFriendlyWall=legal&&game.abilities.blocksMovement(game.player,{x,y},game.player.radius);
+            candidates.push({ x, y, dx, dy, legal:legal&&!blockedByFriendlyWall, blockedByFriendlyWall, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
         return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
@@ -420,7 +419,12 @@ export function runSimulation(options: SimOptions) {
         }
         if (target) screen = weaponScreen;
         input = readInput();
-        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, objective: game.encounterObjective, siege: game.siege, encounter: game.encounter, remaining: game.encounterRemaining, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible, meleePhase: e.meleePhase, pendingAttack: e.pendingAttack, chargeMs: e.chargeMs })), screen: { ...screen } });
+        report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, objective: game.encounterObjective, siege: game.siege, encounter: game.encounter, remaining: game.encounterRemaining, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore,
+            suit: {health:s.combat.health,armor:s.combat.armor,medkits:s.combat.medkits},
+            abilitySlots:s.abilities.slots,deployables:s.abilities.deployables,
+            legalMoves:s.candidates.filter(candidate=>candidate.legal).map(({dx,dy})=>({dx,dy})),
+            movesRejectedByFriendlyWall:s.candidates.filter(candidate=>candidate.blockedByFriendlyWall).map(({dx,dy})=>({dx,dy})),
+            enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible, meleePhase: e.meleePhase, meleeAngle:e.meleeAngle, meleeShape:e.meleeShape, meleeRemainingMs:e.meleeRemainingMs, pendingAttack: e.pendingAttack, chargeMs: e.chargeMs })), screen: { ...screen } });
         advance(decision.stepMs);
         const progressStats = game.stats;
         const crossing=game.siege;
