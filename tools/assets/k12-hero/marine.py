@@ -60,6 +60,13 @@ def build(joints, tails, high):
         if high and '--portrait-kit' in ARGS:
             from selection_kit import extend
             extend(suit, rig)
+            if rig == 'breacher':
+                path = kit.surface_path(helmet.bvh, helmet.front,
+                    [(-70, 12), (-42, 9), (0, -5), (42, 9), (70, 12)],
+                    .025, closed=False, samples=48)
+                mark = kit.ribbon('Breacher visor chevron', path, .009, .0015,
+                                  closed=False, collection=col)
+                suit.groups[rig].append(helmet.add(mark, 'glow'))
         elif '--portrait-kit' not in ARGS:   # HERO24: game-scale selector kit on the play model
             import game_kit
             game_kit.extend(suit, rig)

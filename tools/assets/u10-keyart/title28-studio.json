@@ -1,14 +1,13 @@
 {
   "warden": {
-    "width": 2800,
-    "height": 2800,
+    "width": 2400,
+    "height": 2400,
     "span": 4,
     "subjects": [
       {
         "kind": "enemy",
         "family": "brute",
-        "aim": 2.6179938779914944,
-        "pose": "attack",
+        "aim": 0.4,
         "frame": 0.27,
         "champion": "warden"
       }
@@ -19,7 +18,7 @@
     "breachLight": true,
     "cameraDirection": [
       0,
-      0.28,
+      0.22,
       1
     ],
     "key": [

@@ -150,6 +150,12 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           for(let tick=0;tick<18;tick++)actor.animate(tick/60,0,subject.aim??-2);
           if(shot.breachLight)actor.setStageLight?.(.58);
           root=actor.root; disposable.push(()=>{actor.root.removeFromParent();pool.release(actor);});
+          // The title banks a cutout in the aperture. Its deck reflection belongs to the floor.
+          const floorSpill=shot.transparent ? actor.root.getObjectByName('warden-maw-spill') : undefined;
+          if(floorSpill?.visible){
+            floorSpill.visible=false;
+            disposable.push(()=>{floorSpill.visible=true;});
+          }
           break;
         }
         case 'pod': {

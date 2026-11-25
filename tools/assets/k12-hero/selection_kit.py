@@ -17,22 +17,12 @@ def extend(suit, rig):
         suit.add(kit.sweep(name, path, radius, 12, collection=suit.col), role, 'ribs')
 
     if rig == 'breacher':
-        elbow, wrist = suit.j['forearm.L'], suit.j['hand.L']
-        origin = elbow.lerp(wrist, .5) + V((-.115, 0, 0))
-        normal = V((-.92, .38, 0)).normalized()
-        up = kit.Planar(origin, normal, elbow - wrist).u
-        outline = [(-.17,-.25),(-.09,-.34),(.12,-.30),(.19,-.17),(.19,.20),(.10,.28),(-.13,.26),(-.17,.17)]
-        for name, scale, offset, depth, role in [
-                ('ram shoe', 1, 0, .065, 'gunmetal'), ('ram strike face', .94, .044, .036, colour),
-                ('ram strike insert', .73, .067, .015, 'graphite')]:
-            obj = kit.prism(name, [(x*1.35*scale,y*1.50*scale) for x,y in outline], depth, origin+normal*offset, normal, up, suit.col)
-            kit.bevel(obj, .01, 3)
-            suit.add(obj, role, 'forearm.L')
-        for y in (-.22, 0, .22):
-            obj = kit.prism('ram impact cleat', [(-.095,-.014),(.095,-.014),(.095,.014),(-.095,.014)],
-                            .013, origin+normal*.079+up*y, normal, up, suit.col)
-            kit.bevel(obj, .004, 2)
-            suit.add(obj, 'gunmetal', 'forearm.L')
+        # Use the production wrist mount, shoe and piston pair under the close-up face.
+        import game_kit
+        game_kit.extend(suit, rig, portrait=True)
+        for obj in suit.groups[rig]:
+            if obj.name.startswith(('breacher pauldron cap R', 'breacher pauldron lame 0 R')):
+                obj.data.materials[0] = M.get(colour)
     elif rig == 'cryo':
         for i, (x, z) in enumerate([(-.24,1.72),(.14,1.67)]):
             base = V((x,-.32,z))

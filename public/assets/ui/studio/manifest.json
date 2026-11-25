@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 239529,
+    "bytes": 224128,
     "shot": {
       "source": "selection24",
       "rig": "breacher",
@@ -2323,7 +2323,7 @@
   },
   "lesson-stalker": {
     "file": "lesson-stalker.webp",
-    "bytes": 7798,
+    "bytes": 7794,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 27706,
+    "bytes": 27720,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3891,7 +3891,7 @@
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 25534,
+    "bytes": 25522,
     "shot": {
       "width": 1120,
       "height": 476,

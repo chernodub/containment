@@ -21,7 +21,7 @@ REPLACED = {
 }
 
 
-def extend(suit, rig):
+def extend(suit, rig, portrait=False):
     suit.group = rig
     colour = M.RIG_COLOUR[rig]
     hi = suit.high
@@ -58,9 +58,28 @@ def extend(suit, rig):
             if hi:
                 kit.bevel(obj, .008, 2)
             suit.add(obj, role, 'forearm.L')
+        cleat_origin = origin + n * .054
+        cleat_up = -along
+        if portrait:
+            plate = kit.Planar(origin + n * .059, n, -along)
+            cleat_origin = plate.o + n * .007
+            cleat_up = plate.u
+            for x in (-.165, .165):
+                for y in (-.105, .105):
+                    base = plate.frame(x, y)[0]
+                    bolt = kit.cylinder('recessed strike face stud', base, base + n * .004,
+                                        .011, 8, suit.col)
+                    kit.bevel(bolt, .0015, 2)
+                    suit.add(bolt, 'steel', 'forearm.L')
+            face = kit.prism('strike plate inset', [(x * .82, y * .82) for x, y in outline],
+                             .014, origin + n * .052, n, -along, suit.col)
+            kit.bevel(face, .006, 3)
+            suit.add(face, 'gunmetal', 'forearm.L')
         for y in (-.13, .0, .13):
             obj = kit.prism('ram impact cleat', [(-.085, -.016), (.085, -.016), (.085, .016), (-.085, .016)], .014,
-                            origin + n * .054 - along * y, n, -along, suit.col)
+                            cleat_origin + cleat_up * y, n, -along, suit.col)
+            if portrait:
+                kit.bevel(obj, .004, 3)
             suit.add(obj, 'gunmetal', 'forearm.L')
         # Two short rams behind the plate into the elbow (the gauntlet's mechanism).
         for k in (-1, 1):
