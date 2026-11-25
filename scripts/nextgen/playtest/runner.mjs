@@ -121,8 +121,9 @@ async function advance(milliseconds) {
   return page.evaluate(ms=>{const d=window.__containmentDebug;if(d.canStepNative===false||d.renderer.roomLoading||d.renderer.roomKey!==d.game.node.id)return false;d.step(ms);return true;},milliseconds);
 }
 
+let committedToCover=false;
 async function snapshot() {
-  return page.evaluate(coveredRelayHealthFraction => {
+  const state=await page.evaluate(({coveredRelayHealthFraction,committedToCover}) => {
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     const project=(x,y,height=.65)=>{
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
@@ -135,11 +136,11 @@ async function snapshot() {
     const suit=g.combat.snapshot;
     const suitFraction=(suit.health+suit.armor)/(suit.maxHealth+suit.maxArmor);
     const dashReady=g.abilities.snapshot.slots?.dash?.ready;
-    const takeCover=suitFraction<coveredRelayHealthFraction ||
+    const takeCover=committedToCover||suitFraction<coveredRelayHealthFraction ||
       (!dashReady&&objective?.nearLaneWindup) ||
-      (!!objective?.nearMeleePressure&&(suitFraction<.78||!dashReady));
+      (!!objective?.nearMeleePressure&&(suitFraction<.9||!dashReady));
     const bank=takeCover?objective?.farBank:objective?.nearBank;
-    const siege=bank?{...objective,...bank}:objective;
+    const siege=bank?{...objective,...bank,coveredIntent:!!takeCover}:objective;
     const gate=g.floorControls.filter(p=>p.kind==='gate').sort((a,b)=>b.threats-a.threats)[0];
     const shutterBait=g.shutterBait;
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);const waypoint=goal ? d.botWaypoint(goal)??goal : null;
@@ -169,7 +170,9 @@ async function snapshot() {
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
-  }, COVERED_RELAY_HEALTH_FRACTION);
+  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover});
+  committedToCover=state.siege?.choosing===true&&state.siege.coveredIntent===true;
+  return state;
 }
 async function shot(name,s,options={}) {
   const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});

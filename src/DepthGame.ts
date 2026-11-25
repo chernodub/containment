@@ -318,7 +318,7 @@ export class DepthGame {
     const near=this.relayBanks[0],dx=near.x-this.siegePoint.x,dy=near.y-this.siegePoint.y;
     const along=Math.max(0,Math.min(1,((enemy.x-this.siegePoint.x)*dx+(enemy.y-this.siegePoint.y)*dy)/(dx*dx+dy*dy)));
     const intercept={x:this.siegePoint.x+dx*along,y:this.siegePoint.y+dy*along};
-    return Math.hypot(enemy.x-intercept.x,enemy.y-intercept.y)<135&&hasClearExpeditionShot(this.geometry,enemy,intercept);
+    return Math.hypot(enemy.x-intercept.x,enemy.y-intercept.y)<230&&canTraverseExpedition(this.geometry,enemy,intercept,enemy.radius);
    }),
    nearBank:crossing&&!this.relayBank?this.relayBanks[0]:undefined,
    remainingMs:this.siegeBeat===encounter.beat?this.siegeRemainingMs:12000,crossing,choosing:crossing&&!this.relayBank,farBank:crossing&&!this.relayBank?this.relayBanks[1]:undefined};

@@ -244,6 +244,7 @@ export function runSimulation(options: SimOptions) {
     } | null = null;
     const recentDecisions: Array<Record<string, unknown>> = [];
     let progressSignature = '', lastProgressElapsed = 0;
+    let committedToCover=false;
     function snapshot() {
         const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => canTraverseExpedition(game.geometry, from, { x, y }, weaponCatalog.rifle.projectileRadius);
         const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,vulnerable:!game.isShutterProtected(e.id), clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
@@ -254,11 +255,12 @@ export function runSimulation(options: SimOptions) {
     const suit=game.combat.snapshot;
     const suitFraction=(suit.health+suit.armor)/(suit.maxHealth+suit.maxArmor);
     const dashReady=game.abilities.snapshot.slots?.dash?.ready;
-    const takeCover=suitFraction<COVERED_RELAY_HEALTH_FRACTION ||
+    const takeCover=committedToCover||suitFraction<COVERED_RELAY_HEALTH_FRACTION ||
       (!dashReady&&objective?.nearLaneWindup) ||
-      (!!objective?.nearMeleePressure&&(suitFraction<.78||!dashReady));
+      (!!objective?.nearMeleePressure&&(suitFraction<.9||!dashReady));
+    committedToCover=objective?.choosing===true&&!!takeCover;
     const bank=takeCover?objective?.farBank:objective?.nearBank;
-    const siege=bank?{...objective!,...bank}:objective;
+    const siege=bank?{...objective!,...bank,coveredIntent:!!takeCover}:objective;
     const gate=game.floorControls.filter(p=>p.kind==='gate'&&Number.isFinite(p.threats)).sort((a,b)=>b.threats-a.threats)[0];
     const shutterBait=game.shutterBait;
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);
@@ -422,7 +424,9 @@ export function runSimulation(options: SimOptions) {
         advance(decision.stepMs);
         const progressStats = game.stats;
         const crossing=game.siege;
-        if(crossing?.choosing&&!room.relayCrossing)room.relayCrossing={startDamage:progressStats.damageTaken};
+        if(crossing?.choosing&&!room.relayCrossing)room.relayCrossing={startDamage:progressStats.damageTaken,
+          startHealth:game.combat.snapshot.health,startArmor:game.combat.snapshot.armor,
+          dashReady:game.abilities.snapshot.slots?.dash?.ready,nearMeleePressure:crossing.nearMeleePressure};
         if(room.relayCrossing&&!room.relayCrossing.bank&&crossing?.selectedBank){
             room.relayCrossing.bank=crossing.selectedBank;
             room.relayCrossing.damageTaken=progressStats.damageTaken-room.relayCrossing.startDamage;
