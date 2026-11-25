@@ -346,11 +346,11 @@ export class EncounterDirector {
     return events(start);
   }
 
-  update(deltaMs: number, occupiedCount: number,siegeReady=true,player?:EncounterPlayerPose,heavyRecovered=false): readonly EncounterEvent[] {
+  update(deltaMs: number, occupiedCount: number,siegeReady=true,player?:EncounterPlayerPose,heavyRecovered=false,crawlerSlots=Infinity): readonly EncounterEvent[] {
     if (this.currentPhase !== 'combat' || !Number.isFinite(deltaMs) || deltaMs < 0
       || !Number.isSafeInteger(occupiedCount) || occupiedCount < 0) return EMPTY;
     this.elapsedMs = Math.min(Number.MAX_SAFE_INTEGER, this.elapsedMs + deltaMs);
-    if(this.plan.beats)return this.updateAuthored(deltaMs,occupiedCount,siegeReady,player,heavyRecovered);
+    if(this.plan.beats)return this.updateAuthored(deltaMs,occupiedCount,siegeReady,player,heavyRecovered,crawlerSlots);
     if (this.dispatched === this.plan.totalSpawns) {
       if (occupiedCount !== 0) return EMPTY;
       this.currentPhase = 'complete';
@@ -398,7 +398,7 @@ export class EncounterDirector {
   reportPriorityDefeated(beat:number):void {if(Number.isSafeInteger(beat)&&beat===this.beatIndex){this.defusedBeats.add(beat);const plan=this.plan.beats?.[beat];if(plan?.consequence==='leader')this.breakBeat(plan.end);}}
   cancelNextReinforcements():void { this.skipReinforcements=true; }
   private rehearsalReleaseMs?:number;
-  private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean):readonly EncounterEvent[]{
+  private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean,crawlerSlots:number):readonly EncounterEvent[]{
     const beat=this.plan.beats![this.beatIndex];if(!beat)return EMPTY;
     if(this.clearingBeat){
       this.lullRemainingMs=Math.max(0,this.lullRemainingMs-deltaMs);if(this.lullRemainingMs>0)return EMPTY;
@@ -418,7 +418,7 @@ export class EncounterDirector {
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
       const cost=request.enemyId==='carrier'?4:1;
-      if(request.atMs>this.beatElapsedMs||cost>slots)break;
+      if(request.atMs>this.beatElapsedMs||cost>slots||request.enemyId==='crawler'&&crawlerSlots===0)break;
       if(request.rehearsalFlank){
         if(!heavyRecovered&&occupiedCount>0)break;
         this.rehearsalReleaseMs=this.beatElapsedMs;
@@ -427,6 +427,7 @@ export class EncounterDirector {
       if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
+      if(request.enemyId==='crawler')crawlerSlots--;
       slots-=cost;batch.push(arrival);this.dispatched++;
     }
     return batch.length?Object.freeze(batch):EMPTY;

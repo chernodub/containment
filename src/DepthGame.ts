@@ -389,7 +389,7 @@ export class DepthGame {
  if(this.expedition.run.version===3&&this.difficulty==='story'){
   const {health,armor}=this.combat.snapshot;
   if(this.node.templateId==='diagnostic-gallery'&&health+armor<=12)
-   this.pickups.spawn('health',22,260,485);
+   this.pickups.spawn('health',65,260,485);
   const recovery=this.node.depth===11&&health<50?35:this.node.templateId==='infested-workshop'&&health<=60?25:0;
   if(recovery){
    const entrance=this.moveCorpse({...this.player,radius:14},48,0);
@@ -1123,6 +1123,9 @@ export class DepthGame {
   this.pickups.update(ms,this.player,{magnetEnabled:true,magnetRange:familyBonuses(this.combat.build).recovery?144:120});this.collectLoot();
   for(let i=this.pending.length-1;i>=0;i--){const p=this.pending[i];p.delay-=hostileMs;if(p.delay>0)continue;if(this.spawn(p.type,p.x,p.y,p.elite,p.guardian,p.options,p.shutterSpitter,p.approachLeadMs))this.pending.splice(i,1);else if((p.attempts=(p.attempts??0)+1)>40){/* I13: exhausted annulus requests retire so a blocked brood cannot jam room clear. */if(p.options?.podOrigin){this.pending.splice(i,1);continue;}const open=this.openBreaches;const point=open[p.attempts%open.length];p.x=point.x+(point.facing==='east'?56:-56);p.y=point.y;}}
   this.lookForWeaponLessons();
-  if(!this.rigDrill)this.encounterEvents(this.director.update(ms,this.enemies.activeCount-[...this.departures.values()].filter(departure=>departure.escort).length+this.enemies.reservedCount+this.pending.reduce((n,p)=>n+(p.type==='carrier'?4:1),0),(this.siege?.remainingMs??0)<=0,this.player,this.relayHeavyRecovered));if(this.clearRequested&&(!this.escortExitOpen||Math.hypot(this.player.x-this.geometry.exitPoint.x,this.player.y-this.geometry.exitPoint.y)<=64)){this.clearRequested=false;this.clearRoom();}this.syncOverclock();
+  const shaftCrawlerSlots=this.node.templateId==='service-shaft-landing'?Math.max(0,3
+   -this.enemies.snapshot.enemies.filter(enemy=>enemy.type==='crawler').length
+   -this.pending.filter(request=>request.type==='crawler').length):Infinity;
+  if(!this.rigDrill)this.encounterEvents(this.director.update(ms,this.enemies.activeCount-[...this.departures.values()].filter(departure=>departure.escort).length+this.enemies.reservedCount+this.pending.reduce((n,p)=>n+(p.type==='carrier'?4:1),0),(this.siege?.remainingMs??0)<=0,this.player,this.relayHeavyRecovered,shaftCrawlerSlots));if(this.clearRequested&&(!this.escortExitOpen||Math.hypot(this.player.x-this.geometry.exitPoint.x,this.player.y-this.geometry.exitPoint.y)<=64)){this.clearRequested=false;this.clearRoom();}this.syncOverclock();
  }
 }
