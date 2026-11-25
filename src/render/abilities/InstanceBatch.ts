@@ -131,6 +131,18 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant==17.){
+  float along=uvLocal.x;
+  float spread=sin(along*3.14159);
+  float bend=(abs(fract(along*5.3)*2.-1.)-.5)*.48*spread;
+  float offset=p.y-bend;
+  float split=sin(clamp((along-.30)/.66,0.,1.)*3.14159)*.63;
+  float distanceToTrack=min(abs(offset),abs(offset-split));
+  float coal=1.-smoothstep(.20,.34,distanceToTrack);
+  float vein=1.-smoothstep(.055,.14,distanceToTrack);
+  a*=coal*smoothstep(.0,.04,along)*(1.-smoothstep(.96,1.,along));
+  c=mix(vec3(.032,.013,.038),vec3(.56,.21,.82),vein*(.48+.50*n));
+ }
  else if(variant==16.){
   float edge=.89+.075*sin(5.*a0+.65)+.035*sin(13.*a0)+.02*(n-.5);
   a*=(1.-smoothstep(edge-.035,edge,d))*(.14+.68*smoothstep(edge-.22,edge-.07,d))*(.35+.65*n);

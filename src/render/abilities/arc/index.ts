@@ -231,6 +231,9 @@ class ArcPresentation implements AbilityPresentation {
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload ? (d.delay === 0 ? 1.38 : 1.05) : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = d.overload ? 4 : 3; arc.color = VIOLET; arc.intensity = .86;
           if (d.overload) {
+            // Project this native hop onto the deck once, before its airborne bolts expire.
+            const heading = Math.atan2(dz,dx);
+            k.scar('arc-track',(d.x+d.sx)*.5,(d.z+d.sz)*.5,length*.5,0xb78aff,1.12,heading,.50);
             const bendX=(d.sx+d.x)*.5-dz/length*.24, bendZ=(d.sz+d.z)*.5+dx/length*.24;
             const crest=Math.max(d.sy,d.ty)+.92;
             k.heavyBeam(d.sx,d.sy,d.sz,bendX,crest,bendZ,VIOLET,.39,.25,true);
