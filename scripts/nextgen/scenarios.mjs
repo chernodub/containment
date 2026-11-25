@@ -420,7 +420,7 @@ export const SCENARIOS=[
   g.hurt(40,{x:g.player.x-80,y:g.player.y},{source:'enemy-contact',enemyFamily:'stalker'});
   d.refresh();
  }},
- ...[180,0].map(credits=>({id:credits?'play21-supply':'play21-supply-empty',setupArgument:credits,state:'reward',phase:'reward',nativeKeys:[['Tab',0],['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async credits=>{
+ ...[180,0].map(credits=>({id:credits?'play21-supply':'play21-supply-empty',setupArgument:credits,state:'reward',phase:'reward',nativeKeys:credits?[['Tab',0],['Tab',0]]:[['Tab',0]],required:['.route-supply','#purchase-route-ammo'],setup:async credits=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('breached-loading-bay',{phase:'reward',runStructure:true,rig:'arc'});
   const g=d.game;
