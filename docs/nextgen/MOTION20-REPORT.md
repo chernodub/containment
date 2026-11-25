@@ -225,3 +225,17 @@ The production build passed. The fixed-resolution 300-tick Crew Checkpoint bench
 On seed 1729, Standard Arc cleared 12 rooms with zero errors and zero defects. The first Breacher campaign also cleared 12 rooms with zero errors. Its runner returned status 1 for a 6.53-second Diagnostic Gallery load during concurrent capture work. The reports are in `artifacts/nextgen/playtest/arc-1729/` and `artifacts/nextgen/playtest/breacher-1729/`.
 
 The final-build Breacher repeat cleared all 12 rooms with zero errors, zero defects and exit status 0. Diagnostic Gallery loaded in 817 ms. Its receipt is `artifacts/nextgen/playtest/motion28-final-breacher/report.json`.
+
+## MOTION29
+
+The Brute keeps its pale brow and snout ahead of the folded chest through recovery. The exposed pose rolls the body over the buried cleaver while the head faces the marine. On the first rifle hit of that recovery, the backward step lifts and tips the head back. The forearm and blade use the same native wind-up clock as before. The shoulder moves forward and outward and the elbow lifts, leaving the wrist on the weapon side as the cleaver cocks for release.
+
+The turn study holds the wind-up at 88% and projects both skinned ranks through the production camera. Before the change, the wrist-bound cleaver crossed the torso at 13 of 72 sampled facings for each rank. After the change, it cleared the torso at all 72 facings, sampled every five degrees. The smallest approximate separation at 1920×1080 was 4.4 pixels at 70° for the regular Brute and 30 pixels at 55° for the elite. A leg can still sit behind part of the blade. At quarter size the regular Brute's narrowest opening is about one pixel. The turn sheets show eight compass views for each rank. Copper marks the cleaver, dark grey the trunk and lighter grey the remaining silhouette.
+
+The Carrier's legs and the adjoining lower body use a dark plum atlas cell. Its three magenta sac lobes retain their original cells and emission. The packed and plain Carrier models have identical decoded geometry to their respective baselines, including their low LOD. The 73-joint Carrier fingerprint is `a9960f8e864ca52c`. The 63-joint Brute/Warden fingerprint is `144d320c6cae75d7`. All recorded mesh heights matched the baseline.
+
+Local comparisons are in `artifacts/nextgen/motion29/`, with integration revision `8f0211df` on the left. The `brute-detail.png` sheet shows the wind-up, base recovery clip, native exposed recovery and rifle stagger in Relay Racks. Ordinary Brutes select the exposed clip during native recovery, so the base recovery row explicitly selects its authored counterpart at the same simulation phase. The rifle row follows the native recovery-stagger receipt. The `carrier-detail.png` sheet shows the calm and crowd crops in Swarm Junction. The `brute-native.png`, `brute-480.png`, `carrier-native.png` and `carrier-480.png` sheets retain the whole room. The `turn-native.png` and `turn-480.png` sheets preserve native and quarter-size actor pixels.
+
+The production build passed. Standard Breacher cleared ten rooms through Transmission Chamber on seed 1729, with zero runner errors, zero recorded defects and exit status 0. The campaign receipt is `artifacts/nextgen/playtest/motion29-breacher/report.json`.
+
+The before and after Crew Checkpoint benchmarks each recorded 158 resident programs and zero combat shader compiles.

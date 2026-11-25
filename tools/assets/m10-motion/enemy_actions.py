@@ -267,6 +267,30 @@ class Creature:
             target+=SIDE*W*side*(.19*recoil+.24*abs(flail))
             self.solve(arm,target)
 
+    def brute_head(self, lift, pitch):
+        # Keep the brow facing down the locked attack line as the chest folds or rolls.
+        head=self.m['head']
+        rest=self.base_matrices['head']
+        rest_offset=rest.translation-self.base_matrices[self.center].translation
+        target=self.m[self.center].translation+rest_offset+(FWD*.17+UP*.21)*self.height*lift
+        orientation=Quaternion(SIDE,-pitch) @ rest.to_quaternion()
+        posed=Matrix.LocRotScale(target,orientation,head.to_scale())
+        self.transform('head',posed @ head.inverted_safe())
+
+    def load_cleaver(self, arm, weight):
+        # Turn each link from the shoulder out. A tip-only solve can leave
+        # the elbow tucked against the ribs even with the tip above the crown.
+        bones=arm['bones']
+        self.move(bones[0],(-SIDE*.24+FWD*.30)*self.width*weight)
+        for i,direction in enumerate((-SIDE+.18*UP+.95*FWD,
+                                       -SIDE-.27*UP+1.35*FWD,
+                                       -SIDE+.24*UP+1.28*FWD)):
+            name=bones[i]
+            pivot=self.m[name].translation
+            end=self.m[bones[i+1]].translation if i+1<len(bones) else self.m[name] @ arm['tip_local']
+            turn=(end-pivot).normalized().rotation_difference(direction.normalized())
+            self.rotate(name,turn.axis,turn.angle*weight)
+
     def cleaver(self, action, t, targets):
         # Tip targets are relative to the standing head. During extraction the
         # centre can move around a planted blade without taking it along.
@@ -290,6 +314,9 @@ class Creature:
         self.move(self.center,-UP*H*sunk+SIDE*W*(.20 if wind else .055)*twist)
         self.rotate('head',UP,(-.24 if wind else -.60)*twist)
         self.rotate('head',SIDE,.62*max(0,-twist))
+        if action=='m10-recovery':
+            loaded=1-smooth((t-.68)/.32)
+            self.brute_head(loaded,.21*loaded)
         if wind:   # CREATURE22: jaw forward and low under the raised cleaver
             jaw=smooth(min(1,t/.6))
             self.rotate('head',SIDE,.45*jaw)
@@ -568,7 +595,10 @@ class Creature:
             roll={'crawler':.38,'stalker':-.44,'brute':.42,'spitter':-.35,'carrier':.32}[self.family]
             self.rotate(self.center,FWD,roll*weight)
             self.move(self.center,(-UP*H*.13+SIDE*W*roll*.22)*weight)
-            self.rotate('head',UP,-.43*weight)
+            if self.family=='brute':
+                self.brute_head(1-release,.21*(1-release))
+            else:
+                self.rotate('head',UP,-.43*weight)
             if self.family=='carrier':self.rotate('tail',SIDE,-.39*weight)
             if self.family=='spitter':self.mouth(.73*weight)
             self.plant(feet)
@@ -687,7 +717,7 @@ class Creature:
             kick=between(t,[(0,0),(.17,1),(.45,.92),(.73,.62),(1,0)])
             self.move(self.center,-FWD*W*.40*kick+UP*H*.08*kick)
             self.rotate(self.center,SIDE,-.45*kick)
-            self.rotate('head',SIDE,-.78*kick)
+            self.brute_head(kick,.47*kick)
             for leg in self.legs:
                 if leg['index']%2:
                     targets[leg['index']]=leg['rest']-FWD*W*.55*kick+UP*H*.30*math.sin(t*math.pi)*kick
@@ -855,6 +885,8 @@ class Creature:
             self.ram_lean(1.0)
         self.plant(targets)
         if action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
+        if self.family=='brute' and action=='m10-windup':
+            self.load_cleaver(self.loaded_blade,smooth((t-.15)/.47))
         if action=='m10-spawn' and hasattr(self,'idle_start'):
             settle=smooth((t*seconds-(seconds-.08))/.08)
             if settle>0:

@@ -34,7 +34,8 @@ BANDS["lead"] = BANDS["bone"]
 BANDS["plate"] = BANDS["chitin"]
 # Keep the shared Matron atlas cells in place. The brood carriers use their own skin and sac cells.
 BANDS["gold"] = (0.90, 0.76, 0.42)
-BANDS["brood_skin"] = (0.8229, 0.2916, 0.7062)
+# Load-bearing legs and the lower body share the skin beneath the sac.
+BANDS["brood_skin"] = (0.155, 0.039, 0.108)
 BANDS["sac_fold"] = (0.2776, 0.0892, 0.2386)
 BANDS["sac_skin"] = (0.5552, 0.1783, 0.4771)
 BANDS["sac_lobe"] = (0.8719, 0.2800, 0.7340)
