@@ -90,7 +90,7 @@ export class AbilityVisuals extends AbilityGeometry {
         if (this.protectionMask !== protect) {
             this.protectionMask = protect;
             for (const material of this.castMaterials) {
-                material.stencilWrite = protect !== 0;
+                material.stencilWrite = protect !== 0 && !(protect === 1 && material === this.kit.ribbons.mesh.material);
                 material.stencilFunc = T.EqualStencilFunc;
                 material.stencilRef = 0;
                 material.stencilFuncMask = protect;

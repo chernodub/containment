@@ -94,7 +94,7 @@ class ArcPresentation implements AbilityPresentation {
         // Links of a native chain arrive synchronously; presentation adds the hop rhythm only.
         if (k.time - this.chainAt > .03) this.chainHop = 0;
         this.chainAt = k.time;
-        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .095);
+        this.strike(event, px, pz, Math.min(7, this.chainHop++) * .016);
       } else if (event.phase === 'impact') {
         const last = this.discharges[(this.nextDischarge + this.discharges.length - 1) % this.discharges.length];
         if (last.live && last.age === 0 && last.victimId === event.targetIds?.[event.targetIds.length - 1]) {
@@ -231,7 +231,10 @@ class ArcPresentation implements AbilityPresentation {
           arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = d.overload && d.delay === 0 ? 1.38 : .54;
           arc.h0 = d.sy; arc.h1 = d.ty; arc.param = 3; arc.color = VIOLET; arc.intensity = .86;
           if (d.overload) {
-            k.heavyBeam(d.sx, d.sy, d.sz, d.x, d.ty, d.z, VIOLET, .48, .28, true);
+            const bendX=(d.sx+d.x)*.5-dz/length*.24, bendZ=(d.sz+d.z)*.5+dx/length*.24;
+            const crest=Math.max(d.sy,d.ty)+.92;
+            k.heavyBeam(d.sx,d.sy,d.sz,bendX,crest,bendZ,VIOLET,.39,.25,true);
+            k.heavyBeam(bendX,crest,bendZ,d.x,d.ty+.14,d.z,0xe2d1ff,.32,.25,true);
           }
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
