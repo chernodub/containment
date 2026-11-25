@@ -644,6 +644,7 @@ export class DepthGame {
     if(checkIngress&&!ingress?.reachable(p,radius+2))continue;
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
+     if(options.closeIngress)this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,this.player));
      if(guardian)this.enemies.promote(result.enemy.id,guardian);
      if(this.rackShutter&&guardian==='warden')this.rackShutter.wardenId=result.enemy.id;
      if(options.broodSupply){
