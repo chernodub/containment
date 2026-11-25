@@ -45,7 +45,7 @@
   },
   "reward-reserve-thruster": {
     "file": "reward-reserve-thruster.webp",
-    "bytes": 11232,
+    "bytes": 11326,
     "shot": {
       "width": 640,
       "height": 360,
@@ -101,7 +101,7 @@
   },
   "reward-slide-loader": {
     "file": "reward-slide-loader.webp",
-    "bytes": 11232,
+    "bytes": 11326,
     "shot": {
       "width": 640,
       "height": 360,
@@ -157,7 +157,7 @@
   },
   "reward-tactical-salvage": {
     "file": "reward-tactical-salvage.webp",
-    "bytes": 18754,
+    "bytes": 18776,
     "shot": {
       "width": 640,
       "height": 360,
@@ -213,7 +213,7 @@
   },
   "reward-drive-dynamo": {
     "file": "reward-drive-dynamo.webp",
-    "bytes": 29548,
+    "bytes": 28878,
     "shot": {
       "width": 640,
       "height": 360,
@@ -269,7 +269,7 @@
   },
   "reward-afterquake": {
     "file": "reward-afterquake.webp",
-    "bytes": 14136,
+    "bytes": 13888,
     "shot": {
       "width": 640,
       "height": 360,
@@ -325,7 +325,7 @@
   },
   "reward-reinforced-bulwark": {
     "file": "reward-reinforced-bulwark.webp",
-    "bytes": 12856,
+    "bytes": 12884,
     "shot": {
       "width": 640,
       "height": 360,
@@ -398,7 +398,7 @@
   },
   "reward-spreading-nova": {
     "file": "reward-spreading-nova.webp",
-    "bytes": 18700,
+    "bytes": 18664,
     "shot": {
       "width": 640,
       "height": 360,
@@ -454,7 +454,7 @@
   },
   "reward-twin-glacier": {
     "file": "reward-twin-glacier.webp",
-    "bytes": 16716,
+    "bytes": 16652,
     "shot": {
       "width": 640,
       "height": 360,
@@ -543,7 +543,7 @@
   },
   "reward-scorched-fan": {
     "file": "reward-scorched-fan.webp",
-    "bytes": 12534,
+    "bytes": 12538,
     "shot": {
       "width": 640,
       "height": 360,
@@ -600,7 +600,7 @@
   },
   "reward-napalm-triplet": {
     "file": "reward-napalm-triplet.webp",
-    "bytes": 11890,
+    "bytes": 11822,
     "shot": {
       "width": 640,
       "height": 360,
@@ -702,7 +702,7 @@
   },
   "reward-forked-overload": {
     "file": "reward-forked-overload.webp",
-    "bytes": 12058,
+    "bytes": 12034,
     "shot": {
       "width": 640,
       "height": 360,
@@ -758,7 +758,7 @@
   },
   "reward-twin-pylon": {
     "file": "reward-twin-pylon.webp",
-    "bytes": 16218,
+    "bytes": 16058,
     "shot": {
       "width": 640,
       "height": 360,
@@ -847,7 +847,7 @@
   },
   "reward-siege-plow": {
     "file": "reward-siege-plow.webp",
-    "bytes": 12818,
+    "bytes": 12856,
     "shot": {
       "width": 640,
       "height": 360,
@@ -920,7 +920,7 @@
   },
   "reward-fault-line": {
     "file": "reward-fault-line.webp",
-    "bytes": 14440,
+    "bytes": 14154,
     "shot": {
       "width": 640,
       "height": 360,
@@ -992,7 +992,7 @@
   },
   "reward-shard-harvest": {
     "file": "reward-shard-harvest.webp",
-    "bytes": 13372,
+    "bytes": 13276,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1081,7 +1081,7 @@
   },
   "reward-ice-road": {
     "file": "reward-ice-road.webp",
-    "bytes": 16248,
+    "bytes": 16188,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1153,7 +1153,7 @@
   },
   "reward-ember-relay": {
     "file": "reward-ember-relay.webp",
-    "bytes": 12172,
+    "bytes": 12186,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1210,7 +1210,7 @@
   },
   "reward-meltdown-core": {
     "file": "reward-meltdown-core.webp",
-    "bytes": 20290,
+    "bytes": 20312,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1282,7 +1282,7 @@
   },
   "reward-pilgrim-pylon": {
     "file": "reward-pilgrim-pylon.webp",
-    "bytes": 14348,
+    "bytes": 14350,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1355,7 +1355,7 @@
   },
   "reward-live-wire": {
     "file": "reward-live-wire.webp",
-    "bytes": 12384,
+    "bytes": 12360,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1422,7 +1422,7 @@
   },
   "reward-kinetic": {
     "file": "reward-kinetic.webp",
-    "bytes": 14206,
+    "bytes": 13922,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1478,7 +1478,7 @@
   },
   "reward-cryo": {
     "file": "reward-cryo.webp",
-    "bytes": 19006,
+    "bytes": 19040,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1534,7 +1534,7 @@
   },
   "reward-pyro": {
     "file": "reward-pyro.webp",
-    "bytes": 11948,
+    "bytes": 11930,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1591,7 +1591,7 @@
   },
   "reward-arc": {
     "file": "reward-arc.webp",
-    "bytes": 12284,
+    "bytes": 12168,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1647,7 +1647,7 @@
   },
   "reward-acid": {
     "file": "reward-acid.webp",
-    "bytes": 12276,
+    "bytes": 12222,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1703,7 +1703,7 @@
   },
   "reward-universal": {
     "file": "reward-universal.webp",
-    "bytes": 11240,
+    "bytes": 11320,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1759,7 +1759,7 @@
   },
   "reward-recovery": {
     "file": "reward-recovery.webp",
-    "bytes": 18866,
+    "bytes": 18860,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1815,7 +1815,7 @@
   },
   "reward-demolition": {
     "file": "reward-demolition.webp",
-    "bytes": 14170,
+    "bytes": 14226,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1871,7 +1871,7 @@
   },
   "reward-executioner": {
     "file": "reward-executioner.webp",
-    "bytes": 18862,
+    "bytes": 18768,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1927,7 +1927,7 @@
   },
   "reward-wildfire": {
     "file": "reward-wildfire.webp",
-    "bytes": 12330,
+    "bytes": 12364,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1984,7 +1984,7 @@
   },
   "reward-cycling": {
     "file": "reward-cycling.webp",
-    "bytes": 12276,
+    "bytes": 12186,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2292,7 +2292,7 @@
   },
   "lesson-crawler": {
     "file": "lesson-crawler.webp",
-    "bytes": 9024,
+    "bytes": 9026,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2323,7 +2323,7 @@
   },
   "lesson-stalker": {
     "file": "lesson-stalker.webp",
-    "bytes": 7854,
+    "bytes": 7862,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2354,7 +2354,7 @@
   },
   "lesson-spitter": {
     "file": "lesson-spitter.webp",
-    "bytes": 11916,
+    "bytes": 12000,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2392,7 +2392,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 9932,
+    "bytes": 9736,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2454,7 +2454,7 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 10864,
+    "bytes": 9548,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2486,7 +2486,7 @@
   },
   "lesson-matron": {
     "file": "lesson-matron.webp",
-    "bytes": 10264,
+    "bytes": 10170,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2543,7 +2543,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 12696,
+    "bytes": 11650,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2643,7 +2643,7 @@
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 19534,
+    "bytes": 19174,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 28496,
+    "bytes": 27226,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2769,7 +2769,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 13320,
+    "bytes": 12094,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2794,7 +2794,7 @@
   },
   "route-safety-interlock-station": {
     "file": "route-safety-interlock-station.webp",
-    "bytes": 10814,
+    "bytes": 10830,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2819,7 +2819,7 @@
   },
   "route-coolant-plant": {
     "file": "route-coolant-plant.webp",
-    "bytes": 20296,
+    "bytes": 20304,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2970,7 +2970,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 11570,
+    "bytes": 10332,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3092,7 +3092,7 @@
   },
   "route-warden-cache": {
     "file": "route-warden-cache.webp",
-    "bytes": 27376,
+    "bytes": 26506,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3153,7 +3153,7 @@
   },
   "route-workshop-siege-plow": {
     "file": "route-workshop-siege-plow.webp",
-    "bytes": 18974,
+    "bytes": 19366,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3230,7 +3230,7 @@
   },
   "route-workshop-fault-line": {
     "file": "route-workshop-fault-line.webp",
-    "bytes": 26412,
+    "bytes": 26696,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3306,7 +3306,7 @@
   },
   "route-workshop-shard-harvest": {
     "file": "route-workshop-shard-harvest.webp",
-    "bytes": 21056,
+    "bytes": 21058,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3399,7 +3399,7 @@
   },
   "route-workshop-ice-road": {
     "file": "route-workshop-ice-road.webp",
-    "bytes": 29000,
+    "bytes": 28940,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3475,7 +3475,7 @@
   },
   "route-workshop-ember-relay": {
     "file": "route-workshop-ember-relay.webp",
-    "bytes": 20106,
+    "bytes": 20198,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3536,7 +3536,7 @@
   },
   "route-workshop-meltdown-core": {
     "file": "route-workshop-meltdown-core.webp",
-    "bytes": 28732,
+    "bytes": 28694,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3612,7 +3612,7 @@
   },
   "route-workshop-pilgrim-pylon": {
     "file": "route-workshop-pilgrim-pylon.webp",
-    "bytes": 24396,
+    "bytes": 24524,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3689,7 +3689,7 @@
   },
   "route-workshop-live-wire": {
     "file": "route-workshop-live-wire.webp",
-    "bytes": 20010,
+    "bytes": 20048,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3780,7 +3780,7 @@
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 10058,
+    "bytes": 8738,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3828,7 +3828,7 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 25806,
+    "bytes": 24856,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3891,7 +3891,7 @@
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 25592,
+    "bytes": 25550,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4048,7 +4048,7 @@
   },
   "route-threat-brute": {
     "file": "route-threat-brute.webp",
-    "bytes": 10070,
+    "bytes": 8716,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4088,7 +4088,7 @@
   },
   "route-threat-warden": {
     "file": "route-threat-warden.webp",
-    "bytes": 7466,
+    "bytes": 7250,
     "shot": {
       "width": 1120,
       "height": 476,
