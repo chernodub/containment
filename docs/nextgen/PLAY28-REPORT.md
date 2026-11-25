@@ -204,3 +204,22 @@ The later twelve-seed runs recorded 11 of 12 for Standard competent Cryo, 11 of 
 [Standard Cryo summary](../../artifacts/nextgen/playtest/play31-final-standard-cryo/summary.json) · [Standard Breacher summary](../../artifacts/nextgen/playtest/play31-final-standard-breacher/summary.json) · [Story Cryo summary](../../artifacts/nextgen/playtest/play31-final-story-cryo/summary.json)
 
 The Breacher 1729 continuation reached the Coolant crossfire with its reserve counting down at 446.783 seconds and reached the later pincer at 468.367 seconds. Its leader survived until the reserve shipped. This playthrough did not exercise the closed entry. [Coolant trace](../../artifacts/nextgen/playtest/play31-coolant-reserve/trace.ndjson)
+
+Native Cryo 1729 recorded both Swarm Junction pods at 624.033 seconds. The supply pod was at (600, 680) and the route pod at (600, 520), with the marine at approximately (235, 748). The supply destruction effect fired at 626.417 seconds. The room's saved mid frame precedes the brood cycle. [Swarm Junction trace](../../artifacts/nextgen/playtest/cryo-1729/trace.ndjson) · [Room frame](../../artifacts/nextgen/playtest/cryo-1729/r16-swarm-junction-mid.png)
+
+A native Cryo novice continuation from the earned Transmission reward recorded the first Diagnostic Gallery Brute's strike at 311.783 seconds and sampled recovery at 312.017 seconds. Its next swing missed at 317.033 seconds. One of five Diagnostic Gallery observations recorded both a first strike and recovery. I inspected the strike and recovery frames at 1920×1080 and 480×270. [Strike frame](../../artifacts/nextgen/playtest/play31-gallery-exchange/hardest-28-0.png) · [Recovery frame](../../artifacts/nextgen/playtest/play31-gallery-exchange/hardest-28-3.png)
+
+Communal Atrium recorded zero first-strike-and-recovery exchanges across five native observations. The first Brute reached wind-up in three of them. The focused Arc novice attempt reached wind-up at 57.650 seconds. The closer ingress therefore exposes a wind-up more often than the full first exchange shown in Diagnostic Gallery. [Atrium replay trace](../../artifacts/nextgen/playtest/play31-atrium-arc-exchange/trace.ndjson)
+
+The prescribed full native commands each hit the runner's one-hour wall limit after 18 clears and zero runner errors. Cryo 1729 finished the last two rooms from its earned Containment Annulus checkpoint with zero errors. Those 20 clears span the earlier full-run build and the later continuation build. [Cryo full run](../../artifacts/nextgen/playtest/cryo-1729/report.json) · [Cryo continuation](../../artifacts/nextgen/playtest/play31-cryo-finale/report.json)
+
+The later Cryo run cut off four Crawlers in Coolant Plant at 501.533 seconds. The receipt identifies reserve breach 0 and closed pincer entry 1. The crossfire counter rose to four at 501.567 and the following pincer canceled nine assigned arrivals by 512.300. This run predates the cutoff screenshot hook, so the trace establishes the consequence and the HUD and grille still lack a captured frame. [Cutoff trace](../../artifacts/nextgen/playtest/play31-final-native-cryo/trace.ndjson)
+
+Arc 2718 finished the last two rooms from its earned Containment Annulus checkpoint with zero errors. Both requested seeds reached the ending across their split sessions. Arc recorded two delayed attempts across its full run and continuation. The initial Cryo runner counted approach checks as well as lock attempts. The later Cryo run used the corrected counter and recorded three delays in the 16 rooms it cleared before the supplemental run was stopped. The first recorded delay was in Freight Hold at 138.250 seconds. [Arc full run](../../artifacts/nextgen/playtest/arc-2718/report.json) · [Arc continuation](../../artifacts/nextgen/playtest/play31-arc-finale/report.json) · [Later Cryo trace](../../artifacts/nextgen/playtest/play31-final-native-cryo/trace.ndjson)
+
+| Native suit loss | Cryo 1729 previous / first PLAY31 / later replay | Arc 2718 previous / PLAY31 |
+|---|---:|---:|
+| 1 · Awakening Bay | 10.0 / 10.0 / 10.0 | 0.0 / 0.0 |
+| 2 · Passenger Vault | 0.0 / 0.0 / 0.0 | 0.0 / 0.0 |
+| 3 · Residential Gallery | 0.0 / 0.0 / 0.0 | 0.0 / 0.0 |
+| 4 · Communal Atrium | 0.0 / 2.3 / 0.0 | 0.0 / 0.0 |
