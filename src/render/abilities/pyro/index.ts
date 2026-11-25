@@ -279,6 +279,9 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
   }
 
+  private readonly joints = new WeakMap<Object3D,Object3D[]>();
+  private readonly hitPosition = new Vector3();
+
   private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
     const kit = this.kit, hot = impactBeat(p.age);
     const c = Math.cos(p.angle), s = Math.sin(p.angle);
@@ -296,13 +299,29 @@ class PyroPresentation implements AbilityPresentation {
           .33, .40, 1, FIRE, fade, 0, 0, POOL_FLAME_PHASE + i);
       }
       kit.sprite('glow', p.x + c*p.range*.48, .05, p.z + s*p.range*.48, p.range*.42, p.range*.27, FIRE, fade*.25, 0, 'ground-light');
-      for (const id of p.targetIds ?? []) {
+      if (p.age < .12) for (const id of p.targetIds ?? []) {
         const actor=kit.statusActor(id);
         if (!actor) continue;
-        const pos=actor.root.position, dx=p.x-pos.x, dz=p.z-pos.z;
-        const reach=(frame.game?.enemies.snapshot.enemies.find(e=>e.id===id)?.radius ?? 24)/UNIT/Math.max(.01,Math.hypot(dx,dz));
-        const strength=p.age<.10 ? 1 : .36*fade;
-        kit.sprite('glow',pos.x+dx*reach,actor.height*.56,pos.z+dz*reach,.29,.39,CORE,strength,id,'light');
+        const root=actor.root, pos=root.position;
+        let bones=this.joints.get(root);
+        if (!bones) {
+          bones=[];
+          root.traverse(node=>{ if (node.type==='Bone') bones!.push(node); });
+          this.joints.set(root,bones);
+        }
+        root.updateWorldMatrix(true,true);
+        const dx=p.x-pos.x, dz=p.z-pos.z, distance=Math.max(.01,Math.hypot(dx,dz));
+        let best=-Infinity;
+        this.hitPosition.set(pos.x,actor.height*.48,pos.z);
+        for (const bone of bones) {
+          const m=bone.matrixWorld.elements;
+          if (m[13]<actor.height*.22 || m[13]>actor.height*.82) continue;
+          const facing=((m[12]-pos.x)*dx+(m[14]-pos.z)*dz)/distance;
+          const score=facing-.55*Math.abs(m[13]-actor.height*.52);
+          if (score>best) { best=score; this.hitPosition.set(m[12],m[13],m[14]); }
+        }
+        const hit=this.hitPosition, age=p.age/.12;
+        kit.draw('contact',hit.x,hit.y,hit.z,.38,.38,1,CORE,(1.-age*.55)*kit.flashIntensity,0,id*.71,900+age);
       }
       kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z, p.age <= .14);
       kit.impact();

@@ -137,7 +137,9 @@ export class ElementKit {
     constructor(root: T.Object3D) {
         root.add(this.root);
         this.root.name = 'ability-element-kit';
-        this.batches = { shard: new InstanceBatch(this.root, 'shard', 512, this.atlas), spark: new InstanceBatch(this.root, 'spark', 512, this.atlas), smoke: new InstanceBatch(this.root, 'smoke', 192, this.atlas), flame: new InstanceBatch(this.root, 'flame', 384, this.atlas), solid: new InstanceBatch(this.root, 'solid', 512, this.atlas), ghost: new InstanceBatch(this.root, 'ghost', 128, this.atlas), decal: new InstanceBatch(this.root, 'decal', 64, this.atlas), front: new InstanceBatch(this.root, 'front', 64, this.atlas) };
+        this.batches = { contact: new InstanceBatch(this.root, 'spark', 32, this.atlas), shard: new InstanceBatch(this.root, 'shard', 512, this.atlas), spark: new InstanceBatch(this.root, 'spark', 512, this.atlas), smoke: new InstanceBatch(this.root, 'smoke', 192, this.atlas), flame: new InstanceBatch(this.root, 'flame', 384, this.atlas), solid: new InstanceBatch(this.root, 'solid', 512, this.atlas), ghost: new InstanceBatch(this.root, 'ghost', 128, this.atlas), decal: new InstanceBatch(this.root, 'decal', 64, this.atlas), front: new InstanceBatch(this.root, 'front', 64, this.atlas) };
+        this.batches.contact.mesh.renderOrder = 6;
+        (this.batches.contact.mesh.material as T.ShaderMaterial).depthTest = false;
     }
     setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }

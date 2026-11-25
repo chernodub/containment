@@ -3,7 +3,7 @@ import { EffectAtlas, FIRE_FAN_PHASE, POOL_FLAME_PHASE, EFFECT_ATLAS_GLSL, TEXTU
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
 
-export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
+export type Primitive = 'contact' | 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;varying float worldHeight;varying float viewDepth;
@@ -76,7 +76,21 @@ ${kind === 'smoke' ? `
  a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
 ${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}
-${kind === 'spark' ? 'float tile=phase>=1000.?floor(phase)-1000.:phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
+${kind === 'spark' ? `if(phase>=900. && phase<901.){
+  float age=phase-900.;
+  float ray=atan(p.y,p.x);
+  float r=length(p);
+  float spikes=pow(.5+.5*cos(ray*5.+.7*sin(ray*2.)),12.);
+  float burst=1.-smoothstep(.10+spikes*.56,.16+spikes*.56,r);
+  float sparks=0.;
+  for(int j=0;j<3;j++){
+    float angle=float(j)*2.18+.46;
+    vec2 axis=vec2(cos(angle),sin(angle));
+    vec2 q=p-axis*(.34+.54*age);
+    sparks=max(sparks,1.-smoothstep(.06,.12,length(vec2(dot(q,axis)*.53,dot(q,vec2(-axis.y,axis.x))))));
+  }
+  a*=max(burst*(1.-age*.66),sparks);c=mix(vec3(2.2,.88,.08),vec3(3.,2.55,1.25),burst);
+ }else{float tile=phase>=1000.?floor(phase)-1000.:phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;}` : ''}
 ${kind === 'decal' ? `
  if(phase>=200.){
   float tile=floor(phase)-(phase>=1000.?1000.:phase>=600.?600.:200.);
