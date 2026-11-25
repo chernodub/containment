@@ -17,6 +17,11 @@ import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons'
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
 import {setGraphicShadowPlane} from './lighting/GraphicSurface';
+// Shadow terminator, edge terminator, edge gain and atlas layout (0 stripe, 1 sac, 2 blade/muzzle).
+const BROOD_FORM: Readonly<Partial<Record<string, readonly [number, number, number, number]>>> = {
+ crawler: [-.06,.94,.34,0], spitter: [-.24,.94,.38,2], stalker: [.26,.95,.32,2],
+ carrier: [-.04,.93,.40,1], matron: [-.14,.94,.45,1],
+};
 /** SHADER25b: small families keep a lighter shadow plane so they stay findable on the darkest decks. */
 const SMALL_FAMILY_SHADOW_PLANE=.68;
 // CREATURE26: Brute zone levels (lit albedo: carapace, plate, flesh, bone) for its three anatomy value shapes.
@@ -148,7 +153,10 @@ export function alien(kind:string,elite=false):ActorModel{
  const organStrength=r.materials.map(m=>m.emissiveIntensity),emission=originalCreatureEmission(r.materials);
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.08);const value=kind==='brute'?.62:kind==='carrier'?.75:kind==='spitter'?.70:kind==='stalker'?.40:kind==='queen'?.28:.68;if(!original)for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
  if(original && kind==='brute') for(const material of r.materials) material.defines={...material.defines,BRUTE_PLANES:1};
+ const form=original && BROOD_FORM[kind];
+ if(form)for(const material of r.materials)material.defines={...material.defines,BROOD_PLANES:1};
  const surface=actorSurface(r.materials,false,elite||kind==='queen');
+ if(form)surface.form(...form);
  surface.body(CREATURE_BODY_HUES[kind as keyof typeof CREATURE_BODY_HUES]??CREATURE_BODY_HUES.crawler);
  const deckTints=original && CREATURE_DECK_TINTS[kind];
  let previousFog:T.Scene['fog']|undefined, previousMatron=false;
@@ -157,6 +165,7 @@ export function alien(kind:string,elite=false):ActorModel{
   const parent=r.root.parent, fog=parent instanceof T.Scene?parent.fog:null;
   if(fog===previousFog&&matron===previousMatron)return;
   previousFog=fog;previousMatron=matron;
+  if(form && kind==='carrier')surface.form(...(matron ? BROOD_FORM.matron! : form));
   // Room fog carries the authored ambient palette. A greener fill shifts the skin towards its cool swatch.
   const sky=fog?.color;
   const cool=sky?T.MathUtils.clamp(5*(sky.g-sky.r)/Math.max(.001,sky.g),0,1):0;
@@ -215,6 +224,16 @@ export function alien(kind:string,elite=false):ActorModel{
   effects?.set(v);r.mixer.timeScale=v.frozen?0:1;if(v.frozen)emergence=emergenceDuration;
  },
  animate(time,moving,aim,_recoil=0,_reload=0,velocity){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;castShadeTime=Math.max(0,castShadeTime-dt);surface.castShade(Math.min(1,castShadeTime/.035));if(halo)halo.material.opacity=.30+.07*Math.sin(time*1.8);authored.advanceContact(dt);flash=authored.flashedOut?0:Math.max(0,flash-dt*20);surface.hit(authored.elementalHold?Math.min(.22,flash):flash);if(!status.frozen&&!dead&&bossStun===0)r.root.rotation.y=Math.PI/2-aim;
+  if(form){
+   // The broad side of a shell fills more of its projection as it turns.
+   // Compensate the terminator without rotating the view-space key.
+   const yaw=r.root.rotation.y;
+   let shadow=form[0];
+   if(kind==='crawler')shadow+=.46*Math.cos(yaw)+.12*Math.sin(yaw);
+   if(kind==='stalker')shadow+=-.24*Math.cos(yaw)+.42*Math.sin(yaw);
+   if(kind==='carrier')shadow=champion==='matron'?BROOD_FORM.matron![0]:shadow+.06*Math.sin(yaw);
+   surface.formShadow(status.frozen||status.chilled||status.burning||status.shocked||flash>=.25||deathCue!=='none'?-2:T.MathUtils.clamp(shadow,-.45,.55));
+  }
   surface.stage(stageLight*(bossStun>0?.68:authored.flashedOut?.36:1));
   if(authored.flashedOut)surface.camouflage(Math.min(.30,alpha));
   if(!dead && liveCrack!==authored.exposedIce){
