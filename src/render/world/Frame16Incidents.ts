@@ -53,6 +53,17 @@ export function addFrame16Incidents(root: Group, id: string) {
       pieces.finish(root, 'ejected-leaf', 407, 364).scale.x = .82;
       break;
     case 'overload-floor':
+      // Armour the core-facing side of the native blocked perimeter. The bank route
+      // bends behind these faces as it leaves the exposed eastern approach.
+      for(const [ax,az,bx,bz] of [[827,384,884,480],[884,480,827,636],[827,636,574,636]]){
+        const dx=bx-ax,dz=bz-az,angle=-Math.atan2(dz,dx),length=Math.hypot(dx,dz);
+        for(let i=0;i<4;i++){
+          const x=ax+dx*(i+.5)/4-465,z=az+dz*(i+.5)/4-390;
+          pieces.box(x,12,z,length/4-2,24,4,0x485458,angle);
+          pieces.box(x,25,z,length/4,3,7,0x968c72,angle);
+          pieces.box(x,11,z,5,22,8,0x687577,angle);
+        }
+      }
       pieces.face([[-15, 4, 14], [-12, 23, -14], [13, 15, -15], [12, 2, 12]], 0x899492);
       pieces.face([[-12, 23, -14], [-15, 15, -16], [10, 8, -17], [13, 15, -15]], 0x4f5a60);
       for (const x of [-8, 0, 8])

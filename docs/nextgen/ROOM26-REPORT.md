@@ -124,3 +124,61 @@ The Armory frame catches the Warden’s red sightline crossing the plate seams. 
 The Shaft retake shows the lower wheel face-on above the marine. Transmission’s incident crop still leaves the mast high in the frame, and the pale feed is easier to pick out in the arena view. The intended third-place brightness hierarchy was judged visually. The floor-contrast sample measures deck contrast only.
 
 An earlier final-build preparation sweep overlapped the native campaign. Awakening Bay exceeded the 3,000 ms limit in that sweep (3,708 ms). The table uses the sweep after both campaign and capture finished. [Overlapping sweep](/Users/chernodub/.t3/worktrees/containment-game/t3-104d1dfe-1d612b52db1898b8/artifacts/nextgen/room27-final-prep/rooms.json)
+
+## ROOM29
+
+Passenger Vault replaces the conveyor centre with three berths and a coat. Freight Hold replaces the long handling rails with a sprung four-corner cradle. At Breached Loading Bay a stepped fold in the deck leads toward the torn structure. The three use different floor marks in the lanes beyond the machinery: numbered boarding spaces, lashing sockets and branching stress fractures.
+
+The other rooms carry marks associated with their work across the clipped deck skin. The Annulus lines are concentric with the sealed core. Transmission pairs calibration marks with a cupped reflector. Diagnostic Gallery has a scanner hoop over the patient cradle. The Atrium grow light is amber. Workshop tendrils reach one jaw of the impeller vise, and the reactor core has overlapping armour along the sheltered approach. A small hooded machine lamp casts a trapezoidal pool into each room’s existing deck texture.
+
+The [comparison gallery](../../artifacts/nextgen/room29/index.html) uses final19 on the left and ROOM29 on the right, with native and 480 × 270 pairs for spawn, incident, arena and kiting. The incident captures use the final19 incident-facing camera fixture. The kiting captures use the staged G6 fight. The native Arc run is recorded separately.
+
+### Greyscale kiting review
+
+I ignored the room title and compared the previous and current frames at 480 × 270. “Harder” records whether I found the marine, a bright creature mark or a visible warning harder to locate in the new frame. I also checked colour for the red cues. These are visual judgements from one staged fight per room.
+
+| Room | Could I name it? | What survived reduction | Harder? |
+|---|---|---|---|
+| Awakening Bay | Yes | Pod outlines and numbered thaw stations continue behind the opened berth. | No |
+| Passenger Vault | Yes | Three berths and queue bays give the evacuated passengers a place in the lane. | No |
+| Residential Gallery | Yes | Repeated cabin thresholds and woven mat diamonds frame the trolley. | No |
+| Communal Atrium | No | The exposed irrigation feed could still belong to a service room once the planting leaves the frame. | No |
+| Crew Checkpoint | Yes | Stop bars and the arch separate the inspection lanes. | No |
+| Armory | Yes | Cartridge profiles on the deck repeat the rounds spilling from the carousel. | No |
+| Freight Hold | Yes | Numbered lashing bays surround the torn webbing. The broken cradle is less distinct during the fight. | No |
+| Breached Loading Bay | Yes | Branching fractures and tilted plate ends lead up to the hull tear. | No |
+| Relay Racks | Yes | Parallel cable runs elbow into the open rack trench. | No |
+| Transmission Chamber | Yes | RF calibration arcs repeat around the dish and feed. | No |
+| Diagnostic Gallery | Yes | Rounded bed bays and bed numbers carry the patient story beyond the scanner. | No |
+| Safety Interlock Station | Yes | Repeated switch contacts and ISO stencils echo the isolator. | No |
+| Coolant Plant | Yes | The frosted header and drains belong together. The fluid sheen is faint. | No |
+| Service Shaft Landing | Yes | The winch and load-rating stencils identify a lifting deck. | No |
+| Infested Workshop | Yes | Wrench shadows surround the growth climbing the bench. | No |
+| Swarm Junction | Yes | Branching growth crosses the pipe and continues into the fighting lane. | No |
+| Shielding Gate | Yes | Parallel track slots lead to the surviving upright and broken teeth. | No |
+| Containment Annulus | Yes | Wide concentric double lines stay legible behind the marine. | No |
+| Manual Control Chamber | No | The desk reads as a control station, but the bus lines could also serve a relay room. | No |
+| Overload Floor | Yes | The reactor edge and paired bank ducts identify the room. The staged frame shows little of the sheltered approach. | No |
+
+My three weakest reads are Communal Atrium, Manual Control Chamber and Freight Hold. The first two still depend on the landmark for their specific identity. In Freight the lashing bays identify the room more reliably than the broken metalwork.
+
+### Draw calls
+
+Each value is the largest observed draw count across three standard ten-second Arc combat trials on the specified tier. The [previous build](../../artifacts/nextgen/room29-base-complete/benchmark.json) used b1f1d1ed. The [ROOM29 build](../../artifacts/nextgen/room29/benchmark.json) used 281c9456. Both receipts contain twelve trials, zero trial errors and zero combat shader compiles. ROOM29 peaked at 299 draws on High against the 330 budget.
+
+| Room | Tier | Previous | ROOM29 |
+|---|---|---:|---:|
+| Safety Interlock Station | High | 243 | 299 |
+| Safety Interlock Station | Low | 276 | 286 |
+| Transmission Chamber | High | 161 | 170 |
+| Transmission Chamber | Low | 158 | 158 |
+
+Earlier attempts on the shared host missed the sustained-enemy or accepted-ability requirement. The final delivery run enabled the runner’s continue-on-error option to collect every trial. All twelve passed. The [extended delivery sweep](../../artifacts/nextgen/room29/extended-matrix.json) also passed every trial with five seconds of minimum simulated combat. Its highest High-tier counts were 269 for Safety Interlock and 169 for Transmission. The table uses the standard window on both builds.
+
+### Native Arc campaign
+
+The production build passed. The [uninterrupted standard Arc campaign](../../artifacts/nextgen/playtest/room29-uninterrupted/report.json) cleared all twenty rooms on seed 1729 with zero errors and zero defects. It ran on the final build with the capture and benchmark browsers closed.
+
+An earlier [seed-1729 Arc run](../../artifacts/nextgen/playtest/room29-delivery-arc/report.json) cleared 16 rooms before crawler contact killed the marine in Shielding Gate. The [checkpoint continuation](../../artifacts/nextgen/playtest/room29-arc-continued/report.json) replayed from the recorded Swarm Junction reward with the earned resources. It finished Overload Floor with 20 rooms cleared and zero runtime errors. Across both legs the runner recorded loading delays above five seconds in Passenger Vault, Residential Gallery and Manual Control Chamber. Those defects produced a nonzero runner exit even on completion.
+
+The [capture inventory](../../artifacts/nextgen/room29/captures.json) records the selected source for each of the 80 frames. Six machines received per-part cutaways after the first kiting review. Their four views were recaptured on 281c9456. The gallery retains the identical-room views from the preceding renderer build for the other fourteen rooms.

@@ -77,6 +77,16 @@ export function addLaneMachine(root:Group,id:string){
     }
     case 'transmission-chamber':
       for(const z of [-5,5])run([[170,-61+z],[84,-61+z],[48,-24+z],[z,0],[z-45,18]],6,5,0x746c59);
+      // An offset reflector cups the waveguide. Its exposed back has three radial ribs.
+      for(let i=0;i<16;i++){
+        const rim=(n:number):[number,number,number]=>{
+          const a=n*Math.PI/8;
+          return [-43+10*Math.cos(a),22+18*Math.cos(a),24*Math.sin(a)];
+        };
+        p.face([[-25,19,0],rim(i),rim(i+1)],i%4?0x91a4a6:0x778e94);
+        p.rod(rim(i),rim(i+1),1.5,edge);
+        if(i%5===0)p.rod(rim(i),[-53,24,0],1.2,metal);
+      }
       // Flared receiver horn with an exposed throat on the guide axis.
       for(const side of [-1,1]){
         p.face([[5,8,side*7],[-42,4,side*31],[-42,23,side*31],[5,18,side*7]],0xa9bbbe);
@@ -87,11 +97,15 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-14,14])p.box(x,10,-x*.35,5,19,35,edge,.42);
       break;
     case 'crew-checkpoint':
+      for(const z of [-23,23])p.box(8,20,z,9,39,8,metal);
+      p.box(8,41,0,12,7,55,edge);
       p.box(34,4,-9,112,7,35,rubber,.20);
       for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,.20);
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
       p.box(4,20,-1,19,8,13,0xd5b37e,-.38);break;
     case 'shielding-gate':
+      p.face([[-133,4,-37],[-133,42,-37],[-100,42,-37],[-84,22,-37],[-84,4,-37]],metal);
+      p.rod([-133,42,-37],[-100,42,-37],4,edge);
       for(const side of [-1,1]){
         p.box(-59,5,side*36,140,9,16,metal);
         for(let i=0;i<6;i++){
@@ -134,5 +148,6 @@ export function addLaneMachine(root:Group,id:string){
       for(const x of [-23,-14,-5,4,13,22])p.rod([x,11,4],[x+3,11,4],13,0xc2dde1);
       p.rod([-20,22,8],[21,22,8],2.8,0xd9e8e3);
   }
-  p.finish(root,'lane-machine-'+id,end[0],end[1]);
+  const articulated=['transmission-chamber','crew-checkpoint','shielding-gate'].includes(id);
+  p.finish(root,'lane-machine-'+id,end[0],end[1],undefined,articulated);
 }
