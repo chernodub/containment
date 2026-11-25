@@ -285,14 +285,32 @@ void main(){
    float delta=s-jitter;
    float halo=exp(-delta*delta*6.25);
    float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
-   float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
-   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   if(fxParam>3.5){
+    float split=sin(clamp((v-.30)/.65,0.,1.)*3.14159)*.68;
+    fork=(1.-smoothstep(.08,.15,abs(s-jitter-split)))*smoothstep(.29,.34,v);
+   }
+   float gate=(1.-smoothstep(fxParam>3.5?.23:.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
+   emit=(mix(fxColor*.48,vec3(2.4,1.98,2.72),smoothstep(.65,1.4,along))*bolt+fxColor*(body*.8+halo*.25)+(fxParam>3.5?vec3(1.5,.95,2.):fxColor*.6)*fork)*gate*fxIntensity;
    alpha=(bolt*.82+fork*.25+halo*.07)*gate;
   }else{
    float core=(1.-smoothstep(.07,.19,abs(s)))*(1.-smoothstep(.045,.21,age));
    emit=(hot*i0+vec3(3.,2.85,2.6)*core)*fxIntensity;
    alpha=i0*.12+core*.62;
   }
+ }else if(m<4.5 && fxParam>.5){
+  // Nova and Slam share the footprint, with cold needles or buckled deck seams.
+  float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853;
+  float front=R*smoothstep(0.,.045,age);
+  float behind=front-r;
+  float inside=smoothstep(-.005,.015,behind);
+  float rim=inside*(1.-smoothstep(.12,.27,behind));
+  float fade=1.-smoothstep(.05,.42,age);
+  float grain=fxNoise(fxWorld.xz*1.45+fxSeed);
+  float seam=(1.-smoothstep(.015,.115,abs(sin(a*(fxParam>1.5?6.:12.)+grain*.8))))*inside;
+  float core=(1.-smoothstep(.18,.85,r))*(1.-smoothstep(.033,.05,age));
+  alpha=(.25*inside+.60*rim)*fade;
+  base=mix(fxColor*.24,fxColor,rim);
+  emit=(mix(fxColor,vec3(.92),.35)*rim+fxColor*seam*.28)*fade*fxIntensity+vec3(core)*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
