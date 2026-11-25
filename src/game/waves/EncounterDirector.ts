@@ -14,7 +14,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;approachLeadMs?:number;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -125,6 +125,11 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
   const arrivals=schedule.splice(start);
+  if(node.templateId==='service-shaft-landing'&&beatIndex===0&&
+    arrivals[0]?.enemyId==='stalker'&&arrivals[1]?.enemyId==='stalker'){
+   const early=arrivals[0].atMs+100;
+   arrivals[1]=Object.freeze({...arrivals[1],atMs:early,approachLeadMs:arrivals[1].atMs-early+250});
+  }
   if(beatIndex===reserveBeat){
    const leader=arrivals.findIndex(request=>request.enemyId===reserveLeader);
    const screen=arrivals.filter((request,index)=>index!==leader&&
