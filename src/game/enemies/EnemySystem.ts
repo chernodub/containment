@@ -118,7 +118,7 @@ export type MeleeStrikeEvent = Readonly<{type:'melee-strike';arrivalSwing?:true;
 export type EnemyEvent =
   | Readonly<{type:"ready-shove";x:number;y:number}>
   | Readonly<{type:'melee-miss'|'recovery-stagger';enemyId:number;x:number;y:number}>
-  | Readonly<{type:'arrival-wound'|'arrival-recovery';enemyId:number;x:number;y:number;damage:number}>
+  | Readonly<{type:'arrival-wound'|'arrival-recovery';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;damage:number}>
   | MeleeWarningEvent
   | MeleeStrikeEvent
   | ContactAttackEvent
@@ -599,7 +599,7 @@ export class EnemySystem {
     if(enemy.arrivalSwing){
       const banked=Math.min(healthDamage,enemy.health-(enemy.arrivalDamage??0));
       enemy.arrivalDamage=(enemy.arrivalDamage??0)+banked;
-      const events:EnemyEvent[]=banked>0?[freezeEvent({type:'arrival-wound',enemyId:id,x:enemy.x,y:enemy.y,damage:banked})]:[];
+      const events:EnemyEvent[]=banked>0?[freezeEvent({type:'arrival-wound',enemyId:id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:banked})]:[];
       return this.#damageResult(true,absorbedByArmor,0,false,{x:0,y:0},events);
     }
     enemy.health -= healthDamage;
@@ -1194,7 +1194,7 @@ export class EnemySystem {
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
   beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
-    if(!enemy||enemy.type!=='brute')return [];
+    if(!enemy||(enemy.type!=='brute'&&enemy.lesson!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=true;
@@ -1262,10 +1262,10 @@ export class EnemySystem {
         events.push(freezeEvent({type:'melee-strike',arrivalSwing:enemy.arrivalSwing,enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
         if(enemy.meleeConnected){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)*(enemy.lesson==='stalker'?.65:1)}));
         }
       }else if(enemy.meleePhase==='strike'){
-        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
+        if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
         enemy.arrivalSwing=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
