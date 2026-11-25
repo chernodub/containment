@@ -411,7 +411,7 @@ try {
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
     if(room.id==='relay-racks'&&!room.shutterBreak&&after.status==='playing'){
-      const impact=newEventReceipts(s.events,after.events).find(event=>event.type==='wall-slam');
+      const impact=newEventReceipts(s.events,after.events).find(event=>event.type==='wall-slam'&&!event.wall);
       if(impact){
         const name='r9-relay-racks-shutter-break';
         await shot(name,after);

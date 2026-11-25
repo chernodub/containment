@@ -52,6 +52,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   const [beat]=source.splice(opening.index,1);
   source.unshift(openingBeat(node.depth,opening.index,beat,mode==='story'));
  }
+ const shutterOpening=node.templateId==='relay-racks';
  const coverOpening=node.templateId==='transmission-chamber';
  if(coverOpening){
   const index=source.findIndex(beat=>beat.grammar==='siege');
@@ -60,7 +61,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  }
  const galleryOpening=node.templateId==='diagnostic-gallery';
  const shaftLanding=node.templateId==='service-shaft-landing';
- if(node.templateId==='relay-racks'){
+ if(shutterOpening){
   const index=source.findIndex(beat=>beat.groups.some(group=>group.guardian==='warden'));
   if(index>0)source.unshift(...source.splice(index,1));
  }
@@ -228,7 +229,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(node.depth/3)+concurrentBonus);
- return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
+ return Object.freeze({nodeId:node.id,kind:node.kind,wave:node.depth+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:shutterOpening?'Bait the ram into the rack shutter':coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
 export function createEncounterPlan(options: EncounterOptions): EncounterPlan {

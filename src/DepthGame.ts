@@ -467,6 +467,7 @@ export class DepthGame {
  openingName(depth?:number,salvage=false){
   if(depth===undefined)return this.director.plan.openingName;
   const run=this.expedition.run;
+  if(depth===8&&run.version===3)return 'Bait the ram into the rack shutter';
   if(depth===9&&run.version===3)return 'Use the relay receiver as cover';
   if(depth===GUARDIAN_ROUTE_DEPTH&&run.guardianRoute){
    const route=GUARDIAN_ROUTES[run.guardianRoute];
