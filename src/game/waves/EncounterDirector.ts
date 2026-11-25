@@ -199,6 +199,7 @@ const events = (...values: EncounterEvent[]): readonly EncounterEvent[] => Objec
  */
 export class EncounterDirector {
   readonly plan: EncounterPlan;
+  readonly returnShotBeat: number;
   private readonly pincerFlanks = new Map<number, readonly EncounterSpawn[]>();
   private readonly breaches:readonly {id:string;x:number;y:number}[];
   private holdUntilMs=0;
@@ -219,8 +220,14 @@ export class EncounterDirector {
 
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
-    this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.plan = createEncounterPlan(options);
+    this.returnShotBeat=options.node.templateId==='communal-atrium'&&options.difficulty!=='veteran'
+      ? this.plan.beats?.findIndex(beat=>{
+        const arrivals=this.plan.schedule.slice(beat.start,beat.end);
+        return arrivals.some(enemy=>enemy.enemyId==='brute'&&enemy.role==='anchor')&&
+          arrivals.some(enemy=>enemy.enemyId==='crawler'||enemy.enemyId==='stalker'||enemy.enemyId==='spitter');
+      })??-1 : -1;
+    this.tokens=DIFFICULTIES[options.difficulty??'standard'];
     this.holdUntilMs=options.holdUntilMs??0;
     this.breaches=options.breaches??[];
     this.plan.beats?.forEach((beat,index)=>{
