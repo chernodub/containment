@@ -34,10 +34,15 @@ export function paintWorkingLane(c:CanvasRenderingContext2D,room:RoomTemplate,ar
  const reach=Math.hypot(room.width,room.height);
  // Long working aisles alternate between worn paint, bare plate and inset service panels.
  for(let y=-960;y<=960;y+=320){
-  c.fillStyle='rgba(149,148,131,.15)';c.fillRect(-reach,y-width/2,reach*2,width);
-  c.fillStyle='rgba(18,29,33,.26)';c.fillRect(-reach,y+width/2+8,reach*2,68);
+  c.fillStyle='rgba(167,165,149,.32)';c.fillRect(-reach,y-width/2,reach*2,width);
+  c.fillStyle='rgba(14,23,29,.58)';c.fillRect(-reach,y+width/2+8,reach*2,68);
   const shape=new Path2D(tread);
   for(let x=-Math.ceil(reach/80)*80;x<reach;x+=80){
+   if(Math.abs(y)<160 && Math.abs(x)<280){
+    c.fillStyle='rgba(136,145,141,.56)';
+    for(let rib=0;rib<80;rib+=10)c.fillRect(x+rib,y+width/2+11,3,60);
+    continue;
+   }
    c.save();c.translate(x,y+width/2+42);c.strokeStyle='rgba(137,147,139,.45)';c.lineWidth=2.4;c.stroke(shape);c.restore();
   }
  }

@@ -48,18 +48,18 @@ function mountedStrips(id:string){
   if(!origin||!source)return;
   const angle=layout?Math.atan2(layout[3]-layout[1],layout[2]-layout[0]):0;
   const end=layout?Math.hypot(layout[2]-layout[0],layout[3]-layout[1]):0;
-  const lamp:Strip=[end,0,18,14,7,0];
+  const lamp:Strip=[end,0,13,36,11,0];
   return {origin,angle,color:practicalColor[id]??source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
 }
 
 export function addMachineEmitters(root:Group,id:string){
   const mount=mountedStrips(id);if(!mount)return;
-  const pieces=new IncidentPieces(),tone=new Color(mount.color).multiplyScalar(.66).getHex();
+  const pieces=new IncidentPieces(),tone=new Color(mount.color).multiplyScalar(.83).getHex();
   // A hood, shoe and short post make the auxiliary head legible from above.
   const [x,z,y]=mount.lamp;
   pieces.box(x,1,z,12,2,9,0x404747);
   pieces.box(x,y/2,z,4,y,4,0x414b4d);
-  pieces.box(x,y-1,z,18,3,10,0x606563);
+  pieces.box(x,y-1,z,41,4,16,0x606563);
   for(const [x,z,y,w,d,yaw] of [...mount.parts,mount.lamp])pieces.box(x,y,z,w,.9,d,tone,yaw);
   if(mount.inspection){
     const [x,z,y,w,d,yaw]=mount.inspection;
@@ -69,6 +69,7 @@ export function addMachineEmitters(root:Group,id:string){
   const material=new MeshBasicMaterial({vertexColors:true});
   const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],material);
   mesh.onBeforeRender=()=>material.color.setScalar(.89+.11*Math.sin(environmentClock.value*1.7+mount.angle));
+  mesh.userData.lightFixtures=[{x:x/32,y:(y+4)/32,z:z/32,color:mount.color,nativeColor:true,gain:.83,distance:4.1,poolWidth:2.1,poolDepth:3.0,poolAngle:mount.angle}];
   mesh.rotation.y=-mount.angle;mesh.castShadow=false;
 }
 
@@ -78,9 +79,9 @@ export function paintMachineSpill(c:CanvasRenderingContext2D,id:string){
   const tint='#'+mount.color.toString(16).padStart(6,'0');
   // Metal visor cuts off the rectangular work lamp at the edge of its service area.
   c.save();c.translate(mount.lamp[0],mount.lamp[1]);
-  const pool=c.createLinearGradient(0,0,0,56);
-  pool.addColorStop(0,tint+'d2');pool.addColorStop(1,tint+'38');
-  c.fillStyle=pool;c.fill(new Path2D('M-7 0H7L30 55H-31Z'));c.restore();
+  const pool=c.createLinearGradient(0,0,0,104);
+  pool.addColorStop(0,tint+'ef');pool.addColorStop(.65,tint+'ac');pool.addColorStop(1,tint+'63');
+  c.fillStyle=pool;c.fill(new Path2D('M-18 0H18L73 102H-72Z'));c.restore();
   if(mount.inspection){
     const [x,z,,,,yaw]=mount.inspection;
     c.save();c.translate(x,z);c.rotate(-yaw+.48);
