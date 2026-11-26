@@ -32,7 +32,7 @@ export type PresentationDebug = {
  step(ms:number,input:GameInput,update:(ms:number,input:GameInput)=>void):void;
 };
 export type PerformanceSample = {frame:number;updateStart:number;update:number;render:number;hud:number;audio:number};
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean,liveObservation=false,observePerformance?:(listener:((sample:PerformanceSample)=>void)|undefined)=>void){
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean,liveObservation=false,observePerformance?:(listener:((sample:PerformanceSample)=>void)|undefined)=>void,prepareAudio?:()=>Promise<void>|undefined){
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<GameEffect & {at:number}>=[];if(!liveObservation)renderer.effect=e=>{events.push({...e,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
@@ -49,7 +49,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   };
  }
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
- const ready=async()=>{if(game.status!=='menu')renderer.beginGameplayPresentation();beforePrepare();await renderer.prepare(game.node);refresh();};
+ const ready=async()=>{if(game.status!=='menu')renderer.beginGameplayPresentation();beforePrepare();await Promise.all([renderer.prepare(game.node),prepareAudio?.()]);refresh();};
  const api={game,renderer,events,prepare:ready,
   async studio(shot:StudioShot){
    if(liveObservation||renderer.roomLoading)throw Error('Studio requires a prepared fixed-step room');

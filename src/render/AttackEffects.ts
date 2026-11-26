@@ -419,13 +419,14 @@ export class AttackEffects {
  }
  /** Room loads replace the rendered geometry group. Never retain its disposed predecessor. */
  private readonly wallProbe=new WallSurfaceProbe();
- setWorld(world:T.Object3D){this.world=world;}
+ private readonly wallQueue:(()=>void)[]=[];
+ setWorld(world:T.Object3D){this.wallProbe.clear();this.wallQueue.length=0;this.world=world;}
  prepareWallSurfaces(){if(this.world)this.wallProbe.prepare(this.world);}
- private particle(list:Particle[],limit:number,p:T.Vector3,color:number,size:number,life:number,v?:T.Vector3,gravity=0,stretch=1){
+ private particle(list:Particle[],limit:number,p:T.Vector3,color:number,size:number,life:number,v?:T.Vector3,gravity=0,stretch=1,rotation?:number){
   const cap=this.options.tier==='low'?Math.max(4,Math.floor(limit*.45)):limit;
   const item=list.length>=cap?list.shift()!:this.particleFree.get(list)!.pop()!;
   item.p.copy(p);if(v)item.v.copy(v);else item.v.set(0,0,0);item.color.setHex(color);item.age=0;item.life=life;item.size=size;item.stretch=stretch;
-  item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
+  item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=rotation??Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
   item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.direction=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
  }
  private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false,arrival=false){
@@ -493,7 +494,7 @@ export class AttackEffects {
   }
 
   if(e.type==='recovery-stagger'){this.pulse(p,0xffd28a,.38,1.35);return;}
-  if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
+  if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallQueue.push(()=>this.wallSlam(e,p));return;}
   if(e.type==='corpse'){this.death(e,p,deathCue,frozenBody);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
@@ -656,9 +657,13 @@ export class AttackEffects {
    if(!acid){
     this.flash(p,impactColor,.7,1.8,.08,1);
     if(e.targetId===undefined){
-     const surface=this.world&&this.wallProbe.resolve(this.world,p,forward.clone().negate(),.3);
-     this.particle(this.decals,EFFECT_LIMITS.decals,surface?.supported?surface.point:new T.Vector3(p.x,.012,p.z),0x1a2224,e.weapon==='plasma'?.34:.2,18);
-     const mark=this.decals[this.decals.length-1];mark.variant=e.weapon==='plasma'?1:0;mark.ground=true;mark.spin=0;if(surface?.supported)mark.wall=surface.normal;
+     const rotation=Math.random()*6.28,impact=p.clone(),outward=forward.clone().negate();
+     this.wallQueue.push(()=>{
+      const surface=this.world&&this.wallProbe.resolve(this.world,impact,outward,.3);
+      if(!surface?.supported)impact.y=.012;
+      this.particle(this.decals,EFFECT_LIMITS.decals,surface?.supported?surface.point:impact,0x1a2224,e.weapon==='plasma'?.34:.2,18,undefined,0,1,rotation);
+      const mark=this.decals[this.decals.length-1];mark.variant=e.weapon==='plasma'?1:0;if(surface?.supported)mark.wall=surface.normal;
+     });
     }
    }
    if(!acid)for(let i=0;i<(e.targetId!==undefined?4:3);i++){const a=angle+Math.PI+(Math.random()-.5)*1.1,s=1+Math.random()*2,target=e.targetId!==undefined;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x898477,target?.022+Math.random()*.012:.045,target?.35+Math.random()*.3:3.5,new T.Vector3(Math.cos(a)*s,1+Math.random()*1.5,Math.sin(a)*s),9.8,1.8);}
@@ -822,6 +827,7 @@ export class AttackEffects {
  private readonly bulletSkipPoint=new T.Vector3();
  update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined){
   if(dt<=0||this.disposed)return;
+  for(let i=0;i<2&&this.wallQueue.length;i++)this.wallQueue.shift()!();
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
   let beam=0,hostile=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
   for(const b of bullets){
@@ -1005,8 +1011,8 @@ export class AttackEffects {
   }
   return count;
  }
- clear(){this.shooters.clear();this.activeShooters.clear();this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){this.wallQueue.length=0;this.shooters.clear();this.activeShooters.clear();this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
- dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.emptyPriorityTexture.dispose();this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
+ dispose(){if(this.disposed)return;this.clear();this.wallProbe.clear();this.disposed=true;this.emptyPriorityTexture.dispose();this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
 }

@@ -100,3 +100,71 @@ The current runner exercised Pyro seed 1729 on the frozen `94e3167d` build throu
 Residential Gallery reproduced the five-second defect on the baseline. Passenger Vault crossed it in the candidate trial and also in the earlier PERF41 run on the same-era renderer at much higher load (20.03 s with Arc). The serial comparison cannot isolate a regression at matched load. Reflection capture renders six room views and builds a filtered environment map. It was the largest measured preparation phase in both rooms. Shader readiness was a secondary cost in the older Gallery run. The asset wait includes the ability asset promise, and atlas upload has no separate timer. The runner's hold includes polling/scheduling and can include the time spent saving the loading evidence, so it does not necessarily equal the renderer's preparation total.
 
 The production build passed. The PERF42 native Pyro campaign reached Safety Interlock as room 12, cleared it, and finished at the 13-room limit with zero browser or runner errors. The runner returned exit 1 for the recorded loading defects in Passenger Vault and Residential Gallery. The three-room baseline completed with zero errors and recorded the Residential Gallery loading defect. Receipts are `artifacts/nextgen/playtest/perf42-pyro/report.json` and `artifacts/nextgen/playtest/perf42-w32-load/report.json`.
+
+## PERF43 — wall impacts, audio preparation, and Transmission
+
+### Wall impacts
+
+A room-local horizontal grid indexes triangles intersecting the height band reachable by the impact ray and its four support probes. The bins borrow source attributes, copy only query indices and never enter the render scene. Three performs the actual intersection using the original transform and material. The main probe preserves scene/face order at equal distances. Unsupported and moved meshes retain their native raycasts. At most two probes are drained per presentation frame and room changes clear pending work and dispose query geometries.
+
+### Audio preparation
+
+The first playable room waits for the unlocked audio director to warm active-rig ability phases, all five weapons and three variants per weapon, encounter families including reinforcements, and pickup/UI cues. The synthesis worker receives the actual variant and transfers PCM for the director's cache. A small reserve holds unstarted one-shot Web Audio sources; the mixer refills it between frames. Muting and leaving the run cancel queued preparation and release the reserve. A cold gameplay cue can schedule its buffer for later without replaying an event after a mute or transition.
+
+### Transmission High attribution
+
+The initial 15 s, 100 µs CDP run observed 265 frames. The table ranks the mean excess self time in the 14 slowest native updates against the middle 14. This cohort is separate from the serial verification pair.
+
+| Function and source | Work | Slow self / inclusive (ms) | Middle self / inclusive (ms) | Excess self (ms) |
+|---|---|---:|---:|---:|
+| `Ray.intersectTriangle`, Three core 22920 | Wall probe | 3.71 / 3.71 | 0 / 0 | 3.71 |
+| `checkGeometryIntersection`, Three core 23731 | Wall probe | 3.49 / 12.78 | 0 / 0 | 3.49 |
+| `Mesh.getVertexPosition`, Three core 23467 | Wall probe | 2.02 / 5.02 | 0 / 0 | 2.02 |
+| `BufferAttribute.getX`, Three core 17147 | Wall probe vertex data | 1.59 / 1.63 | 0 / 0 | 1.59 |
+| `#snapshotEnemy`, `src/game/enemies/EnemySystem.ts:739` | Simulation | 1.51 / 1.54 | 0.32 / 0.32 | 1.18 |
+| `Mesh._computeIntersections`, Three core 23563 | Wall probe | 0.80 / 13.58 | 0 / 0 | 0.80 |
+| `Mesh.raycast`, Three core 23517 | Wall probe | 0.67 / 14.33 | 0 / 0 | 0.67 |
+| `checkIntersection`, Three core 23700 | Wall probe | 0.66 / 4.32 | 0 / 0 | 0.66 |
+| `Vector3.fromBufferAttribute`, Three core 5983 | Wall probe vertex data | 0.53 / 3.00 | 0 / 0 | 0.53 |
+| `clearPolygonTopology`, `src/game/world/polygonGeometry.ts:58` | Simulation navigation | 0.55 / 1.71 | 0.09 / 0.83 | 0.47 |
+
+The largest HeapProfiler allocation sites were `clearPolygonTopology` (233.3 MB sampled), `DrawnMarineEnvelope.captureSkin` (225.8 MB), `Mesh.getVertexPosition` (85.5 MB, several stacks), iterator advancement (75.0 MB, several stacks), `pointSegmentDistanceSquared` (68.6 MB), `segmentDistanceSquared` (51.2 MB), `inside` (48.2 MB), and `#snapshotEnemy` (44.8 MB). Sampling includes objects subsequently collected. The largest navigation path led through `FacilityNavigation.closest` and `waypoint` into room movement. In the gameplay workstream, a candidate optimization is to retain immutable polygon edge coefficients and padded bounds by polygon identity, and reuse them in `clearEdges` inside `clearPolygonTopology`. Maintain the existing continuous collision predicates.
+
+The renderer collapses equal bind vertices and ordered skin influences during envelope-cache construction. Every distinct deformed point still contributes to the existing depth bins. The bin reduction writes only improving extrema. The other large renderer allocation path was the wall probe covered above.
+
+### Serial CPU and allocation profiles
+
+The 15-second windows ran consecutively at the loads below. Update timing excludes the benchmark driver. GC counts are main-renderer-thread Chrome trace events. Audio counts come from Chrome main-thread samples. Source creation is counted only inside the measured native update/render windows.
+
+| Pyro case | One-minute load, start → end before / after | Frames | Update p95 ms | Update p99 ms | Updates >8 ms | GC count / total pause ms |
+|---|---|---:|---:|---:|---:|---:|
+| Safety Interlock High | 21.55 → 18.97 / 25.13 → 24.30 | 370 → 360 | 8.3 → 6.0 | 15.5 → 7.7 | 20 → 2 | 49 / 56.55 → 36 / 66.97 |
+| Safety Interlock Low | 18.97 → 21.82 / 24.30 → 23.22 | 621 → 595 | 5.2 → 5.3 | 15.3 → 8.1 | 23 → 6 | 48 / 79.71 → 49 / 95.98 |
+| Transmission High | 21.82 → 25.70 / 23.22 → 21.82 | 306 → 581 | 16.8 → 7.6 | 21.0 → 10.3 | 41 → 25 | 46 / 72.38 → 59 / 75.83 |
+
+| Pyro case | Wall probe inclusive ms per slow update | Main-thread `synthesize` samples | `AudioSystem.buffer` samples | `createBufferSource` samples inside frames |
+|---|---:|---:|---:|---:|
+| Safety Interlock High | 6.27 → 0 sampled | 54 → 0 | 12 → 0 | 43 → 0 |
+| Safety Interlock Low | 6.07 → 0 sampled | 90 → 0 | 59 → 0 | 66 → 0 |
+| Transmission High | 11.13 → 0 sampled | 114 → 0 | 79 → 0 | 42 → 0 |
+
+In the render segment corresponding to the Interlock High slow-update cohort, the wall probe averaged 0.041 sampled inclusive ms per frame, with zero sampled self time. The Interlock Low population guard passed in both paired runs (average/median 24.41/25 and 24.25/25). There were zero combat shader compiles.
+
+| Transmission High allocation or GC measure | Before | After |
+|---|---:|---:|
+| Sampled allocation MB/s | 84.5 | 110.4 |
+| Sampled allocation MB per observed frame | 4.19 | 2.87 |
+| GC events per 100 observed frames | 15.03 | 10.15 |
+| GC pause ms per 100 observed frames | 23.65 | 13.05 |
+| `clearPolygonTopology` sampled allocation MB | 286.8 | 401.5 |
+| `Mesh.getVertexPosition` sampled allocation MB, all stacks | 87.3 | 55.5 |
+
+The candidate produced nearly twice as many Transmission frames in the same wall-clock window. The remaining absolute allocation growth was led by navigation. The unusually large `captureSkin` allocation leaf from the initial attribution run was absent in both paired windows, so that allocation reduction cannot be isolated from these profiles. Raw profiles, traces and analysis scripts are retained under `artifacts/nextgen/perf43/`.
+
+### Matched decal captures and room preparation
+
+The 1920×1080 pairs use staged rifle and shotgun hit events against the authored ivory recorder face, the steel island base, and a controlled rotated, mirrored two-sided panel. The panel was added to the visual fixture only. All six decal positions and normals match exactly. Each full image pair had zero differing RGB pixels with the HUD hidden. The native crops were inspected. The pairs are `artifacts/nextgen/perf43/visual/wall-1-native.png` through `wall-3-native.png`.
+
+Reflection capture still reuses its filtered target for a valid room world. Reloads can recreate geometry, dressing and light state, so a room ID alone is insufficient for reuse across a reload. Splitting the six views across frames would spread submission without removing the work from the startup hold. It would also require freezing scene inputs across those frames to preserve the current result. This pass retains capture and filtering within the existing preparation boundary. In the Arc run, Passenger Vault held for 3.37 s at load 22.65, with 2.09 s spent capturing/filtering reflections. Residential Gallery held for 1.66 s at load 20.55, with 0.82 s in reflections. These timings are observations across builds and rigs, with no reflection change to isolate.
+
+The production build passed. The requested Arc seed 1729 campaign cleared Safety Interlock as room 12 and finished at 13 rooms with zero errors, zero recorded defects, and exit status 0. The campaign receipt is `artifacts/nextgen/playtest/perf43-arc/report.json`. The paired profile baseline was `931092c1` and the candidate runtime was `d262ef54`.

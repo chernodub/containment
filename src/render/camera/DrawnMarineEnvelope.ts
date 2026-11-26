@@ -6,7 +6,7 @@ type SkinCache={
   geometry:T.BufferGeometry;position:T.BufferAttribute;skeleton:T.Skeleton;
   joints:T.BufferAttribute;weights:T.BufferAttribute;
   positionVersion:number;jointsVersion:number;weightsVersion:number;bindMatrix:T.Matrix4;
-  bound:Float64Array;offsets:Uint32Array;starts:Uint32Array;influences:Float64Array;weightSums:Float64Array;bones:number[];
+  bound:Float64Array;offsets:Uint32Array;starts:Uint32Array;influences:Float64Array;weightSums:Float64Array;bones:number[];count:number;
 };
 
 /** Current deformed pose, sampled after ability/socket posing. Presentation only.
@@ -47,26 +47,31 @@ export class DrawnMarineEnvelope {
       cache.positionVersion!==position.version||cache.jointsVersion!==joints.version||cache.weightsVersion!==weights.version||!cache.bindMatrix.equals(mesh.bindMatrix)){
       const bound=new Float64Array(position.count*3),offsets=new Uint32Array(position.count*4);
       const starts=new Uint32Array(position.count+1),influences=new Float64Array(position.count*4),weightSums=new Float64Array(position.count);
-      const bones=new Set<number>();
-      let next=0;
+      const bones=new Set<number>(),seen=new Set<string>();
+      let next=0,count=0;
       for(let i=0;i<position.count;i++){
         this.vertex.fromBufferAttribute(position,i).applyMatrix4(mesh.bindMatrix);
-        const p=i*3;bound[p]=this.vertex.x;bound[p+1]=this.vertex.y;bound[p+2]=this.vertex.z;
-        starts[i]=next;
-        let total=0;
+        // UV/normal seams duplicate vertices without changing their drawn
+        // positions. Equal bind points and ordered influences add identical
+        // points to the envelope in every pose.
+        let key=`${this.vertex.x}/${this.vertex.y}/${this.vertex.z}`,total=0;
+        const first=next;
         for(let j=0;j<4;j++){
           const bone=joints.getComponent(i,j),weight=weights.getComponent(i,j);
           if(bone<0||bone>=mesh.skeleton.bones.length||bone>65535)return false;
           total+=weight;
           if(weight===0)continue;
-          bones.add(bone);
-          offsets[next]=bone*12;
-          influences[next++]=weight;
+          key+=`/${bone}/${weight}`;
+          offsets[next]=bone*12;influences[next++]=weight;
         }
-        weightSums[i]=total;
+        if(seen.has(key)){next=first;continue;}
+        seen.add(key);
+        for(let j=first;j<next;j++)bones.add(offsets[j]/12);
+        const p=count*3;bound[p]=this.vertex.x;bound[p+1]=this.vertex.y;bound[p+2]=this.vertex.z;
+        starts[count]=first;weightSums[count++]=total;
       }
-      starts[position.count]=next;
-      cache={geometry,position,skeleton:mesh.skeleton,joints,weights,positionVersion:position.version,jointsVersion:joints.version,weightsVersion:weights.version,bindMatrix:mesh.bindMatrix.clone(),bound,offsets,starts,influences,weightSums,bones:[...bones]};
+      starts[count]=next;
+      cache={geometry,position,skeleton:mesh.skeleton,joints,weights,positionVersion:position.version,jointsVersion:joints.version,weightsVersion:weights.version,bindMatrix:mesh.bindMatrix.clone(),bound,offsets,starts,influences,weightSums,bones:[...bones],count};
       this.skinCaches.set(mesh,cache);
     }
     const bones=mesh.skeleton.bones,inverses=mesh.skeleton.boneInverses;
@@ -82,7 +87,7 @@ export class DrawnMarineEnvelope {
       this.projectedBones[offset+8]=source[2];this.projectedBones[offset+9]=source[6];this.projectedBones[offset+10]=source[10];this.projectedBones[offset+11]=source[14];
     }
     const {bound,offsets,starts,influences,weightSums}=cache,transforms=this.projectedBones;
-    for(let i=0;i<position.count;i++){
+    for(let i=0;i<cache.count;i++){
       const p=i*3,x=bound[p],y=bound[p+1],z=bound[p+2];
       // Three applies bindMatrixInverse/world/camera after the weighted sum.
       // Retain its fixed translation even when source weights do not sum to one.
@@ -103,9 +108,13 @@ export class DrawnMarineEnvelope {
   }
   private addCoordinates(x:number,y:number,z:number):void {
     const n=Math.max(0,Math.min(BANDS-1,Math.floor((z+4)/STEP)))*STRIDE;
-    this.bins[n]=Math.min(this.bins[n],x);this.bins[n+1]=Math.max(this.bins[n+1],x);
-    this.bins[n+2]=Math.min(this.bins[n+2],y);this.bins[n+3]=Math.max(this.bins[n+3],y);
-    this.bins[n+4]=Math.min(this.bins[n+4],z);this.bins[n+5]=Math.max(this.bins[n+5],z);
+    const bins=this.bins;
+    if(x<bins[n])bins[n]=x;
+    if(x>bins[n+1])bins[n+1]=x;
+    if(y<bins[n+2])bins[n+2]=y;
+    if(y>bins[n+3])bins[n+3]=y;
+    if(z<bins[n+4])bins[n+4]=z;
+    if(z>bins[n+5])bins[n+5]=z;
   }
   capture(root:T.Object3D,camera:T.Camera):void {
     for(let n=0;n<this.bins.length;n+=2){this.bins[n]=Infinity;this.bins[n+1]=-Infinity;}
