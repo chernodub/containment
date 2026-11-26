@@ -242,7 +242,7 @@ export function shopScreen(game: DepthGame): string {
   const stockGroup=(name:string, upgradesOnly:boolean)=>{
     const items=services(upgradesOnly);
     const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)));
-    const summary=pair.length===2?`<span class="stock-summary"> · ${items.length} · from ${cheapest} CR</span>`:'';
+    const summary=pair.length===2||chosen?`<span class="stock-summary"> · ${items.length} · from ${cheapest} CR</span>`:'';
     return `<section class="${upgradesOnly?'requisition-upgrades':''}" aria-label="${name}"><h3>${name}${summary}</h3><div class="requisition-grid">${cards(items)}</div></section>`;
   };
   const pairOption=(id:AugmentId)=>`<button id="purchase-${id}" class="supply-doctrine-option" data-purchase="rig-return" data-augment="${id}" ${game.canPurchaseService('rig-return',id)?'':'disabled'}>
@@ -277,7 +277,7 @@ export function shopScreen(game: DepthGame): string {
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
     ${pairRow}
-    <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2}">
+    <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2||!!chosen}">
       ${stockGroup('Consumables',false)}
       ${stockGroup('Paid upgrades',true)}
       ${routeSupply}

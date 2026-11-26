@@ -30,7 +30,7 @@ export class SiegeBoundary {
         return new MeshBasicMaterial({color: 0x68c9b0, transparent: true, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1});
     }
 
-    update(siege: SiegePresentation | undefined, player: DepthGame['player'], enemies: DepthGame['enemies']['snapshot']['enemies']) {
+    update(siege: SiegePresentation | null | undefined, player: DepthGame['player'], enemies: DepthGame['enemies']['snapshot']['enemies']) {
         this.root.visible = !!siege && !siege.choosing;
         if (!siege || siege.choosing) return;
         const radius = siege.radius / this.unit;

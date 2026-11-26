@@ -14,7 +14,7 @@ export class SiegeLabel {
         host.append(this.node);
     }
 
-    update(renderer: DepthRenderer, siege: SiegePresentation | undefined, player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
+    update(renderer: DepthRenderer, siege: SiegePresentation | null | undefined, player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
         this.node.hidden = true;
         if (!cover && (!siege || siege.choosing)) return;
         const anchor = cover ?? siege!;
