@@ -285,12 +285,12 @@ class PyroPresentation implements AbilityPresentation {
   private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
     const kit = this.kit, hot = impactBeat(p.age);
     const c = Math.cos(p.angle), s = Math.sin(p.angle);
-    if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
-    if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
-    else this.source.set(p.x + c * .55, .95, p.z + s * .55);
     const fade = Math.max(0, 1 - Math.max(0, p.age - .18) / .4);
     kit.impact();
     if (fade > 0) {
+      if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
+      if (this.muzzle) this.muzzle.getWorldPosition(this.source);
+      else this.source.set(p.x + c * .55, .95, p.z + s * .55);
       kit.sustain(p.age);
       kit.sprite('glow', p.x + c*p.range*.48, .05, p.z + s*p.range*.48, p.range*.42, p.range*.27, FIRE, fade*.25, 0, 'ground-light');
       if (p.age < .12) for (const id of p.targetIds ?? []) {
@@ -470,8 +470,15 @@ class PyroPresentation implements AbilityPresentation {
     const fade = Math.min(1, zone.remainingMs / 600);
     kit.sustain(elapsed);
     const meltdown = zone.ability === 'meltdown';
-    const hasContact = frame.game?.enemies.snapshot.enemies.some(enemy => enemy.health > 0 &&
-      (enemy.x - zone.x) ** 2 + (enemy.y - zone.y) ** 2 <= zone.radius ** 2);
+    const enemies = frame.game?.enemies.snapshot.enemies;
+    const zones = frame.snapshot?.zones;
+    const radiusSquared = zone.radius ** 2;
+    let hasContact = false;
+    if (enemies) for (const enemy of enemies) {
+      if (enemy.health <= 0 || (enemy.x - zone.x) ** 2 + (enemy.y - zone.y) ** 2 > radiusSquared) continue;
+      hasContact = true;
+      break;
+    }
     // Keep the fuel running between victims while reserving its hottest value
     // for the skin-bound ember after ignition.
     const desiredGain = hasContact ? 1 - .68 * Math.min(1, Math.max(0, (elapsed - .05) / .10)) : 1;
@@ -507,18 +514,23 @@ class PyroPresentation implements AbilityPresentation {
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
       // Earlier pools own the shared fuel so overlapping patches do not stack their flames.
-      if (frame.snapshot?.zones.some(other => other.id < zone.id && other.element === 'pyro' &&
-          other.shape === 'circle' && Math.hypot(px - other.x / UNIT, pz - other.y / UNIT) < other.radius / UNIT)) continue;
+      if (zones && this.sharedFuel(zones, zone.id, px, pz)) continue;
       let target = 0;
-      if (frame.game) for (const enemy of frame.game.enemies.snapshot.enemies) {
+      if (enemies) for (const enemy of enemies) {
         if (enemy.health <= 0 || (enemy.meleePhase === 'approach' && enemy.windupMs <= 0 && enemy.chargeMs <= 0)) continue;
         const dx = px - enemy.x / UNIT, dz = pz - enemy.y / UNIT;
+        const bodyRadius = enemy.radius / UNIT;
+        const reach = bodyRadius + .38;
+        // Both the body margin and the committed limb's capsule already yield
+        // zero outside this bound. Skip their trigonometry for distant attackers.
+        const maxReach = reach + 1.22;
+        if (dx * dx + dz * dz > maxReach * maxReach) continue;
         const charge = enemy.pendingAttack === 'charge' || enemy.chargeMs > 0;
         const facing = enemy.meleePhase !== 'approach' ? enemy.meleeAngle :
           Math.atan2(charge ? enemy.lockY : enemy.lockY - enemy.y, charge ? enemy.lockX : enemy.lockX - enemy.x);
         const c = Math.cos(facing), s = Math.sin(facing);
-        const along = Math.max(0, Math.min(enemy.radius / UNIT + .38, dx * c + dz * s));
-        const clearance = Math.min(Math.hypot(dx, dz) - enemy.radius / UNIT, Math.hypot(dx - along * c, dz - along * s));
+        const along = Math.max(0, Math.min(reach, dx * c + dz * s));
+        const clearance = Math.min(Math.hypot(dx, dz) - bodyRadius, Math.hypot(dx - along * c, dz - along * s));
         target = Math.max(target, Math.min(1, (1.22 - clearance) / .4));
       }
       const previous = pool?.weight[i] ?? target;
@@ -536,7 +548,7 @@ class PyroPresentation implements AbilityPresentation {
     }
     if (!meltdown) kit.sprite('glow', x, .052, z, radius * 1.18, radius * 1.18, FIRE, .27 * fade, zone.id, 'ground-light');
     let nearest = radius * radius, lx = x, lz = z;
-    for (const enemy of frame.game?.enemies.snapshot.enemies ?? []) {
+    if (enemies) for (const enemy of enemies) {
       const ex = enemy.x / UNIT, ez = enemy.y / UNIT;
       const dist = (ex-x)**2 + (ez-z)**2;
       if (enemy.health <= 0 || dist > radius*radius || enemy.meleePhase !== 'approach' || enemy.windupMs > 0 || enemy.chargeMs > 0) continue;
@@ -569,6 +581,15 @@ class PyroPresentation implements AbilityPresentation {
     if (emit && !kit.low) kit.mote('spark', x, .2, z, .08, 1.4, .04, .035, .9, CORE);
   }
 
+  private sharedFuel(zones: readonly AbilityZoneSnapshot[], id: number, x: number, z: number): boolean {
+    for (const other of zones) {
+      if (other.id >= id || other.element !== 'pyro' || other.shape !== 'circle') continue;
+      const dx = x - other.x / UNIT, dz = z - other.y / UNIT, radius = other.radius / UNIT;
+      if (dx * dx + dz * dz < radius * radius) return true;
+    }
+    return false;
+  }
+
   private meltdown(zone: AbilityZoneSnapshot, x: number, z: number, fade: number, frame: AbilityFrame, emit: boolean): void {
     const kit = this.kit, angle = frame.game?.player.angle ?? 0, c = Math.cos(angle), s = Math.sin(angle);
     const move = frame.game?.player, moving = move && Math.hypot(move.vx, move.vy) > 18;
@@ -580,13 +601,12 @@ class PyroPresentation implements AbilityPresentation {
     if (frame.marine !== this.suit) {
       this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);
     }
-    this.suit?.updateWorldMatrix(true, true);
     // Short unequal exhaust curls stay close to the heated shoulder hardware.
     // Charged seams and shoulder vents retain their attached silhouette priority.
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
       const shoulder=this.shoulders[side<0?0:1];
-      if(shoulder)this.vent.setFromMatrixPosition(shoulder.matrixWorld);
+      shoulder?.getWorldPosition(this.vent);
       const bx = shoulder?this.vent.x-c*.14:x-c*.3-s*side*.48;
       const bz = shoulder?this.vent.z-s*.14:z-s*.3+c*side*.48;
       const base = shoulder?this.vent.y:side<0?1.3:1.25;

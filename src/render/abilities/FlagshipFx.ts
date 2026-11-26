@@ -3,13 +3,11 @@ import type { Rect } from '../../game/roguelike/types';
 import { ELEMENT_COLORS, UNIT } from './types';
 
 /**
- * VFX13/VFX14 surfaces: one retained procedural program for the hero
- * ability moments (fire volume slices, cooling scorch, rail lance and wake,
- * shock rings, frost, Overdrive floor states). Every pooled mesh shares the
- * same geometry and shader source; modes are uniforms, so warm-up compiles a
- * single program and combat never creates one. Shapes are generated in the
- * vertex shader from native footprints. Meltdown reserves a narrow cosmetic
- * apron beyond its hard detonation front.
+ * Pooled procedural ability surfaces. Most modes share the general program.
+ * Fuel and Meltdown use fixed-mode programs prepared with the general pool,
+ * and Fuel shares a simpler mesh with the same perimeter.
+ * Shapes follow native footprints in the vertex shader. Meltdown reserves a
+ * narrow cosmetic apron beyond its hard detonation front.
  */
 export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14, Tongues: 15 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
@@ -635,10 +633,14 @@ export class FlagshipFx {
   low = false;
   flashIntensity = 1;
   private readonly geometry = new T.PlaneGeometry(1, 1, 40, 24);
+  // Fuel shades from world position. Its straight radial edges only need the
+  // original outer ring, with the same forty perimeter segments.
+  private readonly fuelGeometry = new T.PlaneGeometry(1, 1, 40, 1);
   private readonly coldAxes = Array.from({ length: COLD_FIELD_LIMIT }, () => new T.Vector4());
   private readonly coldRadii = new Float32Array(COLD_FIELD_LIMIT);
   private readonly burnDiscs = Array.from({length: BURN_FIELD_LIMIT}, () => new T.Vector3());
   private readonly burnSlots: FxSlot[] = [];
+  private readonly pyroMaterials: Array<{ fuel: T.ShaderMaterial; meltdown: T.ShaderMaterial }> = [];
   private readonly coldSlots: FxSlot[] = [];
   private cursor = 0;
   private time = 0;
@@ -647,6 +649,7 @@ export class FlagshipFx {
   blockers: readonly Rect[] = [];
   constructor(parent: T.Object3D, capacity = 32) {
     this.root.name = 'ability-flagship-fx';
+    const fuelMaterials: T.ShaderMaterial[] = [], meltdownMaterials: T.ShaderMaterial[] = [];
     // PlaneGeometry spans [-.5,.5]; the shader reads only uv, but bounds must be finite.
     for (let i = 0; i < capacity; i++) {
       const material = new T.ShaderMaterial({
@@ -668,6 +671,12 @@ export class FlagshipFx {
         forceSinglePass: true,
         blending: T.NormalBlending,
       });
+      // The compiler can prune the rest of the large procedural shader from
+      // these sustained Pyro fields. The slot still owns the same uniform state.
+      const fuel = this.fieldMaterial(material, FxMode.Fuel);
+      const meltdown = this.fieldMaterial(material, FxMode.Climax);
+      this.pyroMaterials.push({ fuel, meltdown });
+      fuelMaterials.push(fuel); meltdownMaterials.push(meltdown);
       const mesh = new T.Mesh(this.geometry, material);
       mesh.name = `ability-flagship-${i}`;
       mesh.frustumCulled = false;
@@ -680,7 +689,23 @@ export class FlagshipFx {
         h0: 0, h1: 0, mx: 0, my: 0, mz: 0, seed: i * 7.31, color: 0xffffff, intensity: 1, param: 0, mesh, material,
       });
     }
+    const fuelPreparation = new T.Mesh(this.fuelGeometry, fuelMaterials);
+    const meltdownPreparation = new T.Mesh(this.geometry, meltdownMaterials);
+    fuelPreparation.name = 'ability-fuel-materials';
+    meltdownPreparation.name = 'ability-meltdown-materials';
+    fuelPreparation.visible = meltdownPreparation.visible = false;
+    this.root.add(fuelPreparation, meltdownPreparation);
     parent.add(this.root);
+  }
+
+  private fieldMaterial(base: T.ShaderMaterial, mode: typeof FxMode.Fuel | typeof FxMode.Climax): T.ShaderMaterial {
+    const material = base.clone();
+    material.uniforms = { ...base.uniforms };
+    const fixedMode = `const float m=${mode}.;`;
+    material.vertexShader = vertex.replace('float m=fxMode;', fixedMode);
+    material.fragmentShader = fragment.replace('float m=fxMode;', fixedMode);
+    if (mode === FxMode.Climax) material.fragmentShader = material.fragmentShader.replace('el=fxArc', 'el=2.');
+    return material;
   }
 
   spawn(mode: FxMode, x: number, z: number, life: number): FxSlot {
@@ -728,10 +753,11 @@ export class FlagshipFx {
     }
     const cap = this.low ? 70 : 110;
     const yieldScale = area > cap ? Math.max(.45, cap / area) : 1;
-    for (const slot of this.slots) {
+    for (let index = 0; index < this.slots.length; index++) {
+      const slot = this.slots[index];
       if (slot.live) slot.material.uniforms.fxYield.value = this.sustained(slot) ? yieldScale : 1;
       if (!slot.live) { slot.mesh.visible = false; continue; }
-      const u = slot.material.uniforms;
+      const u = slot.material.uniforms as Record<string, T.IUniform & { needsUpdate?: boolean }>;
       let owner = fields.indexOf(slot);
       if (fields.length > 1 && (slot.mode === FxMode.Blizzard || slot.mode === FxMode.Shock && slot.color === ELEMENT_COLORS.cryo)) {
         for (let i = 0; i < fields.length; i++) {
@@ -739,7 +765,9 @@ export class FlagshipFx {
           if (f.x === slot.x && f.z === slot.z && f.range === slot.range) { owner = i; break; }
         }
       }
-      if ((slot.mode === FxMode.Shock && slot.param > .5) || (slot.mode === FxMode.Climax && slot.arc < 2.5)) {
+      const usesDeckBlockers = (slot.mode === FxMode.Shock && slot.param > .5) ||
+        (slot.mode === FxMode.Climax && slot.arc < 2.5);
+      if (usesDeckBlockers) {
         const boxes: T.Vector4[] = u.deckBlockers.value;
         let count = 0;
         for (const rect of this.blockers) {
@@ -751,7 +779,13 @@ export class FlagshipFx {
         }
         u.deckBlockerCount.value=count;
       }
-      u.burnOwner.value = this.burnSlots.indexOf(slot); u.burnCount.value = this.burnSlots.length;
+      // Three uploads arrays at material switches. Leave unused bindings alone.
+      const fuel = slot.mode === FxMode.Fuel;
+      u.deckBlockers.needsUpdate = usesDeckBlockers && u.deckBlockerCount.value > 0;
+      u.burnDiscs.needsUpdate = fuel;
+      u.coldAxes.needsUpdate = u.coldRadii.needsUpdate = owner >= 0 && fields.length > 1;
+      u.burnOwner.value = fuel ? this.burnSlots.indexOf(slot) : -1;
+      u.burnCount.value = fuel ? this.burnSlots.length : 0;
       u.coldOwner.value = owner; u.coldCount.value = fields.length;
       u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
       u.fxSeed.value = slot.seed; (u.fxOrigin.value as T.Vector3).set(slot.x, slot.y, slot.z);
@@ -761,6 +795,10 @@ export class FlagshipFx {
       (u.fxColor.value as T.Color).copy(this.color.setHex(slot.color));
       u.fxIntensity.value = slot.intensity * (.4 + .6 * this.flashIntensity); u.fxLow.value = this.low ? 1 : 0;
       slot.mesh.renderOrder = MODE_ORDER[slot.mode] ?? 2;
+      const { fuel: fuelMaterial, meltdown: meltdownMaterial } = this.pyroMaterials[index];
+      slot.mesh.geometry = fuel ? this.fuelGeometry : this.geometry;
+      slot.mesh.material = fuel ? fuelMaterial :
+        slot.mode === FxMode.Climax && slot.arc === 2 ? meltdownMaterial : slot.material;
       slot.mesh.visible = true;
     }
   }
@@ -793,6 +831,8 @@ export class FlagshipFx {
   dispose(): void {
     this.clear();
     for (const slot of this.slots) slot.material.dispose();
+    for (const { fuel, meltdown } of this.pyroMaterials) { fuel.dispose(); meltdown.dispose(); }
+    this.fuelGeometry.dispose();
     this.geometry.dispose();
     this.root.removeFromParent();
   }

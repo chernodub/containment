@@ -41,15 +41,17 @@ export class AbilityVisuals extends AbilityGeometry {
         this.registerSystem(createSystemPresentation);
         this.root.traverse(node => {
             if (!(node instanceof T.Mesh)) return;
-            const m = node.material as T.ShaderMaterial;
-            if (!m.isShaderMaterial) return;
-            m.stencilFunc = T.NotEqualStencilFunc;
-            m.stencilRef = m.stencilFuncMask = 1;
-            m.stencilWriteMask = 0;
-            this.castMaterials.add(m);
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
             const g = node.geometry;
-            bindPriorityMask(m, this.priorityMask.texture,
-                g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined, false, true);
+            for (const material of materials) {
+                if (!(material instanceof T.ShaderMaterial)) continue;
+                material.stencilFunc = T.NotEqualStencilFunc;
+                material.stencilRef = material.stencilFuncMask = 1;
+                material.stencilWriteMask = 0;
+                this.castMaterials.add(material);
+                bindPriorityMask(material, this.priorityMask.texture,
+                    g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined, false, true);
+            }
         });
     }
     /** Renderer integration: await this before first-room warmup. */
