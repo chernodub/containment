@@ -210,3 +210,12 @@
   #overlay .requisition-upgrades .requisition-grid { grid-template-columns: minmax(0, 1fr); }
   #overlay .requisition-title-row .requisition-terms { flex-wrap: wrap; gap: 3px 8px; }
 }
+
+#overlay .supply-original small, #overlay .supply-doctrine-option .supply-transformation small { font-size: 14px; }
+#overlay .supply-doctrine-option .supply-transformation small::before {
+  content: '→';
+  margin-right: 5px;
+  color: #c9ffe5;
+  font-weight: 700;
+}
+#overlay .supply-doctrine-option:nth-child(2) .supply-transformation small::before { content: '←'; }
