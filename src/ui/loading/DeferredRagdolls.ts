@@ -37,6 +37,6 @@ export class DeathRagdolls {
   remove(id:number): void {this.delegate?.remove(id);}
   inspect(id:number) {return this.delegate?.inspect(id);}
   maxJointError(id:number): number {return this.delegate?.maxJointError(id)??0;}
-  snapshot() {return this.delegate?.snapshot()??{active:0,falling:0,bodies:0,joints:0,settled:0,budget:this.tier==='high'?6:3,collisionGroups:0x00020001,staticColliders:0,stepMs:0,steps:0,overflow:0};}
+  snapshot(contacts=false) {return this.delegate?.snapshot(contacts)??{active:0,falling:0,bodies:0,joints:0,settled:0,budget:this.tier==='high'?6:3,collisionGroups:0x00020001,staticColliders:0,stepMs:0,physicsMs:0,starts:0,contacts:0,steps:0,overflow:0};}
   dispose(): void {this.room=undefined;this.delegate?.dispose();}
 }

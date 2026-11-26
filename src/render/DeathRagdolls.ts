@@ -76,7 +76,7 @@ export class DeathRagdolls {
  private authored=new Map<number,AuthoredDeath>();
  private tier:'high'|'low'='high';private accumulator=0;
  private q=new T.Quaternion();private inverse=new T.Matrix4();private rigidWorld=new T.Matrix4();
- private elapsedMs=0;private steps=0;private overflow=0;
+ private elapsedMs=0;private physicsMs=0;private starts=0;private steps=0;private overflow=0;
  private physicsVelocity={x:0,y:0,z:0};
  private skinFloorBounds=new T.Box3();
  setQuality(tier:'high'|'low'){
@@ -97,7 +97,7 @@ export class DeathRagdolls {
  setRoom(room:Room,world?:T.Object3D){
   this.dispose();if(!ready)return;
   this.world=new RAPIER.World({x:0,y:-9.81,z:0});this.world.integrationParameters.numSolverIterations=12;
-  this.accumulator=0;this.elapsedMs=0;this.steps=0;this.overflow=0;
+  this.accumulator=0;this.elapsedMs=0;this.steps=0;this.starts=0;this.physicsMs=0;this.overflow=0;
   if(world){this.refreshStatic(world);return;}
   // Compatibility proxy only. Without rendered geometry furniture heights are
   // unknown, so do not fabricate them. Polygon voids remain floor holes.
@@ -214,10 +214,11 @@ export class DeathRagdolls {
   // Quantize down: the 32ms request holds at most three 120Hz ticks (25ms).
   const holdTicks=Number.isFinite(holdSeconds)?Math.floor(Math.min(.032,Math.max(0,holdSeconds))/STEP):0;
   if(holdTicks>0)for(const part of parts)part.body.setEnabled(false);
+  this.starts++;
   this.records.set(id,{skinFloorCheckAt:(family==='carrier'&&originalCreature&&cue!=='frost'&&model.height>=4) ? .75 : undefined,model,cue,terminalTime:0,terminalPulse:0,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
  }
  update(dt:number,marineX?:number,marineZ?:number){
-  this.elapsedMs=0;if(!this.world||dt<=0)return;
+  this.elapsedMs=this.physicsMs=0;if(!this.world||dt<=0)return;
   const authoredDt=Math.min(dt,.05);
   for(const [id,death] of this.authored){
     death.age+=authoredDt;
@@ -242,7 +243,7 @@ export class DeathRagdolls {
   let active=false,falling=false;for(const r of this.records.values()){active ||= !r.settled;falling ||= r.falling;}
   if(!active&&!falling)return;const start=performance.now(),delta=Math.min(dt,.05);
   if(active){this.accumulator+=delta;while(this.accumulator+1e-9>=STEP){
-   this.world.timestep=STEP;this.world.step();
+   this.world.timestep=STEP;const stepStart=performance.now();this.world.step();this.physicsMs+=performance.now()-stepStart;
    for(const record of this.records.values()){
     if(record.holdTicks>0){record.holdTicks--;if(record.holdTicks===0)for(const part of record.parts)part.body.setEnabled(true);continue;}
     record.terminalTime+=STEP;
@@ -368,6 +369,6 @@ export class DeathRagdolls {
  maxJointError(id:number){
   let error=0;for(const j of this.records.get(id)?.joints??[]){const a=j.body1(),b=j.body2(),qa=a.rotation(),qb=b.rotation();const va=new T.Vector3().copy(j.anchor1()).applyQuaternion(new T.Quaternion(qa.x,qa.y,qa.z,qa.w)).add(a.translation());const vb=new T.Vector3().copy(j.anchor2()).applyQuaternion(new T.Quaternion(qb.x,qb.y,qb.z,qb.w)).add(b.translation());error=Math.max(error,va.distanceTo(vb));}return error;
  }
- snapshot(){let active=this.authored.size,falling=0,bodies=0,joints=0;for(const r of this.records.values()){if(!r.settled)active++;if(r.falling)falling++;bodies+=r.parts.length;joints+=r.joints.length;}return{active,falling,bodies,joints,settled:this.records.size+this.authored.size-active-falling,budget:RAGDOLL_BUDGET[this.tier],collisionGroups:GROUPS,staticColliders:(this.world?.colliders.len()??0)-bodies,stepMs:this.elapsedMs,steps:this.steps,overflow:this.overflow};}
+ snapshot(contacts=false){let pairs=0;if(contacts&&this.world)for(const r of this.records.values())for(const part of r.parts)this.world.contactPairsWith(part.body.collider(0),()=>{pairs++;});let active=this.authored.size,falling=0,bodies=0,joints=0;for(const r of this.records.values()){if(!r.settled)active++;if(r.falling)falling++;bodies+=r.parts.length;joints+=r.joints.length;}return{active,falling,bodies,joints,settled:this.records.size+this.authored.size-active-falling,budget:RAGDOLL_BUDGET[this.tier],collisionGroups:GROUPS,staticColliders:(this.world?.colliders.len()??0)-bodies,stepMs:this.elapsedMs,physicsMs:this.physicsMs,starts:this.starts,contacts:pairs,steps:this.steps,overflow:this.overflow};}
  dispose(){for(const id of this.authored.keys())this.remove(id);for(const id of this.records.keys())this.remove(id);this.world?.free();this.world=undefined;this.statics=[];this.accumulator=0;this.elapsedMs=0;}
 }

@@ -321,6 +321,9 @@ try{
    const geometryInventory=()=>{const rows=[];const scan=(root,owner)=>{root?.traverseVisible(object=>{if(!object.isMesh)return;const triangles=Math.min(object.geometry.index?.count??object.geometry.attributes.position?.count??0,object.geometry.drawRange.count)/3*(object.isInstancedMesh?object.count:1);let path=object.name||object.type;for(let parent=object.parent;parent&&parent!==root;parent=parent.parent)path=(parent.name||parent.type)+'/'+path;rows.push({owner,path,triangles,bones:object.skeleton?.bones.length??0,low:object.geometry.userData.perf13LOD==='low'});});};scan(r.world,'static world');scan(r.player?.root,'marine');for(const [id,actor]of r.actors)scan(actor.root,'enemy '+id);return rows.sort((a,b)=>b.triangles-a.triangles);};
    const initialGeometryInventory=geometryInventory();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[]};
+   const ragdollKeys=['physicsMs','stepMs','active','bodies','joints','contacts','steps','starts'];
+   if(profile)for(const key of ragdollKeys)samples['ragdoll_'+key]=[];
+   let previousRagdoll=r.ragdolls.snapshot();
    if(profile){samples.updateStart=[];samples.nativeUpdate=[];}
    const costAudit=auditCosts?r.__benchCostAudit:null,gpuPassAudit=gpuPasses?r.__benchGpuPassAudit:null;
    const softDepthAudit=r.post?.__benchNoSoftDepth;let softDepthDiagnostic=null;
@@ -352,6 +355,11 @@ try{
     if(count>=capacity)return;
     for(const key of ['frame','update','render','hud','audio'])values[key][count]=sample[key];
     if(profile){values.updateStart[count]=sample.updateStart;values.nativeUpdate[count]=sample.update;}
+    if(profile){
+     const ragdoll=r.ragdolls.snapshot(true);
+     for(const key of ragdollKeys)values['ragdoll_'+key][count]=key==='starts'||key==='steps'?Math.max(0,ragdoll[key]-previousRagdoll[key]):ragdoll[key];
+     previousRagdoll=ragdoll;
+    }
     values.driver[count]=driverMs;values.update[count]+=driverMs;driverMs=0;values.enemies[count]=g.enemies.activeCount;
     values.draws[count]=r.renderer.info.render.calls;values.triangles[count]=r.renderer.info.render.triangles;
     let lights=0;for(const l of r.lighting.pool.lights)if(l.intensity>0)lights++;
