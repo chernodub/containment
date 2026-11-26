@@ -49,9 +49,9 @@ def extend(suit, rig, portrait=False):
         along = (wrist - elbow).normalized()
         n = V((-.80, .20, .56))
         n = (n - along * n.dot(along)).normalized()
-        n = (along * .82 + n * .57).normalized()
-        origin = wrist + n * .10
-        outline = [(x * 1.86, y * .93) for x, y in [(-.15, -.20), (-.08, -.27), (.10, -.25), (.15, -.15), (.15, .17), (.08, .24), (-.11, .23), (-.15, .15)]]
+        n = (along * .14 + n).normalized()
+        origin = wrist + along * .075 + n * .12
+        outline = [(x * 2.40, y * 1.64) for x, y in [(-.15, -.20), (-.08, -.27), (.10, -.25), (.15, -.15), (.15, .17), (.08, .24), (-.11, .23), (-.15, .15)]]
         for name, scale, offset, depth, role in [('ram shoe', 1.0, 0, .050, 'gunmetal'),
                                                  ('kit24 paint strike face', .90, .034, .026, colour)]:
             obj = kit.prism(name, [(x * scale, y * scale) for x, y in outline], depth, origin + n * offset, n, -along, suit.col)
@@ -75,7 +75,12 @@ def extend(suit, rig, portrait=False):
                              .014, origin + n * .052, n, -along, suit.col)
             kit.bevel(face, .006, 3)
             suit.add(face, 'gunmetal', 'forearm.L')
-        for y in (-.13, .0, .13):
+        if not portrait:
+            # Raised chevron follows the broad face in the same forearm skin.
+            chevron = [(-.16, .085), (0, -.022), (.16, .085), (.16, .030), (0, -.080), (-.16, .030)]
+            obj = kit.prism('ram crest', chevron, .012, origin + n * .061, n, -along, suit.col)
+            suit.add(obj, 'steel', 'forearm.L')
+        for y in ((-.13, .0, .13) if portrait else (-.25, .25)):
             obj = kit.prism('ram impact cleat', [(-.085, -.016), (.085, -.016), (.085, .016), (-.085, .016)], .014,
                             cleat_origin + cleat_up * y, n, -along, suit.col)
             if portrait:
@@ -88,9 +93,9 @@ def extend(suit, rig, portrait=False):
             suit.add(kit.cylinder('ram piston', p0, p0 + along * .20, .019, 12 if hi else 6, suit.col), 'steel', 'forearm.L')
     elif rig == 'cryo':
         tops = []
-        for x, h in ((-.19, .54), (.19, .54)):
-            base = V((x, -.335, 1.30))
-            axis = V((x * .88, -.38, 1)).normalized()
+        for x, h in ((-.21, .48), (.21, .48)):
+            base = V((x, -.36, 1.32))
+            axis = V((x * .22, -.08, 1)).normalized()
             prof = [(0, 0), (.070, 0), (.096, .035), (.098, .07), (.098, h - .07), (.090, h - .03), (.055, h), (0, h)]
             lathe('kit24 paint dewar', prof, base, axis, colour)
             for t in (.13, h - .16):
@@ -127,12 +132,13 @@ def extend(suit, rig, portrait=False):
         suit.add(obj, 'gunmetal', 'ribs')
     elif rig == 'pyro':
         for s in (-1, 1):
-            base = V((s * (.22 if s < 0 else .13), -.285, 1.26 if s < 0 else 1.08))
+            base = V((s * (.36 if s < 0 else .13), -.19, 1.13 if s < 0 else 1.08))
+            bottle_axis = V((s * (.65 if s < 0 else .12), -.65, .78)).normalized()
             lathe('kit24 paint fuel bottle', [(0, 0), (.075, 0), (.102, .04), (.104, .06), (.104, .30), (.088, .36), (.05, .385), (0, .385)],
-                  base, (0, 0, 1), colour)
-            suit.ring('fuel strap', base + V((0, 0, .21)), (0, 0, 1), .106, .036, 'gunmetal', 'ribs')
+                  base, bottle_axis, colour)
+            suit.ring('fuel strap', base + bottle_axis * .21, bottle_axis, .106, .036, 'gunmetal', 'ribs')
             # Flared exhaust stack rising from the bottle head, leaning out and back.
-            a = base + V((0, 0, .37))
+            a = base + bottle_axis * .37
             axis = V((s * (.75 if s < 0 else .15), -.22, 1)).normalized()
             stack = lathe('pyro flared exhaust', [(.036, 0), (.044, .03), (.044, .25), (.058, .30), (.080, .36), (.082, .38), (.064, .38), (.050, .33)],
                           a, axis, 'heat', caps=False)
@@ -143,7 +149,7 @@ def extend(suit, rig, portrait=False):
             lathe('pyro exhaust glow', [(0, .336), (.060, .336), (.060, .346), (0, .346)], a, axis, 'fire_glow', segments=12 if hi else 8)   # closed puck: a zero-area disc shaded NaN (black squares in play)
     else:
         base = V((-.19, -.255, 1.36))
-        axis = V((-.52, -.16, 1)).normalized()
+        axis = V((-.88, -.36, .80)).normalized()
         lathe('telescopic pylon', [(0, 0), (.060, 0), (.050, .26), (.030, .30), (.026, .78), (0, .78)], base, axis, 'steel')
         for k, z in enumerate((.30, .37, .44, .51, .58)):
             r = .092 - k * .006
@@ -151,7 +157,7 @@ def extend(suit, rig, portrait=False):
         tip = base + axis * .74
         right = axis.cross(V((0, 1, 0))).normalized()
         for s in (-1, 1):
-            end = tip + right * (s * .085) + axis * .17
-            tube('pylon fork', [tip, tip + right * (s * .07) + axis * .06, end], .016, 'brass', sides=8 if hi else 5)
+            end = tip + right * (s * .135) + axis * .17
+            tube('pylon fork', [tip, tip + right * (s * .11) + axis * .06, end], .016, 'brass', sides=8 if hi else 5)
             lathe('fork terminal', [(0, 0), (.026, .01), (.022, .04), (0, .05)], end, axis, 'arc_glow', segments=12 if hi else 6)
     suit.group = 'body'

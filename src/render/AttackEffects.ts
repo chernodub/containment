@@ -464,8 +464,8 @@ export class AttackEffects {
    this.particle(this.smoke,EFFECT_LIMITS.smoke,exhaust,0x82938d,id==='rocket'?.32:.21,id==='rocket'?.30:.22,forward.clone().multiplyScalar(id==='rocket'?-.8:.3).add(new T.Vector3(0,.3,0)));
    if(id!=='rocket'){
     const casing=p.clone().addScaledVector(forward,-.65).addScaledVector(right,.09);
-    const v=right.multiplyScalar(id==='rifle'?2.5:id==='shotgun'?.82:1.6+Math.random()).addScaledVector(forward,-.42);v.y=id==='shotgun'?.84:1.7;
-    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xe9b450,id==='shotgun'?.065:id==='rifle'?.061:.038,id==='rifle'?.58:id==='shotgun'?.47:2.8,v,9.8,id==='rifle'?1.95:2.5);
+    const v=right.multiplyScalar(id==='rifle'?2.5:id==='shotgun'?2.35:1.6+Math.random()).addScaledVector(forward,-.42);v.y=id==='shotgun'?1.85:1.7;
+    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0xd59952:0xe9b450,id==='shotgun'?.065:id==='rifle'?.061:.038,id==='rifle'?.58:id==='shotgun'?1.8:2.8,v,9.8,id==='rifle'?1.95:2.5);
    }
   }
  }

@@ -54,6 +54,7 @@ export class MarineMotion {
   authored=false;
   rifleLoad = 0;
   rig = '';
+  shotgunShoulder = 0;
   get actionName(){return this.action;}
   get actionNormalized(){return this.actionProgress;}
   private heldCast=false;
@@ -95,6 +96,9 @@ export class MarineMotion {
   private reversalX = 0;
   private reversalZ = 0;
   private readonly hips: T.Object3D | undefined;
+  private readonly coolantGrip = new T.Vector3();
+  private hasCoolantGrip = false;
+  private readonly openFingers: {bone:T.Bone; bind:T.Quaternion}[]=[];
   private readonly rightArm: T.Object3D | undefined;
   private readonly rightForearm: T.Object3D | undefined;
   private readonly rightHand: T.Object3D | undefined;
@@ -148,6 +152,36 @@ export class MarineMotion {
     this.head = assetRoot.getObjectByName('head');
     this.neck = assetRoot.getObjectByName('neck');
     const affected = [this.spine, this.ribs, this.leftArm, this.leftForearm, this.leftHand, this.rightArm, this.rightForearm, this.rightHand, this.leftShoulder, this.rightShoulder, this.head, this.neck, hips];
+    const skin=assetRoot.getObjectByName('k10-body');
+    if(skin instanceof T.SkinnedMesh){
+      const {bones,boneInverses}=skin.skeleton;
+      bones.forEach((bone,i)=>{
+        if(!/^(finger_|thumb).*L$/.test(bone.name))return;
+        const parent=bones.indexOf(bone.parent as T.Bone);
+        if(parent<0)return;
+        const local=boneInverses[parent].clone().multiply(boneInverses[i].clone().invert());
+        const bind=new T.Quaternion();
+        local.decompose(new T.Vector3(),bind,new T.Vector3());
+        this.openFingers.push({bone,bind});affected.push(bone);
+      });
+    }
+    // Only the supply hose is weighted wholly to handR in the Cryo rig skin.
+    // Its cuff follows the firing wrist through every weapon's ready pose.
+    const cryo=assetRoot.getObjectByName('k10-rig-cryo');
+    if(cryo instanceof T.SkinnedMesh && this.rightHand){
+      const joint=cryo.skeleton.bones.indexOf(this.rightHand as T.Bone);
+      const {skinIndex,skinWeight,position}=cryo.geometry.attributes;
+      let count=0;
+      for(let i=0;i<position.count;i++){
+        if(skinIndex.getX(i)!==joint || skinWeight.getX(i)<.99)continue;
+        this.coolantGrip.add(this.target.fromBufferAttribute(position,i));
+        count++;
+      }
+      if(count){
+        this.coolantGrip.divideScalar(count).applyMatrix4(cryo.bindMatrix).applyMatrix4(cryo.skeleton.boneInverses[joint]);
+        this.hasCoolantGrip=true;
+      }
+    }
     if (hips) this.neutral.push({bone: hips, q: hips.quaternion.clone(), p: hips.position.clone(), s: hips.scale.clone()});
     root.updateWorldMatrix(true, true);
     for (const side of ['R', 'L']) {
@@ -409,42 +443,105 @@ export class MarineMotion {
         if(forward<.18){this.target.x+=Math.cos(this.aim)*(.18-forward);this.target.z+=Math.sin(this.aim)*(.18-forward);this.solveChain(this.leftArm,this.leftForearm,this.leftHand);}
       }
     }
+    if(!this.dead){
+      // This shared rib turn belongs to the original ram socket trajectory.
+      if(this.rig==='breacher' && this.action==='ram')this.rotate(this.ribs,this.up,.43*Math.sin(Math.PI*this.actionProgress),this.yawQ);
+      if(this.shotgunShoulder>0)this.carryTorso(.31*this.shotgunShoulder,-.16*this.shotgunShoulder,this.rightHand);
+      if(this.rig==='pyro'){this.carryTorso(-.27,-.16);this.stanceFeet(.18,.12);}
+      if(this.rig==='cryo'){this.carryTorso(.19,.07);this.stanceFeet(-.065,.03);}
+      if(this.rig==='arc'){this.carryTorso(.06,-.24);this.stanceFeet(.04,-.14);}
+      if(this.rig==='breacher')this.carryTorso(-.11,.19);
+      if(!reload && (this.rig==='breacher'||this.rig==='pyro'))this.lowerGunElbow();
+    }
     if(this.rig==='breacher' && !this.dead){
       this.shieldCarry();
+      this.stanceFeet(.10,.20);
     }else if(!this.dead && !this.action && !reload && weapon!=='rifle'){
-      if(this.rig==='arc') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.13,-.28,.17,.85);
-      if(this.rig==='pyro') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.49,-.04,-.27,.82);
-      if(this.rig==='cryo') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.42,-.19,-.13,.75);
+      if(this.rig==='arc'){
+        this.castArm(this.leftArm,this.leftForearm,this.leftHand,-.09,-.43,.25,1);
+        for(const finger of this.openFingers)finger.bone.quaternion.slerp(finger.bind,.88);
+      }
+      if(this.rig==='pyro') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.48,-.24,-.36,.96);
+      if(this.rig==='cryo' && this.hasCoolantGrip && this.rightHand && this.leftArm && this.leftForearm && this.leftHand){
+        this.target.copy(this.coolantGrip);
+        this.rightHand.localToWorld(this.target);
+        this.solveChain(this.leftArm,this.leftForearm,this.leftHand);
+      }
     }else if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+  }
+
+  private readonly socketAnchor = new T.Vector3();
+  private readonly socketBasis = new T.Quaternion();
+
+  /** Keep the authored receiver chain fixed at the clavicle for a carry,
+   * or at the wrist so the firing shoulder can travel back on the kick. */
+  private carryTorso(pitch:number,yaw:number,anchor=this.rightShoulder){
+    if(!this.ribs||!anchor)return;
+    anchor.getWorldPosition(this.socketAnchor);
+    anchor.getWorldQuaternion(this.socketBasis);
+    this.rotate(this.ribs,this.axis.set(-Math.sin(this.aim),0,Math.cos(this.aim)),pitch,this.yawQ);
+    this.rotate(this.ribs,this.up,yaw,this.yawQ);
+    anchor.getWorldPosition(this.offset);
+    this.offset.subVectors(this.socketAnchor,this.offset);
+    this.moveWorld(this.ribs,this.offset.x,this.offset.y,this.offset.z);
+    anchor.parent!.getWorldQuaternion(this.parentQ);
+    anchor.quaternion.copy(this.parentQ).invert().multiply(this.socketBasis);
+  }
+
+  /** Lower the firing elbow around the fixed shoulder-to-wrist line.
+   * Counter-rotate the wrist so the receiver retains its authored roll. */
+  private lowerGunElbow(){
+    if(!this.rightArm||!this.rightForearm||!this.rightHand)return;
+    this.rightArm.getWorldPosition(this.hip);
+    this.rightHand.getWorldPosition(this.axis).sub(this.hip).normalize();
+    this.rightForearm.getWorldPosition(this.from).sub(this.hip).projectOnPlane(this.axis).normalize();
+    this.to.set(0,-1,0).projectOnPlane(this.axis).normalize();
+    const roll=Math.atan2(this.axis.dot(this.direction.crossVectors(this.from,this.to)),this.from.dot(this.to));
+    this.rightHand.getWorldQuaternion(this.footQ);
+    this.rotate(this.rightArm,this.axis,T.MathUtils.clamp(roll,-.65,.65),this.yawQ);
+    this.rightHand.parent!.getWorldQuaternion(this.parentQ);
+    this.rightHand.quaternion.copy(this.parentQ).invert().multiply(this.footQ);
+  }
+
+  private readonly shinEndpoint = new T.Vector3();
+
+  private stanceFeet(width:number, stride:number){
+    const weight=1-.75*this.moving;
+    const c=Math.cos(this.aim), s=Math.sin(this.aim);
+    for(const leg of this.legs){
+      const x=(-c*stride-s*width)*leg.side*weight;
+      const z=(-s*stride+c*width)*leg.side*weight;
+      leg.ankle.getWorldPosition(this.target);
+      this.target.x+=x;this.target.z+=z;
+      this.solveChain(leg.thigh,leg.shin,leg.ankle,false,true);
+    }
   }
 
   private shieldCarry(){
     if(!this.leftArm||!this.leftForearm||!this.leftHand)return;
-    if(this.action==='ram') this.rotate(this.ribs,this.up,.43*Math.sin(Math.PI*this.actionProgress),this.yawQ);
     const charging = this.action==='ram' || this.action==='dash';
-    // Bend the elbow below the wrist so the forearm plate can face forward.
-    // A straight reach forces its long face parallel to the barrel.
+    // Keep the elbow under the shield and reach farther on the charge.
     const c=Math.cos(this.aim), s=Math.sin(this.aim);
-    if(charging && this.leftShoulder){
+    if(this.leftShoulder){
       // Drive the left clavicle into the ram while the receiver stays on aim.
       this.leftShoulder.getWorldPosition(this.hip);
       this.leftArm.getWorldPosition(this.from).sub(this.hip);
-      this.to.set(c+.45*s,.18,s-.45*c);
+      const drive=this.action==='railbreaker' ? -.48*Math.sin(Math.PI*this.actionProgress) : charging ? .96 : .52;
+      this.to.set(c*drive+.65*s,.10,s*drive-.65*c);
       this.rotateToward(this.leftShoulder,this.from,this.to);
     }
     this.leftArm.getWorldPosition(this.target);
-    const reach=charging ? .65 : .41, side=charging ? -.16 : -.23;
+    const reach=charging ? .82 : .48, side=charging ? -.29 : -.34;
     this.target.x+=c*reach-s*side;
     this.target.z+=s*reach+c*side;
-    this.target.y+=charging ? .05 : -.09;
+    this.target.y+=charging ? -.14 : -.24;
     this.solveChain(this.leftArm,this.leftForearm,this.leftHand,true);
-    // Present the striking surface into the charge, with an outward cant and
-    // a little upward rake so the clipped face stays legible from the deck camera.
+    // Roll the striking face toward world up, with a small outward rake.
     this.leftForearm.getWorldPosition(this.from);
     this.leftHand.getWorldPosition(this.axis).sub(this.from).normalize();
     this.leftForearm.getWorldQuaternion(this.parentQ);
     this.from.set(.39,0,.92).applyQuaternion(this.parentQ).projectOnPlane(this.axis).normalize();
-    this.to.set(c+.65*s,1.25,s-.65*c).projectOnPlane(this.axis).normalize();
+    this.to.set(.12*c+.10*s,1,.12*s-.10*c).projectOnPlane(this.axis).normalize();
     const roll=Math.atan2(this.axis.dot(this.direction.crossVectors(this.from,this.to)),this.from.dot(this.to));
     this.rotate(this.leftForearm,this.axis,roll,this.yawQ);
   }
@@ -638,11 +735,14 @@ export class MarineMotion {
     this.solveChain(this.leftArm, this.leftForearm, this.leftHand);
   }
 
-  private solveChain(upperBone: T.Object3D, lowerBone: T.Object3D, endBone: T.Object3D, brace = false) {
+  private solveChain(upperBone: T.Object3D, lowerBone: T.Object3D, endBone: T.Object3D, brace = false, detachedAnkle = false) {
     upperBone.getWorldPosition(this.hip);
     lowerBone.getWorldPosition(this.knee);
     endBone.getWorldPosition(this.foot);
     endBone.getWorldQuaternion(this.footQ);
+    // The ankle control belongs to origin. Carry its virtual shin endpoint
+    // through both rotations and put the boot at the reachable solution.
+    if(detachedAnkle)lowerBone.worldToLocal(this.shinEndpoint.copy(this.foot));
     const upper = this.hip.distanceTo(this.knee), lower = this.knee.distanceTo(this.foot);
     this.direction.copy(this.target).sub(this.hip);
     const distance = T.MathUtils.clamp(this.direction.length(), Math.abs(upper - lower) + .001, upper + lower - .001);
@@ -656,8 +756,13 @@ export class MarineMotion {
     this.desiredKnee.copy(this.hip).addScaledVector(this.direction, along).addScaledVector(this.pole, Math.sqrt(Math.max(0, upper * upper - along * along)));
     this.rotateToward(upperBone, this.from.copy(this.knee).sub(this.hip), this.to.copy(this.desiredKnee).sub(this.hip));
     lowerBone.getWorldPosition(this.knee);
-    endBone.getWorldPosition(this.foot);
+    if(detachedAnkle)lowerBone.localToWorld(this.foot.copy(this.shinEndpoint));
+    else endBone.getWorldPosition(this.foot);
     this.rotateToward(lowerBone, this.from.copy(this.foot).sub(this.knee), this.to.copy(this.target).sub(this.knee));
+    if(detachedAnkle){
+      lowerBone.localToWorld(this.foot.copy(this.shinEndpoint));
+      endBone.position.copy(endBone.parent!.worldToLocal(this.foot));
+    }
     endBone.parent!.getWorldQuaternion(this.parentQ);
     endBone.quaternion.copy(this.parentQ).invert().multiply(this.footQ);
   }
@@ -675,6 +780,7 @@ export class MarineMotion {
     this.vx = this.vy = this.lastVx = this.lastVy = this.leanX = this.leanZ = 0;
     this.hold = this.holdCooldown = this.hitLife = this.hitRecover = this.hitAmount = this.recoilLife = this.previousRecoil = 0;
     this.stoppedFor = this.switchedFor = 1;
+    this.shotgunShoulder = 0;
     this.weapon = undefined;
     this.action = '';
     this.dead = false;

@@ -29,3 +29,37 @@ The source baseline was rebuilt from `b1f1d1ed`. In 24 matched samples (calm, fo
 The ignored proof directory is `artifacts/nextgen/rig29/`. `rigs-in-play.png` matches the selector with native calm and fight crops. `{colour,silhouette}-{native,480}.png` pairs previous and current for all twelve scenes. The black masks project the visible skinned marine and carried weapon without surrounding effects. `headings.png` shows the calm sweep and `muzzle-comparison.json` records the pose measurements.
 
 **Verification.** The production type-check and build passed. Breacher and Arc each cleared six rooms on seed 1729 in fast desktop play with zero errors. The separate `breacher-actions.png` sequence shows aim, run, fire, reload, hit and ram in order.
+
+## STANCE39
+
+The Breacher carries a clipped graphite shield over the off-hand forearm. It has a gold rim and a raised strike chevron. The left clavicle advances into the ram and retracts on Railbreaker. The front boot steps forward, the elbow drops, and the firing wrist stays on its authored trajectory.
+
+| Rig | Carry in play | Most useful silhouette cue |
+| --- | --- | --- |
+| Breacher | Squared behind the shield shoulder, staggered feet, gun tucked on the far side | Broad clipped face ahead of the helmet |
+| Cryo | Upright, with a narrower base and the support hand reaching across to the coolant feed | Two tank ends and the open return loop |
+| Pyro | Forward over a wide base, firing elbow down, bottle slung diagonally over the hip | Unequal bottle and exhaust profiles |
+| Arc | Turned toward a canted coil mast, with the open support hand raised | Narrow mast ending in two separated prongs |
+
+The strike face led the gun by **0.114–0.207 world units** across 31 samples spanning the ram. The following counts use depth-tested projected triangles at 1920×1080. The shield column includes the broad inset plane only. Rim, thickness and raised fittings are excluded. The helmet column counts the exposed head-bound skin.
+
+| Aim heading | Shield face px | Helmet px | Face / helmet |
+| ---: | ---: | ---: | ---: |
+| 0° | 2,610 | 1,131 | 2.31× |
+| 45° | 3,672 | 1,118 | 3.28× |
+| 90° | 4,479 | 1,105 | 4.05× |
+| 135° | 4,572 | 1,044 | 4.38× |
+| 180° | 3,896 | 1,069 | 3.64× |
+| 225° | 2,850 | 1,130 | 2.52× |
+| 270° | 2,117 | 1,240 | 1.71× |
+| 315° | 2,061 | 1,198 | 1.72× |
+
+The shotgun drives the firing shoulder and chest back over four presentation ticks at 60 Hz. The kick pivots about the firing wrist. The hull uses the existing instanced debris pool. In the ejection capture it rose from 1.85 to 1.95 world units, bounced and settled at deck height 0.035. The rig skins share the existing marine shader and the production and fallback GLBs use the same embedded PNG atlases.
+
+For muzzle verification, the parent and revised production models received identical animation inputs over 112 ticks per rig, covering idle, running, firing, reload, dash and cast. Across 448 paired samples, the largest world-space muzzle displacement was 0.000000377 and the largest socket quaternion component-vector distance was 0.000000366. Tracers still read the final posed muzzle. The simulation owns aim and hit timing.
+
+**Visual review.** I could identify all four native silhouettes and the four 480×270 silhouettes by the shield, open loop, uneven stacks and fork. The cyan visor surface is visible in all 16 colour poses and all eight headings. The V narrows to a stroke at rear headings and the Pyro dash warning crosses it. The marine was as easy to locate in the four matched fights. The Cryo firing frame compresses the two tanks into the loop, and Pyro's orange blast and Arc's pale field draw attention in their fight frames. The Breacher now matches the selector and title in the equipment, carrying arm and leading shoulder. Those illustrations hold the shield upright, while the room pose tips it back to expose its broad face.
+
+**Proof.** Open `artifacts/nextgen/stance39/index.html` for all 64 individual comparisons, `rigs-in-play.png` for the selector beside the native calm and fight frames, and `headings.png` for the eight unscaled heading crops. Native colour comparisons use the archived final21 calm/fight frames. Dash, fire and geometry masks use the rebuilt final21 source at `bc56c43c`. The 480×270 frames show the revised build alone. `muzzle-comparison.json` and `ram-and-shell.json` hold the motion measurements.
+
+**Verification.** The production type-check and build passed. On the final build, Breacher and Pyro each cleared six rooms on seed 1729 with zero errors. Their native reports are under `artifacts/nextgen/playtest/stance39-release-breacher/` and `stance39-release-pyro/`. The Standard competent Breacher simulation cleared 7 of the 12 requested seeds, matching the lead's 7/12 baseline. The full cohort receipt is `artifacts/nextgen/playtest/stance39-standard-breacher/summary.json`.

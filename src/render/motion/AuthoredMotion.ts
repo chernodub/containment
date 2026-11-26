@@ -369,6 +369,10 @@ export class AuthoredMarineMotion {
             this.fireAge = 0;
             this.switchAge = 10;
         }
+        // A short shoulder impulse sits under the longer authored pump cycle.
+        const kickFrame = this.fireAge * 60;
+        this.motion.shotgunShoulder = weapon === 'shotgun' && !reload && !this.motion.actionName
+            ? Math.min(1, (kickFrame + .5) / 1.5) * (1 - T.MathUtils.smoothstep(kickFrame, 1, 4)) * this.feedback : 0;
         this.motion.rifleLoad = weapon === 'rifle' ? this.burstRise / .075 : 0;
         this.recoil = recoil;
         const [kick, decay] = RECEIVER_KICK[weapon];
