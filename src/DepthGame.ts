@@ -893,9 +893,9 @@ export class DepthGame {
    const ends=this.player.x<midX?[console.x,console.x+console.width]:[console.x+console.width,console.x];
    for(const end of ends){
     const side=end<midX?-1:1;
-    const target={x:end-side*28,y:farY-nearSide*(radius+8)};
-    const bait={x:end+side*58,y:nearY+nearSide*22};
-    const landing={x:end+side*62,y:farY-nearSide*24};
+    const target={x:end-side*24,y:farY-nearSide*(radius+8)};
+    const bait={x:end+side*54,y:farY-nearSide*10};
+    const landing={x:end+side*62,y:farY-nearSide*78};
     const retreat={x:midX,y:nearY+nearSide*95};
     if(!canOccupyExpedition(this.geometry,target,radius)||
      !canTraverseExpedition(this.geometry,bait,landing,this.player.radius)||
