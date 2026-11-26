@@ -142,10 +142,11 @@ export class OverdrivePayoff {
     if (rig && active) this.rig = rig;
     if (active && player) { this.x = player.x / UNIT; this.z = player.y / UNIT; }
     // Whiteout and Meltdown keep the exact native zone; Overclock follows the marine.
+    let zoneAge: number | undefined;
     if (active && snapshot) for (const zone of snapshot.zones) {
       if (zone.remainingMs <= 0) continue;
       if ((this.rig === 'cryo' && zone.ability === 'whiteout') || (this.rig === 'pyro' && zone.ability === 'meltdown')) {
-        this.x = zone.x / UNIT; this.z = zone.y / UNIT; this.radius = zone.radius / UNIT; break;
+        this.x = zone.x / UNIT; this.z = zone.y / UNIT; this.radius = zone.radius / UNIT; zoneAge = (zone.durationMs - zone.remainingMs) / 1000; break;
       }
     }
     if (this.rig === 'arc') this.radius = ARC_FIELD;
@@ -164,6 +165,7 @@ export class OverdrivePayoff {
     slot = this.ensure();
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
+    if (zoneAge !== undefined) slot.age = zoneAge;
     slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);

@@ -548,15 +548,17 @@ void main(){
    float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
    base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
-   float cooling=mix(1.,.30,smoothstep(.045,.20,age));
+   float cooling=mix(1.,.15,smoothstep(.045,.20,age));
    emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
    emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
    alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
    float foothold=smoothstep(.24,1.18,r+.13*n);
    alpha*=foothold;emit*=mix(foothold,1.,peak);
-   float travel=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float travel=R*clamp(.18+.82*age/.15,0.,1.);
    float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
-   emit+=vec3(1.15,.34,.055)*front;alpha=max(alpha,front*.66);
+   float swept=(1.-smoothstep(travel-.18,travel,r))*peak;
+   emit+=vec3(.20,.043,.004)*swept*(.42+.58*lava)+vec3(1.85,.60,.088)*front;
+   alpha=max(alpha,max(swept*.29,front*.80));
    float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
    line=0.;
   }else{
