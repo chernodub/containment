@@ -582,6 +582,8 @@ export class DepthRenderer {
   const previous=this.hitPips.get(id);
   this.hitPips.set(id,{count:Math.min(5,count+(previous&&previous.until>this.time?previous.count:0)),until:this.time+.35});
  }
+ private arrivalWoundTimes=new Map<number,number>();
+ private arrivalReleases=new Map<number,{effect:GameEffect;at:number}>();
  effect(effect:GameEffect){
   if(effect.reserveCut){
    this.floorChoiceMarkers.closeReserve(effect.x,effect.y,effect.reserveCut.closedEntry);
@@ -618,13 +620,20 @@ export class DepthRenderer {
     this.effects.event({type:'boon',boon:'shield',x:near.x*UNIT,y:near.z*UNIT,radius:20});
    }
   }
+  if(effect.type==='arrival-wound'&&effect.targetId!==undefined)this.arrivalWoundTimes.set(effect.targetId,this.time);
   if(effect.type==='arrival-wound'&&targetModel){
    targetModel.root.userData.arrivalWoundGlow=Math.min(.8,(targetModel.root.userData.arrivalWoundGlow??0)+(effect.damage??0)/80);
    targetModel.hit?.(Math.min(1,.2+(effect.damage??0)/65));
   }
   if(effect.type==='arrival-recovery'&&effect.id!==undefined){
-   const actor=this.actors.get(effect.id);
-   if(actor)actor.root.userData.arrivalWoundGlow=0;
+   const at=(this.arrivalWoundTimes.get(effect.id)??-Infinity)+.16;
+   if(this.time<at){this.arrivalReleases.set(effect.id,{effect,at});return;}
+   this.arrivalWoundTimes.delete(effect.id);
+   const actor=this.actors.get(effect.id)??this.corpses.find(c=>c.id===effect.id)?.model;
+   if(actor){
+    actor.root.userData.arrivalWoundGlow=0;
+    if(effect.damage)actor.hit?.(Math.min(1,.3+effect.damage/65));
+   }
   }
   if(effect.contact==='damage'||effect.contact==='armor')actorImpact(targetModel??undefined,effect);
   if(effect.type==='corpse'&&this.corpses[this.corpses.length-1]?.pendingEffect===effect)return;
@@ -633,7 +642,12 @@ export class DepthRenderer {
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
-  if(this.roomKey!==game.node.id)this.loadRoom(game.node);
+  if(this.roomKey!==game.node.id){this.arrivalWoundTimes.clear();this.arrivalReleases.clear();this.loadRoom(game.node);}
+  for(const [id,release] of this.arrivalReleases){
+   if(this.time<release.at)continue;
+   this.arrivalReleases.delete(id);
+   this.effect(release.effect);
+  }
   // RUN15 condition presentation consumes the room's deterministic state.
   const condition=menu?null:game.conditionState,blackout=condition?.condition.id==='dark';
   this.conditionVisuals.update(this.graphicsAblation==='conditions'?null:condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
