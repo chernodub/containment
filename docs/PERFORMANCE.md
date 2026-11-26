@@ -58,15 +58,15 @@ CDP sampled the renderer thread at a requested 100 µs interval in each 15 s com
 | `Mesh.getVertexPosition`, Three core 23467 | Wall decal raycast | 2.068 / 2.068 | 0 / 0 | 2.068 |
 | `AudioSystem.buffer`, `src/game/audio/AudioSystem.ts:316` | Audio presentation | 1.503 / 3.970 | 0 / 0 | 1.503 |
 | `Ray.intersectTriangle`, Three core 22920 | Wall decal raycast | 1.287 / 1.287 | 0 / 0 | 1.287 |
-| `createBufferSource`, native Web Audio | Audio presentation | 1.266 / 1.266 | 0 / 0 | 1.266 |
+| `createBufferSource`, via `src/game/audio/MixEngine.ts:102` | Audio presentation | 1.266 / 1.266 | 0 / 0 | 1.266 |
 | `Mesh._computeIntersections`, Three core 23563 | Wall decal raycast | 0.662 / 7.357 | 0 / 0 | 0.662 |
 | `#snapshotEnemy`, `src/game/enemies/EnemySystem.ts:739` | Simulation snapshot | 0.606 / 0.606 | 0.103 / 0.103 | 0.503 |
-| `Vector3[Symbol.iterator]`, Three core 6030 | Three vector iteration | 0.485 / 0.485 | 0 / 0 | 0.485 |
+| `Vector3[Symbol.iterator]`, Three core 6030 | Renderer corpse grounding | 0.485 / 0.485 | 0 / 0 | 0.485 |
 | `intersect`, Three core 56188 | Wall decal raycast traversal | 0.425 / 7.793 | 0 / 0 | 0.425 |
 
 The recurring stack is `DepthGame.update → updateBullets → AttackEffects.event → wallSurface → Raycaster`. It pays for triangle tests before discarding hits under hidden parents, then casts up to four more rays to validate a decal's support. An independent High trace reproduced the raycast and also had GC among the top sampled frames. Shader compilation and texture upload were absent from these leading stacks.
 
-For the audio owner, extend `AudioSystem.scheduleWarm` and `requestWorkerBuffer` to queue the three gun variants keyed by `recipe.id:variant` and prioritize the recipe IDs that miss in `buffer` during combat. Send the variant to the existing synthesis worker and use its PCM to populate `cueBuffers`. Retain the synchronous fallback for unavailable workers. In `EnemySystem.getSystemSnapshot`, investigate reusing immutable per-enemy snapshots by state revision on the full-list path before replacing the per-update freeze. Keep the readonly API and invalidate on every snapshot-visible mutation.
+For the audio owner, extend `AudioSystem.scheduleWarm` and `requestWorkerBuffer` to warm the active rig’s `handleAbility` cues before general recipes, plus all three gun variants. Key jobs by `recipe.id:variant`. Send the variant to the existing synthesis worker and use its PCM to populate `cueBuffers`. Retain the synchronous fallback for unavailable workers. In `EnemySystem.getSystemSnapshot`, investigate reusing immutable per-enemy snapshots by state revision on the full-list path before replacing the per-update freeze. Keep the readonly API and invalidate on every snapshot-visible mutation.
 
 ### Renderer change and paired profiles
 
@@ -81,3 +81,7 @@ The same pre-change probe occupied 10.91 ms per selected slow frame on Interlock
 | Transmission High | 21.09 → 22.01 / 26.11 → 22.77 | 37 → 46 | 22.5 → 17.7 | 43.6 → 43.0 | 21 → 20 | 103 / 70.56 → 109 / 65.85 |
 
 GC counts use main renderer-thread Chrome trace events inside the combat window. Maximum pauses were 23.97 → 9.45 ms, 6.54 → 5.60 ms and 10.30 → 5.69 ms respectively. No combat shaders compiled in the paired windows. The unchanged population guard flagged Interlock Low on both builds (average/median 19.76/20 → 18.94/17). The windows advanced only 1.3–2.7 simulation seconds under host contention. The proportion of Interlock High updates over 8 ms was 12.5% → 14.8%. The small cohorts and varying load leave the overall update tail unresolved. Raw profiles, frame timings, exact GC events and the attribution script are retained under `artifacts/nextgen/perf42/`.
+
+### Matched captures
+
+The 1920×1080 Safety Interlock rifle-impact pair is identical at every RGB pixel. Five shots produced four identical marks with matching positions and normals. An instrumented count in the capture recorded 512 → 504 mesh raycast entries, before Three's geometry bounds and triangle tests. The pincer pair differs at 198 pixels (0.00955%), with small local differences around the creature silhouettes. Both pairs were inspected at native crop size and 480×270. Native/480 pairs and pixel counts are retained under `artifacts/nextgen/perf42/visual/`.
