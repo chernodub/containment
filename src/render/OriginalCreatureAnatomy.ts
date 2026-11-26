@@ -135,10 +135,10 @@ export function prepareOriginalCreature(root: T.Object3D): boolean {
 
 const rankBoneMatrices: T.Matrix4[] = [];
 const rankBindVertex = new T.Vector4();
-const rankBoneVertex = new T.Vector4();
+const rankPoint = new T.Vector3();
 
 function fitRankBounds(mesh: T.SkinnedMesh, bounds: T.Box3, sphere: T.Sphere): void {
-  const point = new T.Vector3();
+  const point = rankPoint;
   const positions = mesh.geometry.getAttribute('position');
   const joints = mesh.geometry.getAttribute('skinIndex');
   const weights = mesh.geometry.getAttribute('skinWeight');
@@ -158,10 +158,11 @@ function fitRankBounds(mesh: T.SkinnedMesh, bounds: T.Box3, sphere: T.Sphere): v
       for (let i = 0; i < 4; i++) {
         const weight = weights.getComponent(index, i);
         if (weight === 0) continue;
-        rankBoneVertex.copy(rankBindVertex).applyMatrix4(rankBoneMatrices[joints.getComponent(index, i)]);
-        point.x += rankBoneVertex.x * weight;
-        point.y += rankBoneVertex.y * weight;
-        point.z += rankBoneVertex.z * weight;
+        const e = rankBoneMatrices[joints.getComponent(index, i)].elements;
+        const {x, y, z, w} = rankBindVertex;
+        point.x += (e[0]*x + e[4]*y + e[8]*z + e[12]*w) * weight;
+        point.y += (e[1]*x + e[5]*y + e[9]*z + e[13]*w) * weight;
+        point.z += (e[2]*x + e[6]*y + e[10]*z + e[14]*w) * weight;
       }
       point.applyMatrix4(mesh.bindMatrixInverse);
     } else {
