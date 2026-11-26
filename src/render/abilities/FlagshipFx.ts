@@ -537,29 +537,15 @@ void main(){
    #endif
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
-   float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
-   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
-   float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
-   float rays=pow(abs(cos(a*5.+.28*n)),12.);
-   float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
-   float core=(1.-smoothstep(.14,.55,r))*peak;
-   float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
-   float skin=smoothstep(.34,.60,lava+.12*cell.z);
-   float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
-   float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
-   base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
-   float cooling=mix(1.,.15,smoothstep(.045,.20,age));
-   emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
-   emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
-   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
-   float foothold=smoothstep(.24,1.18,r+.13*n);
-   alpha*=foothold;emit*=mix(foothold,1.,peak);
-   float travel=R*clamp(.18+.82*age/.15,0.,1.);
-   float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
-   float swept=(1.-smoothstep(travel-.18,travel,r))*peak;
-   emit+=vec3(.20,.043,.004)*swept*(.42+.58*lava)+vec3(1.85,.60,.088)*front;
-   alpha=max(alpha,max(swept*.29,front*.80));
-   float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
+   float travel=R*clamp(age/.15,0.,1.);
+   float edge=travel*(1.-.42*smoothstep(.30,.78,age));
+   float behind=edge-r;
+   float field=smoothstep(0.,.15,behind);
+   float rim=field*(1.-smoothstep(.08,.32,behind));
+   float cooling=1.-smoothstep(.16,.72,age);
+   base=mix(vec3(.035,.015,.010),vec3(.11,.028,.008),cell.z);
+   alpha=field*(.26+.10*peak)+rim*.50*cooling;
+   emit=vec3(2.3,.87,.18)*rim*cooling+vec3(.20,.04,.002)*field*cooling*(.25+.35*fissure);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.

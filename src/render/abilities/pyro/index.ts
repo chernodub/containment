@@ -180,7 +180,12 @@ class PyroPresentation implements AbilityPresentation {
         kit.sustain();
         for (const id of event.targetIds ?? []) {
           const actor = kit.statusActor(id);
-          if (actor) kit.mote('spark', actor.root.position.x, .14, actor.root.position.z, 0, .8, 0, .22, .2, CORE);
+          if (actor) {
+            const dx = actor.root.position.x - x, dz = actor.root.position.z - z;
+            const d = Math.max(.01, Math.hypot(dx, dz));
+            kit.mote('spark', actor.root.position.x, actor.height * .58, actor.root.position.z,
+              dx / d * 2, .6, dz / d * 2, .28, .27, CORE);
+          }
         }
         return;
       }
@@ -491,7 +496,7 @@ class PyroPresentation implements AbilityPresentation {
     // Keep the fuel running between victims while reserving its hottest value
     // for the skin-bound ember after ignition.
     const desiredGain = 1 - (hasContact ? .84 : .66) * Math.min(1, Math.max(0, (elapsed - .08) / .22));
-    const pockets = meltdown ? 4 : kit.low ? 6 : 12;
+    const pockets = meltdown ? 0 : kit.low ? 6 : 12;
     const clock = kit.reducedMotion ? 0 : kit.time;
     let pool = this.burnYield.find(entry => entry.zone === zone.id);
     if (!pool) {
@@ -564,7 +569,7 @@ class PyroPresentation implements AbilityPresentation {
       const foot = enemy.radius / UNIT * .66;
       if (dist < nearest) { nearest=dist; lx=ex+foot; lz=ez+.22; }
     }
-    kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 21 : 15)*fade,Math.min(8,radius*2),3,.48);
+    kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade * flameGain, frame, emit);
       if (shimmer) {
