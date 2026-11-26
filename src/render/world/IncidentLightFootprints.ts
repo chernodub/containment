@@ -7,6 +7,15 @@ import {clipFightingDeck} from './FightingDeck';
 import {incidentPracticalColors} from './MachineEmitters';
 import {storyIncidentSource} from './Inc13StoryIncidents';
 
+// Set exposure at the fixture, so its throw keeps the same value as the
+// combat camera moves. Narrow reflector hoods have a wider penumbra.
+const reflectorGain:Readonly<Record<string,number>>={
+  'awakening-bay':.63,'crew-checkpoint':.96,'relay-racks':.86,'shielding-gate':.79,
+  'communal-atrium':.58,armory:.51,'breached-loading-bay':.83,
+  'transmission-chamber':.62,'diagnostic-gallery':.91,'safety-interlock-station':.49,
+  'infested-workshop':.59,'manual-control-chamber':.84,'overload-floor':.61,
+};
+
 export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const terminal=laneTerminal(room.id),profile=incidentApertures[room.id];
   if(!terminal||!profile)return;
@@ -24,13 +33,13 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     c.save();c.translate(...pin);c.rotate(angle);
     // The reflector projects away from the lamp shoe. The damaged machine
     // occupies the near edge and casts a narrow shadow through its throw.
-    c.translate(0,39);c.scale(3.3,1.95);
+    c.translate(0,39);c.scale(profile[0]==='strip'?5.7:3.3,1.95);
     paintIncidentAperture(c,room.id,tint);
     c.restore();
   }
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:AdditiveBlending,
-    opacity:.69,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
+    opacity:reflectorGain[room.id]??.69,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
   material.userData.actorMaterial=true;
   material.addEventListener('dispose',()=>texture.dispose());
   const mesh=new Mesh(new PlaneGeometry(room.width/32,room.height/32).rotateX(-Math.PI/2),material);
