@@ -134,6 +134,16 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
 }
 
 /** Respect the existing atmosphere option without traversing static room hierarchies. */
-export function setEnvironmentalStoryOptions(world:T.Group,enabled:boolean):void {
-  const mesh=roomParticles.get(world);if(mesh)mesh.visible=enabled;
+export function setEnvironmentalStoryOptions(world:T.Group,enabled:boolean,templateId?:string):void {
+  let mesh=roomParticles.get(world);
+  // Bespoke rooms omit the general story dressing. Their worklight still
+  // shares the same prepared particle family and High-only option.
+  if(templateId&&(!mesh||!mesh.parent||!world.getObjectById(mesh.id))){
+    const source=laneWorklight(templateId);
+    if(source){
+      mesh=createAnchoredStoryParticles([{x:source.x/32,y:source.y,z:source.z/32,kind:0}],environmentClock);
+      world.add(mesh);roomParticles.set(world,mesh);
+    }
+  }
+  if(mesh)mesh.visible=enabled;
 }
