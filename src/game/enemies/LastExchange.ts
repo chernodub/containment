@@ -65,7 +65,8 @@ export class ExchangeHistory {
   snapshot(marine: Marine, blockers: readonly Blocker[], at: number, fatalOwner: number | undefined,
     source: IncomingDamageOrigin, origin?: Point & {radius?: number}): LastExchange | undefined {
     const recent = this.attacks.filter(attack => attack.committed && at - attack.at <= 2);
-    let fatal = [...recent].reverse().find(attack => attack.owner === fatalOwner);
+    const recordedFatal = [...recent].reverse().find(attack => attack.owner === fatalOwner);
+    let fatal = recordedFatal;
     if (source.source === 'enemy-projectile' && origin) {
       const dx = marine.x-origin.x, dy = marine.y-origin.y;
       const width = fatal?.shape.kind === 'line' ? fatal.shape.width : 20;
@@ -77,8 +78,8 @@ export class ExchangeHistory {
     }
     // An unrelated attack cannot stand in for the fatal footprint.
     if (!fatal) return;
-    const attacks = recent.filter(attack => attack.owner !== fatal!.owner
-      && Math.hypot(attack.x-marine.x,attack.y-marine.y) <= attack.shape.range+220).reverse().slice(0, 8);
+    const attacks = recent.filter(attack => attack !== recordedFatal
+      && Math.hypot(attack.x-marine.x,attack.y-marine.y) <= attack.shape.range+220).reverse();
     const earlier = this.positions.reduce<typeof this.positions[number] | undefined>((best, sample) =>
       at-sample.at >= .8 && at-sample.at <= 1.2 && (!best || Math.abs(at-sample.at-1)<Math.abs(at-best.at-1)) ? sample : best, undefined)?.marine;
     const {x,y,angle,radius} = marine;

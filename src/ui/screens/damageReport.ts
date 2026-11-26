@@ -106,7 +106,8 @@ export function lastExchangeDiagram(game: DepthGame): string {
       const angle = direction * Math.PI / 32;
       const point = {x:marine.x+distance*Math.cos(angle),y:marine.y+distance*Math.sin(angle)};
       if (shapes.some(attack => contains(attack,point.x,point.y))) continue;
-      if (!canTraverseExpedition(game.geometry, earlier ?? marine, point, marine.radius)) continue;
+      if (!canTraverseExpedition(game.geometry, marine, point, marine.radius)) continue;
+      if (earlier && !canTraverseExpedition(game.geometry, earlier, point, marine.radius)) continue;
       step = point;
       break;
     }

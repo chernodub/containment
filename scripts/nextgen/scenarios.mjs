@@ -1314,3 +1314,48 @@ SCENARIOS.push(
   d.refresh();
  }},
 );
+
+SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
+ id:`ui31-fatal-${family}`,diagnosticOnly:true,state:'dead',setupArgument:family,
+ nativeKeys:[['Shift+Tab',0],['Tab',0]],required:['#retry-rig','.last-exchange'],
+ setup:async family=>{
+  const d=window.__containmentDebug,g=d.game;
+  const room=family==='stalker'?'manual-control-chamber':'relay-racks';
+  await d.gotoRoom(room,{rig:'breacher',runStructure:true});
+  g.enemies.reset();
+  const point={x:g.player.x,y:g.player.y};
+  const offsets=[[-44,0],[44,0],[0,-44],[0,44],[-31,-31],[31,31]];
+  const earlier=offsets.map(([x,y])=>({x:point.x+x,y:point.y+y}))
+   .find(p=>d.canStand(p.x,p.y)&&d.clearShot(p.x,p.y,point));
+  Object.assign(g.player,earlier??point);
+  d.invulnerable(true);
+  for(let i=0;i<32;i++) d.step(33);
+  Object.assign(g.player,point);
+  d.invulnerable(false);
+  const at=g.elapsed;
+  const attack=(owner,enemyType,angle,range,width,halfAngle=0)=>{
+   const distance=range*.7;
+   return {type:'melee-strike',enemyId:owner,enemyType,x:point.x-Math.cos(angle)*distance,
+    y:point.y-Math.sin(angle)*distance,angle,shape:{kind:width?'line':'arc',range,width,halfAngle}};
+  };
+  const crossing=family==='stalker'?attack(902,'stalker',-.85,130,24)
+   :attack(902,'brute',-.8,92,0,Math.PI/3);
+  g.exchangeHistory.record([crossing],at-.28,20);
+  if(family!=='stalker'){
+   g.hurt(35,undefined,{source:'enemy-contact',enemyFamily:'brute'});
+   for(let i=0;i<8;i++) d.step(33);
+  }
+  const resources=g.combat.getRunResources();
+  g.combat.restoreRunResources({...resources,health:1,armor:0});
+  if(family==='spitter'){
+   const shooter=offsets.map(([x,y])=>({x:point.x+x*3,y:point.y+y*3}))
+    .find(p=>d.canStand(p.x,p.y,18)&&d.clearShot(p.x,p.y,point))??earlier;
+   g.hurt(90,shooter,{source:'enemy-projectile',enemyFamily:'spitter'},undefined,901);
+  }else{
+   const fatal=family==='stalker'?attack(901,family,.35,130,24):attack(901,family,.4,78,0,Math.PI*5/18);
+   g.exchangeHistory.record([fatal],g.elapsed,20);
+   g.hurt(90,fatal,{source:'enemy-contact',enemyFamily:family},undefined,901);
+  }
+  d.refresh();
+ },
+})));
