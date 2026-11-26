@@ -161,6 +161,17 @@ export async function bootstrap() {
         pause(); }, () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);
     let roomRecovering = true;
     let graphicsLost = false;
+    let audioPreparation:Promise<void>|undefined;
+    let audioRoom=-1;
+    function prepareRoomAudio(){
+        const rig=game.expedition.build.rig;
+        if(!rig||game.status!=='playing')return;
+        audioRoom=game.roomRevision;
+        const work=audio.prepareCombat(rig);
+        audioPreparation=work;
+        void work.finally(()=>{if(audioPreparation===work)audioPreparation=undefined;});
+        return work;
+    }
     let lastStatus = '', lastRoom = -1;
     const start = (resume = false, retry = false) => {
         if(graphicsLost||screens.graphicsBlocked)return;
@@ -203,7 +214,7 @@ export async function bootstrap() {
     const screens = createScreens({ game, renderer, input, audio, confirmation, storage, pause, start, settings, graphicsLost: () => graphicsLost, recovering: () => roomRecovering || lastRoom !== game.roomRevision || renderer.roomLoading });
     function syncAudio(): void {
         const audioStarted=benchmarkListener?performance.now():0;
-        const loading = roomRecovering || lastRoom !== game.roomRevision || renderer.roomLoading;
+        const loading = roomRecovering || lastRoom !== game.roomRevision || renderer.roomLoading || !!audioPreparation;
         syncAudioDirector(audio, game, {paused: game.status === 'paused' || graphicsLost || document.hidden || loading, loading});
         // Reload/switch/death transitions have no separate UI sound path.
         audio.syncCombat(game.combat.snapshot);
@@ -247,6 +258,10 @@ export async function bootstrap() {
         benchmarkSample.audio=0;benchmarkSample.hud=0;
         if (game.status === 'menu' && lastStatus !== 'menu')
             renderer.endGameplayPresentation();
+        if(lastStatus!==game.status&&(game.status==='menu'||game.status==='dead'||game.status==='complete')){
+            audio.endCombatPreparation();audioPreparation=undefined;audioRoom=-1;
+        }
+        if(game.status==='playing'&&audioRoom!==game.roomRevision)void prepareRoomAudio();
         // Synchronize before input/update: a boon, restart or route can change rooms between RAFs.
         if (lastRoom !== game.roomRevision) {
             feel.reset();
@@ -257,7 +272,7 @@ export async function bootstrap() {
             lastRoom = game.roomRevision;
             roomRecovering = true;
         }
-        const blocked = graphicsLost || renderer.roomLoading;
+        const blocked = graphicsLost || renderer.roomLoading || !!audioPreparation;
         const graphicsHeld = screens.graphicsBlocked;
         const recovering = roomRecovering;
         const audioStarted=benchmarkListener?performance.now():0;
@@ -326,6 +341,6 @@ export async function bootstrap() {
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        }, () => input.read(), () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation, listener=>{benchmarkListener=listener;});
+        }, () => input.read(), () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation, listener=>{benchmarkListener=listener;}, prepareRoomAudio);
     }
 }

@@ -1,7 +1,7 @@
 import type { GameEffect } from '../../DepthGame';
 import type { CombatSnapshot } from '../combat/CombatSystem';
 import type { QueenBossPhase } from '../enemies/QueenBossSystem';
-import type { AbilityEvent } from '../abilities/contract';
+import type { AbilityEvent, RigId } from '../abilities/contract';
 import { ABILITY_CATALOG } from '../abilities/catalog';
 import { elementalCueSamples, type ElementalCue } from './elementalCues';
 import { DEFAULT_MASTER_VOLUME } from './preferences';
@@ -77,6 +77,9 @@ export class AudioSystem implements GameAudioDirector {
   private warmTimer: ReturnType<typeof setTimeout> | null = null;
   private warmIndex = 0;
   private warmInFlight = false;
+  private combatRig?: RigId;
+  private combatWarm?: Promise<void>;
+  private warmGeneration=0;
   private synthWorker: Worker | null = null;
   private workerFailed = false;
   private readonly pendingBuffers = new Map<string, Array<() => void>>();
@@ -136,6 +139,9 @@ export class AudioSystem implements GameAudioDirector {
       effects: clamp01(volumes.effects ?? this.volumes.effects),
     };
     this.mixer?.setVolumes(this.volumes);
+    if(this.volumes.master===0||this.volumes.effects===0)this.cancelWarm();
+    else if(this.combatRig)void this.prepareCombat(this.combatRig);
+    else this.scheduleWarm();
     if (this.volumes.master === 0) { this.stopLoops(); this.stopAmbience(); this.stopHeartbeat(); this.stopStems(); }
     else { this.startMusic(); this.startAmbience(); this.updateHeartbeat(); }
     if (this.volumes.effects === 0) { this.stopLoops(); this.stopAmbience(); this.stopHeartbeat(); }
@@ -292,8 +298,7 @@ export class AudioSystem implements GameAudioDirector {
   destroy(): void {
     if (this.destroyed) return;
     this.pauseAll(); this.destroyed = true;
-    if (this.warmTimer !== null) clearTimeout(this.warmTimer); this.warmTimer = null;
-    this.synthWorker?.terminate(); this.synthWorker = null; this.pendingBuffers.clear();
+    this.endCombatPreparation();
     this.buffers.clear(); this.cueBuffers.clear(); this.elementalBuffers.clear(); this.frozenIds.clear(); this.lastPlayed.clear(); this.variants.clear(); this.previousCombat = null;
     this.mixer?.destroy(); this.mixer = null;
     const context = this.context; this.context = null;
@@ -319,16 +324,38 @@ export class AudioSystem implements GameAudioDirector {
     if (!buffer) { buffer = this.pcmBuffer(synthesize(recipe, SYNTH_SAMPLE_RATE, variant), SYNTH_SAMPLE_RATE); this.cueBuffers.set(key, buffer); }
     return buffer;
   }
+  private readyBuffer(recipe:CueRecipe,variant=0):AudioBuffer|undefined {
+    const key=`${recipe.id}:${variant}`,buffer=this.cueBuffers.get(key);
+    if(buffer)return buffer;
+    if(!this.combatRig||this.options.prewarm===false)return this.buffer(recipe,variant);
+    if(!this.pendingBuffers.has(key)){
+      const generation=this.warmGeneration;
+      const done=()=>{
+        if(generation===this.warmGeneration&&!this.cueBuffers.has(key))
+          setTimeout(()=>{if(generation===this.warmGeneration&&!this.cueBuffers.has(key))this.buffer(recipe,variant);},0);
+      };
+      if(!this.requestWorkerBuffer(recipe,done,variant)){
+        this.pendingBuffers.set(key,[done]);
+        setTimeout(()=>{
+          if(generation!==this.warmGeneration)return;
+          this.pendingBuffers.delete(key);done();
+        },0);
+      }
+    }
+    return undefined;
+  }
   private cue(recipe: CueRecipe, options: Partial<VoiceOptions> = {}, key = recipe.id, interval = recipe.interval ?? .06, allowPaused = false): MixVoice | null {
     if (!this.rateLimit(key, interval, allowPaused)) return null;
-    return this.mixer!.play(this.buffer(recipe), { bus: recipe.bus, priority: recipe.priority ?? 45, group: recipe.id, ...options });
+    const buffer=this.readyBuffer(recipe);
+    return buffer?this.mixer!.play(buffer, { bus: recipe.bus, priority: recipe.priority ?? 45, group: recipe.id, ...options }):null;
   }
   private weapon(id: 'pistol' | 'rifle' | 'shotgun' | 'plasma' | 'rocket', pan = 0, distance = 0): void {
     const recipe = weaponRecipe(id);
     if (!this.rateLimit(recipe.id, recipe.interval ?? .045)) return;
     const variant = (this.variants.get(id) ?? 0) % 3; this.variants.set(id, variant + 1);
     const rate = [.988, 1.009, 1.022][variant], level = [.98, 1, .96][variant];
-    this.mixer!.play(this.buffer(recipe, variant), { bus: 'weapons', level, pan, distance, rate, priority: 65, group: recipe.id });
+    const buffer=this.readyBuffer(recipe,variant);
+    if(buffer)this.mixer!.play(buffer, { bus: 'weapons', level, pan, distance, rate, priority: 65, group: recipe.id });
     const name = (id === 'plasma' || id === 'rocket' ? `${id}.wav` : `${id}-${variant + 1}.wav`) as Sample;
     this.sample(name, id === 'shotgun' ? .27 : .23, { bus: 'weapons', priority: 60, pan, distance, rate });
     if (id === 'pistol' || id === 'shotgun' || id === 'rifle') this.cue(impactRecipe('shell'), { pan, distance, delay: id === 'shotgun' ? .32 : .15, level: .3 });
@@ -383,7 +410,8 @@ export class AudioSystem implements GameAudioDirector {
   }
   private startAbilityLoop(recipe: CueRecipe, key: string, ability: string, pan: number, distance: number, expiresAt: number): void {
     if (!this.audible() || this.previousCombat?.dead || expiresAt <= this.context!.currentTime + .02) return;
-    const voice = this.mixer!.play(this.buffer(recipe), { bus: 'abilities', priority: 60, pan, distance, loop: true, level: .8, fadeIn: .2 });
+    const buffer=this.readyBuffer(recipe);if(!buffer)return;
+    const voice = this.mixer!.play(buffer, { bus: 'abilities', priority: 60, pan, distance, loop: true, level: .8, fadeIn: .2 });
     if (!voice) return;
     this.loops.set(key, { voice, ability }); this.mixer!.expire(voice, expiresAt - this.context!.currentTime);
     voice.source.addEventListener('ended', () => { if (this.loops.get(key)?.voice === voice) this.loops.delete(key); }, { once: true });
@@ -395,26 +423,30 @@ export class AudioSystem implements GameAudioDirector {
     const profile = ENVIRONMENT_PROFILES[this.environment];
     if (!this.cueBuffers.has(`${profile.recipe.id}:0`) && this.requestWorkerBuffer(profile.recipe, () => this.startAmbience())) return;
     this.mixer!.setReverb(profile.reverbSeconds, profile.damping);
-    this.ambience = this.mixer!.play(this.buffer(profile.recipe), { bus: 'ambience', priority: 95, loop: true, fadeIn: .8 });
+    const buffer=this.readyBuffer(profile.recipe);if(!buffer)return;
+    this.ambience = this.mixer!.play(buffer, { bus: 'ambience', priority: 95, loop: true, fadeIn: .8 });
   }
   private stopAmbience(fade = .018): void { if (this.ambience) this.mixer?.stop(this.ambience, fade); this.ambience = null; }
   private updateHeartbeat(): void {
     if (this.danger < .7 || !this.audible() || this.previousCombat?.dead) { this.stopHeartbeat(); return; }
-    if (!this.heartbeat) this.heartbeat = this.mixer!.play(this.buffer(HEARTBEAT_RECIPE), { bus: HEARTBEAT_RECIPE.bus, priority: 90, loop: true, level: .38 });
+    const buffer=this.readyBuffer(HEARTBEAT_RECIPE);
+    if (!this.heartbeat&&buffer) this.heartbeat = this.mixer!.play(buffer, { bus: HEARTBEAT_RECIPE.bus, priority: 90, loop: true, level: .38 });
   }
   private stopHeartbeat(): void { if (this.heartbeat) this.mixer?.stop(this.heartbeat); this.heartbeat = null; }
   private duck(depth: number, hold: number): void { if (this.audible()) this.mixer?.duck(depth, hold); }
   private playReload(durationMs: number, resume = false): void {
     this.cancelReload(); if (!this.audible()) return;
     if(this.previousCombat?.weaponId==='plasma'){
-      const voice=this.mixer!.play(this.buffer(impactRecipe('vent')),{bus:'weapons',level:.65,priority:60});
+      const buffer=this.readyBuffer(impactRecipe('vent'));if(!buffer)return;
+      const voice=this.mixer!.play(buffer,{bus:'weapons',level:.65,priority:60});
       if(voice)this.reloadVoices.push(voice);
       return;
     }
     const duration = Math.max(.15, durationMs / 1000);
     const cues = resume ? [[Math.max(0, duration - .36), 1, .34]] : [[0, .08, .2], [Math.max(.08, duration * .48 - .1), .52, .3], [Math.max(.12, duration - .36), 1, .34]];
     for (const [delay, offset, length] of cues) {
-      const voice = this.mixer!.play(this.buffer(impactRecipe('reload')), { bus: 'weapons', level: .65, priority: 60, delay });
+      const buffer=this.readyBuffer(impactRecipe('reload'));if(!buffer)return;
+      const voice = this.mixer!.play(buffer, { bus: 'weapons', level: .65, priority: 60, delay });
       if (voice) this.reloadVoices.push(voice);
       const sample = this.sample('reload.wav', .4, { bus: 'weapons', priority: 60, delay, offset, duration: length });
       if (sample) this.reloadVoices.push(sample);
@@ -443,15 +475,58 @@ export class AudioSystem implements GameAudioDirector {
     if (this.stems[0]) { this.stems[0].gain.gain.cancelAndHoldAtTime(now); this.stems[0].gain.gain.setTargetAtTime(Math.cos(mix * Math.PI / 2) * .62, now, 1.1); }
     if (this.stems[1]) { this.stems[1].gain.gain.cancelAndHoldAtTime(now); this.stems[1].gain.gain.setTargetAtTime(Math.sin(mix * Math.PI / 2) * .56, now, 1.1); }
   }
+  /** Prepare before the first playable frame. All authored enemy families are
+   * included because conditions, reinforcements and summons can change the mix. */
+  prepareCombat(rig: RigId): Promise<void> {
+    if(this.combatRig===rig&&this.combatWarm)return this.combatWarm;
+    this.combatRig=rig;
+    if(!this.usable()||!this.volumes.master||!this.volumes.effects||this.options.prewarm===false)return Promise.resolve();
+    const generation=this.warmGeneration;
+    this.mixer?.setSourceReserve(true);
+    const abilities=ABILITY_RECIPES.filter(recipe=>{
+      const ability=recipe.id.split(':')[1];
+      return ability==='feedback'||ABILITY_CATALOG[ability as keyof typeof ABILITY_CATALOG]?.rig===rig;
+    });
+    const jobs=[...abilities,...COMBAT_RECIPES,...UI_RECIPES,...Object.values(ALERTS),HEARTBEAT_RECIPE]
+      .map(recipe=>({recipe,variant:0}));
+    for(const weapon of ['pistol','rifle','shotgun','plasma','rocket'] as const)
+      for(let variant=1;variant<=2;variant++)jobs.push({recipe:weaponRecipe(weapon),variant});
+    this.combatWarm=Promise.all(jobs.map(({recipe,variant})=>new Promise<void>(resolve=>{
+      if(this.cueBuffers.has(`${recipe.id}:${variant}`)){resolve();return;}
+      const done=()=>{
+        if(generation===this.warmGeneration&&!this.cueBuffers.has(`${recipe.id}:${variant}`))this.buffer(recipe,variant);
+        resolve();
+      };
+      if(!this.requestWorkerBuffer(recipe,done,variant))setTimeout(done,0);
+    }))).then(()=>undefined);
+    return this.combatWarm;
+  }
+  endCombatPreparation():void {
+    this.combatRig=undefined;
+    this.cancelWarm();
+    this.cueBuffers.clear();this.elementalBuffers.clear();
+    this.variants.clear();this.lastPlayed.clear();this.warmIndex=0;
+  }
+  private cancelWarm():void {
+    this.warmGeneration++;this.combatWarm=undefined;
+    if(this.warmTimer!==null)clearTimeout(this.warmTimer);
+    this.warmTimer=null;this.warmInFlight=false;
+    this.mixer?.setSourceReserve(false);
+    this.synthWorker?.terminate();this.synthWorker=null;
+    const pending=[...this.pendingBuffers.values()];this.pendingBuffers.clear();
+    for(const callbacks of pending)for(const callback of callbacks)callback();
+  }
+
   private scheduleWarm(): void {
-    if (this.warmTimer !== null || this.warmInFlight || this.warmIndex >= AUDIO_RECIPES.length || this.destroyed) return;
+    if (!this.volumes.master || !this.volumes.effects || this.options.prewarm===false || this.warmTimer !== null || this.warmInFlight || this.warmIndex >= AUDIO_RECIPES.length || this.destroyed) return;
     this.warmTimer = setTimeout(() => {
       this.warmTimer = null;
       if (this.destroyed || !this.context) return;
       const recipe = AUDIO_RECIPES[this.warmIndex];
       if (!this.cueBuffers.has(`${recipe.id}:0`)) {
         this.warmInFlight = true;
-        if (this.requestWorkerBuffer(recipe, () => { this.warmInFlight = false; this.warmIndex++; this.scheduleWarm(); })) return;
+        const generation=this.warmGeneration;
+        if (this.requestWorkerBuffer(recipe, () => { if(generation!==this.warmGeneration)return;this.warmInFlight = false; this.warmIndex++; this.scheduleWarm(); })) return;
         this.warmInFlight = false; this.buffer(recipe);
       }
       this.warmIndex++;
@@ -459,7 +534,7 @@ export class AudioSystem implements GameAudioDirector {
     }, 24);
   }
   /** Workers are optional; unsupported/failed workers fall back to one task per recipe. */
-  private requestWorkerBuffer(recipe: CueRecipe, done: () => void): boolean {
+  private requestWorkerBuffer(recipe: CueRecipe, done: () => void, variant=0): boolean {
     if (this.options.prewarm === false || this.workerFailed || typeof Worker === 'undefined' || this.destroyed) return false;
     if (!this.synthWorker) {
       try {
@@ -468,7 +543,7 @@ export class AudioSystem implements GameAudioDirector {
           if (this.destroyed || !this.context) return;
           const { key, samples, error } = event.data;
           const callbacks = this.pendingBuffers.get(key); this.pendingBuffers.delete(key);
-          if (error || !samples) { this.workerFailed = true; this.synthWorker?.terminate(); this.synthWorker = null; }
+          if (error || !samples) { this.workerFailed = true; this.synthWorker?.terminate(); this.synthWorker = null; const rest=[...this.pendingBuffers.values()];this.pendingBuffers.clear();for(const group of rest)for(const callback of group)callback(); }
           else if (!this.cueBuffers.has(key)) this.cueBuffers.set(key, this.pcmBuffer(new Float32Array(samples), SYNTH_SAMPLE_RATE));
           if (callbacks) for (const callback of callbacks) callback();
         };
@@ -479,8 +554,8 @@ export class AudioSystem implements GameAudioDirector {
         };
       } catch { this.workerFailed = true; return false; }
     }
-    const key = `${recipe.id}:0`, pending = this.pendingBuffers.get(key);
+    const key = `${recipe.id}:${variant}`, pending = this.pendingBuffers.get(key);
     if (pending) { pending.push(done); return true; }
-    this.pendingBuffers.set(key, [done]); this.synthWorker.postMessage({ key, recipe }); return true;
+    this.pendingBuffers.set(key, [done]); this.synthWorker.postMessage({ key, recipe, variant }); return true;
   }
 }

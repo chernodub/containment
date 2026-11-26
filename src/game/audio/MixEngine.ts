@@ -81,6 +81,27 @@ export class MixEngine {
     this.nodes.push(this.master, this.effects, this.music, this.duckMusic, this.duckAmbience, this.musicFocus, this.musicFilter, compressor, limiter, this.reverbInput);
   }
 
+  private readonly readySources: AudioBufferSourceNode[]=[];
+  private reserveSources=false;
+  private refillTimer: ReturnType<typeof setTimeout> | undefined;
+  setSourceReserve(enabled:boolean): void {
+    this.reserveSources=enabled;
+    if(enabled){this.refillSources();return;}
+    if(this.refillTimer!==undefined)clearTimeout(this.refillTimer);
+    this.refillTimer=undefined;
+    this.readySources.length=0;
+  }
+  private refillSources(): void {
+    // Buffer source nodes are one-shot. Reserve unstarted, unconnected nodes.
+    if(this.destroyed||!this.reserveSources)return;
+    while(this.readySources.length<VOICE_LIMIT)this.readySources.push(this.context.createBufferSource());
+  }
+  private takeSource(): AudioBufferSourceNode {
+    if(this.reserveSources&&this.refillTimer===undefined)
+      this.refillTimer=setTimeout(()=>{this.refillTimer=undefined;this.refillSources();},0);
+    return this.readySources.pop()??this.context.createBufferSource();
+  }
+
   /** Admission keeps eight spare physical voices for click-free stealing tails. */
   play(buffer: AudioBuffer, options: VoiceOptions): MixVoice | null {
     if (this.destroyed) return null;
@@ -99,7 +120,7 @@ export class MixEngine {
     }
     if (groupCount >= 3 || (options.bus === 'danger' && dangerCount >= 8) || (options.loop && loops >= LOOP_LIMIT) || this.voices.size >= VOICE_LIMIT || (active >= ACTIVE_VOICE_LIMIT && !victim)) { this.rejected++; return null; }
     if (active >= ACTIVE_VOICE_LIMIT && victim) this.stop(victim);
-    const source = this.context.createBufferSource(), gain = this.context.createGain();
+    const source = this.takeSource(), gain = this.context.createGain();
     const start = now + Math.max(0, options.delay ?? 0), rate = Math.max(.25, Math.min(3, options.rate ?? 1));
     const offset = Math.max(0, Math.min(buffer.duration - .001, options.offset ?? 0));
     const duration = Math.max(.001, Math.min(options.duration ?? buffer.duration - offset, buffer.duration - offset));
@@ -212,7 +233,7 @@ export class MixEngine {
   }
   destroy(): void {
     if (this.destroyed) return;
-    this.destroyed = true;
+    this.destroyed = true;this.setSourceReserve(false);
     for (const voice of this.voices) { try { voice.source.stop(); } catch { /* ended */ } this.release(voice); }
     for (const node of this.nodes) node.disconnect();
     for (const bank of this.reverbs) bank.convolver.buffer = null;
