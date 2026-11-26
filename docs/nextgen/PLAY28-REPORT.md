@@ -771,3 +771,36 @@ A separate eight-room Standard run used seed 1729 in all four rigs after the rev
 ### Crawler contact-line probe
 
 A deterministic open-floor probe started two Crawlers on the same line to the marine. The queued Crawler moved sideways and cleared 29.94 units of arc 167 ms into the first wind-up. At the strike it was 32.48 units away around the arc, past the 28.8-unit target. This staged receipt establishes movement in open space. [Probe receipt](../../artifacts/nextgen/play39-analysis/crawler.json)
+
+### Manual Control sightline follow-up
+
+The corrected-lifecycle Breacher ON trace put the grille and Brute in the viewport from 806.62 to 807.02 seconds. The weapon line to the Brute was blocked throughout those samples. At 807.08 seconds the grille opened to three escorts. Cryo's retry of the earlier candidate showed the same obstruction during its 753.27–753.57 second recovery samples. The console therefore blocked the exchange before the policy had a clear shot. A further experiment-only revision places the Brute on the marine's side of the console's short end, validates sightlines before staging, and limits the staging delay to 400 ms there. This preserves the default encounter.
+
+A pre-revision Pyro OFF run cleared Manual Control in 39.62 seconds with 46.92 suit lost and no recovery closure. It logged one interior-preparation error and its same-seed retry timed out loading, so this solitary row is not a clean paired result. [Breacher trace](../../artifacts/nextgen/playtest/play39-revision-native-on-breacher-19/trace.ndjson) · [Cryo trace](../../artifacts/nextgen/playtest/play39-tip-on-cryo-19-retry/trace.ndjson) · [Pyro report](../../artifacts/nextgen/playtest/play39-tip-off-pyro-19/report.json)
+
+### Production cohort snapshot
+
+| Profile / rig | Wave 33 clears | Production clears in finished usual seeds |
+|---|---:|---:|
+| Standard Breacher | 11/12 | 5/6 |
+| Standard Cryo | 10/12 | — |
+| Standard Pyro | 10/12 | — |
+| Standard Arc | 12/12 | — |
+| **Standard all** | **43/48** | **5/6** |
+| Story Cryo | 10/12 | 7/8 |
+| Story Breacher | 12/12 | — |
+| **Story all** | **22/24** | **7/8** |
+
+No stall appeared in the finished production subset. The sample is too small to establish the balance, per-rig, or zero-stall targets. Story Cryo's sectors 1–4 averaged exactly 17.99 suit in both builds over the eight matched seeds. Production Standard Breacher's Crawler share was 32.48% in six seeds versus 39.32% over the full twelve at Wave 33.
+
+| Standard sectors | Same-seed completed pairs | Mean suit Wave 33 → production |
+|---|---:|---:|
+| 1–4 | 6 | 5.43 → 9.33 |
+| 5–8 | 6 | 73.07 → 99.82 |
+| 9–12 | 5 | 124.13 → 137.19 |
+| 13–16 | 5 | 162.13 → 181.61 |
+| 17–20 | 4 | 226.11 → 187.42 |
+
+The Freight Hold native frame shows the striking Crawler and two nearby Crawlers still in approach at 151.83 seconds. [Freight Hold queue](../../artifacts/nextgen/playtest/play39-campaign-breacher-retry/r7-freight-hold-crawler-queue.png) · [Standard simulator](../../artifacts/nextgen/playtest/play39-ship-standard/summary.json) · [Standard additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-standard-usual-tail/summary.json) · [Story simulator](../../artifacts/nextgen/playtest/play39-ship-story/summary.json) · [Story additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-story-usual-tail/summary.json)
+
+The near-side experiment revision also passed the production build, using a separate output directory so ongoing native campaigns could continue serving their original bundles.
