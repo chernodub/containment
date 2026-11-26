@@ -423,6 +423,7 @@ try {
       'crawler-queue':freshEvents.some(event=>event.type==='enemy-attack'&&event.family==='crawler')&&
         s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
           enemy.visible&&distance(enemy,s.player)<96),
+      'grille-recoil':s.recoveryGrille?.state==='closed'&&s.elapsed-s.recoveryGrille.changedAt>=.18,
       'grille-closed':freshEvents.some(event=>event.type==='recovery-grille-closed'),
       'exchange-bait':decision.exchangeStep==='bait',
       'exchange-landing':decision.exchangeStep==='landing',
