@@ -525,7 +525,7 @@ export class EncounterDirector {
     if(!this.workshop||beat===undefined||this.workshopRelief)return;
     const next=this.plan.beats?.findIndex((entry,index)=>index>beat&&entry.grammar==='interception');
     if(next===undefined||next<0)return;
-    const far=this.breachPositions.reduce<(typeof this.breachPositions)[number]|undefined>((best,p)=>
+    const far=this.breaches.reduce<(typeof this.breaches)[number]|undefined>((best,p)=>
       !best||Math.hypot(p.x-origin.x,p.y-origin.y)>Math.hypot(best.x-origin.x,best.y-origin.y)?p:best,undefined);
     if(far)this.workshopRelief={beat:next,breachId:far.id};
   }
