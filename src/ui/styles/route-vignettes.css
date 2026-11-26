@@ -72,3 +72,10 @@
   object-fit: cover; object-position: left center; filter: brightness(.43) saturate(.75);
 }
 #overlay .route-room-crop + .route-creature { position: relative; mix-blend-mode: screen; background: transparent; }
+
+#overlay .route-briefing {
+  background-color: #101824;
+  background-image: repeating-linear-gradient(0deg, #6d9ab313 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(90deg, #6d9ab313 0 1px, transparent 1px 28px);
+}
+#overlay .route-briefing .deck-map { border-inline: 4px double #83aabc; }

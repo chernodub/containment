@@ -1,5 +1,5 @@
 import {RIG_ACCENTS} from './ActorIdentity';
-import {FloorChoiceMarkers} from './markers/FloorChoiceMarkers';
+import {FloorChoiceMarkers,type StoryHoldGrace} from './markers/FloorChoiceMarkers';
 import { PincerPresentation } from './world/PincerPresentation';
 import {setRoomBlackout,setSurfacePaintDiagnostic} from './lighting/LocalLightShading';
 import {ShipConditionVisuals} from './vfx/ShipConditionVisuals';
@@ -672,6 +672,8 @@ export class DepthRenderer {
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
+  const holdGrace=menu?undefined:(game as DepthGame & {storyHoldGrace?:StoryHoldGrace}).storyHoldGrace;
+  this.floorChoiceMarkers.updateStoryHold(holdGrace,game.floorControls,UNIT,realDt,game.roomRevision);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;

@@ -3,7 +3,7 @@ import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
 import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {GUARDIAN_ROUTES,GUARDIAN_ROUTE_DEPTH,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
-import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
+import {AUGMENT_UPGRADE_RULES,TRANSFORMATIVE_AUGMENT_PAIRS,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
@@ -186,7 +186,7 @@ export function draftScreen(game: DepthGame): string {
   const starting = game.expedition.run.phase==='starting-boon';
   const cost = rerollCost(game.expedition);
   const exhausted = (game.expedition.run.draftRoll??0)>=2;
-  return `<section class="panel choice-panel draft-panel screen-enter">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p>${contractPayout(game)}</div><span class="draft-signal" data-draft-rig="${rig??''}">${icon(rig??'boon-reactor')} ${rig?`${RIG_CATALOG[rig].name.toUpperCase()} RIG · `:''}SUIT REWRITE AVAILABLE</span></div>
+  return `<section class="panel choice-panel draft-panel screen-enter" data-draft-kind="${offers.filter(offer=>offer.abilityOnly).length>offers.length/2?'augment':'boon'}">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p>${contractPayout(game)}</div><span class="draft-signal" data-draft-rig="${rig??''}">${icon(rig??'boon-reactor')} ${rig?`${RIG_CATALOG[rig].name.toUpperCase()} RIG · `:''}SUIT REWRITE AVAILABLE</span></div>
     <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-element="${boonElement(mutation)}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}" data-augment="${mutation.abilityOnly===true}" data-augment-rig="${mutation.rig??'universal'}" aria-describedby="benefit-${mutation.id} numbers-${mutation.id}" style="--reveal-order:${index}">${rewardArt(mutation)}<span class="boon-card-top">${icon(boonIcon(mutation),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${mutation.rig?icon(mutation.rig):mutation.abilityOnly?icon('loadout'):''}${boonPath(mutation)}</span><span class="reward-taxonomy">${mutation.abilityOnly?'ABILITY AUGMENT':'WEAPON BOON'} · ${mutation.family.toUpperCase()} SET</span><h3>${mutation.name}</h3><p class="boon-benefit" id="benefit-${mutation.id}">${boonBenefit(mutation)}</p><p class="boon-numbers" id="numbers-${mutation.id}">${boonNumbers(mutation)}</p>${augmentCombatPreview(mutation,rig??undefined)}<span class="boon-inspect-hint">Focus + <kbd>I</kbd> for rules</span><span class="boon-inspect-detail" role="tooltip"><span class="eyebrow">EXACT VALUES / ${mutation.name}</span>${mutation.abilityOnly?augmentTarget(mutation,rig??undefined):''}${augmentDiagram(mutation,rig??undefined)}<p>${playerFacingText(mutation.description)}</p>${boonChips(mutation,familyCount(game.expedition.build,mutation.family))}<span class="boon-condition"><span>${boonRuleLabel(mutation)}</span>${playerFacingText(mutation.tradeoff)}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><small>Release inspection key or press I / Esc to close.</small></span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
     <div class="reward-footer"><span class="credit-balance">${icon('credits')} <b>${game.combat.snapshot.credits}</b> CREDITS <small><kbd>1–3</kbd> install · <kbd>R</kbd> reroll</small></span><button id="reroll" class="secondary" ${game.expedition.run.version===1||exhausted||game.combat.snapshot.credits<cost?'disabled':''}>${exhausted?'No rerolls left':`Reroll · ${cost} credits`}</button></div></section>`;
 }
@@ -212,6 +212,10 @@ export function shopScreen(game: DepthGame): string {
     medkit: [1, 'medkit'], grenade: [2, 'grenades'], reroll: [1, 'reroll'], upgrade: [1, 'upgrade'],
     revive: [1, 'revive'], 'route-ammo': [0, ''], 'rig-return': [0, '']} as const;
   const pair=game.returningRigAugments;
+  const rig=game.expedition.build.rig??'breacher';
+  const chosen=run.service?.nodeId===run.currentNodeId&&run.service.purchases.includes('rig-return')
+    ? TRANSFORMATIVE_AUGMENT_PAIRS[rig].find(id=>game.expedition.build.mutations.includes(id))
+    : undefined;
   const services=(upgradesOnly:boolean)=>SERVICE_IDS.filter(id=>id!=='route-ammo'&&id!=='rig-return'&&(id==='upgrade')===upgradesOnly&&(id!=='revive'||game.node.depth===18&&run.version===3))
     .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}]);
   const cards=(items:ReturnType<typeof services>)=>items.map(({id,upgrade})=>{
@@ -237,8 +241,9 @@ export function shopScreen(game: DepthGame): string {
   }).join('');
   const stockGroup=(name:string, upgradesOnly:boolean)=>{
     const items=services(upgradesOnly);
-    const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)));
-    const summary=pair.length===2?`<span class="stock-summary"> · ${items.length} · from ${cheapest} CR</span>`:'';
+    const hasReserveAmmo=!upgradesOnly&&!!routeSupply;
+    const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)),hasReserveAmmo?supplyCost:Infinity);
+    const summary=pair.length===2||chosen?`<span class="stock-summary"> · ${items.length+Number(hasReserveAmmo)} · from ${cheapest} CR</span>`:'';
     return `<section class="${upgradesOnly?'requisition-upgrades':''}" aria-label="${name}"><h3>${name}${summary}</h3><div class="requisition-grid">${cards(items)}</div></section>`;
   };
   const pairOption=(id:AugmentId)=>`<button id="purchase-${id}" class="supply-doctrine-option" data-purchase="rig-return" data-augment="${id}" ${game.canPurchaseService('rig-return',id)?'':'disabled'}>
@@ -263,7 +268,7 @@ export function shopScreen(game: DepthGame): string {
       <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
     </div>
     <button id="purchase-route-ammo" data-purchase="route-ammo" class="secondary" ${supplyEnabled?'':'disabled'}>
-      ${supply.name} <span class="requisition-terms"><b class="requisition-amount">+${supply.rounds}</b><span class="requisition-price">${supplyCost} CR</span></span><small>${supplyStatus}</small>
+      ${serviceArt("route-ammo")} ${supply.name} <span class="requisition-terms"><b class="requisition-amount">+${supply.rounds}</b><span class="requisition-price">${supplyCost} CR</span></span><small>${supplyStatus}</small>
     </button>
   </section>`:'';
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
@@ -272,15 +277,17 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
-    ${routeSupply}
     ${pairRow}
-    <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2}">
+    <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2||!!chosen}">
       ${stockGroup('Consumables',false)}
       ${stockGroup('Paid upgrades',true)}
+      ${routeSupply}
     </div>
     <footer class="requisition-footer">
       <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
-      <button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button>
+      <button id="claim" class="${pairRow?'secondary':'primary'}" ${pairRow?'disabled':''}>
+        ${pairRow?'Choose one to continue':chosen?`Install ${escapeHtml(MUTATION_CATALOG[chosen].name)} and leave ${augmentTarget(MUTATION_CATALOG[chosen],rig)}`:allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}
+      </button>
     </footer>
   </section>`;
 }

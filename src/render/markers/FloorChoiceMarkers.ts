@@ -26,6 +26,8 @@ function coveredBankHead(){
  return head;
 }
 
+export type StoryHoldGrace = {id:string;x:number;y:number;ms:number;remainingMs:number;durationMs:number};
+
 export class FloorChoiceMarkers {
  readonly root=new T.Group();
  private readonly geometry=dashedRing(.98,1,64);
@@ -39,6 +41,28 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.geometry,this.materials[0]);
   mesh.renderOrder=-2;mesh.rotation.x=-Math.PI/2;mesh.visible=false;this.root.add(mesh);return mesh;
  });
+ private readonly graceMaterial=new T.MeshBasicMaterial({color:0x9ee8da,transparent:true,depthWrite:false,toneMapped:false});
+ private readonly notchMaterial=new T.MeshBasicMaterial({color:0xffd18b,transparent:true,depthWrite:false,toneMapped:false});
+ private readonly graceRing=new T.Mesh(dashedRing(1.025,1.08,64),this.graceMaterial);
+ private readonly graceNotch=new T.Mesh(new T.RingGeometry(1.10,1.23,12,1,-.13,.26),this.notchMaterial);
+ private graceCharge=0;
+ private graceRoom=-1;
+
+ updateStoryHold(grace:StoryHoldGrace|undefined, choices:DepthGame['floorControls'], unit:number, dt:number, room:number){
+  if(room!==this.graceRoom){this.graceRoom=room;this.graceCharge=0;}
+  const pad=grace&&choices.find(choice=>choice.kind==='gate'&&choice.id===grace.id);
+  this.graceNotch.visible=!!pad&&!!grace;
+  if(grace&&pad){
+   this.graceCharge=Math.min(1,grace.ms/950);
+   for(const mesh of [this.graceRing,this.graceNotch]){
+    mesh.position.set(pad.x/unit,.061,pad.y/unit);
+    mesh.scale.setScalar(pad.radius/unit);
+   }
+   this.graceNotch.rotation.z=-Math.PI*(1-Math.min(1,grace.remainingMs/grace.durationMs));
+  }else this.graceCharge=Math.max(0,this.graceCharge-dt*2.4);
+  this.graceRing.visible=this.graceCharge>0;
+  this.graceRing.geometry.setDrawRange(0,Math.ceil(this.graceCharge*64)*6);
+ }
  private readonly coverGlyphGeometry=coveredBankHead();
  private readonly bankMaterial=new T.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.72,toneMapped:false,depthWrite:false});
  private readonly coverGlyph=new T.Mesh(this.coverGlyphGeometry,this.bankMaterial);
@@ -64,6 +88,11 @@ export class FloorChoiceMarkers {
  }
  constructor(){
   this.root.add(...this.grilles);
+  for(const mesh of [this.graceRing,this.graceNotch]){
+   mesh.rotation.x=-Math.PI/2;
+   mesh.visible=false;
+   this.root.add(mesh);
+  }
   this.root.add(...this.shutterPanels);
   this.coverGlyph.visible=false;
   this.root.add(this.coverGlyph);
@@ -109,5 +138,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.geometry.dispose();this.graceRing.geometry.dispose();this.graceNotch.geometry.dispose();this.graceMaterial.dispose();this.notchMaterial.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }
