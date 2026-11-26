@@ -83,3 +83,25 @@ Proof is in `artifacts/nextgen/title33/`. Each `title-<width>-native.png` reads 
 At 200% the broad silhouette strokes and jaw bands stay continuous. At 480×270 the broken sill carries the near hand, with the amber organ visible between the jaws. The bent forelimb reads sooner than the individual claw tips. The pale rim separates the helmet and receiver from the dark hull and the rust shell from the blue aperture. I would ship this alongside the selector and game suit. Final22 still has finer material reflections, while TITLE33 gives the opposing figure a clearer head, reach and footing.
 
 The production build and all three desktop captures passed.
+
+## TITLE34
+
+A folded pressure collar runs from the left jamb, under the Warden's loaded paw and behind the Breacher's shield. A torn, double-skinned flange gives the claw tips an edge to grip. The Crawler rests on an upper return attached to the right jamb. A folded piece of the left jamb passes in front of the Stalker.
+
+The blue-white breach key (#b6dbe6) comes from above and to camera right. It catches the shield, skull and torn steel. The projected marine matte falls left across the deck between the figures, while the shield's ochre reflects into the near side of the animal. The distant blue steel has a single lit opening. The bone mask remains lighter than the rust armour and darker than the cyan visor.
+
+Run `sh tools/assets/u10-keyart/title34.sh` from the repository root with Blender and a Pillow-enabled Python on PATH. The command regenerates the creatures from the local shipped meshes and reuses the existing supersampled marine and hatch masters. A clean checkout regenerates those masters first.
+
+The comparison set lives in `artifacts/nextgen/title34/`. The desktop pairs use matching 1920×1080, 2560×1440 and 1280×720 viewports. A fourth desktop capture at 1840×860 checks the exact store aspect. The delivered `store-460x215.png` removes 112 pixels of ceiling and 71 pixels of deck from the 1920 capture before reduction, retaining the logo, Wake up, visor, paw and shield. `capsule.json` records that source rectangle.
+
+This pass uses the pre-HEAVY44 meshes. The title creature and affected route, lesson and ending artwork are due for a further render after the lead's HEAVY44 handoff.
+
+The production build passed. All four previous and four current title capture manifests have empty error lists. Ship-kit preparation timed out twice at 1280×720 and once at 1840×860. Repeating the same scenario and settings produced the successful captures. With the optional artwork requests held on a fresh title, Tab reached Settings, Enter opened it and Escape restored focus to Settings. Releasing the requests let the five low-priority title plates finish decoding.
+
+At desktop size the near claws turn over the lit flange, and the cast shadow links the deck to the shield. In the 460×215 crop the bent wrist and mouth still read. The Stalker's thin back leg blends into the jamb, and the Warden's far claw is hard to distinguish from its lower jaw at that scale.
+
+### Revised breach lighting
+
+The torn header now casts the Crawler's perch and the surrounding chamber into near-black. A single blue-white opening sits behind the Warden's sail and skull. Its light continues over the flange as an angular pool, with the Breacher's shadow cast forward onto it. The lit edge of the shield faces the same source as the Warden's back and reaching arm. The current Warden uses two warm shell values, ink at the roots of the plates and pale bone confined to the head.
+
+The revision comparison in `artifacts/nextgen/title34-revision/` runs from final24 to the TITLE34 first pass to the revision. At 460×215, in colour and greyscale, I can follow the revised sail, skull and open jaw toward the shield faster than in either earlier capsule. Final24 retains more detail in the little Crawler. In the revision its legs and the Warden's individual gripping digits are clearest at desktop size. The production build passed. The native title capture and both source title manifests recorded empty error lists.
