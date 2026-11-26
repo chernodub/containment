@@ -296,3 +296,55 @@ The Pyro fixture used a live Napalm Charge to kill four staged Crawlers on the p
 The strips use unscaled native crops, before on top and after below. Inspected samples show continued movement through the falls. I saw no pop, persistent float, mid-air freeze or stiff locked pose. Later crawler rotations differ slightly after the scheduler changes. The two Brute sequences show the same broad fold and fall, with minor differences in limb orientation. The sign obscures part of one crawler in the multi-kill views. The strips are `artifacts/nextgen/perf45/visual/pyro-crop.png`, `arc-crop.png` and `brute-crop.png` in the same directory.
 
 The production build passed. The requested native Pyro seed 1729 campaign cleared all 13 rooms, including Safety Interlock as room 12, with zero errors and exit status 0. The receipt is `artifacts/nextgen/playtest/perf45-pyro/report.json`.
+
+## PERF46 — quiet High feature ablation
+
+Safety Interlock Pyro, seed 1729, 1920×1080 viewport, three 15-second trials per set. The shipped adaptive controller was active except where the tested feature explicitly altered it. The 75% arm fixed the adaptive multiplier at 1.0 so its effective internal render scale was 0.75. GPU totals are the existing asynchronous whole-render query medians. These readings include GPU/driver scheduling and are useful directionally. A queried GPU duration does not isolate execution cost or a CPU wait. Sets were discarded when the observed one-minute load exceeded 3 at a trial boundary. Raw JSON and excluded attempts are retained under `artifacts/nextgen/perf46/`.
+
+### Source audit
+
+- Four pooled PointLights are allocated by `src/render/SceneLighting.ts:30` and made visible by the High pool policy in `src/render/lighting/LightPool.ts:36`. Lit opaque fragments evaluate these slots in the forward light loop. `src/render/lighting/LocalLightShading.ts:60–81` skips a zero-energy slot and bypasses the BRDF if attenuation gives zero. It calls Three's `getPointLightInfo` first for every emitting point at line 66, even outside the light radius. In Three's `lights_pars_begin.glsl.js:111–121`, that computes direction normalization, distance, and attenuation. The cutoff is applied only after the inverse-power distance term at line 61. Inside the cutoff, direct BRDF work then follows. The pool-off ablation removes both fixed-slot evaluation and actual active-light shading, so it cannot quantify their individual shares.
+- The High runtime samples elapsed GPU time for adaptive resolution from `src/render/post/PostPipeline.ts:201–204`. `src/render/post/GpuProfiler.ts:44` reads `GPU_DISJOINT_EXT` on each enabled poll, and line 82 checks query ownership at sample start. Lines 64–65 read the timer result after availability. The call sites establish production driver queries. They do not establish a blocking wait.
+- `src/render/post/SoftParticleDepth.ts:53–55` queries framebuffer bindings when attachment ownership, dimensions, or context change. An adaptive resize can reach that path in the frame loop at `PostPipeline.ts:202`. The ongoing copy is a device-side depth blit at `SoftParticleDepth.ts:92–93`, with a dependency on the preceding opaque pass.
+- No application production frame-loop calls to `readPixels`, `checkFramebufferStatus`, `getError`, `gl.finish` or `gl.flush` were found. Shader readiness and program introspection are preparation work at `src/render/DepthRenderer.ts:320–323`. Three can inspect new programs in `WebGLProgram.js:182,876,998`; check combat compile counters alongside the arms. Bench `gl.getError` is collected after the combat window at `scripts/nextgen/bench.mjs:460`.
+
+### Attribution
+
+The 75% internal-scale arm was the strongest result. Its median trial had 0.58% of frames above 20 ms versus 12.80% on shipped High. The main scene MRT and presentation targets scale together at `src/render/post/PostPipeline.ts:440–452`. This arm confirms that pixel workload matters, without isolating which pass is responsible. Shipped High and High with its pool off both had median adaptive scale 0.90 in all three trials. At 0.75 the scene targets use about 31% fewer pixels than at 0.90.
+
+The pooled combat lights were the strongest isolated feature. Their removal took median frame share from 12.80% to 3.46% and median GPU query time from 37.50 ms to 26.47 ms. All three trials met both frame targets while render-submission p95 stayed in the same range. The live-light median was four on High, zero with the pool off, and two in the reverse Low arm. Low retains fewer source events. Both the range math on covered materials and the BRDF inside light radii are plausible costs. The experiment cannot split them.
+
+Disabling directional shadows reduced the median frame share to 7.15%, with one passing trial. The arm removes both generation and lookup. Interior maps are refreshed on invalidation at `src/render/DepthRenderer.ts:863–864`. Even when the map is cached, the shared key lookup runs on receiving materials at `src/render/lighting/LocalLightShading.ts:33–44`. The timers cannot separately measure that fragment lookup. Gas, soft depth and bloom moved the median but had inconsistent tails.
+
+Disabling the runtime timer removed production query housekeeping and shifted adaptive feedback to frame time. The benchmark still collected separate GPU queries. All three trials missed 5%. Query housekeeping may affect the tail, but the measurements favour GPU shading and pixel throughput as the primary constraint. They do not establish that 1920×1080 is beyond the machine with equivalent shaders.
+
+### Arm definitions and results
+
+The frozen build came from `5b3a74a5`. Its only change from `b5a1a420` was a roadmap edit. The gas arm suppresses the ability smoke batch and disables detached depth. The soft-depth arm disables only detached depth. Grade removes environmental grading, keeping tone mapping and ability grading. Low particles applies the Low attack, ability and affliction particle budgets. It leaves room instances alone. Reverse Low post enables the High post path while preserving Low scene material shading and scene effect settings. Reverse Low pool enables four slots and ability-light emission while leaving the separate muzzle and blast lights disabled. It retained 456 total prepared programs versus a Low inventory target of 400, with zero combat compiles. This inventory is a feature-specific preparation cost.
+
+Each cell lists the three trials in order. The gap column uses the difference between the shipped High and Low medians. Reverse arms are sorted by measured share alongside the High ablations, with the Low control as their reference.
+
+| Arm | >20 ms (%) | Frame p95 (ms) | Submit p95 (ms) | GPU total p50 (ms) | Load start→end | High gap removed |
+| --- | --- | --- | --- | --- | --- | ---: |
+| LOW | 0.2 / 0.4 / 0.7 | 17.8 / 17.4 / 17.7 | 7.6 / 7.5 / 7.8 | 10.9 / 10.8 / 11.5 | 2.12→2.04 / 2.04→2.33 / 2.33→2.32 | 100% |
+| lowPostOn | 0.5 / 0.4 / 0.5 | 17.9 / 17.6 / 17.8 | 7.8 / 7.8 / 7.8 | 21.6 / 21.2 / 22.7 | 2.14→2.24 / 2.24→1.85 / 1.85→1.55 | 99% |
+| resolution75 | 0.6 / 0.6 / 0.6 | 17.6 / 17.8 / 17.7 | 9.0 / 8.9 / 8.1 | 22.7 / 24.1 / 22.9 | 1.85→2.24 / 2.24→2.05 / 2.05→1.99 | 98% |
+| lowPoolOn | 0.5 / 0.6 / 0.8 | 17.6 / 17.8 / 17.7 | 8.2 / 7.6 / 8.1 | 12.4 / 12.9 / 13.1 | 2.74→2.49 / 2.49→2.60 / 2.60→2.15 | 98% |
+| poolOff | 2.3 / 4.5 / 3.5 | 18.1 / 18.2 / 18.0 | 9.0 / 8.5 / 9.8 | 26.5 / 26.9 / 26.2 | 2.85→2.66 / 2.66→2.98 / 2.98→2.50 | 75% |
+| gas | 4.0 / 14.3 / 5.8 | 18.1 / 25.3 / 24.7 | 9.1 / 9.7 / 9.4 | 45.1 / 32.5 / 43.2 | 2.80→2.63 / 2.63→2.73 / 2.73→2.61 | 56% |
+| bloom | 16.4 / 6.7 / 5.8 | 25.5 / 24.9 / 24.7 | 9.4 / 9.5 / 8.9 | 35.7 / 48.2 / 49.1 | 2.73→2.78 / 2.78→2.99 / 2.99→2.90 | 49% |
+| shadows | 8.2 / 7.2 / 4.7 | 25.0 / 25.0 / 18.3 | 9.0 / 9.8 / 8.9 | 27.5 / 28.2 / 28.2 | 2.58→2.04 / 2.04→2.06 / 2.06→1.93 | 45% |
+| timerOff | 9.0 / 5.7 / 7.5 | 25.0 / 24.8 / 25.0 | 9.4 / 9.4 / 9.7 | 39.9 / 45.2 / 45.5 | 1.64→1.87 / 1.87→2.08 / 2.08→2.28 | 43% |
+| lowRagdolls | 8.1 / 15.9 / 4.1 | 25.0 / 25.5 / 18.2 | 8.6 / 8.6 / 8.2 | 45.4 / 32.0 / 40.6 | 1.85→1.81 / 1.81→1.68 / 1.68→1.70 | 38% |
+| softDepth | 4.9 / 13.6 / 8.4 | 18.4 / 25.1 / 25.0 | 9.4 / 9.6 / 9.0 | 37.4 / 32.9 / 45.6 | 2.57→2.75 / 2.75→2.95 / 2.95→2.97 | 35% |
+| finalAA | 7.7 / 10.1 / 19.8 | 25.0 / 25.1 / 25.6 | 9.0 / 9.5 / 9.4 | 45.3 / 46.4 / 32.0 | 1.67→1.83 / 1.83→1.80 / 1.80→2.11 | 21% |
+| grade | 12.3 / 17.7 / 8.3 | 25.1 / 25.4 / 25.0 | 8.8 / 8.1 / 9.6 | 42.7 / 30.7 / 45.3 | 2.10→1.50 / 1.50→1.52 / 1.52→2.09 | 4% |
+| ao | 7.6 / 13.9 / 12.3 | 25.0 / 25.2 / 25.1 | 8.8 / 9.8 / 10.3 | 39.4 / 31.0 / 31.4 | 2.82→2.43 / 2.43→2.28 / 2.28→2.50 | 4% |
+| HIGH | 12.6 / 14.1 / 12.8 | 25.3 / 25.3 / 25.1 | 9.3 / 10.2 / 9.0 | 37.5 / 32.0 / 43.9 | 1.90→2.21 / 2.21→2.21 / 2.21→2.35 | 0% |
+| ink | 6.0 / 12.9 / 16.0 | 24.4 / 25.2 / 25.2 | 10.0 / 9.1 / 8.9 | 31.0 / 30.9 / 31.2 | 2.46→2.09 / 2.09→1.98 / 1.98→1.64 | -1% |
+| distortion | 13.7 / 13.9 / 8.2 | 25.4 / 25.2 / 25.0 | 9.1 / 9.3 / 10.5 | 32.5 / 43.5 / 46.7 | 2.57→2.73 / 2.73→2.38 / 2.38→2.24 | -7% |
+| lowParticles | 13.7 / 12.7 / 14.4 | 25.6 / 25.2 / 25.1 | 9.2 / 9.8 / 9.5 | 40.9 / 32.8 / 31.2 | 1.91→2.17 / 2.17→1.86 / 1.86→1.84 | -7% |
+| lens | 17.1 / 10.5 / 14.2 | 25.8 / 25.1 / 25.1 | 10.0 / 9.2 / 10.2 | 31.6 / 43.1 / 31.4 | 2.16→2.94 / 2.94→2.71 / 2.71→2.29 | -11% |
+| atmosphere | 14.7 / 11.6 / 14.8 | 25.2 / 25.1 / 25.3 | 9.2 / 9.5 / 9.3 | 30.6 / 32.1 / 46.3 | 2.14→1.97 / 1.97→1.78 / 1.78→1.71 | -15% |
+
+The accepted 60 trials peaked at 218 draws and had zero combat shader compiles or WebGL errors. The first Low control, one distortion set, two gas sets and two shadow sets crossed load 3 and were replaced. The reverse post stack nearly doubled the query median relative to Low while leaving frame misses below 1%. The result suggests substantial Low-tier GPU headroom and a cost that depends on which scene and post features run together. No separate room-instance budget arm was available without changing scene LOD policy, so only the particle component of that arm was measured.
