@@ -136,7 +136,7 @@ def build(sk):
         # to the body; at least as long as the body so the loaded limb is the largest light shape from above
         root = wr + v3((0.05, 0.12 * s, 0.05 * a))
         # CREATURE19: the off scythe is slimmer and both splay away from the flanks so the body shows between them
-        tip = v3((-0.95, 1.38 * s, 1.0 * a)) if s < 0 else v3((-0.62, 1.4, 1.05 * a))   # same footprint radius
+        tip = v3((-1.35, 1.61 * s, 1.0 * a)) if s < 0 else v3((-1.06, 1.58, 1.05 * a))   # same footprint radius
         scythe = A.blade(root, tip, v3((0.1, 1.0 * s, 0.35)), (0.52 * heavy) if s < 0 else 0.3, 0.06 * heavy, f"claw.{side}",
                             hook=0.62, serrations=4, zone=BONE if s < 0 else MEMBRANE, edge_zone=CREST if s < 0 else MEMBRANE)
         for segment in scythe:
@@ -156,7 +156,7 @@ def build(sk):
         for s, side in ((-1, "R"), (1, "L")):
             n = lambda part: f"leg_{leg}_{part}.{side}"
             chain(body, sk, [n("up"), n("up1"), n("mid"), n("lo"), n("lo1")], [0.19, 0.17, 0.15, 0.11, 0.08, 0.025], s,
-                  tint=0.75, spread=.48 if leg=="front" and side=="R" else 0)
+                  tint=0.75, spread=.82 if leg=="front" and side=="R" else .30 if leg=="front" else 0)
     # --- elite: dorsal spine fan on the abdomen ---------------------------------------
     elite = S.Sculpture("stalker-elite")
     # one overgrown right scythe: a second, larger bone blade fused along the arm

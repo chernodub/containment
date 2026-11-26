@@ -137,6 +137,13 @@ broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
+// The pressure vessel carries the spine light along its centre; its swollen
+// sides share the brood shell value so the firing lip remains directional.
+bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
+if(spitterSac){
+ broodBody=true;
+ broodMark=abs(actorPosition.y)<.35;
+}
 if(crawlerSkin){
  bool eyes=actorPosition.x>.41 && actorPosition.x<.53 && abs(actorPosition.y)>.12 && abs(actorPosition.y)<.22 && broodRestUp>.1;
  broodMark=broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
@@ -248,7 +255,7 @@ if(actorBroodForm.x>=-1.){
 #ifdef BROOD_PLANES
 // The UV cell comes from the winning K11 primitive and is constant across a face.
 bool broodLimb=vActorRegion>=3. && vActorRegion<=5.;
-bool broodTop=broodBand==1 && !broodLimb;
+bool broodTop=(broodBand==1 || spitterSac) && !broodLimb;
 if(broodFinish && (broodBody || sacPatch) && !broodMark){
  vec3 flatInk=broodTop?vec3(.096,.081,.121):vec3(.047,.039,.065);
  if(broodBand==6 || broodLimb)flatInk=vec3(.025,.022,.037);
