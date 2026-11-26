@@ -154,6 +154,7 @@ export class DepthRenderer {
  private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
  private motionChanged=()=>this.applyQuality();
  private motionQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
+ private crowdRim=0;
  private disposed=false;private time=0;private recoil=0;private roomKey='';private temporaryMaterials:T.Material[]=[];
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
  private pickupInstances=new PickupInstances();private exit:T.Group|null=null;
@@ -710,6 +711,12 @@ export class DepthRenderer {
   // M9: preferences scale secondary motion; authoritative roots remain snapshot-owned.
   this.player.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);this.player.setDead?.(combat.dead);
   if(!combat.dead){this.ragdolls.remove(-2147483648);this.marineDeathStarted=false;}
+  let closeEnemies=0;
+  if(!menu && !combat.dead) for(const enemy of enemies){
+   if(enemy.health>0 && (enemy.x-p.x)**2+(enemy.y-p.y)**2 <= (4*UNIT)**2 && ++closeEnemies===3)break;
+  }
+  this.crowdRim+=((closeEnemies>=3?1:0)-this.crowdRim)*(1-Math.exp(-dt*12));
+  this.player.setCrowdRim?.(this.crowdRim);
   this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;if(!this.ragdolls.has(-2147483648))this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
   // M10: one articulated marine death; native killing direction, retained physics owner.
   if(combat.dead&&!this.marineDeathStarted){this.marineDeathStarted=true;const direction=this.player.root.userData.motionHitDirection??p.angle;if(this.corpses.length&&this.ragdolls.snapshot().active>=this.ragdolls.snapshot().budget){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}this.ragdolls.add(-2147483648,this.player,'marine',{x:Math.cos(direction)*5,z:Math.sin(direction)*5},'none');}

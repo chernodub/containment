@@ -61,8 +61,8 @@ void main(){
   w=base+right*(s*W*(1.-.55*v))+vec3(0.,v*H,0.);
   fxLocal=vec2(s,v);fxSeg=seg+step(39.5,col)*.5;
  }else if(m>13.5){
-  // Meltdown alone reserves a narrow apron for cosmetic cracks beyond its front.
-  float a=g.x*6.2831853;float r=g.y*fxRange*(fxArc==2.?1.18:1.);
+  // The last vertex lies on the authoritative effect boundary.
+  float a=g.x*6.2831853;float r=g.y*fxRange;
   w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
  }else if(m>12.5){
   float a=g.x*6.2831853,polar=g.y*1.5707963;
@@ -190,7 +190,10 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
   base*=mix(.36,1.,band);
-  emit=emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
+  float lip=1.-smoothstep(.055,.22,abs(front-r-.14));
+  alpha=max(alpha,lip*.66);
+  base*=smoothstep(.015,.085,cells.y-cells.x);
+  emit=vec3(.12,.64,.84)*lip+emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
  }
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
@@ -292,7 +295,12 @@ void main(){
   float heat=exp(-age*1.0);float hot=exp(-age*4.);
   float on=smoothstep(.1,.25,age);
   emit=(vec3(3.2,1.2,.08)*speck*heat+vec3(.9,.3,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
+  float ignition=1.-smoothstep(.08,.19,age);
+  float edge=(1.-smoothstep(.018,.075,abs(r-front)))*(.35+.65*n);
+  float muzzle=(1.-smoothstep(.045,.19,r))*(1.-smoothstep(.18,.68,abs(s)));
+  emit+=ignition*(vec3(.85,.21,.018)*edge+vec3(2.5,2.05,1.25)*muzzle+vec3(.18,.035,.003)*body*step(r,front));
   alpha=soot*.62*on*(1.-smoothstep(.55,1.,k));
+  alpha=max(alpha,ignition*(.16*body*step(r,front)+.44*edge+.55*muzzle));
   base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
  }else if(m<2.5){
@@ -347,6 +355,7 @@ void main(){
   float r=fxLocal.y,front=fxRange*smoothstep(0.,.055,age);
   if(fxParam<1.5){
    frostBed(fxWorld.xz,r,front,age,false,base,emit,alpha);
+   emit+=vec3(.12,1.5,2.)*(1.-smoothstep(.22,.95,r))*(1.-smoothstep(.05,.18,age));
   }else{
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
@@ -358,11 +367,12 @@ void main(){
    float dust=smoothstep(.33,.70,grit+tile.x*.12);
    base=mix(vec3(.006,.010,.015),vec3(.041,.054,.060),face*tile.z);
    base+=vec3(.013)*dust;
-   emit=vec3(.17,.085,.023)*(1.-face)*smoothstep(.29,.65,grit)*material;
-   alpha=material*(.08+.31*smoothstep(.28,.84,r/max(.001,front))*smoothstep(.27,.7,grit));
+   float seam=(1.-smoothstep(.01,.034,tile.y-tile.x))*smoothstep(.42,.62,grit)*material;
+   emit=vec3(.27,.12,.018)*seam*(1.-smoothstep(.28,1.,age));
+   alpha=mix(material*(.08+.23*dust),seam*.22,smoothstep(.20,.95,age));
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
-  float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)
+  float settle=fxParam<1.5?1.-smoothstep(.30,.62,age)
     :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.60,2.2,age));
   alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
  }else if(m<4.5){
@@ -537,29 +547,15 @@ void main(){
    #endif
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
-   float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
-   float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
-   float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
-   float rays=pow(abs(cos(a*5.+.28*n)),12.);
-   float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
-   float core=(1.-smoothstep(.14,.55,r))*peak;
-   float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
-   float skin=smoothstep(.34,.60,lava+.12*cell.z);
-   float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
-   float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
-   base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
-   float cooling=mix(1.,.15,smoothstep(.045,.20,age));
-   emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
-   emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
-   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
-   float foothold=smoothstep(.24,1.18,r+.13*n);
-   alpha*=foothold;emit*=mix(foothold,1.,peak);
-   float travel=R*clamp(.18+.82*age/.15,0.,1.);
-   float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
-   float swept=(1.-smoothstep(travel-.18,travel,r))*peak;
-   emit+=vec3(.20,.043,.004)*swept*(.42+.58*lava)+vec3(1.85,.60,.088)*front;
-   alpha=max(alpha,max(swept*.29,front*.80));
-   float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
+   float travel=R*clamp(age/.15,0.,1.);
+   float edge=travel*(1.-.42*smoothstep(.30,.78,age));
+   float behind=edge-r;
+   float field=smoothstep(0.,.15,behind);
+   float rim=field*(1.-smoothstep(.08,.32,behind));
+   float cooling=1.-smoothstep(.16,.72,age);
+   base=mix(vec3(.035,.015,.010),vec3(.11,.028,.008),cell.z);
+   alpha=field*(.26+.10*peak)+rim*.50*cooling;
+   emit=vec3(2.3,.87,.18)*rim*cooling+vec3(.20,.04,.002)*field*cooling*(.25+.35*fissure);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -596,8 +592,8 @@ void main(){
  // Ground sheets keep a flat, quiet tint underneath the warning.
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
- if(m>13.5 && m<14.5 && fxArc<1.5){
-  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0018,-.004);
+ if((m>13.5 && m<14.5 && fxArc<1.5)||(m>3.5 && m<4.5 && fxParam>.5 && fxParam<1.5)){
+  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0025,-.010);
   float backMask=texture2D(abilityPriorityMap,behind).r;
   float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
@@ -623,7 +619,7 @@ void main(){
  float coreCover=max(prioritySample.b,prioritySample.a);
  if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
    // Keep the marine cap here. Actor coverage attenuates premultiplied output once, after shading.
-   keep*=1.-.83*coreCover;
+   keep*=1.-.97*coreCover;
  }
  #endif
  // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
