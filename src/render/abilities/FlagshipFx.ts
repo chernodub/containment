@@ -204,7 +204,7 @@ void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out flo
  float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
  float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.28,.64,fxNoise(p*.57-8.2))
               *smoothstep(.25,.65,-d);
- base=vec3(.018,.013,.009);
+ base=mix(vec3(.018,.009,.007),vec3(.075,.050,.044),smoothstep(.48,.66,broad)*ripple);
  alpha=(.22+.48*broad)*coal+.24*lip+.17*cinders+.14*fissure;
  emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(1.35,.39,.018)*fissure;
 
@@ -451,6 +451,7 @@ void main(){
   // Sections of the native lip remain exposed between scallops of burnt fuel.
   if(napalm)edge+=fxRange*.14*smoothstep(.0,.85,sin(angle*5.+.65)+.45*sin(angle*13.));
   burnSurface(edge,fxWorld.xz,base,emit,alpha);
+  emit*=mix(vec3(1.),vec3(.23,.095,.06),smoothstep(.08,.30,age));
   float heading=angle-fxAngle-bend;
   float river=1.-smoothstep(.004,.047,min(1.-cos(heading-.95),1.-cos(heading+1.85)));
   float grain=fxNoise(fxWorld.xz*3.);
