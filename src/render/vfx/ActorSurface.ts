@@ -111,6 +111,11 @@ bool broodFinish=actorBroodForm.x>=-1.;
 // its raised hind volume in the skin's Z-up bind pose, clear of the legs.
 bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
 bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRegion==7. || sacTip);
+if(broodFinish && broodBody){
+  float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+  diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
+                            : vec3(.84,.73,1.08)*clamp(value*.68,.032,.105);
+}
 #endif
 #ifdef BRUTE_PLANES
 // Flat atlas cells in GLTF's top-down UV order. Bone, lead and gilt carry
