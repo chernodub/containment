@@ -415,6 +415,7 @@ try {
       'delayed-hatch':(s.delayedPincerHatch?.arrivals.length??0)>=2,
       'hatch-in-view':!!s.delayedPincerHatch?.visible,
       'sealed-entry':!!s.markedClosedEntry&&!freshEvents.some(event=>event.reserveCut),
+      'saved-stake':room.id==='swarm-junction'&&freshEvents.some(event=>event.type==='boon'&&event.boon==='shield'&&event.radius===96),
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
       'console-return':room.id==='manual-control-chamber'&&s.encounter.beat===1&&freshEvents.some(event=>event.exposedHit),
