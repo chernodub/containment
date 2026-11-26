@@ -68,12 +68,14 @@ def surface_zones(sculpture, centers):
             paint = 9
         elif prim.plate in (50, 51, 450, 451):
             paint = 7
+        elif prim.name == "oral-fold":
+            paint = 10
         elif prim.plate in (52, 452):
             paint = 8
         elif isinstance(prim, S.ShellBand) and prim.plate != UNDER:
             local = (points - prim.c) @ prim.R
             paint = np.where(local[:, 2] < -.42 * prim.drop, 3,
-                             np.where(abs(local[:, 0]) > prim.half - prim.bev * 1.6, 2, 1))
+                             np.where(abs(local[:, 0]) > prim.half - prim.bev * .75, 2, 1))
         elif prim.zone == FLESH and prim.plate != UNDER:
             # Cross-section in a fixed dorsal/lateral direction. Along a
             # sloping shin the dividing plane follows the shaft to the ankle.
@@ -166,7 +168,7 @@ def back(body, bands=BACK, ridge=0.16, ridge_lift=0.10, plate0=70):
     for i, (x, z, ang, ry, rz, drop, bone) in enumerate(bands):
         body.add(band((x + .09, 0, z - .19), ang + TIP, .69, (3.4, ry + .04, rz),
                       drop, bone, UNDER, thick=.39, bevel=.08))
-        body.add(band((x, 0, z), ang + TIP, .53, (3.4, ry, rz), drop,
+        body.add(band((x, 0, z), ang + TIP, .69, (3.4, ry, rz), drop,
                       bone, plate0 + i, thick=.28, bevel=.13, lip=.15))
         crowns.append(v3((x, 0, z + ridge_lift)))
     # one raised spine ridge running through every band
@@ -205,8 +207,9 @@ def leg(body, s, side, hip=(-1.85, .95, 5.4), knee=(-1.30, 1.70, 3.05), foot=(-1
     hip, knee, foot = v3((hip[0], hip[1] * s, hip[2])), v3((knee[0], knee[1] * s, knee[2])), v3((foot[0], foot[1] * s, foot[2]))
     body.add(RoundCone(hip, knee, r[0], r[1], zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=UNDER))
     body.add(Ellipsoid(knee, (r[1] * 1.05,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
-    body.add(RoundCone(knee, foot + v3((0, 0, .2)), r[1] * .9, r[2], zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=77))
-    sole(body, foot + v3((.52, 0, -.08)), f"foot.back.{side}", (.94, .64, .24))
+    body.add(S.Prism(knee, foot + v3((0, 0, .2)), r[1] * .90, r[2] * .80, sides=6, squash=.86, zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=77))
+    body.add(Ellipsoid(foot, (.43,.46,.33), zone=FLESH, bone=f"foot.back.{side}", plate=UNDER))
+    body.add(S.Prism(foot-v3((.25,0,.04)),foot+v3((1.40,0,-.16)),.48,.34,sides=6,squash=.49,zone=FLESH,bone=f"foot.back.{side}",plate=83))
 
 
 def build(sk):
@@ -227,7 +230,8 @@ def build(sk):
     body.add(RoundCone((1.05, 0, 7.15), (2.05, 0, 7.45), .66, .52, zone=FLESH,
                        bone=("blend", "chest", "head", (1.0, 0, 7.1), (2.1, 0, 7.45)), k=.10, plate=UNDER))
     body.add(Ellipsoid((2.72, 0, 7.58), (1.02, .92, .74), frame((1, 0, -.15)), zone=FLESH, bone="head", k=.12, plate=78))   # skull
-    body.add(Ellipsoid((2.98, 0, 7.02), (.86, .72, .40), frame((1, 0, -.25)), zone=FLESH, bone="head", k=.08, plate=UNDER))  # jaw
+    body.add(Ellipsoid((3.13, 0, 6.78), (.92, .76, .25), frame((1, 0, -.25)), zone=FLESH, bone="head", k=.08, plate=UNDER))  # jaw
+    body.add(Ellipsoid((3.44,0,7.00), (.65,.73,.13), frame((1,0,-.20)), zone=FLESH,bone="head",plate=78,name="oral-fold"))
     plate, tip, rear, pf, pu, ps = skull_plate((2.98, 0, 8.36), (1, 0, 0), 2.72, 2.06, 15, "head", 50)
     body.add(plate)
     # A transverse brow casts a drawn seam over the two swept cheek planes.
