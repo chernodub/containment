@@ -212,9 +212,9 @@ export function shopScreen(game: DepthGame): string {
     medkit: [1, 'medkit'], grenade: [2, 'grenades'], reroll: [1, 'reroll'], upgrade: [1, 'upgrade'],
     revive: [1, 'revive'], 'route-ammo': [0, ''], 'rig-return': [0, '']} as const;
   const pair=game.returningRigAugments;
-  const cards=(upgradesOnly:boolean)=>SERVICE_IDS.filter(id=>id!=='route-ammo'&&id!=='rig-return'&&(id==='upgrade')===upgradesOnly&&(id!=='revive'||game.node.depth===18&&run.version===3))
-    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}])
-    .map(({id,upgrade})=>{
+  const services=(upgradesOnly:boolean)=>SERVICE_IDS.filter(id=>id!=='route-ammo'&&id!=='rig-return'&&(id==='upgrade')===upgradesOnly&&(id!=='revive'||game.node.depth===18&&run.version===3))
+    .flatMap<{id:(typeof SERVICE_IDS)[number];upgrade?:typeof upgrades[number]}>(id=>id==='upgrade'&&upgrades.length?upgrades.map(upgrade=>({id,upgrade})): [{id,upgrade:undefined}]);
+  const cards=(items:ReturnType<typeof services>)=>items.map(({id,upgrade})=>{
     const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id,upgrade);
     const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
     let status=`${stock} in stock`;
@@ -235,6 +235,12 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-item-footer"><span class="requisition-status">${status}</span></span>
     </button>`;
   }).join('');
+  const stockGroup=(name:string, upgradesOnly:boolean)=>{
+    const items=services(upgradesOnly);
+    const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)));
+    const summary=pair.length===2?`<span class="stock-summary"> · ${items.length} · from ${cheapest} CR</span>`:'';
+    return `<section class="${upgradesOnly?'requisition-upgrades':''}" aria-label="${name}"><h3>${name}${summary}</h3><div class="requisition-grid">${cards(items)}</div></section>`;
+  };
   const pairOption=(id:AugmentId)=>`<button id="purchase-${id}" class="supply-doctrine-option" data-purchase="rig-return" data-augment="${id}" ${game.canPurchaseService('rig-return',id)?'':'disabled'}>
     <strong>${escapeHtml(MUTATION_CATALOG[id].name)}</strong>
     <span>${escapeHtml(playerFacingText(MUTATION_CATALOG[id].whatChanges ?? MUTATION_CATALOG[id].description))}</span>
@@ -268,9 +274,9 @@ export function shopScreen(game: DepthGame): string {
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
     ${routeSupply}
     ${pairRow}
-    <div class="service-shop requisition-groups">
-      <section aria-label="Consumables"><h3>Consumables</h3><div class="requisition-grid">${cards(false)}</div></section>
-      <section class="requisition-upgrades" aria-label="Paid upgrades"><h3>Paid upgrades</h3><div class="requisition-grid">${cards(true)}</div></section>
+    <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2}">
+      ${stockGroup('Consumables',false)}
+      ${stockGroup('Paid upgrades',true)}
     </div>
     <footer class="requisition-footer">
       <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
