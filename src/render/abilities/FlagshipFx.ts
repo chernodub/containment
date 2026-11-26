@@ -181,7 +181,11 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   alpha*=mix(.045,1.,deposit);
   emit*=deposit;
  }else{
-  float band=(1.-smoothstep(.18,1.0,back))*bed;
+  float cluster=smoothstep(.36,.65,fxNoise(p*.84+fxSeed));
+  bed*=smoothstep(-.04,.82,back+.54*cluster);
+  alpha*=bed;
+  emit*=bed;
+  float band=(1.-smoothstep(.18,1.0,back))*bed*cluster;
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
   base*=mix(.36,1.,band);
@@ -204,7 +208,7 @@ void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out flo
  float vein=abs(fxNoise(p*.78+13.7)+.14*ripple-.53);
  float fissure=(1.-smoothstep(.008,.032,vein))*smoothstep(.28,.64,fxNoise(p*.57-8.2))
               *smoothstep(.25,.65,-d);
- base=vec3(.018,.013,.009);
+ base=mix(vec3(.018,.009,.007),vec3(.075,.050,.044),smoothstep(.48,.66,broad)*ripple);
  alpha=(.22+.48*broad)*coal+.24*lip+.17*cinders+.14*fissure;
  emit=mix(vec3(.48,.105,.003),vec3(1.7,.56,.028),grain)*lip+vec3(1.55,.67,.07)*cinders+vec3(1.35,.39,.018)*fissure;
 
@@ -455,6 +459,7 @@ void main(){
   float river=1.-smoothstep(.004,.047,min(1.-cos(heading-.95),1.-cos(heading+1.85)));
   float grain=fxNoise(fxWorld.xz*3.);
   if(napalm)emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
+  emit*=mix(vec3(1.),vec3(.23,.095,.06),smoothstep(.08,.30,age));
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
@@ -465,10 +470,10 @@ void main(){
   float curl=fxNoise(q+fxSeed);
   float edge=1.-smoothstep(.91,.995,radial);
   float lip=1.-smoothstep(.018,.082,abs(radial-(.86+.06*curl)));
-  float heat=lip*(.48+.40*curl);
+  float heat=lip*smoothstep(.30,.68,curl)*mix(1.,.24,smoothstep(.08,.30,age));
   base=vec3(.016,.013,.009);
   alpha=(.39*edge+.27*lip)*fxParam;
-  emit=vec3(1.54,.63,.058)*heat*fxParam*fxIntensity;
+  emit=vec3(1.26,.32,.036)*heat*fxParam*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -548,6 +553,10 @@ void main(){
    alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
    float foothold=smoothstep(.24,1.18,r+.13*n);
    alpha*=foothold;emit*=mix(foothold,1.,peak);
+   float travel=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
+   emit+=vec3(1.15,.34,.055)*front;alpha=max(alpha,front*.66);
+   float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -585,7 +594,9 @@ void main(){
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
  if(m>13.5 && m<14.5 && fxArc<1.5){
-  float margin=1.-smoothstep(.02,.9,max(prioritySample.r,prioritySample.b));
+  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0018,-.004);
+  float backMask=texture2D(abilityPriorityMap,behind).r;
+  float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
  }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);

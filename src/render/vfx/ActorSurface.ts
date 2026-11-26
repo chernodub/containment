@@ -110,7 +110,7 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 ivec2 broodCell=ivec2(floor(vMapUv*4.0));
 int broodBand=broodCell.x+4*(3-broodCell.y);
 bool broodBody=broodBand<=1 || broodBand==6 || (actorBroodForm.w==1. && broodBand>=8 && broodBand<=10);
-bool broodFinish=actorBroodForm.x>=-1.;
+bool broodFinish=actorBroodForm.x>=-1. || actorContact.y>0.;
 // The Matron's distal sac follows the tip joint (torso region). Select
 // its raised hind volume in the skin's Z-up bind pose, clear of the legs.
 bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
@@ -222,11 +222,21 @@ float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 #ifdef BROOD_PLANES
 if(broodFinish && sacPatch && !broodMark)outgoingLight=creatureBody*.55+vec3(.021,.009,.045);
-if(broodFinish && broodMark)outgoingLight=cuttingEdge?vec3(.86,.76,.57):lanternEmission;
+if(broodFinish && broodMark){
+ float frost=actorContact.x<1.5 ? actorContact.y : 0.;
+ outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
+}
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
-if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
+bool contactSkin=lanternPeak<.015 && vActorRegion<6.5;
+#ifdef BROOD_PLANES
+contactSkin=contactSkin && !(broodFinish && broodMark);
+#endif
+#ifdef BRUTE_PLANES
+if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
+#endif
+if(actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
  float edge=smoothstep(.025,.34,actorRim);
  vec3 p=actorPosition;
@@ -234,12 +244,12 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  float energy;
  vec3 accent;
  if(actorContact.x<1.5){
-  energy=smoothstep(.17,.49,actorRim)*smoothstep(-.20,.62,vein)*(.20+.80*limb);
+  energy=smoothstep(.12,.43,actorRim)*smoothstep(.30,.70,limb)*smoothstep(.20,.65,p.z-actorPlateBounds.z);
   accent=vec3(.59,1.44,1.68);
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
   energy=smoothstep(.08,.38,actorRim)*(.45+.55*smoothstep(-.62,.40,flicker));
-  accent=mix(vec3(.85,.16,.012),vec3(3.1,2.4,.95),smoothstep(.35,.88,flicker));
+  accent=mix(vec3(.98,.55,.12),vec3(3.1,2.65,1.55),smoothstep(.35,.88,flicker));
  }else if(actorContact.x<3.5){
   energy=edge*(.24+.76*smoothstep(.05,.62,sin(vein*5.+actorContact.z*8.)));
   accent=vec3(1.14,.66,1.92);
@@ -250,20 +260,29 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  // Faceted armour can face the camera squarely. Leave a broken contact
  // patch on those planes too, particularly on the outer joints.
 #ifdef BRUTE_PLANES
- if(actorContact.x<1.5 && !wardenMaw){
-  float top=smoothstep(.18,.77,inverseTransformDirection(normal,viewMatrix).y);
-  vec3 plateIce=mix(vec3(.025,.071,.12),vec3(.28,.46,.54),top);
-  outgoingLight=mix(outgoingLight,plateIce,actorContact.y*.87*safe);
-  energy=edge*smoothstep(-.15,.60,vein)*.60;
+ if(bruteBody && !wardenMaw && actorContact.x<3.5){
+  float top=band==1 ? 1. : 0.;
+  vec3 sides=vec3(.018,.047,.083), crown=vec3(.25,.40,.48);
+  if(actorContact.x>2.5){sides=vec3(.032,.019,.055);crown=vec3(.18,.085,.28);}
+  else if(actorContact.x>1.5){sides=vec3(.058,.026,.012);crown=vec3(.24,.10,.035);}
+  outgoingLight=mix(outgoingLight,mix(sides,crown,top),actorContact.y*safe);
+  energy=smoothstep(.47,.79,actorRim)*(.25+.55*top);
  }
+
 #endif
  float deposit=smoothstep(.48,.94,vein)*(.25+.52*limb);
  if(actorContact.x<1.5)deposit*=.12;
+#ifdef BRUTE_PLANES
+ if(bruteBody)deposit=0.;
+#endif
  outgoingLight+=accent*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
  if(actorContact.x>1.5 && actorContact.x<2.5){
   // The pale centre of a live coal follows the skin even as a limb turns
   // its edge away from the camera. Its narrow footprint keeps the ink clear.
   float coal=(1.-smoothstep(.09,.39,abs(vein-.30)))*max(.42,edge);
+  #ifdef BRUTE_PLANES
+  if(bruteBody)coal*=smoothstep(.45,.81,actorRim);
+#endif
   outgoingLight+=vec3(4.2,2.9,1.2)*coal*safe*actorContact.y;
  }
 }`}
