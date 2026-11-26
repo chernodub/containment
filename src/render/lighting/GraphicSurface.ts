@@ -275,6 +275,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             float silhouette=abs(dot(normalize(vNormal),normalize(vViewPosition)));
             float rim=step(.14,key)*step(silhouette,min(.40,1.5*fwidth(silhouette)));
             graphicActorLight=mix(graphicActorLight,max(graphicActorLight,localLight*min(1.,lit+.07)),rim);
+            diffuseColor.rgb+=vec3(.034,.042,.061)*rim;
             graphicActorHue*=mix(vec3(1.),vec3(.97,1.04,1.13),rim);
             if(actorBroodForm.w==1. && !broodSac && vActorRegion>=3. && vActorRegion<=5.){
               float ridge=max(rim,step(.85,key));

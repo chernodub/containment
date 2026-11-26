@@ -62,6 +62,10 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
+      if(material.defines?.BROOD_PLANES){
+        shader.vertexShader='varying float broodRestUp;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbroodRestUp=normal.z;');
+        shader.fragmentShader='varying float broodRestUp;\n'+shader.fragmentShader;
+      }
       if(material.defines?.BRUTE_PLANES){
         shader.vertexShader='attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;');
       }
@@ -116,11 +120,11 @@ bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
 bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
 bool broodMark=broodBand==3 || broodBand==4 ||
   ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
-bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && normalize(vNormal).z>.30;
+bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && broodRestUp>.30;
 broodMark=broodMark || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
-  (stalkerSkin && vActorRegion==2. && normalize(vNormal).z>.68) ||
-  (carrierSkin && !broodSac && vActorRegion==4. && normalize(vNormal).z>.80)));
+  (stalkerSkin && vActorRegion==2. && broodRestUp>.68) ||
+  (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80)));
 vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
               spitterSkin?vec3(.35,.51,.095):vec3(.20,.39,.59);
 if(broodFinish && broodBody){
