@@ -367,8 +367,9 @@ void main(){
    float dust=smoothstep(.33,.70,grit+tile.x*.12);
    base=mix(vec3(.006,.010,.015),vec3(.041,.054,.060),face*tile.z);
    base+=vec3(.013)*dust;
-   emit=vec3(.17,.085,.023)*(1.-face)*smoothstep(.29,.65,grit)*material;
-   alpha=material*(.08+.31*smoothstep(.28,.84,r/max(.001,front))*smoothstep(.27,.7,grit));
+   float seam=(1.-smoothstep(.01,.034,tile.y-tile.x))*smoothstep(.42,.62,grit)*material;
+   emit=vec3(.27,.12,.018)*seam*(1.-smoothstep(.28,1.,age));
+   alpha=mix(material*(.08+.23*dust),seam*.22,smoothstep(.20,.95,age));
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
   float settle=fxParam<1.5?1.-smoothstep(.30,.62,age)
