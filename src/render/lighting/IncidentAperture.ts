@@ -1,0 +1,51 @@
+// Optical footprint in ship units, measured along and across the fixture axis.
+type Shape='strip'|'broken ring'|'split fan'|'under-glow'|'spill';
+type Aperture=readonly [Shape,number,number];
+export const incidentApertures:Record<string,Aperture>={
+ 'awakening-bay':['strip',76,15], 'passenger-vault':['under-glow',58,38],
+ 'residential-gallery':['spill',64,42], 'communal-atrium':['broken ring',49,32],
+ 'crew-checkpoint':['strip',53,10], armory:['split fan',62,29],
+ 'freight-hold':['under-glow',82,27], 'breached-loading-bay':['split fan',71,46],
+ 'relay-racks':['strip',92,15], 'transmission-chamber':['split fan',86,27],
+ 'diagnostic-gallery':['under-glow',65,34], 'safety-interlock-station':['broken ring',59,37],
+ 'coolant-plant':['spill',69,24], 'service-shaft-landing':['broken ring',47,39],
+ 'infested-workshop':['split fan',52,42], 'swarm-junction':['spill',57,41],
+ 'shielding-gate':['strip',87,17], 'containment-annulus':['broken ring',72,42],
+ 'manual-control-chamber':['under-glow',41,23], 'overload-floor':['spill',85,41],
+};
+export function incidentTransmission(profile:Aperture,along:number,across:number){
+ const [shape,length,width]=profile;
+ const u=along/length,v=across/width;
+ if(Math.abs(u)>1.2||Math.abs(v)>1.2)return 0;
+ // Distance falloff keeps the aperture legible without turning its centre
+ // into a flat patch. Only the broken ring has its maximum away from the lens.
+ let distance:number;
+ switch(shape){
+  case 'strip':distance=Math.hypot(.80*u,1.45*v);break;
+  case 'broken ring':distance=Math.abs(Math.hypot(u,v)-.53)*1.8;break;
+  case 'split fan':distance=Math.hypot(u+.18,v/(.53+.32*u));break;
+  case 'under-glow':distance=Math.hypot(u*1.28,(v+.16)*.85);break;
+  case 'spill':distance=Math.hypot(u*.92,v+.18*Math.sin(3*u));break;
+ }
+ const edge=Math.max(0,1-Math.max(Math.abs(u),Math.abs(v))**3);
+ const distanceFalloff=Math.exp(-1.85*distance*distance)*edge;
+ const slit=.075+.065*Math.max(0,u);
+ const penumbra=Math.min(1,Math.abs(v-.18*u)/slit);
+ const shadow=u>-.12?.40+.60*penumbra:1;
+ const breakInRing=shape==='broken ring'&&v<-.15&&u>.06?.25:1;
+ return distanceFalloff*shadow*breakInRing;
+}
+
+export function paintIncidentAperture(c:CanvasRenderingContext2D,id:string,color:number){
+ const profile=incidentApertures[id];if(!profile)return;
+ const [,length,width]=profile;
+ const stamp=document.createElement('canvas');stamp.width=64;stamp.height=96;
+ const ctx=stamp.getContext('2d')!,image=ctx.createImageData(64,96);
+ for(let y=0;y<96;y++)for(let x=0;x<64;x++){
+  const offset=4*(y*64+x);
+  image.data[offset]=color>>16;image.data[offset+1]=(color>>8)&255;image.data[offset+2]=color&255;
+  image.data[offset+3]=192*incidentTransmission(profile,(y/96-.5)*length*2.4,(x/64-.5)*width*2.4);
+ }
+ ctx.putImageData(image,0,0);
+ c.drawImage(stamp,-1.2*width,-1.2*length,2.4*width,2.4*length);
+}

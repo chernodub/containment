@@ -61,7 +61,7 @@ export class SceneLighting {
   this.templateArchitecture=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId??'');
   this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.overloadFloor=templateId==='overload-floor';this.composition=roomComposition(templateId);this.valueProfile=roomValueProfile(templateId);this.menuPresentation=false;
   const service=laneWorklight(templateId??'');
-  this.laneLight=service?{x:service.x/32,y:service.y,z:service.z/32,color:service.color,priority:-10,duration:1,distance:4.6,intensity:0}:undefined;
+  this.laneLight=service?{x:service.x/32,y:service.y,z:service.z/32,color:service.color,priority:-10,duration:1,distance:9.2,intensity:0}:undefined;
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
   this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
   this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
@@ -176,7 +176,7 @@ export class SceneLighting {
   if(this.menuPresentation)return;
   if(this.laneLight&&this.tier==='high'&&this.dynamicLights){
    // Match floor illuminance at the source, compensating for the lower lamp height.
-   this.laneLight.intensity=.65*this.lamp.light.intensity*(this.laneLight.y/1.65)**2*(this.blackout?.15:1);
+   this.laneLight.intensity=1.30*this.lamp.light.intensity*(this.laneLight.y/1.65)**2*(this.blackout?.15:1);
    this.pool.attach('lane-worklight',this.laneLight);
   }
   const behavior=this.mood.practical.behavior;

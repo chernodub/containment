@@ -1,3 +1,4 @@
+import {incidentApertures,incidentTransmission} from './IncidentAperture';
 import * as T from 'three';
 import {landmarkHousing,laneWorklight} from './LaneWorklight';
 import type { RoomTemplate } from '../../game/roguelike/types';
@@ -32,6 +33,7 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
   const smooth = (lo: number, hi: number, value: number) => {
     const a = Math.max(0, Math.min(1, (value - lo) / (hi - lo))); return a * a * (3 - 2 * a);
   };
+  const apertureProfile=incidentApertures[t.id];
   const lamps=[laneWorklight(t.id),landmarkHousing(t.id)].flatMap(lamp=>lamp?[{
     x:lamp.x/32,z:lamp.z/32,sin:Math.sin(lamp.angle),cos:Math.cos(lamp.angle),
   }]:[]);
@@ -54,10 +56,7 @@ function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],exitGain:nu
     for(const lamp of lamps){
       const along=(x-lamp.x)*lamp.sin+(z-lamp.z)*lamp.cos;
       const across=(x-lamp.x)*lamp.cos-(z-lamp.z)*lamp.sin;
-      const u=across/(.46+Math.max(0,along)*.34);
-      const beam=smooth(-.30,.14,along)*(1-smooth(.9,3.6,along))*
-        (1-smooth(.56,1.2,Math.abs(u)))*(.64+.36*smooth(.02,.16,Math.abs(Math.abs(u)-.34)));
-      aperture=Math.max(aperture,beam);
+      if(apertureProfile)aperture=Math.max(aperture,incidentTransmission(apertureProfile,along*32,across*32));
     }
     const index = (row * size + column) * 4;
     pixels[index] = Math.round(pool * 255); pixels[index + 1] = Math.round(smooth(.1, 1.7, nearest) * 255);
