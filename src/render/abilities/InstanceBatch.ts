@@ -11,6 +11,18 @@ void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;f
 vec3 posedPosition=position;/* ability shape */
 viewDepth=-(modelViewMatrix*instanceMatrix*vec4(posedPosition,1.)).z;worldHeight=(modelMatrix*instanceMatrix*vec4(posedPosition,1.)).y;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
+// The rectangular fan card wastes both sides of the nozzle. Keep the same
+// local coordinates over a triangle enclosing the native sector.
+const flameFanShape = `
+if(abilityPhase>=${FIRE_FAN_PHASE}.){
+  float halfArc=mod(abilityPhase-${FIRE_FAN_PHASE}.,4.);
+  if(halfArc>0. && halfArc<1.0472){
+    posedPosition.x*=uv.y/cos(halfArc);
+    uvLocal.x=posedPosition.x*.5+.5;
+  }
+}
+`;
+
 /** Fixed GPU inventory: shared mipmapped authored flipbooks and textured constructs. */
 export class InstanceBatch {
   readonly mesh: T.InstancedMesh;
@@ -279,7 +291,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { atlasAvailable: { value: typeof document === 'undefined' ? 1 : 0 }, softDepth: { value: this.atlas.texture }, softCamera: { value: new T.Vector4(.1, 100, 1, 0) }, abilityTime: { value: 0 }, map: { value: this.atlas.texture }, flash: { value: 1 } },
-      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;if(seed>1.&&seed<10.&&position.y>0.)posedPosition.y*=.84+.16*sin(seed+position.x*2.1+position.z*3.7);if(seed>20.&&seed<30.)posedPosition.xz*=mix(1.,.18,max(0.,position.y));posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;if(seed>1.&&seed<10.&&position.y>0.)posedPosition.y*=.84+.16*sin(seed+position.x*2.1+position.z*3.7);if(seed>20.&&seed<30.)posedPosition.xz*=mix(1.,.18,max(0.,position.y));posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : kind === 'flame' ? flameFanShape : ''),
       fragmentShader: fragment,
       transparent: true,
       premultipliedAlpha: kind !== 'spark',
