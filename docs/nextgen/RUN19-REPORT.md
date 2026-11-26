@@ -77,7 +77,7 @@ The cargo decision moves the Field Requisition junction forward one stop, to the
 
 The room position still controls encounter scaling and the supply schedule. The cargo pair still ends with the sector-eight supplies and exclusive rig augment. The workshop pair still has a supply stop after sector 15. Legacy saves keep their original junctions, room sequence and repair rules.
 
-Both bot profiles use the same order rule. Arc takes the Freight Hold rush first on the rocket booking and Loading Bay crossfire first on the plasma booking. Breacher takes the ranged threat first with its shield. Cryo and Pyro take each rush first. The cohort override forces the first listed room at both junctions with `--room-order=direct`, or the second listed room with `--room-order=salvage`.
+Both bot profiles use the same order rule. Arc takes the Freight Hold rush first on the rocket booking and Loading Bay crossfire first on the plasma booking. Breacher takes the ranged threat first with its shield. Cryo and Pyro take each rush first. The cohort override forces Freight Hold and Infested Workshop first with `--room-order=direct`, or Breached Loading Bay and Swarm Junction first with `--room-order=salvage`.
 
 ### Arc route comparison
 
@@ -110,7 +110,7 @@ I inspected all four route images at their native sizes and at 480×270. The nam
 
 The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire order. Its first capture hit the original ship kit preparation timeout. The retry used seed 1729 again and completed with zero capture errors. I inspected both sizes. [Arrival](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay.png) · [480×270](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay-480.png)
 
-The desktop Continue flow also reached Breached Loading Bay at sector 8. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
+The desktop Continue flow reached and cleared Breached Loading Bay at sector 8 with zero runtime errors. The runner recorded a loading hold just over five seconds. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
 
 The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. The first four completed Breacher trials with Freight Hold and Infested Workshop forced first yielded one completion and three deaths, in sectors 10, 17 and 20. This is a partial result under host contention. The first worker finished after about 12 minutes of wall time. Full totals require all twelve trials per rig per mode.
 
