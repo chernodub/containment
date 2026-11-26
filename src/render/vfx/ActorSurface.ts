@@ -123,12 +123,14 @@ bool broodMark=broodBand==3 || broodBand==4 ||
 bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && broodRestUp>.30;
 broodMark=broodMark || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
-  (stalkerSkin && vActorRegion==2. && broodRestUp>.68) ||
+  (stalkerSkin && ((vActorRegion==2. && broodRestUp>.68) ||
+                   (vActorRegion==1. && abs(actorPosition.y)<.27 && broodRestUp>.25) ||
+                   (vActorRegion==3. && broodRestUp>.72))) ||
   (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.37)));
 vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
-              spitterSkin?vec3(.35,.51,.095):vec3(.20,.39,.59);
+              spitterSkin?vec3(.35,.51,.095):vec3(.16,.51,.89);
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
   diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
