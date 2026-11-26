@@ -190,7 +190,10 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
   base*=mix(.36,1.,band);
-  emit=emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
+  float lip=1.-smoothstep(.055,.22,abs(front-r-.14));
+  alpha=max(alpha,lip*.66);
+  base*=smoothstep(.015,.085,cells.y-cells.x);
+  emit=vec3(.12,.64,.84)*lip+emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
  }
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
@@ -347,6 +350,7 @@ void main(){
   float r=fxLocal.y,front=fxRange*smoothstep(0.,.055,age);
   if(fxParam<1.5){
    frostBed(fxWorld.xz,r,front,age,false,base,emit,alpha);
+   emit+=vec3(.12,1.5,2.)*(1.-smoothstep(.22,.95,r))*(1.-smoothstep(.05,.18,age));
   }else{
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
@@ -362,7 +366,7 @@ void main(){
    alpha=material*(.08+.31*smoothstep(.28,.84,r/max(.001,front))*smoothstep(.27,.7,grit));
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
-  float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)
+  float settle=fxParam<1.5?1.-smoothstep(.30,.62,age)
     :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.60,2.2,age));
   alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
  }else if(m<4.5){
@@ -582,8 +586,8 @@ void main(){
  // Ground sheets keep a flat, quiet tint underneath the warning.
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
- if(m>13.5 && m<14.5 && fxArc<1.5){
-  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0018,-.004);
+ if((m>13.5 && m<14.5 && fxArc<1.5)||(m>3.5 && m<4.5 && fxParam>.5 && fxParam<1.5)){
+  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0025,-.010);
   float backMask=texture2D(abilityPriorityMap,behind).r;
   float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
