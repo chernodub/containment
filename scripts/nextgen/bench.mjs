@@ -1,5 +1,5 @@
-import {perf46Arms,installPerf46Arm,finishPerf46Arm} from './perf46-ablations.mjs';
 #!/usr/bin/env node
+import {perf46Arms,installPerf46Arm,finishPerf46Arm} from './perf46-ablations.mjs';
 import {attributeCpuSelf,summarizeCpuClock} from './bench-cpu.mjs';
 import {configureCaptureGraphics} from './capture-graphics.mjs';
 /** Sequential production-browser benchmark. No timing assertions on a shared host. */
