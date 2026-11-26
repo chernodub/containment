@@ -282,8 +282,8 @@ export function chooseActions(s) {
   if (slots?.tactical?.ready && tacticalOpportunity) keys.push('q');
   const walls = s.abilities.deployables.filter(entity => entity.kind === 'ice-wall');
   const shatter = walls.some(wall => s.enemies.some(enemy => enemy.visible && distance(wall, enemy) <= 110));
-  const usefulBulwark=s.rig==='breacher'&&s.abilityAims?.power?.targets.some(id=>
-    s.enemies.some(enemy=>enemy.id===id&&(enemy.type==='spitter'||distance(enemy,s.player)<245)));
+  const usefulBulwark = s.rig === 'breacher' && s.abilityAims?.power?.targets.some(id =>
+    s.enemies.some(enemy => enemy.id === id && (enemy.type === 'spitter' || distance(enemy, s.player) < 245)));
   if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && (s.enemies.length >= 2 || usefulBulwark)) keys.push('f');
   const earlyFight = s.node?.depth < 4 && s.enemies.filter(enemy => enemy.visible && distance(enemy, s.player) < 350).length >= 3;
   if (slots?.overdrive?.ready && (earlyFight || s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');

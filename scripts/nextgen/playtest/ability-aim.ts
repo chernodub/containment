@@ -37,8 +37,8 @@ function circleIntersections(a: Point, b: Point, ra: number, rb = ra): Point[] {
 export function chooseAbilityAim(definition: AbilityDefinition, player: Point, observed: readonly AimEnemy[], queries: AimQueries): AbilityAim | null {
   const enemies = observed.filter(e => e.health > 0 && e.visible && e.clear && e.vulnerable !== false && queries.visible(player, e)).sort((a, b) => a.id - b.id);
   if (!enemies.length) return null;
-  const bulwark=definition.id==='bulwark';
-  const plow=bulwark&&queries.has?.('siege-plow');
+  const bulwark = definition.id === 'bulwark';
+  const plow = bulwark && queries.has?.('siege-plow');
   const road=definition.id==='glacier'&&queries.has?.('ice-road');
   const shape = road?{kind:'wall' as const,length:280,thickness:100}:definition.shape;
   const candidates: Point[] = [];
@@ -143,14 +143,15 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       if (shape.kind === 'line' || shape.kind === 'dash') return along >= 0 && along <= (shape.kind === 'line' ? shape.length : shape.distance) && Math.abs(across) <= shape.width / 2;
       if (shape.kind === 'wall') {
         const wx = enemy.x - p.x, wy = enemy.y - p.y;
-        if(bulwark){
-          const forward=wx*Math.cos(angle)+wy*Math.sin(angle);
-          const lateral=Math.abs(-wx*Math.sin(angle)+wy*Math.cos(angle));
-          // Count approaching enemies and firing lanes beyond the barrier,
-          // not just bodies already standing inside its thin footprint.
-          const reach=plow?230:340;
-          return forward>=-shape.thickness/2&&forward<=reach&&lateral<=shape.length/2&&
-            (plow?queries.traverse(p,pointAt(p,angle,Math.max(0,forward-20)),shape.thickness/2):queries.visible(p,enemy));
+        if (bulwark) {
+          const forward = wx * Math.cos(angle) + wy * Math.sin(angle);
+          const lateral = Math.abs(-wx * Math.sin(angle) + wy * Math.cos(angle));
+          // A barrier intercepts approaches and firing lanes beyond its thin footprint.
+          const reach = plow ? 230 : 340;
+          return forward >= -shape.thickness / 2 && forward <= reach && lateral <= shape.length / 2 &&
+            (plow
+              ? queries.traverse(p, pointAt(p, angle, Math.max(0, forward - 20)), shape.thickness / 2)
+              : queries.visible(p, enemy));
         }
         if(road)return Math.abs(wx*Math.cos(angle)+wy*Math.sin(angle))<=140&&Math.abs(-wx*Math.sin(angle)+wy*Math.cos(angle))<=50&&queries.visible(p,enemy);
         return Math.abs(wx * Math.cos(angle) + wy * Math.sin(angle)) <= shape.thickness / 2 && Math.abs(-wx * Math.sin(angle) + wy * Math.cos(angle)) <= shape.length / 2 && queries.visible(p, enemy);
