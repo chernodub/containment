@@ -124,7 +124,9 @@ bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && broodRestUp>.30;
 broodMark=broodMark || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
   (stalkerSkin && vActorRegion==2. && broodRestUp>.68) ||
-  (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80)));
+  (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80) ||
+  (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
+   abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.37)));
 vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
               spitterSkin?vec3(.35,.51,.095):vec3(.20,.39,.59);
 if(broodFinish && broodBody){
@@ -271,7 +273,9 @@ float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vVi
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
 if(broodFinish && broodMark){
-  lanternEmission=broodInk*.69*actorStageLight*actorCamouflage;
+  // Keep the identification mark visible through the resting Stalker's camouflage.
+  float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
+  lanternEmission=broodInk*.78*mix(.85,1.,actorStageLight)*markVisibility;
   totalEmissiveRadiance=lanternEmission;
 }
 #endif
