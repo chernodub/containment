@@ -32,12 +32,7 @@ try{
     ? shot.subjects?.some(subject=>subject.kind==='enemy'||subject.kind==='pod')
     : !filter||filter.test(name));
   const portraits=entries.filter(([,shot])=>shot.source==='selection24');
-  if(portraits.length){
-    const blender=(script,args)=>execFileSync('blender',['-b','--python-exit-code','1','-P','tools/assets/k12-hero/'+script,'--',...args],{stdio:'inherit'});
-    blender('marine.py',['--hero','--portrait-kit']);
-    blender('selection24.py',['--out',out,'--rig',...portraits.map(([,shot])=>shot.rig)]);
-  }
-  if(entries.some(([,shot])=>shot.source!=='selection24')){
+  if(entries.length){
     await new Promise((done,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',done);});
     browser=await chromium.launch({channel:'chromium',headless:true,args:['--no-sandbox',`--use-angle=${process.platform==='darwin'?'metal':'gl'}`,'--enable-gpu','--ignore-gpu-blocklist']});
     page=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
@@ -48,6 +43,27 @@ try{
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/?debug=1&seed=1729`);
     await page.waitForFunction(()=>!!window.__containmentDebug);
+  }
+  if(portraits.length){
+    const poseDir=resolve('artifacts/nextgen/title32-studio');
+    await mkdir(poseDir,{recursive:true});
+    const weapons={breacher:'shotgun',cryo:'rifle',pyro:'rocket',arc:'plasma'};
+    await page.evaluate(()=>window.__containmentDebug.gotoRoom('awakening-bay',{rig:'breacher'}));
+    for(const [,shot] of portraits){
+      const carry=await page.evaluate(subject=>window.__containmentDebug.studio({
+        width:1,height:1,span:1,subjects:[subject],exportCarry:true
+      }),{kind:'marine',rig:shot.rig,weapon:weapons[shot.rig]});
+      await writeFile(resolve(poseDir,shot.rig+'-carry.json'),carry);
+    }
+    if(portraits.length===entries.length){
+      await browser.close();
+      browser=undefined;
+    }
+    const blender=(script,args)=>execFileSync('blender',['-b','-t','6','--python-exit-code','1','-P','tools/assets/k12-hero/'+script,'--',...args],{stdio:'inherit'});
+    blender('marine.py',['--hero','--portrait-kit']);
+    blender('selection24.py',['--out',out,'--rig',...portraits.map(([,shot])=>shot.rig)]);
+    execFileSync('python3',['tools/assets/u10-keyart/ink_contour.py',
+      ...portraits.map(([,shot])=>resolve(out,'portrait-'+shot.rig+'.png'))],{stdio:'inherit'});
   }
   for(const [name,shot] of entries){
     if(!/^[a-z0-9-]+$/.test(name))throw Error(`Invalid shot name ${name}`);

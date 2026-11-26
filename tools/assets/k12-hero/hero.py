@@ -99,7 +99,7 @@ def _curl(arm, side, amount, axis='X'):
             bpy.context.view_layer.update()
 
 
-def stage_hero(rig='breacher', weapon='rifle', brace=True, curl=40.0, axis='X'):
+def stage_hero(rig='breacher', weapon='rifle', brace=True, curl=40.0, axis='X', carry=None):
     """Append the hero into the current scene; returns (objects, meshes, armature)."""
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=str(HERO_GLB))
@@ -111,9 +111,15 @@ def stage_hero(rig='breacher', weapon='rifle', brace=True, curl=40.0, axis='X'):
         o.hide_render = o.name.startswith('k10-rig-') and not o.name.startswith('k10-rig-' + rig)
     document, binary = read_glb(K10 / 'marine-contract.glb')
     rest = pose_matrices(document, binary)
-    posed = pose_matrices(document, binary, CLIP[weapon])
+    if carry is None:
+        posed = pose_matrices(document, binary, CLIP[weapon])
+    else:
+        posed = {}
+        for name in rest:
+            values = carry[name.replace('.', '')]
+            posed[name] = Matrix([values[i:i+4] for i in (0,4,8,12)]).transposed()
     apply_pose(arm, rest, posed)
-    for side in ('R', 'L'):
+    for side in (() if carry is not None else ('R','L')):
         _curl(arm, side, curl if side == 'R' else curl * LEFT_GAIN, axis if side == 'R' else LEFT_AXIS)
     pts = deformed_points(meshes)
     low = min(p.z for p in pts); factor = 2.1 / (max(p.z for p in pts) - low)

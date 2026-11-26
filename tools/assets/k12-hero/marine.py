@@ -55,23 +55,18 @@ def build(joints, tails, high):
     helmet = Helmet(SELECTED, high, col)
     for part in helmet.build():
         suit.groups['body'].append(part)
+    if high and '--portrait-kit' in ARGS:
+        suit.groups['body'].extend(helmet.crown_chevron())
     for rig in RIGS:
         suit.build_rig(rig)
         if high and '--portrait-kit' in ARGS:
             from selection_kit import extend
             extend(suit, rig)
-            if rig == 'breacher':
-                path = kit.surface_path(helmet.bvh, helmet.front,
-                    [(-70, 12), (-42, 9), (0, -5), (42, 9), (70, 12)],
-                    .025, closed=False, samples=48)
-                mark = kit.ribbon('Breacher visor chevron', path, .009, .0015,
-                                  closed=False, collection=col)
-                suit.groups[rig].append(helmet.add(mark, 'glow'))
         elif '--portrait-kit' not in ARGS:   # HERO24: game-scale selector kit on the play model
             import game_kit
             game_kit.extend(suit, rig)
         # HERO14: rig-coloured crown stripes either side of the keel (top-down identity).
-        for side in ((-1, 1) if high else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
+        for side in ((-1, 1) if high and '--portrait-kit' not in ARGS else ()):   # HERO19: no crown stripes in the game LOD (read as a gold headband)
             stripe = [(side * 10.0, 36), (side * 28, 30), (side * 30, -62), (side * 10.5, -72)]   # SHADE15: wider crown stripes
             obj = helmet.plate(f'{rig} crown stripe {side}', stripe, M.RIG_COLOUR[rig], helmet.top, .0262, .004, .002, 'plain', 2.5)
             helmet.parts.remove(obj); suit.groups[rig].append(obj)

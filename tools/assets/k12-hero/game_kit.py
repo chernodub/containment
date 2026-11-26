@@ -75,12 +75,11 @@ def extend(suit, rig, portrait=False):
                              .014, origin + n * .052, n, -along, suit.col)
             kit.bevel(face, .006, 3)
             suit.add(face, 'gunmetal', 'forearm.L')
-        if not portrait:
-            # Raised chevron follows the broad face in the same forearm skin.
-            chevron = [(-.16, .085), (0, -.022), (.16, .085), (.16, .030), (0, -.080), (-.16, .030)]
-            obj = kit.prism('ram crest', chevron, .012, origin + n * .061, n, -along, suit.col)
-            suit.add(obj, 'steel', 'forearm.L')
-        for y in ((-.13, .0, .13) if portrait else (-.25, .25)):
+        # Raised chevron follows the broad face in the same forearm skin.
+        chevron = [(-.16, .085), (0, -.022), (.16, .085), (.16, .030), (0, -.080), (-.16, .030)]
+        obj = kit.prism('ram crest', chevron, .012, origin + n * (.069 if portrait else .061), n, -along, suit.col)
+        suit.add(obj, 'steel', 'forearm.L')
+        for y in ((-.19, .19) if portrait else (-.25, .25)):
             obj = kit.prism('ram impact cleat', [(-.085, -.016), (.085, -.016), (.085, .016), (-.085, .016)], .014,
                             cleat_origin + cleat_up * y, n, -along, suit.col)
             if portrait:

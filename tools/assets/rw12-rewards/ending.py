@@ -10,7 +10,8 @@ ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'tools/assets/u10-keyart'))
 from actors import material, area_light
 sys.path.insert(0,str(ROOT/'tools/assets/k12-hero'))
-from hero import stage_hero
+import hero
+import ink
 sys.path.insert(0,str(ROOT/'tools/assets/k10-marine'))
 from render_device import choose_render_device
 args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
@@ -91,7 +92,8 @@ line('Warning escaping into space',feed+axis*.3,feed+axis*37,.024,cyan)
 box('Final transmission console',(1.4,-.4,.7),(1,.65,1.4),dark)
 console=box('Last console light',(1.4,-.4,1.43),(.85,.5,.035),cyan,.01);console.rotation_euler.x=.15
 # Render-only pose; the native shipping asset and its generator are untouched.
-objects,meshes,armature=stage_hero('breacher',brace=False,curl=8)
+hero.HERO_GLB=hero.HERO_GLB.with_name('marine-selection.glb')
+objects,meshes,armature=hero.stage_hero('breacher',brace=False,curl=8)
 for o in objects:
     if o.name.startswith('portrait held'):
         o.hide_render=True
@@ -257,5 +259,7 @@ area_light('Distant starlight',(-7,-4,10),1100,8,(.31,.48,.65),target=(0,-5,0))
 area_light('Dish rim',(8,-5,6),900,5,(.5,.76,1),target=(4,0,3))
 bpy.ops.object.camera_add(location=(12,16,6.8));camera=bpy.context.object;scene.camera=camera
 camera.rotation_euler=(Vector((-1,-4,1.8))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.type='PERSP';camera.data.lens=44
-scene.render.filepath=str(OUT/'composition.png');bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'ending.blend'));bpy.ops.render.render(write_still=True)
+ink.draw(scene,objects,Vector((.52,.70,.78)),240,embedded=True)
+scene.render.filepath=str(OUT/'composition.png')
+bpy.ops.render.render(write_still=True)
 print('RW12 ENDING',OUT,flush=True)

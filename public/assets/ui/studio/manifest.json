@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 224208,
+    "bytes": 161751,
     "shot": {
       "source": "selection24",
       "rig": "breacher",
@@ -12,7 +12,7 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 228303,
+    "bytes": 129864,
     "shot": {
       "source": "selection24",
       "rig": "cryo",
@@ -23,7 +23,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 235051,
+    "bytes": 155542,
     "shot": {
       "source": "selection24",
       "rig": "pyro",
@@ -34,7 +34,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 219444,
+    "bytes": 153527,
     "shot": {
       "source": "selection24",
       "rig": "arc",
@@ -45,7 +45,7 @@
   },
   "reward-reserve-thruster": {
     "file": "reward-reserve-thruster.webp",
-    "bytes": 11642,
+    "bytes": 11944,
     "shot": {
       "width": 640,
       "height": 360,
@@ -101,7 +101,7 @@
   },
   "reward-slide-loader": {
     "file": "reward-slide-loader.webp",
-    "bytes": 11642,
+    "bytes": 11944,
     "shot": {
       "width": 640,
       "height": 360,
@@ -157,7 +157,7 @@
   },
   "reward-tactical-salvage": {
     "file": "reward-tactical-salvage.webp",
-    "bytes": 17580,
+    "bytes": 18028,
     "shot": {
       "width": 640,
       "height": 360,
@@ -213,7 +213,7 @@
   },
   "reward-drive-dynamo": {
     "file": "reward-drive-dynamo.webp",
-    "bytes": 29706,
+    "bytes": 29634,
     "shot": {
       "width": 640,
       "height": 360,
@@ -269,7 +269,7 @@
   },
   "reward-afterquake": {
     "file": "reward-afterquake.webp",
-    "bytes": 11972,
+    "bytes": 13122,
     "shot": {
       "width": 640,
       "height": 360,
@@ -325,7 +325,7 @@
   },
   "reward-reinforced-bulwark": {
     "file": "reward-reinforced-bulwark.webp",
-    "bytes": 13044,
+    "bytes": 13360,
     "shot": {
       "width": 640,
       "height": 360,
@@ -398,7 +398,7 @@
   },
   "reward-spreading-nova": {
     "file": "reward-spreading-nova.webp",
-    "bytes": 17618,
+    "bytes": 18240,
     "shot": {
       "width": 640,
       "height": 360,
@@ -454,7 +454,7 @@
   },
   "reward-twin-glacier": {
     "file": "reward-twin-glacier.webp",
-    "bytes": 16928,
+    "bytes": 16844,
     "shot": {
       "width": 640,
       "height": 360,
@@ -543,7 +543,7 @@
   },
   "reward-scorched-fan": {
     "file": "reward-scorched-fan.webp",
-    "bytes": 12652,
+    "bytes": 12828,
     "shot": {
       "width": 640,
       "height": 360,
@@ -600,7 +600,7 @@
   },
   "reward-napalm-triplet": {
     "file": "reward-napalm-triplet.webp",
-    "bytes": 12474,
+    "bytes": 12786,
     "shot": {
       "width": 640,
       "height": 360,
@@ -702,7 +702,7 @@
   },
   "reward-forked-overload": {
     "file": "reward-forked-overload.webp",
-    "bytes": 13812,
+    "bytes": 13788,
     "shot": {
       "width": 640,
       "height": 360,
@@ -758,7 +758,7 @@
   },
   "reward-twin-pylon": {
     "file": "reward-twin-pylon.webp",
-    "bytes": 16622,
+    "bytes": 16640,
     "shot": {
       "width": 640,
       "height": 360,
@@ -847,7 +847,7 @@
   },
   "reward-siege-plow": {
     "file": "reward-siege-plow.webp",
-    "bytes": 13004,
+    "bytes": 13360,
     "shot": {
       "width": 640,
       "height": 360,
@@ -920,7 +920,7 @@
   },
   "reward-fault-line": {
     "file": "reward-fault-line.webp",
-    "bytes": 12112,
+    "bytes": 13102,
     "shot": {
       "width": 640,
       "height": 360,
@@ -992,7 +992,7 @@
   },
   "reward-shard-harvest": {
     "file": "reward-shard-harvest.webp",
-    "bytes": 13822,
+    "bytes": 14014,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1081,7 +1081,7 @@
   },
   "reward-ice-road": {
     "file": "reward-ice-road.webp",
-    "bytes": 16396,
+    "bytes": 16436,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1153,7 +1153,7 @@
   },
   "reward-ember-relay": {
     "file": "reward-ember-relay.webp",
-    "bytes": 12372,
+    "bytes": 12460,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1210,7 +1210,7 @@
   },
   "reward-meltdown-core": {
     "file": "reward-meltdown-core.webp",
-    "bytes": 17600,
+    "bytes": 15300,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1282,7 +1282,7 @@
   },
   "reward-pilgrim-pylon": {
     "file": "reward-pilgrim-pylon.webp",
-    "bytes": 14588,
+    "bytes": 14664,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1355,7 +1355,7 @@
   },
   "reward-live-wire": {
     "file": "reward-live-wire.webp",
-    "bytes": 14066,
+    "bytes": 14098,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1422,7 +1422,7 @@
   },
   "reward-kinetic": {
     "file": "reward-kinetic.webp",
-    "bytes": 11916,
+    "bytes": 13182,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1478,7 +1478,7 @@
   },
   "reward-cryo": {
     "file": "reward-cryo.webp",
-    "bytes": 17762,
+    "bytes": 18040,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1534,7 +1534,7 @@
   },
   "reward-pyro": {
     "file": "reward-pyro.webp",
-    "bytes": 12094,
+    "bytes": 12234,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1591,7 +1591,7 @@
   },
   "reward-arc": {
     "file": "reward-arc.webp",
-    "bytes": 13848,
+    "bytes": 13806,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1647,7 +1647,7 @@
   },
   "reward-acid": {
     "file": "reward-acid.webp",
-    "bytes": 13898,
+    "bytes": 13870,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1703,7 +1703,7 @@
   },
   "reward-universal": {
     "file": "reward-universal.webp",
-    "bytes": 11628,
+    "bytes": 11930,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1759,7 +1759,7 @@
   },
   "reward-recovery": {
     "file": "reward-recovery.webp",
-    "bytes": 17776,
+    "bytes": 18034,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1815,7 +1815,7 @@
   },
   "reward-demolition": {
     "file": "reward-demolition.webp",
-    "bytes": 12070,
+    "bytes": 13148,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1871,7 +1871,7 @@
   },
   "reward-executioner": {
     "file": "reward-executioner.webp",
-    "bytes": 17734,
+    "bytes": 18254,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1927,7 +1927,7 @@
   },
   "reward-wildfire": {
     "file": "reward-wildfire.webp",
-    "bytes": 12586,
+    "bytes": 12618,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1984,7 +1984,7 @@
   },
   "reward-cycling": {
     "file": "reward-cycling.webp",
-    "bytes": 13744,
+    "bytes": 13694,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2292,7 +2292,7 @@
   },
   "lesson-crawler": {
     "file": "lesson-crawler.webp",
-    "bytes": 8890,
+    "bytes": 9208,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2323,7 +2323,7 @@
   },
   "lesson-stalker": {
     "file": "lesson-stalker.webp",
-    "bytes": 7808,
+    "bytes": 8462,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2354,7 +2354,7 @@
   },
   "lesson-spitter": {
     "file": "lesson-spitter.webp",
-    "bytes": 11964,
+    "bytes": 12986,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2392,7 +2392,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 11476,
+    "bytes": 11934,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2423,7 +2423,7 @@
   },
   "lesson-carrier": {
     "file": "lesson-carrier.webp",
-    "bytes": 10124,
+    "bytes": 11412,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2454,7 +2454,7 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 11970,
+    "bytes": 12168,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2486,7 +2486,7 @@
   },
   "lesson-matron": {
     "file": "lesson-matron.webp",
-    "bytes": 10212,
+    "bytes": 10982,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2518,7 +2518,7 @@
   },
   "route-awakening-bay": {
     "file": "route-awakening-bay.webp",
-    "bytes": 11778,
+    "bytes": 12432,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2543,7 +2543,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 12692,
+    "bytes": 12834,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2568,7 +2568,7 @@
   },
   "route-residential-gallery": {
     "file": "route-residential-gallery.webp",
-    "bytes": 15342,
+    "bytes": 17258,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2593,7 +2593,7 @@
   },
   "route-communal-atrium": {
     "file": "route-communal-atrium.webp",
-    "bytes": 18194,
+    "bytes": 18786,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2618,7 +2618,7 @@
   },
   "route-crew-checkpoint": {
     "file": "route-crew-checkpoint.webp",
-    "bytes": 20822,
+    "bytes": 20812,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2643,7 +2643,7 @@
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 21634,
+    "bytes": 25136,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2669,7 +2669,7 @@
   },
   "route-freight-hold": {
     "file": "route-freight-hold.webp",
-    "bytes": 11496,
+    "bytes": 11952,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 22212,
+    "bytes": 22706,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2719,7 +2719,7 @@
   },
   "route-relay-racks": {
     "file": "route-relay-racks.webp",
-    "bytes": 17226,
+    "bytes": 17762,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2745,7 +2745,7 @@
   },
   "route-transmission-chamber": {
     "file": "route-transmission-chamber.webp",
-    "bytes": 12346,
+    "bytes": 11742,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2770,7 +2770,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 14002,
+    "bytes": 13992,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2795,7 +2795,7 @@
   },
   "route-safety-interlock-station": {
     "file": "route-safety-interlock-station.webp",
-    "bytes": 11182,
+    "bytes": 11734,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2820,7 +2820,7 @@
   },
   "route-coolant-plant": {
     "file": "route-coolant-plant.webp",
-    "bytes": 21004,
+    "bytes": 20932,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2845,7 +2845,7 @@
   },
   "route-service-shaft-landing": {
     "file": "route-service-shaft-landing.webp",
-    "bytes": 16898,
+    "bytes": 18674,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2870,7 +2870,7 @@
   },
   "route-infested-workshop": {
     "file": "route-infested-workshop.webp",
-    "bytes": 10266,
+    "bytes": 10908,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2895,7 +2895,7 @@
   },
   "route-swarm-junction": {
     "file": "route-swarm-junction.webp",
-    "bytes": 23066,
+    "bytes": 26024,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2920,7 +2920,7 @@
   },
   "route-shielding-gate": {
     "file": "route-shielding-gate.webp",
-    "bytes": 19064,
+    "bytes": 19570,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2945,7 +2945,7 @@
   },
   "route-containment-annulus": {
     "file": "route-containment-annulus.webp",
-    "bytes": 10984,
+    "bytes": 11500,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2970,7 +2970,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 12252,
+    "bytes": 12166,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2995,7 +2995,7 @@
   },
   "route-overload-floor": {
     "file": "route-overload-floor.webp",
-    "bytes": 9982,
+    "bytes": 10652,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3092,7 +3092,7 @@
   },
   "route-warden-cache": {
     "file": "route-warden-cache.webp",
-    "bytes": 28652,
+    "bytes": 30088,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3153,7 +3153,7 @@
   },
   "route-workshop-siege-plow": {
     "file": "route-workshop-siege-plow.webp",
-    "bytes": 20174,
+    "bytes": 21544,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3230,7 +3230,7 @@
   },
   "route-workshop-fault-line": {
     "file": "route-workshop-fault-line.webp",
-    "bytes": 20234,
+    "bytes": 21494,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3306,7 +3306,7 @@
   },
   "route-workshop-shard-harvest": {
     "file": "route-workshop-shard-harvest.webp",
-    "bytes": 21552,
+    "bytes": 22076,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3399,7 +3399,7 @@
   },
   "route-workshop-ice-road": {
     "file": "route-workshop-ice-road.webp",
-    "bytes": 29450,
+    "bytes": 29250,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3475,7 +3475,7 @@
   },
   "route-workshop-ember-relay": {
     "file": "route-workshop-ember-relay.webp",
-    "bytes": 20188,
+    "bytes": 20498,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3536,7 +3536,7 @@
   },
   "route-workshop-meltdown-core": {
     "file": "route-workshop-meltdown-core.webp",
-    "bytes": 25694,
+    "bytes": 22388,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3612,7 +3612,7 @@
   },
   "route-workshop-pilgrim-pylon": {
     "file": "route-workshop-pilgrim-pylon.webp",
-    "bytes": 24762,
+    "bytes": 24624,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3689,7 +3689,7 @@
   },
   "route-workshop-live-wire": {
     "file": "route-workshop-live-wire.webp",
-    "bytes": 22264,
+    "bytes": 22086,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3780,7 +3780,7 @@
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 9494,
+    "bytes": 9506,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3828,7 +3828,7 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 27346,
+    "bytes": 27536,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3891,7 +3891,7 @@
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 27110,
+    "bytes": 30112,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3968,7 +3968,7 @@
   },
   "route-legacy-queen": {
     "file": "route-legacy-queen.webp",
-    "bytes": 10164,
+    "bytes": 10152,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3988,7 +3988,7 @@
   },
   "route-threat-crawler": {
     "file": "route-threat-crawler.webp",
-    "bytes": 8858,
+    "bytes": 9634,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4008,7 +4008,7 @@
   },
   "route-threat-stalker": {
     "file": "route-threat-stalker.webp",
-    "bytes": 12342,
+    "bytes": 14032,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4028,7 +4028,7 @@
   },
   "route-threat-spitter": {
     "file": "route-threat-spitter.webp",
-    "bytes": 10822,
+    "bytes": 10418,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4048,7 +4048,7 @@
   },
   "route-threat-brute": {
     "file": "route-threat-brute.webp",
-    "bytes": 9498,
+    "bytes": 9496,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4068,7 +4068,7 @@
   },
   "route-threat-carrier": {
     "file": "route-threat-carrier.webp",
-    "bytes": 9540,
+    "bytes": 11518,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4109,7 +4109,7 @@
   },
   "route-threat-matron": {
     "file": "route-threat-matron.webp",
-    "bytes": 8350,
+    "bytes": 10862,
     "shot": {
       "width": 1120,
       "height": 476,

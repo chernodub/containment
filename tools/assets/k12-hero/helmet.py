@@ -129,6 +129,32 @@ class Helmet:
         self.ears(o)
         return self.parts
 
+    def crown_chevron(self):
+        """Project the play shader's bind-space brow onto the close-up crown plates."""
+        from mathutils.bvhtree import BVHTree
+        vertices, faces = [], []
+        for part in self.parts:
+            start = len(vertices)
+            vertices.extend(part.matrix_world @ v.co for v in part.data.vertices)
+            faces.extend(tuple(start+i for i in f.vertices) for f in part.data.polygons)
+        hull = BVHTree.FromPolygons(vertices, faces)
+        marks = []
+        # ActorSurface's forward axis is -X. The portrait builder turns it into +Y.
+        for width, lift, role in ((.39,.003,'visor'), (.19,.005,'glow')):
+            grid, quads = [], []
+            for i in range(65):
+                across = .90*(i/32-1)
+                center = .74-.72*abs(across)
+                for j in range(5):
+                    x,y = across/6.8,(center+width*(j/2-1))/6.8
+                    hit, _, _, _ = hull.ray_cast(V((x,y,2.4)),V((0,0,-1)))
+                    grid.append((x,y,(hit.z if hit else CENTER.z)+lift))
+                    k = i*5+j
+                    if i and j:
+                        quads.append((k-6,k-1,k,k-5))
+            marks.append(self.add(kit.new_mesh('crown chevron '+role,grid,quads,self.col),role))
+        return marks
+
     def visor(self, outline):
         grown = kit.offset_polygon(kit.fillet(outline, 5, 3), -3.0)
         # HERO19: lens brought forward (10 mm) so the cyan face shows from the high game camera.

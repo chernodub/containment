@@ -30,7 +30,7 @@ type Subject = Mark & (
   | {kind:'light'; color:number; intensity:number; distance:number}
 );
 export type StudioShot = {
-  width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
+  exportCarry?:boolean; width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
   cameraDirection?:[number,number,number]; breachLight?:boolean;
   card?:boolean; subjectHeight?:number; frameSubject?:boolean; webpQuality?:number;
@@ -41,6 +41,24 @@ export type StudioShot = {
 };
 
 export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:StudioShot) {
+  if(shot.exportCarry){
+    const subject=shot.subjects[0];
+    if(subject.kind!=='marine')throw Error('A carry study needs a marine');
+    const actor=marine();
+    try{
+      actor.setRig?.(subject.rig); actor.equip?.(subject.weapon);
+      actor.setMotionSeed?.(1729); actor.setMotionOptions?.(1,true);
+      for(let tick=0;tick<60;tick++)actor.animate(tick/60,0,0,0);
+      actor.syncWeaponPose?.();
+      actor.root.updateMatrixWorld(true);
+      // The contract root supplies glTF's Z-up conversion. Blender's correction
+      // expects each joint in contract space before that root transform.
+      const source=actor.root.getObjectByName('origin')!.parent!;
+      const inverse=source.matrixWorld.clone().invert(), poses:Record<string,number[]>={};
+      source.traverse(joint=>{poses[joint.name]=new T.Matrix4().multiplyMatrices(inverse,joint.matrixWorld).toArray();});
+      return JSON.stringify(poses);
+    }finally{actor.stop?.();disposeModel(actor.root);}
+  }
   const {renderer,scene}=owner;
   const post=owner['post'], abilities=owner['interimAbilities'];
   const postTime=post['time'];
