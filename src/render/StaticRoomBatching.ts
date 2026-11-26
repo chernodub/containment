@@ -22,10 +22,11 @@ const rigidEquipmentOwners = new Set([
   'l8-equipment', 'armory-carousel-and-issue-bay',
   'safety-recorder', 'disconnected-ai-housing', 'split-contactor-battery',
 ]);
-// The Safety Interlock equipment pieces have descriptive leaf names only.
+// These fixed equipment pieces have descriptive leaf names only.
 // Their original names remain available to collider consumers in collider parts.
 const interchangeableEquipmentParts = new Set([
   'safety-recorder', 'disconnected-ai-housing', 'split-contactor-battery',
+  'armory-carousel-and-issue-bay',
 ]);
 const sharedRoomFinishKeys = new Map<T.Material, string>(
   Object.values(MAT).map(material => [material, material.customProgramCacheKey()]),
