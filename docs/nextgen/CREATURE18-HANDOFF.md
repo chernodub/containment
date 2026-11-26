@@ -1338,3 +1338,37 @@ Crew Checkpoint combat, Cryo, fixed 300 ticks per tier, gave the following draw 
 The production build passed. Benchmark reports are under `artifacts/nextgen/palette38-{before,shipped}-profile/benchmark.json`.
 
 Native Cryo, seed 1729, cleared eight rooms with zero errors and zero runner defects in `artifacts/nextgen/playtest/palette38-replay/report.json`. The preceding eight-room clear had zero runtime errors and one 5.38-second Passenger Vault loading observation. The replay passed that room without a loading defect.
+
+### PALETTE38 mark revision
+
+The Crawler carries a tapered hot coral-pink dorsal stripe, separate biting hooks and a soft fuchsia floor pool. The Spitter’s lime spine meets its mouth. The Stalker’s shoulder and blade use the ice-blue spill, and Carrier and Matron seams and joint marks spill violet. Each living brood actor reuses its existing contact instance. Blackout retains its original contact cues. HDR organ emission feeds bloom; the brood mark has its own geometry region to retain chroma through the filmic grade. The surrounding carapace and sac keep the first-pass pigment.
+
+The table reads **final21 / PALETTE38 first pass / revised**. Mark luma is median displayed Rec.709 Y (0–255). Saturation is median displayed HSV saturation. Area is the percentage of that family’s visible pixels belonging to its mark. A separate matched geometry-ID capture identifies the original atlas mark cells or revised marked surfaces; all colours come from the unmodified production frames.
+
+Local contrast is measured per actor: mean Y of its brightest 10% of visible pixels minus median Y of floor pixels within two projected body widths of its visible bounds. The family value averages those actor differences. Floor samples exclude props and actors and include the actual floor spill. This proxy measures visual separation; there was no timed observer trial. The two stock crowds contain regular Carriers. The Matron uses a supplemental matched calm encounter in each room.
+| Room | Family | Mark luma | Mark saturation (%) | Mark area (%) | Local contrast |
+|---|---|---:|---:|---:|---:|
+| Crew | Crawler | 169.7 / 149.7 / 175.9 | 34.3 / 23.5 / 39.2 | 17.9 / 17.9 / 26.6 | 97.8 / 79.3 / 102.4 |
+| Crew | Spitter | 180.6 / 136.8 / 211.1 | 30.3 / 32.1 / 48.6 | 13.2 / 14.5 / 14.6 | 138.4 / 107.0 / 163.2 |
+| Crew | Stalker | 41.6 / 99.1 / 162.4 | 27.8 / 35.0 / 55.3 | 6.4 / 8.4 / 10.1 | 69.1 / 69.4 / 111.0 |
+| Crew | Carrier | 114.7 / 120.6 / 175.1 | 29.3 / 23.8 / 41.6 | 14.7 / 17.3 / 23.3 | 85.9 / 91.5 / 148.1 |
+| Crew | Matron | 134.6 / 119.2 / 181.3 | 28.9 / 25.7 / 39.2 | 2.6 / 12.2 / 27.3 | 59.1 / 83.3 / 140.5 |
+| Swarm | Crawler | 160.9 / 141.1 / 172.6 | 35.8 / 24.1 / 40.7 | 18.2 / 18.2 / 27.0 | 123.3 / 104.5 / 127.6 |
+| Swarm | Spitter | 177.5 / 131.3 / 206.7 | 31.4 / 33.9 / 50.3 | 13.3 / 14.6 / 14.7 | 142.7 / 109.7 / 166.0 |
+| Swarm | Stalker | 23.5 / 38.6 / 80.9 | 39.4 / 39.4 / 60.7 | 5.9 / 7.1 / 8.3 | 73.9 / 75.1 / 105.5 |
+| Swarm | Carrier | 112.7 / 119.4 / 170.6 | 32.2 / 26.0 / 43.1 | 14.4 / 17.0 / 23.0 | 87.3 / 94.1 / 146.6 |
+| Swarm | Matron | 103.2 / 118.5 / 181.3 | 37.2 / 26.8 / 39.6 | 1.4 / 6.9 / 27.7 | 57.0 / 74.5 / 154.4 |
+
+The seven-frame gallery is in `artifacts/nextgen/palette38b/sheets/index.html`. Each native crop has three columns. The colour and greyscale 480×270 files each show the revised full frame. Counts below are identified/fixture. Each full crowd also has three jade Brutes.
+
+| Frame | Crawler | Spitter | Stalker | Carrier | Crawler read at a glance, colour at 480×270 |
+|---|---:|---:|---:|---:|---|
+| Crew Checkpoint | 10/10 | 2/2 | 3/3 | 2/2 | Yes. The facing and rear-facing animals both break into distinct pink marks or pools. |
+| Swarm Junction | 10/10 | 2/2 | 3/3 | 2/2 | Nine immediate, including all three below and right of the marine. The tenth pink mark overlaps the mechanical arm and can look like a lamp until its hooks are resolved. |
+| Relay Racks | 10/10 | 2/2 | 3/3 | 2/2 | The unoccluded pink marks read immediately. The Crawler crossing the rack needs its outline to confirm it. |
+| Ordered Swarm | 10/10 | 2/2 | 3/3 | 2/2 | Yes. The coral mark and paired hook distinguish all ten, including the central overlap. |
+| Three at the boots | 3/3 | — | — | — | Yes. The right mark clears the gun enough to locate the third animal; part of its hook remains behind the weapon. |
+| Infested Workshop | 10/10 | 2/2 | 3/3 | 2/2 | Yes. The pink pools and hooks show the little rear-facing animals against the violet floor. |
+| Transmission Chamber | 10/10 | 2/2 | 3/3 | 2/2 | Yes. The lower group separates into individual pink marks between the blue Stalker pools. |
+
+The marine and red sector remain distinct in all seven. The bruise-dark bodies still read as one brood. The large violet Carrier on the left of the ordered frame is the strongest competing accent. Greyscale removes the pool-hue cue and leaves the elongated stripe, paired hooks and sac shapes to distinguish the families. The weakest frames are Swarm Junction at the mechanical arm, Relay Racks at the rack crossing, and the boots frame at the right-hand gun overlap.
