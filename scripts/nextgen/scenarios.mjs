@@ -1309,3 +1309,45 @@ SCENARIOS.push(...['stalker','spitter','crawler','charge','pool'].map(kind=>({
    room:kind==='stalker'?'manual-control-chamber':'relay-racks',bruteLoss:kind==='crawler'});
  },
 })));
+
+SCENARIOS.push(...['railbreaker','overload'].map(ability=>({
+ id:`ui32-${ability}`,diagnosticOnly:true,state:'playing',room:'crew-checkpoint',setupArgument:ability,
+ setup:async ability=>{
+  const d=window.__containmentDebug,g=d.game;
+  const rail=ability==='railbreaker',rig=rail?'breacher':'arc',slot=rail?'overdrive':'tactical';
+  await d.gotoRoom('crew-checkpoint',{rig});
+  d.invulnerable(true);
+  g.skipStory();g.enemies.reset();
+  const origin=g.player;
+  const formation=Array.from({length:64},(_,i)=>{
+   const angle=i*Math.PI/32;
+   const positions=[126,216,306].map(distance=>({
+    x:origin.x+Math.cos(angle)*distance,y:origin.y+Math.sin(angle)*distance,
+   }));
+   return {angle,positions};
+  }).find(({positions})=>positions.every(p=>d.canStand(p.x,p.y,33)&&d.clearShot(p.x,p.y)&&d.renderer.visible(p.x,p.y)));
+  if(!formation)throw Error('No clear three-target line for the ability capture');
+  for(const point of formation.positions){
+   const id=d.spawn('brute',point.x,point.y);
+   if(id)g.enemies.setSlow(id,.05);
+  }
+  g.player.angle=formation.angle;
+  d.setInput({x:0,y:0,fire:false,angle:formation.angle,autoAim:false});
+  g.setAimPoint(formation.positions[0]);
+  if(rail)d.fillOverdrive();
+  if(!g.useAbility(slot))throw Error('Ability unavailable in staged fight');
+  d.step(g.abilities.snapshot.slots[slot].castRemainingMs+110);
+  d.refresh();
+ },
+})));
+
+SCENARIOS.push({
+ id:'ui32-unrecorded-spitter',diagnosticOnly:true,state:'dead',
+ setup:async()=>{
+  const d=window.__containmentDebug,g=d.game;
+  await d.gotoRoom('awakening-bay',{rig:'cryo'});
+  g.combat.restoreRunResources({...g.combat.getRunResources(),health:1,armor:0});
+  g.hurt(90,undefined,{source:'enemy-projectile',enemyFamily:'spitter'});
+  d.refresh();
+ },
+});

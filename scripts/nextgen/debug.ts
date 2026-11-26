@@ -12,6 +12,7 @@ import {addMutation} from '../../src/game/roguelike/builds';
 import {canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
 import {WEAPONS} from '../../src/game/combat/catalog';
 import {enemyShotRadius} from '../../src/game/combat/enemyContact';
+import {ENEMY_ATTACK_SHAPES} from '../../src/game/enemies/attackShapes';
 import {MELEE_ATTACKS} from '../../src/game/enemies/meleeAttacks';
 import {AREA_ATTACK_RADIUS} from '../../src/game/enemies/QueenBossSystem';
 import type {EnemyEvent} from '../../src/game/enemies/EnemySystem';
@@ -113,7 +114,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;
   }){
    await api.gotoRoom(room,{rig:'cryo'});
-   const runtime=game as unknown as {enemyEvents(events:readonly EnemyEvent[]):void;hurtCooldown:number};
+   game.skipStory();
+   const runtime=game as unknown as {enemyEvents(events:readonly EnemyEvent[]):void;updateBullets(dt:number):void;hurtCooldown:number};
    const impact={x:game.player.x,y:game.player.y};
    const positions=[[-54,0],[54,0],[0,-54],[0,54],[-38,-38],[38,38]];
    const earlier=positions.map(([x,y])=>({x:impact.x+x,y:impact.y+y}))
@@ -127,7 +129,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    const pose=(family:StandardEnemyId,distance:number,base:number)=>{
     for(const offset of [0,1,-1,2,-2,3,-3,4]){
      const angle=base+offset*Math.PI/4,x=impact.x-Math.cos(angle)*distance,y=impact.y-Math.sin(angle)*distance;
-     if(canOccupyExpedition(game.geometry,{x,y},ENEMIES[family].radius)&&hasClearExpeditionShot(game.geometry,{x,y},impact)){
+     if(canOccupyExpedition(game.geometry,{x,y},ENEMIES[family].radius)&&hasClearExpeditionShot(game.geometry,{x,y},impact)
+       &&(family!=='spitter'||canTraverseExpedition(game.geometry,{x,y},impact,ENEMY_ATTACK_SHAPES.spitterProjectileRadius))){
       const spawned=game.enemies.spawn(family,x,y,false);
       if(spawned.spawned)return {x,y,angle,id:spawned.enemy.id};
      }
@@ -154,10 +157,10 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
       chargeFootprint:{...impact,angle:attacker.angle,shape:{kind:'line',range:5,width:2*ENEMIES.brute.radius,halfAngle:0}}},
     ]);
    }else if(kind==='spitter'){
-    const attacker=pose(kind,105,.2);
+    const attacker=pose(kind,78,.2);
     runtime.enemyEvents([{type:'hazard-attack',enemyId:attacker.id,enemyType:kind,sourceX:attacker.x,sourceY:attacker.y,
      targetX:impact.x,targetY:impact.y,damage:90}]);
-    for(let frame=0;frame<16&&game.status==='playing';frame++)update(30,{x:0,y:0,fire:false,angle:null,autoAim:true});
+    for(let frame=0;frame<36&&game.status==='playing';frame++)runtime.updateBullets(1/60);
    }else{
     const shape=MELEE_ATTACKS[kind].shape, attacker=pose(kind,shape.range*.7,.35);
     runtime.enemyEvents([
@@ -165,6 +168,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
      {type:'contact-attack',enemyId:attacker.id,enemyType:kind,damage:90},
     ]);
    }
+   if(game.status!=='dead'||!game.deathExchange?.fatal)throw Error('The staged attack did not produce a fatal exchange');
    refresh();
    for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++)await new Promise(requestAnimationFrame);
   },
