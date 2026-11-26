@@ -138,10 +138,8 @@ broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
 if(crawlerSkin){
- float spine=abs(actorPosition.x+.47);
- bool spines=(spine<.075 || abs(spine-.35)<.075) && abs(actorPosition.y)<.33 && broodRestUp>-.28;
  bool eyes=actorPosition.x>.41 && actorPosition.x<.53 && abs(actorPosition.y)>.12 && abs(actorPosition.y)<.22 && broodRestUp>.1;
- broodMark=spines || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
+ broodMark=broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
  broodBody=broodBody || broodBand==3 || crawlerHook;
 }
 vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(2.9,2.45,.76):
