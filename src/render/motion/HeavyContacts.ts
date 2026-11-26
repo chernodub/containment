@@ -19,9 +19,17 @@ export function heavyContacts(root:T.Object3D) {
    .applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[joint]);
   return [{bone,bind,pivot,original:new T.Quaternion(),turned:false,side,hand,anchor:new T.Vector3(),offset:new T.Vector3(),held:false}];
  }));
+ let lastYaw:number|undefined, turnPhase=0;
  return {
+  turn(yaw:number){
+   const angle=lastYaw===undefined?0:Math.abs(Math.atan2(Math.sin(yaw-lastYaw),Math.cos(yaw-lastYaw)));
+   lastYaw=yaw;
+   if(angle<.001)return -1;
+   turnPhase=(turnPhase+angle/1.8)%1;
+   return turnPhase;
+  },
   release(){for(const pad of pads){pad.bone.position.sub(pad.offset);pad.offset.set(0,0,0);if(pad.turned){pad.bone.quaternion.copy(pad.original);pad.turned=false;}pad.bone.updateMatrix();}},
-  reset(){for(const pad of pads)pad.held=false;},
+  reset(){lastYaw=undefined;turnPhase=0;for(const pad of pads)pad.held=false;},
   apply(phase:number){
    for(const p of pads){
     const u=(phase+(p.side>0?.5:0)+(p.hand?0:.36))%1;

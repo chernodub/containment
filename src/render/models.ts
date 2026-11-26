@@ -295,7 +295,9 @@ export function alien(kind:string,elite=false):ActorModel{
    }}}
   if(contacts){
    const walk=!champion&&!dead&&!status.frozen&&moving>.3&&authored.player.isCurrent('m10-run')?r.action('m10-run'):undefined;
-   const phase=walk?walk.time/walk.getClip().duration:-1;
+   const turning=contacts.turn(r.root.rotation.y);
+   const atRest=!champion&&!dead&&!status.frozen&&authored.player.isCurrent('m10-idle');
+   const phase=walk?walk.time/walk.getClip().duration:atRest?turning:-1;
    contacts.apply(phase);
    const grip=(u:number)=>walk?Math.tanh(8*Math.sin(2*Math.PI*(u+.03))):0;
    surface.grip(grip(phase),grip(phase+.5));
