@@ -122,10 +122,10 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
     summary: 'Lob a canister. The pool keeps burning.',
-    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds, dealing 6.5 damage every 0.25 seconds and igniting everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'Lob a canister to the cursor. It bursts into a burning pool for 5 seconds, dealing 6.5 damage every 0.25 seconds and igniting everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'point', shape: { kind: 'circle', radius: 120 },
-    castMs: 150, cooldownMs: 12_000, charges: 1, durationMs: 6_000, range: 480,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(12_000) }],
+    castMs: 150, cooldownMs: 12_000, charges: 1, durationMs: 5_000, range: 480,
+    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(12_000) }],
   }),
   meltdown: ability({
     id: 'meltdown', rig: 'pyro', slot: 'overdrive', element: 'pyro', name: 'Meltdown',
