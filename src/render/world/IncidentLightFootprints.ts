@@ -20,17 +20,21 @@ const reflectorGain:Readonly<Record<string,number>>={
 // Soot, rubber and oil on these receivers absorb the white deck reflection.
 // Keep the softer return in the same texture and draw as the coloured throw.
 type Receiver=readonly [absorption:number,farCoverage:number,farGain:number,nearCoverage:number,nearGain:number];
-const smokedReceivers:Readonly<Record<string,Receiver>>={
+const diffuseReturn:Readonly<Record<string,number>>={
+  'breached-loading-bay':1.38,'coolant-plant':1.88,'diagnostic-gallery':1.565,
+};
+const receiverResponses:Readonly<Record<string,Receiver>>={
   'awakening-bay':[.48,.45,2.43,.75,7],armory:[.81,1,5,1,17],
-  'safety-interlock-station':[.73,.72,3.4,1,10],
+  'safety-interlock-station':[.73,.72,4.82,1,10.7],
   'infested-workshop':[.40,.45,2.4,.75,7],
   'manual-control-chamber':[.58,.72,3.4,.45,3.4],
   'service-shaft-landing':[.38,.72,2.4,.72,3.4],
+  'communal-atrium':[0,1,1,1,1.5],'containment-annulus':[0,1,1.045,1,1.9],
 };
 
 // A metal receiver also returns the suit light when the marine walks past.
 // Choose the local fitting per fragment so the distant source stays steady.
-function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:readonly number[],b:readonly number[],compactReader:boolean){
+function applyReceiverResponse(material:MeshBasicMaterial,receiver:Receiver,a:readonly number[],b:readonly number[],roomId:string){
   const [absorption,farCoverage,farGain,nearCoverage,nearGain]=receiver;
   material.color.multiplyScalar(1-absorption*.55);
   const mounts=new Vector4(a[0]/32,a[1]/32,b[0]/32,b[1]/32);
@@ -39,7 +43,8 @@ function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:rea
     shader.uniforms.receiverMounts={value:mounts};
     shader.uniforms.receiverResponse={value:response};
     shader.uniforms.receiverMarine=MARINE_FLOOR_GLOW;
-    shader.uniforms.receiverRange={value:compactReader?new Vector2(1.1,1.8):new Vector2(2.55,4.9)};
+    shader.uniforms.receiverRange={value:roomId==='manual-control-chamber'?new Vector2(1.1,1.8):
+      roomId==='communal-atrium'?new Vector2(2.1,3.6):new Vector2(2.55,4.9)};
     shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
     shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMounts,receiverMarine,receiverResponse; uniform vec2 receiverRange;\n'+
@@ -63,7 +68,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const tint=incidentPracticalColors[room.id],lane=incidentLanes[room.id];
   const angle=lane?Math.atan2(lane[3]-lane[1],lane[2]-lane[0]):0;
   const source=storyIncidentSource(room.id);
-  const receiver=smokedReceivers[room.id];
+  const receiver=receiverResponses[room.id];
   const absorb=receiver?.[0]??0;
   const gain=reflectorGain[room.id]??.69;
   const mounts=[{pin:terminal,angle}];
@@ -104,7 +109,8 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:absorb?NormalBlending:AdditiveBlending,
     opacity:absorb?1:gain,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
-  if(receiver)finishSmokedReceiver(material,receiver,terminal,mounts[1]?.pin??terminal,room.id==='manual-control-chamber');
+  material.color.multiplyScalar(diffuseReturn[room.id]??1);
+  if(receiver)applyReceiverResponse(material,receiver,terminal,mounts[1]?.pin??terminal,room.id);
   material.userData.actorMaterial=true;
   material.addEventListener('dispose',()=>texture.dispose());
   const mesh=new Mesh(new PlaneGeometry(room.width/32,room.height/32).rotateX(-Math.PI/2),material);
