@@ -163,3 +163,21 @@
 .exchange-exit { stroke-dasharray: none; }
 #overlay .incoming-report > .retry-lesson { margin: 0; gap: 12px; }
 #overlay .incoming-report .retry-lesson-art { width: min(55%, 260px); }
+
+#overlay .debrief-panel[data-outcome=dead] { padding-block: clamp(14px, 2vh, 23px); }
+#overlay .debrief-panel[data-outcome=dead] .result-details { margin: 8px 0; }
+#overlay .debrief-panel[data-outcome=dead] .result-details > summary { padding-block: 8px; }
+#overlay .debrief-panel[data-outcome=dead] .result-actions { margin-top: 8px; padding-top: 10px; }
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid #62788755;
+  background: #101b22;
+}
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 5px 0 0;
+}
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown li { flex: 1 1 240px; margin: 1px 0; }

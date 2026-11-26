@@ -334,7 +334,9 @@ export function createScreens(context: ScreenContext) {
     else if(status!==previousStatus||graphicsBlocked) {
       // A held fire key must never activate a newly arrived choice or restart.
       // Keyboard users can deliberately Tab to a native action or use its number key.
-      if(['reward','route','dead','complete'].includes(status)) {
+      if(status==='dead'&&!graphicsBlocked) {
+        root.querySelector<HTMLElement>('#retry-rig')?.focus({preventScroll:true});
+      } else if(['reward','route','dead','complete'].includes(status)) {
         const panel=root.firstElementChild as HTMLElement|null;
         if(panel) {panel.tabIndex=-1;panel.focus({preventScroll:true});}
       } else {
