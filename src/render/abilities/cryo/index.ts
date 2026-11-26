@@ -286,7 +286,7 @@ class CryoPresentation implements AbilityPresentation {
         if (!grown) continue;
         const a = heading + .12*Math.sin(arm+joint);
         k.draw('shard',x+Math.cos(a)*distance,.08,z+Math.sin(a)*distance,
-          (.13+.035*joint)*grown,.13*grown,radius*.13*grown, joint%2 ? ICE : CORE,
+          (.18+.035*joint)*grown,.043*grown,radius*.072*grown, ICE,
           .82*fade,-a+Math.PI*.5,.18,2+joint);
       }
     }

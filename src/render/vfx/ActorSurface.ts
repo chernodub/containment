@@ -216,7 +216,10 @@ float bounded=min(bodyValue,ceiling);
 float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 #ifdef BROOD_PLANES
-if(broodFinish && broodMark)outgoingLight=lanternEmission;
+if(broodFinish && broodMark){
+ float frost=actorContact.x<1.5 ? actorContact.y : 0.;
+ outgoingLight=mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
+}
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
@@ -232,7 +235,7 @@ if(actorContact.y>0. && contactSkin){
  float energy;
  vec3 accent;
  if(actorContact.x<1.5){
-  energy=smoothstep(.17,.49,actorRim)*smoothstep(-.20,.62,vein)*(.20+.80*limb);
+  energy=smoothstep(.12,.43,actorRim)*smoothstep(.30,.70,limb)*smoothstep(.20,.65,p.z-actorPlateBounds.z);
   accent=vec3(.59,1.44,1.68);
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);

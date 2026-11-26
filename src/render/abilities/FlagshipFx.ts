@@ -586,7 +586,9 @@ void main(){
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
  if(m>13.5 && m<14.5 && fxArc<1.5){
-  float margin=1.-smoothstep(.02,.9,max(prioritySample.r,prioritySample.b));
+  vec2 behind=priorityClip.xy/priorityClip.w*.5+.5+vec2(.0018,-.004);
+  float backMask=texture2D(abilityPriorityMap,behind).r;
+  float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
  }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
