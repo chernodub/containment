@@ -15,7 +15,7 @@ export function installPerf46Arm(arm){
  r.applyQuality=()=>{
   apply();
   if(arm==='poolOff')r.lighting.pool.setQuality('high',false);
-  if(arm==='lowPoolOn')r.lighting.pool.setQuality('high',true);
+  if(arm==='lowPoolOn'){r.lighting.pool.setQuality('high',true);r.muzzle.visible=false;r.lighting.blast.visible=false;}
   if(arm==='lowParticles'){
    r.effects.setOptions({...r.graphicsOptions,tier:'low'});
    r.interimAbilities.setOptions(r.graphicsOptions,'low',false);
@@ -48,6 +48,7 @@ export function installPerf46Arm(arm){
  r.setQuality=tier=>{
   select(tier);
   if(overrides[arm])r.setGraphicsOptions(overrides[arm]);
+  if(arm==='resolution75'){r.post.adaptive.minimumScale=1;r.post.adaptive.reset();r.resize();}
   if(arm==='softDepth'||arm==='finalAA'||arm==='gas')r.setGraphicsAblation(arm==='gas'?'softDepth':arm);
  };
 }
