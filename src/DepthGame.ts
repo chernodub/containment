@@ -743,8 +743,15 @@ export class DepthGame {
   return false;
  }
 
+ private reserveBearing?:{from:{x:number;y:number};to:{x:number;y:number};until:number;room:number};
+ get sealedEntryBearing(){
+  const bearing=this.reserveBearing;
+  return bearing&&bearing.room===this.roomRevision&&this.elapsed<bearing.until?bearing:undefined;
+ }
  private encounterEvents(events:readonly EncounterEvent[]){for(const e of events){if(e.type==='reserve-cut'){
  const breach=this.geometry.breaches.find(point=>point.id===e.breachId);
+ const closed=this.geometry.breaches.find(point=>point.id===e.closedEntry);
+ if(closed&&this.lastPriorityPoint)this.reserveBearing={from:this.lastPriorityPoint,to:closed,until:this.elapsed+1.7,room:this.roomRevision};
  if(breach)this.presentation.push({type:'reserve-cut',x:breach.x,y:breach.y,durationMs:3000,reserveCut:e});
  }else if(e.type==='spawn-request'){const chosen=this.geometry.breaches.find(b=>b.id===e.breachId)??this.geometry.breaches[0];
  let x=chosen.x+(chosen.facing==='east'?56:-56),y=chosen.y;

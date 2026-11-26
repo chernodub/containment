@@ -206,8 +206,8 @@ export class PincerPresentation {
       root.visible=index<arrivals.length;
       if(!root.visible)return;
       const waiting=arrivals[index];
-      const advance=Math.max(0,1-waiting/650);
-      root.position.set(-.72+advance*1.3,Math.sin(waiting/120)*.06,
+      const advance=index===0?Math.min(.48,Math.max(0,(4150-waiting)/4400)):0;
+      root.position.set(-.72+advance,Math.sin(waiting/120)*.06,
         (index-(arrivals.length-1)/2)*.36);
     });
   }

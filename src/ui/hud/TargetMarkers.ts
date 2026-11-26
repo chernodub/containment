@@ -53,6 +53,25 @@ export class TargetMarkers {
         if (this.canvas.height !== height) this.canvas.height = height;
         if (this.painted) ctx.clearRect(0, 0, width, height);
         this.painted = false;
+        const bearing=game.sealedEntryBearing;
+        if(bearing){
+            const from=projectWorld(renderer,bearing.from.x,bearing.from.y,{x:0,y:0,visible:false},.15);
+            const to=projectWorld(renderer,bearing.to.x,bearing.to.y,this.point,.15);
+            if(from.visible&&Number.isFinite(to.x)&&Number.isFinite(to.y)){
+                this.painted=true;
+                const angle=Math.atan2(to.y-from.y,to.x-from.x);
+                ctx.save();
+                ctx.translate(from.x,from.y);
+                ctx.rotate(angle);
+                ctx.strokeStyle=paleCrest;
+                ctx.lineWidth=3;
+                ctx.beginPath();
+                ctx.moveTo(12,0);ctx.lineTo(68,0);
+                ctx.moveTo(55,-8);ctx.lineTo(68,0);ctx.lineTo(55,8);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
         const preview=game.relayCoverPreview;
         if(preview){
             const start=projectWorld(renderer,preview.from.x,preview.from.y,{x:0,y:0,visible:false},.15);
