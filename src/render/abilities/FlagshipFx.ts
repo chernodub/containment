@@ -181,7 +181,11 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   alpha*=mix(.045,1.,deposit);
   emit*=deposit;
  }else{
-  float band=(1.-smoothstep(.18,1.0,back))*bed;
+  float cluster=smoothstep(.36,.65,fxNoise(p*.84+fxSeed));
+  bed*=smoothstep(-.04,.82,back+.54*cluster);
+  alpha*=bed;
+  emit*=bed;
+  float band=(1.-smoothstep(.18,1.0,back))*bed*cluster;
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
   base*=mix(.36,1.,band);
@@ -549,6 +553,9 @@ void main(){
    alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
    float foothold=smoothstep(.24,1.18,r+.13*n);
    alpha*=foothold;emit*=mix(foothold,1.,peak);
+   float travel=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
+   emit+=vec3(1.15,.34,.055)*front;alpha=max(alpha,front*.66);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
