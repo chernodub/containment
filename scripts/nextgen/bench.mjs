@@ -307,20 +307,21 @@ try{
   assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
   await cdp.send('Performance.enable');
   const traceEvents=[];if(profile)cdp.on('Tracing.dataCollected',event=>traceEvents.push(...event.value));
-  if(profile){await cdp.send('Tracing.start',{categories:'v8,disabled-by-default-v8.gc',transferMode:'ReportEvents'});await cdp.send('Profiler.enable');await cdp.send('Profiler.start');await cdp.send('HeapProfiler.startSampling',{samplingInterval:32768,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});}
+  if(profile){await cdp.send('Tracing.start',{categories:'v8,disabled-by-default-v8.gc,blink.user_timing',transferMode:'ReportEvents'});await cdp.send('Profiler.enable');await cdp.send('Profiler.setSamplingInterval',{interval:100});await cdp.send('Profiler.start');await cdp.send('HeapProfiler.startSampling',{samplingInterval:32768,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});}
   if(args.includes('--audit-costs'))await page.evaluate(installCostAudit);
   if(report.gpuPasses)await page.evaluate(installGpuPassAudit,{flush:report.gpuFlush});
   const initial=await cdp.send('Performance.getMetrics');
   let audioPollWork=Promise.resolve();
   const audioPoll=profile?setInterval(()=>{audioPollWork=audioPollWork.then(async()=>{for(const context of audioContexts.values())if(context.contextType==='realtime'){try{const {realtimeData}=await cdp.send('WebAudio.getRealtimeData',{contextId:context.contextId});audioSamples.push({contextId:context.contextId,...realtimeData});}catch(error){audioError=String(error);}}});},500):null;
   if(audioPoll)timers.add(audioPoll);
-  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses,deterministic,minSimulationSeconds,cpuOnly})=>{
+  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses,deterministic,minSimulationSeconds,cpuOnly,profile})=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
    // PERF13: inventory once outside the measured combat loop; logical geometry,
    // not shadow/post multiplication. Hidden rank variants are excluded.
    const geometryInventory=()=>{const rows=[];const scan=(root,owner)=>{root?.traverseVisible(object=>{if(!object.isMesh)return;const triangles=Math.min(object.geometry.index?.count??object.geometry.attributes.position?.count??0,object.geometry.drawRange.count)/3*(object.isInstancedMesh?object.count:1);let path=object.name||object.type;for(let parent=object.parent;parent&&parent!==root;parent=parent.parent)path=(parent.name||parent.type)+'/'+path;rows.push({owner,path,triangles,bones:object.skeleton?.bones.length??0,low:object.geometry.userData.perf13LOD==='low'});});};scan(r.world,'static world');scan(r.player?.root,'marine');for(const [id,actor]of r.actors)scan(actor.root,'enemy '+id);return rows.sort((a,b)=>b.triangles-a.triangles);};
    const initialGeometryInventory=geometryInventory();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[]};
+   if(profile){samples.updateStart=[];samples.nativeUpdate=[];}
    const costAudit=auditCosts?r.__benchCostAudit:null,gpuPassAudit=gpuPasses?r.__benchGpuPassAudit:null;
    const softDepthAudit=r.post?.__benchNoSoftDepth;let softDepthDiagnostic=null;
    if(gpuPasses&&!gpuPassAudit)throw Error('GPU pass audit was not installed');
@@ -350,6 +351,7 @@ try{
    d.observePerformance(sample=>{
     if(count>=capacity)return;
     for(const key of ['frame','update','render','hud','audio'])values[key][count]=sample[key];
+    if(profile){values.updateStart[count]=sample.updateStart;values.nativeUpdate[count]=sample.update;}
     values.driver[count]=driverMs;values.update[count]+=driverMs;driverMs=0;values.enemies[count]=g.enemies.activeCount;
     values.draws[count]=r.renderer.info.render.calls;values.triangles[count]=r.renderer.info.render.triangles;
     let lights=0;for(const l of r.lighting.pool.lights)if(l.intensity>0)lights++;
@@ -417,6 +419,7 @@ try{
    };
    costAudit?.reset();
    let fixedTicks=0;
+   const profileAnchor=profile?performance.mark("containment-combat-profile").startTime:null;
    d.realtime(!deterministic);
    try{
     while(deterministic?fixedTicks<Math.round(seconds*60):(performance.now()-start<seconds*1000||(g.elapsed-initialElapsed<minSimulationSeconds&&performance.now()-start<120000))){
@@ -440,8 +443,8 @@ try{
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
    const retiredPodBatches=podBatches.filter(({mesh,root})=>!root.parent&&mesh.parent).length;
-   return {condition:g.conditionState?.condition.id??null,retiredPodBatches,initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
-  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),cpuOnly:args.includes('--cpu-only')});
+   return {profileAnchor,condition:g.conditionState?.condition.id??null,retiredPodBatches,initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+  },{seconds,profile,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),cpuOnly:args.includes('--cpu-only')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;

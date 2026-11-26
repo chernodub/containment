@@ -188,7 +188,7 @@ export async function bootstrap() {
     uiEffect = e => hud.effect?.(e);
     const reticle = {spreadRadians: 0, bloomRadians: 0, reloadProgress: 0, reloading: false, playing: false};
     let benchmarkListener:((sample:PerformanceSample)=>void)|undefined;
-    const benchmarkSample:PerformanceSample={frame:0,update:0,render:0,hud:0,audio:0};
+    const benchmarkSample:PerformanceSample={frame:0,updateStart:0,update:0,render:0,hud:0,audio:0};
     function syncHud(): void {
         syncAudio();
         hud();
@@ -311,7 +311,7 @@ export async function bootstrap() {
         }
         diagnostics.record(elapsed * 1000, updated - started, rendered - updated);
         nativeFrameSamples.record(rendered - started);
-        if(benchmarkListener){benchmarkSample.frame=elapsed*1000;benchmarkSample.update=updated-started;benchmarkSample.render=rendered-updated;benchmarkListener(benchmarkSample);}
+        if(benchmarkListener){benchmarkSample.frame=elapsed*1000;benchmarkSample.updateStart=started;benchmarkSample.update=updated-started;benchmarkSample.render=rendered-updated;benchmarkListener(benchmarkSample);}
     }
     lastRoom = game.roomRevision;
     syncScreen(true);
