@@ -206,8 +206,8 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
   accent=vec3(.59,1.44,1.68);
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
-  energy=edge*(.34+.66*smoothstep(-.62,.40,flicker));
-  accent=mix(vec3(.85,.16,.012),vec3(1.9,.96,.16),smoothstep(.35,.88,flicker));
+  energy=smoothstep(.08,.38,actorRim)*(.45+.55*smoothstep(-.62,.40,flicker));
+  accent=mix(vec3(.85,.16,.012),vec3(3.1,2.4,.95),smoothstep(.35,.88,flicker));
  }else if(actorContact.x<3.5){
   energy=edge*(.24+.76*smoothstep(.05,.62,sin(vein*5.+actorContact.z*8.)));
   accent=vec3(1.14,.66,1.92);

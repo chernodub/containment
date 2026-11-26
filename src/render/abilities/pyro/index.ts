@@ -534,7 +534,7 @@ class PyroPresentation implements AbilityPresentation {
         target = Math.max(target, Math.min(1, (1.22 - clearance) / .4));
       }
       const previous = pool?.weight[i] ?? target;
-      const step = Math.max(0, frame.dt) / .15;
+      const step = Math.max(0, frame.dt) / (target > previous ? .045 : .18);
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
       const height = ((napalm ? .18 + 1.45 * scatter * scatter : .40 + .66 * scatter) + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);

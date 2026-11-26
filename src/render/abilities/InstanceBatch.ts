@@ -281,7 +281,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
  ${kind === 'flame' ? `#ifdef HAS_ABILITY_PRIORITY_MASK
- if(phase>=0.)a=min(a,1.-.4*prioritySample.r);
+ if(phase>=0.)a*=1.-smoothstep(.12,.88,prioritySample.r);
  #endif` : ''}
 
  if(a<.004)discard;gl_FragColor=vec4(c,a);

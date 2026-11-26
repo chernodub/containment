@@ -600,6 +600,7 @@ void main(){
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
  #ifdef HAS_ABILITY_PRIORITY_MASK
+ if(m<.5 || m>14.5)keep*=1.-smoothstep(.12,.88,prioritySample.r);
  float coreCover=max(prioritySample.b,prioritySample.a);
  if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
    // Keep the marine cap here. Actor coverage attenuates premultiplied output once, after shading.
