@@ -179,7 +179,11 @@ export function createScreens(context: ScreenContext) {
     });
     listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {rememberRig(selectedRig);playUiCue(audio,'rig-equip'); syncScreen(true);} else playUiCue(audio,'denied');});
     root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
-      const purchased=game.purchaseService(button.dataset.purchase as import('../../game/roguelike/economy').ServiceId,button.dataset.augment);playUiCue(audio,purchased?'purchase':'denied'); syncScreen();
+      const service=button.dataset.purchase as import('../../game/roguelike/economy').ServiceId;
+      const purchased=game.purchaseService(service,button.dataset.augment);
+      playUiCue(audio,purchased?'purchase':'denied');
+      syncScreen();
+      if(purchased&&service==='rig-return')root.querySelector<HTMLElement>('#claim')?.focus({preventScroll:true});
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
       // Presentation completes independently of the immediate native choice transition.
