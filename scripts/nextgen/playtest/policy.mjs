@@ -411,6 +411,8 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       }
       perceived.human = {spacing,exactSpacing:false};
       const escape = meleeEscapePlan(perceived);
+      // PLAY38 measured the marked exchange as an inconsistent payoff and the HUD no longer draws it;
+      // --exchange-marks=on remains only as a research arm for re-measuring the encounter.
       const marks = readExchange && profile === 'competent' ? s.drawnExchange : undefined;
       if (!marks?.bait && !marks?.landing && !marks?.lane) exchangeCommitted = exchangeSeen = false;
       else if (marks && !exchangeFired) {

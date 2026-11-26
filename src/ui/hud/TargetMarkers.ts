@@ -1,7 +1,7 @@
 import {icon} from '../icons';
 import type {DepthGame} from '../../DepthGame';
 import type {DepthRenderer} from '../../render/DepthRenderer';
-import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds, drawnExchange} from '../gameAdapter';
+import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds} from '../gameAdapter';
 import {hudObstructs, presentationObstructs} from './layout';
 import {threatEdgePoint} from './ThreatIndicators';
 
@@ -53,29 +53,6 @@ export class TargetMarkers {
         if (this.canvas.height !== height) this.canvas.height = height;
         if (this.painted) ctx.clearRect(0, 0, width, height);
         this.painted = false;
-        const exchange=drawnExchange(game,renderer);
-        if(exchange){
-            ctx.save();
-            ctx.lineWidth=2;
-            ctx.strokeStyle='#9af0e5';
-            ctx.font='600 16px Barlow, sans-serif';
-            ctx.fillStyle='#c6fff5';
-            for(const [point,label] of [[exchange.bait?.screen,'Bait'],[exchange.landing?.screen,'Step']] as const){
-                if(!point)continue;
-                this.painted=true;
-                ctx.beginPath();ctx.ellipse(point.x,point.y,14,7,0,0,2*Math.PI);ctx.stroke();
-                ctx.fillText(label,point.x+18,point.y);
-            }
-            if(exchange.lane){
-                const {from:{screen:landing},to:{screen:target}}=exchange.lane;
-                this.painted=true;
-                ctx.setLineDash([7,7]);
-                ctx.beginPath();ctx.moveTo(landing.x,landing.y);ctx.lineTo(target.x,target.y);ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.fillText('Return lane',landing.x+18,landing.y+23);
-            }
-            ctx.restore();
-        }
         const bearing=game.sealedEntryBearing;
         if(bearing){
             const from=projectWorld(renderer,bearing.from.x,bearing.from.y,{x:0,y:0,visible:false},.15);
