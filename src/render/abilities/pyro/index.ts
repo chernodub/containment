@@ -61,7 +61,8 @@ class PyroPresentation implements AbilityPresentation {
     slot.range = stripLength >= 0 ? stripLength : range; slot.angle = angle; slot.arc = arc; slot.inner = stripLength >= 0 ? range : 0;
     slot.h0 = h0; slot.h1 = h1; slot.param = part % 2 ? .45 : .12;
     // Hold the hot portion of the Fire envelope; flow still uses the presentation clock.
-    slot.age = .09; slot.intensity = intensity;
+    if (!fuel) slot.age = .09;
+    slot.intensity = intensity;
     if (fuel) slot.param = intensity;
     else if (id < 0 || range < 1.5) slot.param = -1;
     if (mode === FxMode.Tongues) { slot.param = intensity; slot.intensity = 1; slot.angle = angle; }
@@ -187,11 +188,13 @@ class PyroPresentation implements AbilityPresentation {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
-        if (event.phase === 'burst') {
-          // Kill-burst: a small compact fireball, not a full-radius sheet.
-          const ball = kit.fx.spawn(FxMode.Fire, x, z, .42);
-          ball.range = Math.min(radius, 1.3); ball.arc = Math.PI * 2; ball.h0 = .3; ball.h1 = 1.1;
-          ball.param = .2; ball.intensity = .9;
+        if (event.phase === 'burst' && (event.radius ?? 0) > 130) {
+          // The core detonation owns the traveling front. Kill bursts already
+          // have a local ignition and particles on their struck bodies.
+          const front = kit.fx.spawn(FxMode.Climax, x, z, .62);
+          front.range = radius; front.arc = 2; front.h0 = .044;
+          front.param = 1; front.color = HOT;
+
         }
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);

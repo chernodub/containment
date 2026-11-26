@@ -455,11 +455,11 @@ void main(){
   // Sections of the native lip remain exposed between scallops of burnt fuel.
   if(napalm)edge+=fxRange*.14*smoothstep(.0,.85,sin(angle*5.+.65)+.45*sin(angle*13.));
   burnSurface(edge,fxWorld.xz,base,emit,alpha);
-  emit*=mix(vec3(1.),vec3(.23,.095,.06),smoothstep(.08,.30,age));
   float heading=angle-fxAngle-bend;
   float river=1.-smoothstep(.004,.047,min(1.-cos(heading-.95),1.-cos(heading+1.85)));
   float grain=fxNoise(fxWorld.xz*3.);
   if(napalm)emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
+  emit*=mix(vec3(1.),vec3(.23,.095,.06),smoothstep(.08,.30,age));
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
@@ -470,10 +470,10 @@ void main(){
   float curl=fxNoise(q+fxSeed);
   float edge=1.-smoothstep(.91,.995,radial);
   float lip=1.-smoothstep(.018,.082,abs(radial-(.86+.06*curl)));
-  float heat=lip*(.48+.40*curl);
+  float heat=lip*smoothstep(.30,.68,curl)*mix(1.,.24,smoothstep(.08,.30,age));
   base=vec3(.016,.013,.009);
   alpha=(.39*edge+.27*lip)*fxParam;
-  emit=vec3(1.54,.63,.058)*heat*fxParam*fxIntensity;
+  emit=vec3(1.26,.32,.036)*heat*fxParam*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -556,6 +556,7 @@ void main(){
    float travel=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
    float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
    emit+=vec3(1.15,.34,.055)*front;alpha=max(alpha,front*.66);
+   float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.

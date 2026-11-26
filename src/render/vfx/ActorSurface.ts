@@ -110,7 +110,7 @@ diffuseColor.rgb=zoneHue*zoneLevel;
 ivec2 broodCell=ivec2(floor(vMapUv*4.0));
 int broodBand=broodCell.x+4*(3-broodCell.y);
 bool broodBody=broodBand<=1 || broodBand==6 || (actorBroodForm.w==1. && broodBand>=8 && broodBand<=10);
-bool broodFinish=actorBroodForm.x>=-1.;
+bool broodFinish=actorBroodForm.x>=-1. || actorContact.y>0.;
 // The Matron's distal sac follows the tip joint (torso region). Select
 // its raised hind volume in the skin's Z-up bind pose, clear of the legs.
 bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
@@ -226,6 +226,9 @@ if(broodFinish && broodMark){
 bool contactSkin=lanternPeak<.015 && vActorRegion<6.5;
 #ifdef BROOD_PLANES
 contactSkin=contactSkin && !(broodFinish && broodMark);
+#endif
+#ifdef BRUTE_PLANES
+if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
 #endif
 if(actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);

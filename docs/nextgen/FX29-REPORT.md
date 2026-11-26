@@ -161,3 +161,33 @@ The production build passed. Both benchmark builds used Crew Checkpoint, fixed r
 | Cryo Low | 134 | 134 | 0 / 0 |
 
 The native seed-1729 Pyro campaign cleared all eight rooms with zero errors. The runner exited 1 for room-loading diagnostics in Awakening Bay, Passenger Vault and Residential Gallery. [Campaign report](../../artifacts/nextgen/playtest/fx32-delivery-pyro/report.json) · [Build log](../../artifacts/nextgen/fx32/delivery-build.log)
+
+## FX33
+
+The Afterburn strip previously placed equally spaced upright flame cards along its centerline. It now places three to five low, uneven licks across the trail and leans each toward the wake. Napalm clusters different-sized licks along the fuel flow, over dark sheen and interrupted coals. The retained fuel surface now advances its own age. Its orange emission falls toward red-brown over the first 300 ms. Flashfire retains its accepted fork and muzzle flash. The Crawler’s amber hooks and dorsal stripe keep their authored shape through burn, with yellow-white contact light on the adjoining skin.
+
+Whiteout uses the existing actor mask to thin snow behind silhouettes. Its deck shards are shorter and flatter, the struck-side joint receives a narrow highlight, and family emission survives the last frost pass. Cryo Nova breaks the crystal lip into separate patches and feathers the glaze between them. Meltdown drives a bright front to the native radius in 150 ms. Its pooled ground material handles both the base aura and the Core augment’s 260-unit detonation. Secondary kill bursts retain their local body particles. No light or screen pass was added.
+
+I compared the dense frames at 480×270 and counted recognizable bodies or family marks, excluding health bars alone. Denominators count living centers inside the footprint at each sample. They include occluded and offscreen actors. The gallery uses final22’s native originals for the five matching dense casts, overlaps and native campaign. The dense Afterburn and combined status fixtures were recaptured on the pre-FX33 worktree build because final22 lacks those exact frames. The separate rank lineup uses final22’s calm lineup as its left panel. [Gallery](../../artifacts/nextgen/fx33/index.html) · [Fixture locations](../../artifacts/nextgen/fx33/enemy-locations.txt)
+
+| Power | Peak, previous → FX33 | +300 ms, previous → FX33 | Post-flash accents and remaining construction |
+| --- | --- | --- | --- |
+| Afterburn | 1/1 → 1/1 | 2/2 → 2/2 | Narrow ember tracks leave the Crawler visible near the wake. No upright row. |
+| Napalm | 7/10 → 8/10 | 6/8 → 7/8 | The burning flank and family marks lead over the settled fuel. Short hot ends persist between bodies; the resting edge is broken. |
+| Flashfire | 7/8 → 7/8 | 8/9 → 8/9 | The separated fork still leads at peak. Flank accents lead in the tail, with a few bright embers on the deck. |
+| Meltdown | 0/0 → 0/0 | 3/3 → 3/3 | No enemy center is inside the base aura at peak. The edge of the cooling pool is still visible at +300 ms. The Core augment’s expanding front is the brightest feature during detonation. |
+| Whiteout | 18/26 → 20/26 | 17/26 → 19/26 | Family marks and dark silhouettes read through the margins. Heavy plates remain the brightest ice, and crowded small bodies still overlap. |
+| Cryo Nova | 5/6 → 5/6 | 8/11 → 9/11 | Bare gaps interrupt the crystal edge, but individual bright clusters still compete with the bodies. |
+
+The normal and elite Brute show blue sides and pale band tops at full freeze. Chilled bands stay darker, burn leaves a warm edge, and shock gives the bands a violet edge. The Warden resisted the lineup’s native freeze application and retained its rust and bone finish. The mixed-crowd status study includes small creatures with the same effects. [Heavy lineup receipts](../../artifacts/nextgen/fx33/trio-frozen.json)
+
+The native Communal Atrium frame records a visible burning Crawler beside Afterburn and Flashfire residue. Its amber hook and stripe remain recognizable against the brown deck. The lit hide still approaches the mark’s value where they touch. In the Core detonation detail, the traveling front replaces the old cluster of bright fireballs; broken red crust remains at +300 ms. Both overlap cases retain their red hostile arc. [Native details](../../artifacts/nextgen/fx33/native-details.png) · [Crawler snapshot](../../artifacts/nextgen/playtest/fx33-release-pyro/r4-communal-atrium-pressure.json)
+
+The production build passed. The seed-1729 Pyro campaign cleared all eight rooms with zero errors and zero runner defects. The Crew Checkpoint benchmark used fixed resolution and 600 fixed ticks per rig and tier. [Campaign](../../artifacts/nextgen/playtest/fx33-release-pyro/report.json) · [Baseline](../../artifacts/nextgen/fx33-base/benchmark.json) · [Release](../../artifacts/nextgen/fx33-release/benchmark.json)
+
+| Rig and tier | Before peak draws | FX33 peak draws | Combat shader compiles, before / FX33 |
+| --- | ---: | ---: | ---: |
+| Pyro High | 160 | 155 | 0 / 0 |
+| Pyro Low | 146 | 141 | 0 / 0 |
+| Cryo High | 147 | 147 | 0 / 0 |
+| Cryo Low | 134 | 134 | 0 / 0 |
