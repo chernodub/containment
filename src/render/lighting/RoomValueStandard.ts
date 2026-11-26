@@ -121,7 +121,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     landmark:{at:[581,302],color:0xba86d5,radius:7,body:.6,spill:.025,height:1.2,keyGain:.7},
     // Consumed milling machine, rear brood nest, engulfed repair bench.
     fixturesAt:[[507,328],[861,100],[250,900]],
-    floor:{lit:.62,unlit:.29,edge:.14},perimeter:{inner:3.8,outer:10,value:.42,lane:.8},
+    floor:{lit:1.20,unlit:.34,edge:.14},perimeter:{inner:3.8,outer:10,value:.42,lane:.8},
     wall:{value:.58,saturation:.60},floorSaturation:.54,tint:0xd9c4eb,
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
@@ -129,7 +129,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     landmark:{at:[343,538],color:0xe977d4,radius:4.8,body:.20,spill:.012,keyGain:.88,height:2.7},
     // Hive heart and the occupied northern/southern ventilation mouths.
     fixturesAt:[[470,620],[600,250],[600,790]],
-    floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
+    floor:{lit:1.20,unlit:.35,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
     wall:{value:.60,saturation:.60},floorSaturation:.55,tint:0xebbedc,
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),

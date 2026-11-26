@@ -286,3 +286,59 @@ My weakest three are Manual Control Chamber, Safety Interlock Station and Awaken
 The production build passed. The Standard Cryo campaign on seed 1729 cleared nine rooms and ended in Transmission Chamber with zero runtime errors. Its runner exited 1 and recorded four room-loading delays over five seconds. [Campaign receipt](../../artifacts/nextgen/room31/cryo-report.json)
 
 All 80 captures completed on ccda8c66 with zero capture failures or errors. The gallery contains native final21/current pairs, current-only 480 × 270 frames and eight colour or greyscale sheets. [Open gallery](../../artifacts/nextgen/room31/index.html) · [Capture inventory](../../artifacts/nextgen/room31/captures.json)
+
+## ROOM32
+
+The deck lamp has a 36-unit lens and a hooded trapezoidal throw that opens to 145 ship units. The marine’s 32-unit footprint gives the pool a scale of about four and a half marine widths at its outer edge. The lamp pulses on the existing environment clock, and its fixture participates in the existing non-shadow-casting light pool. The raised fragments share the room machine’s geometry batch and contact-shadow footprint pass. They are mounted on the service side of the terminal, with a maximum height of 10 ship units (0.31 m).
+
+Passenger has a toppled berth and a pod-width pair of drag scars. Checkpoint has a bent queue rail between torn anchor shoes, Freight a skewed cradle runner with a slack restraint, and Transmission a broken fork in the waveguide. The manual console, recorder and workbench retain their authored locations.
+
+The centre service panels now have closely spaced grate ribs. The floor symbols from ROOM31 are confined to the outer aisles. Lit-floor gain in Workshop and Junction rises from 0.62 to 1.20. Their near-black perimeter values stay low. The existing outboard conduits supply foreground depth.
+
+The pressure restages use the rig, marine position and facing and the recorded living enemy types and positions from each final22 native pressure snapshot. Timing, attack poses, projectiles and ability effects differ from the native frame. Use the pairs to compare the room at that fight location.
+
+### Peak draw calls
+
+One ten-second Arc trial per room and tier on each build. These are observed peaks on the shared host. [Previous receipt](../../artifacts/nextgen/room32-before/benchmark.json) · [ROOM32 receipt](../../artifacts/nextgen/room32-after/benchmark.json)
+
+| Room | Tier | Previous | ROOM32 | Combat compiles |
+|---|---|---:|---:|---:|
+| safety-interlock-station | high | 285 | 241 | 0 |
+| safety-interlock-station | low | 277 | 223 | 0 |
+| transmission-chamber | high | 170 | 162 | 0 |
+| transmission-chamber | low | 158 | 158 | 0 |
+
+### Kiting at 480 × 270
+
+The first column records whether the thumbnail identifies the room with the lettering ignored. The last column compares the marine, enemy marks and visible warnings with final22.
+
+| Room | Identifiable | Where the practical shows | Raised consequence | Any harder to find? |
+|---|---|---|---|---|
+| Awakening Bay | Yes, from the thaw berths | Amber strip on the thaw fitting. The pool overlaps the marine light. | Pleated pad torn out of a pod | No |
+| Passenger Vault | Yes | Green below the berth train | Toppled padded berth on two parallel scars | No |
+| Residential Gallery | Tentative | Cool light under the serving trolley | Fallen tray and loose plates | No |
+| Communal Atrium | No | Violet beside the irrigation manifold | Broken branch and pale leaves. They read as fragments at this size. | No |
+| Crew Checkpoint | Yes | Amber between the displaced shoes | Bent queue rail with torn anchor plates | No |
+| Armory | Yes | Pale green beside the ammunition spill | Split clip and scattered rounds | No |
+| Freight Hold | Yes | Cold white on the lower-left runner | Skewed cargo cradle with a slack restraint | No |
+| Breached Loading Bay | Yes | Sodium light at the end of the deck tear | Three lifted plate edges | No |
+| Relay Racks | Yes | Amber at the end of the rack wiring | Broken cable comb with splayed pins | No |
+| Transmission Chamber | Yes | Amber at the fork beneath the feed | Scorched branching waveguide with exposed ends | No |
+| Diagnostic Gallery | Yes | Violet below the dark recorder | Snapped bed rail, casters and bag | No |
+| Safety Interlock Station | No | Green to the left of the switch | Switch contact and two bushings. A heavy hides part of the assembly. | No |
+| Coolant Plant | Yes | Amber at the break against the cold pipework | Cuffed pipe split above the runoff | No |
+| Service Shaft Landing | Yes | Violet at the winch sheave | Wire drum and trailing sling | No |
+| Infested Workshop | Tentative | Warm pool under the workbench | Broken impeller and thrown blade | No |
+| Swarm Junction | Yes | Pale green below the ruptured pipe | Shed shells following the ribbed nest | No |
+| Shielding Gate | Yes | Amber below the gate track | Dropped three-tooth cassette | No |
+| Containment Annulus | Yes | Amber beside the curved containment jacket | Short arc of displaced gasket clamps, partly behind the heavy | No |
+| Manual Control Chamber | Tentative | Green below the reader at the end of the console | Detached keyed plug and two tails | No |
+| Overload Floor | Yes | Cold white on the feeder shoe beside the reactor | Two buckled copper bus bars | No |
+
+The weakest three are Communal Atrium, where leaves merge into general debris, Safety Interlock Station, where the defining contact hides behind a heavy, and Manual Control Chamber, where the reader plug is small beside the console.
+
+The production build passed. Standard Cryo, seed 1729, cleared 12 rooms and died in Coolant Plant with zero errors. The runner recorded three room-loading holds over five seconds in Passenger Vault, Residential Gallery and Crew Checkpoint. [Campaign receipt](../../artifacts/nextgen/room32/cryo-report.json)
+
+[ROOM32 gallery and ten sheets](../../artifacts/nextgen/room32/index.html) · [Capture inventory](../../artifacts/nextgen/room32/captures.json). Each of the five views has 20 accepted captures, a native final22/current pair per room, a current-only 480 × 270 frame and colour and greyscale sheets. The capture receipts retain 13 interrupted kiting/arena attempts from closing stalled browsers. The replacements completed after the capture harness queried shader link status synchronously during preparation. All 100 accepted captures have zero page or console errors.
+
+All 20 pressure restages match the native living-enemy counts. Nineteen also match the recorded marine coordinates exactly. The original Safety Interlock and Manual Control positions initially cropped the physical warning sign. Extra camera settling resolved Safety Interlock at the original position. Manual Control needed a legal position 128 ship units (4 m) away for its accepted frame. Both initial exact-location pairs remain available in the gallery.
