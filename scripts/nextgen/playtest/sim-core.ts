@@ -137,7 +137,7 @@ export type SimOptions = {
     maxRoomSeconds?: number;
     trace?: boolean;
     readExchange?: boolean;
-    recoveryGrilles?: boolean;
+    recoveryGrilles?: boolean | 'release-only';
     metrics?: Record<string, {
         height: number;
     }>;
@@ -176,6 +176,10 @@ export function runSimulation(options: SimOptions) {
     const weaponHits = {total:0, exposed:0};
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if(room&&e.type==='recovery-grille-closed'){
+            room.grilleClosures++;
+            room.grilleEscortsCancelled+=e.grilleEscorts??0;
+        }
         if(e.type==='hit'&&e.source==='weapon'&&(e.damage??0)>0){
             weaponHits.total++;
             if(e.exposedHit)weaponHits.exposed++;
@@ -400,7 +404,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', grilleClosures:0, grilleEscortsCancelled:0, startedElapsed: game.elapsed, startStats: game.stats,
                 startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
