@@ -1,6 +1,7 @@
 """Reduce supersampled figure plates into the native breach artwork."""
 from pathlib import Path
 import sys
+import math
 from PIL import Image,ImageDraw,ImageFilter,ImageChops,ImageOps
 from ink_contour import contour
 from title34_light import cast_shadow
@@ -48,6 +49,19 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         ice.putalpha(source.getchannel('A'))
         source=ice
     if name=='warden':
+        # Shield brass reflects into the large side plane of the loaded arm.
+        # Keep the feet in the hull's shadow so the bone brow leads the caste.
+        w,h=source.size
+        near=Image.new('L',source.size)
+        ImageDraw.Draw(near).ellipse((.36*w,.58*h,.80*w,1.20*h),fill=225)
+        near=near.filter(ImageFilter.GaussianBlur(w*.025))
+        planes=source.convert('L').point(lambda v:58 if 55<v<140 else 0)
+        bounce=ImageChops.multiply(near,planes)
+        source.paste('#cb9955',(0,0,*source.size),ImageChops.multiply(bounce,source.getchannel('A')))
+        feet=Image.new('L',source.size)
+        ImageDraw.Draw(feet).rectangle((0,h*.72,w*.77,h),fill=240)
+        horn=ImageChops.multiply(feet,source.convert('L').point(lambda v:255 if v>155 else 0))
+        source.paste('#a7987b',(0,0,*source.size),ImageChops.multiply(horn,source.getchannel('A')))
         # Set the luminous organ behind the prow and above the lower jaw.
         throat=ImageChops.offset(organ,-round(source.width*.049),round(source.width*.027))
         source.paste('#a65833',(0,0,*source.size),throat)
@@ -61,6 +75,23 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
     rim=ImageChops.subtract(alpha,inward).point(lambda a:round(a*.78))
     source.paste('#b6dbe6',(0,0,*source.size),rim)
     source.putalpha(alpha)
+    if name=='warden':
+        # Curl the contact side of the near digits around the broken lip.
+        # Inverse-map a local patch of the supersampled matte, leaving the wrist anchored.
+        w,h=source.size
+        source=ImageOps.expand(source,border=(0,0,0,round(h*.08)))
+        def knuckle(x,y):
+            reach=math.exp(-((x/w-.694)/.085)**4)
+            contact=max(0,min(1,(y/h-.845)/.14))
+            return x,y-h*.053*reach*contact
+        grid=[]
+        step=max(12,w//48)
+        for y0 in range(0,source.height,step):
+            for x0 in range(0,w,step):
+                x1,y1=min(w,x0+step),min(source.height,y0+step)
+                corners=(knuckle(x0,y0),knuckle(x0,y1),knuckle(x1,y1),knuckle(x1,y0))
+                grid.append(((x0,y0,x1,y1),tuple(v for pair in corners for v in pair)))
+        source=source.transform(source.size,Image.Transform.MESH,grid,Image.Resampling.BICUBIC)
     weight=max(2,round(source.width*.003))
     outlined=contour(source,weight)
     scale=extent/(outlined.height if vertical else outlined.width)

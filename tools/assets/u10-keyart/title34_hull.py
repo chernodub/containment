@@ -1,5 +1,5 @@
 """Hull returns and landing deck in the perspective of the existing 640-wide stage."""
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 def sheet():
     return Image.new('RGBA',(5120,2880))
@@ -61,4 +61,4 @@ def contacts():
                    [(296,290),(312,288),(337,294),(341,298),(323,297),(308,296)],
                    [(296,152),(305,150),(328,151),(325,154),(306,155)]]:
         panel(shadow,points,'#101b24')
-    return shadow.resize((2560,1440),Image.Resampling.LANCZOS)
+    return shadow.resize((2560,1440),Image.Resampling.LANCZOS).filter(ImageFilter.GaussianBlur(2))
