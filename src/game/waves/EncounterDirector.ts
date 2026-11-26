@@ -196,6 +196,18 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      {...request,atMs:Math.max(request.atMs,750),consoleHold:true});
    }
   }
+  const relief=(node.depth===4&&beat.grammar==='crossfire')||
+   (node.depth===5&&beat.grammar==='priority')||(node.depth===6&&beat.grammar==='pincer')||
+   (node.depth===7&&beat.grammar==='interception');
+  if(relief&&mode==='standard'){
+   const ordered=[...arrivals].sort((a,b)=>a.atMs-b.atMs);
+   const screen=ordered.find(request=>!request.guardian&&!request.priority&&
+    (request.role==='screen'||request.role==='flanker'||request.role==='ranged'));
+   if(screen){
+    const index=arrivals.indexOf(screen);
+    arrivals[index]=Object.freeze({...screen,atMs:screen.atMs+950});
+   }
+  }
   const lateExchange=['diagnostic-gallery','infested-workshop'].includes(node.templateId)&&beatIndex===1;
   if(lateExchange){
    const lead=arrivals.findIndex(request=>!request.guardian&&!request.reinforcement&&
