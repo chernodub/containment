@@ -76,21 +76,45 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
   c.save();
   switch(id){
     case 'passenger-vault':
-      for(const gauge of [-29,29]){
+      // Each torn wheel channel is 16 ship units (0.5 m) wide. The two
+      // displaced lips retain the gauge even where one wheel skipped.
+      for(const gauge of [-24,24]){
         c.save();c.translate(0,gauge);
-        const path='M72 419Q178 430 292 470T483 484Q573 465 686 472T1000 465';
-        line(path,9,'#434d50');c.translate(0,3);line(path,2.5,'#7a8581');c.restore();
+        const path='M70 414Q163 412 271 452T480 449Q572 430 684 449T1000 444';
+        line(path,19,'#a9a899');line(path,15,'#242d31');
+        c.translate(0,2);line(path,7,'#485355');
+        for(const x of [201,376,502,698,850,972]){
+          c.fillStyle='#7b8480';c.fill(new Path2D('M'+x+' 447l12 -5 4 2 -14 7Z'));
+        }
+        c.restore();
       }break;
-    case 'crew-checkpoint':
-      line('M205 432Q276 378 414 429T648 444Q750 405 832 432',12,'#4e5050');
-      line('M205 437Q276 383 414 434T648 449Q750 410 832 437',3,'#928575');
-      break;
-    case 'transmission-chamber':
-      for(const z of [-7,7]){
-        c.save();c.translate(0,z);line('M365 497H551L610 551H743L814 482H888',9,'#424345');c.restore();
-      }
-      for(let x=620;x<741;x+=17)line('M'+x+' 540v22',4,'#817563');
-      break;
+    case 'crew-checkpoint':{
+      const arc='M178 453Q255 369 384 405T634 456Q747 399 885 441T1128 421';
+      line(arc,36,'#252b30');line(arc,30,'#96958a');
+      c.save();c.translate(0,-5);line(arc,8,'#616567');c.restore();
+      // One shoe pivots, skids and tears loose, leaving a fan of rubber.
+      for(const [x,z,a] of [[284,397,-.28],[461,430,.25],[700,436,-.31],[926,447,.14],[1098,428,-.25]]){
+        c.save();c.translate(x,z);c.rotate(a);
+        c.fillStyle='#353536';c.fill(new Path2D('M-36 -6Q-21 -12 5 -11L26 -8 17 -5 32 -3 17 -1 23 4 -9 7Z'));
+        c.fillStyle='#73726a';c.fillRect(-6,-10,14,18);
+        c.fillStyle='#232b2c';c.fillRect(-3,-6,8,10);c.restore();
+      }break;
+    }
+    case 'transmission-chamber':{
+      const channel='M326 494H472L518 534H593L614 554H755L822 484H893';
+      c.lineJoin='bevel';
+      line(channel,41,'#8b8f8a');line(channel,34,'#233038');
+      line(channel,20,'#38474a');
+      // Bolted lengths of twin conductor are interrupted at each turnout.
+      for(const [x,z,length] of [[336,494,122],[528,534,55],[623,554,119],[830,484,52]]){
+        for(const rail of [-7,7])for(let dx=0;dx<length;dx+=27){
+          c.fillStyle=rail<0?'#b2aaa0':'#9f9280';c.fillRect(x+dx,z+rail-2,Math.min(21,length-dx),5);
+        }
+        for(let dx=23;dx<length;dx+=27){
+          c.fillStyle='#596970';c.fillRect(x+dx,z-14,4,28);
+        }
+      }break;
+    }
     case 'overload-floor':
       for(const [x,z] of [[172,512],[315,538],[449,562],[615,680],[832,684],[950,568]]){
         c.save();c.translate(x,z);
