@@ -1351,3 +1351,29 @@ SCENARIOS.push({
   d.refresh();
  },
 });
+
+SCENARIOS.push({
+ id:'ui32-dense-pyro',diagnosticOnly:true,state:'playing',room:'containment-annulus',
+ setup:async()=>{
+  const d=window.__containmentDebug,g=d.game;
+  await d.gotoRoom('containment-annulus',{rig:'pyro'});
+  d.invulnerable(true);g.skipStory();g.enemies.reset();
+  const origin=g.player;
+  const formation=Array.from({length:48},(_,i)=>{
+   const angle=i*Math.PI/24;
+   const positions=[[105,-.63],[105,-.14],[105,.35],[165,-.63],[165,-.25],[165,.16],[165,.56]]
+    .map(([distance,offset])=>({x:origin.x+Math.cos(angle+offset)*distance,y:origin.y+Math.sin(angle+offset)*distance}))
+    .filter(p=>d.canStand(p.x,p.y,24)&&d.clearShot(p.x,p.y)&&d.renderer.visible(p.x,p.y));
+   return {angle,positions};
+  }).sort((a,b)=>b.positions.length-a.positions.length)[0];
+  for(const [index,point] of formation.positions.entries()){
+   const id=d.spawn(index%2?'crawler':'carrier',point.x,point.y);
+   if(id)g.enemies.setSlow(id,.1);
+  }
+  g.player.angle=formation.angle;
+  d.setInput({x:0,y:0,fire:false,angle:formation.angle,autoAim:false});
+  if(!g.useAbility('tactical'))throw Error('Flashfire unavailable in staged fight');
+  d.step(230);
+  d.refresh();
+ },
+});
