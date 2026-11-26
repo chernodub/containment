@@ -28,7 +28,7 @@ export function addLaneMachine(root:Group,id:string){
       p.box(9,4,-75,39,6,43,metal,.34);
       for(const z of [-7,0,7])run([[216,-56+z],[132,-56+z],[86,-12+z],[5,-12+z]],4,2.8,rubber);
       p.box(0,5,0,57,9,35,metal);p.box(0,10,-1,48,2,28,0x35474d);
-      for(const x of [-16,-5,6,17])p.box(x,18,-1,7,16,22,0x988d6c,.26);
+      for(const x of [-16,-5,6,17])p.box(x,16,-1,7,15,22,0x988d6c,.26);
       p.box(0,12,18,29,5,4,edge);break;
     case 'service-shaft-landing':
       // A taut standing part meets the sheave, then doubles back to the sling.

@@ -58,8 +58,8 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const x of [L-16,L+16])for(const z of [-10,10])
         p.rod([x,7,z],[x,16,z],2,steel);
       box(L,16,0,44,3,27,ochre);disc(L-9,18,2,7,2,0xa5aea4);
-      disc(L+7,18,-3,7,12,0xb1a089);
-      pipe(L+12,-3,L+20,-3,24,2.5,ochre);
+      disc(L+7,18,-3,7,7,0xb1a089);
+      pipe(L+12,-3,L+20,-3,22,2.5,ochre);
       disc(L-26,15,9,13,4,0x9e9782);break;
     case 'communal-atrium':
       pipe(0,0,L,0,4,4,0x756e53);
@@ -133,8 +133,8 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);
       for(const x of [L-28,L-10,L+8])box(x,8,0,8,9,26,steel);
-      p.rod([L+5,7,0],[L+28,32,0],4,steel);
-      box(L+28,33,0,11,8,27,0xc38754);
+      p.rod([L+5,7,0],[L+34,20,0],4,steel);
+      box(L+34,21,0,13,8,29,0xc38754);
       box(L+13,5,0,12,9,36,iron);
       for(let i=0;i<4;i++){
         const x=L-49,z=i*32-33;
