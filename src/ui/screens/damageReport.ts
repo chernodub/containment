@@ -66,7 +66,7 @@ function attackGuide(receipt: RunStatsSnapshot['lastDamage']): LastExchange {
   const earlier = {...marine,x:65,y:40};
   let shape: AttackFootprint['shape'] = {kind:'circle',range:AREA_ATTACK_RADIUS};
   if (source==='enemy-contact' && family!=='queen') shape=MELEE_ATTACKS[family].shape;
-  if (source==='enemy-charge') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000,width:48,halfAngle:0};
+  if (source==='enemy-charge') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000,width:2*ENEMIES.brute.radius,halfAngle:0};
   if (source==='enemy-projectile') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife,width:2*ENEMY_ATTACK_SHAPES.spitterProjectileRadius,halfAngle:0};
   if(source==='acid-pool') shape={kind:'circle',range:AREA_ATTACK_RADIUS*.75};
   if(source==='self-blast') shape={kind:'circle',range:162};
@@ -125,7 +125,7 @@ export function lastExchangeDiagram(game: DepthGame): string {
     <svg role="img" aria-label="Coral fatal footprint, muted nearby attacks, marine at impact and one second earlier, and a clear step when available." viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
-      ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${Math.min(30,fatal.shape.range)}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
+      ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
       ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle)).join('')}${path}${pose(marine)}${exit}
     </svg><figcaption>${advice}</figcaption></figure>`;
 }
