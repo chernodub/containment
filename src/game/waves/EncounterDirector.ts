@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;consoleLead?:true;consoleHold?:true;afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -188,7 +188,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     }
    }
   }
-  const lateExchange=['diagnostic-gallery','infested-workshop','manual-control-chamber'].includes(node.templateId)&&beatIndex===1;
+  if(node.templateId==='manual-control-chamber'&&beatIndex===1){
+   const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
+   if(lead)for(let index=0;index<arrivals.length;index++){
+    const request=arrivals[index];
+    arrivals[index]=Object.freeze(request===lead?{...request,atMs:650,consoleLead:true}:
+     {...request,atMs:Math.max(request.atMs,750),consoleHold:true});
+   }
+  }
+  const lateExchange=['diagnostic-gallery','infested-workshop'].includes(node.templateId)&&beatIndex===1;
   if(lateExchange){
    const lead=arrivals.findIndex(request=>!request.guardian&&!request.reinforcement&&
     (request.enemyId==='stalker'||request.enemyId==='brute'));

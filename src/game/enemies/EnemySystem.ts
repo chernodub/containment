@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -198,7 +198,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -405,7 +405,7 @@ export class EnemySystem {
     const reservedChildren =
       type === 'carrier' ? Math.min(CARRIER_CHILD_CAP, availableReservations) : 0;
     const state: EnemyState = {
-      broodDestination:options.broodDestination,openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
+      recoveryFloorMs:options.recoveryFloorMs,broodDestination:options.broodDestination,openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
       id: this.#nextId++,
       type,
       elite: elite === true,
@@ -1272,6 +1272,10 @@ export class EnemySystem {
         enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
+        if(enemy.recoveryFloorMs){
+          enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(enemy.meleeRemainingMs,enemy.recoveryFloorMs);
+          enemy.recoveryFloorMs=undefined;
+        }
         enemy.recoveryPunished=false;
         if(!enemy.champion&&!enemy.meleeConnected){
           events.push(freezeEvent({type:'melee-miss',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
