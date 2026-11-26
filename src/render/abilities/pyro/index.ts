@@ -336,7 +336,7 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .68 * k + .16, .46 * k + .12, 1, 0xfff9e9, k);
       kit.draw('spark', this.source.x + c * .4, this.source.y, this.source.z + s * .4, .5 * k, .14 * k, 1, 0xffd27a, .8 * k, 0, -p.angle);
     }
-    kit.lightAt(p.lightId, p.x + c * p.range * .4, p.z + s * p.range * .4, FIRE, (14 + 18 * hot) * fade, Math.max(8, p.range * 1.2));
+    kit.lightAt(p.lightId, p.x + c * p.range * .4, p.z + s * p.range * .4, FIRE, (5 + 18 * hot) * fade * (.28 + .72 * Math.max(0, 1 - p.age / .2)), Math.max(8, p.range * 1.2));
     if (emit && !kit.low && p.age < .5) {
       const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * (.5 + (p.age * 3.1) % .4);
       kit.mote('spark', p.x + Math.cos(a) * r, .5, p.z + Math.sin(a) * r, Math.cos(a) * 2, 1.4, Math.sin(a) * 2, .03, .8, HOT);

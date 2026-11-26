@@ -406,7 +406,7 @@ export class ElementKit {
             .normalize().multiplyScalar(radius * .54);
         x += lift.x; y += lift.y; z += lift.z;
         this.flowCard('flame', x, y, z, x + radius * .20, y + height, z + radius * .13,
-            Math.max(.10, radius * .27), 0xffeabb, 1, -1 - Math.abs(seed % 63));
+            Math.max(.14, radius * .34), 0xfff5c9, 1, -1 - Math.abs(seed % 63));
     }
     /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
     boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {

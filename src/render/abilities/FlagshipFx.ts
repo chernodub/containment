@@ -602,6 +602,10 @@ void main(){
   float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
  }
+ if((m>=.5 && m<1.5)||(m>=7.5 && m<8.5)||(m>10.5 && m<11.5)||(m>13.5 && m<14.5 && fxArc==2.)){
+  float silhouette=max(prioritySample.r,texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5+vec2(0.,-.004)).r);
+  emit*=1.-smoothstep(.035,.65,silhouette);
+ }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
