@@ -173,6 +173,14 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
  alpha=bed*mix(.16,.42,peak)*(.82+.28*crust);
  base=mix(vec3(.010,.029,.045),vec3(.115,.228,.245),crust*facet);
  emit=vec3(.027,.063,.075)*crust*(1.-facet)*bed+vec3(.045,.112,.134)*ridge;
+ if(storm){
+  vec2 lee=vec2(.76,-.34);
+  float shelter=smoothstep(.08,.68,clear-deckClearance(p-lee));
+  float drift=fxFbm(vec2(p.x*.42+p.y*.28,p.y*1.24)+wind*.28);
+  float deposit=smoothstep(.58,.72,drift+shelter*.30);
+  alpha*=mix(.045,1.,deposit);
+  emit*=deposit;
+ }
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
  // All pools sample the same deck coordinates, including at ownership seams.
@@ -570,6 +578,10 @@ void main(){
  // Ground sheets keep a flat, quiet tint underneath the warning.
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
+ if(m>13.5 && m<14.5 && fxArc<1.5){
+  float margin=1.-smoothstep(.02,.9,max(prioritySample.r,prioritySample.b));
+  alpha*=margin;emit*=margin;
+ }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
