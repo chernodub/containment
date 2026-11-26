@@ -66,6 +66,7 @@ export class EnemyMotion {
   private seed = 0;
   private nativePhase: EnemyAttackPhase | undefined;
   private nativeProgress = 0;
+  private recoveryAge = 0;
   private biteHook?:T.Object3D;
   private readonly hookRest=new T.Quaternion();
   private hookOffset=false;
@@ -109,6 +110,7 @@ export class EnemyMotion {
   setAttackState(phase: EnemyAttackPhase, progress: number, angle: number, shape?: EnemyStrikeShape | null) {
     if (phase === 'strike' && this.nativePhase !== 'strike') this.attack();
     if (phase === 'approach' && this.nativePhase === 'windup') this.release = 0;
+    if (phase === 'recovery' && this.nativePhase !== phase) this.recoveryAge = 0;
     this.nativePhase = phase;
     this.nativeProgress = T.MathUtils.clamp(progress, 0, 1);
     this.nativeAngle = angle;
@@ -173,6 +175,7 @@ export class EnemyMotion {
     const stopped = frozen ? dt : Math.min(dt, this.hold);
     this.hold = Math.max(0, this.hold - dt);
     this.visualTime += dt - stopped;
+    if (this.nativePhase === 'recovery') this.recoveryAge += dt - stopped;
     this.impactAge += dt; this.beamAge += dt;
     this.release = Math.max(0, this.release - dt);
     this.emergence = Math.min(.34, this.emergence + dt);
@@ -212,8 +215,9 @@ export class EnemyMotion {
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
       if(this.biteHook && (brace || strike || recovery)){
         this.hookRest.copy(this.biteHook.quaternion);
-        this.biteHook.rotateZ(-.30*(brace+strike+recovery));
-        this.biteHook.rotateX(.26*brace);
+        const held = recovery ? 1 - T.MathUtils.smoothstep(this.recoveryAge, .12, .23) : 0;
+        this.biteHook.rotateZ(-.30*brace - .54*Math.max(strike,recovery,held));
+        this.biteHook.rotateX(.26*brace + .20*Math.max(strike,held));
         this.hookOffset=true;
       }
       const mass=1/Math.sqrt(p.weight);
@@ -222,8 +226,8 @@ export class EnemyMotion {
       // The off-balance return follows the full native recovery, including elites.
       const extension=this.nativePhase==='strike'?(this.family==='stalker'
         ? .91+.09*Math.sin(Math.PI*this.nativeProgress)-.18*this.nativeProgress
-        : 1-.35*this.nativeProgress)
-        :this.nativePhase==='recovery'?(this.family==='stalker'?.73:.65)*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
+        : 1-.18*this.nativeProgress)
+        :this.nativePhase==='recovery'?(this.family==='stalker'?.73:.82*(1-.54*T.MathUtils.smoothstep(this.recoveryAge,0,.12)))*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
       const lunging=this.family==='stalker'||this.family==='crawler';
       const limit=lunging&&this.strikeRange>0?Math.max(0,this.strikeRange-(this.root.userData.colliderRadius??.5)):this.state.offsetLimit;
       const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
@@ -231,7 +235,7 @@ export class EnemyMotion {
       // The outer hook reaches around the boot at contact. Leave the shell
       // beside the ankle so its cutting edge stays clear of the suit.
       if(this.biteHook && extension>0){
-        const lateral=-limit*.32*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
+        const lateral=-limit*.46*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
         this.body.position.x+=Math.cos(strikeDirection)*lateral-Math.sin(strikeDirection)*limit*.18*extension;
         this.body.position.z-=Math.sin(strikeDirection)*lateral+Math.cos(strikeDirection)*limit*.18*extension;
       }
