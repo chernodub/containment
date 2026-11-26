@@ -1074,10 +1074,9 @@ export class DepthGame {
       !canTraverseExpedition(this.geometry,this.player,reward,this.player.radius)||
       !hasClearExpeditionShot(this.geometry,this.player,plate))continue;
      this.residentialLane={plate,side:{x:-Math.sin(angle)*side,y:Math.cos(angle)*side}};
-     const cover=this.difficulty==='standard'&&stageCoverLesson(this.geometry,
-     ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],player);
-    const pickup=cover?cover.pickup:reward;
-    this.pickups.spawn('armor',20,pickup.x,pickup.y);
+     const coveredReward=this.difficulty==='standard'&&stageCoverLesson(this.geometry,cover,this.player);
+     const pickup=coveredReward?coveredReward.pickup:reward;
+     this.pickups.spawn('armor',20,pickup.x,pickup.y);
      break;
     }
    }
