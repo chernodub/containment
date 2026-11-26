@@ -95,6 +95,40 @@ function integrationKitingSetup(tier){
 }
 
 export const SCENARIOS=[
+ ...[
+  ['arc','pilgrim-pylon','power'],['arc','live-wire','tactical'],
+  ['cryo','shard-harvest','tactical'],['cryo','ice-road','power'],
+  ['breacher','siege-plow','power'],['breacher','fault-line','tactical'],
+  ['pyro','ember-relay','power'],['pyro','meltdown-core','overdrive'],
+ ].map(([rig,augment,slot])=>({
+  id:`play35-${augment}`,diagnosticOnly:true,state:'playing',setupArgument:{rig,augment,slot},
+  setup:async ({rig,augment,slot})=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom('transmission-chamber',{runStructure:true,rig});
+   d.grantBoons([augment]);
+   d.invulnerable(true);
+   const g=d.game;
+   for(let elapsed=0;elapsed<7000&&g.targets().length<2;elapsed+=100)d.step(100);
+   const targets=g.targets();
+   const target=targets.find(actor=>d.clearShot(actor.x,actor.y))??targets[0];
+   if(target){
+    const angle=Math.atan2(target.y-g.player.y,target.x-g.player.x);
+    const aim=slot==='power'?{x:g.player.x+Math.cos(angle)*104,y:g.player.y+Math.sin(angle)*104}:target;
+    g.setAimPoint(aim);
+    d.setInput({angle,autoAim:false});
+    if(slot==='overdrive')d.fillOverdrive();
+    g.useAbility(slot);
+    d.step((g.abilities.snapshot.slots[slot].castRemainingMs??0)+180);
+    if(rig==='arc'){
+     d.setInput({x:-Math.sin(angle),y:Math.cos(angle),angle,autoAim:false});
+     d.step(400);
+     d.setInput({x:0,y:0});
+    }
+   }
+   d.refresh();
+  },
+ })),
+
  ...ONB14_SCENARIOS,
  ...PLAY16_SCENARIOS,
  E9_TOUR_SCENARIO,
