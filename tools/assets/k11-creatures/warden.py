@@ -66,10 +66,11 @@ def build(sk, a):
     shingle((2.00, 0, 7.10), .67, .50, -.08, "head", 451, CREST)
     # Open jaws project beyond the neck. The mouth runs around the leading lip
     # and remains exposed at both corners when the prow is seen edge-on.
-    lobe((4.27, 0, 5.65), (1.48, 1.13, .34), "head", -.21, zone=ARMOR, plate=424)
+    w.add(Carapace((4.49, 0, 5.73), (1.39, 1.19, .39), frame((1, 0, -.22)),
+                   zone=ARMOR, plate=424, bone="head", hard=1))
     for sign in (-1, 1):
-        w.add(Carapace((4.48, 1.14*sign, 6.15), (1.14, .32, .48),
+        w.add(Carapace((4.58, 1.23*sign, 6.20), (1.26, .40, .54),
                        frame((1,-.21*sign,-.23)), zone=ARMOR, plate=424, bone="head", hard=1))
-    lobe((4.57, 0, 6.32), (1.14, 1.22, .66), "head", -.32,
+    lobe((4.46, 0, 6.36), (1.19, 1.21, .68), "head", -.32,
          zone=ORGAN, name="warden-ram")
     return w

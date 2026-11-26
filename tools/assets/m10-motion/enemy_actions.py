@@ -291,6 +291,25 @@ class Creature:
             turn=(end-pivot).normalized().rotation_difference(direction.normalized())
             self.rotate(name,turn.axis,turn.angle*weight)
 
+    def club_hook(self, load, creep):
+        # Frame the sculpted upper arm and club in the deck plane. These three
+        # centres are expressed in armature space, with the sculpt's Z aspect removed.
+        shoulder = FWD*.30 - SIDE*1.70 + UP*(6.90/1.8)
+        elbow = -FWD*.21 - SIDE*3.28 + UP*(6.02/1.8)
+        fist = FWD*2.15 - SIDE*3.00 + UP*(4.57/1.8)
+        def basis(upper, distal):
+            x = upper.normalized()
+            z = x.cross(distal).normalized()
+            return Matrix((x, z.cross(x), z)).transposed()
+        source = basis(elbow-shoulder, fist-elbow)
+        target = basis(-SIDE + FWD*(.92-.26*creep) + UP*.10, -FWD - SIDE*.45 + UP*.25)
+        swing = (target @ source.transposed()).to_quaternion()
+        anchor = shoulder - SIDE*(.76+.36*creep) - FWD*(.48+.48*creep) + UP*.18
+        hook = Matrix.Translation(anchor) @ swing.to_matrix().to_4x4() @ Matrix.Scale(1.13, 4) @ Matrix.Translation(-shoulder)
+        name = 'shoulder.r'
+        posed = self.m[name].lerp(hook @ self.rest[name], load)
+        self.transform(name, posed @ self.m[name].inverted_safe())
+
     def club_swing(self, action, t, targets):
         # Both rebuilt clubs skin to the shoulder. Pose that joint directly;
         # moving the legacy wrist IK alone barely moves the drawn knuckles.
@@ -299,7 +318,7 @@ class Creature:
         drive=between(t,[(0,.80),(.28,1.10),(.72,1.),(1,1.)]) if action=='m10-strike' else 1.-smooth((t-.75)/.25) if action=='m10-recovery' else 0.
         slump=drive if action=='m10-recovery' else 0.
         self.move(self.center,(-FWD*W*.14+UP*H*.09)*load + SIDE*W*.09*load+FWD*W*.12*drive-UP*H*(.07*load+.12*drive))
-        self.rotate(self.center,UP,-.34*load+.43*drive-.18*slump)
+        self.rotate(self.center,UP,-.60*load+.43*drive-.18*slump)
         self.rotate(self.center,SIDE,.14*load+.31*drive)
         support='shoulder.l'
         self.transform(support,self.base_matrices[support] @ self.m[support].inverted_safe())
@@ -307,10 +326,13 @@ class Creature:
         self.rotate('shoulder.r',SIDE,.68*load-.55*drive)
         self.move('shoulder.r',-SIDE*W*(.34*load+.26*drive)
                   +FWD*W*(-.18*load+.51*drive)+UP*H*(.22*load-.07*drive))
+        hook = 1. if action=='m10-windup' else 1.-smooth(t/.43) if action=='m10-strike' else 0.
+        if hook:
+            self.club_hook(hook, smooth(t) if action=='m10-windup' else 1.)
         self.move(support, (FWD*W*.08-UP*H*.16)*slump)
         self.rotate(support,SIDE,.28*slump)
         self.move('head',FWD*W*.08*(load+drive)-UP*H*(.10*load+.09*drive+.23*slump))
-        self.rotate('head',UP,.16*load-.21*drive)
+        self.rotate('head',UP,.60*load-.21*drive)
         for leg in self.legs:
             targets[leg['index']]=leg['rest']
 

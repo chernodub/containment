@@ -1293,3 +1293,48 @@ Crew Checkpoint, Pyro, fixed resolution, 300 simulation ticks per tier. The thre
 HEAVY37 and SKIN37 also match on minimum, P95 and mean draw calls for both tiers. Compared with final20, their means are higher by one draw across 37 samples. The integrated P95 submit time increased on both tiers. The captures and campaign shared the machine during the run, so these timings include host contention. Reports are in `artifacts/nextgen/{skin37-fixed-before,skin37-heavy-control,skin37-integrated}/benchmark.json`.
 
 The final production build passed. Arc, seed 1729, cleared all eight rooms with zero errors and zero runner defects in the isolated replay (`artifacts/nextgen/playtest/skin37-solo-arc/report.json`). An earlier replay during the gallery captures also cleared eight rooms with zero runtime errors, but recorded slow room preparation in Passenger Vault and Residential Gallery. The review index links all 37 native sheets and all 35 reduced sheets. The two motion strips are native only.
+
+## POSE38
+
+The loaded Brute now points its upper arm outboard and folds its forearm back across the deck. The motion generator uses the sculpted shoulder, elbow and fist centres to orient the striking side. It keeps the opposite knuckles planted, counterturns the skull toward the marine and moves the elbow back through the warning. Both ranks share the take. The release blends out of the hook in the opening 43% of the strike, sweeping into HEAVY37's wide plant. The first strike tick therefore shows the fist travelling. The native red sector still switches at that tick.
+
+| Attack | Read at 480×270 | Remaining overlap |
+|---|---|---|
+| Brute swing | The shoulder starts at the chest, the elbow makes the outside corner and the fist ends the returning forearm. Floor is visible inside the open bend. Frame 09 in the reviewed Crew Checkpoint sequence shows this at the same 1417 ms in both builds. | The fist and its guard read as one club. At contact the marine can cover the low skull. |
+| Elite swing | The same three landmarks and floor opening survive the wider shoulder shelf. The horn crosses the inner edge but leaves the outside elbow visible. | The horn partly hides the arm root in frontal windup. |
+| Warden charge | The shoulder tops lead to two planted forelimbs with a floor wedge between them. The square lower jaw now projects ahead of the light, and the cheeks frame the throat on release, in charge and at wall stun. | At wall stun the far cheek is thinner in projection than the near cheek. |
+
+The Warden's lit area was measured using the WARDEN34 native-resolution connected-component method. Peak is Rec.709 display luma on a 0–255 scale.
+
+| State | Lit area, final21 → POSE38 (pixels) | Peak, final21 → POSE38 |
+|---|---|---|
+| Calm | 6,630 → 6,805 | 244 → 244 |
+| Charge windup | 3,462 → 3,458 | 244 → 243 |
+| Frontal release | 7,043 → 7,061 | 245 → 245 |
+| Charge | 4,654 → 4,641 | 244 → 244 |
+| Wall stun | 3,030 → 3,047 | 243 → 242 |
+
+The Carrier and Matron front hooks already spread across the floor projection as the sac rises. The Crawler's raised rear remains distinct from its two cocked front hooks. The Spitter's melee load and ranged aim keep the lime mark forward, and the Warden compresses between its planted braces. The Stalker's blade was retained. The audit found no additional upright club-like overlap requiring a new take.
+
+| Attack | final21 (ms) | POSE38 (ms) |
+|---|---|---|
+| Brute | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite Brute | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+
+These are the first observed warning, strike or charge, recovery or impact, and return to approach or end of stun in the staged native 60 Hz encounter. Each build uses its own runtime. The simulation diff against final21 fixture head `bc56c43c` is empty.
+
+| Lineup measurement | final21 | POSE38 |
+|---|---|---|
+| Public height, Brute / elite / Warden (m) | 3.030 / 3.271 / 4.500 | 3.030 / 3.271 / 4.500 |
+| Drawn height (m) | 2.87 / 3.35 / 4.41 | 2.87 / 3.35 / 4.41 |
+| Native contact radii | 42.90 / 55.77 / 64.00 | 42.90 / 55.77 / 64.00 |
+| Skeleton | 63 joints · `144d320c6cae75d7` | 63 joints · `144d320c6cae75d7` |
+
+The [local proof gallery](../../artifacts/nextgen/pose38/index.html) links native crops and 480×270 sheets. The floor-free strips sample warning onset, midpoint and 98%. The room images retain the marine, floor warnings, boss indicator and health bars. The waiting-pack images sample a native Brute with waiting engagement and no attack slot. Capture receipts and raw sources are under `artifacts/nextgen/pose38/` and the sibling pose capture folders.
+
+The weakest poses are elite frontal windup, regular melee recovery against the marine, and Warden wall stun viewed across its far cheek.
+
+The six-tick sweep sheets hold the camera on the first 83 ms of native strike. At onset the regular fist is still outboard. At +17 ms it is crossing forward, and by +33 ms it reads as a wide plant beside the marine. The red strike cue and underlying hit window begin on the same tick as final21.
+
+The production build passed. Standard Breacher cleared nine rooms through Relay Racks on seed 1729 with fast stepping and a 180000 ms startup timeout. The runner exited 0 with zero errors and zero recorded defects. [Campaign receipt](../../artifacts/nextgen/playtest/pose38-final-breacher/report.json)
