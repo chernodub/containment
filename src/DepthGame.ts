@@ -884,8 +884,22 @@ export class DepthGame {
   if(shoulder&&canOccupyExpedition(this.geometry,shoulder.shooter,enemyBodyRadius(e.enemyId,e.elite)))
    ({x,y}=shoulder.shooter);
  }
- if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0&&this.residentialLane){
-  ({x,y}=this.residentialLane.plate);
+ if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0){
+  if(!this.residentialLane){
+   const player=this.player;
+   for(let i=0;i<16;i++){
+    const angle=player.angle+i*Math.PI/8,dx=Math.cos(angle),dy=Math.sin(angle);
+    const plate={x:player.x+dx*150,y:player.y+dy*150};
+    const reward={x:plate.x+dx*58,y:plate.y+dy*58};
+    if(!canOccupyExpedition(this.geometry,plate,enemyBodyRadius(e.enemyId,e.elite))||
+     !canTraverseExpedition(this.geometry,player,reward,player.radius)||
+     !hasClearExpeditionShot(this.geometry,player,plate))continue;
+    this.residentialLane={plate,side:{x:-dy,y:dx}};
+    this.pickups.spawn('armor',20,reward.x,reward.y);
+    break;
+   }
+  }
+  if(this.residentialLane)({x,y}=this.residentialLane.plate);
  }
  if(e.lesson){
   const distance=e.lesson==='brute'&&this.node.templateId==='passenger-vault'?84:e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
