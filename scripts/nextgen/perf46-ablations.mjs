@@ -26,8 +26,12 @@ export function installPerf46Arm(arm){
  };
  if(arm==='lowPostOn'){
   const set=r.post.setOptions.bind(r.post);
-  r.post.setOptions=(options,tier)=>set({...options,bloom:true,ambientOcclusion:true,
-   distortion:true,lensEffects:true,inkOutlines:'full'},tier==='low'?'high':tier);
+  r.post.setOptions=(options,tier)=>{
+   // Let the normal option setter keep Low's scene shading and adaptive policy.
+   set({...options,bloom:true,ambientOcclusion:true,atmosphere:true,
+    distortion:true,lensEffects:true,inkOutlines:'full'},tier);
+   if(tier==='low'){r.post.tier='high';r.post.distortion.setEnabled(true);}
+  };
  }
  if(arm==='grade'){
   const ensure=r.post.ensureResources.bind(r.post),applied=new WeakSet();
