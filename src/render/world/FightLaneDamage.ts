@@ -101,11 +101,25 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
           c.fillStyle='#7b8480';c.fill(new Path2D('M'+x+' 447l12 -5 4 2 -14 7Z'));
         }
         c.restore();
-      }break;
+      }
+      // The empty bed stays straight. The displaced continuous steel rail
+      // climbs out of it, leaving its slotted mounting shoes behind.
+      line('M80 421H990',14,'#202a30');
+      for(let x=100;x<990;x+=53){c.fillStyle='#6a797b';c.fillRect(x,415,13,12);c.fillStyle='#242a2c';c.fillRect(x+3,418,7,6);}
+      line('M80 422L318 423 522 458 684 470 990 441',13,'#20272a');
+      line('M80 417L318 418 522 453 684 465 990 436',8,'#aec0b7');
+      break;
     case 'crew-checkpoint':{
       const arc='M178 453Q255 369 384 405T634 456Q747 399 885 441T1128 421';
+      line('M180 454H1100',12,'#30343a');
       line(arc,36,'#252b30');line(arc,30,'#96958a');
       c.save();c.translate(0,-5);line(arc,8,'#616567');c.restore();
+      for(const x of [302,517,731,945]){
+        c.save();c.translate(x,421);c.rotate(.17);
+        c.fillStyle='#353438';c.fillRect(-25,-11,50,24);
+        c.fillStyle='#ac966f';c.fill(new Path2D('M-25 7L-8 -14 3 -16 24 6 13 7 -6 -6 -18 9Z'));
+        c.restore();
+      }
       // One shoe pivots, skids and tears loose, leaving a fan of rubber.
       for(const [x,z,a] of [[284,397,-.28],[461,430,.25],[700,436,-.31],[926,447,.14],[1098,428,-.25]]){
         c.save();c.translate(x,z);c.rotate(a);
@@ -119,6 +133,9 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       c.lineJoin='bevel';
       line(channel,41,'#8b8f8a');line(channel,34,'#233038');
       line(channel,20,'#38474a');
+      const bus='M323 491H471L518 531H594L615 551H753L820 481H925';
+      line(bus,10,'#39271e');line(bus,6,'#ca9974');
+      line('M739 550l6 -6 4 4 4 -3',9,'#202830');
       // Bolted lengths of twin conductor are interrupted at each turnout.
       for(const [x,z,length] of [[336,494,122],[528,534,55],[623,554,119],[830,484,52]]){
         for(const rail of [-7,7])for(let dx=0;dx<length;dx+=27){
@@ -130,6 +147,11 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       }break;
     }
     case 'overload-floor':
+      const feed='M190 533L326 551 468 568 591 683 833 683 994 645V519L832 355';
+      line(feed,26,'#252a2c');line(feed,18,'#80705f');line(feed,8,'#413e39');
+      for(const [x,z] of [[257,542],[393,560],[531,628],[657,683],[756,683],[896,668],[994,590],[919,444]]){
+        c.fillStyle='#43494a';c.fillRect(x-7,z-17,14,34);c.fillStyle='#b57c48';c.fillRect(x-4,z-12,5,24);
+      }
       c.save();c.translate(833.71249,349.81813);
       const shade=c.createLinearGradient(0,-14,0,-56);
       shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
