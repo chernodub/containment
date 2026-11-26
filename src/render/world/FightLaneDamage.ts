@@ -1,4 +1,4 @@
-import {MeshBasicMaterial,MeshStandardMaterial,type Group} from 'three';
+import {MeshBasicMaterial,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
 /** Ship-plan coordinates along the service edges. These are fragments of the
@@ -49,20 +49,24 @@ export function addFightLaneDamage(root:Group,id:string){
       // A battered steel sill straddles the feed. The sloping end and
       // recessed panel breaks expose the stopping face from the approach.
       lip.box(-49,17,-8,98,34,16,0x485352);
-      lip.face([[-98,35,-18],[0,35,-18],[0,35,0],[-98,35,0]],0x77817a);
-      lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x646f6c);
-      lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x242b2d);
+      lip.face([[-98,35,-18],[0,35,-18],[0,35,0],[-98,35,0]],0x48504b);
+      lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
+      lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x171d20);
       lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
       for(const x of [-90,-64,-38]){
         const front=-x*.092;
         lip.face([[x,22,front+.6],[x+19,22,front-1.2],[x+19,29,front-1.2],[x,29,front+.6]],0x353b3d);
-        lip.box(x+7,35.2,-2,16,.7,2.6,0xbc7848);
+        lip.box(x+7,35.2,-2,16,.7,2.6,0xab6335);
         lip.box(x+2,35.3,-11,1.3,.6,8,0x3e4645);
       }
       lip.rod([-95,12,-10],[-163,6,-27],4,0x58605a);
       lip.rod([-95,9,-18],[-160,5,-34],3,0x805f4c);
-      const steel=new MeshStandardMaterial({vertexColors:true,roughness:.76,metalness:.23,
-        emissive:0x171c1c,emissiveIntensity:.32});
+      // Painted steel values stay readable on the dark feeder bank. The
+      // short orange return around the corner follows the reactor casing.
+      lip.box(-9,34.8,-1,18,1.6,2.3,0xa45e32);
+      lip.box(-1,34.8,-8,2,1.6,15,0x96542f);
+      for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
+      const steel=new MeshBasicMaterial({vertexColors:true});
       const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
       sill.castShadow=true;sill.receiveShadow=true;
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){

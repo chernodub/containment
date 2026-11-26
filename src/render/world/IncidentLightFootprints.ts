@@ -14,7 +14,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const angle=lane?Math.atan2(lane[3]-lane[1],lane[2]-lane[0]):0;
   const source=storyIncidentSource(room.id);
   const mounts=[{pin:terminal,angle}];
-  if(source&&Math.hypot(source[0]-terminal[0],source[1]-terminal[1])>110)mounts.push({pin:source,angle:0});
+  if(source&&Math.hypot(source[0]-terminal[0],source[1]-terminal[1])>110)mounts.push({pin:source,angle:Math.atan2(source[0]-terminal[0],terminal[1]-source[1])});
   const canvas=document.createElement('canvas');
   canvas.width=768;canvas.height=Math.round(canvas.width*room.height/room.width);
   const c=canvas.getContext('2d')!;
@@ -24,7 +24,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     c.save();c.translate(...pin);c.rotate(angle);
     // The reflector projects away from the lamp shoe. The damaged machine
     // occupies the near edge and casts a narrow shadow through its throw.
-    c.translate(0,48);c.scale(2.6,1.65);
+    c.translate(0,39);c.scale(3.3,1.95);
     paintIncidentAperture(c,room.id,tint);
     c.restore();
   }

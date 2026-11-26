@@ -17,16 +17,23 @@ export function incidentTransmission(profile:Aperture,along:number,across:number
  const [shape,length,width]=profile;
  const u=along/length,v=across/width;
  if(Math.abs(u)>1.2||Math.abs(v)>1.2)return 0;
- let field:number;
+ // Distance falloff keeps the aperture legible without turning its centre
+ // into a flat patch. Only the broken ring has its maximum away from the lens.
+ let distance:number;
  switch(shape){
-  case 'strip':field=1-Math.max(Math.abs(u),Math.abs(v))**2;break;
-  case 'broken ring':field=(1-Math.abs(Math.hypot(u,v)-.66)*3.7)*(v<-.22&&u>.08?.09:1);break;
-  case 'split fan':field=(1-Math.hypot(u-.30,v/(.47+.43*u)))*Math.min(1,Math.abs(v-.12*u)*7);break;
-  case 'under-glow':field=1-Math.hypot(u,Math.abs(v+.35)*1.3);break;
-  case 'spill':field=1-Math.hypot(u,v+.22*Math.sin(4*u))*(1+.13*Math.sin(6*u+2*v));break;
+  case 'strip':distance=Math.hypot(.80*u,1.45*v);break;
+  case 'broken ring':distance=Math.abs(Math.hypot(u,v)-.53)*1.8;break;
+  case 'split fan':distance=Math.hypot(u+.18,v/(.53+.32*u));break;
+  case 'under-glow':distance=Math.hypot(u*1.28,(v+.16)*.85);break;
+  case 'spill':distance=Math.hypot(u*.92,v+.18*Math.sin(3*u));break;
  }
- const shadow=along>6&&Math.abs(across-along*.16)<2+along*.055?.36:1;
- return Math.min(1,Math.max(0,field)*1.65)**.76*shadow;
+ const edge=Math.max(0,1-Math.max(Math.abs(u),Math.abs(v))**3);
+ const distanceFalloff=Math.exp(-1.85*distance*distance)*edge;
+ const slit=.075+.065*Math.max(0,u);
+ const penumbra=Math.min(1,Math.abs(v-.18*u)/slit);
+ const shadow=u>-.12?.40+.60*penumbra:1;
+ const breakInRing=shape==='broken ring'&&v<-.15&&u>.06?.25:1;
+ return distanceFalloff*shadow*breakInRing;
 }
 
 export function paintIncidentAperture(c:CanvasRenderingContext2D,id:string,color:number){
