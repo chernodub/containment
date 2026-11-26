@@ -9,7 +9,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
   const [sx,sz,ex,ez]=layout;
   const L=Math.hypot(ex-sx,ez-sz),angle=Math.atan2(ez-sz,ex-sx);
   const p=new IncidentPieces(), steel=0x859694, iron=0x4e6061, boot=0x354447;
-  const ochre=0x9c8666, ice=0x8caeb1, green=0xbda271;
+  const ochre=0x9c8666, ice=0x8caeb1, green=0x446750;
   function box(x:number,y:number,z:number,w:number,h:number,d:number,color:number,turn=0){
     p.box(x,y,z,w,h,d,color,turn);
   }
@@ -35,6 +35,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       box(L-37,4,22,80,6,46,0x749c9d,-.16);
       for(const z of [4,41])pipe(L-72,z-6,L-4,z+5,7,4.5,ice);
       disc(L,1,0,20,5,iron);disc(L,6,0,14,6,ice);
+      // The single open thaw lid exposes the amber heating liner and its hinge.
+      p.box(L-70,27,22,51,5,43,iron,-.16,.96);
+      box(L-42,8,22,41,2,31,0xad744c,-.16);
       box(L+6,12,0,26,5,8,steel);break;
     }
     case 'passenger-vault':
@@ -55,17 +58,21 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const x of [L-16,L+16])for(const z of [-10,10])
         p.rod([x,7,z],[x,16,z],2,steel);
       box(L,16,0,44,3,27,ochre);disc(L-9,18,2,7,2,0xa5aea4);
-      disc(L+7,18,-3,5,7,0x748385);break;
+      disc(L+7,18,-3,7,12,0xb1a089);
+      pipe(L+12,-3,L+20,-3,24,2.5,ochre);
+      disc(L-26,15,9,13,4,0x9e9782);break;
     case 'communal-atrium':
       pipe(0,0,L,0,4,4,0x756e53);
       for(let x=22;x<L;x+=40){pipe(x,0,x+9,13,3,2.5,iron);disc(x+9,4,13,4,3,steel);}
       p.rod([L-13,10,-8],[L+15,8,3],13,0x85745d);
       p.rod([L+12,8,2],[L+17,8,4],15,0x9a8b70);
       for(let i=0;i<9;i++){
-        const a=i*2.4,tip=L+22+Math.cos(a)*19,z=5+Math.sin(a)*18;
-        p.face([[L+12,8,3],[tip-4,6,z-4],[tip,11,z],[tip+6,5,z+4]],i%2?green:0xd8bea2);
+        const a=i*2.4,tip=L+22+Math.cos(a)*32,z=5+Math.sin(a)*29;
+        p.face([[L+12,8,3],[tip-4,6,z-4],[tip,11,z],[tip+6,5,z+4]],i%2?green:0x6e8865);
       }break;
     case 'freight-hold':
+      for(const x of [L-66,L-39])p.box(x,19,-23,17,32,17,0x887351,.26,.32);
+      p.rod([L-73,35,-22],[L-20,7,9],3,0xa47e4b);
       box(L-37,4,0,106,7,93,boot);
       for(const z of [-42,42]){
         box(L-40,9,z,110,10,8,ochre);
@@ -78,6 +85,10 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       }
       break;
     case 'breached-loading-bay':
+      for(const x of [L-67,L-31,L+5]){
+        p.rod([x,2,7],[x+28,-39,49],5,0x66797d);
+        p.rod([x+28,-39,49],[x+58,-39,53],5,0x465963);
+      }
       for(let i=0;i<6;i++){
         const x=i*L/6,z=Math.sin(i*1.8)*12;
         p.face([[x,1,z-34],[x+L/6,1,z-28],[x+L/6,7+i,z+3],[x,3+i,z]],iron);
@@ -94,6 +105,8 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       p.rod([L+37,4,46],[L+37,22,46],4,steel);
       p.rod([L+37,22,46],[L+21,22,40],3,steel);
       disc(L+21,14,40,6,8,ice);
+      disc(L+26,23,40,12,3,boot);disc(L+26,26,40,9,1,0x799f8e);
+      pipe(L+26,40,L+31,35,28,1.6,ochre);
       // Patient cradle crosses the probe axis. A scalloped headrest and paired
       // restraint straps interrupt the continuous pale upholstered bed.
       box(L+17,7,79,47,9,105,iron);box(L+17,14,79,39,6,99,0x9fb9b2);
@@ -120,6 +133,8 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       box(L/2,3,0,L,5,23,boot);rails(12);
       box(L*.66,6,0,L*.67,7,11,ochre);
       for(const x of [L-28,L-10,L+8])box(x,8,0,8,9,26,steel);
+      p.rod([L+5,7,0],[L+28,32,0],4,steel);
+      box(L+28,33,0,11,8,27,0xc38754);
       box(L+13,5,0,12,9,36,iron);
       for(let i=0;i<4;i++){
         const x=L-49,z=i*32-33;
@@ -133,7 +148,9 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       // The split impeller is still clamped in the vise. Tendrils reach one jaw.
       disc(L-12,26,0,13,3,boot);
       for(let i=0;i<5;i++)box(L-12+9*Math.cos(i*1.26),30,9*Math.sin(i*1.26),15,5,5,ochre,-i*1.26);
-      for(const x of [L-32,L+7])box(x,29,0,6,8,18,iron);
+      for(const x of [L-32,L+7])box(x,33,0,9,16,24,iron);
+      pipe(L-48,0,L-29,0,32,4,steel);
+      pipe(L-48,-11,L-48,11,32,2.7,ochre);
       for(let i=0;i<4;i++)p.rod([L-82+i*5,2,-30+i*4],[L-36,26,-14+i*4],2+i*.4,0x846a7d);
       break;
     case 'swarm-junction':
@@ -152,6 +169,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
         const x=(i+.5)*L/5,z=18*Math.sin((i+.5)*Math.PI/5);
         const turn=-Math.atan(18*Math.PI/L*Math.cos((i+.5)*Math.PI/5));
         box(x,5,z,L/5+4,9,26,iron,turn);
+        box(x,11,z,6,6,31,0x867356,turn);
         box(x,11,z+6,L/5-3,4,7,steel,turn);
       }
       for(let i=0;i<7;i++){

@@ -672,7 +672,7 @@ export class DepthRenderer {
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
   const grilleGame=game as typeof game & {recoveryGrille?:import('./markers/RecoveryGrille').GrillePose};
-  const sampleGrille=!('recoveryGrille' in game)&&game.node.templateId==='manual-control-chamber'
+  const sampleGrille=!Reflect.has(game,'recoveryGrille')&&game.node.templateId==='manual-control-chamber'
     ?{x:614,y:390,angle:0,state:'waiting',changedAt:0}:undefined;
   this.floorChoiceMarkers.recovery.update(menu?undefined:grilleGame.recoveryGrille??sampleGrille,game.elapsed);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
