@@ -85,3 +85,18 @@ GC counts use main renderer-thread Chrome trace events inside the combat window.
 ### Matched captures
 
 The 1920×1080 Safety Interlock rifle-impact pair is identical at every RGB pixel. Five shots produced four identical marks with matching positions and normals. An instrumented count in the capture recorded 512 → 504 mesh raycast entries, before Three's geometry bounds and triangle tests. The pincer pair differs at 198 pixels (0.00955%), with small local differences around the creature silhouettes. Both pairs were inspected at native crop size and 480×270. Native/480 pairs and pixel counts are retained under `artifacts/nextgen/perf42/visual/`.
+
+### Loading holds
+
+The current runner exercised Pyro seed 1729 on the frozen `94e3167d` build through three rooms, then used the same flags through thirteen rooms on PERF42. They ran serially. The candidate load was higher, so the elapsed differences are observational.
+
+| Build and room | Runner hold (s) | One-minute load start → end | Renderer preparation (s) | Assets wait (s) | Model parse / transcode (s) | Reflection (s) | Shader wait (s) | Texture uploads (ms) |
+|---|---:|---|---:|---:|---:|---:|---:|---:|
+| 94e3167d Passenger Vault | 4.39 | 24.20 → 24.67 | 3.23 | 0.86 | 0.43 / 0.32 | 2.00 | 0.03 | 7.0 |
+| PERF42 Passenger Vault | 9.05 | 29.85 → 29.36 | 4.36 | 0.81 | 0.35 / 0.22 | 3.19 | 0.07 | 7.5 |
+| 94e3167d Residential Gallery | 8.19 | 25.20 → 26.34 | 3.65 | <0.01 | 0.02 / — | 1.84 | 1.19 | 25.4 |
+| PERF42 Residential Gallery | 7.93 | 30.90 → 31.22 | 4.24 | <0.01 | 0.07 / — | 3.33 | 0.11 | 19.1 |
+
+Residential Gallery reproduced the five-second defect on the baseline. Passenger Vault crossed it in the candidate trial and also in the earlier PERF41 run on the same-era renderer at much higher load (20.03 s with Arc). The serial comparison cannot isolate a regression at matched load. Reflection capture renders six room views and builds a filtered environment map. It was the largest measured preparation phase in both rooms. Shader readiness was a secondary cost in the older Gallery run. The asset wait includes the ability asset promise, and atlas upload has no separate timer. The runner's hold includes polling/scheduling and can include the time spent saving the loading evidence, so it does not necessarily equal the renderer's preparation total.
+
+The production build passed. The PERF42 native Pyro campaign reached Safety Interlock as room 12, cleared it, and finished at the 13-room limit with zero browser or runner errors. The runner returned exit 1 for the recorded loading defects in Passenger Vault and Residential Gallery. The three-room baseline completed with zero errors and recorded the Residential Gallery loading defect. Receipts are `artifacts/nextgen/playtest/perf42-pyro/report.json` and `artifacts/nextgen/playtest/perf42-w32-load/report.json`.
