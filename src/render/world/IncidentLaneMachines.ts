@@ -204,7 +204,7 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
     for(const dx of [2,5])box(x+dx,y+.6,z,1,.6,4,steel);
   }
   brokenLaneEnd(p,id,L);
-  const articulated=['diagnostic-gallery','freight-hold','infested-workshop'].includes(id);
+  const articulated=['awakening-bay','diagnostic-gallery','freight-hold','infested-workshop'].includes(id);
   const mesh=p.finish(root,'lane-machine-'+id,sx,sz,undefined,articulated);
   mesh.rotation.y=-angle;
 }

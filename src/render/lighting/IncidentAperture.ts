@@ -33,7 +33,8 @@ export function incidentTransmission(profile:Aperture,along:number,across:number
  const blade=Math.abs(v/(1.2+.32*u)-.05*u);
  const blocked=shape==='broken ring'?u>.08&&v<-.16:
    shape==='split fan'?blade<.095:Math.abs(blade-.34)<.08;
- return rim*(blocked?.065:1)*Math.max(.14,.84-.55*distance);
+ const transmission=.09+.74*Math.max(0,1-distance)**1.75;
+ return rim*(blocked?.065:1)*transmission;
 
 }
 
