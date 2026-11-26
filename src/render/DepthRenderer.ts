@@ -765,7 +765,10 @@ export class DepthRenderer {
     const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
     const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
     const shooter=e.type==='spitter'&&!e.pod&&e.windupMs>0&&e.pendingAttack==='spit';
-    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*(contact&&!shooter?1.25:1),contact?(shooter?3:1):0,contact?enemyMotionAim(e,p):0);
+    const bladeSpill=!blackout && e.type==='stalker' && !e.pod && e.health>0;
+    const contactScale=bladeSpill?1.48:contact&&!shooter?1.25:1;
+    const contactInk=bladeSpill?-1:contact?(shooter?3:1):0;
+    if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*contactScale,contactInk,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
