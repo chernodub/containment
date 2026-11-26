@@ -703,14 +703,14 @@ The three-rig benefit in both rooms has not been demonstrated. The grille theref
 
 | Additional native case | Recovery hits OFF → ON | Grilles closed OFF → ON | Escorts canceled OFF → ON | Room suit OFF → ON | Room seconds OFF → ON |
 |---|---:|---:|---:|---:|---:|
-| Pyro 1729, Atrium | 2 → — | 1 → — | 1 → — | 0 → — | 18.40 → — |
-| Arc 1729, Atrium | — | — | — | — | — |
+| Pyro 1729, Atrium | 2 → 2 | 1 → 1 | 1 → 1 | 0 → 0 | 18.40 → 18.40 |
+| Arc 1729, Atrium | 14 → — | 1 → — | 1 → — | 0 → — | 17.27 → — |
 | Breacher 1729, Manual Control | — | — | — | — | — |
 | Cryo 1729, Manual Control | — | — | — | — | — |
 | Pyro 1729, Manual Control | — | — | — | — | — |
 | Arc 2718, Manual Control | — | — | — | — | — |
 
-Arc uses 2718 for the late checkpoint because the earned Final24 Arc 1729 campaign ended in Diagnostic Gallery. [Waiting bodies](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-waiting.png) · [Recovery hit](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-closed.png) · [Grille closing](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-recoil.png)
+Arc uses 2718 for the late checkpoint because the earned Final24 Arc 1729 campaign ended in Diagnostic Gallery. [Waiting bodies](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-waiting.png) · [Recovery hit](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-closed.png) · [Grille closing](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-recoil.png)
 
 ### Simulator snapshot
 
@@ -782,25 +782,27 @@ A pre-revision Pyro OFF run cleared Manual Control in 39.62 seconds with 46.92 s
 
 | Profile / rig | Wave 33 clears | Production clears in finished usual seeds |
 |---|---:|---:|
-| Standard Breacher | 11/12 | 5/6 |
+| Standard Breacher | 11/12 | 7/8 |
 | Standard Cryo | 10/12 | — |
 | Standard Pyro | 10/12 | — |
 | Standard Arc | 12/12 | — |
-| **Standard all** | **43/48** | **5/6** |
+| **Standard all** | **43/48** | **7/8** |
 | Story Cryo | 10/12 | 7/8 |
 | Story Breacher | 12/12 | — |
 | **Story all** | **22/24** | **7/8** |
 
-No stall appeared in the finished production subset. The sample is too small to establish the balance, per-rig, or zero-stall targets. Story Cryo's sectors 1–4 averaged exactly 17.99 suit in both builds over the eight matched seeds. Production Standard Breacher's Crawler share was 32.48% in six seeds versus 39.32% over the full twelve at Wave 33.
+No stall appeared in the finished production subset. The sample is too small to establish the balance, per-rig, or zero-stall targets. Story Cryo's sectors 1–4 averaged exactly 17.99 suit in both builds over the eight matched seeds. On the same 8 Standard Breacher seeds, Crawler share changed from 37.91% in Wave 33 to 35.28% in production.
 
 | Standard sectors | Same-seed completed pairs | Mean suit Wave 33 → production |
 |---|---:|---:|
-| 1–4 | 6 | 5.43 → 9.33 |
-| 5–8 | 6 | 73.07 → 99.82 |
-| 9–12 | 5 | 124.13 → 137.19 |
-| 13–16 | 5 | 162.13 → 181.61 |
-| 17–20 | 4 | 226.11 → 187.42 |
+| 1–4 | 8 | 4.07 → 7.00 |
+| 5–8 | 8 | 70.66 → 90.64 |
+| 9–12 | 7 | 159.67 → 154.17 |
+| 13–16 | 7 | 165.07 → 170.26 |
+| 17–20 | 6 | 189.22 → 184.63 |
 
 The Freight Hold native frame shows the striking Crawler and two nearby Crawlers still in approach at 151.83 seconds. [Freight Hold queue](../../artifacts/nextgen/playtest/play39-campaign-breacher-retry/r7-freight-hold-crawler-queue.png) · [Standard simulator](../../artifacts/nextgen/playtest/play39-ship-standard/summary.json) · [Standard additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-standard-usual-tail/summary.json) · [Story simulator](../../artifacts/nextgen/playtest/play39-ship-story/summary.json) · [Story additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-story-usual-tail/summary.json)
 
 The near-side experiment revision also passed the production build, using a separate output directory so ongoing native campaigns could continue serving their original bundles.
+
+In the revised Breacher ON sample, waiting escorts were visible at 800.82 seconds. The return shot at 802.32 seconds closed the grille on all three. The sampled actor position came from the close-ingress fallback, so this demonstrates a working Manual Control return shot without establishing the short-side console placement. The run logged an interior-preparation error, and it does not supply a clean paired result. [Waiting](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-waiting.png) · [Hit and three-escort closure](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-closed.png)
