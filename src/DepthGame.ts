@@ -731,6 +731,8 @@ export class DepthGame {
       this.enemyEvents(this.enemies.startOpeningVolley(result.enemy.id,this.player));
      }
      if(this.rackShutter&&shutterSpitter)this.rackShutter.spitterId=result.enemy.id;
+     if(this.node.templateId==='residential-gallery'&&options.beat===0&&type==='brute'&&this.residentialLane)
+      this.platedLessonTarget=result.enemy.id;
      if(this.node.templateId==='passenger-vault'&&options.lesson==='brute'){
       this.platedLessonTarget=result.enemy.id;
       this.enemies.stagger(result.enemy.id,3200);
