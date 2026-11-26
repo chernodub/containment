@@ -62,6 +62,10 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
+      if(material.defines?.BROOD_PLANES){
+        shader.vertexShader='varying float broodRestUp;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbroodRestUp=normal.z;');
+        shader.fragmentShader='varying float broodRestUp;\n'+shader.fragmentShader;
+      }
       if(material.defines?.BRUTE_PLANES){
         shader.vertexShader='attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;');
       }
@@ -111,6 +115,34 @@ bool broodFinish=actorBroodForm.x>=-1.;
 // its raised hind volume in the skin's Z-up bind pose, clear of the legs.
 bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
 bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRegion==7. || sacTip);
+// The fourth form component identifies the shared atlas layout.
+bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
+bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
+bool broodMark=broodBand==3 || broodBand==4 ||
+  ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
+// The longitudinal ridge widens toward the tail; the hooks form a separate pair.
+float ridgeWidth=crawlerSkin?mix(.145,.095,smoothstep(-.8,.65,actorPosition.x)):.50;
+float ridgeDistance=abs(actorPosition.y)/ridgeWidth;
+bool ridgeSkin=(crawlerSkin || spitterSkin) && broodBody && broodRestUp>.12;
+bool dorsal=ridgeSkin && ridgeDistance<1.;
+bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
+                 actorPosition.x>.52 && abs(actorPosition.y)>.09;
+broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
+  (spitterSkin && dorsal && vActorRegion<=2.) ||
+  (stalkerSkin && ((vActorRegion==2. && broodRestUp>.68) ||
+                   (vActorRegion==1. && abs(actorPosition.y)<.27 && broodRestUp>.25) ||
+                   (vActorRegion>=3. && vActorRegion<=4. && broodRestUp>.55))) ||
+  (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
+  (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
+   abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
+vec3 broodInk=carrierSkin?vec3(1.75,.012,.95):crawlerSkin?vec3(4.2,.008,.48):
+              spitterSkin?vec3(.14,4.2,.001):vec3(.008,1.90,5.0);
+float ridgeGlow=ridgeSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
+if(broodFinish && broodBody){
+  float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+  diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
+                            : vec3(.84,.73,1.08)*clamp(value*.68,.032,.105);
+}
 #endif
 #ifdef BRUTE_PLANES
 // Flat atlas cells in GLTF's top-down UV order. Bone, lead and gilt carry
@@ -192,6 +224,9 @@ if(bruteFace)ceiling=.355;
 float bounded=min(bodyValue,ceiling);
 float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
+#ifdef BROOD_PLANES
+if(broodFinish && broodMark)outgoingLight=lanternEmission;
+#endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
 if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
@@ -257,6 +292,14 @@ totalEmissiveRadiance=lanternEmission;
 // CREATURE26: a small wet specular pick from the fixed key, on flesh zones only (0 = off for families not rebuilt).
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
+#ifdef BROOD_PLANES
+if(broodFinish && (broodMark || ridgeGlow>0.)){
+  // Keep the identification mark visible through the resting Stalker's camouflage.
+  float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
+  lanternEmission=broodInk*(broodMark?1.:ridgeGlow)*mix(.92,1.,actorStageLight)*markVisibility;
+  totalEmissiveRadiance=lanternEmission;
+}
+#endif
 #ifdef BRUTE_PLANES
 if(wardenMaw){
   float core=smoothstep(.64,.80,max(dot(normalize(normal),normalize(vViewPosition)),0.));

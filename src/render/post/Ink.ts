@@ -91,7 +91,8 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    float a=float(i)*1.5707963268;
    vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*1.0,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
-   if(centerRegion!=30.&&floor(neighbor.w/8.)!=30.&&abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
+   float neighborRegion=floor(neighbor.w/8.);
+   if(centerRegion!=28.&&neighborRegion!=28.&&centerRegion!=30.&&neighborRegion!=30.&&abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
     crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*.10); // HERO19/SHADER25: faint plate seams on every actor; bone-weight regions are not creases
   }
  } else if(inkMode>1.5&&inkStrength>.01) {
