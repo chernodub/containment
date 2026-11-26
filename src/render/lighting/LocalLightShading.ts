@@ -4,7 +4,7 @@ import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE
 const blackout={value:0};
 export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 
-export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v15-room-blackout-surface22';
+export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v14-room-blackout-surface22';
 /** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
 const surfacePaint={value:new Vector4(1,0,0,0)};
 export function setSurfacePaintDiagnostic(enabled:boolean):void{surfacePaint.value.y=enabled?0:1;}
@@ -29,18 +29,6 @@ export function setRoomValue(material: MeshStandardMaterial, value=1, saturation
 const reflectionLighting = ShaderChunk.lights_fragment_maps
   .replace('iblIrradiance += getIBLIrradiance( geometryNormal );', 'iblIrradiance += roomDiffuseEnvironmentGain * getIBLIrradiance( geometryNormal );')
   .replace('radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );', 'radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness ) * mix(1.0,mix(1.0,.02,smoothstep(.15,.5,material.roughness)),1.0-roomDiffuseEnvironmentGain);');
-// The attenuation window is exactly zero beyond the cutoff. Use the native
-// distance calculation once, before normalizing the vector or evaluating decay.
-const pointLightRange = ShaderChunk.lights_pars_begin.replace(
-  'light.direction = normalize( lVector );\n\n\t\tfloat lightDistance = length( lVector );',
-  `float lightDistance = length( lVector );
-    if ( pointLight.distance > 0.0 && lightDistance >= pointLight.distance ) {
-      light.color = vec3( 0.0 );
-      light.visible = false;
-      return;
-    }
-    light.direction = normalize( lVector );`,
-);
 const sharedKeyOcclusion = /* glsl */ `
 // Artistic shared-key occlusion for the four fixed practical slots. This is
 // deliberately not a per-fixture visibility test or another shadow atlas.
@@ -128,7 +116,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
-    shader.fragmentShader = 'uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_pars_begin>',pointLightRange).replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.fragmentShader = 'uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));
       vec3 roomWorld=transpose(mat3(viewMatrix))*geometryPosition+cameraPosition;
