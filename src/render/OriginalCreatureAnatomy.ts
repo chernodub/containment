@@ -116,24 +116,57 @@ export function prepareOriginalCreature(root: T.Object3D): boolean {
   return found;
 }
 
+const rankBoneMatrices: T.Matrix4[] = [];
+const rankBindVertex = new T.Vector4();
+const rankBoneVertex = new T.Vector4();
+
+function fitRankBounds(mesh: T.SkinnedMesh, bounds: T.Box3, sphere: T.Sphere): void {
+  const point = new T.Vector3();
+  const positions = mesh.geometry.getAttribute('position');
+  const joints = mesh.geometry.getAttribute('skinIndex');
+  const weights = mesh.geometry.getAttribute('skinWeight');
+  const standardSkin = mesh.getVertexPosition === T.SkinnedMesh.prototype.getVertexPosition
+    && mesh.applyBoneTransform === T.SkinnedMesh.prototype.applyBoneTransform
+    && !mesh.morphTargetInfluences?.length && joints?.itemSize === 4 && weights?.itemSize === 4;
+  if (standardSkin) {
+    const {bones, boneInverses} = mesh.skeleton;
+    for (let i = 0; i < bones.length; i++) {
+      (rankBoneMatrices[i] ??= new T.Matrix4()).multiplyMatrices(bones[i].matrixWorld, boneInverses[i]);
+    }
+  }
+  for (let index = 0; index < positions.count; index++) {
+    if (standardSkin) {
+      rankBindVertex.set(positions.getX(index), positions.getY(index), positions.getZ(index), 1).applyMatrix4(mesh.bindMatrix);
+      point.set(0, 0, 0);
+      for (let i = 0; i < 4; i++) {
+        const weight = weights.getComponent(index, i);
+        if (weight === 0) continue;
+        rankBoneVertex.copy(rankBindVertex).applyMatrix4(rankBoneMatrices[joints.getComponent(index, i)]);
+        point.x += rankBoneVertex.x * weight;
+        point.y += rankBoneVertex.y * weight;
+        point.z += rankBoneVertex.z * weight;
+      }
+      point.applyMatrix4(mesh.bindMatrixInverse);
+    } else {
+      mesh.getVertexPosition(index, point);
+    }
+    bounds.expandByPoint(point);
+    sphere.expandByPoint(point);
+  }
+}
+
 function select(skin: CreatureSkin, rank: Rank, force = false): void {
   const resolved = skin.variants[rank] ? rank : rank === 'boss' && skin.variants.elite ? 'elite' : 'base';
   if (!force && resolved === skin.rank) return;
   skin.rank = resolved;
   skin.mesh.geometry = skin.variants[resolved]!;
   skin.root.updateMatrixWorld(true);
-  // Both bounds use the same deformed vertices. Preserve Three's incremental
-  // sphere and box accumulation while skinning each vertex only once.
+  // Use the same deformed vertices and accumulation as Three. Rank changes
+  // and pool resets reuse each bone transform across the full skin.
   const mesh = skin.mesh;
   const bounds = (mesh.boundingBox ??= new T.Box3()).makeEmpty();
   const sphere = (mesh.boundingSphere ??= new T.Sphere()).makeEmpty();
-  const point = new T.Vector3();
-  const positions = mesh.geometry.getAttribute('position');
-  for (let index = 0; index < positions.count; index++) {
-    mesh.getVertexPosition(index, point);
-    bounds.expandByPoint(point);
-    sphere.expandByPoint(point);
-  }
+  fitRankBounds(mesh, bounds, sphere);
   skin.mesh.updateWorldMatrix(true, false);
   const root = skin.root;
   const toRoot = root.matrixWorld.clone().invert().multiply(skin.mesh.matrixWorld);

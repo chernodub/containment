@@ -24,10 +24,23 @@ export class FacilityNavigation {
     for(let i=0;i<walls.length;i++){const r=walls[i];if(Math.max(a.x,b.x)<r.x||Math.min(a.x,b.x)>r.x+r.width||Math.max(a.y,b.y)<r.y||Math.min(a.y,b.y)>r.y+r.height)continue;if(!clearRectSweep(a,b,radius,this.walls[i]))return false;}return true;
   }
   private closest(p:FacilityPoint,reachable=false,radius=12):number {
-    const center=index(p);let best=-1,score=Infinity;
-    for(let y=-4;y<=4;y++)for(let x=-4;x<=4;x++){
-      const col=center%COLS+x,row=Math.floor(center/COLS)+y;if(col<0||col>=COLS||row<0||row>=ROWS)continue;
-      const id=row*COLS+col;if(!this.walkable[id]||(reachable&&this.distance[id]<0))continue;
+    const center=index(p),col=center%COLS,row=Math.floor(center/COLS);
+    const left=Math.max(0,col-4),right=Math.min(COLS-1,col+4);
+    const top=Math.max(0,row-4),bottom=Math.min(ROWS-1,row+4);
+    let nearest=-1,nearestScore=Infinity;
+    // Most legs can reach the nearest eligible cell. Resolve cheap distances
+    // first so the common case only needs one swept clearance probe.
+    for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
+      const id=y*COLS+x;if(!this.walkable[id]||(reachable&&this.distance[id]<0))continue;
+      const q=point(id),d=(p.x-q.x)**2+(p.y-q.y)**2;
+      if(d<nearestScore){nearestScore=d;nearest=id;}
+    }
+    if(nearest<0||this.clear(p,point(nearest),radius))return nearest;
+    // A rack or concave edge can block the nearest cell. Keep the original
+    // row-major tie break and all remaining continuous clearance checks.
+    let best=-1,score=Infinity;
+    for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
+      const id=y*COLS+x;if(id===nearest||!this.walkable[id]||(reachable&&this.distance[id]<0))continue;
       const q=point(id),d=(p.x-q.x)**2+(p.y-q.y)**2;
       if(d<score&&this.clear(p,q,radius)){score=d;best=id;}
     }return best;

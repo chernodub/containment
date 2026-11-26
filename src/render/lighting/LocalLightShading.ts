@@ -4,7 +4,7 @@ import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE
 const blackout={value:0};
 export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 
-export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v14-room-blackout-surface22';
+export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v15-practical-mask-surface22';
 /** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
 const surfacePaint={value:new Vector4(1,0,0,0)};
 export function setSurfacePaintDiagnostic(enabled:boolean):void{surfacePaint.value.y=enabled?0:1;}
@@ -46,10 +46,8 @@ float roomKeyOcclusion = 1.0;
 const practicalOcclusion = /* glsl */ `
   // Practical fixtures represent broad diffusers, not mathematical pin lights.
   // Bound near-field irradiance so nearby machine roofs retain their finish.
-  #if UNROLLED_LOOP_INDEX < 4
-    directLight.color *= min( 1.0, dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / roomPracticalNearField );
-  #endif
-  #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4
+  directLight.color *= min( 1.0, dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / roomPracticalNearField );
+  #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
     directLight.color *= mix( roomPracticalShadowFill, 1.0, roomKeyOcclusion );
   #endif
 `;
@@ -64,7 +62,12 @@ const localLights = ShaderChunk.lights_fragment_begin
       directLight.color = vec3( 0.0 );
       directLight.visible = false;
     } else {
-      getPointLightInfo( pointLight, geometryPosition, directLight );\n${practicalOcclusion}
+      getPointLightInfo( pointLight, geometryPosition, directLight );
+      #if UNROLLED_LOOP_INDEX < 4
+        // Outside the point's cutoff, the practical and floor aperture contribute exactly zero.
+        if ( directLight.visible ) {\n${practicalOcclusion}
+        }
+      #endif
     }`)
   .replace(directionalShadowExpression, `
     #if UNROLLED_LOOP_INDEX == 0
@@ -98,7 +101,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   const key = material.customProgramCacheKey();
   const floor=['environment-floor','painted-steel-deck','annulus-deck','annulus-circulation'].includes(material.name)||material.userData.floorDressing===true;
   const floorShape=`
-#if UNROLLED_LOOP_INDEX < 4
  vec3 floorDeltaView=pointLight.position-geometryPosition;
  vec2 floorDelta=vec2(dot(floorDeltaView,viewMatrix[0].xyz),dot(floorDeltaView,viewMatrix[2].xyz));
  vec4 aperture=roomFloorPracticalShapes[UNROLLED_LOOP_INDEX];
@@ -110,7 +112,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
  float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z));
  directLight.color*=mix(.12+slit*.40,slit*.40,stripOnly);
  }
-#endif
 `;
   const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
