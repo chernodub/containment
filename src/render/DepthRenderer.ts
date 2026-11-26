@@ -451,7 +451,7 @@ export class DepthRenderer {
   this.ragdolls?.dispose();this.marineDeathStarted=false;this.presentationHold?.reset();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
   const t=ROOM_TEMPLATES[node.templateId],w=t.width/UNIT,h=t.height/UNIT;this.roomWidth=w;this.roomHeight=h;
   const atrium=node.templateId==='communal-atrium';
-  this.overdriveReactions.reset();this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
+  this.hitPips.clear();this.overdriveReactions.reset();this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
   this.muzzle.intensity=0;this.contacts.begin();this.contacts.end();
   this.aheadRooms?.clearPending();const cached=this.aheadRooms?.take(node);const bespoke=cached!==undefined?cached:this.buildRoomArchitecture(node,t);
   const act=Math.min(2,Math.floor(node.depth/4));this.surfaces.theme(act);if(environment)this.surfaces.shipTheme(environment);
@@ -576,6 +576,11 @@ export class DepthRenderer {
   this.surfaces.uv(box(g,0,height/2,0,length,height,.32,this.surfaces.wall),2);box(g,0,height/2,.19,length-.17,height-.15,.12,this.surfaces.cover);box(g,0,height+.015,0,length,.08,.48,MAT.edge);
   for(const side of [-1,1])box(g,side*(length/2-.1),height/2,.22,.11,height,.12,MAT.edge,.015);
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
+ }
+ private readonly hitPips = new Map<number,{count:number;until:number}>();
+ noteHitPips(id:number,count=1) {
+  const previous=this.hitPips.get(id);
+  this.hitPips.set(id,{count:Math.min(5,count+(previous&&previous.until>this.time?previous.count:0)),until:this.time+.35});
  }
  effect(effect:GameEffect){
   if(effect.reserveCut){
@@ -703,7 +708,8 @@ export class DepthRenderer {
    model.setWaitingState?.(waiting,ordinary?feintProgress:undefined,ordinary,paceSide,laneCut&&Math.hypot(dx,dy)<e.radius);
    model.setAttackState?.(e.meleePhase,e.meleeProgress,e.meleeAngle,e.meleeShape);this.actorPoseBounds.center.set(e.x/UNIT,model.height*.5,e.y/UNIT);this.actorPoseBounds.radius=Math.hypot(model.height*.6,e.radius/UNIT*1.35)+.4+/* C10: footprint-scaled presentation travel culling. */ ((e.type==='stalker'||e.type==='crawler')&&e.meleePhase!=='approach'?e.meleeShape.range/UNIT:0);model.root.userData.perf13CullRadius=this.actorPoseBounds.radius;model.setMotionVisible?.(this.actorPoseFrustum.intersectsSphere(this.actorPoseBounds),e.engagement==='waiting'&&e.meleePhase==='approach'&&!status.chilled&&!status.burning&&!status.poisoned&&!status.frozen&&!status.shocked);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;const pose=this.pincerPresentation.retreatPose(model,game,e,UNIT,enemyMotionAim(e,p),Math.hypot(e.velocityX,e.velocityY)>2?1:.12,this.playerVelocity);model.animate(this.time+e.id,pose.stride,pose.angle,0,0,this.playerVelocity);this.pincerPresentation.bossPose(model,e,game,UNIT);setActorLOD(model.root,!e.pod&&!e.elite&&!e.champion&&(this.actorLODStudy==='low'||this.actorLODStudy!=='full'&&(e.x-p.x)**2+(e.y-p.y)**2>Math.max((3*UNIT)**2,this.lodDistances[3])));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.pincerPresentation.releaseActor(model);this.actorPool.release(model);this.actors.delete(id);}
-  let healthCount=0;for(const e of enemies){if(healthCount===128)break;if(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS)continue;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;this.actors.get(e.id)?.setPlateOpen?.(e.maxArmor>0?Math.floor(3*(1-e.armor/e.maxArmor))/3:0);bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
+  for(const [id,pips] of this.hitPips)if(pips.until<=this.time)this.hitPips.delete(id);
+  let healthCount=0;for(const e of enemies){if(healthCount===128)break;if(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS)continue;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.hits=this.hitPips.get(e.id)?.count;this.actors.get(e.id)?.setPlateOpen?.(e.maxArmor>0?Math.floor(3*(1-e.armor/e.maxArmor))/3:0);bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.hits=undefined;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.menuActors.visible=menu;
   if(menu){this.menuMarine.root.position.set(TITLE_STAGE.marine.x,0,TITLE_STAGE.marine.z);this.menuAlien.root.position.set(TITLE_STAGE.creature.x,0,TITLE_STAGE.creature.z);this.menuMarine.animate(this.time,0,TITLE_STAGE.marine.angle);this.menuThreatClock=this.motionQuery?.matches?0:this.menuThreatClock+dt;if(this.menuThreatClock>5.5){this.menuAlien.attack?.();this.menuThreatClock=0;}this.menuAlien.animate(this.time,.12,TITLE_STAGE.creature.angle);}else this.menuThreatClock=0;
   this.lastMenu=menu;

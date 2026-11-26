@@ -787,14 +787,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const anchor = markedEnemy && projectWorld(renderer, markedEnemy.x, markedEnemy.y, projected, 1.5);
         onboarding.tick(elapsed, bounds, onboardingObstacles, anchor?.visible ? anchor : undefined);
         abilityHints.tick(bounds, true);
-        const committedBodies = [];
+        const committedBodies = [], allBodies = [];
+        const protectAggregate = combatText.needsAggregateClearance;
         for (const enemy of game.enemies.snapshot.enemies) {
-            if (enemy.health <= 0 || !(enemy.pendingAttack || enemy.windupMs > 0 || enemy.chargeMs > 0 ||
-                enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike')) continue;
+            const committed = enemy.pendingAttack || enemy.windupMs > 0 || enemy.chargeMs > 0 ||
+                enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike';
+            if (enemy.health <= 0 || !committed && !protectAggregate) continue;
             const body = {id: enemy.id, left: 0, right: 0, top: 0, bottom: 0};
-            if (projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) committedBodies.push(body);
+            if (!projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) continue;
+            if (committed) committedBodies.push(body);
+            if (protectAggregate) allBodies.push(body);
         }
-        combatText.tick(elapsed, bounds, committedBodies);
+        combatText.tick(elapsed, bounds, committedBodies, allBodies);
         threats.tick(elapsed);
         toasts.tick(elapsed);
     };

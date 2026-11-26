@@ -6,6 +6,8 @@ import {icon} from '../icons';
 import {damageToken} from '../damageTokens';
 export const COMBAT_TEXT_CAPACITY = 8;
 export const COMBAT_TEXT_MERGE_SECONDS = .25;
+type BodyBounds = {left:number;right:number;top:number;bottom:number};
+type ActorBounds = BodyBounds & {id:number};
 type Float = {
     node: HTMLDivElement;
     glyph: HTMLSpanElement;
@@ -40,20 +42,19 @@ type Float = {
     fontSize: number;
     scale: number;
     ticks: number;
-    repeatAmount: number;
-    repeats: number;
+    pipsOnly: boolean;
 };
 const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
 const statusGlyphs: Record<string, string> = {ice:'chill',frost:'chill',freeze:'freeze',shatter:'freeze',fire:'burn',burn:'burn',poison:'acid',acid:'acid',shock:'shock',arc:'shock',overload:'shock'};
 const statusPriority: Record<string, number> = {freeze:6,shatter:6,shock:5,arc:5,overload:5,poison:4,acid:4,fire:3,burn:3,ice:2,frost:2};
-/** A bounded DOM pool; same-target pellets merge instead of covering the encounter. */
+/** A bounded DOM pool for direct hits and one aggregate per eligible cast. */
 export class CombatText {
     private readonly pool: Float[] = [];
     private readonly pendingAbilityHits: HudEffect[] = [];
     private readonly clusterPoint: ScreenPoint = {x:0,y:0,visible:false};
-    private readonly periodicHits = new Map<number, {effect: HudEffect; remaining: number}>();
     private readonly castHits = new Map<string, HudEffect[]>();
+    private readonly eligibleCasts = new Set<string>();
     // Half-integers keep synthetic anchors distinct from native enemy and nest IDs.
     private clusterId = -.5;
     private enabled = true;
@@ -78,7 +79,7 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, clusterSize: 0, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,ticks:0,repeatAmount:0,repeats:0,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, clusterSize: 0, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,ticks:0,pipsOnly:false,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -86,6 +87,9 @@ export class CombatText {
         this.clear(); this.enabled = enabled; }
     /** Reduced feedback retains damage totals and kills, with no status chips. */
     setReduced(reduced: boolean): void { if (this.reduced !== reduced) this.clear(); this.reduced = reduced; }
+    get needsAggregateClearance() {
+        return this.castHits.size > 0 || this.pool.some(entry => entry.clusterSize > 1 && entry.life > 0);
+    }
     effect(e: HudEffect): void {
         if (!this.enabled || this.disposed)
             return;
@@ -96,65 +100,53 @@ export class CombatText {
         }
         const event = e.ability;
         if (event) {
-            const key = event.ability + '/' + (event.entityId ?? 'cast');
-            if (event.phase === 'cast') {
-                const previous = this.castHits.get(key);
-                if (previous) this.showClusters(previous);
-                this.castHits.delete(key);
+            const key = event.ability;
+            if (event.phase === 'cast' && (event.slot === 'power' || event.slot === 'overdrive')) {
+                this.eligibleCasts.add(key);
             }
             if (event.targetIds?.length) {
                 const matched = this.castHits.get(key) ?? [];
                 let remaining = 0;
                 for (const hit of this.pendingAbilityHits) {
-                    if (event.targetIds.includes(hit.targetId ?? hit.id ?? Infinity)) {
-                        if (event.phase !== 'tick' || !this.queuePeriodic(hit)) matched.push(hit);
+                    if (!event.targetIds.includes(hit.targetId ?? hit.id ?? Infinity)) {
+                        this.pendingAbilityHits[remaining++] = hit;
+                        continue;
                     }
-                    else this.pendingAbilityHits[remaining++] = hit;
+                    if (event.phase !== 'tick' && this.eligibleCasts.has(key)) matched.push(hit);
+                    else this.hitPips(hit);
                 }
                 this.pendingAbilityHits.length = remaining;
                 if (matched.length) this.castHits.set(key, matched);
             }
+            if (event.phase === 'end') this.eligibleCasts.delete(key);
         }
         this.showEffect(e);
     }
+    private hitPips(effect: HudEffect): void {
+        const target = effect.targetId ?? effect.id;
+        if (target !== undefined && effect.damage && effect.damage > 0) this.renderer.noteHitPips(target);
+    }
     private queuePeriodic(effect: HudEffect): boolean {
         const target = effect.targetId ?? effect.id;
-        const damage = effect.damage;
-        if (target === undefined || damage === undefined || !Number.isFinite(damage) || damage <= 0) return false;
-        const pending = this.periodicHits.get(target);
-        const combined = {...effect, source:'status', damage:damage + (pending?.effect.damage ?? 0)};
-        if (effect.lethal) {
-            this.periodicHits.delete(target);
-            this.showEffect(combined);
-        } else {
-            this.periodicHits.set(target, {effect:combined, remaining:pending?.remaining ?? .5});
-        }
+        if (target === undefined || !effect.damage || !Number.isFinite(effect.damage) || effect.damage <= 0) return false;
+        this.hitPips(effect);
         return true;
     }
-    private showClusters(hits: readonly HudEffect[]): void {
-        const clusters: {x:number;y:number;hits:HudEffect[]}[] = [];
-        for (const hit of hits) {
-            if (!hit.damage) continue;
-            let cluster = clusters.find(c => Math.hypot(hit.x-c.x, hit.y-c.y) <= 130);
-            if (!cluster) { cluster = {x:hit.x,y:hit.y,hits:[]}; clusters.push(cluster); }
-            cluster.hits.push(hit);
-            cluster.x += (hit.x-cluster.x)/cluster.hits.length;
-            cluster.y += (hit.y-cluster.y)/cluster.hits.length;
-        }
+    private showAggregate(hits: readonly HudEffect[]): void {
+        const damaging = hits.filter(hit => hit.damage && hit.damage > 0);
+        if (!damaging.length) return;
+        if (damaging.length === 1) { this.showEffect(damaging[0]); return; }
+        const x = damaging.reduce((sum, hit) => sum + hit.x, 0)/damaging.length;
+        const y = damaging.reduce((sum, hit) => sum + hit.y, 0)/damaging.length;
         const player = this.playerPosition();
-        for (const cluster of clusters) {
-            const angle = Math.atan2(cluster.y-player.y,cluster.x-player.x);
-            const dx = Math.cos(angle), dy = Math.sin(angle);
-            let reach = Math.max(...cluster.hits.map(h => (h.x-cluster.x)*dx+(h.y-cluster.y)*dy)) + 32;
-            // A cast can run up to the viewport edge. Keep its label on the visible
-            // side of that boundary, then let the screen-space placement clear the HUD.
-            for (let step = 0; step < 4 && !projectWorld(this.renderer,cluster.x+dx*reach,cluster.y+dy*reach,this.clusterPoint,1.2).visible; step++) reach *= .5;
-            const total = cluster.hits.reduce((sum,h) => sum+h.damage!,0);
-            const first = cluster.hits[0];
-            this.add(cluster.x+dx*reach,cluster.y+dy*reach,this.clusterId--,total,'damage',
-                first.damageElement ?? first.element ?? '',cluster.hits.some(h=>h.lethal),false,'ability',false,
-                cluster.hits.every(h=>h.damage===first.damage) ? cluster.hits.length : 1, cluster.hits.length);
-        }
+        const angle = Math.atan2(y-player.y,x-player.x);
+        const dx = Math.cos(angle), dy = Math.sin(angle);
+        let reach = Math.max(...damaging.map(hit => (hit.x-x)*dx+(hit.y-y)*dy)) + 45;
+        for (let step = 0; step < 4 && !projectWorld(this.renderer,x+dx*reach,y+dy*reach,this.clusterPoint,1.2).visible; step++) reach *= .5;
+        const total = damaging.reduce((sum, hit) => sum + hit.damage!, 0);
+        this.add(x+dx*reach,y+dy*reach,this.clusterId--,total,'damage',
+            damaging[0].damageElement ?? damaging[0].element ?? '',damaging.some(hit=>hit.lethal),
+            false,'ability',false,damaging.length);
     }
     private showEffect(e: HudEffect, periodic = e.source === 'status'): void {
         const target = e.targetId ?? e.id;
@@ -164,6 +156,7 @@ export class CombatText {
             !(e.contact === 'armor' && victim?.armor === 0);
         if (!chip && (e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
             this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '', periodic);
+        if (chip) this.hitPips(e);
         // Never invent damage totals for old events. Element labels acknowledge real status events.
         if (e.type === 'hit' && e.elements)
             for (const element of e.elements) {
@@ -174,7 +167,7 @@ export class CombatText {
         if (e.type === 'boon' && e.boon && statusLabels[e.boon])
             this.add(e.x, e.y, target, 0, 'status', e.boon, false);
     }
-    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false, count = 1, clusterSize = 0): void {
+    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = '', periodic = false, clusterSize = 0): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (this.reduced && kind === 'status') return;
         const sameTarget = (p: Float) => target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<(kind === 'status'?72:25);
@@ -186,7 +179,15 @@ export class CombatText {
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
         let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && sameTarget(p) && (p.source === 'status') === periodic);
         const merge = !periodic && !!entry && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS;
-        const total = (merge ? entry!.amount : 0) + amount;
+        if (merge && kind === 'damage' && target !== undefined) {
+            this.renderer.noteHitPips(target, entry!.pipsOnly ? 1 : 2);
+            entry!.pipsOnly = true;
+            entry!.node.hidden = true;
+            entry!.quiet = 0;
+            entry!.life = .4;
+            return;
+        }
+        const total = amount;
         const priority = lethal ? 4 : !periodic && (critical || total >= 30) ? 3 : !periodic && kind === 'damage' ? 2 : periodic ? 1 : 0;
         if (!entry) entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
@@ -198,8 +199,7 @@ export class CombatText {
             entry = lowest;
         }
         if (lethal) for (const p of this.pool) if (p !== entry && p.life > 0 && sameTarget(p)) {p.life=0;p.node.hidden=true;}
-        entry.repeats = !merge ? count : entry.repeatAmount === amount && entry.repeats > 0 ? entry.repeats + 1 : 0;
-        entry.repeatAmount = amount/count;
+        entry.pipsOnly = false;
         entry.fromAmount = merge ? entry.displayed : amount;
         entry.amount = total;
         entry.displayed = this.reducedMotion || lethal ? total : entry.fromAmount;
@@ -214,7 +214,8 @@ export class CombatText {
         entry.target = target;
         entry.clusterSize = clusterSize;
         entry.age = merge ? entry.age : 0;
-        entry.life = kind === 'damage' ? .4 : .8;
+        entry.life = clusterSize > 1 ? .55 : kind === 'damage' ? .4 : .8;
+        entry.node.dataset.aggregate = String(clusterSize > 1);
         entry.ticks = periodic ? (merge ? entry.ticks : 0) + 1 : 0;
         entry.node.dataset.ticks = String(entry.ticks);
         entry.kind = kind;
@@ -236,7 +237,7 @@ export class CombatText {
         entry.node.dataset.element = color;
         entry.node.dataset.damageToken = damageToken(color);
         entry.node.dataset.critical = String(entry.critical);
-        const fontSize = kind === 'status' ? 12 : entry.lethal ? 29 : entry.critical ? 28 : 18;
+        const fontSize = clusterSize > 1 ? 13 : kind === 'status' ? 12 : entry.lethal ? 29 : entry.critical ? 28 : 18;
         entry.fontSize = fontSize;
         entry.baseWidth = kind === 'status' ? 26 : Math.max(28, Math.ceil(label.length * fontSize * .7) + 6);
         entry.baseHeight = kind === 'status' ? 26 : fontSize + 5;
@@ -244,28 +245,18 @@ export class CombatText {
         entry.node.dataset.lethal = String(entry.lethal);
     }
     private damageLabel(entry: Float, amount: number): string {
-        const hits = Math.max(entry.clusterSize, entry.repeats);
+        const hits = entry.clusterSize;
         const value = hits > 1 ? `${Math.round(amount)} (${hits} hits)` : String(Math.round(amount));
         return entry.lethal ? `${value} ×` : value;
     }
-    tick(dt: number, player: {
-        left: number;
-        right: number;
-        top: number;
-        bottom: number;
-    }, threats: readonly {
-        id: number; left: number; right: number; top: number; bottom: number;
-    }[]): void {
-        for (const hits of this.castHits.values()) this.showClusters(hits);
-        this.castHits.clear();
-        if (this.pendingAbilityHits.length) this.showClusters(this.pendingAbilityHits);
-        this.pendingAbilityHits.length = 0;
-        for (const [target, pending] of this.periodicHits) {
-            pending.remaining -= dt;
-            if (pending.remaining > 0) continue;
-            this.periodicHits.delete(target);
-            this.showEffect(pending.effect);
+    tick(dt: number, player: BodyBounds, threats: readonly ActorBounds[], bodies: readonly ActorBounds[]): void {
+        for (const [ability,hits] of this.castHits) {
+            this.showAggregate(hits);
+            this.eligibleCasts.delete(ability);
         }
+        this.castHits.clear();
+        for (const hit of this.pendingAbilityHits) this.hitPips(hit);
+        this.pendingAbilityHits.length = 0;
         const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
         for (const p of this.pool) p.placed = false;
         for (const p of [...this.pool].sort((a,b) => b.priority-a.priority || b.amount-a.amount)) {
@@ -281,7 +272,7 @@ export class CombatText {
                 p.label.textContent = this.damageLabel(p, p.displayed);
                 p.node.dataset.settled = String(p.lethal || p.quiet >= COMBAT_TEXT_MERGE_SECONDS);
             }
-            if (!p.life) {
+            if (!p.life || p.pipsOnly) {
                 p.node.hidden = true;
                 continue;
             }
@@ -333,14 +324,14 @@ export class CombatText {
             const originX = x, originY = y;
             let placed = false;
             for (let attempt = 0; attempt < (attacker ? 1 : 9); attempt++) {
-                const row = Math.floor((attempt + 1) / 3);
+                const row = p.clusterSize > 1 ? [0,-1,1][Math.floor(attempt/3)] : -Math.floor((attempt+1)/3);
                 const side = attempt % 3;
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
-                y = Math.max(8, Math.min(h - p.height - 8, originY - row * (p.height + 6)));
+                y = Math.max(8, Math.min(h - p.height - 8, originY + row * (p.height + 6)));
                 if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) continue;
                 if (hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) continue;
                 if (this.renderer.warningObstructs(x-8,y-8,x+p.width+8,y+p.height+8)) continue;
-                if (threats.some(body => x < body.right + 8 && x + p.width > body.left - 8 &&
+                if ((p.clusterSize > 1 ? bodies : threats).some(body => x < body.right + 8 && x + p.width > body.left - 8 &&
                     y < body.bottom + 8 && y + p.height > body.top - 8)) continue;
                 let occupied = false;
                 for (const other of this.pool) {
@@ -356,7 +347,7 @@ export class CombatText {
             p.node.style.opacity = String(Math.min(1, p.life / .2));
         }
     }
-    clear(): void { this.castHits.clear(); this.periodicHits.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
+    clear(): void { this.castHits.clear(); this.eligibleCasts.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
         p.life = 0;
         p.node.hidden = true;
     } }
