@@ -1,4 +1,4 @@
-import {MeshBasicMaterial,type Group} from 'three';
+import {MeshBasicMaterial,MeshStandardMaterial,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
 /** Ship-plan coordinates along the service edges. These are fragments of the
@@ -46,15 +46,25 @@ export function addFightLaneDamage(root:Group,id:string){
       // The shot enters from the south-east. Keep the right-hand upper
       // corner on the native clipped ray and run the feed west behind it.
       const lip=new IncidentPieces();
-      lip.box(-40,16,-7,80,32,14,0x354043);
-      lip.box(-40,32,-8,80,3,16,0x747b70);
-      for(const dx of [-73,-50,-27]){
-        lip.box(dx,16,-9,5,32,16,0x4b5351);
-        lip.box(dx,34,-15,7,3,29,0x766653);
+      // A battered steel sill straddles the feed. The sloping end and
+      // recessed panel breaks expose the stopping face from the approach.
+      lip.box(-49,17,-8,98,34,16,0x485352);
+      lip.face([[-98,35,-18],[0,35,-18],[0,35,0],[-98,35,0]],0x77817a);
+      lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x646f6c);
+      lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x242b2d);
+      lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
+      for(const x of [-90,-64,-38]){
+        const front=-x*.092;
+        lip.face([[x,22,front+.6],[x+19,22,front-1.2],[x+19,29,front-1.2],[x,29,front+.6]],0x353b3d);
+        lip.box(x+7,35.2,-2,16,.7,2.6,0xbc7848);
+        lip.box(x+2,35.3,-11,1.3,.6,8,0x3e4645);
       }
-      lip.rod([-76,10,-12],[-167,7,-26],5,0x596768);
-      lip.rod([-76,10,-18],[-165,7,-32],3,0x83735f);
-      lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,new MeshBasicMaterial({vertexColors:true}));
+      lip.rod([-95,12,-10],[-163,6,-27],4,0x58605a);
+      lip.rod([-95,9,-18],[-160,5,-34],3,0x805f4c);
+      const steel=new MeshStandardMaterial({vertexColors:true,roughness:.76,metalness:.23,
+        emissive:0x171c1c,emissiveIntensity:.32});
+      const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
+      sill.castShadow=true;sill.receiveShadow=true;
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
         p.box(x,3,z,54,6,32,0x374245);
         for(const dx of [-15,0,15]){
@@ -116,6 +126,10 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       }break;
     }
     case 'overload-floor':
+      c.save();c.translate(833.71249,349.81813);
+      const shade=c.createLinearGradient(0,-14,0,-56);
+      shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
+      c.fillStyle=shade;c.fill(new Path2D('M-101 2H0L-25 -54 -123 -49Z'));c.restore();
       for(const [x,z] of [[172,512],[315,538],[449,562],[615,680],[832,684],[950,568]]){
         c.save();c.translate(x,z);
         for(const [i,s] of [-31,-13,8,29].entries()){
