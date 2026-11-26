@@ -202,7 +202,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
     const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
-    const escorts=others.filter(request=>!request.guardian&&!request.priority).slice(0,consoleExchange?3:2);
+    const escorts=others.filter(request=>!request.guardian&&(consoleExchange||!request.priority)).slice(0,consoleExchange?3:2);
     let previous=4900;
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;

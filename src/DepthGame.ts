@@ -1091,7 +1091,7 @@ export class DepthGame {
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
   const bearing=Math.atan2(reference.y-y,reference.x-x);
-  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,0]){
+  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI]){
    const angle=bearing+offset,point={x:x+Math.cos(angle)*99,y:y+Math.sin(angle)*99};
    if(!canOccupyExpedition(this.geometry,point,25)||!hasClearExpeditionShot(this.geometry,reference,point))continue;
    this.recoveryGrilleState={...point,angle:Math.atan2(y-point.y,x-point.x),escorts:e.grilleLead,
