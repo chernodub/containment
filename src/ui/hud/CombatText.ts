@@ -89,7 +89,7 @@ export class CombatText {
     /** Reduced feedback retains damage totals and kills, with no status chips. */
     setReduced(reduced: boolean): void { if (this.reduced !== reduced) this.clear(); this.reduced = reduced; }
     get needsAggregateClearance() {
-        return this.castHits.size > 0 || this.pool.some(entry => entry.clusterSize > 1 && entry.life > 0);
+        return [...this.castHits.values()].some(hits => hits.length > 1) || this.pool.some(entry => entry.clusterSize > 1 && entry.life > 0);
     }
     effect(e: HudEffect): void {
         if (!this.enabled || this.disposed)
@@ -113,7 +113,7 @@ export class CombatText {
                         this.pendingAbilityHits[remaining++] = hit;
                         continue;
                     }
-                    if (event.phase !== 'tick' && this.eligibleCasts.has(key)) matched.push(hit);
+                    if (this.eligibleCasts.has(key)) matched.push(hit);
                     else if (event.phase !== 'tick' || !this.queuePeriodic({...hit,source:'status'})) this.hitPips(hit);
                 }
                 this.pendingAbilityHits.length = remaining;
@@ -141,10 +141,10 @@ export class CombatText {
         }
         return true;
     }
-    private showAggregate(hits: readonly HudEffect[]): void {
+    private showAggregate(hits: readonly HudEffect[]): boolean {
         const damaging = hits.filter(hit => hit.damage && hit.damage > 0);
-        if (!damaging.length) return;
-        if (damaging.length === 1) { this.showEffect(damaging[0]); return; }
+        if (!damaging.length) return false;
+        if (damaging.length === 1) { this.showEffect(damaging[0]); return false; }
         const x = damaging.reduce((sum, hit) => sum + hit.x, 0)/damaging.length;
         const y = damaging.reduce((sum, hit) => sum + hit.y, 0)/damaging.length;
         const player = this.playerPosition();
@@ -156,6 +156,7 @@ export class CombatText {
         this.add(x+dx*reach,y+dy*reach,this.clusterId--,total,'damage',
             damaging[0].damageElement ?? damaging[0].element ?? '',damaging.some(hit=>hit.lethal),
             false,'ability',false,damaging.length);
+        return true;
     }
     private showEffect(e: HudEffect, periodic = e.source === 'status'): void {
         const target = e.targetId ?? e.id;
@@ -260,8 +261,7 @@ export class CombatText {
     }
     tick(dt: number, player: BodyBounds, threats: readonly ActorBounds[], bodies: readonly ActorBounds[]): void {
         for (const [ability,hits] of this.castHits) {
-            this.showAggregate(hits);
-            this.eligibleCasts.delete(ability);
+            if (this.showAggregate(hits)) this.eligibleCasts.delete(ability);
         }
         this.castHits.clear();
         for (const hit of this.pendingAbilityHits) this.hitPips(hit);
