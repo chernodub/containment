@@ -308,6 +308,8 @@ export class DepthGame {
   return id===undefined?undefined:this.geometry.breaches.find(breach=>breach.id===id);
  }
  get closedFlank(){return this.director.closedFlank;}
+ private relayRoutes:{x:number;y:number}[][]=[];
+ get relayApproaches(){return this.crossingRequired&&!this.relayBank?this.relayRoutes:[];}
  private relayRoute(goal:{x:number;y:number},navigator:FacilityNavigation){
   const route=[this.siegePoint];
   for(let i=0;i<24;i++){
@@ -453,7 +455,7 @@ export class DepthGame {
  private enterRoom(start=true){this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
  this.gateStaged=false;this.gateHold=undefined;this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
- this.relayBanks=[];this.relayShelterStep=undefined;
+ this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
  if(this.node.templateId==='overload-floor'){
   const reachable=(point:{x:number;y:number})=>this.navigation.reachable(point);
   const [near]=floorChoicePair(this.geometry,this.siegePoint,p=>reachable(p)&&hasClearExpeditionShot(this.geometry,this.siegePoint,p),292,388);
@@ -462,7 +464,8 @@ export class DepthGame {
     &&Math.hypot(p.x-near.x,p.y-near.y)>450),704,864);
   this.relayBanks=near&&far?[near,far]:floorChoicePair(this.geometry,this.siegePoint,reachable,304,496);
   const routes=new FacilityNavigation(this.geometry);
-  const covered=this.relayBanks[1]&&this.relayRoute(this.relayBanks[1],routes);
+  this.relayRoutes=this.relayBanks.map(bank=>this.relayRoute(bank,routes));
+  const covered=this.relayRoutes[1];
   if(covered)for(let i=1;i<covered.length&&!this.relayShelterStep;i++){
    const from=covered[i-1],to=covered[i],steps=Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/12);
    for(let step=1;step<=steps;step++){
