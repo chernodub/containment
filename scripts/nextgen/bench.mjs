@@ -1,3 +1,4 @@
+import {perf46Arms,installPerf46Arm,finishPerf46Arm} from './perf46-ablations.mjs';
 #!/usr/bin/env node
 import {attributeCpuSelf,summarizeCpuClock} from './bench-cpu.mjs';
 import {configureCaptureGraphics} from './capture-graphics.mjs';
@@ -181,6 +182,8 @@ assert(/^[\w.-]+$/.test(label));
 const seconds=Number(option('seconds',20)), repeats=Number(option('repeat',3));
 assert(seconds>=1&&seconds<=120&&repeats>=1&&repeats<=10);
 const out=resolve(option('out',resolve('artifacts/nextgen',label))), dist=resolve(option('dist','dist'));
+const perf46Arm=option('perf46-arm','');
+assert(!perf46Arm||perf46Arms.includes(perf46Arm),'Unknown PERF46 arm');
 const requestedAblation = option('ablation', '');
 const graphicsAblations = { ao: { ambientOcclusion: false }, bloom: { bloom: false }, distortion: { distortion: false } };
 const ablationFeatures = [...Object.keys(graphicsAblations), 'finalAA', 'softDepth', 'atmosphereLayers', 'halfLightPool', 'contacts', 'silhouette', 'prioritySampling', 'floorResidues', 'conditions', 'adaptive80'];
@@ -197,7 +200,7 @@ const storyRooms=['awakening-bay','passenger-vault','residential-gallery','commu
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build',...(args.includes('--breakdown')?['--','--sourcemap']:[])],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={ablation:requestedAblation||null,distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!requestedAblation&&!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),cpuOnly:args.includes('--cpu-only'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={perf46Arm:perf46Arm||null,ablation:requestedAblation||null,distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!requestedAblation&&!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),cpuOnly:args.includes('--cpu-only'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
 const microSamples=Number(option('gpu-micro-samples',2));
 assert(!report.gpuMicro||(Number.isInteger(microSamples)&&microSamples>=2&&microSamples<=4),'--gpu-micro-samples must be2–4');
@@ -229,6 +232,7 @@ try{
  if(args.includes('--scan')||args.includes('--scan-heavy')||!rooms.length){
   for(const room of storyRooms){
    await reset();
+  if(perf46Arm)await page.evaluate(installPerf46Arm,perf46Arm);
    if(heavyScan)await page.evaluate(stageV2,{rig:'arc',room,tier:'high',heavy:true,setupOnly:true,conditionSeed});
    else await page.evaluate(SCENARIOS.find(s=>s.id==='g2-calm-high').setup,room);
    const counts=await page.evaluate(heavy=>{
@@ -276,6 +280,7 @@ try{
   }
   try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
   await reset();
+  if(perf46Arm)await page.evaluate(installPerf46Arm,perf46Arm);
   if(args.includes('--fixed-resolution'))await page.evaluate(configureCaptureGraphics,{adaptiveResolution:false,resolutionScale:1});
   if (graphicsAblations[ablation]) await page.evaluate(configureCaptureGraphics, graphicsAblations[ablation]);
   else if (ablation && !['full', 'flameSprites', 'floorSkins'].includes(ablation)) {
@@ -303,6 +308,7 @@ try{
     r.world.traverse(object => { if (skins.has(object.name)) object.layers.disable(0); });
    }
   }, ablation);
+  if(perf46Arm)await page.evaluate(finishPerf46Arm,perf46Arm);
   if(report.noSoftDepth)await page.evaluate(installNoSoftDepthDiagnostic);
   assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
   await cdp.send('Performance.enable');
@@ -504,7 +510,7 @@ try{
   if(!baseline&&ablation!=='adaptive80'&&!budget.adaptiveScale)report.budgetFailures.push({scenario:name,metric:'adaptiveScale',observed:[summary.adaptiveScale.min,summary.adaptiveScale.max],limit:[.7,1]});
   if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});
   if(!baseline&&!budget.headroomDraws)report.budgetFailures.push({scenario:name,metric:'headroomDraws',observed:summary.draws.max,limit:330});
-  assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
+  assert(summary.lights.max<=(tier==='high'||perf46Arm==='lowPoolOn'?9:2),'Shared light budget exceeded');
   assert(summary.instances.max<=4096,'Fixed ability instance inventory exceeded');
   assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
   assert(data.initialEnemies===25&&data.simulationSeconds>0,'Benchmark did not run the live encounter');
