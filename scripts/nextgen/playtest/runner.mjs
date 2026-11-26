@@ -417,6 +417,7 @@ try {
       'sealed-entry':!!s.markedClosedEntry&&!freshEvents.some(event=>event.reserveCut),
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
+      'shelter-impact':(s.relayCoverPreview?.impactUntil??0)>s.elapsed,
     };
     for(const [key,seen] of Object.entries(evidence)){
       if(!seen||room.play33Frames?.[key])continue;

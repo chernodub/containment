@@ -133,7 +133,7 @@ export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 export type PodStage = 'sealed' | 'swelling' | 'opening';
 type ReadyBehaviour = "skitter" | "pace" | "step" | "brace" | "relocate";
 
-export type EnemySnapshot = Readonly<{arrivalBanked?:number;broodDestination?:'relay'|'supply';laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type EnemySnapshot = Readonly<{arrivalProtected?:true;arrivalBanked?:number;broodDestination?:'relay'|'supply';laneCutter?:boolean;readyBehaviour?:ReadyBehaviour;feintProgress?:number;wallStunAngle?:number;chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -587,10 +587,11 @@ export class EnemySystem {
     amount: number,
     knockback?: Readonly<{ x: number; y: number }>,
     weaponHit=false,
+    rigHit=false,
   ): DamageResult {
     this.#cachedSnapshot=null;
     const enemy = Number.isSafeInteger(id) ? this.#enemies.get(id) : undefined;
-    if (!enemy || (enemy.arrivalSwing&&!weaponHit) || !Number.isFinite(amount) || amount <= 0) {
+    if (!enemy || (enemy.arrivalSwing&&!weaponHit&&!rigHit) || !Number.isFinite(amount) || amount <= 0) {
       return this.#damageResult(false, 0, 0, false, { x: 0, y: 0 }, []);
     }
 
@@ -734,7 +735,7 @@ export class EnemySystem {
 
   #snapshotEnemy(enemy: EnemyState): EnemySnapshot {
     return Object.freeze({
-      arrivalBanked:enemy.arrivalSwing?enemy.arrivalDamage:undefined,broodDestination:enemy.pod?enemy.broodDestination:undefined,role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
+      arrivalProtected:enemy.arrivalSwing,arrivalBanked:enemy.arrivalSwing?enemy.arrivalDamage:undefined,broodDestination:enemy.pod?enemy.broodDestination:undefined,role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
       wallStunAngle:enemy.stunRemainingMs>0?enemy.wallStunAngle:undefined,
       id: enemy.id,
       type: enemy.type,
@@ -1268,7 +1269,7 @@ export class EnemySystem {
         }
       }else if(enemy.meleePhase==='strike'){
         if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
-        enemy.arrivalSwing=undefined;
+        enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         enemy.recoveryPunished=false;

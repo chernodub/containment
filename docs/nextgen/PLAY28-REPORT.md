@@ -338,3 +338,60 @@ The production build passed. Arc and Pyro 1729 each cleared all 20 rooms with ze
 | All five R25 Standard campaigns | 70.8% | — |
 
 The matched native share divides 631.3 Crawler and Stalker contact damage by 1057.8 total suit damage. R25's matched sample ended earlier because Arc died in the Shaft. The deterministic cohort provides a second comparison with the same 48 starting configurations and a different result.
+
+## PLAY34
+
+- The later Diagnostic Gallery, Infested Workshop and Manual Control exchanges stage an existing melee attacker across the room's incident cover. The next request leaves about one second before it arrives.
+- Workshop's clean brood-leader kill redirects the next flank to the entry farthest from the kill and cuts one arrival there. The changed entry uses the existing flank warning.
+- Protected arrivals accept rig damage and show the same banked wound as weapon damage. Armor strips immediately. Queued health damage retains its source, and queued freeze, burn, shock and chill apply after the committed strike if the target survives.
+- Residential's plated lesson opens the optional armor lane with a lateral shove and stagger when plasma breaks the plate. The novice policy had explicitly excluded Residential from lesson targeting even when the target was visible and in range.
+- Swarm Junction places its first marked brood pair together in front of the marine and holds escorts on whichever beat the seed assigns to the Matron. Escorts wait for the pair plus a 0.4-second margin, with a four-second ceiling after dispatch.
+- A short world-projected arrow carries the bearing from the defeated reserve target toward the persistent sealed-entry crest. The first queued silhouette advances to the grille while it waits.
+- Overload's preview stops on the cover lip and keeps the impact marked for 1.3 seconds. Crossing route arrows were removed.
+
+### Residential receipt
+
+The Story novice Cryo checkpoint replay fired three plasma shots in Residential, compared with zero in R26. Plasma broke the staged plate at 40.183 seconds. The replay cleared the room with zero suit loss and zero runtime errors. The side-on lock and banked-wound frames precede the plate break. [Native replay](../../artifacts/nextgen/playtest/play34-residential-tip/report.json) · [Side-on lock frame](../../artifacts/nextgen/playtest/play34-residential-tip/r3-residential-gallery-side-on-lock.png) · [Trace](../../artifacts/nextgen/playtest/play34-residential-tip/trace.ndjson)
+
+### Late-room receipts
+
+Breacher killed Workshop's Carrier at 554.017 seconds. The next flank used the far entry at (1180, 720), announced at 572.200. The room cleared for 27.7 suit compared with 133.6 in R26. The exposed hit at 581.317 was in the flank beat. [Workshop trace](../../artifacts/nextgen/playtest/play34-native-breacher/trace.ndjson) · [Workshop frame](../../artifacts/nextgen/playtest/play34-native-breacher/r15-infested-workshop-reserve-cut.png)
+
+Breacher's Coolant reserve cut chose a sealed entry at 448.383 seconds. The bearing frame is at 448.533 and the later grille frame at 461.383. [Sealed entry](../../artifacts/nextgen/playtest/play34-native-breacher/r13-coolant-plant-sealed-entry.png) · [Gathering hatch](../../artifacts/nextgen/playtest/play34-native-breacher/r13-coolant-plant-hatch-in-view.png)
+
+The first marked Swarm Junction pods are both in the Breacher frame at 611.367 seconds, with the supply pod near the lower edge. The Cryo finale checkpoint replay recorded the preview stop at (833.7, 349.8). The impact is on screen at 800.917 seconds and the snapshot retains it until 802.200. [Pod frame](../../artifacts/nextgen/playtest/play34-native-breacher/r16-swarm-junction-pod-destinations.png) · [Cover impact frame](../../artifacts/nextgen/playtest/play34-cover-impact/r20-overload-floor-shelter-impact.png)
+
+### Balance
+
+Standard's first cohort cleared 41 of 48. Standard paid health repair went from 25 to 22 and armor repair from 20 to 17. The retuned usual cohort cleared 40 of 48 before the final Matron timing adjustment. The final cohorts below include that adjustment. No enemy counts or damage values changed in the retune.
+
+| Cohort | R26 clears | PLAY34 clears |
+|---|---:|---:|
+| Standard usual · Breacher / Cryo / Pyro / Arc | 7 / 9 / 10 / 9 | 9 / 10 / 11 / 9 |
+| Standard usual total | 35/48 | 39/48 |
+| Standard fresh 101–124 · Breacher / Arc | — | 23/24 / 21/24 |
+| Standard fresh total | — | 44/48 |
+| Story usual · Cryo / Breacher | 12 / 11 | 11 / 11 |
+| Story usual total | 23/24 | 22/24 |
+
+Zero stalls across all 120 cohort runs. The matched usual Standard cohort spent 0 → 0 suit in Passenger Vault, 54.1 → 54.1 in Residential Gallery, and 203.2 → 260.9 in Communal Atrium. [Usual Standard](../../artifacts/nextgen/playtest/play34-marked-usual/summary.json) · [Fresh Standard](../../artifacts/nextgen/playtest/play34-marked-fresh/summary.json) · [Story](../../artifacts/nextgen/playtest/play34-marked-story/summary.json)
+
+### Protected rig hit
+
+In the Breacher Residential trace, Seismic Slam hit the protected Stalker at 41.083 seconds and banked 90 health damage. Rifle and shotgun contacts banked separately. The Stalker completed its strike, and recovery at 41.483 released the 224.4-point combined bank. The trace does not establish the elemental status payout on a protected Brute. [Banked wound frame](../../artifacts/nextgen/playtest/play34-native-breacher/r3-residential-gallery-banked-wound.png) · [Breacher trace](../../artifacts/nextgen/playtest/play34-native-breacher/trace.ndjson)
+
+### Full native campaigns
+
+Breacher seed 1729 finished all 20 rooms at 837.667 seconds, and the fresh Cryo retry finished all 20 at 906.600. Both recorded zero runtime errors and zero stalls. Their harnesses reported five and two loading holds over five wall seconds respectively. The earlier fresh Cryo attempt died in Transmission at 263.400. A separate Cryo continuation from an earned R26 sector-10 boundary cleared through the end at 866.983 with zero errors or loading findings. The full campaigns preceded the final repair and escort timing changes. The repaired build supplied the finale impact replay, and the seeded escort timing was exercised in Swarm Junction checkpoint replays. [Breacher campaign](../../artifacts/nextgen/playtest/play34-native-breacher/report.json) · [Cryo campaign](../../artifacts/nextgen/playtest/play34-cryo-final-title/report.json) · [Cryo continuation](../../artifacts/nextgen/playtest/play34-cryo-diagnostic-continuation/report.json)
+
+| Native room | Breacher exposed hits · suit loss, R26 → PLAY34 | Cryo exposed hits · suit loss, R26 → PLAY34 |
+|---|---:|---:|
+| Diagnostic Gallery | 3 · 83.0 → 1 · 45.0 | 1 · 120.8 → 3 · 38.4 |
+| Infested Workshop | 2 · 133.6 → 1 · 27.7 | 3 · 18.2 → 1 · 104.0 |
+| Manual Control Chamber | 1 · 90.8 → 2 · 136.5 | 1 · 98.6 → 0 · 129.3 |
+
+The Cryo checkpoint continuation recorded five exposed hits and 137.2 suit lost in Diagnostic, one and zero in Workshop, and zero and 76.3 in Manual Control. None of these three sampled campaigns landed an exposed hit during the new second beat itself. Breacher's pair in Manual Control registered at 753.433 seconds in beat zero, and Cryo's last Gallery punish came at 377.483 in beat two. The frames provide room context. [Gallery frame](../../artifacts/nextgen/playtest/play34-cryo-final-title/r11-diagnostic-gallery-mid.png) · [Manual Control frame](../../artifacts/nextgen/playtest/play34-native-breacher/r19-manual-control-chamber-mid.png)
+
+Across the matched full Breacher and Cryo traces, the share of weapon contacts on exposed actors moved from 30/4,246 (0.707%) to 32/4,823 (0.663%). R26's wider five-run sample was 84/12,460 (0.674%). Native suit costs in sectors 2–4 were 0 / 0 / 0 → 0 / 0 / 0 for Breacher and 0 / 0 / 4.8 → 0 / 0 / 0 for Cryo.
+
+The corrected Swarm replays exercised the bounded escort hold. Cryo’s matched checkpoint replay moved the first escorts from 648.200 to 654.400 seconds; the Matron was killed before a marked pair appeared. The earlier pod frame verifies placement, while the corrected trace verifies the wait and fallback. The final production build passed. [Corrected Swarm trace](../../artifacts/nextgen/playtest/play34-marked-native/trace.ndjson)
