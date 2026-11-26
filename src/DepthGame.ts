@@ -889,7 +889,8 @@ export class DepthGame {
     for(const side of [1,-1]){
      const plate={x:point.x+Math.cos(angle)*70-Math.sin(angle)*side*88,
       y:point.y+Math.sin(angle)*70+Math.cos(angle)*side*88};
-     const reward={x:plate.x+Math.cos(angle)*78,y:plate.y+Math.sin(angle)*78};
+     const lane=Math.atan2(plate.y-this.player.y,plate.x-this.player.x);
+     const reward={x:plate.x+Math.cos(lane)*58,y:plate.y+Math.sin(lane)*58};
      if(!canOccupyExpedition(this.geometry,plate,enemyBodyRadius('brute',true))||
       !canTraverseExpedition(this.geometry,this.player,reward,this.player.radius)||
       !hasClearExpeditionShot(this.geometry,this.player,plate))continue;
