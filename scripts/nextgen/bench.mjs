@@ -375,9 +375,13 @@ try{
    for(const radius of [110,145,180,240,300,360,420,480])for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
    // Fill legal gaps between polar samples in compartmentalized rooms.
    for(let y=lane.y-480;y<=lane.y+480;y+=32)for(let x=lane.x-480;x<=lane.x+480;x+=32)if(Math.hypot(x-lane.x,y-lane.y)<=480&&d.canStand(x,y,40))refillPoints.push({x,y});
+   const reservePoints=[];
+   for(let y=lane.y-640;y<=lane.y+640;y+=28)for(let x=lane.x-640;x<=lane.x+640;x+=28){
+    if(d.canStand(x,y,40))reservePoints.push({x,y});
+   }
    const refillTypes=['brute','spitter','crawler','stalker','carrier'];
-   let refillCursor=0,refillSerial=0,replenished=0;
-   const refillAudit={points:refillPoints.length,passes:0,blockedPasses:0,maxDeficit:0};
+   let refillCursor=0,reserveCursor=0,refillSerial=0,replenished=0;
+   const refillAudit={points:refillPoints.length,reservePoints:reservePoints.length,reserveSpawns:0,passes:0,blockedPasses:0,maxDeficit:0};
    const refill=()=>{
     const deficit=25-g.enemies.activeCount;
     if(deficit<=0)return;
@@ -387,12 +391,14 @@ try{
     // Driver cost stays inside the measured CPU window; legal spacing is unchanged.
     for(let missing=0;missing<deficit&&g.enemies.activeCount<25;missing++){
      const enemies=g.enemies.snapshot.enemies;let spawned=false;
-     for(let attempt=0;attempt<refillPoints.length;attempt++){
-      const point=refillPoints[refillCursor++%refillPoints.length],distance=Math.hypot(point.x-g.player.x,point.y-g.player.y);
-      if(distance<110||distance>620||!d.clearShot(point.x,point.y))continue;
+     for(let attempt=0;attempt<refillPoints.length+reservePoints.length;attempt++){
+      const reserve=attempt>=refillPoints.length;
+      const point=reserve?reservePoints[reserveCursor++%reservePoints.length]:refillPoints[refillCursor++%refillPoints.length];
+      const distance=Math.hypot(point.x-g.player.x,point.y-g.player.y);
+      if(distance<110||distance>620)continue;
       let clear=true;for(const e of enemies)if(e.health>0&&Math.hypot(e.x-point.x,e.y-point.y)<e.radius+52){clear=false;break;}
-      if(!clear)continue;
-      if(d.spawn(refillTypes[refillSerial%5],point.x,point.y,refillSerial%6===0)){replenished++;refillSerial++;spawned=true;break;}
+      if(!clear||(reserve?!r.visible(point.x,point.y):!d.clearShot(point.x,point.y)))continue;
+      if(d.spawn(refillTypes[refillSerial%5],point.x,point.y,refillSerial%6===0)){replenished++;refillSerial++;refillAudit.reserveSpawns+=Number(reserve);spawned=true;break;}
      }
      if(!spawned){refillAudit.blockedPasses++;break;}
     }
