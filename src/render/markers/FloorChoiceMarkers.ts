@@ -44,7 +44,7 @@ export class FloorChoiceMarkers {
  private readonly graceMaterial=new T.MeshBasicMaterial({color:0x9ee8da,transparent:true,depthWrite:false,toneMapped:false});
  private readonly notchMaterial=new T.MeshBasicMaterial({color:0xffd18b,transparent:true,depthWrite:false,toneMapped:false});
  private readonly graceRing=new T.Mesh(dashedRing(1.025,1.08,64),this.graceMaterial);
- private readonly graceNotch=new T.Mesh(new T.RingGeometry(1.09,1.18,12,1,-.095,.19),this.notchMaterial);
+ private readonly graceNotch=new T.Mesh(new T.RingGeometry(1.10,1.23,12,1,-.13,.26),this.notchMaterial);
  private graceCharge=0;
  private graceRoom=-1;
 
@@ -58,7 +58,7 @@ export class FloorChoiceMarkers {
     mesh.position.set(pad.x/unit,.061,pad.y/unit);
     mesh.scale.setScalar(pad.radius/unit);
    }
-   this.graceNotch.rotation.z=-Math.PI*2*(1-Math.min(1,grace.remainingMs/grace.durationMs));
+   this.graceNotch.rotation.z=-Math.PI*(1-Math.min(1,grace.remainingMs/grace.durationMs));
   }else this.graceCharge=Math.max(0,this.graceCharge-dt*2.4);
   this.graceRing.visible=this.graceCharge>0;
   this.graceRing.geometry.setDrawRange(0,Math.ceil(this.graceCharge*64)*6);
