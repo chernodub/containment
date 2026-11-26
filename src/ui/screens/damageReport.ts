@@ -1,5 +1,6 @@
 import {exchangeEnemy, exchangeMarine} from './exchangeGlyphs';
 import {ENEMY_ATTACK_SHAPES} from '../../game/enemies/attackShapes';
+import {WEAPONS} from '../../game/combat/catalog';
 import {AREA_ATTACK_RADIUS} from '../../game/enemies/QueenBossSystem';
 import {getRoomDamage} from '../gameAdapter';
 import {MELEE_ATTACKS, meleeStrikeContains} from '../../game/enemies/meleeAttacks';
@@ -69,7 +70,7 @@ function attackGuide(receipt: RunStatsSnapshot['lastDamage']): LastExchange {
   if (source==='enemy-charge') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000,width:2*ENEMIES.brute.radius,halfAngle:0};
   if (source==='enemy-projectile') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife,width:2*ENEMY_ATTACK_SHAPES.spitterProjectileRadius,halfAngle:0};
   if(source==='acid-pool') shape={kind:'circle',range:AREA_ATTACK_RADIUS*.75};
-  if(source==='self-blast') shape={kind:'circle',range:162};
+  if(source==='self-blast') shape={kind:'circle',range:WEAPONS.rocket.splashRadius};
   const known=source && source!=='scripted' && source!=='unknown';
   const x=source==='enemy-projectile'?-90:source==='enemy-contact'?marine.x-Math.min(shape.range*.72,75):0;
   return {marine,earlier,attacks:[],blockers:source==='enemy-projectile'?[{x:-25,y:-90,width:104,height:20}]:[],
@@ -122,7 +123,7 @@ export function lastExchangeDiagram(game: DepthGame): string {
   const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : fatal ? ENEMIES[fatal.family].label : 'Unrecorded attack';
   return `<figure class="last-exchange" aria-label="Last exchange">
     <div class="exchange-key"><b>${family} · ${recorded?'fatal attack':'attack guide'}</b><span>${held?'Earlier and impact coincide':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}${blockers.length?' · ▰ Cover':''}</span></div>
-    <svg role="img" aria-label="Coral fatal footprint, muted nearby attacks, marine at impact and one second earlier, and a clear step when available." viewBox="${left} ${top} ${right-left} ${bottom-top}">
+    <svg role="img" aria-label="${recorded?'Recorded fatal footprint, nearby attacks, marine poses and clearing step when available.':'Illustrated attack guide and clearing step.'}" viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
       ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
