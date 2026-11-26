@@ -312,6 +312,22 @@ for name, sculpture in parts.items():
                 facets[winner == i, axis] = plate.field(points + offset) - plate.field(points - offset)
         facets /= np.maximum(np.linalg.norm(facets, axis=1, keepdims=True), 1e-8)
         low.data.attributes.new("k11_facet", "FLOAT_VECTOR", "FACE").data.foreach_set("vector", facets.ravel())
+        # HEAVY39: a curved ShellBand gets its analytic gradient at every corner instead of one per face, so the
+        # light turns smoothly across the band and the step falls on a clean curve; its bevels still turn sharply.
+        shells = [(i, p) for i, p in plates if isinstance(p, S.ShellBand)]
+        if shells:
+            co_ = K.verts_np(low)
+            loops = np.array([loop.vertex_index for loop in low.data.loops])
+            face_of = np.repeat(np.arange(len(low.data.polygons)), [f.loop_total for f in low.data.polygons])
+            corner = np.zeros((len(loops), 3), np.float32)
+            for i, shell in shells:
+                sel = winner[face_of] == i
+                pts = co_[loops[sel]]
+                g = np.zeros_like(pts)
+                for axis, offset in enumerate(np.eye(3, dtype=np.float32) * .0005):
+                    g[:, axis] = shell.field(pts + offset) - shell.field(pts - offset)
+                corner[sel] = g / np.maximum(np.linalg.norm(g, axis=1, keepdims=True), 1e-8)
+            low.data.attributes.new("k11_corner", "FLOAT_VECTOR", "CORNER").data.foreach_set("vector", corner.ravel())
     hw = build_bands.hard_weights(K.verts_np(low), sculpture)
     if hw is not None:   # CREATURE29: carried to the variants, read by form_normals, removed before export
         low.data.attributes.new("k11_hard", "FLOAT", "POINT").data.foreach_set("value", hw)
@@ -412,6 +428,13 @@ def form_normals(obj, mix, iterations):
         for face, normal in zip(obj.data.polygons, normals):
             if np.any(normal):
                 corners[face.loop_start:face.loop_start+face.loop_total] = normal
+        shell = obj.data.attributes.get("k11_corner")
+        if shell:
+            smooth = np.zeros((len(obj.data.loops), 3), np.float32)
+            shell.data.foreach_get("vector", smooth.ravel())
+            obj.data.attributes.remove(shell)
+            keep = np.any(smooth != 0, axis=1)
+            corners[keep] = smooth[keep]
         obj.data.normals_split_custom_set(corners.tolist())
     else:
         obj.data.normals_split_custom_set_from_vertices(n.tolist())

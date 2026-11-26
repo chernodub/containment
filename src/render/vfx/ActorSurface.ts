@@ -159,19 +159,9 @@ if(bruteBody) {
   diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.027,.073,.044)*.79,actorWarden);
   creatureStrike=1.0;
 }
-// Plate pigment follows the stepped lighting. Eye slits and status finishes retain their dark ink.
-if(bruteBody && actorWarden>.5 && band==6)diffuseColor.rgb*=actorBroodForm.x< -1. ? .30 : .96;
-if(bruteBody && actorWarden<.5){
-  // Wrap armor around the fists in bind space. Its edge follows the skin
-  // continuously between vertices, even on the low-detail mesh.
-  vec3 sculpt=actorPosition*vec3(1.,1.,1.8);
-  float side=abs(sculpt.y);
-  bool forelimb=side>1.90 && sculpt.x>.58 && sculpt.z<6.4;
-  bool knuckle=sculpt.x-.22*(sculpt.z-4.6)>1.62;
-  bool darkArmor=forelimb?knuckle:band==6;
-  bool eyeSlit=band==6 && vActorRegion==2. && sculpt.x>2.28;
-  if(darkArmor)diffuseColor.rgb*=actorBroodForm.x< -1. || eyeSlit ? .30 : .96;
-}
+// HEAVY39: the plate cell is the near-black underbody (neck, armpits, flanks, joints, knuckles) under lighter
+// dorsal bands; eye slits share it. Status finishes keep their own ink.
+if(bruteBody && band==6)diffuseColor.rgb*=.18;
 #endif`}`)
         .replace('#include <color_fragment>', `#include <color_fragment>
 ${friendly ? `// Keep the paint chromatic through the shared light bands.
@@ -302,8 +292,8 @@ if(broodFinish && (broodMark || ridgeGlow>0.)){
 #endif
 #ifdef BRUTE_PLANES
 if(wardenMaw){
-  float core=smoothstep(.64,.80,max(dot(normalize(normal),normalize(vViewPosition)),0.));
-  lanternEmission=mix(vec3(1.30,.41,.045),vec3(5.6,4.8,3.35),core)*(1.+.18*actorAttackLoad)*mix(.88,1.,actorStageLight)*actorCamouflage*(1.-actorDissolve);
+  float core=smoothstep(.72,.94,max(dot(normalize(normal),normalize(vViewPosition)),0.));
+  lanternEmission=mix(vec3(2.7,1.40,.21),vec3(8.1,6.5,3.9),core)*(1.+.18*actorAttackLoad)*mix(.88,1.,actorStageLight)*actorCamouflage*(1.-actorDissolve);
   totalEmissiveRadiance=lanternEmission;
 }
 if(bruteBody || (bruteFace && actorWarden>.5)){

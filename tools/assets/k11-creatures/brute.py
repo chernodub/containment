@@ -40,7 +40,8 @@ BAND_MAP = {"shell": "flesh", "crest": "flesh", "membrane": "chitin", "sinew": "
 PLATE_BAND = {**{i: "plate" for i in (*WARDEN.DORSAL_PLATES, 424)}, **{i: "lead" for i in WARDEN.CROWN_PLATES},
               300: "chitin", 20: "chitin", 21: "chitin", 310: "bone", 311: "chitin", 50: "lead", 55: "chitin",
               **{i: "flesh" for i in range(90, 100)},
-              51: "lead", 60: "plate", 61: "plate", 62: "plate", 63: "plate", 64: "plate", 65: "plate"}   # BRUTE32: elite horns face-pale; dorsal plates, eye slits dark
+              51: "lead", 60: "plate", 61: "plate", 62: "plate", 63: "plate", 64: "plate", 65: "plate",
+              66: "plate", **{i: "flesh" for i in range(70, 80)}}   # BRUTE32: elite horns face-pale; dorsal plates, eye slits dark
 BAND_KEEP = ("accent", "eye", "plate")   # BRUTE32: the eye slits are small; keep them from the island merge   # leg armour plates stay in the limb's flesh shape
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
@@ -97,71 +98,122 @@ def skull_plate(c, heading, length, width, tilt, bone, plate, zone=CREST):
     return p, c + fwd * L * (1 + rake), rear, fwd, up, side
 
 
+UNDER = 66            # HEAVY39: near-black underbody, joints, knuckles (atlas "plate" cell)
+JADE = range(70, 80)  # HEAVY39: dorsal bands, shoulder caps, limb segments (atlas "flesh" cell, bruteBody jade)
+
+
+def band(c, angle, half, radii, drop, bone, plate, side=None, thick=.26, bevel=.09, lip=0.0, roll=0.0, zone=ARMOR):
+    """HEAVY39: a grown shell band. ``angle`` (degrees) raises the band's head end; ``roll`` tips it outward."""
+    t = math.radians(angle)
+    fwd = v3((math.cos(t), 0, math.sin(t)))
+    up = v3((-math.sin(t), roll, math.cos(t)))
+    return S.ShellBand(c, frame(fwd, up), radii, half, drop, thick=thick, bevel=bevel, lip=lip,
+                       zone=zone, bone=bone, plate=plate, hard=1.0)
+
+
+# Three dorsal crowns, each with its own dark bearing surface beneath the jade lip.
+BACK = ((.64, 8.48, -14, 1.68, 1.18, .92, "chest"),
+        (-.53, 8.76, 9, 1.87, 1.23, 1.08, "chest"),
+        (-1.89, 7.93, 39, 1.88, 1.10, 1.06, "tail"))
+TIP = 24
+
+
+def back(body, bands=BACK, ridge=0.16, ridge_lift=0.10, plate0=70):
+    crowns = []
+    for i, (x, z, ang, ry, rz, drop, bone) in enumerate(bands):
+        body.add(band((x + .09, 0, z - .19), ang + TIP, .69, (3.4, ry + .04, rz),
+                      drop, bone, UNDER, thick=.39, bevel=.08))
+        body.add(band((x, 0, z), ang + TIP, .53, (3.4, ry, rz), drop,
+                      bone, plate0 + i, thick=.28, bevel=.13, lip=.15))
+        crowns.append(v3((x, 0, z + ridge_lift)))
+    # one raised spine ridge running through every band
+    body.add(S.Tube(crowns, [ridge * 0.8] + [ridge] * (len(crowns) - 2) + [ridge * 0.7], zone=ARMOR, bone="chest",
+                    plate=plate0 + 9, hard=0.0))
+    return crowns
+
+
+def arm(body, s, side, guard=True):
+    """Shoulder cap, upper arm, elbow, forearm (one guard), wrist, fist with two weight-bearing knuckles. The
+    shoulder, elbow and fist centres are the ones POSE38's club_hook frames (enemy_actions.py); all rigid on the
+    shoulder bone, as the clips expect."""
+    bone = f"shoulder.{side}"
+    sh = v3((0.3, 1.7 * s, 6.9))
+    el = v3((-.21, 3.28 * s, 6.02))
+    fist = v3((2.15, 3.00 * s, 4.57))
+    wrist = el + (fist - el) * 0.74
+    body.add(Ellipsoid(sh + v3((0, .15 * s, .05)), (.95, .88, .85), zone=FLESH, bone=bone, k=.10, plate=UNDER))   # deltoid
+    body.add(S.ShellBand(sh + v3((.05, .30 * s, .98)), frame((1, .10 * s, -.10), (0, .55 * s, 1)), (1.35, 1.12, .95),
+                         .88, .70, thick=.30, bevel=.09, lip=.05, zone=ARMOR, bone=bone, plate=73, hard=1.0))   # cap
+    body.add(RoundCone(sh + v3((0, .35 * s, -.35)), el, .74, .60, zone=FLESH, bone=bone, k=.06, plate=UNDER))
+    body.add(Ellipsoid(el, (.62, .60, .60), zone=FLESH, bone=bone, k=.04, plate=UNDER))   # elbow
+    body.add(RoundCone(el, wrist, .70, .86, zone=FLESH, bone=bone, k=.05, plate=74))
+    if guard:   # one forearm guard on the outer top of the forearm
+        d = normalize(wrist - el)
+        mid = (el + wrist) * 0.5
+        up = normalize(v3((0, .55 * s, 1)) - d * float(d @ v3((0, .55 * s, 1))))
+        body.add(S.ShellBand(mid + up * .80, frame(d, up), (1.7, .80, .70), .70, .55, thick=.20, bevel=.08,
+                             zone=ARMOR, bone=bone, plate=75, hard=1.0))
+    body.add(Ellipsoid(wrist, (.58, .60, .55), zone=FLESH, bone=bone, k=.04, plate=UNDER))   # wrist
+    body.add(Ellipsoid(fist + v3((0.05, 0, 0.1)), (.92, 1.02, .80), frame((1, .15 * s, .15)), zone=FLESH, bone=bone,
+                       k=.08, plate=76))   # hand mass, lit top
+    for k in (-1, 1):   # two weight-bearing knuckles, front and down
+        body.add(Ellipsoid(fist + v3((.72, .44 * k + .05 * s, -.42)), (.46, .40, .42), zone=FLESH, bone=bone, k=.04,
+                           plate=UNDER))
+    return sh, el, wrist, fist
+
+
+def leg(body, s, side, hip=(-1.85, .95, 5.4), knee=(-1.30, 1.70, 3.05), foot=(-1.75, 1.95, .40), r=(.88, .68, .52)):
+    hip, knee, foot = v3((hip[0], hip[1] * s, hip[2])), v3((knee[0], knee[1] * s, knee[2])), v3((foot[0], foot[1] * s, foot[2]))
+    body.add(RoundCone(hip, knee, r[0], r[1], zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=UNDER))
+    body.add(Ellipsoid(knee, (r[1] * 1.05,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
+    body.add(RoundCone(knee, foot + v3((0, 0, .2)), r[1] * .9, r[2], zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=77))
+    body.add(Ellipsoid(foot + v3((.30, 0, -.06)), (r[2] * 1.5, r[2] * 1.05, r[2] * .7), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
+
+
 def build(sk):
-    """The body is symmetric about its heading: two
-    shoulder masses (the widest point) over a chest, a hump between them, a waist, smaller hips on two short hind
-    legs, and two knuckle-walking forelimbs whose thick forearms end in club fists planted forward and out. One
-    pale arrowhead skull plate rides low and forward on top of the head (the bruteFace zone); three dark plates run
-    down the spine. Everything else is one jade zone with smooth normals, so the raking key draws one terminator
-    per mass. The front leg and feeding-arm bones carry no geometry. Bones, joints and clips are unchanged."""
-    a = sk.aspect
+    """HEAVY39: the Brute as an armoured animal. A dark, smooth underbody (chest, hump core, waist, hips, neck)
+    carries three curved, overlapping dorsal bands and a spine ridge; curved shoulder caps overlap the first band;
+    each forelimb is one traceable chain (cap, upper arm, dark elbow, forearm with one guard, dark wrist, fist with two
+    dark knuckles); short hind legs with knee and foot. The head sits forward on a narrow dark neck under the
+    accepted bone skull plate with its eye slits. Bones, joints and clips are unchanged."""
     body = S.Sculpture("brute-body")
-    # --- trunk: chest, hump (idle top), waist, hips -------------------------------------------------------------
-    body.add(Ellipsoid((0.35, 0, 6.1), (1.55, 1.46, 1.58), zone=FLESH, bone="chest", k=0.35))
-    hump_top = 8.86   # Rest-space crown of the underlying hump.
-    hump_r = (1.15, 1.05, 0.95)
-    body.add(Ellipsoid((-0.25, 0, hump_top - hump_r[2]), hump_r, frame((1, 0, 0.25)), zone=FLESH, bone="chest", k=0.35))
-    body.add(Ellipsoid((-1.06, 0, 6.12), (1.14, 0.96, 1.26), frame((1, 0, 0.2)), zone=FLESH,
-                       bone=("blend", "chest", "tail", (0.0, 0, 6.2), (-1.6, 0, 4.9)), k=0.3))
-    body.add(Ellipsoid((-1.80, 0, 5.35), (1.20, 1.10, 1.12), frame((1, 0, 0.15)), zone=FLESH, bone="tail", k=0.3))
-    # Overlapping shingles follow the descending ridge from the crown to the pelvis.
-    for pid, cx, cz, length, width, pitch, bone in (
-        (60, -0.35, 8.79, 1.50, 1.66, -12, "chest"),
-        (61, -1.42, 8.04, 1.61, 1.83, -34, "chest"),
-        (63, -2.20, 6.73, 1.66, 1.60, -42, "tail"),
-    ):
-        body.add(S.Carapace((cx, 0, cz), (.58*length, .62*width, .19), frame((1, 0, -math.tan(math.radians(pitch)))), zone=ARMOR, bone=bone, plate=pid, hard=1))
-    # --- head: low and forward, under one pale arrowhead skull plate --------------------------------------------
-    body.add(Ellipsoid((2.32, 0, 7.55), (1.15, 0.95, 0.8), frame((1, 0, -0.15)), zone=FLESH, bone="head", k=0.12))
-    body.add(S.Carapace((1.65, 0, 7.68), (.34, 1.05, .52), frame((1,0,-.12)), zone=ARMOR, bone="head", plate=65, hard=1))
-    plate, tip, rear, pf, pu, ps = skull_plate((2.68, 0, 8.39), (1, 0, 0), 2.72, 2.06, 15, "head", 50)
+    # --- underbody: near-black, smooth --------------------------------------------------------------------------
+    body.add(Ellipsoid((0.15, 0, 6.35), (1.40, 1.42, 1.42), zone=FLESH, bone="chest", k=.35, plate=UNDER))   # chest
+    body.add(Ellipsoid((-0.35, 0, 7.55), (1.25, 1.42, 1.05), frame((1, 0, .1)), zone=FLESH, bone="chest", k=.35, plate=UNDER))
+    body.add(Ellipsoid((-1.25, 0, 6.85), (1.15, 1.22, 1.12), frame((1, 0, .4)), zone=FLESH,
+                       bone=("blend", "chest", "tail", (-0.2, 0, 7.0), (-1.9, 0, 6.0)), k=.3, plate=UNDER))
+    body.add(Ellipsoid((-2.05, 0, 5.85), (1.10, 1.08, 1.08), frame((1, 0, .3)), zone=FLESH, bone="tail", k=.3, plate=UNDER))
+    back(body)
+    # --- neck and head: neck narrower than head and shoulders, dark; head forward under the bone plate -------------
+    body.add(RoundCone((1.05, 0, 7.15), (2.05, 0, 7.45), .66, .52, zone=FLESH,
+                       bone=("blend", "chest", "head", (1.0, 0, 7.1), (2.1, 0, 7.45)), k=.10, plate=UNDER))
+    body.add(Ellipsoid((2.72, 0, 7.58), (1.02, .92, .74), frame((1, 0, -.15)), zone=FLESH, bone="head", k=.12, plate=78))   # skull
+    body.add(Ellipsoid((2.98, 0, 7.02), (.86, .72, .40), frame((1, 0, -.25)), zone=FLESH, bone="head", k=.08, plate=UNDER))  # jaw
+    plate, tip, rear, pf, pu, ps = skull_plate((2.98, 0, 8.36), (1, 0, 0), 2.72, 2.06, 15, "head", 50)
     body.add(plate)
-    for s in (-1, 1):   # two dark eye slits angled in toward the point
+    for s in (-1, 1):   # two dark eye slits angled in toward the point (the eye sockets)
         d = normalize(pf + ps * s * 0.45)
-        cen = v3((2.77, 0.38 * s, 0))
-        cen[2] = 8.39 + (2.77 - 2.68) * float(pf[2] / pf[0]) + 0.2
+        cen = v3((3.07, 0.38 * s, 0))
+        cen[2] = 8.36 + 0.09 * float(pf[2] / pf[0]) + 0.2
         body.add(Ellipsoid(cen, (0.38, 0.095, 0.105), frame(d, pu), zone=MEMBRANE, bone="head", k=0.0, plate=62, hard=1.0))
-    # --- forelimbs: equal, knuckle-walking; forearm thicker than upper arm, club fist planted forward and out ------
     for s, side in ((-1, "r"), (1, "l")):
-        sh_c = v3((0.3, 1.7 * s, 6.9))
-        body.add(S.Box(sh_c, (.87, .77, .63), frame((1, .15 * s, -.20)), round=.40,
-                       zone=FLESH, bone=f"shoulder.{side}", k=.06))
-        body.add(S.Carapace(sh_c + v3((0, .10*s, .93)), (1.26, 1.04, .27), frame((1, .12*s, -.18), (0, .28*s, 1)), bone=f"shoulder.{side}", zone=ARMOR, plate=64, hard=1))
-        el = v3((-.21, 3.28 * s, 6.02))
-        fist = v3((2.15, 3.00 * s, 4.57))
-        body.add(RoundCone(sh_c + v3((0.1, 0.3 * s, -0.4)), el, 1.00, 0.90, zone=FLESH,
-                           bone=f"shoulder.{side}", k=0.035))
-        body.add(S.Prism(el, fist, 1.02, .88, sides=6, up=(0, s, 0), roll=0, squash=.90,
-                         zone=FLESH, bone=f"shoulder.{side}", k=.14))
-        body.add(Ellipsoid(fist + v3((0.2, 0.05 * s, 0)), (1.16, 1.28, 0.98), frame((1, 0.2 * s, 0.25)), zone=FLESH,
-                           bone=f"shoulder.{side}", k=0.035))
-        body.add(skull_plate(fist + v3((0.46, 0.12 * s, 1.01)), (1, 0, 0), 2.15, 2.0, 16,
-                             f"shoulder.{side}", 64, zone=ARMOR)[0])
-        # A dark socket peeks through at the inner edge of each shoulder.
-        body.add(Ellipsoid(sh_c + v3((-0.04, -0.52 * s, -0.15)), (1.23, 0.92, 1.11),
-                           zone=ARMOR, bone=f"shoulder.{side}", plate=65))
-    # --- hind legs: short, thick, smooth --------------------------------------------------------------------------
-    for s, side in ((-1, "r"), (1, "l")):
-        hip, knee, foot = v3((-1.55, 0.85 * s, 4.45)), v3((-1.35, 1.6 * s, 2.85)), v3((-1.75, 1.95 * s, 0.38))
-        body.add(RoundCone(hip, knee, 0.79, 0.63, zone=FLESH, bone=f"leg.back.{side}", k=0.2))
-        body.add(RoundCone(knee, foot, 0.63, 0.47, zone=FLESH, bone=f"foot.back.{side}", k=0.1))
-        body.add(Ellipsoid(foot + v3((0.25, 0, -0.08)), (0.62, 0.45, 0.32), zone=FLESH, bone=f"foot.back.{side}", k=0.1))
-    # --- elite: the same body; its rank is read on the skull plate --------------------------------------------------
+        arm(body, s, side)
+        leg(body, s, side)
+    # --- elite: the same body; horns on the skull plate, a taller spine ridge and broader shoulder mantles ---------
     regalia = S.Sculpture("brute-regalia")
     for s, r0 in zip((-1, 1), rear):   # two pale horns swept back and out from the plate's rear corners
         pts = [r0 + pu * 0.05, r0 + v3((-0.32, 1.06 * s, -0.37)), r0 + v3((-1.28, 2.31 * s, -0.76)), r0 + v3((-2.70, 2.91 * s, -1.36))]
         regalia.add(S.Tube(pts, [0.44, 0.38, 0.24, 0.055], zone=BONE, bone="head", plate=51))
-    for sign, side in ((-1,"r"), (1,"l")):
-        regalia.add(S.Carapace((.15, 2.55*sign, 7.62), (1.38, 1.00, .26), frame((1, .18*sign, -.18), (0, .38*sign, 1)), zone=ARMOR, plate=64, hard=1, bone=f"shoulder.{side}"))
-    boss = WARDEN.build(sk, a)
+    for i, (x, z, ang, ry, rz, drop, bone) in enumerate(BACK[:3]):   # a tall keel along the spine ridge
+        regalia.add(band((x, 0, z + .14), ang + TIP, .52, (2.2, .34, .55), .55, bone, 79, thick=.30, bevel=.10))
+    for s, side in ((-1, "r"), (1, "l")):
+        # Split tail fan broadens the rump in plan, below the existing withers.
+        regalia.add(S.ShellBand((-2.36, 1.18 * s, 7.30),
+                                frame((.84, -.54 * s, .28), (0, .30 * s, 1)),
+                                (2.35, 1.15, .91), 1.14, .71, thick=.34, bevel=.14,
+                                lip=.12, zone=ARMOR, bone="tail", plate=78, hard=1.0))
+        sh = v3((0.3, 1.7 * s, 6.9))
+        regalia.add(S.ShellBand(sh + v3((-.15, .55 * s, 1.08)), frame((1, .12 * s, -.12), (0, .75 * s, 1)), (1.55, 1.25, 1.0),
+                                .95, .80, thick=.24, bevel=.09, zone=ARMOR, bone=f"shoulder.{side}", plate=73, hard=1.0))
+    boss = WARDEN.build(sk, sk.aspect)
     return {"body": body, "regalia": regalia, "boss": boss}

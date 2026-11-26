@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 224217,
+    "bytes": 224208,
     "shot": {
       "source": "selection24",
       "rig": "breacher",
@@ -543,7 +543,7 @@
   },
   "reward-scorched-fan": {
     "file": "reward-scorched-fan.webp",
-    "bytes": 12666,
+    "bytes": 12652,
     "shot": {
       "width": 640,
       "height": 360,
@@ -600,7 +600,7 @@
   },
   "reward-napalm-triplet": {
     "file": "reward-napalm-triplet.webp",
-    "bytes": 12468,
+    "bytes": 12474,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1534,7 +1534,7 @@
   },
   "reward-pyro": {
     "file": "reward-pyro.webp",
-    "bytes": 12128,
+    "bytes": 12094,
     "shot": {
       "width": 640,
       "height": 360,
@@ -1984,7 +1984,7 @@
   },
   "reward-cycling": {
     "file": "reward-cycling.webp",
-    "bytes": 13752,
+    "bytes": 13744,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2292,7 +2292,7 @@
   },
   "lesson-crawler": {
     "file": "lesson-crawler.webp",
-    "bytes": 8892,
+    "bytes": 8890,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2323,7 +2323,7 @@
   },
   "lesson-stalker": {
     "file": "lesson-stalker.webp",
-    "bytes": 7810,
+    "bytes": 7808,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2354,7 +2354,7 @@
   },
   "lesson-spitter": {
     "file": "lesson-spitter.webp",
-    "bytes": 12182,
+    "bytes": 11964,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2392,7 +2392,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 11828,
+    "bytes": 11476,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2454,7 +2454,7 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 11516,
+    "bytes": 11970,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2543,7 +2543,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 12844,
+    "bytes": 12692,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2568,7 +2568,7 @@
   },
   "route-residential-gallery": {
     "file": "route-residential-gallery.webp",
-    "bytes": 15344,
+    "bytes": 15342,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2593,7 +2593,7 @@
   },
   "route-communal-atrium": {
     "file": "route-communal-atrium.webp",
-    "bytes": 15312,
+    "bytes": 18194,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2618,7 +2618,7 @@
   },
   "route-crew-checkpoint": {
     "file": "route-crew-checkpoint.webp",
-    "bytes": 20534,
+    "bytes": 20822,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2643,7 +2643,7 @@
   },
   "route-armory": {
     "file": "route-armory.webp",
-    "bytes": 22018,
+    "bytes": 21634,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2669,7 +2669,7 @@
   },
   "route-freight-hold": {
     "file": "route-freight-hold.webp",
-    "bytes": 11504,
+    "bytes": 11496,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 22754,
+    "bytes": 22212,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2719,7 +2719,7 @@
   },
   "route-relay-racks": {
     "file": "route-relay-racks.webp",
-    "bytes": 17126,
+    "bytes": 17226,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2770,7 +2770,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 14752,
+    "bytes": 14002,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2795,7 +2795,7 @@
   },
   "route-safety-interlock-station": {
     "file": "route-safety-interlock-station.webp",
-    "bytes": 11184,
+    "bytes": 11182,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2820,7 +2820,7 @@
   },
   "route-coolant-plant": {
     "file": "route-coolant-plant.webp",
-    "bytes": 21120,
+    "bytes": 21004,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2845,7 +2845,7 @@
   },
   "route-service-shaft-landing": {
     "file": "route-service-shaft-landing.webp",
-    "bytes": 17040,
+    "bytes": 16898,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2870,7 +2870,7 @@
   },
   "route-infested-workshop": {
     "file": "route-infested-workshop.webp",
-    "bytes": 10264,
+    "bytes": 10266,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2895,7 +2895,7 @@
   },
   "route-swarm-junction": {
     "file": "route-swarm-junction.webp",
-    "bytes": 23262,
+    "bytes": 23066,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2920,7 +2920,7 @@
   },
   "route-shielding-gate": {
     "file": "route-shielding-gate.webp",
-    "bytes": 18342,
+    "bytes": 19064,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2970,7 +2970,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 13088,
+    "bytes": 12252,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2995,7 +2995,7 @@
   },
   "route-overload-floor": {
     "file": "route-overload-floor.webp",
-    "bytes": 10546,
+    "bytes": 9982,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3092,7 +3092,7 @@
   },
   "route-warden-cache": {
     "file": "route-warden-cache.webp",
-    "bytes": 28870,
+    "bytes": 28652,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3780,7 +3780,7 @@
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 10298,
+    "bytes": 9494,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3828,7 +3828,7 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 29814,
+    "bytes": 27346,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3891,7 +3891,7 @@
   },
   "route-brood": {
     "file": "route-brood.webp",
-    "bytes": 27654,
+    "bytes": 27110,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3968,7 +3968,7 @@
   },
   "route-legacy-queen": {
     "file": "route-legacy-queen.webp",
-    "bytes": 9500,
+    "bytes": 10164,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4048,7 +4048,7 @@
   },
   "route-threat-brute": {
     "file": "route-threat-brute.webp",
-    "bytes": 10278,
+    "bytes": 9498,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4088,7 +4088,7 @@
   },
   "route-threat-warden": {
     "file": "route-threat-warden.webp",
-    "bytes": 9346,
+    "bytes": 8768,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4109,7 +4109,7 @@
   },
   "route-threat-matron": {
     "file": "route-threat-matron.webp",
-    "bytes": 8358,
+    "bytes": 8350,
     "shot": {
       "width": 1120,
       "height": 476,

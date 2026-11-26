@@ -243,6 +243,37 @@ class Carapace(Box):
         return np.maximum.reduce((edge, z-hz, (edge+z-hz+.72*hz)*.7071))
 
 
+class ShellBand(Carapace):
+    """HEAVY39: one grown armour band, a bent section of an ellipsoid shell (not a box).
+
+    In the local frame R (x along the spine toward the head, y across, z out of the back) the outer face is the
+    ellipsoid with radii ``radii`` whose crown is at ``c``; the band is ``thick`` deep, spans ``half`` along x
+    either side of the crown and wraps down the flanks to ``drop`` below it. Every edge is rounded by ``bevel``.
+    A Carapace subclass, so the exporter writes its analytic gradient into each face: the band shades across its
+    curve and its bevels catch the rim. ``lip`` thickens the front edge so it overhangs the band in front of it.
+    """
+    def __init__(self, c, R, radii, half, drop, thick=.26, bevel=.08, lip=0.0, **kw):
+        self.c, self.R = v3(c), np.asarray(R, dtype=F)
+        self.rad, self.half, self.drop, self.t, self.bev, self.lip = v3(radii), float(half), float(drop), float(thick), float(bevel), float(lip)
+        ext = np.abs(self.R) @ v3((half + thick, radii[1] + thick, max(drop, radii[2]) + thick))
+        Prim.__init__(self, bounds=(self.c - ext, self.c + ext), **kw)
+        self.h = v3((half, radii[1], drop))
+
+    def field(self, P):
+        q = (P - self.c) @ self.R
+        e = q - v3((0, 0, -self.rad[2]))
+        k0 = np.linalg.norm(e / self.rad, axis=1)
+        k1 = np.linalg.norm(e / (self.rad * self.rad), axis=1)
+        ell = np.where(k0 < 1e-6, -min(self.rad), k0 * (k0 - 1) / np.maximum(k1, 1e-9))
+        t = self.t + self.lip * np.clip((q[:, 0] / self.half + .2) / 1.2, 0, 1) ** 2
+        shell = np.abs(ell + t / 2) - (t / 2 - self.bev)
+        cut_x = np.abs(q[:, 0]) - self.half + self.bev
+        cut_z = -q[:, 2] - self.drop + self.bev
+        stack = np.stack((shell, cut_x, cut_z), axis=1)
+        outside = np.linalg.norm(np.maximum(stack, 0), axis=1)
+        return outside + np.minimum(stack.max(axis=1), 0) - self.bev
+
+
 class Torus(Prim):
     def __init__(self, c, axis, major, minor, **kw):
         self.c, self.major, self.minor = v3(c), float(major), float(minor)

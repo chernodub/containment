@@ -1425,3 +1425,163 @@ The production build passed. Crew Checkpoint, Cryo, fixed 300 ticks on both tier
 ### Lead tuning after PALETTE38
 
 The revised marks made the Carrier and Matron sacs read as magenta lamps that pulled the eye before the marine. The lead reduced the Carrier mark emission from (3.1, .005, 1.55) to (1.75, .012, .95), narrowed the sac's lit seams from 65% to 30% of each stripe period, and lowered the floor-pool alpha from .29 to .19. Crawler, Spitter and Stalker marks are as delivered.
+
+## HEAVY39 — heavies rebuilt from curved shell bands
+
+Base `49be7426`. I changed `tools/assets/k11-creatures/{sdf,brute,warden,build}.py`, one rule in `src/render/vfx/ActorSurface.ts` and the packed `tyrant.glb` (and `plain/tyrant.glb`). I did not touch the skeleton, the clips, the simulation, the `GraphicSurface.ts` heavy block, the declared fit constants or the small families' `BROOD_PLANES`.
+
+### The method
+
+The armour is no longer made of boxes and blobs. It is made of **shell bands**: `sdf.ShellBand` is a section of an ellipsoid shell. It has a real thickness, real curvature across the body and along it, a rounded bevel on every edge, and an optional thicker front lip. Its parameters are the crown point, the frame (x toward the head, z out of the back), the ellipsoid radii, the half-length along the spine, how far down the flanks it wraps (`drop`), and the thickness, bevel and lip. It subclasses `Carapace`, so the exporter knows it is armour. `build.py` gives every corner of a band triangle the analytic gradient of that band, not one normal per face. The light therefore turns smoothly across the curve, and the bevels still turn sharply enough to catch the key rim. The surface stays inside the SDF → OpenVDB → flat-cell pipeline, so zones, bone weights and plate ids still come from the primitive that wins at each point. I did not write a separate Blender mesh path.
+
+How each band sits on the back: `brute.band(c, angle, …)` places a band at a spine crown, with its pitch set **18° steeper than the spine** (`TIP`). Its front edge therefore stands proud of the band ahead, and its rear edge tucks under the next band. The step casts a dark overlap line that the plane shader picks up. A `Tube` runs through all the crowns as the spine ridge. To extend this to another family: lay out crowns along its spine as `(x, z, spine angle, lateral radius, vertical radius, drop)`, call `back()`, and give everything underneath the `UNDER` plate id.
+
+Zones: plate `66` (`UNDER`) maps to the atlas `plate` cell. It covers the underbody, neck, upper arms, thighs, elbows, wrists, knee and foot pads, the knuckles and the Warden's teeth. Plates `70–79` map to the jade `flesh` cell: bands, caps, forearms, guards, fists, skull lobe and spine ridge. Bone (`lead` = `bruteFace`) covers the skull plate, the horns and the Warden's prow and sail (`450/451`). The single shader change: in `ActorSurface.ts` the plate cell now multiplies the heavy jade by **.18** for all three heavies. It replaces the bind-space forelimb knuckle test and the old .96/.30 split. The light-by-plane thresholds in `GraphicSurface.ts` are unchanged.
+
+### What each heavy is made of
+
+- **Brute**:
+  - A dark underbody of four smooth lobes (chest, hump core, waist, hips).
+  - Four jade dorsal bands from the withers to the hips, with a spine ridge.
+  - A curved shoulder cap over each deltoid that overlaps the first band.
+  - Each forelimb is one chain, rigid on `shoulder.{l,r}` at POSE38's `club_hook` centres (shoulder `(.30, 1.70, 6.90)`, elbow `(-.21, 3.28, 6.02)`, fist `(2.15, 3.00, 4.57)`). In order: dark upper arm, dark elbow, jade forearm (thickening toward the wrist) with one guard band, dark wrist, jade fist, and two dark weight-bearing knuckles.
+  - Hind legs: dark thigh, dark knee, jade shin, dark foot.
+  - A narrow dark neck (r .66→.52, against a .92 head half-width and 1.7 shoulder offset). The skull lobe and dark jaw sit forward of it, under the accepted bone arrowhead with its eye slits. The arrowhead moved .30 forward to open the neck.
+- **Elite**: the same body plus the regalia part: the two swept horns (unchanged), a keel band along the first three crowns and a broader shoulder mantle band on each side.
+- **Warden**:
+  - A longer, lower dark underbody.
+  - Five bands under a **sail of four bone blades**: tapered flat prisms raked back, tallest over the withers. The sail sets the top.
+  - Heavier forequarters on the same chain plan, rigid on `chest` as before.
+  - The head is built around the jaw: a short jade upper jaw with a small bone prow behind the light, a dropped dark lower jaw, two jade cheek hinges, the lit `warden-ram` throat pushed forward and up past the upper jaw (narrower, taller), and two dark teeth bars across the top of the light.
+
+### Measurements
+
+| | final21 | HEAVY39 |
+|---|---|---|
+| Public height, Brute / elite / Warden (m) | 3.030 / 3.271 / 4.500 | unchanged by construction (declared fit constants and `WARDEN_STATURE` untouched) |
+| Drawn height, lineup (m) | 2.87 / 3.35 / 4.41 | 2.84 / 3.33 / 4.40 (−1.0% / −0.6% / −0.2%) |
+| Drawn width × depth (m) | 1.81×2.19 / 2.41×2.93 / 4.24×3.65 | 1.92×2.03 / 2.56×2.71 / 4.31×3.65 |
+| Contact radii | 42.90 / 55.77 / 64.00 | 42.90 / 55.77 / 64.00 |
+| Rig | 63 · `144d320c6cae75d7` | 63 · `144d320c6cae75d7` |
+| Clips | `brute-motion.glb` | byte-identical (no diff) |
+| Rest top / radial, design units (Brute body, Warden) | 9.08 / 5.04, 8.58 / 5.94 | 9.10 / 4.92, 8.73 / 5.84 |
+| Triangles base / elite / boss | 11500 / 12850 / 19900 | same budgets |
+
+`git diff 49be7426 -- src/game src/DepthGame.ts` is empty.
+
+The Warden's lit maw uses the largest connected component of display luma ≥ 200 that holds warm pixels, measured on the native `i13-native` cycle frames (`artifacts/nextgen/heavy39/maw.mjs`). This heuristic does not reproduce POSE38's absolute counts, so only compare the two columns with each other.
+
+| State | Area final21 → HEAVY39 (px) | Peak |
+|---|---|---|
+| Charge windup | 846 → 1208 | 244 → 243 |
+| Charge | 2633 → 2366 | 244 → 245 |
+| Wall stun | 1297 → 300 | 243 → 201 |
+| Recovery | 861 → 854 | 204 → 203 |
+
+Calm is not resolved by this heuristic in either build. In the calm sheet the white core is visible and somewhat smaller.
+
+### Proof
+
+Sheets are in `artifacts/nextgen/heavy39/sheets/`. Each `<name>-native.png` is final21 | now, cropped to the heavy's jade bounds; each `<name>-480.png` is the current full frame at 480×270. They cover:
+
+- `heavies-{colour,grey,silhouette}`;
+- `{brute,elite-brute,warden}-{calm,windup,release,recovery,behind,side}`;
+- `brute-{frozen,chilled,burning,shocked}`;
+- `crowd-{swarm-junction,relay-racks,crew-checkpoint}`;
+- `warden-cycle-{calm,charge-windup,charge,wall-stun,recovery,death,ragdoll}`.
+
+Scripts: captures `artifacts/nextgen/heavy39/cap.sh` (final21's `capture-fixtures.mjs` copied into `artifacts/nextgen/final21/`, one scenario per invocation, plus `i13-native.mjs --cases=warden`), the loop `loop.sh`, sheets `sheets.mjs`. The game-pitch eight-heading clay and silhouette previews are `artifacts/nextgen/heavy39/look{1,2}/`.
+
+### Still weak
+
+1. The shell bands read as stripes across the back, not yet as crisp separate plates. The hide finish and the curved crown step mottle the lit jade, and at 480×270 the bands merge into one lit back. The overlap shadow is thin. A slightly larger `TIP` or lip, or a darker underbody showing between bands, would help.
+2. The underbody is near-black in pigment (×.18), but under the 1.45 crown gain a top-facing underbody patch lands near shaded jade. The "dark underbody, light plates" split is clearest on the flanks and the neck, and weak on top-facing surfaces.
+3. Warden wall stun: the throat faces the wall and its lit area dropped from 1297 to 300 px (peak 243 → 201). Charge and windup are back to final21.
+4. The elite's keel band shows little with the horns hidden. The broader mantles carry most of the difference.
+5. In the status fixtures, chilled and frozen Brutes are pale teal with frost, as in final21. The frost now outlines the arm chain and the bands, where final21 showed rectangular blocks. Burning and shocked keep their effects on top.
+
+### Runs
+
+The production build passed (`npm run build`). Standard Breacher, seed 1729, nine rooms through Relay Racks with `--fast` and a 180000 ms startup timeout: exit 0, zero errors (`artifacts/nextgen/playtest/breacher-1729/`). I re-rendered the title cast and creature cards with `title28.sh`; the title now shows the Warden's bone sail against the breach.
+
+## HEAVY40 — Warden punish window and dorsal shell overlap
+
+The Warden now retracts and turns its head as the ram stops, rolls the throat toward the camera and lets the lower jaw hang on its own joint. The existing 100 ms wall-stun clip carries the recoil. Its last pose follows the existing 240 ms visual return. The throat material has an amber border around a white core. The small ground pool follows the head.
+
+Three crowns cover each Brute's spine and three sit beneath the Warden's sail. Each crown has a dark shell beneath the front bevel. In the native calm captures a horizontal transect through the Brute's overlap at y=304 crosses 5 dark pixels at x=768–772. On the native Warden side view at y=470 the two dark inter-plate spans at x=332–354 and x=409–439 measure 23 and 31 pixels. These are projected widths on those transects, using green channel <35. A four-crown Warden trial made the rear overlaps too close to the sail at 480 × 270. The final three-crown profile gives the middle flank a distinct outer edge. The comparison is in `artifacts/nextgen/heavy40/trial/compare.png`. The elite has a split fan at the rear of the rib cage. Its two lobes break the hind contour in the hornless silhouette.
+
+### Maw measurements
+
+The columns use HEAVY39's full-frame, four-connected component method on the same native Crew Checkpoint fixture. Each cell gives area in pixels / peak Rec.709 display luma on a 0–255 scale. The component must be at least 200 luma with more than 15% warm pixels. The final column identifies what the measure actually picked.
+
+| Native state | final21 | HEAVY39 | HEAVY40 | Interpretation |
+|---|---:|---:|---:|---|
+| Calm | 5 / 229 | 3 / 210 | 8,699 / 248 | Both earlier white cores fail the warmth filter. |
+| Charge windup | 846 / 244 | 1,208 / 243 | 5,720 / 246 | Throat in all three. |
+| Charge | 2,633 / 244 | 2,366 / 245 | 6,831 / 248 | Throat in all three. |
+| Wall stun | 1,297 / 243 | 300 / 201 | 8,651 / 247 | HEAVY39's accepted component was outside the mouth. |
+| Recovery | 861 / 204 | 854 / 203 | 9,752 / 248 | Both earlier white cores fail the warmth filter. |
+| Death receipt | 661 / 206 | 653 / 207 | 661 / 206 | The historical method selects off-body light. A small crescent of throat is visible beyond the foreleg. |
+| Settled ragdoll | 498 / 205 | 498 / 205 | 498 / 205 | All three pick the same off-body light. The settled corpse hides the throat. |
+
+A second check located the bright component at the head and counted connected pixels at the same 200-luma threshold without the warm-fraction exclusion. At calm the three throats measure 4,753 / 244, 4,228 / 244 and 8,699 / 248. At wall-stun the corresponding results are 1,297 / 243, 1,519 / 243 and 8,651 / 247. At recovery they are 3,869 / 244, 3,797 / 244 and 9,752 / 248. The historical 300 / 201 understated the HEAVY39 wall-stun throat.
+
+Four additional fixed-step samples check the intervening poses. At 25% and 50% of the native stun, HEAVY40 reads 10,676 / 248 and 10,792 / 247. At 50 and 117 ms into the 240 ms turn back to the marine it reads 8,851 / 248 and 6,015 / 247. The corresponding final21 warm-component readings are 256 / 201, 258 / 201, 874 / 203 and 866 / 202. The head-local check and intermediate captures are in `artifacts/nextgen/heavy40/{brightest.mjs,early.txt,sampling/}`.
+
+### Rig, fit and attack clocks
+
+Order within each height and radius cell is Brute / elite Brute / Warden. Public heights were read from the live models. Drawn heights come from the posed meshes in the native lineup.
+
+| Measurement | final21 | HEAVY39 | HEAVY40 |
+|---|---|---|---|
+| Public height (m) | 3.030 / 3.271 / 4.500 | 3.030 / 3.275 / 4.500 | 3.030 / 3.265 / 4.500 |
+| Drawn height (m) | 2.87 / 3.35 / 4.41 | 2.84 / 3.33 / 4.40 | 2.81 / 3.33 / 4.41 |
+| Native contact radius | 42.90 / 55.77 / 64.00 | same | same |
+| Rig | 63 joints, `144d320c6cae75d7` | same | same |
+
+The elite public height decreased 0.32% from HEAVY39. All 38 animation durations match. The simulation diff against HEAVY39 is empty, as is the simulation diff from final21 to HEAVY39. The event times below are milliseconds from staging, in warning / release / recovery / ready order. Evidence is in `rig.txt`, `clip-times.txt`, `timings/manifest.json`, `final/heavies/trio.json` and `simulation.diff` under the HEAVY40 proof directory.
+
+| Attack | Previous | HEAVY40 |
+|---|---|---|
+| Brute swing | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite swing | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden ram | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+
+### Sheet review at 480 × 270
+
+Open `artifacts/nextgen/heavy40/sheets/index.html`. Each thumbnail is the complete current frame. Selecting it opens the native crop in final21 | HEAVY39 | HEAVY40 order. Counts below refer to dorsal crowns I could separate in the full frame. The shoulders, fan and pale sail are excluded. An approximate count means that a boundary disappears under another mass at that heading.
+
+| Pose sheet | Brute | Elite Brute | Warden |
+|---|---|---|---|
+| Calm | Three crowns above the skull. | Two clear crowns and a partly horn-covered third. | Three broad flanks beneath the sail. Maw at the left end. |
+| Windup | Two clear crowns behind the lowered skull. The hook and red arc read independently. | Two clear crowns. The fan and horns frame the raised arm. | Three transverse steps along the sail. Maw centered between the planted limbs. |
+| Release | Three crowns across the back above the strike arc. | Three crowns behind the extended fist. | Three steps, with the rear one shallow. Maw points down the lane. |
+| Recovery | Two clear crowns as the skull drops alongside the marine. | Three steps seen obliquely above the limp arm. | Two clear flanks. The marine crosses the near shoulder, with the throat visible below him. |
+| Behind | Two clear crowns. The third merges with the far shoulder at this scale. | Two clear crowns between the horns and tail fan. | Three flank steps. Maw visible beyond the near shoulder. |
+| Side | Three crowns step up from the pale skull. | Two clear crowns. Fan and horn overlap the third. | Three clear flanks below the sail. Maw at the right end. |
+
+| Other sheet | Read in the full frame |
+|---|---|
+| Lineup, colour | Roughly three / two / three crowns across the ranks. Skull, horns and throat are distinct, and the marine's silhouette stays clear. |
+| Lineup, greyscale | The dark steps survive desaturation. The elite's horn covers the near crown, and the Warden's throat remains the brightest mark. |
+| Lineup, silhouette | Interior crowns disappear in the black fill. The Warden's sail and long jaw break the contour. |
+| Lineup, horns hidden | The elite still has a two-lobed rear fan visible against the floor. The regular has a rounded rump. |
+| Swarm Junction crowd | Two or three crowns on the nearer Brutes. The backmost is too small to count cleanly. Skull marks, small creatures and the red sector remain distinct. |
+| Relay Racks crowd | Two or three crowns on the lower pair. The upper Brute's flank merges with the rack edge. The marine and sector remain visible. |
+| Crew Checkpoint crowd | Two or three on the near pair. The backmost reads by its skull and hind silhouette. The marine and sector are clear. |
+| Native Warden calm | Three flank plates below the sail. The white throat is easy to locate at the right. |
+| Native Warden windup | Three plates on the diagonal. The throat points into the red capsule, clear of the marine. |
+| Native Warden charge | Three flank plates on the near side. White core and amber rim remain visible during the drive. |
+| Native Warden wall stun | Two flanks visible. The recoiled throat is exposed at the upper left. The pale stun indicator and marine outline remain visible. |
+| Native Warden recovery | Two clear flanks in the overlap with the marine. The throat is open on the left side of the body. |
+| Native Warden death receipt | Foreleg crosses the throat as the corpse rolls. A bright crescent remains at the left edge of the head; the flanks are obscured. |
+| Native Relay Racks shutter impact | The throat points toward the bottom of the frame against the shattered warm floor. Two crown edges are clear beside the sail. The marine, stun marks and shutter callout stay readable. |
+| Native Warden settled ragdoll | The underside faces the camera. The plates and throat are occluded. This is a settled corpse, with no remaining punish window. |
+
+The red telegraphs, skull marks, health bars and marine retain their previous reads in these comparisons. The native Warden overlaps the marine at impact in all three revisions. The fractional crown counts describe actual occlusion and viewing distance. The new geometry improves the separations but does not deliver a complete plate count from every heading.
+
+### Delivery and remaining weaknesses
+
+The final production build passed. The native Breacher campaign cleared nine rooms with seed 1729, fast stepping and the 180000 ms startup timeout. It recorded zero errors and a shutter-break receipt in Relay Racks. The playtest's room-entry hold messages include machine load. The final logs are `artifacts/nextgen/heavy40/{build-final.log,playtest-final.log,title-final.log}`. The existing title28 pipeline regenerated the title cast and creature cards in `public/assets/ui/`. The proof index links 33 three-revision native sheets and 33 current full frames.
+
+The three weakest frames are the settled ragdoll (the floor-facing jaw disappears), elite side (the horn crosses a crown even though the tail fan identifies the rank), and the Relay Racks crowd (the rear Brute sits against a rack of similar value). In early recovery the marine can overlap the throat briefly as the head turns. The marine's outline remains visible in the 117 ms sample.
