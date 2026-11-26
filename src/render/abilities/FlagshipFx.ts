@@ -177,14 +177,15 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   vec2 lee=vec2(.76,-.34);
   float shelter=smoothstep(.08,.68,clear-deckClearance(p-lee));
   float drift=fxFbm(vec2(p.x*.42+p.y*.28,p.y*1.24)+wind*.28);
-  float deposit=smoothstep(.58,.72,drift+shelter*.30);
+  float deposit=smoothstep(.54,.59,drift+shelter*.30+.28*(cells.z-.5));
+  base=mix(vec3(.012,.037,.055),vec3(.12,.27,.32),step(.06,cells.y-cells.x)*(.35+.65*cells.z));
   alpha*=mix(.045,1.,deposit);
-  emit*=deposit;
+  emit=deposit*bed*facet*(vec3(.025,.075,.095)+bank*vec3(.10,.21,.25));
  }else{
   float cluster=smoothstep(.36,.65,fxNoise(p*.84+fxSeed));
   bed*=smoothstep(-.04,.82,back+.54*cluster);
-  alpha*=bed;
-  emit*=bed;
+  alpha*=bed*.48;
+  emit*=bed*.35;
   float band=(1.-smoothstep(.18,1.0,back))*bed*cluster;
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
