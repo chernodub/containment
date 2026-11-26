@@ -135,7 +135,7 @@ broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
-vec3 broodInk=carrierSkin?vec3(1.75,.012,.95):crawlerSkin?vec3(4.2,.008,.48):
+vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(3.6,1.25,.01):
               spitterSkin?vec3(.14,4.2,.001):vec3(.008,1.90,5.0);
 float ridgeGlow=ridgeSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
 if(broodFinish && broodBody){

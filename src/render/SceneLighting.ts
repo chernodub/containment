@@ -268,9 +268,9 @@ export class ContactShadows {
   material.fragmentShader='varying float ink;\n'+material.fragmentShader.replace(')*.4;',')*.22;').replace('  gl_FragColor',`
   if(ink<-.5){
     color=vec3(.19,.46,.65);
-    if(ink < -1.5)color=vec3(.66,.12,.41);
+    if(ink < -1.5)color=vec3(.66,.33,.05);
     if(ink < -2.5)color=vec3(.31,.54,.10);
-    if(ink < -3.5)color=vec3(.45,.12,.55);
+    if(ink < -3.5)color=vec3(.32,.14,.66);
     alpha=.19*(1.-smoothstep(.16,.98,radius));
   }
   if(ink>.5){
