@@ -329,7 +329,8 @@ export function createScreens(context: ScreenContext) {
     if(resultExpanded) root.querySelector<HTMLDetailsElement>('.result-details')?.setAttribute('open','');
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
-    if(focusReplacement instanceof HTMLButtonElement&&focusReplacement.disabled&&focusId?.startsWith('purchase-')) (root.querySelector<HTMLElement>('[data-purchase]:not(:disabled)')??root.querySelector<HTMLElement>('#claim'))?.focus({preventScroll:true});
+    if(status==='dead'&&status!==previousStatus&&!graphicsBlocked) root.querySelector<HTMLElement>('#retry-rig')?.focus({preventScroll:true});
+    else if(focusReplacement instanceof HTMLButtonElement&&focusReplacement.disabled&&focusId?.startsWith('purchase-')) (root.querySelector<HTMLElement>('[data-purchase]:not(:disabled)')??root.querySelector<HTMLElement>('#claim'))?.focus({preventScroll:true});
     else if(focusReplacement) focusReplacement.focus({preventScroll:true});
     else if(status!==previousStatus||graphicsBlocked) {
       // A held fire key must never activate a newly arrived choice or restart.
@@ -359,7 +360,10 @@ export function createScreens(context: ScreenContext) {
       return;
     }
     // Repeated Tab must remain contained; only action shortcuts reject repeats.
-    if(event.repeat) return;
+    if(event.repeat) {
+      if(status==='dead'&&(event.key==='Enter'||event.key===' ')) event.preventDefault();
+      return;
+    }
     if(context.graphicsLost()||recoveryPending) {
       if(event.key==='Escape') {event.preventDefault();el('recover')?.focus();}
       return;

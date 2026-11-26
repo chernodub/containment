@@ -1314,3 +1314,58 @@ SCENARIOS.push(
   d.refresh();
  }},
 );
+
+SCENARIOS.push(...['stalker','spitter','crawler','charge','pool'].map(family=>({
+ id:`ui31-fatal-${family}`,diagnosticOnly:true,state:'dead',setupArgument:family,
+ nativeKeys:[['Tab',0],['Shift+Tab',0]],required:['#retry-rig','.last-exchange'],
+ setup:async family=>{
+  const d=window.__containmentDebug,g=d.game;
+  const room=family==='stalker'?'manual-control-chamber':'relay-racks';
+  await d.gotoRoom(room,{rig:'breacher',runStructure:true});
+  g.enemies.reset();
+  const point={x:g.player.x,y:g.player.y};
+  const offsets=[[-44,0],[44,0],[0,-44],[0,44],[-31,-31],[31,31]];
+  const earlier=offsets.map(([x,y])=>({x:point.x+x,y:point.y+y}))
+   .find(p=>d.canStand(p.x,p.y)&&d.clearShot(p.x,p.y,point));
+  const at=g.elapsed;
+  g.exchangeHistory.sample({...g.player,...earlier},at-1);
+  const attack=(owner,enemyType,bearing,range,width,halfAngle=0)=>{
+   const distance=range*.7;
+   const poses=[0,1,-1,2,-2,3,-3,4].map(offset=>{
+    const angle=bearing+offset*Math.PI/4;
+    return {x:point.x-Math.cos(angle)*distance,y:point.y-Math.sin(angle)*distance,angle};
+   });
+   const pose=poses.find(p=>d.canStand(p.x,p.y,18)&&d.clearShot(p.x,p.y,point))??poses[0];
+   return {type:'melee-strike',enemyId:owner,enemyType,...pose,shape:{kind:width?'line':'arc',range,width,halfAngle}};
+  };
+  const crossing=family==='stalker'?attack(902,'stalker',-.85,130,24)
+   :attack(902,'brute',-.8,92,0,Math.PI/3);
+  g.exchangeHistory.record([crossing],at-.28,20);
+  if(family!=='stalker'){
+   g.hurt(35,undefined,{source:'enemy-contact',enemyFamily:'brute'});
+   g.hurtCooldown=0;
+  }
+  const resources=g.combat.getRunResources();
+  g.combat.restoreRunResources({...resources,health:1,armor:0});
+  if(family==='pool'){
+   g.hurt(90,{...point,radius:62},{source:'acid-pool',enemyFamily:'queen'});
+  }else if(family==='charge'){
+   const lane=attack(901,'brute',.35,120,48);
+   g.exchangeHistory.record([
+    {type:'attack-warning',enemyId:901,enemyType:'brute',x:lane.x,y:lane.y,targetX:point.x,targetY:point.y,durationMs:450},
+    {type:'contact-attack',enemyId:901,enemyType:'brute',chargeFootprint:{...point,angle:lane.angle,shape:{kind:'line',range:5,halfAngle:0,width:48}}},
+   ],g.elapsed,18);
+   g.hurt(90,point,{source:'enemy-charge',enemyFamily:'brute'},'warden',901);
+  }else if(family==='spitter'){
+   const shooter=offsets.map(([x,y])=>({x:point.x+x*3,y:point.y+y*3}))
+    .find(p=>d.canStand(p.x,p.y,18)&&d.clearShot(p.x,p.y,point))??earlier;
+   g.hurt(90,shooter,{source:'enemy-projectile',enemyFamily:'spitter'},undefined,901);
+  }else{
+   const fatal=family==='stalker'?attack(901,family,.35,130,24):attack(901,family,.4,78,0,Math.PI*5/18);
+   g.exchangeHistory.record([fatal],g.elapsed,20);
+   g.hurt(90,fatal,{source:'enemy-contact',enemyFamily:family},undefined,901);
+  }
+  d.refresh();
+  for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++) await new Promise(requestAnimationFrame);
+ },
+})));

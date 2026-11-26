@@ -44,7 +44,6 @@
 }
 /* Opening telemetry gives the existing compact debrief the viewport. The
    authored ending/failure analysis remains the initial primary view. */
-#overlay .debrief-panel:has(.result-details[open]) .incoming-report {display:none;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending {min-height:0;padding:0;align-items:flex-start;text-align:left;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:20px;line-height:1.4;letter-spacing:.03em;margin:0 0 12px;max-width:none;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-rule,#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending>.eyebrow {display:none;}
@@ -142,3 +141,54 @@
 }
 #overlay .result-actions .retry-lesson-art { width: 120px; }
 #overlay .result-actions .retry-lesson p { margin: 0; }
+
+#overlay .debrief-panel[data-outcome=dead] .incoming-report {
+  grid-template-columns: minmax(0, .7fr) minmax(0, 1fr);
+  align-items: center;
+  margin: 10px 0;
+  padding: 12px 16px;
+  gap: 16px;
+}
+#overlay .debrief-panel[data-outcome=dead] .debrief-heading h2 { font-size: clamp(32px, 4.8vh, 52px); }
+#overlay .debrief-panel[data-outcome=dead] .debrief-rig > svg { width: 48px; height: 48px; }
+#overlay .last-exchange { display: block; min-width: 0; }
+#overlay .last-exchange svg { display: block; width: 100%; height: clamp(215px, 29vh, 330px); }
+#overlay .last-exchange figcaption { margin-top: 5px; color: #c7eadb; }
+#overlay .exchange-key { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 4px; font-size: 14px; }
+#overlay .exchange-key b { color: #ffac98; }
+.exchange-trail { fill: none; stroke: #f2f7fa; stroke-width: 2.5; stroke-dasharray: 5 5; }
+.exchange-marine.exchange-ghost { fill: #13232b; stroke: white; stroke-width: 2.5; }
+.exchange-attack:not([data-fatal=true]) { opacity: .45; }
+.exchange-exit { stroke-dasharray: none; }
+#overlay .incoming-report > .retry-lesson { margin: 0; gap: 12px; }
+#overlay .incoming-report .retry-lesson-art { width: min(55%, 260px); }
+
+#overlay .debrief-panel[data-outcome=dead] { padding-block: clamp(14px, 2vh, 23px); }
+#overlay .debrief-panel[data-outcome=dead] .result-details { margin: 8px 0; }
+#overlay .debrief-panel[data-outcome=dead] .result-details > summary { padding-block: 8px; }
+#overlay .debrief-panel[data-outcome=dead] .result-actions { margin-top: 8px; padding-top: 10px; }
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid #62788755;
+  background: #101b22;
+}
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 5px 0 0;
+}
+#overlay .debrief-panel[data-outcome=dead] .incoming-breakdown li { flex: 1 1 240px; margin: 1px 0; }
+
+#overlay .debrief-panel[data-outcome=dead] .fatal-details {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+#overlay .debrief-panel[data-outcome=dead] .fatal-details .result-actions {
+  margin: 0;
+  padding: 12px 0 0;
+}
+#overlay .fatal-details .result-actions .primary { flex-basis: 100%; }
+.exchange-held { fill: none; stroke: #e2e9ec; stroke-width: 2.5; stroke-dasharray: 4 4; }
