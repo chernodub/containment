@@ -1,8 +1,10 @@
-import {studioImage} from '../studioArt';
+import {exchangeEnemy, exchangeMarine} from './exchangeGlyphs';
+import {ENEMY_ATTACK_SHAPES} from '../../game/enemies/attackShapes';
+import {AREA_ATTACK_RADIUS} from '../../game/enemies/QueenBossSystem';
 import {getRoomDamage} from '../gameAdapter';
 import {MELEE_ATTACKS, meleeStrikeContains} from '../../game/enemies/meleeAttacks';
 import type {DepthGame} from '../../DepthGame';
-import type {AttackFootprint} from "../../game/enemies/LastExchange";
+import type {AttackFootprint, LastExchange} from "../../game/enemies/LastExchange";
 import type {IncomingDamageReceipt, RunStatsSnapshot} from '../../game/abilities/RunStats';
 import {ENEMIES} from '../../game/enemies/catalog';
 import {generateRun} from '../../game/roguelike/run';
@@ -31,10 +33,9 @@ export function incomingDamageLabel(receipt: Pick<IncomingDamageReceipt, 'source
 export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, actions: string): string {
   const last = stats.lastDamage;
   if (!last) {
-    return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p>${actions}</div></section>`;
+    return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p>${actions}</div>${lastExchangeDiagram(game)}</section>`;
   }
-  const diagram = lastExchangeDiagram(game) || retryLesson(game);
-  const dodge = diagram ? '' : fatalDodge(last);
+  const diagram = lastExchangeDiagram(game);
   const ready=game.deathReadyAbility;
   const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
   const node = generateRun(game.expedition.run.seed, game.expedition.run.version).nodes.find(candidate => candidate.id === last.room);
@@ -47,7 +48,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, a
   const grouped = [...sources].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
   const total = grouped.reduce((sum, [, amount]) => sum + amount, 0);
   const format = (amount: number) => Math.round(amount).toLocaleString('en-US');
-  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${dodge ? `<p class="fatal-escape">${escapeHtml(dodge)}</p>` : ''}${escape}</div>${actions}</div>${diagram}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
+  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${escape}</div>${actions}</div>${diagram}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
 }
 
 /** Preserve the authored ending verbatim and give it a full-screen moment. */
@@ -57,66 +58,54 @@ export function completionEnding(game: DepthGame): string {
   return `<section class="completion-ending" aria-label="Expedition ending" data-ending="${story ? 'sacrifice' : 'restored'}"><span class="eyebrow">${story ? 'FINAL TRANSMISSION' : 'EXPEDITION COMPLETE'}</span>${story ? endingTransmission() : ''}<h2 class="ending-exact">${escapeHtml(exactEnding)}</h2><span class="ending-rule" aria-hidden="true"></span></section>`;
 }
 
-const lessons = {
-  crawler: `Back off the swipe fan. Use the Crawler’s ${MELEE_ATTACKS.crawler.recoveryMs} ms base recovery to shoot.`,
-  stalker: 'Step sideways when the lunge line locks.',
-  spitter: 'Break the sightline behind solid cover.',
-  brute: 'Sidestep the overhead strike, then shoot during recovery.',
-  warden: 'Bait the charge into a wall, then shoot while the Warden is stunned.',
-  carrier: 'Back away from the brood-claw slam and shoot during recovery.',
-  matron: 'Shoot the pods or focus the Matron to interrupt its brood.',
-} as const;
-
-function fatalDodge(receipt: IncomingDamageReceipt): string {
-  switch (receipt.source) {
-    case 'enemy-charge': return 'Step sideways out of the locked charge lane.';
-    case 'enemy-contact':
-      return receipt.enemyFamily === 'brute' ? 'Sidestep the sweep before it lands.'
-        : receipt.enemyFamily === 'stalker' ? lessons.stalker : 'Move out of the marked strike area.';
-    case 'enemy-projectile': return 'Break the sightline behind solid cover.';
-    case 'acid-pool': return 'Step off the acid before it ticks.';
-    case 'boss-attack': return 'Leave the marked blast area.';
-    case 'self-blast': return 'Back away from the blast radius.';
-    default: return '';
-  }
-}
-
-export function retryLesson(game: DepthGame): string {
-  const top=game.stats.lastDamage;
-  const key=top?.enemyFamily;
-  if(!top||!key||key==='queen'||!Object.hasOwn(lessons,key))return '';
-  const copy=lessons[key];
-  return `<aside class="retry-lesson">${studioImage(`lesson-${key}`,'retry-lesson-art',320,180)}<p>${escapeHtml(copy)}</p></aside>`;
+/** A cause-specific illustration for old or incomplete receipts. */
+function attackGuide(receipt: RunStatsSnapshot['lastDamage']): LastExchange {
+  const source = receipt?.source;
+  const family = receipt?.enemyFamily ?? (source==='enemy-projectile'?'spitter':source==='enemy-charge'?'brute':'queen');
+  const marine = {x:55,y:0,angle:Math.PI,radius:16};
+  const earlier = {...marine,x:65,y:40};
+  let shape: AttackFootprint['shape'] = {kind:'circle',range:AREA_ATTACK_RADIUS};
+  if (source==='enemy-contact' && family!=='queen') shape=MELEE_ATTACKS[family].shape;
+  if (source==='enemy-charge') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000,width:48,halfAngle:0};
+  if (source==='enemy-projectile') shape={kind:'line',range:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife,width:2*ENEMY_ATTACK_SHAPES.spitterProjectileRadius,halfAngle:0};
+  if(source==='acid-pool') shape={kind:'circle',range:AREA_ATTACK_RADIUS*.75};
+  if(source==='self-blast') shape={kind:'circle',range:162};
+  const known=source && source!=='scripted' && source!=='unknown';
+  const x=source==='enemy-projectile'?-90:source==='enemy-contact'?marine.x-Math.min(shape.range*.72,75):0;
+  return {marine,earlier,attacks:[],blockers:source==='enemy-projectile'?[{x:-25,y:-90,width:104,height:20}]:[],
+    fatal:known?{owner:-1,family,x,y:0,angle:0,shape,at:0,committed:true}:undefined};
 }
 
 /** Plot local collision geometry and the footprints retained by the death receipt. */
 export function lastExchangeDiagram(game: DepthGame): string {
-  const exchange = game.deathExchange;
-  if (!exchange?.fatal) return '';
+  const recorded = !!game.deathExchange?.fatal;
+  const exchange = recorded ? game.deathExchange! : attackGuide(game.stats.lastDamage);
   const {marine, earlier, fatal, attacks, blockers} = exchange;
-  const shapes = [...attacks, fatal];
+  const shapes = fatal ? [...attacks, fatal] : attacks;
   const xy = (x: number, y: number) => `${x.toFixed(1)} ${y.toFixed(1)}`;
   const contains = (attack: AttackFootprint, x: number, y: number) => attack.shape.kind === 'circle'
     ? Math.hypot(x-attack.x,y-attack.y) <= attack.shape.range+marine.radius
     : meleeStrikeContains(attack.shape, attack.x, attack.y, attack.angle, x, y, marine.radius);
   // Search outward from the impact. Keep steps traversable from the earlier pose
   // when available, so an obstacle crossed later does not suggest an escape.
-  let step: {x:number;y:number} | undefined;
+  let step: {x:number;y:number} | undefined = fatal ? undefined : {x:marine.x,y:marine.y-45};
   for (let distance=4; distance<=240 && !step; distance+=4) {
     for (let direction=0; direction<64; direction++) {
       const angle = direction * Math.PI / 32;
       const point = {x:marine.x+distance*Math.cos(angle),y:marine.y+distance*Math.sin(angle)};
       if (shapes.some(attack => contains(attack,point.x,point.y))) continue;
-      if (!canTraverseExpedition(game.geometry, marine, point, marine.radius)) continue;
-      if (earlier && !canTraverseExpedition(game.geometry, earlier, point, marine.radius)) continue;
+      if (recorded && (!canTraverseExpedition(game.geometry, marine, point, marine.radius)
+        || earlier && !canTraverseExpedition(game.geometry, earlier, point, marine.radius))) continue;
+      if (!recorded && blockers.some(b => point.x>=b.x-marine.radius&&point.x<=b.x+b.width+marine.radius
+        && point.y>=b.y-marine.radius&&point.y<=b.y+b.height+marine.radius)) continue;
       step = point;
       break;
     }
   }
-  const left = Math.min(marine.x-105, fatal.x-40, earlier?.x??marine.x, step?.x??marine.x)-24;
-  const right = Math.max(marine.x+105, fatal.x+40, earlier?.x??marine.x, step?.x??marine.x)+24;
-  const top = Math.min(marine.y-90, fatal.y-36, earlier?.y??marine.y, step?.y??marine.y)-24;
-  const bottom = Math.max(marine.y+90, fatal.y+36, earlier?.y??marine.y, step?.y??marine.y)+24;
+  const left = Math.min(marine.x-105, (fatal?.x??marine.x)-40, earlier?.x??marine.x, step?.x??marine.x)-24;
+  const right = Math.max(marine.x+105, (fatal?.x??marine.x)+40, earlier?.x??marine.x, step?.x??marine.x)+24;
+  const top = Math.min(marine.y-90, (fatal?.y??marine.y)-36, earlier?.y??marine.y, step?.y??marine.y)-24;
+  const bottom = Math.max(marine.y+90, (fatal?.y??marine.y)+36, earlier?.y??marine.y, step?.y??marine.y)+24;
   const mapAttack = (attack: AttackFootprint) => {
     const {shape, x, y, angle} = attack;
     const point = (direction: number) => xy(x + Math.cos(direction) * shape.range, y + Math.sin(direction) * shape.range);
@@ -125,17 +114,18 @@ export function lastExchangeDiagram(game: DepthGame): string {
       : `<path d="M${xy(x,y)} L${point(angle-shape.halfAngle)} A${shape.range} ${shape.range} 0 0 1 ${point(angle+shape.halfAngle)} Z"/>`;
     return `<g class="exchange-attack" data-fatal="${attack === fatal}">${body}</g>`;
   };
-  const pose = (position: typeof marine, ghost = false) => `<path class="exchange-marine${ghost?' exchange-ghost':''}" transform="translate(${xy(position.x,position.y)}) rotate(${position.angle*180/Math.PI})" d="M14 0 -10 -9 -7 0 -10 9Z"/>`;
+  const pose = (p: typeof marine, ghost = false) => exchangeMarine(p.x,p.y,p.angle,ghost);
   const held = earlier && Math.hypot(earlier.x-marine.x,earlier.y-marine.y) < 1;
   const path = held ? `<circle class="exchange-held" cx="${earlier.x}" cy="${earlier.y}" r="${marine.radius+7}"/>` : earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
   const exit = step ? `<path class="exchange-exit" marker-end="url(#exchange-arrow)" d="M${xy(marine.x,marine.y)} L${xy(step.x,step.y)}"/>` : '';
-  const advice = step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
-  const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : ENEMIES[fatal.family].label;
+  const advice = !fatal ? 'Move toward clear ground when the danger cue appears.' : step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
+  const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : fatal ? ENEMIES[fatal.family].label : 'Unrecorded attack';
   return `<figure class="last-exchange" aria-label="Last exchange">
-    <div class="exchange-key"><b>${family} · fatal attack</b><span>${held?'Earlier and impact coincide':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}</span></div>
+    <div class="exchange-key"><b>${family} · ${recorded?'fatal attack':'attack guide'}</b><span>${held?'Earlier and impact coincide':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}${blockers.length?' · ▰ Cover':''}</span></div>
     <svg role="img" aria-label="Coral fatal footprint, muted nearby attacks, marine at impact and one second earlier, and a clear step when available." viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
-      ${shapes.map(mapAttack).join('')}${path}${pose(marine)}${exit}
+      ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${Math.min(30,fatal.shape.range)}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
+      ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle)).join('')}${path}${pose(marine)}${exit}
     </svg><figcaption>${advice}</figcaption></figure>`;
 }
