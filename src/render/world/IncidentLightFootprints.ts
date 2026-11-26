@@ -1,4 +1,4 @@
-import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,Vector4,type Group} from 'three';
+import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,Vector2,Vector4,type Group} from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {incidentApertures,paintIncidentAperture} from '../lighting/IncidentAperture';
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
@@ -21,7 +21,7 @@ const reflectorGain:Readonly<Record<string,number>>={
 // Keep the softer return in the same texture and draw as the coloured throw.
 type Receiver=readonly [absorption:number,farCoverage:number,farGain:number,nearCoverage:number,nearGain:number];
 const smokedReceivers:Readonly<Record<string,Receiver>>={
-  'awakening-bay':[.48,.45,2.43,.75,7],armory:[.81,1,5,1,16],
+  'awakening-bay':[.48,.45,2.43,.75,7],armory:[.81,1,5,1,17],
   'safety-interlock-station':[.73,.72,3.4,1,10],
   'infested-workshop':[.40,.45,2.4,.75,7],
   'manual-control-chamber':[.58,.72,3.4,.45,3.4],
@@ -30,7 +30,7 @@ const smokedReceivers:Readonly<Record<string,Receiver>>={
 
 // A metal receiver also returns the suit light when the marine walks past.
 // Choose the local fitting per fragment so the distant source stays steady.
-function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:readonly number[],b:readonly number[]){
+function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:readonly number[],b:readonly number[],compactReader:boolean){
   const [absorption,farCoverage,farGain,nearCoverage,nearGain]=receiver;
   material.color.multiplyScalar(1-absorption*.55);
   const mounts=new Vector4(a[0]/32,a[1]/32,b[0]/32,b[1]/32);
@@ -39,13 +39,16 @@ function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:rea
     shader.uniforms.receiverMounts={value:mounts};
     shader.uniforms.receiverResponse={value:response};
     shader.uniforms.receiverMarine=MARINE_FLOOR_GLOW;
+    shader.uniforms.receiverRange={value:compactReader?new Vector2(1.1,1.8):new Vector2(2.55,4.9)};
     shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
-    shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMounts,receiverMarine,receiverResponse;\n'+
+    shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMounts,receiverMarine,receiverResponse; uniform vec2 receiverRange;\n'+
       shader.fragmentShader.replace('#include <opaque_fragment>',`
         vec2 a=receiverMounts.xy,b=receiverMounts.zw;
-        vec2 localMount=distance(receiverXZ,a)<distance(receiverXZ,b)?a:b;
-        float away=smoothstep(2.55,4.9,distance(localMount,receiverMarine.xy));
+        float crossFade=smoothstep(-1.5,1.5,distance(receiverXZ,a)-distance(receiverXZ,b));
+        vec2 distances=vec2(distance(a,receiverMarine.xy),distance(b,receiverMarine.xy));
+        vec2 fades=smoothstep(vec2(receiverRange.x),vec2(receiverRange.y),distances);
+        float away=mix(fades.x,fades.y,crossFade);
         vec2 response=mix(receiverResponse.xy,receiverResponse.zw,away);
         diffuseColor.a*=response.x;
         outgoingLight*=response.y/response.x;
@@ -76,7 +79,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     // occupies the near edge and casts a narrow shadow through its throw.
     const atSource=pin===source;
     const closeThrow=atSource&&(room.id==='freight-hold'||room.id==='residential-gallery');
-    c.translate(0,closeThrow?15:39);
+    c.translate(0,closeThrow?(room.id==='freight-hold'?65:15):39);
     if(absorb){
       c.save();c.scale(125,112);
       const soot=c.createRadialGradient(0,0,0,0,0,1);
@@ -92,10 +95,16 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     paintIncidentAperture(c,room.id,tint);
     c.restore();
   }
+  if(room.id==='service-shaft-landing'&&source){
+    // The spoke wheel sits on the returned tackle, 145 ship units past the
+    // broken lifting eye. Its inspection head grazes the lower balcony.
+    c.save();c.translate(source[0]-40,source[1]+138);c.rotate(-.38);
+    c.scale(1.28,.88);c.globalAlpha=.32;paintIncidentAperture(c,room.id,tint);c.restore();
+  }
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:absorb?NormalBlending:AdditiveBlending,
     opacity:absorb?1:gain,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
-  if(receiver)finishSmokedReceiver(material,receiver,terminal,mounts[1]?.pin??terminal);
+  if(receiver)finishSmokedReceiver(material,receiver,terminal,mounts[1]?.pin??terminal,room.id==='manual-control-chamber');
   material.userData.actorMaterial=true;
   material.addEventListener('dispose',()=>texture.dispose());
   const mesh=new Mesh(new PlaneGeometry(room.width/32,room.height/32).rotateX(-Math.PI/2),material);

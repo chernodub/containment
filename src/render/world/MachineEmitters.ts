@@ -38,6 +38,7 @@ const strips:Record<string,readonly Strip[]>={
 // Deck-level inspection lamps recovered with the failed hardware. Positions are
 // relative to the same terminal as the matching fittings, in ship-plan units.
 const inspectionLamps:Record<string,Strip>={
+  'service-shaft-landing':[82,481,39,15,4,-.38],
   'transmission-chamber':[99,43,9.7,13,4,0],
   'crew-checkpoint':[76,66,4.2,17,5,-.27],
   'shielding-gate':[92,-64,6.2,13,4,.18],

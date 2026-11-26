@@ -7,7 +7,7 @@ export const incidentApertures:Record<string,Aperture>={
  'crew-checkpoint':['strip',53,10], armory:['split fan',62,29],
  'freight-hold':['under-glow',82,27], 'breached-loading-bay':['split fan',71,46],
  'relay-racks':['strip',92,15], 'transmission-chamber':['split fan',86,27],
- 'diagnostic-gallery':['under-glow',65,34], 'safety-interlock-station':['broken ring',38,27],
+ 'diagnostic-gallery':['under-glow',65,34], 'safety-interlock-station':['broken ring',59,37],
  'coolant-plant':['spill',69,24], 'service-shaft-landing':['broken ring',47,39],
  'infested-workshop':['split fan',52,42], 'swarm-junction':['spill',57,41],
  'shielding-gate':['strip',87,17], 'containment-annulus':['broken ring',72,42],
