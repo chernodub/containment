@@ -67,3 +67,17 @@ CDP sampled the renderer thread at a requested 100 µs interval in each 15 s com
 The recurring stack is `DepthGame.update → updateBullets → AttackEffects.event → wallSurface → Raycaster`. It pays for triangle tests before discarding hits under hidden parents, then casts up to four more rays to validate a decal's support. An independent High trace reproduced the raycast and also had GC among the top sampled frames. Shader compilation and texture upload were absent from these leading stacks.
 
 For the audio owner, extend `AudioSystem.scheduleWarm` and `requestWorkerBuffer` to queue the three gun variants keyed by `recipe.id:variant` and prioritize the recipe IDs that miss in `buffer` during combat. Send the variant to the existing synthesis worker and use its PCM to populate `cueBuffers`. Retain the synchronous fallback for unavailable workers. In `EnemySystem.getSystemSnapshot`, investigate reusing immutable per-enemy snapshots by state revision on the full-list path before replacing the per-update freeze. Keep the readonly API and invalidate on every snapshot-visible mutation.
+
+### Renderer change and paired profiles
+
+Wall and impact decals now share a renderer-owned probe with reusable scratch vectors and hit buffers. The recursive cast prunes invisible branches before they produce hits, and standard rigid meshes get a local bounding box during room preparation. The initial ray still uses Three's geometry, side, layer rules and stable distance order. A supported mark still requires all four support points to reach a coplanar surface. A failed corner terminates the support checks immediately.
+
+The same pre-change probe occupied 10.91 ms per selected slow frame on Interlock Low and 17.05 ms on Transmission High. Low therefore shares the update spike. It showed more render-submission headroom in this sample, with a render p95 of 14.1 ms against 20.6 ms at Interlock High. The wall-probe inclusive samples averaged 7.84 → 7.10 ms per selected slow frame at Interlock High, 10.91 → 0 sampled ms at Interlock Low and 17.05 → 6.94 ms at Transmission High. A later Interlock High slow frame also contained corpse grounding in `models.ts` via precise `Box3.setFromObject`, which transforms skinned vertices on death.
+
+| Pyro room and tier | One-minute load before start → end / after start → end | Frames | Update p95 ms | Update p99 ms | Updates >8 ms | GC count / total ms |
+|---|---|---:|---:|---:|---:|---:|
+| Safety Interlock High | 25.48 → 25.41 / 21.34 → 22.55 | 56 → 27 | 10.9 → 10.0 | 27.2 → 22.2 | 7 → 4 | 15 / 57.82 → 5 / 18.74 |
+| Safety Interlock Low | 25.41 → 21.09 / 22.55 → 26.11 | 34 → 32 | 11.2 → 8.3 | 25.8 → 8.7 | 3 → 2 | 5 / 10.33 → 5 / 9.53 |
+| Transmission High | 21.09 → 22.01 / 26.11 → 22.77 | 37 → 46 | 22.5 → 17.7 | 43.6 → 43.0 | 21 → 20 | 103 / 70.56 → 109 / 65.85 |
+
+GC counts use main renderer-thread Chrome trace events inside the combat window. Maximum pauses were 23.97 → 9.45 ms, 6.54 → 5.60 ms and 10.30 → 5.69 ms respectively. No combat shaders compiled in the paired windows. The unchanged population guard flagged Interlock Low on both builds (average/median 19.76/20 → 18.94/17). The windows advanced only 1.3–2.7 simulation seconds under host contention. The proportion of Interlock High updates over 8 ms was 12.5% → 14.8%. The small cohorts and varying load leave the overall update tail unresolved. Raw profiles, frame timings, exact GC events and the attribution script are retained under `artifacts/nextgen/perf42/`.
