@@ -55,7 +55,7 @@ export const SERVICE_CATALOG=Object.freeze({
  revive:Object.freeze({name:'Emergency resuscitation',description:'Survive one lethal hit in the finale and return with 45 health.',cost:610,stock:1}),
 });
 export function serviceRepairAmounts(difficulty: string){
- return difficulty==='standard'?{heal:25,armor:20}:{heal:35,armor:30};
+ return difficulty==='standard'?{heal:22,armor:17}:{heal:35,armor:30};
 }
 export const SERVICE_IDS=Object.freeze(Object.keys(SERVICE_CATALOG) as ServiceId[]);
 export function serviceCost(id:ServiceId,depth:number){if(id==='rig-return')return 0;if(depth===3&&id==='medkit')return 35;if(depth===3&&id==='grenade')return 20;return SERVICE_CATALOG[id].cost+Math.floor(depth/4)*10;}
