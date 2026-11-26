@@ -451,3 +451,72 @@ All 96 final simulator runs had zero stalls. Usual Standard is inside the band a
 Arc selected Coolant breach 3 on its 494.600-second reserve cut. The marked-entry frame is at 494.767; this verifies the nearer entry was selected. The replay did not verify a waiting body at that closed grille. [Coolant seal frame](../../artifacts/nextgen/playtest/play35-full-arc/r13-coolant-plant-sealed-entry.png)
 
 The final production build passed. I stopped the full native campaigns at their one-hour wall budget. Arc had cleared 13 rooms and Breacher 14, with zero runtime errors before shutdown. Shutdown itself was recorded as a closed-browser runner error. A separate Arc finale checkpoint replay cleared the final room after one renderer kit preparation error. Breacher's finale restarts hit loading timeouts. The requested two zero-error full native clears remain unverified. [Arc full attempt](../../artifacts/nextgen/playtest/play35-full-arc/report.json) · [Breacher full attempt](../../artifacts/nextgen/playtest/play35-full-breacher/report.json) · [Arc finale replay](../../artifacts/nextgen/playtest/play35-finale-arc/report.json)
+
+## PLAY36
+
+### Breacher diagnosis
+
+The five lead-reported Standard losses end in different rooms. Two finish with Crawler contact, one with Stalker contact, one with a Brute hit and one with Spitter fire.
+
+| Seed | Fatal room | Beat | Fatal family | Entry suit |
+|---|---|---|---|---:|
+| 7 | 11 · Diagnostic Gallery | 0 · Cut back around the recorder | Stalker | 7.7 |
+| 23 | 17 · Shielding Gate | 1 · Silence the two firing lanes | Spitter | 28.3 |
+| 512 | 20 · Overload Floor | 2 · Hold the relay and turn the final flank | Crawler | 120.3 |
+| 4096 | 13 · Coolant Plant | 1 · Silence the two firing lanes | Crawler | 92.6 |
+| 6561 | 12 · Safety Interlock | 1 · Hold a lane, then change position | Brute | 82.0 |
+
+| Lead's 12 usual Standard seeds | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| Clears | 7 | 11 | 12 | 10 |
+| Dash / tactical / power / overdrive uses per run | 90.7 / 104.0 / 26.1 / 8.5 | 140.4 / 75.1 / 75.4 / 11.4 | 103.8 / 120.5 / 54.4 / 10.8 | 107.9 / 108.5 / 43.3 / 10.3 |
+| Direct ability damage per use, all slots | 87.6 | 72.7 | 121.4 | 92.2 |
+| Crawler suit loss per run | 230.4 | 419.2 | 181.5 | 161.9 |
+| Projectile suit loss per run | 160.8 | 198.1 | 126.6 | 145.0 |
+
+Seed 7 reached Diagnostic with 7.7 suit on Breacher compared with 83.4, 107.2 and 75.5 for Cryo, Pyro and Arc. Seed 23 reached Shielding Gate with 28.3 compared with 137.5 and 168.2 for Cryo and Pyro. Arc had already died. In seed 512's finale, the four rigs entered with 120–130 suit. Breacher dealt 1,377 direct ability damage there and died. Cryo, Pyro and Arc dealt 4,552, 3,767 and 1,590 and cleared. For seed 6561, Arc entered Interlock with 69.1 suit versus Breacher's 82.0 and cleared while dealing 1,744 direct ability damage compared with Breacher's 846. Breacher therefore has both carry-in losses and late exchanges it cannot survive from comparable suit. In the finale Arc also dealt 4,698 weapon damage against Breacher's 2,792. In Shielding Gate Cryo and Pyro dealt 3,957 and 2,815 weapon damage against Breacher's 1,411. Those are room totals that include the additional time the surviving rigs spent fighting, so they cannot isolate a weapon range disadvantage.
+
+In the four R27 native seed-1729 traces, receipt damage per actual use and target contacts per use were as follows. Contacts count repeated effects on the same actor. The damage column only counts recorded direct ability receipts. It omits status damage, blocked projectiles and utility such as Arc's Overclock.
+
+| Slot · damage / target contacts per use | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| Tactical | 156.1 / 2.43 | 151.2 / 4.48 | 193.7 / 14.28 | 147.9 / 7.12 |
+| Power | 0.0 / 5.12 | 119.7 / 2.01 | 174.5 / 30.57 | 212.8 / 9.54 |
+| Overdrive | 256.0 / 4.50 | 393.9 / 61.83 | 265.0 / 22.91 | 0.0 / 0.00 |
+
+The 169 Breacher power target receipts are Siege Plow contacts. The bot did use the augment. Bulwark's projectile interception changes barrier health without emitting a dedicated blocked-damage receipt, so these logs cannot rank its protection per use. Likewise Cryo's frequent dashes and freeze ticks describe how its toolkit is used but do not directly measure escaping a lethal lane.
+
+| Fresh baseline · 24 Standard seeds per rig | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| Clears | 22 | 15 | 24 | 20 |
+| Dash / tactical / power / overdrive uses per run | 114.3 / 120.7 / 30.9 / 10.6 | 116.0 / 61.8 / 63.8 / 8.5 | 101.9 / 119.8 / 54.5 / 10.4 | 111.6 / 105.3 / 43.3 / 10.4 |
+| Direct ability damage per use, all slots | 91.0 | 71.4 | 115.7 | 93.9 |
+
+The fresh baseline's Breacher deaths were seed 117 to a Stalker in Manual Control's “Read the flank” beat and seed 123 to a Crawler in Swarm Junction's “Choose an exit before the arms close” beat. On seed 117, Breacher entered with 32.8 suit and lost 34.8. Cryo, Pyro and Arc entered with 175.4, 105.4 and 63.9 and lost 77.8, 51.0 and 12.0. On seed 123, Breacher entered with 71.8 and lost 75.8. Cryo and Pyro entered with 174.1 and 122.3 and lost 57.7 and 46.1. Arc died four sectors earlier. The usual seeds alone overstate Breacher's weakness relative to Cryo and Arc.
+
+### Policy correction
+
+The baseline aim scored Bulwark like an attack centered on an enemy, requiring a body inside the barrier's 18-unit footprint. Static Bulwark now looks for an enemy approach or visible firing lane beyond a legal barrier. Siege Plow scores a shorter forward corridor and checks that the wall can travel along it. The bot can also deploy against a single nearby threat or Spitter when the lane is useful. This is a playtest policy fault. The game kit, enemies and repair economy were left untouched.
+
+### Matched beat and native check
+
+A baseline-policy replay of seed 4096 separates Coolant's opening from the fatal crossfire. Breacher spent 68.2 suit in beat 0. In beat 1 it recorded three Crawler kills, seven dashes, one power use and 440.7 direct ability damage before the terminal sample. Cryo recorded 12 Crawler kills, 12 dashes, two power uses and 403.0 direct ability plus 53.1 status damage in the completed beat. Pyro killed eight Crawlers and dealt 537.8 direct plus 426.5 status damage with 8.9 suit spent. Arc killed seven Crawlers and spent zero suit, with a power use, two tacticals and Overclock. The beat-level totals cover different durations because Breacher died. The complete room ledger includes the fatal hit. [Matched Coolant simulations](../../artifacts/nextgen/playtest/play36-coolant-beats/summary.json)
+
+The native Breacher 1729 Coolant checkpoint replay cleared at 479.6 seconds with zero runtime errors. It spent 37.8 suit, used Bulwark five times, and recorded 13 Siege Plow contacts, 16 tacticals and one Railbreaker. The replay used the Bulwark aim correction. [Native report](../../artifacts/nextgen/playtest/play36-native-coolant/report.json) · [Coolant frame](../../artifacts/nextgen/playtest/play36-native-coolant/r13-coolant-plant-mid.png)
+
+Power uses per Breacher run rose from 26.1 to 37.5 on the usual seeds and from 30.9 to 39.9 on the fresh seeds. The Bulwark correction recovered usual seeds 7 and 6561. The other three usual Breacher losses all moved to Safety Interlock. On fresh seeds 104, 120 and 124 changed from clears to losses. Four of the five fresh losses ended with Crawler damage and one with Stalker damage. I also tried letting Railbreaker fire at a strong line of two targets. It still cleared 9 of 12 usual seeds and moved seed 512's death to sector 10, two sectors earlier than the Bulwark-only run, so I reverted it.
+
+### Cohorts and verification
+
+The production build passed. The native checkpoint replay above used the same Bulwark policy as the final cohorts. The final code has only formatting changes after that replay.
+
+| Cohort | Previous | PLAY36 |
+|---|---:|---:|
+| Standard usual · Breacher / Cryo / Pyro / Arc | 7 / 11 / 12 / 10 | 9 / 11 / 12 / 10 |
+| Standard usual total | 40/48 | 42/48 |
+| Story novice usual · Breacher / Cryo | 11 / 11 | 12 / 11 |
+| Story novice usual total | 22/24 | 23/24 |
+| Standard fresh · Breacher | 22/24 | 19/24 |
+| Standard fresh · Cryo | 15/24 | 15/24 |
+
+The usual Standard cohort finished two clears above the band. Pyro led both samples with 12/12 usual and 24/24 fresh, and the two additional usual clears came from Breacher. The usual spread was three clears. On fresh seeds, the two rerun rigs were four clears apart, and the baseline spread across all four was nine. The within-two target remains unmet. There were zero stalls across all 120 final simulator runs. [Usual Standard](../../artifacts/nextgen/playtest/play36-aim-usual/summary.json) · [Story](../../artifacts/nextgen/playtest/play36-aim-story/summary.json) · [Fresh Standard](../../artifacts/nextgen/playtest/play36-aim-fresh/summary.json) · [Fresh baseline Breacher](../../artifacts/nextgen/playtest/play36-base-breacher/summary.json) · [Fresh baseline Cryo](../../artifacts/nextgen/playtest/play36-base-cryo/summary.json) · [Fresh baseline Pyro](../../artifacts/nextgen/playtest/play36-base-pyro/summary.json) · [Fresh baseline Arc](../../artifacts/nextgen/playtest/play36-base-arc/summary.json)
