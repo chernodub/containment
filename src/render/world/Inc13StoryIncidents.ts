@@ -453,6 +453,14 @@ const incidents:Record<string,Incident>={
   },
 };
 
+const independentSources:Record<string,[number,number]>={
+  'awakening-bay':[640,295],'residential-gallery':[410,241],'coolant-plant':[401,300],
+  'infested-workshop':[515,325],'manual-control-chamber':[617,386],
+};
+export function storyIncidentSource(id:string):[number,number]|undefined {
+  return incidents[id]?.source??independentSources[id];
+}
+
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
   const id=room.id,incident=incidents[id];if(!incident)return;
   const [x,z]=incident.source,[left,top,width,depth]=incident.bounds;

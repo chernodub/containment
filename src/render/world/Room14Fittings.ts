@@ -1,3 +1,4 @@
+import {addIncidentLightFootprints} from './IncidentLightFootprints';
 import {addMachineEmitters} from './MachineEmitters';
 import {addLaneMachine} from './LaneMachines';
 import {addLaneIncident} from './LaneIncidents';
@@ -45,6 +46,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
   addMachineEmitters(root,id);
   const room = ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES];
   addFrame16Deck(root,room,plan.arena);
+  addIncidentLightFootprints(root,room);
   // A recessed diffuser follows the top of each original hull module.
   // Keep the line outboard of the deck, with a short break at each joint.
   const rim: number[] = [];

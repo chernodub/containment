@@ -6,7 +6,7 @@ import {IncidentPieces} from './Inc13StoryIncidents';
 
 import {environmentClock} from '../lighting/HotFixtureSurface';
 
-const practicalColor:Record<string,number>={
+export const incidentPracticalColors:Record<string,number>={
  'awakening-bay':0xefba76,'passenger-vault':0xbad89b,'residential-gallery':0xb9d9df,
  'communal-atrium':0xc9acd9,'crew-checkpoint':0xe5ad6c,armory:0x9bc89c,
  'freight-hold':0xb3d7e2,'breached-loading-bay':0xf0b078,'relay-racks':0xe7af70,
@@ -49,7 +49,7 @@ function mountedStrips(id:string){
   const angle=layout?Math.atan2(layout[3]-layout[1],layout[2]-layout[0]):0;
   const end=layout?Math.hypot(layout[2]-layout[0],layout[3]-layout[1]):0;
   const lamp:Strip=[end,0,13,36,11,0];
-  return {origin,angle,color:practicalColor[id]??source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
+  return {origin,angle,color:incidentPracticalColors[id]??source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
 }
 
 export function addMachineEmitters(root:Group,id:string){
@@ -69,7 +69,7 @@ export function addMachineEmitters(root:Group,id:string){
   const material=new MeshBasicMaterial({vertexColors:true});
   const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],material);
   mesh.onBeforeRender=()=>material.color.setScalar(.89+.11*Math.sin(environmentClock.value*1.7+mount.angle));
-  mesh.userData.lightFixtures=[{x:x/32,y:(y+4)/32,z:z/32,color:mount.color,nativeColor:true,gain:.83,distance:4.1,poolWidth:2.1,poolDepth:3.0,poolAngle:mount.angle}];
+  mesh.userData.lightFixtures=[{x:x/32,y:(y+4)/32,z:z/32,color:mount.color,nativeColor:true,gain:1.5,distance:8.2,poolWidth:2.1,poolDepth:3.0,poolAngle:mount.angle}];
   mesh.rotation.y=-mount.angle;mesh.castShadow=false;
 }
 

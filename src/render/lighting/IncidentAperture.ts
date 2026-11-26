@@ -25,7 +25,8 @@ export function incidentTransmission(profile:Aperture,along:number,across:number
   case 'under-glow':field=1-Math.hypot(u,Math.abs(v+.35)*1.3);break;
   case 'spill':field=1-Math.hypot(u,v+.22*Math.sin(4*u))*(1+.13*Math.sin(6*u+2*v));break;
  }
- return Math.max(0,field)**1.45;
+ const shadow=along>6&&Math.abs(across-along*.16)<2+along*.055?.36:1;
+ return Math.min(1,Math.max(0,field)*1.65)**.76*shadow;
 }
 
 export function paintIncidentAperture(c:CanvasRenderingContext2D,id:string,color:number){
