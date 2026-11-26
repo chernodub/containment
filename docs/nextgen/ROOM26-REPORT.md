@@ -234,3 +234,55 @@ The weakest three are Communal Atrium, Safety Interlock Station and Manual Contr
 [Colour and greyscale sheets and all previous/current pairs](../../artifacts/nextgen/room30/index.html) · [Sheltered bank during selection](../../artifacts/nextgen/room30-bank/play27-covered-bank-overload-floor.png)
 
 The production build passed. On Standard, the uninterrupted Arc campaign with seed 1729 cleared all twenty rooms and recorded zero errors and zero defects. All four capture manifests completed on e26f2dca with twenty frames apiece and zero failures. The gallery contains 80 original captures, 160 final20/current pairs and eight colour or greyscale contact sheets. [Arc campaign receipt](../../artifacts/nextgen/room30/arc-report.json) · [Capture inventory](../../artifacts/nextgen/room30/captures.json)
+
+## ROOM31
+
+The Freight Hold has paired restraint gouges. One runner skips near impact, while its mate continues to the shackle. Coolant Plant’s spill crosses the plate joints in three lobes. The colour and wet-surface mask use the same contour. Transmission Chamber’s open waveguide trench makes two sharp turns between its burnt ties and the severed feed. Every other room has a debris or wear trail shaped around its working equipment.
+
+Working aisles alternate worn plate with inset service panels. The Atrium carries a planting profile, the checkpoint has inspection bars, and the workshop has slotted tool drawers. The junction uses broken shell profiles, Transmission uses waveguide sections, Manual Control uses reader sockets and Safety Interlock uses paired switch contacts. Console and locker floor wear follows the authored furnishing positions. Flat work shares the original clipped deck draw.
+
+The machine lamps use contrasting practical colours and a slow status pulse driven by the shared environment clock. Upward-facing machine normals get the largest lift and retain the existing contact shadows. Dark conduit pairs and their clips share the wall cap mesh along long side and far-z hull edges. The additions use zero shadow-casting lights. The recorder, workbench and manual console keep their authored positions.
+
+### Draw calls
+
+One ten-second Arc trial per room and tier on the shared host. These are observed peaks. Both releases recorded zero combat shader compiles in all four cells. [Previous benchmark](../../artifacts/nextgen/room31-before/benchmark.json) · [ROOM31 benchmark](../../artifacts/nextgen/room31-after/benchmark.json)
+
+| Room | Tier | Previous (b42a1782) | ROOM31 (ccda8c66) |
+|---|---|---:|---:|
+| Safety Interlock Station | High | 287 | 266 |
+| Safety Interlock Station | Low | 283 | 229 |
+| Transmission Chamber | High | 160 | 169 |
+| Transmission Chamber | Low | 146 | 158 |
+
+### Kiting read
+
+I ignored lettering and covered the incident visually when judging the floor cue. I then looked at the full kiting frame to judge whether the incident was the third thing I found, after the marine and the creatures. At 480 × 270, none of the twenty comparisons made a marine plate, bright creature mark or visible red warning harder for me to locate. The intended one-fifth lift is an art target. Displayed contrast varies with the local lighting and the marine's position.
+
+| Room | Floor cue with the incident excluded | Incident third? |
+|---|---|---|
+| Awakening Bay | Rounded pod recesses and thaw creases suggest cryogenics, weakly once the pod row leaves view. | No. The pod row draws my eye first among the fixtures. |
+| Passenger Vault | Berth footprints cross the worn aisle. The scarf and shoe trail reads as personal belongings. | Yes |
+| Residential Gallery | Mat borders and a fan of broken crockery identify a domestic corridor. | Yes |
+| Communal Atrium | A repeating leaf-and-stem border beside the soil fan suggests planting. The smaller leaf fragments lose their shape. | No. The irrigation pipe is easier to pick out than the spill. |
+| Crew Checkpoint | Queuing bars, paired stop lines and post-foot marks identify a controlled crossing. | Yes |
+| Armory | Two cartridge profiles repeat along the apron beyond the loose rounds. | Yes |
+| Freight Hold | Paired runner gouges traverse the lashing grid and split where the restraint failed. | Yes |
+| Breached Loading Bay | Long fractures interrupt dock plates, with frost in the lifted seam. | Yes |
+| Relay Racks | Parallel conductors step sideways into open trench combs. | Yes |
+| Transmission Chamber | Calibration arcs and flanged channel sections give the burnt trench a signal-equipment context. | Yes |
+| Diagnostic Gallery | Rounded bed bays with headrest ends line the caster trail. | No. The hanging recorder display still catches the eye. |
+| Safety Interlock Station | Paired switch contacts span the aisle. At reduced size they could serve another controls room. | No. The panel bank competes with the loose contact. |
+| Coolant Plant | The long ice margin crosses multiple drain panels and follows the runoff. | Yes |
+| Service Shaft Landing | Wire rope, sling marks and parallel load rails identify the hoisting lane. | Yes |
+| Infested Workshop | Slotted tool-drawer outlines, wrenches and curled swarf put the growth in a workshop. | Yes |
+| Swarm Junction | Split shells run along the branching pipe route through the lane. | Yes |
+| Shielding Gate | Paired track slots and tooth-shaped recesses continue beyond the collapsed leaf. | Yes |
+| Containment Annulus | Concentric double seams and a peeled gasket carry the ring geometry past the fight. | Yes |
+| Manual Control Chamber | Reader sockets and keyed leads show a control circuit. I could not infer manual authority from them alone. | No. The console bank wins over its keyed fitting. |
+| Overload Floor | Ribbed bus housings and an insulation burn trail mark a high-current deck. | No. The core remains the first environmental read. |
+
+My weakest three are Manual Control Chamber, Safety Interlock Station and Awakening Bay. Their lanes convey control equipment or cryogenics more readily than the specific room function.
+
+The production build passed. The Standard Cryo campaign on seed 1729 cleared nine rooms and ended in Transmission Chamber with zero runtime errors. Its runner exited 1 and recorded four room-loading delays over five seconds. [Campaign receipt](../../artifacts/nextgen/room31/cryo-report.json)
+
+All 80 captures completed on ccda8c66 with zero capture failures or errors. The gallery contains native final21/current pairs, current-only 480 × 270 frames and eight colour or greyscale sheets. [Open gallery](../../artifacts/nextgen/room31/index.html) · [Capture inventory](../../artifacts/nextgen/room31/captures.json)
