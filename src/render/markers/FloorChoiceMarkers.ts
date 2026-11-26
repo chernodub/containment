@@ -81,7 +81,7 @@ export class FloorChoiceMarkers {
   const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
   mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
  });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame'],covered?:DepthGame['relayShelter']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,_approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame'],covered?:DepthGame['relayShelter']){
   this.shutterPanels.forEach((panel,index)=>{
    panel.visible=!!shutter;
    if(!shutter)return;
@@ -95,18 +95,8 @@ export class FloorChoiceMarkers {
   });
   this.coverGlyph.visible=!!covered;
   if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
-  this.routes.forEach((mesh,index)=>{
-   const path=index===0?approaches[0]:undefined;
-   let count=0;
-   for(let i=1;path&&i<path.length;i++){
-    const from=path[i-1],to=path[i],dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
-    for(let along=22;along<distance&&count<48;along+=37){
-     this.routeDummy.position.set((from.x+dx*along/distance)/unit,.05,(from.y+dy*along/distance)/unit);
-     this.routeDummy.rotation.y=-Math.atan2(dy,dx);this.routeDummy.scale.setScalar(index===1?1.1:.65);this.routeDummy.updateMatrix();
-     mesh.setMatrixAt(count++,this.routeDummy.matrix);
-    }
-   }
-   mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
+  this.routes.forEach((mesh)=>{
+   mesh.count=0;
   });
   this.arrows.forEach((arrow,index)=>{
    const choice=choices[index];

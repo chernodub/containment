@@ -328,7 +328,7 @@ export class DepthGame {
   return this.relayShelterStep;
  }
  private relayShelterStep?:{x:number;y:number};
- private coverPreview?:{x:number;y:number;from:{x:number;y:number};until:number};
+ private coverPreview?:{x:number;y:number;from:{x:number;y:number};until:number;impactUntil?:number};
  get relayCoverPreview(){return this.coverPreview&&this.elapsed<this.coverPreview.until?this.coverPreview:undefined;}
  private previewRelayCover(){
   const bank=this.relayShelterStep;
@@ -1100,6 +1100,10 @@ export class DepthGame {
     done=true;break;
    }
    const wallBlocked=!canTraverseExpedition(this.geometry,from,next,b.request.radius);if(wallBlocked&&b.kind!=='player'){
+    if(b.preview&&this.coverPreview){
+     this.coverPreview.impactUntil=this.elapsed+1.3;
+     this.presentation.push({type:'hit',x:this.coverPreview.x,y:this.coverPreview.y,durationMs:1300,contact:'blocked'});
+    }
     const lesson=this.coverLesson;
     const r=b.request.radius;
     if(b.kind==='hazard'&&lesson&&!lesson.learned&&b.sourceX!==undefined&&b.sourceY!==undefined

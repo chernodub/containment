@@ -88,6 +88,13 @@ export class TargetMarkers {
                 ctx.moveTo(stop.x-dx,stop.y+dy);
                 ctx.lineTo(stop.x+dx,stop.y-dy);
                 ctx.stroke();
+                if((preview.impactUntil??0)>game.elapsed){
+                    ctx.strokeStyle='#fff0ce';
+                    ctx.lineWidth=3;
+                    ctx.beginPath();
+                    ctx.arc(stop.x,stop.y,11,0,Math.PI*2);
+                    ctx.stroke();
+                }
             }
         }
         for (const cue of cues) {
