@@ -67,6 +67,55 @@ export class EnemyMotion {
   private nativePhase: EnemyAttackPhase | undefined;
   private nativeProgress = 0;
   private recoveryAge = 0;
+  private biteContact?:{point:(out:T.Vector3)=>T.Vector3;anchor:T.Vector3;tip:T.Vector3;target:T.Vector3;loaded:boolean};
+
+  bindBiteContact(point:(out:T.Vector3)=>T.Vector3) {
+    this.biteContact={point,anchor:new T.Vector3(),tip:new T.Vector3(),target:new T.Vector3(),loaded:false};
+  }
+
+  private followBiteContact(striking:boolean) {
+    const contact=this.biteContact;
+    if(!contact)return;
+    contact.point(contact.tip);
+    if(striking){
+      contact.anchor.copy(contact.tip);
+      contact.loaded=true;
+      return;
+    }
+    if(!contact.loaded || this.recoveryAge>=.25)return;
+    const retreat=.13*T.MathUtils.smoothstep(this.recoveryAge,0,.12);
+    contact.target.copy(contact.anchor);
+    contact.target.x-=Math.cos(this.nativeAngle)*retreat;
+    contact.target.z-=Math.sin(this.nativeAngle)*retreat;
+    this.root.worldToLocal(contact.target);
+    this.root.worldToLocal(contact.tip);
+    const blend=1-T.MathUtils.smoothstep(this.recoveryAge,.12,.25);
+    this.body.position.x+=(contact.target.x-contact.tip.x)*blend;
+    this.body.position.z+=(contact.target.z-contact.tip.z)*blend;
+  }
+  private muzzlePose?:{joint:T.Object3D;point:(out:T.Vector3)=>T.Vector3;rest:T.Quaternion;adjusted:boolean};
+
+  bindMuzzlePose(joint:T.Object3D,point:(out:T.Vector3)=>T.Vector3) {
+    this.muzzlePose={joint,point,rest:new T.Quaternion(),adjusted:false};
+  }
+
+  aimMuzzle(angle:number) {
+    const pose=this.muzzlePose,parent=pose?.joint.parent;
+    if(!pose || !parent)return;
+    const tip=pose.point(this.headPoint);
+    const clearance=this.root.position.y+.48;
+    if(tip.y>=clearance)return;
+    const reach=(this.root.userData.colliderRadius??.5)*1.10;
+    this.shoulderPoint.set(this.root.position.x+Math.cos(angle)*reach,clearance,
+                           this.root.position.z+Math.sin(angle)*reach);
+    parent.worldToLocal(tip).sub(pose.joint.position).normalize();
+    parent.worldToLocal(this.shoulderPoint).sub(pose.joint.position).normalize();
+    pose.rest.copy(pose.joint.quaternion);
+    pose.joint.quaternion.premultiply(this.delta.setFromUnitVectors(tip,this.shoulderPoint));
+    pose.joint.updateMatrix();
+    pose.adjusted=true;
+  }
+
   private biteHook?:T.Object3D;
   private readonly hookRest=new T.Quaternion();
   private hookOffset=false;
@@ -110,6 +159,7 @@ export class EnemyMotion {
   setAttackState(phase: EnemyAttackPhase, progress: number, angle: number, shape?: EnemyStrikeShape | null) {
     if (phase === 'strike' && this.nativePhase !== 'strike') this.attack();
     if (phase === 'approach' && this.nativePhase === 'windup') this.release = 0;
+    if (this.biteContact && (phase==='approach'||phase==='windup')) this.biteContact.loaded=false;
     if (phase === 'recovery' && this.nativePhase !== phase) this.recoveryAge = 0;
     this.nativePhase = phase;
     this.nativeProgress = T.MathUtils.clamp(progress, 0, 1);
@@ -160,7 +210,12 @@ export class EnemyMotion {
 
   /** Remove last frame's offsets before the source mixer samples any tracks. */
   restore() {
-    if(this.hookOffset && this.biteHook){this.biteHook.quaternion.copy(this.hookRest);this.hookOffset=false;}
+    if(this.muzzlePose?.adjusted){
+      this.muzzlePose.joint.quaternion.copy(this.muzzlePose.rest);
+      this.muzzlePose.joint.updateMatrix();
+      this.muzzlePose.adjusted=false;
+    }
+    if(this.hookOffset && this.biteHook){this.biteHook.quaternion.copy(this.hookRest);this.biteHook.updateMatrix();this.hookOffset=false;}
     if (this.restored) return;
     for (const joint of this.joints) joint.bone.quaternion.copy(joint.rest);
     this.restored = true;
@@ -218,6 +273,7 @@ export class EnemyMotion {
         const held = recovery ? 1 - T.MathUtils.smoothstep(this.recoveryAge, .12, .23) : 0;
         this.biteHook.rotateZ(-.30*brace - .54*Math.max(strike,recovery,held));
         this.biteHook.rotateX(.26*brace + .20*Math.max(strike,held));
+        this.biteHook.updateMatrix();
         this.hookOffset=true;
       }
       const mass=1/Math.sqrt(p.weight);
@@ -251,6 +307,7 @@ export class EnemyMotion {
         1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;
+      if(this.biteContact && (strike || recovery))this.followBiteContact(strike>0);
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
     }
 
@@ -384,6 +441,7 @@ export class EnemyMotion {
   }
 
   reset() {
+    if(this.biteContact)this.biteContact.loaded=false;
     this.restore(); this.freeze(); this.previous = undefined;
     this.visualTime = this.cooldown = this.impact = this.release = this.emergence = 0;
     this.beamAge = 1; this.beamAngle = undefined; this.fallStarted = false; this.impactAge = 1; this.nativePhase = undefined; this.nativeProgress = this.nativeAngle = this.strikeRange = 0;

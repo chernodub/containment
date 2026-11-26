@@ -230,24 +230,42 @@ export function alien(kind:string,elite=false):ActorModel{
  }
  // Offsets use the K11 mesh bind coordinates and follow the posed joint,
  // including the presentation-only bite extension and rank fit.
- const sockets = new Map<string,{bone:T.Bone,local:T.Vector3}>();
- const attach = (key:string,name:string,point?:T.Vector3) => {
-  let skin:T.SkinnedMesh|undefined;
-  r.assetRoot.traverse(o=>{if(!skin && o instanceof T.SkinnedMesh)skin=o;});
+ const sockets = new Map<string,(out:T.Vector3)=>T.Vector3>();
+ let skin:T.SkinnedMesh|undefined;
+ r.assetRoot.traverse(o=>{if(!skin && o instanceof T.SkinnedMesh)skin=o;});
+ const attach = (key:string,name:string,bindPoint?:T.Vector3) => {
   if(!skin)return;
   const index=skin.skeleton.bones.findIndex(b=>b.name===name || b.name===T.PropertyBinding.sanitizeNodeName(name));
   if(index<0)return;
-  sockets.set(key,{bone:skin.skeleton.bones[index],local:point?point.applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]):new T.Vector3()});
+  const point=bindPoint?bindPoint.applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]):new T.Vector3();
+  const bone=skin.skeleton.bones[index],chain:T.Object3D[]=[];
+  for(let node:T.Object3D|null=bone;node && node!==r.root;node=node.parent)chain.push(node);
+  chain.reverse();
+  sockets.set(key,out=>{
+   // The mixer composes manual bone locals. A parent-only world query can
+   // skip a clean child after its ancestor moved during the same frame.
+   r.root.updateWorldMatrix(true,false);
+   for(const node of chain){
+    if(node.matrixAutoUpdate)node.updateMatrix();
+    node.matrixWorld.multiplyMatrices(node.parent!.matrixWorld,node.matrix);
+   }
+   return out.copy(point).applyMatrix4(bone.matrixWorld);
+  });
  };
  if(kind==='crawler')attach('attack','antenna_right0',new T.Vector3(1.08,-.51,.42));
+ const bite=kind==='crawler'?sockets.get('attack'):undefined;
+ if(bite)motion.bindBiteContact(bite);
  if(kind==='stalker')attach('attack','claw.R',new T.Vector3(-1.30,-1.58,1.04));
  if(kind==='spitter')attach('attack','jaw',new T.Vector3(4.72,0,2.62));
+ const muzzle=kind==='spitter'?sockets.get('attack'):undefined;
+ const neck=muzzle?r.assetRoot.getObjectByName('neck'):undefined;
+ if(muzzle && neck)motion.bindMuzzlePose(neck,muzzle);
  if(kind==='carrier'){attach('attack','claw.R');attach('brood','tip');}
  if(kind==='brute'){attach('attack','fingertip.0.r');attach('ram','jaw');}
  return{root:r.root,body:r.body,limbs:[],strikeSocket(out){
    const key=champion==='matron' && brood>0?'brood':champion==='warden' && threatKind==='charge'?'ram':'attack';
    const socket=sockets.get(key);
-   return socket?.bone.localToWorld(out.copy(socket.local));
+   return socket?.(out);
   },elementContact(element){
    contactKind=element==='cryo'?1:element==='pyro'?2:element==='arc'?3:4;
    contactLife=.62;
@@ -295,7 +313,9 @@ export function alien(kind:string,elite=false):ActorModel{
    liveCrack=authored.exposedIce;
    if(liveCrack)frost?.use();else frost?.reset();
   }
-  if(!dead&&bossStun===0){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);if(champion==='matron' && (brood>0 || broodRelease>0)){
+  if(!dead&&bossStun===0){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);
+   if(kind==='spitter' && !status.frozen && (threatKind==='spit' || spitFollowThrough>0))motion.aimMuzzle(aim);
+   if(champion==='matron' && (brood>0 || broodRelease>0)){
    authored.player.snapNext();
    authored.player.sample('m10-brood',brood>0?.70*(1-brood/1000):1,dt);
    broodRelease=Math.max(0,broodRelease-dt);
