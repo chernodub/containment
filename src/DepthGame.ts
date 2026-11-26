@@ -801,6 +801,12 @@ export class DepthGame {
    break;
   }
  }
+ if(e.lateExchange){
+  const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
+  const shoulder=stageCoverLesson(this.geometry,covers,this.player);
+  if(shoulder&&canOccupyExpedition(this.geometry,shoulder.shooter,enemyBodyRadius(e.enemyId,e.elite)))
+   ({x,y}=shoulder.shooter);
+ }
  if(this.node.templateId==='residential-gallery'&&e.enemyId==='brute'&&e.beat===0&&this.residentialLane){
   ({x,y}=this.residentialLane.plate);
  }

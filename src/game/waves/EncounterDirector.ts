@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -186,6 +186,17 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      const other=arrivals[partner];
      arrivals[partner]=Object.freeze({...other,openingExchange:true,atMs:request.atMs+850,approachLeadMs:450});
     }
+   }
+  }
+  const lateExchange=['diagnostic-gallery','infested-workshop','manual-control-chamber'].includes(node.templateId)&&beatIndex===1;
+  if(lateExchange){
+   const lead=arrivals.findIndex(request=>!request.guardian&&!request.reinforcement&&
+    (request.enemyId==='stalker'||request.enemyId==='brute'));
+   if(lead>=0){
+    const first=arrivals[lead];
+    arrivals[lead]=Object.freeze({...first,openingExchange:true,lateExchange:true});
+    const next=arrivals.findIndex((request,index)=>index!==lead&&!request.reinforcement);
+    if(next>=0)arrivals[next]=Object.freeze({...arrivals[next],atMs:Math.max(arrivals[next].atMs,first.atMs+1050)});
    }
   }
   if(shaftLanding&&beatIndex===0&&
