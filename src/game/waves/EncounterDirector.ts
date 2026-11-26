@@ -247,7 +247,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const pincerDelay=beat.grammar==='pincer'?1200:0;
    for(let index=protectedArrivals;index<arrivals.length;index++){
     const request=arrivals[index];
-    arrivals[index]=Object.freeze({...request,atMs:request.atMs+pincerDelay+(index-protectedArrivals+1)*300});
+    arrivals[index]=Object.freeze({...request,atMs:request.atMs+pincerDelay+(index-protectedArrivals+1)*(beat.grammar==='pincer'?520:300)});
    }
   }
   if(galleryOpening&&beatIndex===0){
@@ -525,6 +525,8 @@ export class EncounterDirector {
     if(this.broken)return 'withdraw';
     if(beat.recallAfterLunge&&this.dispatched===beat.end&&!pending
       &&live.some(enemy=>enemy.role==='flanker'&&enemy.meleePhase==='recovery'))return 'withdraw';
+    if(this.coolantPlant&&beat.grammar==='crossfire'&&!pending&&this.dispatched===beat.end&&live.length>0&&
+      live.every(enemy=>!enemy.priority&&(enemy.type==='crawler'||enemy.type==='stalker')))return 'withdraw';
     if(this.withdrawLateScreen&&!pending&&this.dispatched===beat.end&&
       (beat.grammar!=='siege'||siegeReady)&&live.length>0&&live.length<=3&&
       live.every(enemy=>!enemy.priority&&(enemy.type==='crawler'||enemy.type==='stalker'))&&

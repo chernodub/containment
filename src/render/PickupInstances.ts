@@ -65,14 +65,15 @@ export class PickupInstances {
   }
 
   /** Match ordinary pickup placement exactly; snapshot alpha remains presentation-neutral. */
-  update(snapshot: readonly PickupSnapshot[], time: number): void {
+  update(snapshot: readonly PickupSnapshot[], time: number, reveal?:{id:number;age:number}): void {
     if (this.disposed) return;
     for (const draw of this.draws) draw.mesh.count = 0;
     this.pose.makeRotationY(time * .6);
     const limit = Math.min(snapshot.length, MAX_ACTIVE_PICKUPS);
     for (let i = 0; i < limit; i++) {
       const item = snapshot[i];
-      const height=.18 + Math.sin(time * 2 + item.id) * .07;
+      const rise=reveal?.id===item.id?Math.sin(Math.PI*Math.max(0,Math.min(1,reveal.age/1.15)))*.6:0;
+      const height=.18 + Math.sin(time * 2 + item.id) * .07+rise;
       for (const draw of this.kinds[item.kind]) {
         this.pose.setPosition(item.x / 32, draw.onDeck?0:height, item.y / 32);
         this.matrix.multiplyMatrices(this.pose, draw.local);

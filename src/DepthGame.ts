@@ -135,6 +135,11 @@ export class DepthGame {
   return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,runStructure:this.expedition.run.runStructure,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
  }
  private broodSupply?:{pod:number;pickup:number};
+ private savedArmour?:{id:number;at:number;room:number};
+ get savedArmourReveal(){
+  const saved=this.savedArmour;
+  return saved&&saved.room===this.roomRevision&&this.elapsed-saved.at<1.15?saved:undefined;
+ }
  private broodChoiceUsed=false;
  private broodMarksShownAt:number|undefined;
  private repelSavedBroodLane(pod:{x:number;y:number}){
@@ -160,7 +165,7 @@ export class DepthGame {
   }
   return fallback;
  }
- private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean;openedAt?:number}|undefined;
+ private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean;openedAt?:number;shotThrough?:boolean}|undefined;
  get relayShutterFrame(){
   return this.rackShutter?{x:491,y:158,width:18,height:140,broken:this.rackShutter.broken}:undefined;
  }
@@ -172,6 +177,13 @@ export class DepthGame {
   const shutter=this.rackShutter;
   return !!shutter&&!shutter.broken&&shutter.spitterId===id&&
     (shutter.wardenId===undefined||!!this.enemies.getSnapshot(shutter.wardenId));
+ }
+ get shutterCameraPoint(){
+  const shutter=this.rackShutter,frame=this.relayShutterFrame;
+  if(!shutter||!frame||shutter.shotThrough)return;
+  const warden=shutter.wardenId===undefined?undefined:this.enemies.getSnapshot(shutter.wardenId);
+  if(warden?.pendingAttack==='charge'||warden?.chargeMs||shutter.broken&&this.elapsed-(shutter.openedAt??0)<2)
+   return {x:frame.x+frame.width/2,y:frame.y+frame.height/2};
  }
  get shutterBait(){
   const shutter=this.relayShutter,warden=this.rackShutter?.wardenId;
@@ -485,7 +497,9 @@ export class DepthGame {
    const from=covered[i-1],to=covered[i],steps=Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/12);
    for(let step=1;step<=steps;step++){
     const point={x:from.x+(to.x-from.x)*step/steps,y:from.y+(to.y-from.y)*step/steps};
-    if(clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS).blocked){
+    if(canOccupyExpedition(this.geometry,point,this.player.radius)&&
+     clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS+this.player.radius).blocked&&
+     clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS).blocked){
      this.relayShelterStep=point;
      break;
     }
@@ -755,7 +769,16 @@ export class DepthGame {
       this.platedLessonTarget=result.enemy.id;
      if(this.node.templateId==='passenger-vault'&&options.lesson==='brute'){
       this.platedLessonTarget=result.enemy.id;
-      this.enemies.stagger(result.enemy.id,3200);
+      const angle=Math.atan2(p.y-this.player.y,p.x-this.player.x)+Math.PI/2;
+      for(const distance of [148,124,96]){
+       const side=[1,-1].find(side=>canTraverseExpedition(this.geometry,this.player,{
+        x:this.player.x+side*distance*Math.cos(angle),y:this.player.y+side*distance*Math.sin(angle),
+       },this.player.radius));
+       if(side===undefined)continue;
+       const step={x:this.player.x+side*distance*Math.cos(angle),y:this.player.y+side*distance*Math.sin(angle)};
+       this.pickups.spawn('armor',12,step.x,step.y);
+       break;
+      }
       this.startWeaponLesson('plasma',result.enemy.id);
      }
     }
@@ -773,7 +796,7 @@ export class DepthGame {
  private encounterEvents(events:readonly EncounterEvent[]){for(const e of events){if(e.type==='reserve-cut'){
  const breach=this.geometry.breaches.find(point=>point.id===e.breachId);
  const closed=this.geometry.breaches.find(point=>point.id===e.closedEntry);
- if(closed&&this.lastPriorityPoint)this.reserveBearing={from:this.lastPriorityPoint,to:closed,until:this.elapsed+1.7,room:this.roomRevision};
+ if(closed&&this.lastPriorityPoint)this.reserveBearing={from:this.lastPriorityPoint,to:closed,until:this.elapsed+2,room:this.roomRevision};
  if(breach)this.presentation.push({type:'reserve-cut',x:breach.x,y:breach.y,durationMs:3000,reserveCut:e});
  }else if(e.type==='spawn-request'){const chosen=this.geometry.breaches.find(b=>b.id===e.breachId)??this.geometry.breaches[0];
  let x=chosen.x+(chosen.facing==='east'?56:-56),y=chosen.y;
@@ -853,7 +876,10 @@ export class DepthGame {
   if(pair?.some(augment=>this.expedition.build.mutations.includes(augment))){
    const cover=stageCoverLesson(this.geometry,ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],this.player);
    if(cover){
-    const point=e.augmentPosition==='shooter'?cover.shooter:cover.pickup;
+    const second=this.geometry.blockers.filter(rect=>!cover.solids.includes(rect)&&
+     !this.geometry.boundaryWalls.includes(rect)&&Math.hypot(rect.x+rect.width/2-cover.shooter.x,rect.y+rect.height/2-cover.shooter.y)<230);
+    const corner=stageCoverLesson(this.geometry,second,cover.pickup);
+    const point=e.augmentPosition==='shooter'?(corner?.shooter??cover.shooter):cover.pickup;
     if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite)))({x,y}=point);
    }
   }
@@ -862,15 +888,26 @@ export class DepthGame {
   this.consoleRelease=this.elapsed+4.8;
   const console=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles?.[0];
   if(console){
-   const end=this.player.x<console.x+console.width/2?console.x:console.x+console.width;
-   const side=end===console.x?-1:1;
-   const target={x:end+side*48,y:console.y+console.height/2};
-   const bait={x:target.x+side*76,y:target.y};
-   const landing={x:bait.x,y:bait.y+(this.player.y<bait.y?-72:72)};
    const radius=enemyBodyRadius(e.enemyId,e.elite);
-   if(canOccupyExpedition(this.geometry,target,radius)&&canTraverseExpedition(this.geometry,bait,landing,this.player.radius)&&hasClearExpeditionShot(this.geometry,landing,target)){
+   const nearSide=this.player.y<console.y+console.height/2?-1:1;
+   const nearY=nearSide<0?console.y:console.y+console.height;
+   const farY=nearSide<0?console.y+console.height:console.y;
+   const midX=console.x+console.width/2;
+   const ends=this.player.x<midX?[console.x,console.x+console.width]:[console.x+console.width,console.x];
+   for(const end of ends){
+    const side=end<midX?-1:1;
+    const target={x:end-side*24,y:farY-nearSide*(radius+8)};
+    const bait={x:end+side*54,y:farY-nearSide*10};
+    const landing={x:end+side*62,y:farY-nearSide*78};
+    const retreat={x:midX,y:nearY+nearSide*95};
+    if(!canOccupyExpedition(this.geometry,target,radius)||
+     !canTraverseExpedition(this.geometry,bait,landing,this.player.radius)||
+     !hasClearExpeditionShot(this.geometry,bait,target)||
+     !hasClearExpeditionShot(this.geometry,landing,target)||
+     hasClearExpeditionShot(this.geometry,retreat,target))continue;
     this.consoleExchange={bait,landing,target};
     ({x,y}=target);
+    break;
    }
   }
   if(!this.consoleExchange){
@@ -905,14 +942,14 @@ export class DepthGame {
   if(this.residentialLane)({x,y}=this.residentialLane.plate);
  }
  if(e.lesson){
-  const distance=e.lesson==='brute'&&this.node.templateId==='passenger-vault'?84:e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
+  const distance=e.lesson==='brute'&&this.node.templateId==='passenger-vault'?70:e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
   const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:e.lesson==='stalker'?[1,-1,1.5,-1.5,.5,-.5,0]:[0,.5,-.5,1,-1];
   const legal=offsets.map(offset=>{
    const angle=this.player.angle+offset;
    return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};
   }).filter(point=>canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point));
   const cover=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
-  const nearCover=e.lesson==='brute'?legal.find(point=>cover.some(rect=>
+  const nearCover=e.lesson==='brute'&&this.node.templateId!=='passenger-vault'?legal.find(point=>cover.some(rect=>
    Math.hypot(Math.max(rect.x-point.x,0,point.x-rect.x-rect.width),Math.max(rect.y-point.y,0,point.y-rect.y-rect.height))<55)):undefined;
   const sidestep=e.lesson==='stalker'?legal.find(point=>{
    const angle=Math.atan2(point.y-this.player.y,point.x-this.player.x)+Math.PI/2;
@@ -945,7 +982,7 @@ export class DepthGame {
    const stage=wardenOpeningSpawn(this.geometry,this.player,Math.atan2(y-this.player.y,x-this.player.x),this.enemies.snapshot.enemies);
    if(stage){x=stage.x;y=stage.y;}
   }
- this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650+(e.hatchDelayMs??0),consoleHold:e.consoleHold,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{closeIngress:firstHeavy||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.consoleLead?1500:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
+ this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650+(e.hatchDelayMs??0),consoleHold:e.consoleHold,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{closeIngress:firstHeavy||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:e.lesson==='brute'&&this.node.templateId==='passenger-vault'?.3:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.consoleLead?1500:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
  skipAwakeningDrill(){if(this.status!=='playing')return;if(this.rigDrill&&!this.rigDrill.won)this.finishRigDrill();else if(this.dodgeDrill&&!this.dodgeDrill.confirmation)this.clearRoom();}
@@ -1085,7 +1122,11 @@ export class DepthGame {
    }
    if(r.died&&condition?.eggs.delete(id)&&!condition.eggs.size&&!condition.broodLost)this.director.cancelNextReinforcements();
    if(before?.champion==='matron'&&!r.died&&before.broodRemainingMs&& !this.enemies.getSnapshot(id)?.broodRemainingMs)this.interruptBrood(id,before.beat);
-   if(before?.broodDestination&&r.died)this.repelSavedBroodLane(before);
+   if(before?.broodDestination&&r.died){
+    this.repelSavedBroodLane(before);
+    if(before.broodDestination==='supply'&&this.broodSupply?.pod===id)
+     this.savedArmour={id:this.broodSupply.pickup,at:this.elapsed,room:this.roomRevision};
+   }
    if(before?.pod&&r.died&&++this.broodPodsDestroyed===2){
     const matron=this.enemies.snapshot.enemies.find(enemy=>enemy.champion==='matron');
     if(matron)this.interruptBrood(matron.id,matron.beat);
@@ -1175,6 +1216,8 @@ export class DepthGame {
   const start={x:0,y:0},end={x:0,y:0},origin={x:0,y:0},impact={x:0,y:0};
   for(const b of [...this.bullets]){if(this.status!=='playing')break;if((b.previewAt??0)>this.elapsed)continue;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
    const from={x:b.x,y:b.y},next={x:b.x+dx/steps,y:b.y+dy/steps};const barrierBlocked=b.kind==='hazard'&&!b.preview&&this.abilities.interceptProjectile(from,next,b.request.radius,b.request.damage);if(barrierBlocked){done=true;break;}const shutter=b.kind==='player'&&this.relayShutter;
+   const opened=b.kind==='player'&&this.rackShutter?.broken&&this.relayShutterFrame;
+   if(opened&&this.rackShutter&&segmentIntersectsRect(from,next,opened))this.rackShutter.shotThrough=true;
    if(shutter&&segmentIntersectsRect(from,next,shutter)){
     this.presentation.push({type:'hit',x:from.x,y:from.y,angle:b.request.angle,weapon:b.request.weaponId});
     done=true;break;

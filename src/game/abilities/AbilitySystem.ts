@@ -380,7 +380,7 @@ export class AbilitySystem {
       }
       case 'napalm-charge': {
         for (const p of cast.placements ?? this.planPlacements(cast)) {
-          this.addZone(cast.id, p, p.radius ?? 120, 6000, 6.5);
+          this.addZone(cast.id, p, p.radius ?? 120, d.durationMs, 6.5);
           this.event(cast.id, 'impact', cast, { targetX: p.x, targetY: p.y, radius: p.radius ?? 120, durationMs: d.durationMs });
         }
         return;
