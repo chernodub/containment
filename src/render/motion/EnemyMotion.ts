@@ -69,6 +69,22 @@ export class EnemyMotion {
   private recoveryAge = 0;
   private biteContact?:{point:(out:T.Vector3)=>T.Vector3;anchor:T.Vector3;tip:T.Vector3;target:T.Vector3;loaded:boolean};
 
+  private shellAxis?:{prow:(out:T.Vector3)=>T.Vector3;tail:(out:T.Vector3)=>T.Vector3;front:T.Vector3;rear:T.Vector3};
+
+  bindShellAxis(prow:(out:T.Vector3)=>T.Vector3,tail:(out:T.Vector3)=>T.Vector3) {
+    this.shellAxis={prow,tail,front:new T.Vector3(),rear:new T.Vector3()};
+  }
+
+  private levelShell(load:number) {
+    const axis=this.shellAxis;
+    if(!axis)return;
+    const direction=axis.prow(axis.front).sub(axis.tail(axis.rear));
+    const pitch=Math.atan2(direction.y,Math.hypot(direction.x,direction.z));
+    // The running clip can tip the raised scutes toward the deck by 58°.
+    // Keep the prow slightly down, then give the bite clip back its pitch.
+    this.body.rotateX(T.MathUtils.clamp(pitch+.06,-1.10,0)*(1-load));
+  }
+
   bindBiteContact(point:(out:T.Vector3)=>T.Vector3) {
     this.biteContact={point,anchor:new T.Vector3(),tip:new T.Vector3(),target:new T.Vector3(),loaded:false};
   }
@@ -307,6 +323,8 @@ export class EnemyMotion {
         1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;
+      if(this.shellAxis && (this.nativePhase==='approach' || this.nativePhase==='windup'))
+        this.levelShell(this.nativePhase==='windup'?T.MathUtils.smoothstep(this.nativeProgress,0,.25):0);
       if(this.biteContact && (strike || recovery))this.followBiteContact(strike>0);
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
     }

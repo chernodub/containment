@@ -252,7 +252,13 @@ export function alien(kind:string,elite=false):ActorModel{
    return out.copy(point).applyMatrix4(bone.matrixWorld);
   });
  };
- if(kind==='crawler')attach('attack','antenna_right0',new T.Vector3(1.08,-.51,.42));
+ if(kind==='crawler'){
+  attach('attack','antenna_right0',new T.Vector3(1.08,-.51,.42));
+  attach('prow','chest',new T.Vector3(.30,0,.55));
+  attach('tail','tail',new T.Vector3(-.80,0,.60));
+  const prow=sockets.get('prow'),tail=sockets.get('tail');
+  if(prow && tail)motion.bindShellAxis(prow,tail);
+ }
  const bite=kind==='crawler'?sockets.get('attack'):undefined;
  if(bite)motion.bindBiteContact(bite);
  if(kind==='stalker')attach('attack','claw.R',new T.Vector3(-1.30,-1.58,1.04));
