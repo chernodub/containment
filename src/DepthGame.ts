@@ -98,7 +98,7 @@ export class DepthGame {
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private shaftApproach?:{id:number;readyAt:number};
- private residentialLane?:{plate:{x:number;y:number}};
+ private residentialLane?:{plate:{x:number;y:number};side:{x:number;y:number}};
  private shaftIngress?:{beat:number;deckY:number;x:number};
  private platedLessonTarget:number|undefined;
  private promptedWeapons=0;
@@ -587,7 +587,10 @@ export class DepthGame {
  }
  get weaponLessonPrompt(){
   const lesson=this.weaponLesson;
-  if(!lesson||this.elapsed>=lesson.until)return undefined;
+  if(!lesson||this.elapsed>=lesson.until){
+   const plate=this.node.templateId==='residential-gallery'&&this.platedLessonTarget!==undefined?this.enemies.getSnapshot(this.platedLessonTarget):undefined;
+   return plate?.armor?{target:plate,text:'4 · Plasma breaks armour'}:undefined;
+  }
   const target=this.enemies.getSnapshot(lesson.target);
   if(!target||lesson.weapon==='plasma'&&!target.armor)return undefined;
   return {target,text:lesson.weapon==='plasma'?'4 · Plasma breaks armour':'5 · Rocket the incoming pair from range'};
@@ -849,7 +852,7 @@ export class DepthGame {
      if(!canOccupyExpedition(this.geometry,plate,enemyBodyRadius('brute',true))||
       !canTraverseExpedition(this.geometry,this.player,reward,this.player.radius)||
       !hasClearExpeditionShot(this.geometry,this.player,plate))continue;
-     this.residentialLane={plate};
+     this.residentialLane={plate,side:{x:-Math.sin(angle)*side,y:Math.cos(angle)*side}};
      this.pickups.spawn('armor',20,reward.x,reward.y);
      break;
     }
@@ -1104,6 +1107,10 @@ export class DepthGame {
     if(this.node.templateId==='residential-gallery'||firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
      this.combat.setCredits(this.combat.snapshot.credits+15);
      this.runStats.recordCredits(15);
+     if(!r.died&&t.id===this.platedLessonTarget&&this.residentialLane){
+      const side=this.residentialLane.side;
+      this.shoveEnemy(t.id,side.x*72,side.y*72);
+     }
      if(!r.died)this.enemies.stagger(t.id,this.difficulty==='story'||this.node.templateId==='residential-gallery'?1600:1100);
      this.presentation.push({type:'boon',boon:'shield',x:t.x,y:t.y,targetId:t.id});
     }
