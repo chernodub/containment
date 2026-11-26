@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -341,10 +341,12 @@ export class EncounterDirector {
   private coolantEntry?:string;private interruptedBrood=false;private beatIndex=0;private beatElapsedMs=0;private lullRemainingMs=0;private clearingBeat=false;private defusedBeats=new Set<number>();private usedFlankerBreaches=new Set<string>();private canceledReinforcements=0;private broken=false;
 
   private readonly coolantPlant:boolean;
+  private readonly workshop:boolean;
   private readonly withdrawLateScreen: boolean;
   private readonly tokens: {meleeTokens:number;rangedTokens:number};
   constructor(options: EncounterOptions) {
     this.plan = createEncounterPlan(options);
+    this.workshop=options.node.templateId==='infested-workshop';
     this.coolantPlant=options.node.templateId==='coolant-plant';
     this.returnShotBeat=(options.node.templateId==='communal-atrium'||options.node.templateId==='diagnostic-gallery')&&options.difficulty!=='veteran'
       ? this.plan.beats?.findIndex(beat=>{
@@ -518,6 +520,15 @@ export class EncounterDirector {
     return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
   }
   cancelNextReinforcements():void { this.skipReinforcements=true; }
+  private workshopRelief?:{beat:number;breachId:string};
+  reportWorkshopBroodLeaderDefeated(beat:number|undefined,origin:{x:number;y:number}){
+    if(!this.workshop||beat===undefined||this.workshopRelief)return;
+    const next=this.plan.beats?.findIndex((entry,index)=>index>beat&&entry.grammar==='interception');
+    if(next===undefined||next<0)return;
+    const far=this.breachPositions.reduce<(typeof this.breachPositions)[number]|undefined>((best,p)=>
+      !best||Math.hypot(p.x-origin.x,p.y-origin.y)>Math.hypot(best.x-origin.x,best.y-origin.y)?p:best,undefined);
+    if(far)this.workshopRelief={beat:next,breachId:far.id};
+  }
   private rehearsalReleaseMs?:number;
   private updateAuthored(deltaMs:number,occupiedCount:number,siegeReady:boolean,player:EncounterPlayerPose|undefined,heavyRecovered:boolean,crawlerSlots:number):readonly EncounterEvent[]{
     const beat=this.plan.beats![this.beatIndex];if(!beat)return EMPTY;
@@ -549,7 +560,10 @@ export class EncounterDirector {
         if(!heavyRecovered&&occupiedCount>0&&this.beatElapsedMs<request.atMs+3000)break;
         this.rehearsalReleaseMs=this.beatElapsedMs;
       }else if(request.afterHeavyRecovery&&this.beatElapsedMs<(this.rehearsalReleaseMs??request.atMs+3000)+900)break;
-      const arrival=request.reserve?request:this.placeInterception(request,player);
+      const relief=this.workshopRelief?.beat===this.beatIndex?this.workshopRelief:undefined;
+      if(relief&&this.dispatched===beat.end-1){this.dispatched++;this.canceledReinforcements++;continue;}
+      const arrival=relief?{...request,breachId:relief.breachId,relievedFlank:true as const}:
+        request.reserve?request:this.placeInterception(request,player);
       if(request.reinforcement&&request.role==='flanker'&&arrival.breachId===this.closedFlankId){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
@@ -588,6 +602,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.workshopRelief=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }
