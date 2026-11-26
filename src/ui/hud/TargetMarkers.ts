@@ -117,7 +117,8 @@ export class TargetMarkers {
                     ctx.strokeStyle='#fff0ce';
                     ctx.lineWidth=3;
                     ctx.beginPath();
-                    ctx.arc(stop.x,stop.y,11,0,Math.PI*2);
+                    ctx.moveTo(stop.x-dx*1.4,stop.y+dy*1.4);
+                    ctx.lineTo(stop.x+dx*1.4,stop.y-dy*1.4);
                     ctx.stroke();
                 }
             }

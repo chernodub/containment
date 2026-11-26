@@ -135,6 +135,11 @@ export class DepthGame {
   return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,runStructure:this.expedition.run.runStructure,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
  }
  private broodSupply?:{pod:number;pickup:number};
+ private savedArmour?:{id:number;at:number;room:number};
+ get savedArmourReveal(){
+  const saved=this.savedArmour;
+  return saved&&saved.room===this.roomRevision&&this.elapsed-saved.at<1.15?saved:undefined;
+ }
  private broodChoiceUsed=false;
  private broodMarksShownAt:number|undefined;
  private repelSavedBroodLane(pod:{x:number;y:number}){
@@ -492,7 +497,9 @@ export class DepthGame {
    const from=covered[i-1],to=covered[i],steps=Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/12);
    for(let step=1;step<=steps;step++){
     const point={x:from.x+(to.x-from.x)*step/steps,y:from.y+(to.y-from.y)*step/steps};
-    if(clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS).blocked){
+    if(canOccupyExpedition(this.geometry,point,this.player.radius)&&
+     clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS+this.player.radius).blocked&&
+     clipExpeditionLane(this.geometry,this.siegePoint,point,SPITTER_PROJECTILE_RADIUS).blocked){
      this.relayShelterStep=point;
      break;
     }
@@ -866,7 +873,10 @@ export class DepthGame {
   if(pair?.some(augment=>this.expedition.build.mutations.includes(augment))){
    const cover=stageCoverLesson(this.geometry,ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],this.player);
    if(cover){
-    const point=e.augmentPosition==='shooter'?cover.shooter:cover.pickup;
+    const second=this.geometry.blockers.filter(rect=>!cover.solids.includes(rect)&&
+     !this.geometry.boundaryWalls.includes(rect)&&Math.hypot(rect.x+rect.width/2-cover.shooter.x,rect.y+rect.height/2-cover.shooter.y)<230);
+    const corner=stageCoverLesson(this.geometry,second,cover.pickup);
+    const point=e.augmentPosition==='shooter'?(corner?.shooter??cover.shooter):cover.pickup;
     if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite)))({x,y}=point);
    }
   }
@@ -1109,7 +1119,11 @@ export class DepthGame {
    }
    if(r.died&&condition?.eggs.delete(id)&&!condition.eggs.size&&!condition.broodLost)this.director.cancelNextReinforcements();
    if(before?.champion==='matron'&&!r.died&&before.broodRemainingMs&& !this.enemies.getSnapshot(id)?.broodRemainingMs)this.interruptBrood(id,before.beat);
-   if(before?.broodDestination&&r.died)this.repelSavedBroodLane(before);
+   if(before?.broodDestination&&r.died){
+    this.repelSavedBroodLane(before);
+    if(before.broodDestination==='supply'&&this.broodSupply?.pod===id)
+     this.savedArmour={id:this.broodSupply.pickup,at:this.elapsed,room:this.roomRevision};
+   }
    if(before?.pod&&r.died&&++this.broodPodsDestroyed===2){
     const matron=this.enemies.snapshot.enemies.find(enemy=>enemy.champion==='matron');
     if(matron)this.interruptBrood(matron.id,matron.beat);
