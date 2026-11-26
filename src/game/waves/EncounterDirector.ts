@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -194,17 +194,22 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    if(shooter>=0)arrivals[shooter]=Object.freeze({...arrivals[shooter],augmentPosition:'shooter'});
    if(approach>=0)arrivals[approach]=Object.freeze({...arrivals[approach],augmentPosition:'approach'});
   }
-  if(node.templateId==='manual-control-chamber'&&beatIndex===1){
+  const consoleExchange=node.templateId==='manual-control-chamber'&&beatIndex===1;
+  const earlyExchange=node.templateId==='communal-atrium'&&beatIndex===0;
+  if(consoleExchange||earlyExchange){
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
-    const waiting=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    const escorts=others.filter(request=>!request.guardian&&!request.priority&&!request.reinforcement).slice(0,consoleExchange?3:2);
     let previous=4900;
-    for(const request of waiting){
-     const atMs=Math.max(previous+380,request.atMs+4500);
-     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:true});
-     previous=atMs;
+    for(const request of others){
+     if(!consoleExchange&&!escorts.includes(request))continue;
+     const atMs=escorts.includes(request)?750:Math.max(previous+380,request.atMs+4500);
+     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
+      grilleEscort:escorts.includes(request)?true:undefined});
+     if(!escorts.includes(request))previous=atMs;
     }
-    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:true});
+    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length});
    }
   }
   const relief=(node.depth===4&&beat.grammar==='crossfire')||
@@ -535,9 +540,9 @@ export class EncounterDirector {
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
-  private consolePunishedBeat = -1;
-  reportConsolePunished() {
-    this.consolePunishedBeat = this.beatIndex;
+  private closedRecoveryGrilleBeat = -1;
+  reportRecoveryGrilleClosed() {
+    this.closedRecoveryGrilleBeat = this.beatIndex;
   }
   private breakBeat(end:number){
     this.broken=true;
@@ -599,7 +604,7 @@ export class EncounterDirector {
         if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
-      if(request.consoleHold&&this.consolePunishedBeat===this.beatIndex&&this.dispatched>=beat.end-3){
+      if(request.grilleEscort&&this.closedRecoveryGrilleBeat===this.beatIndex){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){

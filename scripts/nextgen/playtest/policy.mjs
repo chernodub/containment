@@ -356,7 +356,6 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
   let lastMove = -Infinity;
-  let exchangeCommitted = false, exchangeSeen = false, exchangeFired = false;
   let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
@@ -366,7 +365,6 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       if (key !== roomKey) {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
         plasmaAttempts.clear(); plasmaOpeningUntil = 0;
-        exchangeCommitted = exchangeSeen = exchangeFired = false;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -413,36 +411,15 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       const escape = meleeEscapePlan(perceived);
       // PLAY38 measured the marked exchange as an inconsistent payoff and the HUD no longer draws it;
       // --exchange-marks=on remains only as a research arm for re-measuring the encounter.
-      const marks = readExchange && profile === 'competent' ? s.drawnExchange : undefined;
-      if (!marks?.bait && !marks?.landing && !marks?.lane) exchangeCommitted = exchangeSeen = false;
-      else if (marks && !exchangeFired) {
-        const heavy = marks.lane && visible.find(enemy => enemy.meleePhase && distance(enemy, marks.lane.to) < 55);
-        if (heavy?.meleePhase === 'windup' && marks.bait && distance(s.player, marks.bait) <= 22) exchangeSeen = true;
-        if (heavy?.meleePhase === 'strike' || heavy?.meleePhase === 'recovery' ||
-            exchangeSeen && heavy?.meleePhase === 'windup') exchangeCommitted = true;
-        const mark = exchangeCommitted ? marks.landing : marks.bait;
-        if (mark && mark.waypoint) {
-          const atMark = distance(s.player, mark) <= 22;
-          const safe = point => !active.some(enemy => insideMeleeWarning(enemy, point)) &&
-            !visibleHazards.some(hazard => hazard.kind !== 'projectile' && distance(hazard, point) <= hazard.radius + (s.player.radius ?? 16));
-          const choices = s.candidates.filter(candidate => {
-            if (!candidate.legal || !Math.hypot(candidate.dx,candidate.dy)) return false;
-            const velocity = candidateVelocity(s,candidate);
-            return [0.04,0.08,0.12].every(t => safe({...s.player,x:s.player.x+velocity.x*t,y:s.player.y+velocity.y*t}));
-          }).sort((a,b)=>distance(a,mark.waypoint)-distance(b,mark.waypoint));
-          if ((!atMark && choices.length) || atMark && safe(s.player)) {
-            const target = exchangeCommitted && atMark && heavy?.meleePhase === 'recovery' && heavy.clear ? heavy : null;
-            const preferred = s.resources?.ammo.plasma;
-            const weapon = preferred && preferred.magazine + preferred.reserve > 0 && (!target || target.armor > 0) &&
-              (!target || target.plasmaClear) ? 'plasma' : s.combat.weapon;
-            if (target && weapon === s.combat.weapon && s.combat.magazine > 0 &&
-                !s.reloadingWeapons?.includes(weapon)) exchangeFired = true;
-            return {target, movement:atMark ? {dx:0,dy:0} : choices[0], actions:[],weapon,
-              exchangeStep:atMark ? (exchangeCommitted ? 'landing' : 'bait') : undefined,stepMs:HUMAN_OBSERVATION_MS};
-          }
-        }
+      const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
+      const returnTarget = grille?.state === 'waiting' && visible.find(enemy =>
+        enemy.id === grille.attackerId && enemy.clear && enemy.meleePhase === 'recovery');
+      if (returnTarget && !escape) {
+        const plasma = s.resources?.ammo.plasma;
+        const weapon = returnTarget.armor > 0 && returnTarget.plasmaClear &&
+          plasma && plasma.magazine + plasma.reserve > 0 ? 'plasma' : s.combat.weapon;
+        return {target:returnTarget,movement:{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS};
       }
-
       if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
         const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});
         movement = fixation && visible.length && !escape ? {dx:0,dy:0} : next;
