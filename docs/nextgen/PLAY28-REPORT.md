@@ -526,7 +526,7 @@ The usual Standard cohort finished two clears above the band. Pyro led both samp
 ### Encounter changes
 
 - Manual Control searches both ends of the existing console for a legal Brute position. The bait and landing have clear sightlines. The center retreat line must intersect cover. The 1.5-second recovery floor and the ordinary bot policy are retained.
-- Passenger Vault stages its opening Brute within the sweep's range on a clear lane and puts 12 armour at the first traversable lateral step. A melee-strike receipt records phase entry before the arc and line-of-sight tests. Suit damage additionally requires a vulnerable marine. The lesson keeps normal dodge invulnerability and its forgiving damage multiplier.
+- Passenger Vault stages its opening Brute within the sweep's range on a clear lane and puts 12 armour at the furthest traversable trial step on the lateral dodge route. A melee-strike receipt records phase entry before the arc and line-of-sight tests. Suit damage additionally requires a vulnerable marine. The lesson keeps normal dodge invulnerability and its forgiving damage multiplier.
 - Coolant releases the crossfire screen into withdrawal once the featured threats are gone and the beat has dispatched. Shaft adds 220 ms of spacing per following pincer arrival. The PLAY35 encounter diff does not contain a direct Shaft staging edit, so the earlier suit increase cannot be attributed to a specific PLAY35 Shaft change.
 - Protected wounds retain their presentation glow until at least 160 ms of presentation time after the last bank effect. The release flinch uses the recovery receipt, including when the actor already entered corpse presentation. Simulation damage timing is unchanged.
 - Coolant and the Relay Racks shutter request up to four world units of focus shift before the existing HUD and room constraints. The seal request lasts two seconds and shows one silhouette approach and recoil. The shutter request begins during charge commitment and clears on a shot crossing the opened frame or after two seconds.
@@ -536,16 +536,46 @@ The usual Standard cohort finished two clears above the band. Pyro led both samp
 
 The production build passed, including a rebuild of the final Passenger adjustment. In a stationary deterministic replay from the earned Arc 1729 Awakening checkpoint, the opening Passenger Brute took 13.23 armour (46.00 to 32.77), left health at 100, and left the 12-armour pickup 148 units along the lateral step. The native Arc and Breacher runs from the preceding build both took zero suit in Passenger. The Arc banked-wound frame is at 14.883 seconds. The Breacher trace has bank and recovery events in the same input sample at 17.633 seconds. Those receipts show the triggering case. They do not time the rendered release. [Stationary simulation](../../artifacts/nextgen/play37-probe/passenger.json) · [Native Arc wound frame](../../artifacts/nextgen/playtest/play37-native-arc/r2-passenger-vault-banked-wound.png)
 
-The Arc 1729 Manual Control checkpoint replay showed the Brute recovering at (390, 649.9) at 806.617 seconds. The marine was at (594.9, 293.8), outside the marked landing at (304, 677), with no clear shot. The window therefore shows the blocked retreat side but does not demonstrate a landing and return shot. The replay logged an original ship kit preparation timeout. [Recovery frame](../../artifacts/nextgen/playtest/play37-console-arc/r19-manual-control-chamber-console-window.png) · [Replay report](../../artifacts/nextgen/playtest/play37-console-arc/report.json)
+The Arc 1729 Manual Control checkpoint replay showed the Brute recovering at (390, 649.9) at 806.617 seconds. The marine was at (594.9, 293.8), outside the marked landing at (304, 677), with no clear shot. The window therefore shows the blocked retreat side but does not demonstrate a landing and return shot. The replay cleared Manual Control at 833.200 seconds with 82.0 suit lost versus 27.7 in Final23. It recorded zero exposed contacts and an original ship kit preparation timeout. The native landing and suit-loss targets remain unmet in this replay. [Recovery frame](../../artifacts/nextgen/playtest/play37-console-arc/r19-manual-control-chamber-console-window.png) · [Replay report](../../artifacts/nextgen/playtest/play37-console-arc/report.json)
 
-Final23 Standard suit totals were 40.1 in sectors 1–4, 453.0 in sectors 5–8 and 1,035.7 in sectors 13–16. The full native campaigns and final-head simulator series were launched under concurrent gallery load.
+Final23 Standard suit totals were 40.1 in sectors 1–4, 453.0 in sectors 5–8 and 1,035.7 in sectors 13–16. The full native campaigns and final-head simulator series were launched under concurrent gallery load. A separate native Arc checkpoint replay on the tip cleared Passenger at 26.950 seconds with zero suit loss and zero runtime errors. [Tip Passenger replay](../../artifacts/nextgen/playtest/play37-tip-passenger/report.json)
 
 | Verification metric | Previous | PLAY37 status |
 |---|---:|---|
-| Standard usual clears | 42/48 with PLAY36 policy | Final-head cohort launched |
-| Story novice usual clears | 23/24 | Final-head cohort launched |
-| Standard fresh Breacher / Pyro clears | 19/24 / 24/24 | Final-head cohort launched |
+| Standard usual clears | 42/48 with PLAY36 policy | 42/48 after Napalm (11 / 11 / 9 / 11) |
+| Story novice usual clears | 23/24 | 24/24 |
+| Standard fresh Breacher / Pyro clears | 19/24 / 24/24 | 24/24 / 23/24 |
 | Standard native suit, sectors 1–4 / 5–8 / 13–16 | 40.1 / 453.0 / 1,035.7 | Matched aggregate pending |
 | Manual Control landing then return hits | 0 across five Final23 Standard runs | No hit in the sampled Arc replay window |
 
-Prior fresh Pyro is the PLAY36 baseline, and prior fresh Breacher is after the Bulwark policy correction. The current rig balance and stall counts require completed cohorts. No Pyro tuning has been applied.
+Prior fresh Pyro is the PLAY36 baseline, and prior fresh Breacher is after the Bulwark policy correction. Standard reached 43/48 before the Pyro adjustment. The measured Pyro step brought it to 42/48, two above the requested band.
+
+The Breacher, Cryo and Arc full-campaign attempts each cleared the first four sectors with zero runtime errors before I stopped them to prioritize the final cohorts and the focused late replay. Their matched sectors 1–4 spent 30.1 suit in Final23 and 20.0 in those PLAY37 attempts. Those attempts used the build before the final Passenger chip adjustment.
+
+The tip's Breacher 1729 Shaft checkpoint replay cleared at 523.800 seconds with zero suit loss and zero runtime errors. Final23's full Breacher campaign spent 86.4 suit there. The pincer announcement frame is at 489.767 seconds. A separate Coolant-to-Shaft attempt hit its 750-second wall budget in Coolant at 466.800 simulation seconds with zero runtime errors. Its delayed hatch frame at 453.517 seconds had the hatch outside the viewport. That was a brood-delay frame and does not measure the reserve-cut camera adjustment. [Shaft pincer frame](../../artifacts/nextgen/playtest/play37-tip-shaft/r14-service-shaft-landing-shaft-pincer.png) · [Shaft report](../../artifacts/nextgen/playtest/play37-tip-shaft/report.json) · [Coolant hatch frame](../../artifacts/nextgen/playtest/play37-tip-coolant-shaft/r13-coolant-plant-delayed-hatch.png)
+
+| Manual Control case | Final23 suit | PLAY37 suit | Landing followed by return hit |
+|---|---:|---:|---|
+| Breacher 1729 | 22.8 | — | No completed native room |
+| Cryo 1729 | 57.5 | — | No completed native room |
+| Pyro 1729 | 0.0 | — | No PLAY37 native run |
+| Arc 1729 | 27.7 | 82.0, checkpoint | No |
+| Arc 2718 | 0.0 | — | No PLAY37 native run |
+
+Native Breacher saved the Swarm stakes at 597.900 seconds and cleared the room with zero runtime errors. Native Arc recorded the short cover-face impact at 856.267 seconds and completed from the finale checkpoint at 883.900 with zero runtime errors. [Saved stake](../../artifacts/nextgen/playtest/play37-tip-swarm/r16-swarm-junction-saved-stake.png) · [Cover impact](../../artifacts/nextgen/playtest/play37-tip-finale/r20-overload-floor-shelter-impact.png)
+
+The pre-tuning Standard cohort cleared 43/48. Pyro was 10/12 on the usual seeds and 22/24 fresh, down from 12/12 and 24/24 in the PLAY36 comparison. The prior native Pyro power sample averaged 30.57 contact receipts per cast, with recurring contacts on overlapping targets in a persistent pool. The single tuning step shortened Napalm Charge pools from six seconds to five, or four fewer quarter-second pulse opportunities per pool. Damage per pulse, radius, charge count, cooldown, enemies, and repairs stayed at their prior values.
+
+The matched Standard simulator suit ledger uses the same seed and rig pairs from PLAY36 and PLAY37, with the tuned Pyro runs substituted. Each block includes only pairs where both builds cleared the entire block. These values are separate from the Final23 native sample.
+
+| Sector block | Matched pairs | PLAY36 suit | PLAY37 suit |
+|---|---:|---:|---:|
+| 1–4 | 48 | 358.7 | 316.6 |
+| 5–8 | 48 | 5,000.1 | 5,185.9 |
+| 13–16 | 43 | 7,170.9 | 8,822.7 |
+
+Arc's Relay Racks replay broke the shutter at 208.583 seconds. The Warden was visible with the marine, the pair fit the HUD framing, and the room constraint reported zero outside area. The retained world-space offset after constraints was not sampled. [Shutter break](../../artifacts/nextgen/playtest/play37-tip-relay-transmission/r9-relay-racks-shutter-break.png)
+
+The same Arc replay reached Transmission with Pilgrim Pylon. The mid-room frame at 249.383 seconds shows the Spitter behind cover at (990.4, 402.5). The room cleared at 321.983 with zero runtime errors. That sample does not verify both exclusive solutions. [Transmission frame](../../artifacts/nextgen/playtest/play37-tip-relay-transmission/r10-transmission-chamber-mid.png)
+
+There were zero stalls in the 120 final cohort cases. The final ledger retains the 84 non-Pyro cases from the encounter revision and substitutes the 36 rerun Pyro cases from the Napalm revision. [Untuned Standard](../../artifacts/nextgen/playtest/play37-tip-standard/summary.json) · [Story](../../artifacts/nextgen/playtest/play37-tip-story/summary.json) · [Untuned fresh](../../artifacts/nextgen/playtest/play37-tip-fresh/summary.json) · [Tuned Pyro usual](../../artifacts/nextgen/playtest/play37-napalm-usual/summary.json) · [Tuned Pyro fresh](../../artifacts/nextgen/playtest/play37-napalm-fresh/summary.json)
