@@ -846,7 +846,7 @@ export class DepthGame {
  }
  if(e.augmentPosition){
   const rig=this.abilities.snapshot.rig;
-  const pair=TRANSFORMATIVE_AUGMENT_PAIRS[rig];
+  const pair=rig?TRANSFORMATIVE_AUGMENT_PAIRS[rig]:undefined;
   if(pair?.some(augment=>this.expedition.build.mutations.includes(augment))){
    const cover=stageCoverLesson(this.geometry,ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],this.player);
    if(cover){
