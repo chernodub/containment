@@ -535,6 +535,10 @@ export class EncounterDirector {
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
+  private consolePunishedBeat = -1;
+  reportConsolePunished() {
+    this.consolePunishedBeat = this.beatIndex;
+  }
   private breakBeat(end:number){
     this.broken=true;
     this.canceledReinforcements+=end-this.dispatched;
@@ -595,6 +599,9 @@ export class EncounterDirector {
         if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
+      if(request.consoleHold&&this.consolePunishedBeat===this.beatIndex&&this.dispatched>=beat.end-3){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
         this.dispatched++;this.canceledReinforcements++;continue;
       }

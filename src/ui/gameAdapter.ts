@@ -1,3 +1,4 @@
+import {hudObstructs} from './hud/layout';
 import {createEncounterPlan} from '../game/waves/EncounterDirector';
 import type {RunNode} from '../game/roguelike/types';
 import type {AlertCue} from '../game/audio/alertCues';
@@ -617,4 +618,21 @@ export function getWeaponSituation(game: DepthGame, platedId?: number) {
 
 export function getWeaponInventory(game: DepthGame) {
   return game.combat.getRunResources();
+}
+
+/** The floor overlay and the native observer share the exact visibility rules. */
+export function drawnExchange(game: DepthGame, renderer: DepthRenderer) {
+  const exchange = game.manualExchange;
+  if (!exchange) return;
+  const project = (point: {x:number;y:number}) =>
+    projectWorld(renderer, point.x, point.y, {x:0,y:0,visible:false}, .08);
+  const bait = project(exchange.bait), landing = project(exchange.landing), target = project(exchange.target);
+  const marked = (point: ScreenPoint) => point.visible &&
+    !hudObstructs(point.x-24, point.y-25, point.x+24, point.y+12);
+  const lane = landing.visible && target.visible;
+  return {
+    bait: marked(bait) ? {...exchange.bait, screen:bait} : undefined,
+    landing: marked(landing) ? {...exchange.landing, screen:landing} : undefined,
+    lane: lane ? {from:{...exchange.landing, screen:landing}, to:{...exchange.target, screen:target}} : undefined,
+  };
 }

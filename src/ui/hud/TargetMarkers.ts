@@ -1,7 +1,7 @@
 import {icon} from '../icons';
 import type {DepthGame} from '../../DepthGame';
 import type {DepthRenderer} from '../../render/DepthRenderer';
-import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds} from '../gameAdapter';
+import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds, drawnExchange} from '../gameAdapter';
 import {hudObstructs, presentationObstructs} from './layout';
 import {threatEdgePoint} from './ThreatIndicators';
 
@@ -53,23 +53,21 @@ export class TargetMarkers {
         if (this.canvas.height !== height) this.canvas.height = height;
         if (this.painted) ctx.clearRect(0, 0, width, height);
         this.painted = false;
-        const exchange=game.manualExchange;
+        const exchange=drawnExchange(game,renderer);
         if(exchange){
-            const bait=projectWorld(renderer,exchange.bait.x,exchange.bait.y,{x:0,y:0,visible:false},.08);
-            const landing=projectWorld(renderer,exchange.landing.x,exchange.landing.y,{x:0,y:0,visible:false},.08);
-            const target=projectWorld(renderer,exchange.target.x,exchange.target.y,this.point,.08);
             ctx.save();
             ctx.lineWidth=2;
             ctx.strokeStyle='#9af0e5';
             ctx.font='600 16px Barlow, sans-serif';
             ctx.fillStyle='#c6fff5';
-            for(const [point,label] of [[bait,'Bait'],[landing,'Step']] as const){
-                if(!point.visible||hudObstructs(point.x-24,point.y-25,point.x+24,point.y+12))continue;
+            for(const [point,label] of [[exchange.bait?.screen,'Bait'],[exchange.landing?.screen,'Step']] as const){
+                if(!point)continue;
                 this.painted=true;
                 ctx.beginPath();ctx.ellipse(point.x,point.y,14,7,0,0,2*Math.PI);ctx.stroke();
                 ctx.fillText(label,point.x+18,point.y);
             }
-            if(landing.visible&&target.visible){
+            if(exchange.lane){
+                const {from:{screen:landing},to:{screen:target}}=exchange.lane;
                 this.painted=true;
                 ctx.setLineDash([7,7]);
                 ctx.beginPath();ctx.moveTo(landing.x,landing.y);ctx.lineTo(target.x,target.y);ctx.stroke();

@@ -579,3 +579,86 @@ Arc's Relay Racks replay broke the shutter at 208.583 seconds. The Warden was vi
 The same Arc replay reached Transmission with Pilgrim Pylon. The mid-room frame at 249.383 seconds shows the Spitter behind cover at (990.4, 402.5). The room cleared at 321.983 with zero runtime errors. That sample does not verify both exclusive solutions. [Transmission frame](../../artifacts/nextgen/playtest/play37-tip-relay-transmission/r10-transmission-chamber-mid.png)
 
 There were zero stalls in the 120 final cohort cases. The final ledger retains the 84 non-Pyro cases from the encounter revision and substitutes the 36 rerun Pyro cases from the Napalm revision. [Untuned Standard](../../artifacts/nextgen/playtest/play37-tip-standard/summary.json) · [Story](../../artifacts/nextgen/playtest/play37-tip-story/summary.json) · [Untuned fresh](../../artifacts/nextgen/playtest/play37-tip-fresh/summary.json) · [Tuned Pyro usual](../../artifacts/nextgen/playtest/play37-napalm-usual/summary.json) · [Tuned Pyro fresh](../../artifacts/nextgen/playtest/play37-napalm-fresh/summary.json)
+
+## PLAY38
+
+The native HUD and observer share a projection of the floor marks. The observer receives only drawn points and their current visibility, plus the existing floor path query and visible enemy poses. Both runners accept `--exchange-marks=on|off`. Only the competent policy acts on the marks. A first navigation sample showed that the grid could return no waypoint for a nearby mark, so the observer now recognizes a directly traversable route before consulting the grid.
+
+The initial Breacher replay establishes that using the landing can produce a return hit. It reached the landing and hit the recovering Brute twice, but it skipped the bait and spent 150.5 suit against 30.7 with the policy OFF. It cleared in 64.87 seconds against 66.42. Cryo also spent more suit with the marks enabled (111.3 against 88.5). Pyro saved 6.1 suit without taking the exchange. [Breacher landing](../../artifacts/nextgen/playtest/play38-routed-on-breacher/r19-manual-control-chamber-exchange-landing.png) · [Breacher return](../../artifacts/nextgen/playtest/play38-routed-on-breacher/r19-manual-control-chamber-console-return.png)
+
+### Baseline ON/OFF
+
+The native checkpoint rows below use OFF → ON. A bait stand required a stationary observation within 22 units. A landing required an observation within 22 units. The hit column counts exposed contacts on the Brute by the drawn lane while it was in recovery. An OFF hit can therefore count even without visiting the landing. Suit in the beat comes from the campaign ledger at the first and last sampled states for beat one.
+
+| Native case | Bait stand | Landing | Exposed contacts | Beat suit | Room suit | Room seconds |
+|---|---|---|---:|---:|---:|---:|
+| Breacher 1729 | No → No | No → Yes | 1 → 2 | 0.0 → 44.1 | 30.7 → 150.5 | 66.42 → 64.87 |
+| Cryo 1729 | No → No | No → No | 0 → 0 | 0.0 → 12.6 | 88.5 → 111.3 | 67.08 → 67.38 |
+| Pyro 1729 | No → No | No → No | 0 → 0 | 0.0 → 0.0 | 51.0 → 44.9 | 42.08 → 41.57 |
+| Arc 1729 | No → No | No → Yes | 0 → 0 | 0.0 → 0.0 | 71.8 → 120.6 | 49.43 → 55.87 |
+| Arc 2718 | No → No | No → Yes | 15 → 3 | 0.0 → 45.0 | 24.6 → 116.0 | 50.92 → 56.23, died |
+
+| Usual Standard simulator | Room entries OFF → ON | Manual Control deaths OFF → ON | Median room suit OFF → ON |
+|---|---:|---:|---:|
+| Breacher | 11 → 11 | 0 → 0 | 25.2 → 69.0 |
+| Cryo | 12 → 12 | 0 → 0 | 87.5 → 96.4 |
+| Pyro | 10 → 10 | 1 → 1 | 54.5 → 54.9 |
+| Arc | 11 → 11 | 0 → 0 | 28.6 → 67.0 |
+
+Each arm completed 48 simulations with 42 campaign clears and zero stalls. Native OFF cleared 5/5, native ON 4/5, and all ten logged zero runtime errors. [Simulator OFF](../../artifacts/nextgen/playtest/play38-base-off/summary.json) · [Simulator ON](../../artifacts/nextgen/playtest/play38-routed-base-on/summary.json)
+
+### Encounter revisions
+
+The first option (b) revision held the lead's emergence for up to three seconds of approach time and let a recovery shot from the landing add the surviving plate value to its damage. The first two complete native pairs still favored OFF overall. ON vs OFF was 87.4 vs 45.7 suit and 71.58 vs 69.02 seconds for Breacher, and 134.1 vs 137.3 suit and 78.68 vs 68.93 seconds for Cryo. Neither ON run stood on the bait. The remaining native runs in those two arms were stopped under host contention so the second attempt could run.
+
+The second revision requested constrained camera focus on the bait and canceled the last three held arrivals when an exposed recovery hit landed from the step. The first Breacher replay successfully waited at the bait, reached the landing and fired, but the bot lingered until a subsequent attack. The competent policy now resumes ordinary movement after a firing opportunity with a loaded weapon. This policy fix is part of the second encounter attempt.
+
+### Second revision ON/OFF
+
+| Native case | Bait stand | Landing | Exposed contacts | Beat suit | Room suit | Clear seconds |
+|---|---|---|---:|---:|---:|---:|
+| Breacher 1729 | No → Yes | No → Yes | 4 → 8 | 0.0 → 5.8 | 37.9 → 66.5 | 56.17 → 60.43 |
+| Cryo 1729 | No → No | No → No | 0 → 0 | 0.0 → 0.0 | 86.1 → 111.3 | 73.65 → 74.60 |
+| Pyro 1729 | No → No | No → No | 0 → 0 | 7.6 → 0.0 | 77.6 → 34.7 | 48.58 → 49.60 |
+| Arc 1729 | No → No | No → No | 0 → 0 | 0.0 → 0.0 | 92.3 → 82.0 | 48.30 → 53.18 |
+| Arc 2718 | No → Yes | No → Yes | 15 → 4 | 0.0 → 0.0 | 23.4 → 12.6 | 53.78 → 43.75 |
+
+Both arms cleared all five native cases. The Breacher OFF replay logged one interior kit preparation timeout. All other cases in the table logged zero runtime errors. ON lowered total room suit by 10.3 across five cases and increased total clear time by 1.1 seconds. Only Breacher and Arc 2718 completed the full marked sequence. Their suit and time deltas went in opposite directions. Option (b) stopped after two encounter revisions. Mark reading ships OFF and remains available through the runner flag. The native results support removing the marks. The branch retains the second encounter revision so the compared scene and captures remain available.
+
+Breacher's corrected ON sequence [bait at 744.133](../../artifacts/nextgen/playtest/play38-tail-release-on-breacher/r19-manual-control-chamber-exchange-bait.png) · [landing at 745.833](../../artifacts/nextgen/playtest/play38-tail-release-on-breacher/r19-manual-control-chamber-exchange-landing.png) · [exposed hit at 745.933](../../artifacts/nextgen/playtest/play38-tail-release-on-breacher/r19-manual-control-chamber-console-return.png).
+
+| Second revision simulator | Room entries OFF → ON | Manual Control deaths OFF → ON | Median room suit OFF → ON |
+|---|---:|---:|---:|
+| Breacher | 11 → 11 | 0 → 0 | 55.1 → 36.6 |
+| Cryo | 12 → 12 | 0 → 0 | 76.7 → 78.3 |
+| Pyro | 10 → 10 | 0 → 0 | 32.6 → 28.6 |
+| Arc | 11 → 11 | 0 → 0 | 38.4 → 35.4 |
+
+The second revision's simulator ON cleared 44/48 campaigns and OFF cleared 42/48, with zero stalls in each arm. Breacher's simulation median improved, but the direct native evidence for taking the exchange remained split. The five-case room-time comparison did not show an overall saving. [Second revision OFF](../../artifacts/nextgen/playtest/play38-tail-base-off/summary.json) · [Second revision ON](../../artifacts/nextgen/playtest/play38-tail-release-base-on/summary.json)
+
+### Shipped cohorts and suit loss
+
+Standard's paid repair moved from 22 health and 17 armour to 19 and 14. The 21/16 and 20/15 trials both finished at 42/48. The 19/14 trial was the smallest measured reduction that reached 38–40. A larger exploratory run was stopped once the smaller passing step completed. The production build passed. Both final cohorts had zero stalls. Story uses its own repair amounts, and the measured Story cohort has the same gameplay and policy as the final branch.
+
+| Usual cohort | PLAY37 | PLAY38, marks OFF |
+|---|---:|---:|
+| Standard Breacher | 11/12 | 10/12 |
+| Standard Cryo | 11/12 | 11/12 |
+| Standard Pyro | 9/12 | 9/12 |
+| Standard Arc | 11/12 | 9/12 |
+| Standard total | 42/48 | 39/48 |
+| Story Cryo | 12/12 | 12/12 |
+| Story Breacher | 12/12 | 12/12 |
+| Story total | 24/24 | 24/24 |
+
+The suit ledger matches each rig and seed pair and includes only pairs that cleared the entire sector block in both builds. PLAY37 uses its final tuned Pyro runs.
+
+| Sectors | Matched pairs | PLAY37 suit | PLAY38 suit |
+|---|---:|---:|---:|
+| 1–4 | 48 | 316.6 | 316.6 |
+| 5–8 | 48 | 5,185.9 | 5,185.9 |
+| 9–12 | 48 | 9,270.7 | 9,162.9 |
+| 13–16 | 45 | 9,262.1 | 9,309.4 |
+| 17–20 | 38 | 7,301.3 | 7,908.6 |
+
+[Final Standard](../../artifacts/nextgen/playtest/play38-ship-repair-three-off/summary.json) · [Final Story](../../artifacts/nextgen/playtest/play38-ship-story/summary.json) · [21/16 trial](../../artifacts/nextgen/playtest/play38-ship-repair-one-off/summary.json) · [20/15 trial](../../artifacts/nextgen/playtest/play38-ship-repair-two-off/summary.json)

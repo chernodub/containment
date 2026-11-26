@@ -687,7 +687,7 @@ export class DepthRenderer {
   }
   // WARN16 look-ahead precedes the existing room AABB and marine-envelope fit.
   if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint,this.hudCoachedTargetId);
-  const encounterFocus=menu?undefined:game.sealedEntryBearing?.to??game.shutterCameraPoint;
+  const encounterFocus=menu?undefined:game.sealedEntryBearing?.to??game.shutterCameraPoint??game.manualExchange?.bait;
   if(encounterFocus){
    const dx=encounterFocus.x/UNIT-this.desiredFocus.x,dz=encounterFocus.y/UNIT-this.desiredFocus.z;
    const weight=Math.min(.55,4/Math.max(1,Math.hypot(dx,dz)));

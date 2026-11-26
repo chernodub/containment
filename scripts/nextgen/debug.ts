@@ -1,3 +1,4 @@
+import {drawnExchange} from '../../src/ui/gameAdapter';
 import type {StudioShot} from './studioFixture';
 // Imported only by main.ts when ?debug=1. Production gameplay never installs these overrides.
 import {setUiFixture, type UiFixture} from '../../src/ui/gameAdapter';
@@ -194,6 +195,13 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   get encounterGuardian(){return game.encounterGuardian;},
   /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
   botPursuitLookAhead(target:{x:number;y:number},requireProgress=false){return botPursuitLookAhead(game,target,90,requireProgress);},
+  drawnExchange(){
+   const marks=drawnExchange(game,renderer);
+   const waypoint=(mark:{x:number;y:number})=>canTraverseExpedition(game.geometry,game.player,mark,game.player.radius)?{x:mark.x,y:mark.y}:observeBotWaypoint(game,mark);
+   return marks&&{...marks,
+    bait:marks.bait&&{...marks.bait,waypoint:waypoint(marks.bait)},
+    landing:marks.landing&&{...marks.landing,waypoint:waypoint(marks.landing)}};
+  },
   botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){
