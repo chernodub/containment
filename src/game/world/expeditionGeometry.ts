@@ -70,12 +70,12 @@ function overlapsBlocker(point: Point, rect: Rect, radius: number, radiusSquared
 }
 
 export function hasClearExpeditionShot(geometry: ExpeditionGeometry, from: Point, to: Point): boolean {
-  const inBounds = (point: Point): boolean => point.x >= geometry.bounds.x && point.y >= geometry.bounds.y
-    && point.x <= geometry.bounds.x + geometry.bounds.width && point.y <= geometry.bounds.y + geometry.bounds.height;
-  return [from.x, from.y, to.x, to.y].every(Number.isFinite)
-    && inBounds(from) && inBounds(to)
-    && clearPolygonTopology(geometry,from,to)
-    && geometry.blockers.every(rect => !segmentIntersectsRect(from, to, rect));
+  if (!fitsBounds(geometry.bounds, from, 0) || !fitsBounds(geometry.bounds, to, 0)
+    || !clearPolygonTopology(geometry, from, to)) return false;
+  for (const rect of geometry.blockers) {
+    if (segmentIntersectsRect(from, to, rect)) return false;
+  }
+  return true;
 }
 
 export function canTraverseExpedition(geometry: ExpeditionGeometry, from: Point, to: Point, radius: number): boolean {
