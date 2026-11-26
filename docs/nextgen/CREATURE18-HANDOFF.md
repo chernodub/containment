@@ -1346,6 +1346,7 @@ The Crawler carries a tapered hot coral-pink dorsal stripe, separate biting hook
 The table reads **final21 / PALETTE38 first pass / revised**. Mark luma is median displayed Rec.709 Y (0–255). Saturation is median displayed HSV saturation. Area is the percentage of that family’s visible pixels belonging to its mark. A separate matched geometry-ID capture identifies the original atlas mark cells or revised marked surfaces; all colours come from the unmodified production frames.
 
 Local contrast is measured per actor: mean Y of its brightest 10% of visible pixels minus median Y of floor pixels within two projected body widths of its visible bounds. The family value averages those actor differences. Floor samples exclude props and actors and include the actual floor spill. This proxy measures visual separation; there was no timed observer trial. The two stock crowds contain regular Carriers. The Matron uses a supplemental matched calm encounter in each room.
+
 | Room | Family | Mark luma | Mark saturation (%) | Mark area (%) | Local contrast |
 |---|---|---:|---:|---:|---:|
 | Crew | Crawler | 169.7 / 149.7 / 175.9 | 34.3 / 23.5 / 39.2 | 17.9 / 17.9 / 26.6 | 97.8 / 79.3 / 102.4 |
@@ -1372,3 +1373,5 @@ The seven-frame gallery is in `artifacts/nextgen/palette38b/sheets/index.html`. 
 | Transmission Chamber | 10/10 | 2/2 | 3/3 | 2/2 | Yes. The lower group separates into individual pink marks between the blue Stalker pools. |
 
 The marine and red sector remain distinct in all seven. The bruise-dark bodies still read as one brood. The large violet Carrier on the left of the ordered frame is the strongest competing accent. Greyscale removes the pool-hue cue and leaves the elongated stripe, paired hooks and sac shapes to distinguish the families. The weakest frames are Swarm Junction at the mechanical arm, Relay Racks at the rack crossing, and the boots frame at the right-hand gun overlap.
+
+The production build passed. Crew Checkpoint, Cryo, fixed 300 ticks on both tiers recorded zero combat shader compiles. Median/peak draws were 134/139 on High and 124/130 on Low in all three versions. The native Cryo campaign (seed 1729) cleared 8/8 rooms with zero errors and zero runner defects. The repeated standard competent cohorts cleared 9/12 Cryo and 9/12 Arc. Reports are in `artifacts/nextgen/palette38b-profile/benchmark.json`, `artifacts/nextgen/playtest/palette38b-cryo/report.json` and the two simulator logs in `artifacts/nextgen/palette38b/`.
