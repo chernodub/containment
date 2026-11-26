@@ -43,6 +43,7 @@ async function stageDeath(family){
     g.hurt(90,undefined,source);
   }
   d.refresh();
+  for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++) await new Promise(requestAnimationFrame);
 }
 
 async function stagePod(phase){

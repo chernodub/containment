@@ -1366,5 +1366,6 @@ SCENARIOS.push(...['stalker','spitter','crawler','charge','pool'].map(family=>({
    g.hurt(90,fatal,{source:'enemy-contact',enemyFamily:family},undefined,901);
   }
   d.refresh();
+  for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++) await new Promise(requestAnimationFrame);
  },
 })));

@@ -44,7 +44,6 @@
 }
 /* Opening telemetry gives the existing compact debrief the viewport. The
    authored ending/failure analysis remains the initial primary view. */
-#overlay .debrief-panel:has(.result-details[open]) .incoming-report {display:none;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending {min-height:0;padding:0;align-items:flex-start;text-align:left;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:20px;line-height:1.4;letter-spacing:.03em;margin:0 0 12px;max-width:none;}
 #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-rule,#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending>.eyebrow {display:none;}
