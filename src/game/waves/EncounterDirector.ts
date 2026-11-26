@@ -196,10 +196,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   if(node.templateId==='manual-control-chamber'&&beatIndex===1){
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
-   if(lead)for(let index=0;index<arrivals.length;index++){
-    const request=arrivals[index];
-    arrivals[index]=Object.freeze(request===lead?{...request,atMs:650,consoleLead:true}:
-     {...request,atMs:Math.max(request.atMs,750),consoleHold:true});
+   if(lead){
+    const waiting=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    let previous=4900;
+    for(const request of waiting){
+     const atMs=Math.max(previous+380,request.atMs+4500);
+     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:true});
+     previous=atMs;
+    }
+    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:true});
    }
   }
   const relief=(node.depth===4&&beat.grammar==='crossfire')||
