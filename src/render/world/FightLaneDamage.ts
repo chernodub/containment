@@ -6,7 +6,18 @@ import {IncidentPieces} from './Inc13StoryIncidents';
 export function addFightLaneDamage(root:Group,id:string){
   const p=new IncidentPieces();
   switch(id){
-    case 'passenger-vault':
+    case 'passenger-vault':{
+      // The exposed south wall cap is at 32 ship units. Torn pan ribs
+      // straddle it where the displaced berth train caught the bulkhead.
+      const rack=new IncidentPieces();
+      for(const [x,z,turn] of [[359,794,-.22],[446,790,.10],[533,795,-.09]]){
+        rack.box(x,33,z,73,2,35,0x384650,turn);
+        rack.box(x,35,z,60,2,25,0x58686b,turn);
+        rack.box(x-14,38,z,8,5,32,0x87938e,turn);
+        rack.rod([x-31,36,z-17],[x+14,41,z-19],2.7,0x718683);
+        rack.rod([x+14,41,z-19],[x+29,37,z-8],2.7,0x718683);
+      }
+      rack.finish(root,'berth-train-wall-impact',0,0,new MeshBasicMaterial({vertexColors:true}));
       for(const [x,z,h] of [[148,527,16],[366,523,22],[588,516,28],[810,517,17],[323,794,41]]){
         // A deep folded berth pan, a torn padded back and two empty rail eyes.
         p.box(x,h*.5,z,72,h,12,0x445660,-.07);
@@ -14,6 +25,7 @@ export function addFightLaneDamage(root:Group,id:string){
         for(const dx of [-27,27])p.box(x+dx,h*.6,z-10,6,9,10,0x39464b);
       }
       break;
+    }
     case 'crew-checkpoint':
       for(const [x,z,h] of [[272,342,8],[469,344,17],[658,341,12],[867,343,23]]){
         p.box(x,3,z,26,6,22,0x45494a);
