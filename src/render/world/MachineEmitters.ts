@@ -4,6 +4,17 @@ import {laneTerminal} from '../lighting/LaneWorklight';
 import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
+import {environmentClock} from '../lighting/HotFixtureSurface';
+
+const practicalColor:Record<string,number>={
+ 'awakening-bay':0xefba76,'passenger-vault':0xbad89b,'residential-gallery':0xb9d9df,
+ 'communal-atrium':0xc9acd9,'crew-checkpoint':0xe5ad6c,armory:0x9bc89c,
+ 'freight-hold':0xb3d7e2,'breached-loading-bay':0xf0b078,'relay-racks':0xe7af70,
+ 'transmission-chamber':0xf1b172,'diagnostic-gallery':0xc3a1d6,'safety-interlock-station':0x9cd9ae,
+ 'coolant-plant':0xe4b071,'service-shaft-landing':0xc9c1e5,'infested-workshop':0xe6bd85,
+ 'swarm-junction':0xa7cba4,'shielding-gate':0xe4b56c,'containment-annulus':0xe6b277,
+ 'manual-control-chamber':0xa1d5ae,'overload-floor':0xb6d5e1,
+};
 type Strip=readonly [number,number,number,number,number,number];
 // x, z, elevation, length, width and yaw on the existing machine. Incident
 // lanes use the source socket's longitudinal axis; other machines use deck axes.
@@ -38,12 +49,12 @@ function mountedStrips(id:string){
   const angle=layout?Math.atan2(layout[3]-layout[1],layout[2]-layout[0]):0;
   const end=layout?Math.hypot(layout[2]-layout[0],layout[3]-layout[1]):0;
   const lamp:Strip=[end,0,18,14,7,0];
-  return {origin,angle,color:source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
+  return {origin,angle,color:practicalColor[id]??source.color,parts:strips[id]??[],lamp,inspection:inspectionLamps[id]};
 }
 
 export function addMachineEmitters(root:Group,id:string){
   const mount=mountedStrips(id);if(!mount)return;
-  const pieces=new IncidentPieces(),tone=new Color(mount.color).multiplyScalar(.53).getHex();
+  const pieces=new IncidentPieces(),tone=new Color(mount.color).multiplyScalar(.66).getHex();
   // A hood, shoe and short post make the auxiliary head legible from above.
   const [x,z,y]=mount.lamp;
   pieces.box(x,1,z,12,2,9,0x404747);
@@ -55,7 +66,9 @@ export function addMachineEmitters(root:Group,id:string){
     pieces.box(x,y-1,z,w+5,2,d+4,0x434d50,yaw);
     pieces.box(x,y+.3,z,w,.7,d,tone,yaw);
   }
-  const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],new MeshBasicMaterial({vertexColors:true}));
+  const material=new MeshBasicMaterial({vertexColors:true});
+  const mesh=pieces.finish(root,'machine-diffusers',mount.origin[0],mount.origin[1],material);
+  mesh.onBeforeRender=()=>material.color.setScalar(.89+.11*Math.sin(environmentClock.value*1.7+mount.angle));
   mesh.rotation.y=-mount.angle;mesh.castShadow=false;
 }
 
@@ -66,7 +79,7 @@ export function paintMachineSpill(c:CanvasRenderingContext2D,id:string){
   // Metal visor cuts off the rectangular work lamp at the edge of its service area.
   c.save();c.translate(mount.lamp[0],mount.lamp[1]);
   const pool=c.createLinearGradient(0,0,0,56);
-  pool.addColorStop(0,tint+'94');pool.addColorStop(1,tint+'22');
+  pool.addColorStop(0,tint+'d2');pool.addColorStop(1,tint+'38');
   c.fillStyle=pool;c.fill(new Path2D('M-7 0H7L30 55H-31Z'));c.restore();
   if(mount.inspection){
     const [x,z,,,,yaw]=mount.inspection;

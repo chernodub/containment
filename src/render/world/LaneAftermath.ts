@@ -1,6 +1,6 @@
 import type {Point} from '../../game/roguelike/types';
 
-export const coolantRunoff='M-18 -37Q-32 -11 -14 2T-20 25Q-43 38 -70 27T-107 43Q-100 61 -77 53T-30 58Q-9 61 10 36T8 7Q-14 -3 -8 -25Z';
+export const coolantRunoff='M-18 -37Q-32 -11 -14 2T-20 25Q-43 38 -70 27T-107 43Q-143 69 -180 56T-245 68Q-262 84 -300 76L-329 87Q-274 93 -239 80T-182 72Q-139 83 -100 58L-77 53T-30 58Q-9 61 10 36T8 7Q-14 -3 -8 -25Z';
 
 type Brush=CanvasRenderingContext2D;
 function patch(c:Brush,path:string,color:string){
@@ -102,6 +102,10 @@ export function paintLaneAftermath(c:Brush,id:string,arena:Point){
       fragment(c,'M37 53L24 29 7 26 -4 10 -25 7 -39 -8 -34 -11 -18 0 1 3 13 19 30 21 44 47Z','#96816b');
       for(const [x,y] of [[13,30],[-6,16],[-31,5]]){c.save();c.translate(x,y);fragment(c,'M-6 -3l13 2 -2 5 -12 -1Z','#8a9390');c.restore();}break;
     case 'freight-hold':
+      // Paired gouges converge on the shackle. The second runner skips after impact.
+      seam(c,'M-341 -55Q-273 -61 -215 -31T-103 10L-43 24',9,'#4c4941');
+      seam(c,'M-341 -57Q-273 -63 -215 -33T-103 8L-43 22',2,'#a89982');
+      seam(c,'M-338 -88Q-272 -92 -210 -67T-147 -29M-126 -22L-45 -9',5,'#58554b');
       // The runners lead to the actual cargo cradle at (741,725).
       for(const offset of [-18,19]){
         c.save();c.translate(0,offset);
@@ -128,6 +132,11 @@ export function paintLaneAftermath(c:Brush,id:string,arena:Point){
       seam(c,'M33 78Q41 70 39 60',2,'#a7b8ad');
       break;
     case 'transmission-chamber':
+      seam(c,'M-289 -111H-201L-157 -66H-77L-23 -25',23,'#38414a');
+      seam(c,'M-289 -115H-199L-155 -70H-74L-23 -29',4,'#858681');
+      for(const x of [-268,-243,-218,-134,-110,-86]){
+        const y=x < -190?-111:-66;c.fillStyle='#716f66';c.fillRect(x,y-9,3,18);
+      }
       patch(c,'M-20 -27Q12 -41 24 -15L44 6 82 9 91 35 66 36 27 19 4 -6Z','#313d48');
       seam(c,'M-24 -25Q7 -35 17 -12T53 15L71 18',12,'#434d55');
       seam(c,'M-24 -27Q7 -37 17 -14T53 13L70 16',3,'#87989d');
