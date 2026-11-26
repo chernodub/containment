@@ -271,8 +271,8 @@ float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vVi
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
 if(broodFinish && broodMark){
-  reflectedLight.directDiffuse*=.15;
-  totalEmissiveRadiance=broodInk*actorStageLight*actorCamouflage;
+  lanternEmission=broodInk*.69*actorStageLight*actorCamouflage;
+  totalEmissiveRadiance=lanternEmission;
 }
 #endif
 #ifdef BRUTE_PLANES
