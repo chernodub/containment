@@ -76,12 +76,7 @@ export class FloorChoiceMarkers {
   const mesh=new T.Mesh(this.arrowGeometry,this.materials[0]);
   mesh.visible=false;this.root.add(mesh);return mesh;
  });
- private readonly routeDummy=new T.Object3D();
- private readonly routes=this.materials.map(material=>{
-  const mesh=new T.InstancedMesh(this.arrowGeometry,material,48);
-  mesh.count=0;mesh.frustumCulled=false;this.root.add(mesh);return mesh;
- });
- update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,_approaches:DepthGame['relayApproaches']=[],siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame'],covered?:DepthGame['relayShelter']){
+ update(choices:DepthGame['floorControls'],breaches:DepthGame['geometry']['breaches'],unit:number,siege?:DepthGame['siege'],shutter?:DepthGame['relayShutterFrame'],covered?:DepthGame['relayShelter']){
   this.shutterPanels.forEach((panel,index)=>{
    panel.visible=!!shutter;
    if(!shutter)return;
@@ -95,9 +90,6 @@ export class FloorChoiceMarkers {
   });
   this.coverGlyph.visible=!!covered;
   if(covered)this.coverGlyph.position.set(covered.x/unit,.055,covered.y/unit);
-  this.routes.forEach((mesh)=>{
-   mesh.count=0;
-  });
   this.arrows.forEach((arrow,index)=>{
    const choice=choices[index];
    const breach=choice?.kind==='gate'&&breaches.find(point=>point.id===choice.id);
@@ -117,5 +109,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.routes.forEach(mesh=>mesh.dispose());this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.root.removeFromParent();this.geometry.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }
