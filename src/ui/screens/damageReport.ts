@@ -94,9 +94,10 @@ export function lastExchangeDiagram(game: DepthGame): string {
   // Search outward from the impact. Keep steps traversable from the earlier pose
   // when available, so an obstacle crossed later does not suggest an escape.
   let step: {x:number;y:number} | undefined = fatal ? undefined : {x:marine.x,y:marine.y-45};
+  const away = earlier ? Math.atan2(marine.y-earlier.y,marine.x-earlier.x) : 0;
   for (let distance=52; distance<=240 && !step; distance+=4) {
     for (let direction=0; direction<64; direction++) {
-      const angle = direction * Math.PI / 32;
+      const angle = away + Math.ceil(direction/2) * (direction%2 ? 1 : -1) * Math.PI / 32;
       const point = {x:marine.x+distance*Math.cos(angle),y:marine.y+distance*Math.sin(angle)};
       if (shapes.some(attack => contains(attack,point.x,point.y) ||
         contains(attack,point.x-8*Math.cos(angle),point.y-8*Math.sin(angle)))) continue;
@@ -159,12 +160,13 @@ export function lastExchangeDiagram(game: DepthGame): string {
   };
   const advice = !fatal ? 'Move toward clear ground when the danger cue appears.' : step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
   const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : fatal ? ENEMIES[fatal.family].label : 'Unrecorded attack';
+  const reachLabel = fatal ? `${recorded&&receipt.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m` : '';
   return `<figure class="last-exchange" aria-label="Last exchange">
     <div class="exchange-key"><b>${family} · ${recorded?'fatal attack':'attack guide'}</b><span>${held?'Short movement · ◆ Impact':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}${blockers.length?' · ▰ Cover':''}</span></div>
     <svg role="img" aria-label="${recorded?'Recorded fatal footprint, nearby attacks, marine poses and clearing step when available.':'Illustrated attack guide and clearing step.'}" viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
-      ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
+      ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/>`:''}
       ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle,glyphScale)).join('')}${blockers.map(coverEdge).join('')}${path}${pose(marine)}${exit}
-    </svg><figcaption>${advice}</figcaption></figure>`;
+    </svg><figcaption>${advice} ${reachLabel?`<span class="exchange-reach-label"> · ${reachLabel}</span>`: ''}</figcaption></figure>`;
 }
