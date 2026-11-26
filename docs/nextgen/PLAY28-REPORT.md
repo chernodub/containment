@@ -694,3 +694,54 @@ Breacher's native Atrium closure was visible in both arms. Cryo's initial OFF sa
 ### Story hold probe
 
 A controlled deterministic probe from the earned Story Cryo 1729 checkpoint charged 336 ms on the Interlock pad before stepping out of a staged Brute swing. Charge stayed at 336 ms while the grace interval counted down from 2,404 to 804 ms and expired after 2.5 seconds. The probe emitted one `story-hold-grace` effect. The original Final24 native loss was 110.8 suit. The first PLAY39 native replay hit its wall budget with an interior preparation timeout. Its same-seed retry hit a screenshot timeout. Neither produced a final room-loss total. [Probe receipt](../../artifacts/nextgen/play39-analysis/hold.json) · [First replay](../../artifacts/nextgen/playtest/play39-hold-story/report.json) · [Retry](../../artifacts/nextgen/playtest/play39-hold-story-retry/report.json)
+
+### Candidate revisions and release decision
+
+The second grille revision distinguished a Brute's initial approach from its return to approach after a committed strike. Until then an approaching Brute could release the escorts immediately after spawning. The hard seven-second timeout remains. The early pressure follow-up moved the additional Spitter's target lock to the start of its warning so the shot tests the marine's current approach. The tables below come from before those two revisions.
+
+The three-rig benefit in both rooms has not been demonstrated. The grille therefore requires an explicit `--exchange-marks=off` or `--exchange-marks=on` in the playtest runners. Both flags stage the same grille and escorts. Only ON prioritizes the visible return shot. Regular campaigns use the prior console exchange and Atrium setup, with the other PLAY39 changes active.
+
+| Additional native case | Recovery hits OFF → ON | Grilles closed OFF → ON | Escorts canceled OFF → ON | Room suit OFF → ON | Room seconds OFF → ON |
+|---|---:|---:|---:|---:|---:|
+| Pyro 1729, Atrium | 2 → — | 1 → — | 1 → — | 0 → — | 18.40 → — |
+| Arc 1729, Atrium | — | — | — | — | — |
+| Breacher 1729, Manual Control | — | — | — | — | — |
+| Cryo 1729, Manual Control | — | — | — | — | — |
+| Pyro 1729, Manual Control | — | — | — | — | — |
+| Arc 2718, Manual Control | — | — | — | — | — |
+
+Arc uses 2718 for the late checkpoint because the earned Final24 Arc 1729 campaign ended in Diagnostic Gallery. [Waiting bodies](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-waiting.png) · [Recovery hit](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-closed.png) · [Grille closing](../../artifacts/nextgen/playtest/play39-tip-off-pyro-4/r4-communal-atrium-grille-recoil.png)
+
+### Simulator snapshot
+
+Denominators below count finished simulator reports available at this snapshot. Empty cells indicate zero finished reports. Candidate results are provisional and do not establish the shipped balance or absence of stalls across the requested seeds.
+
+| Profile / rig | Wave 33 | Candidate OFF | Candidate ON |
+|---|---:|---:|---:|
+| Standard Breacher | 11/12 | 7/10 | 8/9 |
+| Standard Cryo | 10/12 | — | — |
+| Standard Pyro | 10/12 | — | — |
+| Standard Arc | 12/12 | — | — |
+| **Standard all** | **43/48** | **7/10** | **8/9** |
+| Story Cryo | 10/12 | 8/9 | — |
+| Story Breacher | 12/12 | — | — |
+| **Story all** | **22/24** | **8/9** | — |
+
+Standard damage is mean suit per completed block. Each candidate is compared with the same rigs and seeds from Wave 33 that finished the block in both builds. The full Wave 33 block mean is also shown for reference.
+
+| Sectors | Wave 33 all | OFF pairs | Wave 33 → OFF | ON pairs | Wave 33 → ON |
+|---|---:|---:|---:|---:|---:|
+| 1–4 | 7.21 | 10 | 6.06 → 8.89 | 9 | 4.73 → 9.55 |
+| 5–8 | 97.55 | 10 | 69.36 → 95.95 | 9 | 65.49 → 118.86 |
+| 9–12 | 176.12 | 9 | 144.75 → 181.28 | 9 | 151.33 → 149.07 |
+| 13–16 | 198.38 | 9 | 171.48 → 149.23 | 9 | 173.76 → 183.84 |
+| 17–20 | 195.72 | 7 | 157.73 → 187.43 | 7 | 185.29 → 185.01 |
+
+| Standard Crawler share | Wave 33 all | Candidate OFF | Candidate ON |
+|---|---:|---:|---:|
+| Breacher | 39.32% | 36.59% (10) | 35.14% (9) |
+| Cryo | 39.63% | — | — |
+| Pyro | 41.25% | — | — |
+| Arc | 37.55% | — | — |
+
+[Candidate OFF summary](../../artifacts/nextgen/playtest/play39-tip-off/summary.json) · [Candidate ON summary](../../artifacts/nextgen/playtest/play39-tip-on/summary.json) · [Candidate Story summary](../../artifacts/nextgen/playtest/play39-tip-story/summary.json)
