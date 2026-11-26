@@ -998,18 +998,21 @@ export class DepthGame {
    const ends=this.player.x<midX?[console.x,console.x+console.width]:[console.x+console.width,console.x];
    for(const end of ends){
     const side=end<midX?-1:1;
-    const target={x:end-side*24,y:farY-nearSide*(radius+8)};
-    const bait={x:end+side*54,y:farY-nearSide*10};
-    const landing={x:end+side*62,y:farY-nearSide*78};
+    const edgeY=e.grilleLead?nearY:farY;
+    const out=e.grilleLead?nearSide:-nearSide;
+    const target={x:end-side*24,y:edgeY+out*(radius+8)};
+    const bait={x:end+side*54,y:edgeY+out*10};
+    const landing={x:end+side*62,y:edgeY+out*78};
     const retreat={x:midX,y:nearY+nearSide*95};
     if(!canOccupyExpedition(this.geometry,target,radius)||
      !canTraverseExpedition(this.geometry,bait,landing,this.player.radius)||
      !hasClearExpeditionShot(this.geometry,bait,target)||
      !hasClearExpeditionShot(this.geometry,landing,target)||
-     hasClearExpeditionShot(this.geometry,retreat,target))continue;
+     (e.grilleLead?!hasClearExpeditionShot(this.geometry,this.player,target):
+      hasClearExpeditionShot(this.geometry,retreat,target)))continue;
     this.consoleExchange={bait,landing,target};
     const approach=Math.hypot(bait.x-this.player.x,bait.y-this.player.y);
-    consoleApproachMs=Math.min(3000,Math.max(0,Math.round(approach/220*1000+350)));
+    consoleApproachMs=Math.min(e.grilleLead?400:3000,Math.round(approach/220*1000+350));
     this.consoleRelease+=consoleApproachMs/1000;
     ({x,y}=target);
     break;
