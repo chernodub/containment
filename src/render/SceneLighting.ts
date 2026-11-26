@@ -271,7 +271,7 @@ export class ContactShadows {
     if(ink < -1.5)color=vec3(.66,.33,.05);
     if(ink < -2.5)color=vec3(.31,.54,.10);
     if(ink < -3.5)color=vec3(.32,.14,.66);
-    alpha=.19*(1.-smoothstep(.16,.98,radius));
+    alpha=(ink < -1.5 && ink > -2.5 ? .32 : .19)*(1.-smoothstep(.16,.98,radius));
   }
   if(ink>.5){
     color=vec3(.20,.29,.35);
