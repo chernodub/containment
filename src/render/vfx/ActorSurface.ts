@@ -128,7 +128,7 @@ broodMark=broodMark || (broodBody && (
                    (vActorRegion==3. && broodRestUp>.72))) ||
   (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
-   abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.37)));
+   abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.65)));
 vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
               spitterSkin?vec3(.35,.51,.095):vec3(.16,.51,.89);
 if(broodFinish && broodBody){
