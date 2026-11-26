@@ -366,7 +366,7 @@ export function runSimulation(options: SimOptions) {
                 const offers = expeditionRewardOffers(game.expedition);
                 if (offers.length)
                     game.chooseMutation(chooseBoon(offers.map(o => o.id), options.rig, [...game.expedition.build.mutations]));
-                else {const purchase=chooseServicePurchase(SERVICE_IDS.filter(id=>game.canPurchaseService(id)),game.combat.snapshot,game.expedition.build,game.expedition.run);if(purchase)game.purchaseService(purchase,augmentUpgrades?.(game.expedition.build).at(-1));else game.claimResources();}
+                else {const purchase=chooseServicePurchase(SERVICE_IDS.filter(id=>game.canPurchaseService(id)),game.combat.snapshot,game.expedition.build,game.expedition.run);if(purchase)game.purchaseService(purchase,purchase==='rig-return'?game.returningRigAugments.at(-1):augmentUpgrades?.(game.expedition.build).at(-1));else game.claimResources();}
             }
             else if (game.status === 'route') {
                 const graph = generateRun(options.seed, game.expedition.run.version);

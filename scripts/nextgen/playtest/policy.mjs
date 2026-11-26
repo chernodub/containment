@@ -153,7 +153,7 @@ export function chooseRoute(routes, health = 100) {
 }
 /** Shop only from currently offered/affordable buttons; no future-room knowledge. */
 export function chooseServicePurchase(available,combat,build={},run={}) {
-  const priorities=['revive'];
+  const priorities=['rig-return','revive'];
   if(combat.health<70)priorities.push('heal');
   if(combat.armor<20)priorities.push('armor');
   if(combat.medkits<2)priorities.push('medkit');
