@@ -137,13 +137,24 @@ export class DepthGame {
  private broodSupply?:{pod:number;pickup:number};
  private broodChoiceUsed=false;
  private broodMarksShownAt:number|undefined;
+ private repelSavedBroodLane(pod:{x:number;y:number}){
+  const screens=this.enemies.snapshot.enemies.filter(enemy=>!enemy.pod&&(enemy.type==='crawler'||enemy.type==='stalker'))
+   .sort((a,b)=>Math.hypot(a.x-pod.x,a.y-pod.y)-Math.hypot(b.x-pod.x,b.y-pod.y)).slice(0,3);
+  for(const enemy of screens){
+   const dx=enemy.x-pod.x,dy=enemy.y-pod.y,distance=Math.hypot(dx,dy);
+   if(distance>300||distance===0)continue;
+   this.shoveEnemy(enemy.id,dx/distance*95,dy/distance*95);
+   this.enemies.stagger(enemy.id,950);
+  }
+  this.presentation.push({type:'boon',boon:'shield',x:pod.x,y:pod.y,durationMs:950,radius:96});
+ }
  private stageBroodChoice(index:number, fallback:{x:number;y:number}){
   const player=this.player,exit=this.geometry.exitPoint;
   const bearing=Math.atan2(exit.y-player.y,exit.x-player.x);
   for(const turn of [0,Math.PI/2,-Math.PI/2,Math.PI]){
    const angle=bearing+turn;
-   const pair=[-1,1].map(side=>({x:player.x+Math.cos(angle)*122-side*Math.sin(angle)*59,
-    y:player.y+Math.sin(angle)*122+side*Math.cos(angle)*59}));
+   const pair=[{x:player.x+Math.cos(angle)*164,y:player.y+Math.sin(angle)*164},
+    {x:player.x+Math.cos(angle)*84-Math.sin(angle)*92,y:player.y+Math.sin(angle)*84+Math.cos(angle)*92}];
    if(pair.every(point=>canOccupyExpedition(this.geometry,point,26)&&hasClearExpeditionShot(this.geometry,player,point)))
     return pair[index]??fallback;
   }
@@ -728,7 +739,7 @@ export class DepthGame {
      if(options.broodDestination&&this.enemies.snapshot.enemies.filter(enemy=>enemy.broodDestination).length>=2)
       this.broodMarksShownAt=this.elapsed;
      if(options.broodSupply){
-      const pickup=this.pickups.spawn('armor',35,p.x,p.y);
+      const pickup=this.pickups.spawn('armor',35,p.x+Math.cos(Math.atan2(this.player.y-p.y,this.player.x-p.x))*28,p.y+Math.sin(Math.atan2(this.player.y-p.y,this.player.x-p.x))*28);
       if(pickup.spawned)this.broodSupply={pod:result.enemy.id,pickup:pickup.pickup.id};
      }
      if(type==='spitter'&&!options.openingVolley&&this.crawlerPressureRoom&&!this.featuredVolleyUsed&&
@@ -1046,6 +1057,7 @@ export class DepthGame {
    }
    if(r.died&&condition?.eggs.delete(id)&&!condition.eggs.size&&!condition.broodLost)this.director.cancelNextReinforcements();
    if(before?.champion==='matron'&&!r.died&&before.broodRemainingMs&& !this.enemies.getSnapshot(id)?.broodRemainingMs)this.interruptBrood(id,before.beat);
+   if(before?.broodDestination&&r.died)this.repelSavedBroodLane(before);
    if(before?.pod&&r.died&&++this.broodPodsDestroyed===2){
     const matron=this.enemies.snapshot.enemies.find(enemy=>enemy.champion==='matron');
     if(matron)this.interruptBrood(matron.id,matron.beat);
