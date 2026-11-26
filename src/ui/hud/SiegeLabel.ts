@@ -1,5 +1,4 @@
 import type {DepthGame} from '../../DepthGame';
-import type {SiegePresentation} from '../../render/markers/SiegeBoundary';
 import type {DepthRenderer} from '../../render/DepthRenderer';
 import {projectWorld} from '../gameAdapter';
 import {hudObstructs} from './layout';
@@ -14,7 +13,7 @@ export class SiegeLabel {
         host.append(this.node);
     }
 
-    update(renderer: DepthRenderer, siege: SiegePresentation | null | undefined, player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
+    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
         this.node.hidden = true;
         if (!cover && (!siege || siege.choosing)) return;
         const anchor = cover ?? siege!;
@@ -27,8 +26,7 @@ export class SiegeLabel {
         this.node.hidden = false;
         this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
         this.node.style.fontSize = cover ? 'clamp(16px, 2.8vw, 48px)' : '18px';
-        const grace = siege?.graceRemainingMs ?? 0;
-        const label = cover ? '⬢ Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : grace > 0 ? `Charge held · ${(grace / 1000).toFixed(1)}s to return` : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
+        const label = cover ? '⬢ Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
         if (label !== this.node.textContent) this.node.textContent = label;
     }
 

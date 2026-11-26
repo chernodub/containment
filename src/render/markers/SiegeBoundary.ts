@@ -1,8 +1,6 @@
 import {BufferAttribute, DynamicDrawUsage, Group, Mesh, MeshBasicMaterial, RingGeometry} from 'three';
 import type {DepthGame} from '../../DepthGame';
 
-export type SiegePresentation = NonNullable<DepthGame['siege']> & {graceRemainingMs?: number; graceDurationMs?: number};
-
 import {dashedRing} from './dashedRing';
 
 export class SiegeBoundary {
@@ -10,7 +8,6 @@ export class SiegeBoundary {
     private readonly track = new Mesh(dashedRing(.995, 1, 128), this.material());
     private readonly sweep = new Mesh(dashedRing(.973, .978, 128), this.material());
 
-    private readonly graceNotch = new Mesh(new RingGeometry(1.025, 1.066, 12, 1, -.07, .14), this.material());
     private readonly nearest = new Mesh(new RingGeometry(.983, 1.012, 16, 1, -.24, .48), this.material());
 
     private readonly sweepPositions = this.sweep.geometry.getAttribute("position") as BufferAttribute;
@@ -18,7 +15,7 @@ export class SiegeBoundary {
 
     constructor(private readonly unit: number) {
         this.sweepPositions.setUsage(DynamicDrawUsage);
-        for (const mesh of [this.track, this.sweep, this.nearest, this.graceNotch]) {
+        for (const mesh of [this.track, this.sweep, this.nearest]) {
             mesh.rotation.x = -Math.PI / 2;
             mesh.frustumCulled = false; mesh.renderOrder = -2;
             this.root.add(mesh);
@@ -30,28 +27,19 @@ export class SiegeBoundary {
         return new MeshBasicMaterial({color: 0x68c9b0, transparent: true, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1});
     }
 
-    update(siege: SiegePresentation | null | undefined, player: DepthGame['player'], enemies: DepthGame['enemies']['snapshot']['enemies']) {
+    update(siege: DepthGame['siege'], player: DepthGame['player'], enemies: DepthGame['enemies']['snapshot']['enemies']) {
         this.root.visible = !!siege && !siege.choosing;
         if (!siege || siege.choosing) return;
         const radius = siege.radius / this.unit;
         this.root.position.set(siege.x / this.unit, .026, siege.y / this.unit);
         this.root.scale.setScalar(radius);
         const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
-        const remaining = siege.graceRemainingMs ?? 0;
-        const grace = !inside && remaining > 0;
-        this.graceNotch.visible = grace;
-        if (grace) {
-            this.graceNotch.material.color.setHex(0xffdd95);
-            this.graceNotch.material.opacity = 1;
-            this.graceNotch.position.y = .013;
-            this.graceNotch.rotation.z = (1 - Math.min(1, remaining / (siege.graceDurationMs ?? 2500))) * -Math.PI * 2;
-        }
         this.nearest.rotation.z = Math.atan2(siege.y - player.y, player.x - siege.x);
         this.nearest.position.y = .009;
         this.nearest.material.color.setHex(inside ? 0x8debff : 0xffad60);
         this.nearest.material.opacity = inside ? .9 : .75;
         this.track.material.opacity = inside ? .25 : .18;
-        this.sweep.material.opacity = inside || grace ? .30 : .22;
+        this.sweep.material.opacity = inside ? .30 : .22;
         const positions = this.originalSweepPositions;
         const winding = enemies.filter(enemy => enemy.health > 0 && (enemy.windupMs > 0 || enemy.meleePhase === 'windup'));
         for (let i = 0; i < positions.count; i++) {
@@ -72,7 +60,7 @@ export class SiegeBoundary {
 
     dispose() {
         this.root.removeFromParent();
-        for (const mesh of [this.track, this.sweep, this.nearest, this.graceNotch]) {
+        for (const mesh of [this.track, this.sweep, this.nearest]) {
             mesh.geometry.dispose();
             mesh.material.dispose();
         }
