@@ -141,6 +141,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
  const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
   group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
+ const grilleLessonBeat=node.templateId==='communal-atrium'?source.findIndex(beat=>
+  beat.groups.some(group=>group.family==='brute'&&!group.guardian&&!group.reinforcement)):-1;
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
@@ -195,18 +197,18 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    if(approach>=0)arrivals[approach]=Object.freeze({...arrivals[approach],augmentPosition:'approach'});
   }
   const consoleExchange=node.templateId==='manual-control-chamber'&&beatIndex===1;
-  const earlyExchange=node.templateId==='communal-atrium'&&beatIndex===0;
+  const earlyExchange=beatIndex===grilleLessonBeat;
   if(consoleExchange||earlyExchange){
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
     const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
-    const escorts=others.filter(request=>!request.guardian&&!request.priority&&!request.reinforcement).slice(0,consoleExchange?3:2);
+    const escorts=others.filter(request=>!request.guardian&&!request.priority).slice(0,consoleExchange?3:2);
     let previous=4900;
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;
      const atMs=escorts.includes(request)?750:Math.max(previous+380,request.atMs+4500);
      arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
-      grilleEscort:escorts.includes(request)?true:undefined});
+      grilleEscort:escorts.includes(request)?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
      if(!escorts.includes(request))previous=atMs;
     }
     arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length});
