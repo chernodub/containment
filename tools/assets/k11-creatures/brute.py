@@ -5,6 +5,7 @@ short hind legs, two equal forelimbs ending in club fists, and one pale arrowhea
 the head. The Warden is its own sculpture (warden.py).
 """
 
+from heavy_support import planted_hand, sole
 import math
 
 import numpy as np
@@ -51,6 +52,37 @@ PALETTE = {
     "cavity": (0.03, 0.005, 0.006), "under": (0.08, 0.03, 0.022),
 }
 GLOW = {"gilt": (0.009, 0.006, 0.002), "organ": (1.0, 0.36, 0.0), "eye": (1.0, 0.55, 0.08)}
+
+
+def surface_zones(sculpture, centers):
+    """Low nibble is paint, remaining bits identify the anatomical primitive for ink."""
+    _, owner = sculpture.evaluate_points(centers, track=True)
+    result = np.zeros(len(centers), dtype=np.int32)
+    for i, prim in enumerate(sculpture.prims):
+        mask = owner == i
+        if not np.any(mask):
+            continue
+        points = centers[mask]
+        paint = 0  # underbody
+        if prim.name == "warden-ram":
+            paint = 9
+        elif prim.plate in (50, 51, 450, 451):
+            paint = 7
+        elif prim.plate in (52, 452):
+            paint = 8
+        elif isinstance(prim, S.ShellBand) and prim.plate != UNDER:
+            local = (points - prim.c) @ prim.R
+            paint = np.where(local[:, 2] < -.58 * prim.drop, 3,
+                             np.where(abs(local[:, 0]) > prim.half - prim.bev * 1.6, 2, 1))
+        elif prim.plate in (76, 80, 81, 82, 83):
+            paint = 6
+        elif prim.plate != UNDER and prim.zone == FLESH:
+            lo, hi = prim.bounds()
+            paint = np.where(points[:, 2] > (lo[2] + hi[2]) * .5, 4, 5)
+        # Adjacent pieces of flesh share their ink region. Armour and digits have separate outlines.
+        region = i + 1 if isinstance(prim, S.ShellBand) or prim.plate in (50,51,52,76,80,81,82,83,450,451,452) else 0
+        result[mask] = region * 16 + paint
+    return result
 
 
 def paint_marks(name, co, normals, plate, bands):
@@ -154,12 +186,8 @@ def arm(body, s, side, guard=True):
         up = normalize(v3((0, .55 * s, 1)) - d * float(d @ v3((0, .55 * s, 1))))
         body.add(S.ShellBand(mid + up * .80, frame(d, up), (1.7, .80, .70), .70, .55, thick=.20, bevel=.08,
                              zone=ARMOR, bone=bone, plate=75, hard=1.0))
-    body.add(Ellipsoid(wrist, (.58, .60, .55), zone=FLESH, bone=bone, k=.04, plate=UNDER))   # wrist
-    body.add(Ellipsoid(fist + v3((0.05, 0, 0.1)), (.72, .98, .58), frame((1, .15 * s, .15)), zone=FLESH, bone=bone,
-                       k=.08, plate=76))   # hand mass, lit top
-    for k in (-1, 1):   # two weight-bearing knuckles, front and down
-        body.add(Ellipsoid(fist + v3((1.02, .62 * k + .05 * s, -.34)), (.64, .44, .49), zone=FLESH, bone=bone, k=.04,
-                           plate=76))
+    body.add(Ellipsoid(wrist, (.58, .62, .41), zone=FLESH, bone=bone, k=.04, plate=UNDER))   # wrist
+    planted_hand(body, fist, bone)
     return sh, el, wrist, fist
 
 
@@ -168,7 +196,7 @@ def leg(body, s, side, hip=(-1.85, .95, 5.4), knee=(-1.30, 1.70, 3.05), foot=(-1
     body.add(RoundCone(hip, knee, r[0], r[1], zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=UNDER))
     body.add(Ellipsoid(knee, (r[1] * 1.05,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
     body.add(RoundCone(knee, foot + v3((0, 0, .2)), r[1] * .9, r[2], zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=77))
-    body.add(Ellipsoid(foot + v3((.54, 0, -.06)), (r[2] * 2.16, r[2] * 1.45, r[2] * .7), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
+    sole(body, foot + v3((.52, 0, -.08)), f"foot.back.{side}", (.94, .64, .24))
 
 
 def build(sk):
@@ -192,6 +220,12 @@ def build(sk):
     body.add(Ellipsoid((2.98, 0, 7.02), (.86, .72, .40), frame((1, 0, -.25)), zone=FLESH, bone="head", k=.08, plate=UNDER))  # jaw
     plate, tip, rear, pf, pu, ps = skull_plate((2.98, 0, 8.36), (1, 0, 0), 2.72, 2.06, 15, "head", 50)
     body.add(plate)
+    # A transverse brow casts a drawn seam over the two swept cheek planes.
+    body.add(S.Prism((2.63, -.76, 8.61), (2.63, .76, 8.61), .27, .27,
+                     sides=4, zone=CREST, bone="head", plate=50))
+    for sign in (-1, 1):
+        body.add(S.Prism((2.65, .82*sign, 8.35), (3.70, .43*sign, 7.96),
+                         .36, .13, sides=4, zone=CREST, bone="head", plate=52))
     for s in (-1, 1):   # two dark eye slits angled in toward the point (the eye sockets)
         d = normalize(pf + ps * s * 0.45)
         cen = v3((3.07, 0.38 * s, 0))

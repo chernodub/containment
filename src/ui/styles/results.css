@@ -185,3 +185,4 @@
 }
 #overlay .fatal-details .result-actions .primary { flex-basis: 100%; }
 .exchange-held { fill: none; stroke: #e2e9ec; stroke-width: 2.5; stroke-dasharray: 4 4; }
+#overlay .exchange-reach-label { color: #ffbea8; white-space: nowrap; font-size: 13px; }

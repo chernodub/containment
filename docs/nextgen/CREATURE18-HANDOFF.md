@@ -1710,3 +1710,34 @@ Native crops pair a rebuild of the final22 campaign revision `40650265` with BRO
 The stable brood marks use yellow, lime, blue and violet. Bright red in the staged attack frames identifies warning shapes and hostile projectile cores. Wounds and hit accents can introduce small red pixels during combat. A waiting Carrier is quieter than the attacking Crawler in the ordinary crowd frames. The far-side dark feet still disappear behind pipes and foreground racks. The three weakest frames are Napalm charge (burning overlapping bodies), Relay Racks (rail occlusion) and the centred Residential Gallery sample (furnishing occlusion).
 
 The production build passed. Crew Checkpoint, seed 1729 with Pyro, recorded median draws of 159 → 159 on High and 145 → 145 on Low, with zero combat shader compiles on both builds and tiers. Standard competent cohorts cleared 9/12 with Cryo and 9/12 with Arc. The native Pyro campaign cleared eight rooms with zero errors. Both runs returned status 1 for room-loading diagnostics. The first flagged Passenger Vault, Residential Gallery and Crew Checkpoint. The repeat flagged Passenger Vault and Residential Gallery, again with eight clears and zero errors. The full gallery and campaigns used the build before the final pooled Spitter timer reset. The reset received a fresh production build and a Crew Checkpoint release capture with zero browser errors. The proof index contains 83 annotated comparisons.
+
+
+## BROOD41
+
+Brood chitin uses the K11 primitive atlas cell carried by the skin UVs. Top paint is linear RGB (.096, .081, .121), flank (.047, .039, .065), and underside and limbs (.025, .022, .037). Sac planes use (.108, .052, .141) and (.064, .029, .090). Matching bind-position vertices on different atlas cells supply a seam mask. The ink target is (.012, .010, .020), with a nominal .85-pixel transition. A cool rim follows the key-facing silhouette. The hide modulation and normal-threshold body planes are removed from the brood finish.
+
+Three separated straw spines, eyes and short hook edges use (2.9, 2.45, .76). The longitudinal emission halo is removed. The splayed feet and dark intervals separate the Crawler from a single cartridge. Its outside hook travels laterally by .32 of the permitted presentation lunge, held into early recovery. During strike and the first 35% of recovery the nearest waiting Crawler loses 52% of its mark intensity. The Stalker's right foreleg extends forward and out from the folded blade.
+
+Elemental status tints a top plane by at most 40%, with a separate rim. The tint colours are ice (.31, .66, .89), fire (.74, .27, .048) and shock (.48, .22, .86). Chilled uses .32 strength, frozen 1.0, and sustained fire and shock .82. The HEAVY42 zone contract uses 1 for crown, 7–8 for bone and 9 for luminous maw. On that shader the status pass also excludes its authored interior ink. The integration branch's heavy model and shader supply the heavy screenshots in this gallery.
+
+The paired gallery uses a local production rebuild of final23 at `63990654`. Native crops compare final23 on the left and BROOD41 on the right. The 480×270 files show the whole current frame. The reference and current runs use native attack phases. Independent room entry can change extra spawns, camera placement and the exact facing of an actor.
+
+| Full frame at 480×270 | Crawler | Spitter | Stalker | Carrier | Brute | First-look read |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Swarm Junction | 8/10 | 2/2 | 3/3 | 2/2 | 3/3 | Three straw marks and the dark leg fan read where exposed. Side-on backs on the upper dark deck are easiest to miss. |
+| Relay Racks | 7/10 | 2/2 | 2/3 | 2/2 | 3/3 | Railings interrupt small backs and the rear blue blade. |
+| Crew Checkpoint | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | The hooked bite reads against the red fan. One dark back sits against the central furnishing. |
+| Ordered crowd | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | The backs read as segmented animals. One waiting Crawler loses its mark near the fan. |
+| Three at the boots | 3/3 | — | — | — | — | Three approach directions remain visible, though the far animal's trunk is under the gun. |
+| Pyro overlap | 8/10 | 2/2 | 2/3 | 2/2 | 3/3 | Straw stays separate from orange. The flame fragments compete with the far small bodies. |
+| Napalm charge | 4/6 | 4/5 | 5/5 | 5/5 | 5/5 | Splayed legs, lime firing ends and blue blades persist in the fire. The central overlapping Crawlers remain difficult to count. |
+
+The numerator is an estimate from the first inspection of the full frame. The denominator is the native fixture actor list. This was a visual review, without timed human trials.
+
+On the two pose floors the broad body planes now read closer to the marine's plates. The Crawler has three separate pale bars at rest and from behind. The side-on strike leaves a thin pale hook beyond the boot; the head-on angle still compresses that gap. The Spitter's forelegs bracket the sightline and its muzzle survives the projectile crossing. The Stalker's planted foreleg gives the calm silhouette an extra point of contact. Its blade remains the strongest shape through release. The Carrier and Matron sacs show quieter, flatter planes. Small irregular flecks remain along the sac seams and the bright joints, particularly in the rear Carrier view. At full-room scale some black leg tips merge with Swarm Junction's pipework.
+
+The native socket comparison matched all 448 samples. The matched 180-tick Crew Checkpoint Pyro benchmarks measured median draws of 141 → 141 on High and 131 → 131 on Low, with zero combat compiles on both revisions and tiers. The Standard competent cohorts cleared 11/12 on Cryo and 10/12 on Arc.
+
+The 120 annotated sheets are linked from `artifacts/nextgen/brood41/index.html`. Eleven additional sheets exercise the sibling HEAVY42 models, authored zones and ink with this status pass in a disposable compatibility build. Both builds rendered the status fixtures with zero browser errors. A native freeze attempt staggers the resistant Warden. The separately labelled renderer-only frozen Warden sample exercises the full frozen finish. Its jaw, hands and dark underside remain visible.
+
+The three weakest reads are Relay Racks (rail occlusion), the Carrier from behind in Swarm Junction (busy seam detail above feet on a dark pipe), and the Napalm centre (overlapping Crawlers). The native production Pyro run on seed 1729 cleared all eight rooms with zero errors. The runner returned status 1 for four room-loading diagnostics. An earlier attempt exhausted temporary disk space and another timed out during screenshot capture under load. The completed campaign is `artifacts/nextgen/playtest/brood41-shipped-pyro/index.html`.

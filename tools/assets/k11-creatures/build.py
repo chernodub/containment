@@ -242,6 +242,11 @@ def flat_cells(low, sculpture):
     names = cell_names()
     vid = np.array([names.index(b) for b in bands])
     uv = low.data.uv_layers.new(name="UVMap")
+    if hasattr(M, "surface_zones"):
+        centers = np.array([tuple(face.center) for face in low.data.polygons])
+        values = M.surface_zones(sculpture, centers)
+        attr = low.data.attributes.new("heavy_zone", "INT", "FACE")
+        attr.data.foreach_set("value", values)
     counts = {}
     for poly in low.data.polygons:
         ids = [vid[v] for v in poly.vertices]

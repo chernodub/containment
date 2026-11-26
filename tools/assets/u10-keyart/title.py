@@ -18,6 +18,9 @@ bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=Fals
 s=bpy.context.scene;s.render.engine='CYCLES';choose_render_device(s);s.cycles.samples=24 if '--preview' in args else 128;s.cycles.use_denoising=True
 s.cycles.volume_bounces=2;s.cycles.adaptive_threshold=.025
 s.render.resolution_x=1920 if '--preview' in args else 2560;s.render.resolution_y=s.render.resolution_x*9//16;s.render.resolution_percentage=35 if '--study' in args else 100
+if '--title33-scenery' in args:
+ s.render.resolution_x=5120;s.render.resolution_y=2880
+ s.cycles.samples=16;s.cycles.use_auto_tile=True;s.cycles.tile_size=512
 s.render.image_settings.file_format='PNG';s.render.image_settings.color_mode='RGBA'
 s.view_settings.view_transform='AgX';s.view_settings.look='AgX - Medium High Contrast';s.view_settings.exposure=-1.6
 s.world.use_nodes=True;s.world.node_tree.nodes['Background'].inputs[0].default_value=(.025,.04,.06,1);s.world.node_tree.nodes['Background'].inputs[1].default_value=.006
@@ -258,8 +261,10 @@ if hit and ob.get('ka12Plate')=='hero':
 for p,items in plates.items():
  for o in items:o['ka12Plate']=p
 s.render.film_transparent=False;s.render.filepath=str(OUT/'composition.png')
-bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'stage.blend'))
-if '--background-only' in args:
+if '--title33-scenery' not in args:bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'stage.blend'))
+if '--title33-scenery' in args:
+ render_plates=['background','fog']
+elif '--background-only' in args:
  render_plates=['background']
 elif '--midground-only' in args:
  render_plates=['midground']

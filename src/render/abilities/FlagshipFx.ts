@@ -177,14 +177,15 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   vec2 lee=vec2(.76,-.34);
   float shelter=smoothstep(.08,.68,clear-deckClearance(p-lee));
   float drift=fxFbm(vec2(p.x*.42+p.y*.28,p.y*1.24)+wind*.28);
-  float deposit=smoothstep(.58,.72,drift+shelter*.30);
+  float deposit=smoothstep(.54,.59,drift+shelter*.30+.28*(cells.z-.5));
+  base=mix(vec3(.012,.037,.055),vec3(.12,.27,.32),step(.06,cells.y-cells.x)*(.35+.65*cells.z));
   alpha*=mix(.045,1.,deposit);
-  emit*=deposit;
+  emit=deposit*bed*facet*(vec3(.025,.075,.095)+bank*vec3(.10,.21,.25));
  }else{
   float cluster=smoothstep(.36,.65,fxNoise(p*.84+fxSeed));
   bed*=smoothstep(-.04,.82,back+.54*cluster);
-  alpha*=bed;
-  emit*=bed;
+  alpha*=bed*.48;
+  emit*=bed*.35;
   float band=(1.-smoothstep(.18,1.0,back))*bed*cluster;
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
@@ -547,15 +548,17 @@ void main(){
    float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
    base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
-   float cooling=mix(1.,.30,smoothstep(.045,.20,age));
+   float cooling=mix(1.,.15,smoothstep(.045,.20,age));
    emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
    emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
    alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
    float foothold=smoothstep(.24,1.18,r+.13*n);
    alpha*=foothold;emit*=mix(foothold,1.,peak);
-   float travel=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
+   float travel=R*clamp(.18+.82*age/.15,0.,1.);
    float front=(1.-smoothstep(.035,.19,abs(r-travel)))*(1.-smoothstep(.15,.22,age));
-   emit+=vec3(1.15,.34,.055)*front;alpha=max(alpha,front*.66);
+   float swept=(1.-smoothstep(travel-.18,travel,r))*peak;
+   emit+=vec3(.20,.043,.004)*swept*(.42+.58*lava)+vec3(1.85,.60,.088)*front;
+   alpha=max(alpha,max(swept*.29,front*.80));
    float residue=1.-smoothstep(.50,1.,k);emit*=residue;alpha*=residue;
    line=0.;
   }else{
@@ -598,6 +601,10 @@ void main(){
   float backMask=texture2D(abilityPriorityMap,behind).r;
   float margin=1.-smoothstep(.008,.68,max(backMask,max(prioritySample.r,prioritySample.b)));
   alpha*=margin;emit*=margin;
+ }
+ if((m>=.5 && m<1.5)||(m>=7.5 && m<8.5)||(m>10.5 && m<11.5)||(m>13.5 && m<14.5 && fxArc==2.)){
+  float silhouette=max(prioritySample.r,texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5+vec2(0.,-.004)).r);
+  emit*=1.-smoothstep(.035,.65,silhouette);
  }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);

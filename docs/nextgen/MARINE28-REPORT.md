@@ -78,3 +78,18 @@ Across 448 paired production-model samples (112 per rig, covering idle, run, fir
 | Cryo | The nearer tank and upper yoke make a tall column. The two valves separate at native size. | The joined column stays upright behind the arm. Its lower edge touches the hose in black. |
 | Pyro | The exhaust mouths occupy opposite sides of the hips. The low outer mouth has the clearest profile. | The wide ends stay distinct from Cryo. From the firing heading the far bottle reads as a separate projection. |
 | Arc | The fork rises clear of the shoulder in colour and black. | The mast stays visible above the gun hand. The individual teeth need the native crop. |
+
+## BROOD41
+
+Pyro's flared exhausts now attach to a two-sided dark yoke from the upper back down to the hip bottles. Arc holds the support elbow farther from the mast while aiming, including with the rifle. The Breacher reaches farther forward and lower in the ordinary shield carry, keeping the forearm between the torso and the plate through the diagonal run. The game and fallback models ship the same embedded PNG atlases.
+
+The calm, diagonal run and shotgun comparisons for all four rigs, including their black silhouettes and current-only full 480×270 frames, are under `artifacts/nextgen/brood41/sheets/`.
+
+The two production models received the same 112 idle, running, firing, reloading, dashing and casting samples per rig. Across 448 pairs, maximum muzzle displacement was 0 and maximum weapon-socket quaternion component distance was 0. The paired samples are in `sockets-before/sockets.json` and `sockets-now/sockets.json` in the gallery folder.
+
+| Rig | Calm | Diagonal run | Shotgun |
+| --- | --- | --- | --- |
+| Breacher | Face and shoulder meet ahead of the helmet. | The gold rim stays forward. Its lower edge and wrist merge into one dark shape in silhouette. | The shield covers the leading forearm, with a short visible return under the face. |
+| Cryo | The joined tank column identifies the rig. | The yoke and tank ends tilt with the trunk. | The tank silhouette stays clear behind the gun. |
+| Pyro | Both exhausts now connect through a dark crosspiece. | The crosspiece and low bottle read as a continuous silhouette. | The outboard mouth stays visible. The yoke is easier to see against the pale deck. |
+| Arc | The fork and open support hand stay on the mast side. | The separation reads best from the diagonal view. | The fork survives in black, although the elbow-to-mast gap is small at 480×270. |

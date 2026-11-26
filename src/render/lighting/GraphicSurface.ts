@@ -247,7 +247,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             graphicActorHue=vec3(1.);
           }else if(bruteBody){
             float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
-            graphicActorLight=.19+.81*step(.225,key)+.45*step(.94,key);
+            graphicActorLight=actorBroodForm.x>=-1. ? 1. : .19+.81*step(.225,key)+.45*step(.94,key);
             graphicActorHue=vec3(1.);
           }else
 #endif
@@ -259,49 +259,12 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
           }
 #ifdef BROOD_PLANES
-          float broodHide=hideFinish(actorPosition,vActorRegion>=3. && vActorRegion<=5. && !broodSac,broodSac);
           if(broodFinish && broodBody){
-            float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
-            // Keep the atlas zone and deck tint as the upper bound for each fragment.
-            // The edge retains its original value. Both larger planes subtract light.
-            float lit=actorBroodForm.w==1. && !broodSac ? .74 : .92;
-            float shade=broodSac ? .61 : actorBroodForm.z;
-            float plane=mix(shade,lit,step(actorBroodForm.x,key));
-            float localLight=graphicActorLight;
-            // The forward-facing sac and joint ridges pick up the same cold key.
-            float edge=actorBroodForm.y;
-            if(broodSac && actorBroodForm.z>.42)edge-=.14*step(.45,normalize(vNormal).z);
-            graphicActorLight*=mix(plane*broodHide,1.,step(edge,key));
-            float silhouette=abs(dot(normalize(vNormal),normalize(vViewPosition)));
-            float rim=step(.14,key)*step(silhouette,min(.53,2.35*fwidth(silhouette)));
-            graphicActorLight=mix(graphicActorLight,max(graphicActorLight,localLight*min(1.,lit+.07)),rim);
-            diffuseColor.rgb+=vec3(.060,.082,.119)*rim;
-            graphicActorHue*=mix(vec3(1.),vec3(.97,1.04,1.13),rim);
-            if(actorBroodForm.w==1. && !broodSac && vActorRegion>=3. && vActorRegion<=5.){
-              float ridge=max(rim,step(.85,key));
-              diffuseColor.rgb+=ridge*vec3(.012,.009,.022);
-            }
-            if(vActorRegion>=2. && vActorRegion<=5.)diffuseColor.rgb+=vec3(.048,.052,.075)*actorAttackLoad*step(-.15,key);
-            if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
+            graphicActorLight=1.;
+            graphicActorHue=vec3(1.);
           }
 #endif
-#ifdef BRUTE_PLANES
-          float heavyHide=hideFinish(actorPosition,vActorRegion>=3. && vActorRegion<=5.,false);
-          vec3 heavyNormal=normalize(vNormal);
-          float heavyUp=dot(heavyNormal,viewMatrix[1].xyz);
-          float heavyKey=dot(heavyNormal,normalize(vec3(-.78,.40,.48)));
-          float heavyFacing=abs(dot(heavyNormal,normalize(vViewPosition)));
-          float heavyRim=max(plateEdgeRim(),step(.14,heavyKey)*step(heavyFacing,min(.40,1.5*fwidth(heavyFacing))));
-          if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
-          if(bruteBody){
-            bool naturalFinish=actorBroodForm.x>=-1.;
-            float side=step(-.18,heavyUp)*step(.06,heavyKey);
-            float plane=mix(mix(.17,.64,side),1.45,step(.66,heavyUp));
-            float legacy=.19+.81*step(.225,heavyKey)+.45*step(.94,heavyKey);
-            graphicActorLight=naturalFinish?mix(plane*heavyHide,1.45,heavyRim):legacy;
-            graphicActorHue=mix(vec3(1.),vec3(.91,.99,1.16),naturalFinish?heavyRim:0.);
-          }
-#endif
+
         }
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,

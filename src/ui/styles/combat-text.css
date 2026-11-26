@@ -32,7 +32,7 @@
 #combat-text .combat-float[data-damage-token=healing] { --combat-ink: var(--healing, #8ce6c3); }
 #combat-text .combat-float[data-kind=status] {color:var(--combat-ink,#f0fbff);}
 #combat-text .combat-float[data-kind=damage] {color:#f0eee5;text-decoration:none;}
-.banked-wound-marker{position:absolute;left:0;top:0;pointer-events:none;padding:2px 6px;white-space:nowrap;color:#ffe2a1;background:#251805e8;border:1px solid #a47c46;font:600 18px var(--font-display,sans-serif)}
+.banked-wound-marker{position:absolute;left:0;top:0;pointer-events:none;padding:2px 6px;white-space:nowrap;color:#ffe2a1;background:#251805e8;border:1px solid #a47c46;font:700 22px var(--font-display,sans-serif)}
 #combat-text .combat-float[data-kind=damage]:not([data-damage-token=neutral])::after {
   content:""; display:inline-block; vertical-align:middle;
   width:.16em; height:.16em; margin-left:.16em; background:var(--combat-ink);

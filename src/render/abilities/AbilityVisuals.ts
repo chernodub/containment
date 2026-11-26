@@ -1,3 +1,4 @@
+import { advanceCastPulse, castField, startCastPulse } from '../lighting/CastPulse';
 import * as T from 'three';
 import { PlacementPreview, type PlacementPreviewState } from './PlacementPreview';
 import { AbilityPriorityMask, bindPriorityMask, type HostilePrioritySource } from './PriorityMask';
@@ -70,6 +71,7 @@ export class AbilityVisuals extends AbilityGeometry {
             return;
         if (event.phase === 'cast')
             super.event(event, x, y);
+        startCastPulse(event, x, y);
         this.kit.contact(event, x, y);
         this.registry.get(event.rig)?.event(event, x, y);
         this.system?.event(event, x, y);
@@ -112,6 +114,7 @@ export class AbilityVisuals extends AbilityGeometry {
             this.kit.fx.blockers = game.geometry.blockers;
             this.kit.fx.enemies = game.enemies.snapshot.enemies;
         }
+        advanceCastPulse(dt);
         this.kit.begin(dt);
         super.update(visible ? snapshot : undefined, dt, visible);
         const f = this.frame;
@@ -130,7 +133,7 @@ export class AbilityVisuals extends AbilityGeometry {
     updatePriority(camera: T.Camera): void {
         this.priorityMask.update(this.wasVisible ? this.frame.game : undefined, camera, this.prioritySource, this.priorityActor);
     }
-    override clear(): void { super.clear(); this.placementPreview?.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
+    override clear(): void { castField.value.w = 0; super.clear(); this.placementPreview?.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
         for (const p of this.registry.values())
             p.clear(); this.system?.clear(); }
     override dispose(): void { if (this.dead)

@@ -4,17 +4,15 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 // Rest-space waves form shallow pores, parallel limb flutes and small sac dimples.
 const creatureHide = `
-#if defined(BROOD_PLANES) || defined(BRUTE_PLANES)
 #ifdef BRUTE_PLANES
 varying vec3 vPlateEdge;
-float plateEdgeRim(){
-  vec3 dx=dFdx(vPlateEdge),dy=dFdy(vPlateEdge);
-  vec3 gradient=max(sqrt(dx*dx+dy*dy),vec3(.00001));
-  vec3 onKey=step(vec3(.20),(.89*dx-.46*dy)/gradient);
-  vec3 rim=onKey*step(vPlateEdge,1.5*gradient);
-  return max(rim.x,max(rim.y,rim.z));
+varying float vHeavyZone;
+float heavyInk(){
+  vec3 distancePx=vPlateEdge/max(fwidth(vPlateEdge),vec3(.00001));
+  return 1.-smoothstep(.22,.78,min(distancePx.x,min(distancePx.y,distancePx.z)));
 }
 #endif
+#ifdef BROOD_PLANES
 uniform float actorHideFrequency;
 float hideFinish(vec3 position, bool limb, bool sac) {
   vec3 p = position * actorHideFrequency * (sac ? 1.45 : 1.);
@@ -63,13 +61,15 @@ float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBoun
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
       if(material.defines?.BROOD_PLANES){
-        shader.vertexShader='varying float broodRestUp;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbroodRestUp=normal.z;');
-        shader.fragmentShader='varying float broodRestUp;\n'+shader.fragmentShader;
+        shader.vertexShader='attribute float broodInterior; varying float vBroodInterior; varying float broodRestUp;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvBroodInterior=broodInterior;broodRestUp=normal.z;');
+        shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;');
+        shader.vertexShader='attribute float _heavyzone; varying float vHeavyZone; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);');
       }
-      shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
+      const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -136,13 +136,20 @@ broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
-vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(3.6,2.05,.035):
+if(crawlerSkin){
+ float spine=abs(actorPosition.x+.47);
+ bool spines=(spine<.075 || abs(spine-.35)<.075) && abs(actorPosition.y)<.33 && broodRestUp>-.28;
+ bool eyes=actorPosition.x>.41 && actorPosition.x<.53 && abs(actorPosition.y)>.12 && abs(actorPosition.y)<.22 && broodRestUp>.1;
+ broodMark=spines || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
+ broodBody=broodBody || broodBand==3 || crawlerHook;
+}
+vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(2.9,2.45,.76):
               spitterSkin?vec3(.14,4.2,.001):vec3(.008,1.90,5.0);
 // Trace a narrow line across organ patches, widening only during native brood priming.
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
 if(sacPatch)broodMark=seam<mix(.14,.86,actorBroodPrime);
-float ridgeGlow=ridgeSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
+float ridgeGlow=ridgeSkin && !crawlerSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
   diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
@@ -155,9 +162,10 @@ if(broodFinish && broodBody){
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
-bool wardenMaw=actorWarden>.5 && band==3;
+float heavyPaint=floor(vHeavyZone+.5);
+bool wardenMaw=actorWarden>.5 && heavyPaint==9.;
 if(wardenMaw)diffuseColor.rgb=vec3(.025,.012,.005);
-bool bruteFace=band==5;
+bool bruteFace=heavyPaint==7. || heavyPaint==8.;
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
@@ -220,8 +228,35 @@ if(bruteFace)ceiling=.355;
 float bounded=min(bodyValue,ceiling);
 float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
+#ifdef BRUTE_PLANES
+if(actorBroodForm.x>=-1.){
+  vec3 middle=mix(vec3(.050,.074,.048),vec3(.108,.055,.031),actorWarden);
+  vec3 crown=mix(vec3(.094,.147,.098),vec3(.187,.101,.060),actorWarden);
+  vec3 paint=vec3(.020,.024,.015);
+  if(heavyPaint==1.)paint=crown;
+  if(heavyPaint==2. || heavyPaint==4. || heavyPaint==6.)paint=middle;
+  if(heavyPaint==7.)paint=vec3(.49,.435,.337);
+  if(heavyPaint==8.)paint=vec3(.275,.236,.172);
+  if(heavyPaint==9.)paint=vec3(5.9,3.85,1.50);
+  vec3 n=normalize(vNormal);
+  float facing=abs(dot(n,normalize(vViewPosition)));
+  float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));
+  outgoingLight=mix(mix(paint,vec3(.19,.23,.24),rim*step(heavyPaint,6.)),vec3(.008,.011,.009),heavyInk());
+}
+#endif
 #ifdef BROOD_PLANES
-if(broodFinish && sacPatch && !broodMark)outgoingLight=creatureBody*.55+vec3(.021,.009,.045);
+// The UV cell comes from the winning K11 primitive and is constant across a face.
+bool broodLimb=vActorRegion>=3. && vActorRegion<=5.;
+bool broodTop=broodBand==1 && !broodLimb;
+if(broodFinish && (broodBody || sacPatch) && !broodMark){
+ vec3 flatInk=broodTop?vec3(.096,.081,.121):vec3(.047,.039,.065);
+ if(broodBand==6 || broodLimb)flatInk=vec3(.025,.022,.037);
+ if(sacPatch)flatInk=broodBand==9?vec3(.108,.052,.141):vec3(.064,.029,.090);
+ float slope=fwidth(vBroodInterior);
+ float line=step(.0001,slope)*step(vBroodInterior,min(.48,.85*slope));
+ outgoingLight=mix(flatInk,vec3(.012,.010,.020),line)*actorStageLight*actorCamouflage;
+ outgoingLight+=vec3(.085,.11,.15)*keyRim;
+}
 if(broodFinish && broodMark){
  float frost=actorContact.x<1.5 ? actorContact.y : 0.;
  outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
@@ -236,54 +271,42 @@ contactSkin=contactSkin && !(broodFinish && broodMark);
 #ifdef BRUTE_PLANES
 if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
 #endif
-if(actorContact.y>0. && contactSkin){
+if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
- float edge=smoothstep(.025,.34,actorRim);
- vec3 p=actorPosition;
- float vein=sin(dot(p,vec3(1.67,.86,1.22))+.65*sin(p.z*2.1));
- float energy;
- vec3 accent;
- if(actorContact.x<1.5){
-  energy=smoothstep(.12,.43,actorRim)*smoothstep(.30,.70,limb)*smoothstep(.20,.65,p.z-actorPlateBounds.z);
-  accent=vec3(.59,1.44,1.68);
- }else if(actorContact.x<2.5){
-  float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
-  energy=smoothstep(.08,.38,actorRim)*(.45+.55*smoothstep(-.62,.40,flicker));
-  accent=mix(vec3(.98,.55,.12),vec3(3.1,2.65,1.55),smoothstep(.35,.88,flicker));
- }else if(actorContact.x<3.5){
-  energy=edge*(.24+.76*smoothstep(.05,.62,sin(vein*5.+actorContact.z*8.)));
-  accent=vec3(1.14,.66,1.92);
- }else{
-  energy=edge*(.26+.74*smoothstep(-.45,.58,vein));
-  accent=vec3(1.29,.90,.47);
- }
- // Faceted armour can face the camera squarely. Leave a broken contact
- // patch on those planes too, particularly on the outer joints.
-#ifdef BRUTE_PLANES
- if(bruteBody && !wardenMaw && actorContact.x<3.5){
-  float top=band==1 ? 1. : 0.;
-  vec3 sides=vec3(.018,.047,.083), crown=vec3(.25,.40,.48);
-  if(actorContact.x>2.5){sides=vec3(.032,.019,.055);crown=vec3(.18,.085,.28);}
-  else if(actorContact.x>1.5){sides=vec3(.058,.026,.012);crown=vec3(.24,.10,.035);}
-  outgoingLight=mix(outgoingLight,mix(sides,crown,top),actorContact.y*safe);
-  energy=smoothstep(.47,.79,actorRim)*(.25+.55*top);
- }
-
-#endif
+ float vein=sin(dot(actorPosition,vec3(1.67,.86,1.22))+.65*sin(actorPosition.z*2.1));
+ float energy=smoothstep(.025,.34,actorRim)*(.26+.74*smoothstep(-.45,.58,vein));
  float deposit=smoothstep(.48,.94,vein)*(.25+.52*limb);
- if(actorContact.x<1.5)deposit*=.12;
 #ifdef BRUTE_PLANES
  if(bruteBody)deposit=0.;
 #endif
- outgoingLight+=accent*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
- if(actorContact.x>1.5 && actorContact.x<2.5){
-  // The pale centre of a live coal follows the skin even as a limb turns
-  // its edge away from the camera. Its narrow footprint keeps the ink clear.
-  float coal=(1.-smoothstep(.09,.39,abs(vein-.30)))*max(.42,edge);
-  #ifdef BRUTE_PLANES
-  if(bruteBody)coal*=smoothstep(.45,.81,actorRim);
+ outgoingLight+=vec3(1.29,.90,.47)*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
+}else if(actorContact.x<3.5 && actorContact.y>0.){
+ vec3 accent=actorContact.x<1.5?vec3(.31,.66,.89):actorContact.x<2.5?vec3(.74,.27,.048):
+             actorContact.x<3.5?vec3(.48,.22,.86):vec3(.48,.37,.22);
+ bool top=false;
+ bool identityMark=lanternPeak>.015;
+#ifdef BRUTE_PLANES
+ top=bruteBody && band==1;
+ identityMark=wardenMaw || (!bruteBody && identityMark);
+ contactSkin=bruteBody && !bruteFace && !wardenMaw && !eliteTrim;
+#ifdef AUTHORED_HEAVY_STATUS
+ float statusZone=floor(vHeavyZone+.5);
+ top=statusZone==1.;
+ identityMark=statusZone==9.;
+ contactSkin=statusZone<=6. && heavyInk()<.35;
 #endif
-  outgoingLight+=vec3(4.2,2.9,1.2)*coal*safe*actorContact.y;
+#endif
+#ifdef BROOD_PLANES
+ top=(broodTop || broodSac) && !broodMark;
+ identityMark=broodMark;
+ contactSkin=(broodBody || broodSac) && !identityMark;
+#endif
+ if(contactSkin){
+  float tint=top?.40*actorContact.y:0.;
+  outgoingLight=mix(outgoingLight,accent,tint);
+  outgoingLight+=accent*actorContact.y*step(.62,actorRim)*.72;
+ }else if(identityMark){
+  outgoingLight*=mix(vec3(1.),.68+.24*accent,actorContact.y);
  }
 }`}
 #include <opaque_fragment>`)
@@ -312,6 +335,7 @@ totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoot
 if(broodFinish && (broodMark || ridgeGlow>0.)){
   // Keep the identification mark visible through the resting Stalker's camouflage.
   float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
+  if(crawlerSkin)markVisibility*=1.-.52*actorBroodPrime;
   lanternEmission=broodInk*(broodMark?1.:ridgeGlow)*mix(.92,1.,actorStageLight)*markVisibility;
   totalEmissiveRadiance=lanternEmission;
 }
@@ -333,7 +357,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-fx31:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-heavy42:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

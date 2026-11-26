@@ -456,9 +456,9 @@ export class MarineMotion {
     if(this.rig==='breacher' && !this.dead){
       this.shieldCarry();
       this.stanceFeet(.10,.20);
-    }else if(!this.dead && !this.action && !reload && weapon!=='rifle'){
+    }else if(!this.dead && !this.action && !reload && (weapon!=='rifle'||this.rig==='arc')){
       if(this.rig==='arc'){
-        this.castArm(this.leftArm,this.leftForearm,this.leftHand,-.09,-.43,.25,1);
+        this.castArm(this.leftArm,this.leftForearm,this.leftHand,-.23,-.62,.34,1);
         for(const finger of this.openFingers)finger.bone.quaternion.slerp(finger.bind,.88);
       }
       if(this.rig==='pyro') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.48,-.24,-.36,.96);
@@ -531,10 +531,10 @@ export class MarineMotion {
       this.rotateToward(this.leftShoulder,this.from,this.to);
     }
     this.leftArm.getWorldPosition(this.target);
-    const reach=charging ? .82 : .43, side=charging ? -.29 : -.22;
+    const reach=charging ? .82 : .56, side=charging ? -.29 : -.22;
     this.target.x+=c*reach-s*side;
     this.target.z+=s*reach+c*side;
-    this.target.y+=charging ? -.14 : -.32;
+    this.target.y+=charging ? -.14 : -.36;
     this.solveChain(this.leftArm,this.leftForearm,this.leftHand,true);
     // Roll the striking face toward world up, with a small outward rake.
     this.leftForearm.getWorldPosition(this.from);

@@ -219,3 +219,17 @@
   font-weight: 700;
 }
 #overlay .supply-doctrine-option:nth-child(2) .supply-transformation small::before { content: '←'; }
+
+#overlay .requisition-groups[data-pair-pending=true]:not(:focus-within):not(:hover) {
+  grid-template-columns: 1fr;
+  gap: 4px;
+  opacity: .74;
+}
+#overlay .requisition-groups[data-pair-pending=true]:not(:focus-within):not(:hover) .requisition-grid {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#overlay .requisition-groups:is(:focus-within,:hover) .stock-summary { display: none; }

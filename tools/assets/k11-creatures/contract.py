@@ -165,7 +165,7 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
         flat = [number for value in values for number in value]
         code = {5126: "f", 5123: "H", 5125: "I"}[component]
         raw = struct.pack(f"<{len(flat)}{code}", *flat)
-        accessor = {"bufferView": add_view(raw, 34963 if kind == "SCALAR" else 34962), "componentType": component,
+        accessor = {"bufferView": add_view(raw, 34963 if kind == "SCALAR" and component != 5126 else 34962), "componentType": component,
                     "count": len(values), "type": kind}
         if bounds:
             accessor["min"] = [min(row[i] for row in values) for i in range(width)]
@@ -205,6 +205,8 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
             uv = mesh.uv_layers.active
             color = mesh.color_attributes.active_color
             region = mesh.attributes.get("k11_region")
+            heavy_zone = mesh.attributes.get("heavy_zone")
+            zone_ids = []
             groups = {group.index: joints[group.name] for group in obj.vertex_groups
                       if group.name in joints}
             vertex_weights = []
@@ -235,12 +237,14 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                     rgba = tuple(color.data[color_index].color) if color else ()
                     ids, weights = vertex_weights[loop.vertex_index]
                     reg = tuple(region.data[loop.vertex_index].vector) if region else ()
-                    key = (point, direction, texcoord, rgba, tuple(ids), tuple(weights), reg)
+                    zone_id = heavy_zone.data[triangle.polygon_index].value if heavy_zone else 0
+                    key = (zone_id, point, direction, texcoord, rgba, tuple(ids), tuple(weights), reg)
                     vertex_index = lookup.get(key)
                     if vertex_index is None:
                         vertex_index = len(positions)
                         lookup[key] = vertex_index
                         positions.append(point);directions.append(direction)
+                        if heavy_zone: zone_ids.append((zone_id,))
                         if uv: uvs.append(texcoord)
                         if color: colors.append(rgba)
                         bone_ids.append(ids);bone_weights.append(weights)
@@ -254,6 +258,8 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                 attributes["TEXCOORD_0"] = add_accessor(uvs, "VEC2")
                 # AO shares the same baked layout as the base/normal atlases.
                 attributes["TEXCOORD_1"] = attributes["TEXCOORD_0"]
+            if zone_ids:
+                attributes["_HEAVYZONE"] = add_accessor(zone_ids, "SCALAR")
             if colors:
                 attributes["COLOR_0"] = add_accessor(colors, "VEC4")
             if regions and any(max(r) > 0 for r in regions):

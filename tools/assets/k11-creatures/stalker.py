@@ -156,7 +156,7 @@ def build(sk):
         for s, side in ((-1, "R"), (1, "L")):
             n = lambda part: f"leg_{leg}_{part}.{side}"
             chain(body, sk, [n("up"), n("up1"), n("mid"), n("lo"), n("lo1")], [0.19, 0.17, 0.15, 0.11, 0.08, 0.025], s,
-                  tint=0.75)
+                  tint=0.75, spread=.48 if leg=="front" and side=="R" else 0)
     # --- elite: dorsal spine fan on the abdomen ---------------------------------------
     elite = S.Sculpture("stalker-elite")
     # one overgrown right scythe: a second, larger bone blade fused along the arm

@@ -603,3 +603,4 @@ body[data-state=playing] #world{cursor:none}
 #hud #room-objective.coaching-objective[data-leader="left"]::after { left: 100%; }
 
 #hud #room-objective.coaching-obstructed { visibility: hidden; }
+#hud #action-bar [data-marine-clearance] { opacity: 0; transition: none; }

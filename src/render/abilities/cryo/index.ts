@@ -118,37 +118,21 @@ class CryoPresentation implements AbilityPresentation {
       const insideStorm = whiteout && Math.hypot(wave.x - whiteout.x / UNIT, wave.z - whiteout.y / UNIT) + wave.radius < whiteout.radius / UNIT;
       const localYield = insideStorm && wave.age > .10 ? .16 : 1;
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity) * localYield;
-      if (wave.age < wave.life && wave.aftermath) {
-        // Native radius remains a thin boundary. Authored mist carries the rolling
-        // vapor silhouette, with short overlapping cards instead of a solid torus.
-        const curtainYield = Math.min(1, Math.max(0, (wave.age - .10) / .08));
-        const mistCount = k.low ? 4 : 8;
-        for (let i = 0; i < mistCount; i++) {
-          const a = i * TAU / mistCount + .13;
-          const width = Math.min(radius * .17, .58 + progress * .42);
-          const r = Math.max(0, radius - width * 1.2);
-          k.gust(wave.x + Math.cos(a) * r, wave.z + Math.sin(a) * r,
-            width * 1.5, .14, a + Math.PI / 2, i * 1.87,
-            fade * .22 * (1 - curtainYield * .7));
-        }
-      }
       const count = k.low ? 8 : 24;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
         const seed = i * 1.873, angle = (i + Math.sin(seed) * .32) * TAU / count;
         const c = Math.cos(angle), s = Math.sin(angle);
-        const size = .045 + Math.sin(seed * 3.1) ** 2 * .1;
+        const size = .10 + Math.sin(seed * 3.1) ** 2 * .15;
         k.draw('shard', wave.x + c * Math.max(0, radius - size * 1.65), .15 + Math.sin(i * 1.7) ** 2 * .18, wave.z + s * Math.max(0, radius - size * 1.65),
           size, size * (wave.shatter ? 3.6 : 2.7), size * .8, i % 3 ? ICE : CORE, fade * .85, angle + Math.sin(seed * 2.3) * .55, .1 + Math.sin(seed) * .12);
-        if (!k.low && i % 3 === 0) {
-          k.draw('smoke', wave.x + c * radius * .89, .3, wave.z + s * radius * .89,
-            .65 + progress * .45, .33 + progress * .2, .1, 0xb2dce8, fade * (wave.shatter ? .12 : .38), angle);
-        }
+
       }
+      if (wave.aftermath) this.obstacleCrystals(wave.x, wave.z, radius, localYield);
       if (wave.aftermath) {
         // Crystal spikes erupt from the deck where the front passes, in leaning clusters, then sink.
         const clusters = k.low ? 6 : 16, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
         for (let i = 0; i < clusters; i++) {
-          const a = i * 2.39996323 + .4, r = wave.radius * (.38 + ((i * .618034) % 1) * .54);
+          const a = i * 2.39996323 + .4, r = wave.radius * (.84 + ((i * .618034) % 1) * .12);
           const g0 = Math.min(1, Math.max(0, (radius - r) / .35)), growth = 1 - (1 - g0) ** 3;
           if (growth <= 0) continue;
           const tall = (.5 + (i % 4) * .14) * growth * (.55 + .45 * lingering);
@@ -275,72 +259,37 @@ class CryoPresentation implements AbilityPresentation {
       }
     }
     k.sustain(age / 1000);
-    const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
-    const time = k.reducedMotion ? 0 : age / 1000;
-    // Low facets grow successively down branching radial seams.
-    for (let arm = 0; arm < (k.low ? 6 : 11); arm++) {
-      const heading = arm * 2.39996 + zone.id;
-      for (let joint = 1; joint <= (k.low ? 3 : 5); joint++) {
-        const distance = radius * joint / (k.low ? 3.6 : 5.7);
-        const grown = Math.min(1,Math.max(0,age/420-distance/radius));
-        if (!grown) continue;
-        const a = heading + .12*Math.sin(arm+joint);
-        k.draw('shard',x+Math.cos(a)*distance,.08,z+Math.sin(a)*distance,
-          (.18+.035*joint)*grown,.043*grown,radius*.072*grown, ICE,
-          .82*fade,-a+Math.PI*.5,.18,2+joint);
-      }
+    const growth = Math.min(1, age / 150);
+    const front = radius * growth;
+    const count = k.low ? 8 : 15;
+    for (let i = 0; i < count; i++) {
+      const angle = i * 2.39996 + zone.id;
+      const h = .48 + .58 * authoredVariation(i + zone.id);
+      const px = x + Math.cos(angle) * (front - .28), pz = z + Math.sin(angle) * (front - .28);
+      k.draw('shard', px, h * .45, pz, .19, h, .12, ICE, fade, angle, .38);
+      k.draw('shard', px + .16, h * .33, pz, .105, h * .70, .09, CORE, fade, angle, -.16);
     }
-    // Local snow wisps drift above the single rolling ground surface.
-    const wisps = k.low ? 4 : 8;
-    for (let i = 0; i < wisps; i++) {
-      const seed = i * 2.731 + zone.id * .73;
-      const a = i * TAU / wisps + time * .48;
-      const r = radius * (i % 4 === 0 ? .46 : .87), width = Math.min(.48, radius * .045);
-      k.sprite('snow', x + Math.cos(a) * r, .65 + (i % 3) * .14, z + Math.sin(a) * r,
-        width, .32, CORE, fade * .72, seed, 'billboard', 0, -.72);
-    }
-    // Tangential gust ribbons keep the interior transparent.
-    const strokes = k.low ? 3 : 6;
-    for (let i = 0; i < strokes; i++) {
-      const seed = i * 2.731 + zone.id, variation = authoredVariation(seed, 3);
-      const a = i * TAU / strokes + time * .24 + variation * .21;
-      const r = radius * (.84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
-      const halfLength = Math.min(radius * (.14 + variation * .08), Math.sqrt(Math.max(.001, radius * radius - (r + halfWidth) ** 2)) * .85);
-      k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
-        a + Math.PI / 2, seed, fade * (.33 + variation * .13) * groundYield);
-    }
-    this.targetVapor(zone, frame, fade);
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
+    this.obstacleCrystals(x, z, front, fade);
     this.frostRims(zone, frame, fade * .85);
     k.impact();
   }
 
-  private targetVapor(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
-    const game = frame.game, k = this.kit;
-    if (!game) return;
-    let count = 0;
-    for (const enemy of game.enemies?.snapshot.enemies ?? EMPTY_ENEMIES) {
-      if (enemy.health <= 0) continue;
-      const dx = enemy.x - zone.x, dz = enemy.y - zone.y;
-      if (dx * dx + dz * dz > zone.radius * zone.radius) continue;
-      const status = game.boonStatuses?.(enemy.id);
-      if (!status?.chilled && !status?.frozen) continue;
-      const radius = enemy.radius / UNIT, actorHeight = k.statusActor?.(enemy.id)?.height ?? 1;
-      const x = enemy.x / UNIT, z = enemy.y / UNIT;
-      k.sprite('mist', x - .22, actorHeight * .3, z + .15,
-        Math.min(.65, radius * 1.05), Math.min(.58, actorHeight * .4),
-        ICE, fade * .38, enemy.id, 'billboard', 0, -.55);
-      const pulseAge = ((zone.durationMs - zone.remainingMs) % 2000) / 1000;
-      if (status.frozen && pulseAge < .32) {
-        // Contact facets frame the feet, never a white overlay across anatomy.
-        for (let i = 0; i < (k.low ? 2 : 4); i++) {
-          const a = i * TAU / (k.low ? 2 : 4) + .37, r = radius * 1.25;
-          if (Math.hypot(dx / UNIT, dz / UNIT) + r + .2 >= zone.radius / UNIT) continue;
-          k.sprite('crystal', x + Math.cos(a) * r, .13, z + Math.sin(a) * r,
-            .13, .25 * (1 - pulseAge / .32), CORE, fade * (1 - pulseAge / .32) * .65, enemy.id + i, 'vertical', -a);
-        }
-      }
-      if (++count >= (k.low ? 2 : 4)) break;
+
+  private obstacleCrystals(x: number, z: number, radius: number, opacity: number): void {
+    const k = this.kit;
+    let clusters = 0;
+    for (const rect of k.fx.blockers) {
+      const px = Math.max(rect.x / UNIT, Math.min(x, (rect.x + rect.width) / UNIT));
+      const pz = Math.max(rect.y / UNIT, Math.min(z, (rect.y + rect.height) / UNIT));
+      const dx = x - px, dz = z - pz, d = Math.hypot(dx, dz);
+      if (d < .01 || d + .18 > radius) continue;
+      const angle = Math.atan2(dz, dx);
+      k.draw('shard', px + dx / d * .18, .34, pz + dz / d * .18,
+        .21, .72, .14, ICE, opacity, angle, .31);
+      k.draw('shard', px + dx / d * .32, .29, pz + dz / d * .32,
+        .10, .58, .08, CORE, opacity, angle, -.18);
+      if (++clusters >= (k.low ? 2 : 4)) break;
     }
   }
 

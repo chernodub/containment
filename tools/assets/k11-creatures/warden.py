@@ -2,6 +2,7 @@
 jade shell bands under a tall bone sail along the spine ridge, heavier forequarters, and a head built around an
 open jaw (bone prow on the upper jaw, a dark lower jaw on visible cheek hinges, dark teeth across a lit throat)."""
 
+from heavy_support import planted_hand, sole
 import math
 
 from sdf import AnglePlate, Ellipsoid, Prism, RoundCone, ShellBand, frame, normalize, v3, ARMOR, FLESH, CREST, ORGAN
@@ -39,7 +40,7 @@ def build(sk, a):
     for (x, z, height), number in zip(((.75, 6.70, 1.84), (-.40, 6.80, 1.96), (-1.55, 6.66, 1.60), (-2.60, 6.25, 1.15)),
                                       (451, 451, 451, 451)):
         base = v3((x, 0, z))
-        tip = base + v3((-.55 * height, 0, height))
+        tip = base + v3((-.15 * height, 0, 1.16 * height))
         w.add(Prism(base, tip, .62, .07, sides=4, up=(0, 1, 0), roll=math.pi / 4, squash=.42,
                     zone=CREST, bone="chest" if x > -2 else "tail", k=.04, plate=number, hard=1.0))
     # --- heavier forequarters: cap, upper arm, dark elbow, forearm + guard, dark wrist, fist, two knuckles -----------
@@ -55,17 +56,15 @@ def build(sk, a):
         upv = normalize(v3((0, .55 * s, 1)) - d * float(d @ v3((0, .55 * s, 1))))
         w.add(ShellBand((el + wr) * .5 + upv * .98, frame(d, upv), (2.0, .95, .85), .85, .65, thick=.24, bevel=.09,
                         zone=ARMOR, bone="chest", plate=JADE + 9, hard=1.0))
-        lobe(wr, (.70, .72, .66), "chest", k=.05)
+        lobe(wr, (.72, .76, .49), "chest", k=.05)
         fist = wr + v3((.45, .02 * s, -.10))
-        lobe(fist, (.81, 1.13, .60), "chest", .15, k=.08, plate=JADE + 8)
-        for k in (-1, 1):
-            lobe(fist + v3((1.14, .68 * k + .05 * s, -.34)), (.70, .45, .50), "chest", k=.04)
+        planted_hand(w, fist, "chest", 1.16)
         # hind legs: thigh, dark knee, shin, dark foot
         hip, knee, foot = v3((-2.95, 1.05 * s, 4.25)), v3((-2.55, 1.75 * s, 2.65)), v3((-3.05, 1.95 * s, .50))
         w.add(RoundCone(hip, knee, .95, .74, zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=JADE + 6))
         w.add(Ellipsoid(knee, (.76,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
         w.add(RoundCone(knee, foot + v3((0, 0, .2)), .66, .52, zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=JADE + 6))
-        w.add(Ellipsoid(foot + v3((.35, 0, -.05)), (1.23, .80, .42), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
+        sole(w, foot + v3((.38, 0, -.06)), f"foot.back.{side}", (1.12, .73, .31))
     # --- neck: narrow and dark from the chest to the jaw hinge, a crease back to the leading shoulders ---------------
     w.add(RoundCone((1.70, 0, 5.55), (3.05, 0, 5.80), .82, .66, zone=FLESH,
                     bone=("blend", "chest", "head", (1.7, 0, 5.5), (3.1, 0, 5.8)), k=.10, plate=UNDER))
@@ -75,10 +74,10 @@ def build(sk, a):
     lobe((3.80, 0, 6.38), (1.14, 1.00, .44), "head", -.10, plate=UNDER)
     w.add(AnglePlate((3.67, 0, 6.74), frame((-1, 0, .12)), 1.06, .88, .26,
                      keel=.18, rake=.64, taper=.60, zone=CREST, bone="head", plate=450, hard=1.0))
-    lobe((4.36, 0, 5.47), (1.36, 1.08, .38), "jaw", -.10, plate=UNDER)
-    lobe((5.24, 0, 5.56), (.55, .92, .22), "jaw", .05, plate=450)
+    lobe((4.55, 0, 5.37), (1.50, 1.09, .36), "jaw", -.10, plate=UNDER)
+    lobe((5.70, 0, 5.44), (.40, 1.01, .20), "jaw", .05, plate=450)
     for side in (-1, 1):
         lobe((3.15, 1.04 * side, 5.99), (.52, .31, .49), "head", plate=450)
-    lobe((4.77, 0, 6.21), (.43, 1.02, .30), "head", -.13, k=.0,
+    lobe((4.90, 0, 6.14), (.58, 1.00, .36), "head", -.13, k=.0,
          zone=ORGAN, plate=0, name="warden-ram")
     return w

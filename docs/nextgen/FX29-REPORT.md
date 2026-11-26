@@ -191,3 +191,41 @@ The production build passed. The seed-1729 Pyro campaign cleared all eight rooms
 | Pyro Low | 146 | 141 | 0 / 0 |
 | Cryo High | 147 | 147 | 0 / 0 |
 | Cryo Low | 134 | 134 | 0 / 0 |
+
+## FX34
+
+Eight cast effects share a 180 ms colored pulse. The existing surface materials project it onto the deck in world space and onto low prop edges. Actor materials use their stage-light gain and grazing angle for the rim. Color falls off with distance and height. The pulse is shaded into the opaque surfaces under hostile warnings. It adds no light, draw call or screen pass.
+
+Cryo Nova trades its rolling mist cards for upright blue shards with white center blades at separated points along the front. Whiteout retains bare-deck channels, with dark joints between bank facets and crystal clusters at the rim. Both effects place a few additional blades at the nearest exposed faces of collision obstacles. Base Meltdown now derives its shader age from elapsed native aura time. Its translucent hot interior and bright front expand to the 130-unit radius in 150 ms. Core uses the same drawing at its native 260-unit detonation. Both cool into dark crust with a few ember seams.
+
+Seismic Slam retains its dark raised slabs and amber fissures. Overload keeps its branching lance and deck track, and Railbreaker retains its linear wake. Each receives its rig-colored cast pulse. Flashfire retains its opening fork, with a faster falloff on the caster’s existing light. Fire emission fades behind actor silhouettes, and a single brighter ember follows a posed flank joint during the existing 650 ms Pyro hit receipt.
+
+The gallery compares final23 with FX34 at native size and shows current-only thumbnails at 480×270. The cast sample is 10 ms after resolution. The peak and the next frame use final23’s timing, with the latter 300 ms after peak. The separate exact-300 sheet samples 300 ms after resolution. All gallery pairs use the final build on the right. For cast instants and the Core detonation, the comparison uses fresh captures of the pre-FX34 build on the same fixture because final23 lacks those samples. [Gallery](../../artifacts/nextgen/fx34/index.html) · [Exact-300 sheet](../../artifacts/nextgen/fx34/at300.png) · [Sheet order](../../artifacts/nextgen/fx34/at300-order.txt) · [Enemy centers](../../artifacts/nextgen/fx34/counts.txt)
+
+The denominator is the live enemy roster inside the power at that sample, including enemies clipped by the viewport. The numerator is a one-second visual estimate at 480×270. An enemy needs a distinguishable body or family mark. A health bar alone does not count. For Overload the roster follows the native chain, and for Railbreaker it follows the shot corridor. Each cell gives previous → FX34.
+
+| Power | Cast | Peak | Peak + 300 ms | Cast pulse and brightest accents at 300 ms after resolution |
+| --- | --- | --- | --- | --- |
+| Whiteout | 19/24 → 19/24 | 20/26 → 20/26 | 19/26 → 19/26 | Cyan reaches the deck and nearby silhouettes. At 300 ms the pale banks on the left still compete with frozen limbs. |
+| Cryo Nova | 5/6 → 5/6 | 5/6 → 5/6 | 9/11 → 9/11 | Cyan deck flash under the rising shards. The white crystal tips and upper-body ice share the brightest cold accents. |
+| Meltdown | 0/0 → 0/0 | 0/0 → 0/0 | 3/3 → 3/3 | Orange light spreads from the caster. The front reaches 130 units before cooling. At 300 ms the floor effect has faded below the marine and nearby family marks. |
+| Meltdown Core | 5/5 → 5/5 | 5/5 → 5/5 | 5/5 → 5/5 | The orange pulse and broad travelling edge register against the Brutes. At 300 ms the pale outline on the recoiling heavy leads the fire residue. |
+| Seismic Slam | 7/8 → 7/8 | 2/3 → 2/3 | 5/7 → 5/7 | Amber reflects off the deck at cast. The green, blue and amber creature marks stand above the dark plates and thin cracks at 300 ms. |
+| Flashfire | 11/13 → 11/13 | 7/8 → 7/8 | 8/9 → 8/9 | Red-orange light reaches the deck and lower limbs. At 300 ms the muzzle has cooled. A few ember points and creature marks stand out, with the room practical brighter than either. |
+| Overload | 4/5 → 4/5 | 4/5 → 4/5 | 4/5 → 4/5 | Violet light reaches the nearby deck and low edges at cast. At 300 ms the pale arc on the heavy and the creature marks lead the narrow purple track. |
+| Railbreaker | 0/0 → 0/0 | 0/0 → 0/0 | 0/0 → 0/0 | An amber flash reflects beneath the white rail. At 300 ms its brightest remaining effect pixels are on the winding deck wake. The impact receipt records three hits. There are no surviving enemy centers in the 44-unit-wide shot corridor at the samples. |
+
+The base Meltdown fixture starts with its nearest living enemy centers outside the 130-unit aura. Its separate 150 ms sample shows the full edge and the interruption at the nearby obstacle. The Core fixture puts five surviving Brutes inside its larger detonation. The native Pyro panel uses the Passenger Vault pressure frame from a two-room campaign. [Meltdown at full reach](../../artifacts/nextgen/fx34/meltdown-radius-480.png) · [Native Pyro](../../artifacts/nextgen/fx34/native-pyro-native.png)
+
+At 480×270 the hostile red arc is identifiable beside the marine in all four overlap cases. Pyro gives it the least color separation. Its red curve remains distinct from the brighter orange fork. Cryo and Arc preserve the curve through the pulse, and Breacher leaves it visible inside the amber perimeter. In the dense power panels, visible warnings retain their red outlines, including the fan under Meltdown Core. The pulse reaches the deck in every cast. The low-edge tint is easiest to see on the nearest large bodies. Distant prop trim is too small to judge reliably at 480×270. [Pyro](../../artifacts/nextgen/fx34/overlap-pyro-native.png) · [Cryo](../../artifacts/nextgen/fx34/overlap-cryo-native.png) · [Arc](../../artifacts/nextgen/fx34/overlap-arc-native.png) · [Breacher](../../artifacts/nextgen/fx34/overlap-breacher-native.png)
+
+The production build passed. The native Cryo campaign with seed 1729 cleared all eight rooms and recorded zero errors. The runner exited 1 after recording five room-loading diagnostics on the shared machine. [Build](../../artifacts/nextgen/fx34/build.log) · [Campaign receipt](../../artifacts/nextgen/playtest/fx34-final-cryo/report.json)
+
+Crew Checkpoint peak draw calls over 600 fixed ticks. Each cell gives pre-FX34 → FX34. Combat compiles are counts of new shader programs during the measured combat interval. [Baseline](../../artifacts/nextgen/fx34-base/benchmark.json) · [FX34](../../artifacts/nextgen/fx34-final/benchmark.json)
+
+| Rig | High peak draws | Low peak draws | High combat compiles | Low combat compiles |
+| --- | ---: | ---: | ---: | ---: |
+| Pyro | 155 → 155 | 141 → 141 | 0 → 0 | 0 → 0 |
+| Cryo | 147 → 147 | 134 → 134 | 0 → 0 | 0 → 0 |
+| Arc | 156 → 156 | 145 → 145 | 0 → 0 | 0 → 0 |
+| Breacher | 143 → 143 | 134 → 134 | 0 → 0 | 0 → 0 |

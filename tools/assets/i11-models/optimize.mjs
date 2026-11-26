@@ -1,3 +1,4 @@
+import {fairPaintSeams} from '../k11-creatures/paint-seams.mjs';
 /** Offline actor packing. Positions, skeleton transforms and animation data remain full precision. */
 import {NodeIO, PropertyType} from '@gltf-transform/core';
 import {ALL_EXTENSIONS, EXTMeshoptCompression} from '@gltf-transform/extensions';
@@ -13,6 +14,11 @@ for(const name of ['dretch','basilisk','marauder','tyrant','dragoon','marine']) 
  const path=`public/assets/models/${name}.glb`;
  const original=await readFile(path);
  const doc=await io.readBinary(original);
+ if (name === 'tyrant') {
+  for (const mesh of doc.getRoot().listMeshes()) {
+   for (const primitive of mesh.listPrimitives()) fairPaintSeams(primitive);
+  }
+ }
  // Preserve named rank skins and animation contracts; prune orphan accessors only.
  await doc.transform(dedup(),quantize({pattern:/^(NORMAL|TANGENT|TEXCOORD_\d+|WEIGHTS_\d+)$/,quantizeNormal:16,quantizeTexcoord:16,quantizeWeight:16,normalizeWeights:false,cleanup:false}),dedup(),prune({propertyTypes:[PropertyType.ACCESSOR]}));
  doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({method:EXTMeshoptCompression.EncoderMethod.QUANTIZE});

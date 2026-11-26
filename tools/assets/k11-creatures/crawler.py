@@ -119,6 +119,8 @@ def build(sk):
     for leg, side, raptor in legs:
         up, lo = f"{leg}_upper", f"{leg}_lower"
         hip, knee, foot = sk.h(up), sk.h(lo), sk.end(lo)
+        knee = knee + v3((0, side * .11, 0))
+        foot = foot + v3((0, side * .19, 0))
         heavy = 1.25 if (raptor and side < 0) else 1.0   # the off-hand: right hook is heavier
         if raptor:
             forelimb = A.limb(hip, knee, knee + (foot - knee) * 0.25, 0.15 * heavy, 0.12 * heavy, 0.07, up, lo,

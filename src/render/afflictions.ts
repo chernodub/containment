@@ -10,6 +10,7 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
  const data:Attachment={status:NO_AFFLICTION,span,height,phase:serial++*.713};root.userData.affliction=data;
  const frost={value:0};
  root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial){
+  if(m.defines?.BROOD_PLANES || m.defines?.BRUTE_PLANES)continue;
   const previous=m.onBeforeCompile,previousKey=m.customProgramCacheKey();
   m.onBeforeCompile=(shader,renderer)=>{previous.call(m,shader,renderer);shader.uniforms.statusFrost=frost;
    shader.vertexShader='varying vec3 statusPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nstatusPosition = position;');

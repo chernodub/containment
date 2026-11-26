@@ -41,9 +41,11 @@ PALETTE = {
 GLOW = {"muzzle": (0.63, 0.90, 0.14), "organ": (0.2, 1.0, 0.02), "eye": (0.5, 1.0, 0.2)}
 
 
-def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, planted=True):
+def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, planted=True, spread=0.0):
     """Jointed leg along a bone chain: armoured segments, knuckles, planted foot."""
     pts = [sk.h(n) for n in names] + [sk.end(names[-1])]
+    if spread:
+        pts = [p + v3((spread*i/len(names), side*spread*i/len(names), 0)) for i,p in enumerate(pts)]
     for i, name in enumerate(names):
         p, q = pts[i], pts[i + 1]
         if float(np.linalg.norm(q - p)) < 1e-4:

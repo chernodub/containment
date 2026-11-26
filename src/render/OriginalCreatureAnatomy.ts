@@ -94,6 +94,22 @@ export function originalCreatureEmission(materials: readonly T.MeshStandardMater
   };
 }
 
+/** UV-island vertices coincide at the modelled boundary between two K11 atlas cells. */
+function prepareBroodInk(geometry:T.BufferGeometry){
+  if(geometry.hasAttribute('broodInterior'))return;
+  const position=geometry.getAttribute('position'),uv=geometry.getAttribute('uv');
+  if(!uv)return;
+  const firstCell=new Map<string,number>(),keys:string[]=[];
+  for(let i=0;i<position.count;i++){
+    const key=position.getX(i)+','+position.getY(i)+','+position.getZ(i);
+    keys.push(key);
+    const cell=Math.floor(uv.getX(i)*4)+4*Math.floor(uv.getY(i)*4);
+    const previous=firstCell.get(key);
+    firstCell.set(key,previous===undefined||previous===cell?cell:-1);
+  }
+  geometry.setAttribute('broodInterior',new T.Uint8BufferAttribute(keys.map(key=>firstCell.get(key)===-1?0:1),1));
+}
+
 /** Keep alternate ranks resident but out of template metrics and skin batching. */
 export function prepareOriginalCreature(root: T.Object3D): boolean {
   let found = false;
@@ -104,6 +120,7 @@ export function prepareOriginalCreature(root: T.Object3D): boolean {
     if (!rank || !materials.some(material => material.userData.k11Original)) return;
     found = true;
     prepareEmissionRegions(object, rank);
+    if(object.userData.k11Family!=='brute')prepareBroodInk(object.geometry);
     object.visible = rank === 'base';
     for (const material of materials) {
       material.userData.k11Original = true;
