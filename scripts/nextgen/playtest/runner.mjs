@@ -178,8 +178,9 @@ async function snapshot(stagnantSince=Infinity) {
   committedToCover=state.siege?.choosing===true&&state.siege.coveredIntent===true;
   return state;
 }
+const screenshotTimeoutMs = Math.max(20000, Math.min(90000, Number(options['startup-timeout-ms'] ?? 20000)));
 async function shot(name,s,options={}) {
-  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});
+  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),timeout:screenshotTimeoutMs,...options});
   report.screenshots.push(file);
   // Save actual body extents only at evidence frames; policy and native inputs are unchanged.
   if(s.status==='playing'&&!s.loading)s.framingEvidence=await page.evaluate(()=>{
