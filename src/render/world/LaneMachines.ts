@@ -172,6 +172,6 @@ export function addLaneMachine(root:Group,id:string){
       p.rod([-20,22,8],[21,22,8],2.8,0x8b9d9b);
   }
   brokenLaneEnd(p,id,0);
-  const articulated=['transmission-chamber','crew-checkpoint','shielding-gate'].includes(id);
+  const articulated=['transmission-chamber','crew-checkpoint','shielding-gate','service-shaft-landing'].includes(id);
   p.finish(root,'lane-machine-'+id,end[0],end[1],undefined,articulated);
 }
