@@ -53,6 +53,7 @@ export class CombatText {
     private readonly pool: Float[] = [];
     private readonly pendingAbilityHits: HudEffect[] = [];
     private readonly clusterPoint: ScreenPoint = {x:0,y:0,visible:false};
+    private readonly periodicHits = new Map<number,{effect:HudEffect;count:number;remaining:number}>();
     private readonly castHits = new Map<string, HudEffect[]>();
     private readonly eligibleCasts = new Set<string>();
     // Half-integers keep synthetic anchors distinct from native enemy and nest IDs.
@@ -113,7 +114,7 @@ export class CombatText {
                         continue;
                     }
                     if (event.phase !== 'tick' && this.eligibleCasts.has(key)) matched.push(hit);
-                    else this.hitPips(hit);
+                    else if (event.phase !== 'tick' || !this.queuePeriodic({...hit,source:'status'})) this.hitPips(hit);
                 }
                 this.pendingAbilityHits.length = remaining;
                 if (matched.length) this.castHits.set(key, matched);
@@ -129,7 +130,15 @@ export class CombatText {
     private queuePeriodic(effect: HudEffect): boolean {
         const target = effect.targetId ?? effect.id;
         if (target === undefined || !effect.damage || !Number.isFinite(effect.damage) || effect.damage <= 0) return false;
-        this.hitPips(effect);
+        const pending = this.periodicHits.get(target);
+        const count = (pending?.count ?? 0) + 1;
+        if (effect.lethal) {
+            this.periodicHits.delete(target);
+            if (count === 1) this.showEffect(effect);
+            else this.renderer.noteHitPips(target,count);
+        } else {
+            this.periodicHits.set(target,{effect,count,remaining:pending?.remaining ?? .5});
+        }
         return true;
     }
     private showAggregate(hits: readonly HudEffect[]): void {
@@ -257,6 +266,13 @@ export class CombatText {
         this.castHits.clear();
         for (const hit of this.pendingAbilityHits) this.hitPips(hit);
         this.pendingAbilityHits.length = 0;
+        for (const [id,pending] of this.periodicHits) {
+            pending.remaining -= dt;
+            if (pending.remaining > 0) continue;
+            this.periodicHits.delete(id);
+            if (pending.count === 1) this.showEffect(pending.effect);
+            else this.renderer.noteHitPips(id,pending.count);
+        }
         const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
         for (const p of this.pool) p.placed = false;
         for (const p of [...this.pool].sort((a,b) => b.priority-a.priority || b.amount-a.amount)) {
@@ -347,7 +363,7 @@ export class CombatText {
             p.node.style.opacity = String(Math.min(1, p.life / .2));
         }
     }
-    clear(): void { this.castHits.clear(); this.eligibleCasts.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
+    clear(): void { this.castHits.clear(); this.eligibleCasts.clear(); this.periodicHits.clear(); this.pendingAbilityHits.length = 0; for (const p of this.pool) {
         p.life = 0;
         p.node.hidden = true;
     } }
