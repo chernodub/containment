@@ -844,6 +844,17 @@ export class DepthGame {
    break;
   }
  }
+ if(e.augmentPosition){
+  const rig=this.abilities.snapshot.rig;
+  const pair=TRANSFORMATIVE_AUGMENT_PAIRS[rig];
+  if(pair?.some(augment=>this.expedition.build.mutations.includes(augment))){
+   const cover=stageCoverLesson(this.geometry,ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],this.player);
+   if(cover){
+    const point=e.augmentPosition==='shooter'?cover.shooter:cover.pickup;
+    if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite)))({x,y}=point);
+   }
+  }
+ }
  if(e.consoleLead){
   this.consoleRelease=this.elapsed+4.8;
   const console=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles?.[0];
