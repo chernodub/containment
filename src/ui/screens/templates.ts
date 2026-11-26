@@ -267,7 +267,7 @@ export function shopScreen(game: DepthGame): string {
       <div><strong>Coolant Plant · ${GUARDIAN_ROUTES[route].fight}</strong><p>${supply.guidance}</p></div>
     </div>
     <button id="purchase-route-ammo" data-purchase="route-ammo" class="secondary" ${supplyEnabled?'':'disabled'}>
-      ${supply.name} <span class="requisition-terms"><b class="requisition-amount">+${supply.rounds}</b><span class="requisition-price">${supplyCost} CR</span></span><small>${supplyStatus}</small>
+      ${serviceArt("route-ammo")} ${supply.name} <span class="requisition-terms"><b class="requisition-amount">+${supply.rounds}</b><span class="requisition-price">${supplyCost} CR</span></span><small>${supplyStatus}</small>
     </button>
   </section>`:'';
   return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
