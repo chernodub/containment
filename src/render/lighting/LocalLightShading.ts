@@ -1,10 +1,11 @@
+import { castColor, castField } from './CastPulse';
 import { Color, MeshStandardMaterial, ShaderChunk, Vector4 } from 'three';
 import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE_FIELD, ROOM_LANDMARK, ROOM_LANDMARK_COLOR, ROOM_LANDMARK_GAINS, ROOM_LANDMARK_TRIM } from './RoomValueStandard';
 
 const blackout={value:0};
 export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 
-export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v15-practical-mask-surface22';
+export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v16-cast-pulse';
 /** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
 const surfacePaint={value:new Vector4(1,0,0,0)};
 export function setSurfacePaintDiagnostic(enabled:boolean):void{surfacePaint.value.y=enabled?0:1;}
@@ -116,11 +117,23 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
-    shader.fragmentShader = 'uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomCastField=castField;shader.uniforms.roomCastColor=castColor;shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
+    const actorSurface = shader.fragmentShader.includes('uniform float actorStageLight;');
+    shader.fragmentShader = (actorSurface ? '#define CAST_ACTOR_RIM\n' : '') + 'uniform vec4 roomCastField;uniform vec3 roomCastColor;uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));
       vec3 roomWorld=transpose(mat3(viewMatrix))*geometryPosition+cameraPosition;
+      if(roomCastField.w>0. && roomWorld.y<1.7){
+        float reach=1.-smoothstep(0.,roomCastField.z,distance(roomWorld.xz,roomCastField.xy));
+        float lowEdge=1.-smoothstep(.15,1.7,roomWorld.y);
+        float facing=1.-abs(dot(normalize(normal),normalize(vViewPosition)));
+        #ifdef CAST_ACTOR_RIM
+        float response=actorStageLight*smoothstep(.16,.65,facing)*.82;
+        #else
+        float response=.12+.16*facing+.14*clamp(dot(diffuseColor.rgb,vec3(.21,.72,.07)),0.,1.);
+        #endif
+        totalEmissiveRadiance+=roomCastColor*roomCastField.w*reach*lowEdge*response;
+      }
       // LIGHT13 field: fight circle and exit in light, perimeter falling to roomValue.w.
       float roomField=1.0;
       if(roomValue.w!=1.0){
