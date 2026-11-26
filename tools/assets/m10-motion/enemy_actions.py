@@ -750,10 +750,10 @@ class Creature:
             self.rotate(self.center,FWD,.10+.20*slump)
             self.move('tail',FWD*W*.26*(1-slump))
             self.move('head',-FWD*W*(.12+.07*slump)+UP*H*(.06+.04*slump)+SIDE*W*.05*slump)
-            self.rotate('head',UP,1.04+.39*slump)
+            self.rotate('head',UP,1.04+1.06*slump)
             self.rotate('head',SIDE,-.44-.10*slump)
             self.rotate('head',FWD,.28+.16*slump)
-            self.ram_jaw(.92+.16*slump)
+            self.ram_jaw(1.1+.39*slump)
             for arm in self.arms:
                 if arm['index']<0:   # club forefoot braced on the wall foot
                     self.solve(arm,arm['rest']+FWD*W*.22-UP*H*.12,16)

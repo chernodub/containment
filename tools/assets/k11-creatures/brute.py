@@ -68,6 +68,8 @@ def surface_zones(sculpture, centers):
             paint = 9
         elif prim.plate in (50, 51, 450, 451):
             paint = 7
+        elif prim.name == "inner-lip":
+            paint = 11
         elif prim.name == "oral-fold":
             paint = 10
         elif prim.plate in (52, 452):

@@ -241,6 +241,7 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
   if(heavyPaint==7.)paint=vec3(.49,.435,.337);
   if(heavyPaint==8.)paint=vec3(.275,.236,.172);
+  if(heavyPaint==11.)paint=vec3(.97,.55,.22);
   if(heavyPaint==10.)paint=vec3(.068,.033,.062);
   if(heavyPaint==9.)paint=vec3(5.9,3.85,1.50);
   vec3 n=normalize(vNormal);
