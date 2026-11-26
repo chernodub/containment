@@ -273,14 +273,15 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             if(broodSac && actorBroodForm.z>.42)edge-=.14*step(.45,normalize(vNormal).z);
             graphicActorLight*=mix(plane*broodHide,1.,step(edge,key));
             float silhouette=abs(dot(normalize(vNormal),normalize(vViewPosition)));
-            float rim=step(.14,key)*step(silhouette,min(.40,1.5*fwidth(silhouette)));
+            float rim=step(.14,key)*step(silhouette,min(.53,2.35*fwidth(silhouette)));
             graphicActorLight=mix(graphicActorLight,max(graphicActorLight,localLight*min(1.,lit+.07)),rim);
-            diffuseColor.rgb+=vec3(.034,.042,.061)*rim;
+            diffuseColor.rgb+=vec3(.060,.082,.119)*rim;
             graphicActorHue*=mix(vec3(1.),vec3(.97,1.04,1.13),rim);
             if(actorBroodForm.w==1. && !broodSac && vActorRegion>=3. && vActorRegion<=5.){
               float ridge=max(rim,step(.85,key));
               diffuseColor.rgb+=ridge*vec3(.012,.009,.022);
             }
+            if(vActorRegion>=2. && vActorRegion<=5.)diffuseColor.rgb+=vec3(.048,.052,.075)*actorAttackLoad*step(-.15,key);
             if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
           }
 #endif

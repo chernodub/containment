@@ -49,8 +49,8 @@ def extend(suit, rig, portrait=False):
         along = (wrist - elbow).normalized()
         n = V((-.80, .20, .56))
         n = (n - along * n.dot(along)).normalized()
-        n = (along * .14 + n).normalized()
-        origin = wrist + along * .075 + n * .12
+        n = (along * .34 + n).normalized()
+        origin = wrist - along * .055 + n * .095
         outline = [(x * 2.40, y * 1.64) for x, y in [(-.15, -.20), (-.08, -.27), (.10, -.25), (.15, -.15), (.15, .17), (.08, .24), (-.11, .23), (-.15, .15)]]
         for name, scale, offset, depth, role in [('ram shoe', 1.0, 0, .050, 'gunmetal'),
                                                  ('kit24 paint strike face', .90, .034, .026, colour)]:
@@ -85,6 +85,11 @@ def extend(suit, rig, portrait=False):
             if portrait:
                 kit.bevel(obj, .004, 3)
             suit.add(obj, 'gunmetal', 'forearm.L')
+        # Open knuckle bow: its brass return crosses the exposed wrist-side edge.
+        frame = kit.Planar(origin, n, -along)
+        bow = [frame.frame(x,y)[0] - n * depth for x,y,depth in
+               [(-.23,-.12,.025),(-.39,-.12,.08),(-.39,.13,.12),(-.23,.13,.025)]]
+        tube('ram grip bow', bow, .031, 'brass', 'forearm.L')
         # Two short rams behind the plate into the elbow (the gauntlet's mechanism).
         for k in (-1, 1):
             side = n.cross(along).normalized() * (k * .06)
@@ -92,7 +97,7 @@ def extend(suit, rig, portrait=False):
             suit.add(kit.cylinder('ram piston', p0, p0 + along * .20, .019, 12 if hi else 6, suit.col), 'steel', 'forearm.L')
     elif rig == 'cryo':
         tops = []
-        for x, h in ((-.21, .48), (.21, .48)):
+        for x, h in ((-.13, .64), (.13, .64)):
             base = V((x, -.36, 1.32))
             axis = V((x * .22, -.08, 1)).normalized()
             prof = [(0, 0), (.070, 0), (.096, .035), (.098, .07), (.098, h - .07), (.090, h - .03), (.055, h), (0, h)]
@@ -107,6 +112,7 @@ def extend(suit, rig, portrait=False):
         mid = (a + b) / 2
         tube('dewar return loop', [a + aa * .03, a + aa * .14 + V((.03, -.03, 0)), mid + V((0, -.08, .20)),
                                    b + ba * .14 + V((-.03, -.03, 0)), b + ba * .03], .026, 'rubber')
+        tube('dewar upper yoke', [a,mid+V((0,-.02,.025)),b], .058, 'gunmetal')
         # Supply line on the firing side. Each section follows its mount,
         # from the valve over the upper arm to the animated weapon receiver.
         outlet = tops[1][0]
@@ -131,14 +137,14 @@ def extend(suit, rig, portrait=False):
         suit.add(obj, 'gunmetal', 'ribs')
     elif rig == 'pyro':
         for s in (-1, 1):
-            base = V((s * (.36 if s < 0 else .13), -.19, 1.13 if s < 0 else 1.08))
+            base = V((s * (.40 if s < 0 else .32), -.19, 1.02 if s < 0 else .98))
             bottle_axis = V((s * (.65 if s < 0 else .12), -.65, .78)).normalized()
             lathe('kit24 paint fuel bottle', [(0, 0), (.075, 0), (.102, .04), (.104, .06), (.104, .30), (.088, .36), (.05, .385), (0, .385)],
                   base, bottle_axis, colour)
             suit.ring('fuel strap', base + bottle_axis * .21, bottle_axis, .106, .036, 'gunmetal', 'ribs')
             # Flared exhaust stack rising from the bottle head, leaning out and back.
             a = base + bottle_axis * .37
-            axis = V((s * (.75 if s < 0 else .15), -.22, 1)).normalized()
+            axis = V((s * 1.18, -.38, .56)).normalized()
             stack = lathe('pyro flared exhaust', [(.036, 0), (.044, .03), (.044, .25), (.058, .30), (.080, .36), (.082, .38), (.064, .38), (.050, .33)],
                           a, axis, 'heat', caps=False)
             heat = stack.data.attributes.new('k12_heat', 'FLOAT', 'POINT')

@@ -66,11 +66,15 @@ export class EnemyMotion {
   private seed = 0;
   private nativePhase: EnemyAttackPhase | undefined;
   private nativeProgress = 0;
+  private biteHook?:T.Object3D;
+  private readonly hookRest=new T.Quaternion();
+  private hookOffset=false;
   private nativeAngle = 0;
   private strikeRange = 0;
 
   constructor(private root: T.Group, private body: T.Group, asset: T.Object3D, private family: string) {
     this.profile = PROFILES[family] ?? PROFILES.crawler;
+    if(family==='crawler')this.biteHook=asset.getObjectByName('antenna_right0');
     this.restY = body.position.y;
     this.head = asset.getObjectByName('head');
     if (family === 'brute') for (const side of [-1,1]) {
@@ -154,6 +158,7 @@ export class EnemyMotion {
 
   /** Remove last frame's offsets before the source mixer samples any tracks. */
   restore() {
+    if(this.hookOffset && this.biteHook){this.biteHook.quaternion.copy(this.hookRest);this.hookOffset=false;}
     if (this.restored) return;
     for (const joint of this.joints) joint.bone.quaternion.copy(joint.rest);
     this.restored = true;
@@ -205,6 +210,12 @@ export class EnemyMotion {
       const brace=winding?(staged?.18+.82*T.MathUtils.smoothstep(anticipation,0,.92):.72+.28*T.MathUtils.smoothstep(anticipation,0,.25)):0;
       const recovery=this.nativePhase==='recovery'?.18+.82*(1-this.nativeProgress):0;
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
+      if(this.biteHook && (brace || strike || recovery)){
+        this.hookRest.copy(this.biteHook.quaternion);
+        this.biteHook.rotateZ(-.30*(brace+strike+recovery));
+        this.biteHook.rotateX(.26*brace);
+        this.hookOffset=true;
+      }
       const mass=1/Math.sqrt(p.weight);
       const bend=contact*(this.heavy?.78:.55)*mass;
       // Hit is accepted at strike entry, so extension is already at contact.
@@ -217,6 +228,13 @@ export class EnemyMotion {
       const limit=lunging&&this.strikeRange>0?Math.max(0,this.strikeRange-(this.root.userData.colliderRadius??.5)):this.state.offsetLimit;
       const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
       this.body.position.set(Math.sin(direction)*offset+Math.sin(strikeDirection)*limit*extension,this.restY,Math.cos(direction)*offset+Math.cos(strikeDirection)*limit*extension);
+      // The outer hook reaches around the boot at contact. Leave the shell
+      // beside the ankle so its cutting edge stays clear of the suit.
+      if(this.biteHook && extension>0){
+        const lateral=-limit*.24*extension;
+        this.body.position.x+=Math.cos(strikeDirection)*lateral-Math.sin(strikeDirection)*limit*.18*extension;
+        this.body.position.z-=Math.sin(strikeDirection)*lateral+Math.cos(strikeDirection)*limit*.18*extension;
+      }
       const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;
       if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
       this.body.rotation.set(

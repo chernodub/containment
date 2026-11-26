@@ -531,10 +531,10 @@ export class MarineMotion {
       this.rotateToward(this.leftShoulder,this.from,this.to);
     }
     this.leftArm.getWorldPosition(this.target);
-    const reach=charging ? .82 : .48, side=charging ? -.29 : -.34;
+    const reach=charging ? .82 : .43, side=charging ? -.29 : -.22;
     this.target.x+=c*reach-s*side;
     this.target.z+=s*reach+c*side;
-    this.target.y+=charging ? -.14 : -.24;
+    this.target.y+=charging ? -.14 : -.32;
     this.solveChain(this.leftArm,this.leftForearm,this.leftHand,true);
     // Roll the striking face toward world up, with a small outward rake.
     this.leftForearm.getWorldPosition(this.from);

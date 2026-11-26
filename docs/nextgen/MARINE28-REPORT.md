@@ -63,3 +63,18 @@ For muzzle verification, the parent and revised production models received ident
 **Proof.** Open `artifacts/nextgen/stance39/index.html` for all 64 individual comparisons, `rigs-in-play.png` for the selector beside the native calm and fight frames, and `headings.png` for the eight unscaled heading crops. Native colour comparisons use the archived final21 calm/fight frames. Dash, fire and geometry masks use the rebuilt final21 source at `bc56c43c`. The 480×270 frames show the revised build alone. `muzzle-comparison.json` and `ram-and-shell.json` hold the motion measurements.
 
 **Verification.** The production type-check and build passed. On the final build, Breacher and Pyro each cleared six rooms on seed 1729 with zero errors. Their native reports are under `artifacts/nextgen/playtest/stance39-release-breacher/` and `stance39-release-pyro/`. The Standard competent Breacher simulation cleared 7 of the 12 requested seeds, matching the lead's 7/12 baseline. The full cohort receipt is `artifacts/nextgen/playtest/stance39-standard-breacher/summary.json`.
+
+## BROOD40
+
+The Breacher carries the plate closer to the wrist, lower and farther in front of the torso. The inset face, segmented rim and chevron still face upward. An open brass grip bow returns under the wrist-side edge and follows the forearm through the ram. Cryo's two cylinders rise to one upper yoke. Pyro's exhaust mouths sit farther apart and lean out from the hips. Arc retains its raised hand and fork. The fittings share the existing rig meshes and baked PNG atlases.
+
+The calm, shotgun and black silhouette comparisons for all four rigs are under `artifacts/nextgen/brood40/sheets/` with the `marine-` prefix. The native crops compare the final22 build to BROOD40. The full 480×270 frames show BROOD40.
+
+Across 448 paired production-model samples (112 per rig, covering idle, run, fire, reload, dash and cast), the maximum muzzle displacement and weapon-socket quaternion difference were both zero. The captures are `artifacts/nextgen/brood40/parent/sockets.json` and `artifacts/nextgen/brood40/socket-now/sockets.json`.
+
+| Rig | Calm and silhouette | Shotgun and silhouette |
+| --- | --- | --- |
+| Breacher | The shield meets the shoulder and the wrist return closes the old gap. The visor stays visible. | The silhouette carries one wall in front of the arm. At 480×270 the grip and receiver overlap. |
+| Cryo | The nearer tank and upper yoke make a tall column. The two valves separate at native size. | The joined column stays upright behind the arm. Its lower edge touches the hose in black. |
+| Pyro | The exhaust mouths occupy opposite sides of the hips. The low outer mouth has the clearest profile. | The wide ends stay distinct from Cryo. From the firing heading the far bottle reads as a separate projection. |
+| Arc | The fork rises clear of the shoulder in colour and black. | The mast stays visible above the gun hand. The individual teeth need the native crop. |

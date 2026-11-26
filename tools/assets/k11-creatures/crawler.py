@@ -101,8 +101,8 @@ def build(sk):
     # ATTACK16: two broad pale hooks sweep out from the wedge corners and curl inward: a "C" from above,
     # with a dark gap between the hooks and the head plate
     for s_, bn in ((-1, "antenna_right0"), (1, "antenna_left0")):
-        body.extend(A.hook([(0.47, 0.32 * s_, 0.48 * sk.aspect), (0.85, 0.62 * s_, 0.46 * sk.aspect),
-                            (1.15, 0.36 * s_, 0.42 * sk.aspect), (1.08, 0.06 * s_, 0.39 * sk.aspect)],
+        body.extend(A.hook([(0.47, 0.32 * s_, 0.48 * sk.aspect), (0.85, (0.83 if s_ < 0 else 0.62) * s_, 0.46 * sk.aspect),
+                            (1.15, (0.65 if s_ < 0 else 0.36) * s_, 0.42 * sk.aspect), (1.08, (0.39 if s_ < 0 else 0.06) * s_, 0.39 * sk.aspect)],
                            0.12, 0.02, bn, zone=BONE, tip_zone=BONE, k=0.025, n=10, tip=0.35))
     # wet flesh in the waist seam
     body.add(Ellipsoid((-0.04, 0, 0.52 * sk.aspect), (0.09, 0.2, 0.07 * sk.aspect), zone=FLESH,

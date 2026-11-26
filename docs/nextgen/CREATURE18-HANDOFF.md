@@ -1648,3 +1648,65 @@ I saw no loss of the red warning sector or capsule, skull marks, health bars or 
 At the native Relay Racks shutter impact the lower jaw projects down-left, with a dark mouth and a lit bar below the prow. The near foot has two knuckles. The marine, shutter callout and stun indicator remain distinct against the broken floor. The three weakest reads are the oblique native windup (prow before glow), Warden behind (near cheek hides the slot), and the rear Brute in Swarm Junction (hand too small to count).
 
 The delivered production build passed. The title cast and creature cards were re-rendered after the throat revision. The final native Breacher cleared all nine rooms with zero errors and recorded the Relay Racks shutter impact. Its process returned 1 for three room-loading observations over five seconds on the busy machine. The earlier nine-room pass also cleared all rooms with zero errors. The final receipt is `artifacts/nextgen/playtest/heavy41-final-breacher/report.json`; the build and twelve-seed receipts are `artifacts/nextgen/heavy41/{delivery-build.log,sim.log}`. The gallery contains 41 native comparisons and 41 current 480 × 270 images.
+
+## BROOD40
+
+The Crawler's dorsal line and hooks use linear RGB (3.60, 2.05, 0.035). Its existing deck pool stays amber (0.66, 0.33, 0.05). Carrier and Matron retain violet (0.80, 0.06, 2.10) and their (0.32, 0.14, 0.66) pool. Spitter lime (0.14, 4.20, 0.001) and Stalker ice (0.008, 1.90, 5.00) retain their family identities.
+
+A narrow rest seam crosses the sac. Its sine threshold rises from 0.14 to 0.86 at the midpoint of the Matron's one-second native brood timer and closes again on release or interruption. Ordinary Carriers lack that timer and keep their resting seams. In the Crew Checkpoint cycle the high-violet pixels occupied 5.1% of the projected Matron bounding rectangle at rest and 12.4% during priming (blue >150, blue/red >1.08, blue/green >1.30 in displayed RGB).
+
+The shared dark hide has a broader cool grazing edge on the key side. The head and limb regions pick up a cool plane through melee load, strike and recovery. Spitters also carry it through the ranged windup and the first tenth of a second after release. The Crawler's outer hook sweeps farther to the side, rolls on its existing joint and exposes a short bone-coloured edge inside the yellow hook. Native combat geometry and attack clocks still use the original simulation.
+
+The Crawler's outer hook clears the white boot in the side-on contact capture. Its shell finishes off-centre beside the ankle. At 480×270 a shield crossing the attack can still hide the inside hook. The added offset affects the rendered body only.
+
+**Crowd review at 480×270.** The numerator is a first-look visual count and the denominator is the fixture's live actor count. This is one reviewer’s estimate, without timed human trials.
+
+| Frame | Crawler | Spitter | Stalker | Carrier | Brute | First read |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Swarm Junction | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | White suit and outer yellow hook lead. The crouched Crawler by the shield is easily missed. |
+| Relay Racks | 8/10 | 2/2 | 2/3 | 2/2 | 3/3 | The marine separates. Rack bars interrupt two stripes and the rear blue blade. |
+| Crew Checkpoint | 10/10 | 2/2 | 3/3 | 2/2 | 3/3 | All four mark shapes separate around the white suit. The waiting Carriers stay peripheral. |
+| Ordered crowd | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | The bite reads inside the red fan. Two approaching yellow marks almost join near the back. |
+| Three at the boots | 3/3 | — | — | — | — | Three approach directions read. The far body is mostly under the gun. |
+| Pyro overlap | 8/10 | 2/2 | 2/3 | 2/2 | 3/3 | Orange flame breaks around the yellow lines. Hit and burning finishes conceal some limbs. |
+| Napalm charge | 2/6 | 2/5 | 2/5 | 4/5 | 5/5 | The flame and large bodies lead. The two uncovered yellow marks separate from the orange. Central burning actors cannot all be classified on first look. |
+
+**Pose sheets.** Each column below has separate Swarm Junction and Crew Checkpoint comparisons. In each cell the dark-floor observation comes first, followed by the pale-floor observation.
+
+| Family | Calm | Windup | Strike | Behind |
+| --- | --- | --- | --- | --- |
+| Crawler | Yellow back and hooks stand out beside pipework. The hooks also separate on pale steel. | Outer hook turns toward the camera on both floors. | The hook clears the left edge of the white boot on both floors. The shield covers the inside hook. | The stripe anchors the rear view on both. The dark feet are easier to follow on pale steel. |
+| Spitter | The lip and near forelimb show against the pipe. Both forelimbs separate on the pale deck. | The paired pale arm edges frame the red sightline on both floors. | The red projectile crosses the lime firing end on both. The forelimbs can be followed to either side. | The hind legs merge into the shadow below the pipe. Both feet are visible on pale steel. |
+| Stalker | The blade identifies the animal beside the pipe, with the far feet hard to separate. The folded blade and long legs separate on the pale deck. | The outside leg and loaded blade show on both floors. | The blue cutting end clears the white boot in both views. | The blue shoulder and nearer leg survive the pipe. Both leg silhouettes are clearer on the pale deck. |
+| Carrier | The joint lights locate the legs below a quieter sac on both floors. The far dark leg touches the pipe shadow. | The raised sac has narrow violet seams and the legs have a pale contact edge on both. | The gun hides the middle of the sac on both floors. Outer joints and feet stay visible. | The sac and joints separate on both. Black leg tips disappear first under the pipe. |
+| Matron | Thin seams describe the sac on both floors. The bright joints still lead the resting silhouette. | The tall sac and near leg show against both decks. | Thin seams return on release. The outer feet separate most clearly at native size. | The violet chevrons cross the back on both floors. The dark tips are easier to distinguish on pale steel. |
+
+| Matron cycle sheet | Observation |
+| --- | --- |
+| Calm | A dark sac sits above the violet joints. |
+| Brood onset | The first widening is small and the red pod warning is distinct. |
+| Brood pulse | Broad violet bands spread over the raised sac at mid-prime. |
+| Pod sealed | The bands close as the new pod appears. |
+| Pod swelling | The pod grows beside a quiet sac. |
+| Pod opening | Separate shell halves reveal the hatch. |
+| Hatched | The amber hatchling and the mother's thin violet seams separate. |
+
+Native crops pair a rebuild of the final22 campaign revision `40650265` with BROOD40. The 480×270 images are full current frames. The fixtures stage native AI and animation phases, so neighbouring spawns and facing can differ between samples. `artifacts/nextgen/brood40/index.html` links the comparisons. The parent hue check at `13920765` is in `hue-parent/` beside the sheets.
+
+| Colour or rank sheet | 480×270 observation |
+| --- | --- |
+| Safety Interlock | Both yellow backs separate from the brass floor. |
+| Freight Hold | One yellow back is visible between the freight rack and walkway. |
+| Residential Gallery | The central furnishing hides the Crawler. The additional open-deck sheet shows its stripe clearly on the same brown floor. |
+| Overload Floor | The yellow core separates from the rust-coloured floor beside the chamber. |
+| Infested Workshop | Violet joints locate the waiting Carrier against the purple pipework. Only the nearer leg tips separate. |
+| Swarm Junction | Violet stays distinct from the purple deck. The two waiting Carriers draw less attention than the attacking yellow hook. |
+| Crawler elite pair | Both Crawlers read. The stripe and the gold crest approach the same hue. Size, crest outline and ring carry rank. |
+| Spitter elite pair | Both lime firing ends read. The larger body and crest identify the elite. |
+| Stalker elite pair | Both blue edges read, with a distinct ring on the lower elite. |
+| Carrier elite pair | Both violet joint sets read. The elite's ring separates from its thin seams. |
+| Brute elite pair | Both jade silhouettes read. The pale crest and ring still identify the elite. |
+
+The stable brood marks use yellow, lime, blue and violet. Bright red in the staged attack frames identifies warning shapes and hostile projectile cores. Wounds and hit accents can introduce small red pixels during combat. A waiting Carrier is quieter than the attacking Crawler in the ordinary crowd frames. The far-side dark feet still disappear behind pipes and foreground racks. The three weakest frames are Napalm charge (burning overlapping bodies), Relay Racks (rail occlusion) and the centred Residential Gallery sample (furnishing occlusion).
+
+The production build passed. Crew Checkpoint, seed 1729 with Pyro, recorded median draws of 159 → 159 on High and 145 → 145 on Low, with zero combat shader compiles on both builds and tiers. Standard competent cohorts cleared 9/12 with Cryo and 9/12 with Arc. The native Pyro campaign cleared eight rooms with zero errors. Both runs returned status 1 for room-loading diagnostics. The first flagged Passenger Vault, Residential Gallery and Crew Checkpoint. The repeat flagged Passenger Vault and Residential Gallery, again with eight clears and zero errors. The full gallery and campaigns used the build before the final pooled Spitter timer reset. The reset received a fresh production build and a Crew Checkpoint release capture with zero browser errors. The proof index contains 83 annotated comparisons.
