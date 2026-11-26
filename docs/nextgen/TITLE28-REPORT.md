@@ -99,3 +99,9 @@ This pass uses the pre-HEAVY44 meshes. The title creature and affected route, le
 The production build passed. All four previous and four current title capture manifests have empty error lists. Ship-kit preparation timed out twice at 1280×720 and once at 1840×860. Repeating the same scenario and settings produced the successful captures. With the optional artwork requests held on a fresh title, Tab reached Settings, Enter opened it and Escape restored focus to Settings. Releasing the requests let the five low-priority title plates finish decoding.
 
 At desktop size the near claws turn over the lit flange, and the cast shadow links the deck to the shield. In the 460×215 crop the bent wrist and mouth still read. The Stalker's thin back leg blends into the jamb, and the Warden's far claw is hard to distinguish from its lower jaw at that scale.
+
+### Revised breach lighting
+
+The torn header now casts the Crawler's perch and the surrounding chamber into near-black. A single blue-white opening sits behind the Warden's sail and skull. Its light continues over the flange as an angular pool, with the Breacher's shadow cast forward onto it. The lit edge of the shield faces the same source as the Warden's back and reaching arm. The current Warden uses two warm shell values, ink at the roots of the plates and pale bone confined to the head.
+
+The revision comparison in `artifacts/nextgen/title34-revision/` runs from final24 to the TITLE34 first pass to the revision. At 460×215, in colour and greyscale, I can follow the revised sail, skull and open jaw toward the shield faster than in either earlier capsule. Final24 retains more detail in the little Crawler. In the revision its legs and the Warden's individual gripping digits are clearest at desktop size. The production build passed. The native title capture and both source title manifests recorded empty error lists.

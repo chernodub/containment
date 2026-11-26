@@ -4,7 +4,7 @@ import sys
 import math
 from PIL import Image,ImageDraw,ImageFilter,ImageChops,ImageOps
 from ink_contour import contour
-from title34_light import cast_shadow
+from title34_light import cast_shadow, light_deck
 from title34_hull import structure, left_return, contacts
 
 raw=Path(sys.argv[1])
@@ -49,31 +49,52 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         ice.putalpha(source.getchannel('A'))
         source=ice
     if name=='warden':
-        # Shield brass reflects into the large side plane of the loaded arm.
-        # Keep the feet in the hull's shadow so the bone brow leads the caste.
+        # The distant light unifies the dorsal shell, sail and limbs in shadow.
+        # Reserve the bone value for the head only. The plate boundaries retain
+        # their source ink on the two warm body values.
         w,h=source.size
+        value=source.convert('L')
+        alpha=source.getchannel('A')
+        paint=Image.new('RGB',source.size,'#302626')
+        all_pixels=(0,0,w,h)
+        paint.paste('#734939',all_pixels,value.point(lambda v:255 if v>72 else 0))
+        paint.paste('#18171c',all_pixels,value.point(lambda v:255 if v<35 else 0))
+        # Keep a fine ink break at the root of each sail plate even though
+        # the sail and the lit shell now share the same warm pigment.
+        sail=Image.new('L',source.size)
+        ImageDraw.Draw(sail).rectangle((0,0,.59*w,.44*h),fill=255)
+        sail=ImageChops.multiply(sail,value.point(lambda v:255 if v>148 else 0))
+        offset=max(1,round(w*.0045))
+        root=ImageChops.subtract(sail,sail.crop((0,offset,w,h+offset)))
+        paint.paste('#211a1c',all_pixels,root)
+        head=Image.new('L',source.size)
+        ImageDraw.Draw(head).rectangle((.59*w,.20*h,w,.81*h),fill=255)
+        bone=ImageChops.multiply(head,value.point(lambda v:255 if v>153 else 0))
+        paint.paste('#cbbb9e',all_pixels,bone)
+        # A little reflected brass along the loaded arm, inside the warm step.
         near=Image.new('L',source.size)
-        ImageDraw.Draw(near).ellipse((.36*w,.58*h,.80*w,1.20*h),fill=225)
-        near=near.filter(ImageFilter.GaussianBlur(w*.025))
-        planes=source.convert('L').point(lambda v:58 if 55<v<140 else 0)
-        bounce=ImageChops.multiply(near,planes)
-        source.paste('#cb9955',(0,0,*source.size),ImageChops.multiply(bounce,source.getchannel('A')))
-        feet=Image.new('L',source.size)
-        ImageDraw.Draw(feet).rectangle((0,h*.72,w*.77,h),fill=240)
-        horn=ImageChops.multiply(feet,source.convert('L').point(lambda v:255 if v>155 else 0))
-        source.paste('#a7987b',(0,0,*source.size),ImageChops.multiply(horn,source.getchannel('A')))
+        ImageDraw.Draw(near).polygon([(.44*w,.64*h),(.50*w,.72*h),(.66*w,.86*h),
+                                     (.61*w,.86*h),(.47*w,.75*h)],fill=84)
+        paint.paste('#b27f49',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
+        source=paint.convert('RGBA')
+        source.putalpha(alpha)
         # Set the luminous organ behind the prow and above the lower jaw.
         throat=ImageChops.offset(organ,-round(source.width*.049),round(source.width*.027))
         source.paste('#a65833',(0,0,*source.size),throat)
         inset=ImageChops.multiply(throat,ImageChops.offset(throat,-round(source.width*.011),round(source.width*.006)))
         source.paste('#efa155',(0,0,*source.size),inset)
+    if name=='crawler':
+        # Only the fine outer rim breaks the dark mass of the upper jamb.
+        alpha=source.getchannel('A')
+        source=ImageOps.colorize(source.convert('L'),'#090c11','#805836')
+        source.putalpha(alpha)
     # A narrow hard highlight on the inner edge matches the side facing the
     # aperture. Retain a separate outer ink stroke after the highlight.
     alpha=source.getchannel('A')
-    dx=round(source.width*.005)
+    dx=round(source.width*(.009 if name in ("warden","breacher") else .005))
     inward=alpha.crop((dx,-dx,alpha.width+dx,alpha.height-dx))
-    rim=ImageChops.subtract(alpha,inward).point(lambda a:round(a*.78))
-    source.paste('#b6dbe6',(0,0,*source.size),rim)
+    rim=ImageChops.subtract(alpha,inward).point(lambda a:round(a*(.82 if name=="crawler" else .95)))
+    source.paste('#c0dce3',(0,0,*source.size),rim)
     source.putalpha(alpha)
     if name=='warden':
         # Curl the contact side of the near digits around the broken lip.
@@ -101,7 +122,7 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
 hero=Image.new('RGBA',size)
 place(hero,'breacher',1525,358,1330,vertical=True)
 hero.save(raw/'hero.png')
-layer=structure()
+layer=light_deck(structure())
 cast_shadow(layer,hero)
 layer.alpha_composite(contacts())
 place(layer,'crawler',1142,465,222,bank=-22)
