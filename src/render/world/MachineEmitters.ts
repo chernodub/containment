@@ -7,9 +7,9 @@ import {IncidentPieces} from './Inc13StoryIncidents';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 
 export const incidentPracticalColors:Record<string,number>={
- 'awakening-bay':0xefba76,'passenger-vault':0xbad89b,'residential-gallery':0xb9d9df,
+ 'awakening-bay':0xefba76,'passenger-vault':0xbad89b,'residential-gallery':0xd9c093,
  'communal-atrium':0xc9acd9,'crew-checkpoint':0xe5ad6c,armory:0x9bc89c,
- 'freight-hold':0xb3d7e2,'breached-loading-bay':0xf0b078,'relay-racks':0xe7af70,
+ 'freight-hold':0xd3b58d,'breached-loading-bay':0xf0b078,'relay-racks':0xe7af70,
  'transmission-chamber':0xf1b172,'diagnostic-gallery':0xc3a1d6,'safety-interlock-station':0x9cd9ae,
  'coolant-plant':0xe4b071,'service-shaft-landing':0xc9c1e5,'infested-workshop':0xe6bd85,
  'swarm-junction':0xa7cba4,'shielding-gate':0xe4b56c,'containment-annulus':0xe6b277,
