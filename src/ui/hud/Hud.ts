@@ -236,7 +236,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
             if (segments) {nearest = distance; yielding = segments;}
         }
-        dockSegments.forEach((segment, index) => segment.toggleAttribute('data-dock-yield', Boolean(yielding & (1 << index))));
+        dockSegments.forEach((segment, index) => {
+            const rect = rectangles[index];
+            const marineOverlaps = playing && rect.width > 0 && rect.height > 0 &&
+                rect.left < bounds.right && rect.right > bounds.left &&
+                rect.top < bounds.bottom && rect.bottom > bounds.top;
+            segment.toggleAttribute('data-dock-yield', marineOverlaps || Boolean(yielding & (1 << index)));
+            segment.toggleAttribute('data-marine-clearance', marineOverlaps);
+        });
     };
     const protectPanels = () => {
         onboardingObstacles.length = 0;

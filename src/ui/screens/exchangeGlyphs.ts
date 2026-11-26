@@ -9,15 +9,15 @@ const enemies: Record<EnemyId, [string,string]> = {
   queen: ['#d4a2ab','M21 0 11-10-2-14-19-10-21 0-19 10-2 14 11 10Z'],
 };
 
-export function exchangeEnemy(family: EnemyId, x: number, y: number, angle: number): string {
+export function exchangeEnemy(family: EnemyId, x: number, y: number, angle: number, scale = 1): string {
   const [color, silhouette] = enemies[family];
-  return `<g class="exchange-glyph" transform="translate(${x} ${y}) rotate(${angle*180/Math.PI})">
+  return `<g class="exchange-glyph" transform="translate(${x} ${y}) rotate(${angle*180/Math.PI}) scale(${scale})">
     <path fill="${color}" d="${silhouette}"/><path class="exchange-enemy-mark" stroke="${color}" d="M2-5 8 0 2 5"/>
   </g>`;
 }
 
-export function exchangeMarine(x: number, y: number, angle: number, ghost = false): string {
-  return `<g class="exchange-glyph exchange-marine${ghost?' exchange-ghost':''}" transform="translate(${x} ${y}) rotate(${angle*180/Math.PI})">
+export function exchangeMarine(x: number, y: number, angle: number, ghost = false, scale = 1): string {
+  return `<g class="exchange-glyph exchange-marine${ghost?' exchange-ghost':''}" transform="translate(${x} ${y}) rotate(${angle*180/Math.PI}) scale(${scale})">
     <path d="M10-5 6-11-6-13-10-7-8-3-13-2-13 7-6 7-5 12 4 10 7 6 13 5Z"/>
     <path class="exchange-visor" d="M3-5 8-1 4 4"/>
   </g>`;
