@@ -30,7 +30,19 @@ export function addFightLaneDamage(root:Group,id:string){
         p.box(x-29,10,z,6,20,28,0x5c6462);
       }
       break;
-    case 'overload-floor':
+    case 'overload-floor':{
+      // The shot enters from the south-east. Keep the right-hand upper
+      // corner on the native clipped ray and run the feed west behind it.
+      const lip=new IncidentPieces();
+      lip.box(-40,11,-7,80,22,14,0x344346);
+      lip.box(-40,22,-7,80,3,14,0x83918a);
+      for(const dx of [-73,-50,-27]){
+        lip.box(dx,12,-9,5,23,16,0x556263);
+        lip.box(dx,24,-15,7,3,29,0x92806a);
+      }
+      lip.rod([-76,10,-12],[-167,7,-26],5,0x596768);
+      lip.rod([-76,10,-18],[-165,7,-32],3,0x83735f);
+      lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813);
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
         p.box(x,3,z,54,6,32,0x374245);
         for(const dx of [-15,0,15]){
@@ -39,6 +51,7 @@ export function addFightLaneDamage(root:Group,id:string){
         }
       }
       break;
+    }
     default:return;
   }
   p.finish(root,'lane-edge-'+id,0,0,undefined,true);
