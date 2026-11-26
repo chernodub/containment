@@ -109,3 +109,16 @@ The baseline install and build passed. The production build passed again with th
 I inspected all four route images at their native sizes and at 480×270. The names and the before/after terms fit on their own lines. At 480×270, the names remain easy to distinguish and the smaller terms are best read at the native sizes.
 
 The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire order. Its first capture hit the original ship kit preparation timeout. The retry used seed 1729 again and completed with zero capture errors. I inspected both sizes. [Arrival](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay.png) · [480×270](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay-480.png)
+
+The desktop Continue flow also reached Breached Loading Bay at sector 8. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
+
+The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. The first four completed Breacher trials with Freight Hold and Infested Workshop forced first yielded one completion and three deaths, in sectors 10, 17 and 20. This is a partial result under host contention. The first worker finished after about 12 minutes of wall time. Full totals require all twelve trials per rig per mode.
+
+| Rig | Starting reference | Freight / Workshop first | Loading / Swarm first | Policy |
+| --- | ---: | ---: | ---: | ---: |
+| Breacher | 11/12 | 1/4 so far | Pending | Pending |
+| Cryo | 10/12 | Pending | Pending | Pending |
+| Pyro | 10/12 | Pending | Pending | Pending |
+| Arc | 12/12 | Pending | Pending | Pending |
+
+[Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/)
