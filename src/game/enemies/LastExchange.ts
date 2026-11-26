@@ -1,21 +1,24 @@
 import type { EnemyEvent } from './EnemySystem';
 import type { MeleeStrikeShape } from './meleeAttacks';
-import type { StandardEnemyId } from './types';
+import type { EnemyId } from './types';
+import type { IncomingDamageOrigin } from '../abilities/RunStats';
 
 export type AttackFootprint = Readonly<{
   owner: number;
-  family: StandardEnemyId;
+  family: EnemyId;
   x: number;
   y: number;
   angle: number;
-  shape: MeleeStrikeShape;
+  shape: MeleeStrikeShape | {kind: 'circle'; range: number};
   at: number;
   committed: boolean;
 }>;
 type Point = {x: number; y: number};
+type Marine = Point & {angle: number; radius: number};
 type Blocker = Point & {width: number; height: number};
 export type LastExchange = Readonly<{
-  marine: Point & {angle: number; radius: number};
+  marine: Marine;
+  earlier?: Marine;
   attacks: readonly AttackFootprint[];
   fatal?: AttackFootprint;
   blockers: readonly Blocker[];
@@ -25,7 +28,16 @@ export type LastExchange = Readonly<{
 export class ExchangeHistory {
   private attacks: AttackFootprint[] = [];
 
-  clear(): void { this.attacks = []; }
+  private positions: {marine: Marine; at: number}[] = [];
+
+  clear(): void { this.attacks = []; this.positions = []; }
+
+  sample(marine: Marine, at: number): void {
+    if (at - (this.positions.at(-1)?.at ?? -Infinity) < .05) return;
+    const {x,y,angle,radius} = marine;
+    this.positions.push({marine:{x,y,angle,radius},at});
+    if (this.positions.length > 40) this.positions.shift();
+  }
 
   record(events: readonly EnemyEvent[], at: number, projectileWidth: number): void {
     for (const event of events) {
@@ -50,19 +62,29 @@ export class ExchangeHistory {
     if (this.attacks.length > 32) this.attacks.shift();
   }
 
-  snapshot(marine: LastExchange['marine'], blockers: readonly Blocker[], at: number, fatalOwner?: number): LastExchange | undefined {
-    const recent = this.attacks.filter(attack => at - attack.at <= 1.8);
-    const fatal = [...recent].reverse().find(attack => attack.owner === fatalOwner && attack.committed);
-    const nearby = recent.filter(attack => Math.hypot(attack.x - marine.x, attack.y - marine.y) <= attack.shape.range + 170);
-    const owners = new Set<number>();
-    const attacks = nearby.reverse().filter(attack => {
-      if (attack === fatal || owners.has(attack.owner)) return false;
-      owners.add(attack.owner);
-      return true;
-    }).slice(0, 3);
-    if (!fatal && !attacks.length) return;
+  snapshot(marine: Marine, blockers: readonly Blocker[], at: number, fatalOwner: number | undefined,
+    source: IncomingDamageOrigin, origin?: Point & {radius?: number}): LastExchange | undefined {
+    const recent = this.attacks.filter(attack => attack.committed && at - attack.at <= 2);
+    let fatal = [...recent].reverse().find(attack => attack.owner === fatalOwner);
+    if (source.source === 'enemy-projectile' && origin) {
+      const dx = marine.x-origin.x, dy = marine.y-origin.y;
+      const width = fatal?.shape.kind === 'line' ? fatal.shape.width : 20;
+      fatal = {owner:fatalOwner ?? -1,family:source.enemyFamily ?? 'spitter',...origin,at,committed:true,
+        angle:Math.atan2(dy,dx),shape:{kind:'line',range:Math.hypot(dx,dy),width,halfAngle:0}};
+    } else if (origin?.radius && ['acid-pool','boss-attack','self-blast'].includes(source.source)) {
+      fatal = {owner:-1,family:source.enemyFamily ?? 'queen',...origin,at,committed:true,
+        angle:0,shape:{kind:'circle',range:origin.radius}};
+    }
+    // An unrelated attack cannot stand in for the fatal footprint.
+    if (!fatal) return;
+    const attacks = recent.filter(attack => attack.owner !== fatal!.owner
+      && Math.hypot(attack.x-marine.x,attack.y-marine.y) <= attack.shape.range+220).reverse().slice(0, 8);
+    const earlier = this.positions.reduce<typeof this.positions[number] | undefined>((best, sample) =>
+      at-sample.at >= .8 && at-sample.at <= 1.2 && (!best || Math.abs(at-sample.at-1)<Math.abs(at-best.at-1)) ? sample : best, undefined)?.marine;
     const {x,y,angle,radius} = marine;
-    return {marine:{x,y,angle,radius}, attacks, fatal, blockers:blockers.filter(blocker =>
-      blocker.x < x+220 && blocker.x+blocker.width > x-220 && blocker.y < y+165 && blocker.y+blocker.height > y-165)};
+    const left = Math.min(x,earlier?.x??x,fatal.x)-300, right = Math.max(x,earlier?.x??x,fatal.x)+300;
+    const top = Math.min(y,earlier?.y??y,fatal.y)-240, bottom = Math.max(y,earlier?.y??y,fatal.y)+240;
+    return {marine:{x,y,angle,radius}, earlier, attacks, fatal, blockers:blockers.filter(b =>
+      b.x<right && b.x+b.width>left && b.y<bottom && b.y+b.height>top)};
   }
 }

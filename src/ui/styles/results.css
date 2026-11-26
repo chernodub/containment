@@ -142,3 +142,24 @@
 }
 #overlay .result-actions .retry-lesson-art { width: 120px; }
 #overlay .result-actions .retry-lesson p { margin: 0; }
+
+#overlay .debrief-panel[data-outcome=dead] .incoming-report {
+  grid-template-columns: minmax(0, .7fr) minmax(0, 1fr);
+  align-items: center;
+  margin: 10px 0;
+  padding: 12px 16px;
+  gap: 16px;
+}
+#overlay .debrief-panel[data-outcome=dead] .debrief-heading h2 { font-size: clamp(32px, 4.8vh, 52px); }
+#overlay .debrief-panel[data-outcome=dead] .debrief-rig > svg { width: 48px; height: 48px; }
+#overlay .last-exchange { display: block; min-width: 0; }
+#overlay .last-exchange svg { display: block; width: 100%; height: clamp(215px, 29vh, 330px); }
+#overlay .last-exchange figcaption { margin-top: 5px; color: #c7eadb; }
+#overlay .exchange-key { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 4px; font-size: 14px; }
+#overlay .exchange-key b { color: #ffac98; }
+.exchange-trail { fill: none; stroke: #f2f7fa; stroke-width: 2.5; stroke-dasharray: 5 5; }
+.exchange-marine.exchange-ghost { fill: #13232b; stroke: white; stroke-width: 2.5; }
+.exchange-attack:not([data-fatal=true]) { opacity: .45; }
+.exchange-exit { stroke-dasharray: none; }
+#overlay .incoming-report > .retry-lesson { margin: 0; gap: 12px; }
+#overlay .incoming-report .retry-lesson-art { width: min(55%, 260px); }
