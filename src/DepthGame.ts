@@ -99,10 +99,13 @@ export class DepthGame {
  private relayVolleyId?:number;
  private consoleRelease=0;
  private recoveryGrilleState?:{x:number;y:number;angle:number;escorts:number;attackerId?:number;
-  state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number};
+  state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4))return grille;
+  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4)){
+   const {attackStarted:_,...visible}=grille;
+   return visible;
+  }
  }
  private resolveRecoveryGrille(closed:boolean){
   const grille=this.recoveryGrilleState;
@@ -119,8 +122,10 @@ export class DepthGame {
   const grille=this.recoveryGrilleState;
   if(grille?.state!=='waiting')return;
   const attacker=grille.attackerId===undefined?undefined:this.enemies.getSnapshot(grille.attackerId);
-  if(this.elapsed>=grille.expiresAt||grille.attackerId!==undefined&&(!attacker||attacker.meleePhase==='approach'))
-   this.resolveRecoveryGrille(false);
+  if(attacker?.meleePhase==='windup'||attacker?.meleePhase==='strike'||attacker?.meleePhase==='recovery')
+   grille.attackStarted=true;
+  const finished=grille.attackerId!==undefined&&(!attacker||grille.attackStarted&&attacker.meleePhase==='approach');
+  if(this.elapsed>=grille.expiresAt||finished)this.resolveRecoveryGrille(false);
  }
  private consoleExchange?:{bait:{x:number;y:number};landing:{x:number;y:number};target:{x:number;y:number}};
  get manualExchange(){return this.consoleRelease>this.elapsed?this.consoleExchange:undefined;}
