@@ -528,21 +528,25 @@ export class EncounterDirector {
     this.dispatched=end;
   }
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
-  reportPriorityDefeated(beat:number){
+  reportPriorityDefeated(beat:number,origin?:{x:number;y:number}){
     if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
     const plan=this.plan.beats?.[beat];
-    const cut=this.reserveCut(beat);
+    const cut=this.reserveCut(beat,origin);
     this.defusedBeats.add(beat);
     if(plan?.consequence==='leader')this.breakBeat(plan.end);
     return cut;
   }
-  private reserveCut(beat:number):ReserveCut|undefined {
+  private reserveCut(beat:number,origin?:{x:number;y:number}):ReserveCut|undefined {
     const end=this.plan.beats?.[beat]?.end??this.dispatched;
     const reserve=this.plan.schedule.slice(this.dispatched,end).filter(request=>request.reserve);
     if(!reserve.length)return;
     if(reserve[0].enemyId==='crawler'){
       const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
-      if(pincer)this.coolantEntry=this.plan.schedule[pincer.start].breachId;
+      if(pincer){
+        const entries=this.breaches.filter(entry=>this.plan.schedule.slice(pincer.start,pincer.end).some(spawn=>spawn.breachId===entry.id));
+        this.coolantEntry=origin?entries.sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]?.id:
+          this.plan.schedule[pincer.start].breachId;
+      }
     }
     return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
   }
