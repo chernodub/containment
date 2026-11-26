@@ -1585,3 +1585,66 @@ The red telegraphs, skull marks, health bars and marine retain their previous re
 The final production build passed. The native Breacher campaign cleared nine rooms with seed 1729, fast stepping and the 180000 ms startup timeout. It recorded zero errors and a shutter-break receipt in Relay Racks. The playtest's room-entry hold messages include machine load. The final logs are `artifacts/nextgen/heavy40/{build-final.log,playtest-final.log,title-final.log}`. The existing title28 pipeline regenerated the title cast and creature cards in `public/assets/ui/`. The proof index links 33 three-revision native sheets and 33 current full frames.
 
 The three weakest frames are the settled ragdoll (the floor-facing jaw disappears), elite side (the horn crosses a crown even though the tail fan identifies the rank), and the Relay Racks crowd (the rear Brute sits against a rack of similar value). In early recovery the marine can overlap the throat briefly as the head turns. The marine's outline remains visible in the 117 ms sample.
+
+## HEAVY41 — articulated jaw, supports and heavy palettes
+
+The Warden's throat is a short transverse emissive surface behind a bone prow and a projecting chin. The lower plate follows the jaw joint, which opens progressively in the ram load and holds its opening at charge release. Each cheek carries a bone hinge. The existing wall recoil presents the side of the mouth during the punish window.
+
+Each hand has a shorter palm, two forward-projecting, separated knuckles and a recessed wrist. The hind feet project ahead of the ankles. The elite horns grow through dark roots on the skull. The gait shifts the chest laterally, rolls it over the support and counter-rotates the tail. The striking shoulder rolls through impact and retracts the hand sideways during the first half of recovery.
+
+The shader edit is confined to the existing `BRUTE_PLANES` body-albedo block in `src/render/vfx/ActorSurface.ts`. Atlas cell 1 supplies the desaturated jade or Warden rust crown. The remaining body cells use dark olive, retaining the existing deeper multiplier for the underbody and the existing cool rim. The generator assigns the limbs to chitin. The rust candidate separates the Warden from the two jade ranks and from the brighter orange Crawler marks. Deck lighting and the shared light evaluation have an empty diff.
+
+The proof index is `artifacts/nextgen/heavy41/sheets/index.html`. Native comparisons put final22 on the left. The colour comparison puts jade on the left and rust on the right. The six-frame gait studies sample each live lineup model with moving input, a fixed heading and the game camera.
+
+| Native measurement | final22 | HEAVY41 |
+|---|---|---|
+| Rig | 63 joints, `144d320c6cae75d7` | same |
+| Contact radii, Brute / elite / Warden | 42.90 / 55.77 / 64.00 | same |
+| Public height (m), same order | 3.030 / 3.265 / 4.500 | 3.030 / 3.272 / 4.500 |
+| Drawn height (m), same order | 2.81 / 3.33 / 4.41 | 2.81 / 3.33 / 4.40 |
+
+The simulation diff from the assigned base is empty. All 38 packed animation durations match final22. The standard competent Breacher sim completed 7 of the 12 campaigns. Successful seeds were 11, 99, 256, 1024, 6561, 9001 and 65537. The room-clear counts for the others were 19 (7), 11 (23), 15 (512), 17 (2025) and 18 (4096).
+
+| Attack clock (ms) | final22 warning / release / recovery / ready | HEAVY41 |
+|---|---|---|
+| Brute | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite Brute | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+
+The first-tick recovery fixture still shows the hand at impact. The extra mid-recovery sheets advance both revisions by nine simulation ticks for the Brute and eight for the elite. These are the frames in which to judge the withdrawn hand. Ordinary Brutes sample `m10-exposed` during that window, and both that clip and `m10-recovery` carry the revised pose.
+
+### Read at 480 × 270
+
+| Pose sheet | Brute | Elite Brute | Warden |
+|---|---|---|---|
+| Calm | Two near knuckles and a short wrist. Skull stays distinct. | Two near knuckles. The horn base sits in the dark crown. | Prow and chin bracket a warm seam. The cheek hinge is visible beside it. Near knuckles separate. |
+| Windup | Cocked arm and planted hand separate; both lobes visible on the plant. | Wide hook, planted twin knuckles and clear red sector. | Face-on, the bright slot runs between the jaws. Both planted hands split. The hinges sit along the cheek outlines. |
+| Release | The planted hand projects past the skull. Two knuckles read on the near hand. | Extended striking hand and two separate support knuckles. | Widest jaw gap. Chin below, brow above, bright curved slot inside. Both hands read. |
+| Recovery onset | Hand still forward on this first tick; the marine partially covers it. | Same early impact hold. | Near jaw is open but overlaps the marine. The opening and hinge are easier to see at native size. |
+| Mid-recovery | Withdrawn hand below and behind the skull, with floor visible between. | Withdrawn hand clears both the skull and marine. | Native stun and recovery sheets cover the ram. |
+| Behind | Near hand and foot separate; far knuckles overlap. | Horn crosses the back, but the planted hand still splits. | Prow, sail and pool give heading; the upper jaw covers much of the throat. One hand is easier to count. |
+| Side | Both lobes on the near hand and the heel-to-toe projection are visible. | Near knuckles are clear. Horn still crosses the shoulder from this heading. | Slot sits between the near jaw tips, hinge behind it; two near knuckles. |
+| Six-frame walk | Rib cage rocks across the supporting wrist as the opposite foot advances. | The fan, horns and back rock together above the planted hand. | Heavy counter-roll and broad hind foot; the far hand overlaps the near one during part of the cycle. |
+
+| Other sheet | Read |
+|---|---|
+| Lineup colour | Marine and skulls stay readable. Two knuckles on each near hand. Umber makes the Warden distinct and the warm throat sits inside the bone jaws. |
+| Lineup grey | Dark gap and wrist creases survive desaturation. |
+| Lineup silhouette | Split hands and broadened feet remain countable on the near side. The long Warden head and sail distinguish the boss. |
+| Warden colour candidates | Jade blends the Warden with the Brutes. Rust-umber separates their shells while leaving bright orange to the Crawler. |
+| Swarm Junction crowd | Marine before the Brutes. Small creatures and red sector stay clear. Knuckles on the backmost Brute are too small to count. |
+| Crew Checkpoint crowd | Marine before the Brutes. The front pair retain readable pale skulls against the deck. |
+| Frozen / chilled | Both retain the existing blue-grey glaze. Hands remain split in outline. These two fixture frames look similar. |
+| Burning / shocked | Orange rim and violet discharge remain legible alongside the skull marks. |
+| Native Warden calm | Warm seam beside the chin, near hinge under the prow. The upper jaw is the largest face shape. |
+| Native charge windup | Gap is visible in profile. The cheek and brow mask most of the slot at this oblique angle, and the prow catches the eye first. |
+| Native charge | Head leads, with warm light on the forward rim. The far jaw and far hand overlap from this heading. |
+| Native wall stun | Near hinge and chin are separate as the head recoils. The warm crescent is identifiable, smaller than the prow. |
+| Native recovery | Throat and chin show left of the marine. The hand partly crosses the jaw. |
+| Native death / settled ragdoll | Corpse rolls underneath its forelimbs. The sail and feet remain visible; the mouth is occluded. |
+
+I saw no loss of the red warning sector or capsule, skull marks, health bars or marine outline in the comparisons. The Warden's slot reads fastest head-on. In the oblique native windup and behind view the bone can draw the eye first.
+
+At the native Relay Racks shutter impact the lower jaw projects down-left, with a dark mouth and a lit bar below the prow. The near foot has two knuckles. The marine, shutter callout and stun indicator remain distinct against the broken floor. The three weakest reads are the oblique native windup (prow before glow), Warden behind (near cheek hides the slot), and the rear Brute in Swarm Junction (hand too small to count).
+
+The delivered production build passed. The title cast and creature cards were re-rendered after the throat revision. The final native Breacher cleared all nine rooms with zero errors and recorded the Relay Racks shutter impact. Its process returned 1 for three room-loading observations over five seconds on the busy machine. The earlier nine-room pass also cleared all rooms with zero errors. The final receipt is `artifacts/nextgen/playtest/heavy41-final-breacher/report.json`; the build and twelve-seed receipts are `artifacts/nextgen/heavy41/{delivery-build.log,sim.log}`. The gallery contains 41 native comparisons and 41 current 480 × 270 images.

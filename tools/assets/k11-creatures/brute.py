@@ -42,6 +42,7 @@ PLATE_BAND = {**{i: "plate" for i in (*WARDEN.DORSAL_PLATES, 424)}, **{i: "lead"
               **{i: "flesh" for i in range(90, 100)},
               51: "lead", 60: "plate", 61: "plate", 62: "plate", 63: "plate", 64: "plate", 65: "plate",
               66: "plate", **{i: "flesh" for i in range(70, 80)}}   # BRUTE32: elite horns face-pale; dorsal plates, eye slits dark
+PLATE_BAND.update({70: "flesh", 71: "flesh", 72: "flesh", **{i: "chitin" for i in range(73, 80)}})
 BAND_KEEP = ("accent", "eye", "plate")   # BRUTE32: the eye slits are small; keep them from the island merge   # leg armour plates stay in the limb's flesh shape
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
@@ -140,7 +141,7 @@ def arm(body, s, side, guard=True):
     sh = v3((0.3, 1.7 * s, 6.9))
     el = v3((-.21, 3.28 * s, 6.02))
     fist = v3((2.15, 3.00 * s, 4.57))
-    wrist = el + (fist - el) * 0.74
+    wrist = el + (fist - el) * 0.62
     body.add(Ellipsoid(sh + v3((0, .15 * s, .05)), (.95, .88, .85), zone=FLESH, bone=bone, k=.10, plate=UNDER))   # deltoid
     body.add(S.ShellBand(sh + v3((.05, .30 * s, .98)), frame((1, .10 * s, -.10), (0, .55 * s, 1)), (1.35, 1.12, .95),
                          .88, .70, thick=.30, bevel=.09, lip=.05, zone=ARMOR, bone=bone, plate=73, hard=1.0))   # cap
@@ -154,11 +155,11 @@ def arm(body, s, side, guard=True):
         body.add(S.ShellBand(mid + up * .80, frame(d, up), (1.7, .80, .70), .70, .55, thick=.20, bevel=.08,
                              zone=ARMOR, bone=bone, plate=75, hard=1.0))
     body.add(Ellipsoid(wrist, (.58, .60, .55), zone=FLESH, bone=bone, k=.04, plate=UNDER))   # wrist
-    body.add(Ellipsoid(fist + v3((0.05, 0, 0.1)), (.92, 1.02, .80), frame((1, .15 * s, .15)), zone=FLESH, bone=bone,
+    body.add(Ellipsoid(fist + v3((0.05, 0, 0.1)), (.72, .98, .58), frame((1, .15 * s, .15)), zone=FLESH, bone=bone,
                        k=.08, plate=76))   # hand mass, lit top
     for k in (-1, 1):   # two weight-bearing knuckles, front and down
-        body.add(Ellipsoid(fist + v3((.72, .44 * k + .05 * s, -.42)), (.46, .40, .42), zone=FLESH, bone=bone, k=.04,
-                           plate=UNDER))
+        body.add(Ellipsoid(fist + v3((1.02, .62 * k + .05 * s, -.34)), (.64, .44, .49), zone=FLESH, bone=bone, k=.04,
+                           plate=76))
     return sh, el, wrist, fist
 
 
@@ -167,7 +168,7 @@ def leg(body, s, side, hip=(-1.85, .95, 5.4), knee=(-1.30, 1.70, 3.05), foot=(-1
     body.add(RoundCone(hip, knee, r[0], r[1], zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=UNDER))
     body.add(Ellipsoid(knee, (r[1] * 1.05,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
     body.add(RoundCone(knee, foot + v3((0, 0, .2)), r[1] * .9, r[2], zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=77))
-    body.add(Ellipsoid(foot + v3((.30, 0, -.06)), (r[2] * 1.5, r[2] * 1.05, r[2] * .7), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
+    body.add(Ellipsoid(foot + v3((.54, 0, -.06)), (r[2] * 2.16, r[2] * 1.45, r[2] * .7), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
 
 
 def build(sk):
@@ -203,6 +204,7 @@ def build(sk):
     regalia = S.Sculpture("brute-regalia")
     for s, r0 in zip((-1, 1), rear):   # two pale horns swept back and out from the plate's rear corners
         pts = [r0 + pu * 0.05, r0 + v3((-0.32, 1.06 * s, -0.37)), r0 + v3((-1.28, 2.31 * s, -0.76)), r0 + v3((-2.70, 2.91 * s, -1.36))]
+        regalia.add(Ellipsoid(r0, (.66, .68, .48), zone=ARMOR, bone="head", plate=74))
         regalia.add(S.Tube(pts, [0.44, 0.38, 0.24, 0.055], zone=BONE, bone="head", plate=51))
     for i, (x, z, ang, ry, rz, drop, bone) in enumerate(BACK[:3]):   # a tall keel along the spine ridge
         regalia.add(band((x, 0, z + .14), ang + TIP, .52, (2.2, .34, .55), .55, bone, 79, thick=.30, bevel=.10))

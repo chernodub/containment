@@ -156,7 +156,8 @@ bool bruteFace=band==5;
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
-  diffuseColor.rgb=mix(vec3(.027,.073,.044),vec3(.027,.073,.044)*.79,actorWarden);
+  vec3 crown=mix(vec3(.034,.062,.043),vec3(.090,.047,.030),actorWarden);
+  diffuseColor.rgb=band==1 ? crown : vec3(.020,.025,.014);
   creatureStrike=1.0;
 }
 // HEAVY39: the plate cell is the near-black underbody (neck, armpits, flanks, joints, knuckles) under lighter

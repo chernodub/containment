@@ -315,8 +315,8 @@ class Creature:
         # moving the legacy wrist IK alone barely moves the drawn knuckles.
         H,W=self.height,self.width
         load=(.78+.28*smooth(t)) if action=='m10-windup' else 0.
-        drive=between(t,[(0,.80),(.28,1.10),(.72,1.),(1,1.)]) if action=='m10-strike' else 1.-smooth((t-.75)/.25) if action=='m10-recovery' else 0.
-        slump=drive if action=='m10-recovery' else 0.
+        drive=between(t,[(0,.80),(.28,1.10),(.72,1.),(1,1.)]) if action=='m10-strike' else 1.-smooth(t/.58) if action=='m10-recovery' else 0.
+        slump=1.-smooth((t-.58)/.42) if action=='m10-recovery' else 0.
         self.move(self.center,(-FWD*W*.14+UP*H*.09)*load + SIDE*W*.09*load+FWD*W*.12*drive-UP*H*(.07*load+.12*drive))
         self.rotate(self.center,UP,-.60*load+.43*drive-.18*slump)
         self.rotate(self.center,SIDE,.14*load+.31*drive)
@@ -326,6 +326,10 @@ class Creature:
         self.rotate('shoulder.r',SIDE,.68*load-.55*drive)
         self.move('shoulder.r',-SIDE*W*(.34*load+.26*drive)
                   +FWD*W*(-.18*load+.51*drive)+UP*H*(.22*load-.07*drive))
+        if action=='m10-recovery':
+            retreat=smooth(t/.48)*(1.-smooth((t-.68)/.32))
+            self.move('shoulder.r',(-FWD*.29-SIDE*.22)*W*retreat)
+            self.rotate(self.center,UP,.26*retreat)
         hook = 1. if action=='m10-windup' else 1.-smooth(t/.43) if action=='m10-strike' else 0.
         if hook:
             self.club_hook(hook, smooth(t) if action=='m10-windup' else 1.)
@@ -658,6 +662,7 @@ class Creature:
             action = 'm10-run'
         if ram == 'm10-ram-load':
             self.ram_load(t, targets)
+            self.rotate('jaw',SIDE,.48*smooth(t))
         elif action in ('m10-waiting','m10-waiting-low'):
             if action=='m10-waiting-low':
                 self.move(self.center,-SIDE*W*.22-UP*H*.21)
@@ -688,6 +693,12 @@ class Creature:
             self.move(self.center,UP*H*(.025+.025*math.cos(phase*2)))
             self.rotate(self.center,FWD,.075*math.sin(phase))
             self.rotate(self.center,SIDE,.11 if crawler else .07)
+            if self.family=='brute' and not ram:
+                plant=math.sin(phase)
+                self.move(self.center,SIDE*W*.075*plant)
+                self.rotate(self.center,FWD,.16*plant)
+                self.rotate('chest',UP,.22*plant)
+                self.rotate('tail',UP,-.18*plant)
             for leg in self.legs:
                 i=leg['index'];opposite=(i%2) if crawler else (0 if i in [0,3] else 1)
                 cycle=(t+.5*opposite)%1
@@ -916,6 +927,7 @@ class Creature:
             self.rotate('neck_lo',UP,-.50*side)
             self.move(self.center,SIDE*W*.14*side-UP*H*.1)
         if ram == 'm10-ram-charge':
+            self.rotate('jaw',SIDE,.52)
             self.move(self.center,FWD*W*(.23+.035*math.cos(t*math.tau))-UP*H*.05)
             self.move('head',FWD*W*.13+UP*H*.025)
             self.rotate('head',SIDE,-.11)

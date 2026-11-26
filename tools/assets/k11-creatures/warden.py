@@ -57,27 +57,28 @@ def build(sk, a):
                         zone=ARMOR, bone="chest", plate=JADE + 9, hard=1.0))
         lobe(wr, (.70, .72, .66), "chest", k=.05)
         fist = wr + v3((.45, .02 * s, -.10))
-        lobe(fist, (1.08, 1.18, .82), "chest", .15, k=.08, plate=JADE + 8)
+        lobe(fist, (.81, 1.13, .60), "chest", .15, k=.08, plate=JADE + 8)
         for k in (-1, 1):
-            lobe(fist + v3((.80, .50 * k + .05 * s, -.40)), (.54, .46, .48), "chest", k=.04)
+            lobe(fist + v3((1.14, .68 * k + .05 * s, -.34)), (.70, .45, .50), "chest", k=.04)
         # hind legs: thigh, dark knee, shin, dark foot
         hip, knee, foot = v3((-2.95, 1.05 * s, 4.25)), v3((-2.55, 1.75 * s, 2.65)), v3((-3.05, 1.95 * s, .50))
         w.add(RoundCone(hip, knee, .95, .74, zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=JADE + 6))
         w.add(Ellipsoid(knee, (.76,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
         w.add(RoundCone(knee, foot + v3((0, 0, .2)), .66, .52, zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=JADE + 6))
-        w.add(Ellipsoid(foot + v3((.35, 0, -.05)), (.80, .58, .40), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
+        w.add(Ellipsoid(foot + v3((.35, 0, -.05)), (1.23, .80, .42), zone=FLESH, bone=f"foot.back.{side}", k=.08, plate=UNDER))
     # --- neck: narrow and dark from the chest to the jaw hinge, a crease back to the leading shoulders ---------------
     w.add(RoundCone((1.70, 0, 5.55), (3.05, 0, 5.80), .82, .66, zone=FLESH,
                     bone=("blend", "chest", "head", (1.7, 0, 5.5), (3.1, 0, 5.8)), k=.10, plate=UNDER))
     # --- head built around the jaw ---------------------------------------------------------------------------------
-    lobe((3.45, 0, 6.30), (1.05, .95, .48), "head", -.10, k=.10, plate=JADE + 5)             # upper jaw, short
-    w.add(AnglePlate((3.45, 0, 6.72), frame((-1, 0, .10)), .80, .78, .28, keel=.24, rake=.70, taper=.55,
-                     zone=CREST, bone="head", plate=450, hard=1.0))                            # bone prow
-    lobe((4.40, 0, 5.05), (1.55, .98, .40), "jaw", -.30, k=.06)                               # lower jaw, dropped open
-    for s in (-1, 1):
-        lobe((2.88, 1.00 * s, 5.68), (.50, .34, .52), "head", k=.05, plate=JADE + 5)            # cheek hinge
-    lobe((4.65, 0, 6.25), (1.35, 1.13, .86), "head", -.05, k=.0, plate=0, zone=ORGAN, name="warden-ram")   # lit throat, open to the sky
-    for y in (-.36, .36):   # dark teeth laid across the light, front to back
-        w.add(Prism(v3((4.75, y, 6.80)), v3((5.55, y * 1.15, 6.30)), .11, .08, sides=4, zone=FLESH, bone="head", k=.02,
-                    plate=UNDER))
+    # Overbite and underslung chin overlap the throat at rest. Both ends of the
+    # jaw remain visible from above because the chin projects past the prow.
+    lobe((3.80, 0, 6.38), (1.14, 1.00, .44), "head", -.10, plate=UNDER)
+    w.add(AnglePlate((3.67, 0, 6.74), frame((-1, 0, .12)), 1.06, .88, .26,
+                     keel=.18, rake=.64, taper=.60, zone=CREST, bone="head", plate=450, hard=1.0))
+    lobe((4.36, 0, 5.47), (1.36, 1.08, .38), "jaw", -.10, plate=UNDER)
+    lobe((5.24, 0, 5.56), (.55, .92, .22), "jaw", .05, plate=450)
+    for side in (-1, 1):
+        lobe((3.15, 1.04 * side, 5.99), (.52, .31, .49), "head", plate=450)
+    lobe((4.77, 0, 6.21), (.43, 1.02, .30), "head", -.13, k=.0,
+         zone=ORGAN, plate=0, name="warden-ram")
     return w
