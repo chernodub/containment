@@ -5,7 +5,7 @@ type Body = {x:number; y:number; radius:number};
 type Actor = Body & {id:number};
 type Model = {height:number; root?:T.Object3D};
 export type InteriorCutawayPart = {colors:T.BufferAttribute; start:number; end:number};
-export type InteriorCutaway = {bounds:T.Box3; parts:InteriorCutawayPart[]; object?:T.Object3D; floorCover?:boolean; indices?:{attribute:T.BufferAttribute;start:number;end:number}; hidden:boolean};
+export type InteriorCutaway = {bounds:T.Box3; parts:InteriorCutawayPart[]; object?:T.Object3D; floorCover?:boolean; actorsOnly?:boolean; indices?:{attribute:T.BufferAttribute;start:number;end:number}; hidden:boolean};
 type State = {pieces:InteriorCutaway[]; point:T.Vector3; viewProjection:T.Matrix4; actors:Float64Array; box:Float64Array};
 const states = new WeakMap<T.Object3D,State>();
 
@@ -57,8 +57,9 @@ export function updateOriginalInteriorCutaways(root:T.Object3D|undefined,camera:
     projectBox(b.min.x,b.max.x,b.min.y,b.max.y,b.min.z,b.max.z,viewProjection,point,box,0);
     const m=camera.matrixWorld.elements;
     const front=(m[8]>=0?b.max.x:b.min.x)*m[8]+(m[10]>=0?b.max.z:b.min.z)*m[10];
-    let hidden=bodies===1025;
-    for(let i=0;!hidden&&i<bodies;i++){
+    const targetCount=piece.actorsOnly?actorCount:bodies;
+    let hidden=targetCount===1025;
+    for(let i=0;!hidden&&i<targetCount;i++){
       const n=i*6;
       // A body touching the front bevel of solid floor cover remains in front.
       // Ground warnings and overhead fixtures still use their full rear extent.
