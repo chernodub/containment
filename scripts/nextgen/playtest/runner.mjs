@@ -179,7 +179,7 @@ async function snapshot(stagnantSince=Infinity) {
   return state;
 }
 async function shot(name,s,options={}) {
-  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});
+  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),timeout:120000,...options});
   report.screenshots.push(file);
   // Save actual body extents only at evidence frames; policy and native inputs are unchanged.
   if(s.status==='playing'&&!s.loading)s.framingEvidence=await page.evaluate(()=>{
