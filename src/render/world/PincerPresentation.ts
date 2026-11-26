@@ -24,6 +24,7 @@ export class PincerPresentation {
     silhouettes: {root:T.Group; arrival:number}[];
     countdown: T.Mesh;
   }>();
+  private queuedBend?:T.Group;
   private recoveryGate?:ReturnType<PincerPresentation['createGate']>;
   private delayedGate?:ReturnType<PincerPresentation['createGate']>;
   private readonly seams: T.Mesh[] = [];
@@ -163,6 +164,13 @@ export class PincerPresentation {
     const closed=bearing&&game.geometry.breaches.find(breach=>breach.x===bearing.to.x&&breach.y===bearing.to.y);
     const cutAge=bearing?Math.max(0,2-bearing.until+game.elapsed):0;
     this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
+    const bend=menu?undefined:game.coolantQueuedBend;
+    if(bend){
+      if(!this.queuedBend){this.queuedBend=this.makeSilhouette();this.root.add(this.queuedBend);}
+      this.queuedBend.visible=true;
+      this.queuedBend.position.set(bend.x/unit,0,bend.y/unit);
+      this.queuedBend.rotation.y=-bend.angle;
+    }else if(this.queuedBend)this.queuedBend.visible=false;
     this.updateRecoveryGrille(menu?undefined:game.recoveryGrille,unit,game.elapsed);
     this.exit.visible = pincer?.state === 'sealed';
     if (!pincer) return;

@@ -355,7 +355,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
   let consumableState=(seed^0xba113)>>>0;
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
-  let lastMove = -Infinity;
+  let lastMove = -Infinity, exclusiveTried = false;
   let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
@@ -364,7 +364,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
       if (key !== roomKey) {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
-        plasmaAttempts.clear(); plasmaOpeningUntil = 0;
+        plasmaAttempts.clear(); plasmaOpeningUntil = 0;exclusiveTried=false;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -430,6 +430,15 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       const keys = chooseActions(perceived);
+      if(profile==='competent'&&!exclusiveTried&&s.node?.templateId==='transmission-chamber'&&visible.length){
+        const equipped=s.build?.mutations.find(id=>['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id));
+        const button={'siege-plow':'f','fault-line':'q','shard-harvest':'q','ice-road':'f','ember-relay':'f','meltdown-core':'v','pilgrim-pylon':'f','live-wire':'q'}[equipped];
+        const slot={q:'tactical',f:'power',v:'overdrive'}[button];
+        if(slot&&s.abilities.slots?.[slot]?.ready&&s.abilityAims?.[slot]&&now>=nextInput){
+          keys.unshift(button);exclusiveTried=true;
+        }
+      }
+
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player,s.weaponRange),keys);
       movement=conditionMovement;
       if(s.shutterBait&&target?.id===s.shutterBait.wardenId&&target.health>target.maxHealth*.35&&!escape)target=undefined;
