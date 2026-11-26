@@ -241,8 +241,9 @@ export function shopScreen(game: DepthGame): string {
   }).join('');
   const stockGroup=(name:string, upgradesOnly:boolean)=>{
     const items=services(upgradesOnly);
-    const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)));
-    const summary=pair.length===2||chosen?`<span class="stock-summary"> · ${items.length} · from ${cheapest} CR</span>`:'';
+    const hasReserveAmmo=!upgradesOnly&&!!routeSupply;
+    const cheapest=Math.min(...items.map(({id})=>serviceCost(id,game.node.depth)),hasReserveAmmo?supplyCost:Infinity);
+    const summary=pair.length===2||chosen?`<span class="stock-summary"> · ${items.length+Number(hasReserveAmmo)} · from ${cheapest} CR</span>`:'';
     return `<section class="${upgradesOnly?'requisition-upgrades':''}" aria-label="${name}"><h3>${name}${summary}</h3><div class="requisition-grid">${cards(items)}</div></section>`;
   };
   const pairOption=(id:AugmentId)=>`<button id="purchase-${id}" class="supply-doctrine-option" data-purchase="rig-return" data-augment="${id}" ${game.canPurchaseService('rig-return',id)?'':'disabled'}>

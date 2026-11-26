@@ -264,3 +264,4 @@
   border-inline-start: 3px solid #bcabd6;
   padding-inline-start: 6px;
 }
+#overlay .route-supply .service-illustration { display: inline-block; width: 28px; height: 28px; vertical-align: middle; background: none; }
