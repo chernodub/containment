@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 from PIL import Image,ImageDraw,ImageFilter,ImageChops,ImageOps
 from ink_contour import contour
+from title34_light import cast_shadow
 from title34_hull import structure, left_return, contacts
 
 raw=Path(sys.argv[1])
@@ -51,43 +52,29 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         throat=ImageChops.offset(organ,-round(source.width*.049),round(source.width*.027))
         source.paste('#a65833',(0,0,*source.size),throat)
         inset=ImageChops.multiply(throat,ImageChops.offset(throat,-round(source.width*.011),round(source.width*.006)))
-        source.paste('#ffb961',(0,0,*source.size),inset)
+        source.paste('#efa155',(0,0,*source.size),inset)
     # A narrow hard highlight on the inner edge matches the side facing the
     # aperture. Retain a separate outer ink stroke after the highlight.
     alpha=source.getchannel('A')
     dx=round(source.width*.005)
-    inward=alpha.crop((-dx,-dx,alpha.width-dx,alpha.height-dx))
+    inward=alpha.crop((dx,-dx,alpha.width+dx,alpha.height-dx))
     rim=ImageChops.subtract(alpha,inward).point(lambda a:round(a*.78))
-    source.paste('#b4d1df',(0,0,*source.size),rim)
+    source.paste('#b6dbe6',(0,0,*source.size),rim)
     source.putalpha(alpha)
-    if name=='warden':
-        # Catch the two near knuckles over the sill. Anchor the keratin tips
-        # to the visible lower outline so a change of mesh moves the contact.
-        w,h=source.size
-        source=ImageOps.expand(source,border=(0,0,0,round(h*.06)))
-        pen=ImageDraw.Draw(source)
-        for fraction in (.595,.666):
-            tip_x=round(w*fraction)
-            column=alpha.crop((tip_x,0,tip_x+1,h)).getbbox()
-            if column:
-                tip_y=column[3]-round(h*.024)
-                claw=[(tip_x-w*.017,tip_y-h*.015),(tip_x+w*.009,tip_y-h*.016),
-                      (tip_x+w*.029,tip_y+h*.004),(tip_x+w*.035,tip_y+h*.052),(tip_x+w*.012,tip_y+h*.028)]
-                pen.polygon(claw,fill='#6e6968',outline='#20232b',width=max(1,w//400))
-                pen.line(claw[1:3],fill='#aac0c8',width=max(1,w//380))
     weight=max(2,round(source.width*.003))
     outlined=contour(source,weight)
     scale=extent/(outlined.height if vertical else outlined.width)
     plate=outlined.resize((round(outlined.width*scale),round(outlined.height*scale)),Image.Resampling.LANCZOS)
     layer.alpha_composite(plate,(x,y))
 
+hero=Image.new('RGBA',size)
+place(hero,'breacher',1525,358,1330,vertical=True)
+hero.save(raw/'hero.png')
 layer=structure()
+cast_shadow(layer,hero)
 layer.alpha_composite(contacts())
 place(layer,'crawler',1142,465,222,bank=-22)
 place(layer,'stalker',824,650,205,bank=17)
 layer.alpha_composite(left_return())
 place(layer,'warden',895,814,720)
 layer.save(raw/'midground.png')
-layer=Image.new('RGBA',size)
-place(layer,'breacher',1525,358,1330,vertical=True)
-layer.save(raw/'hero.png')

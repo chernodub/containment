@@ -17,6 +17,9 @@ if background:
         hull = hull.resize(size,resize)
     if hull.size != size:
         raise ValueError(f'Background must be rendered at {size}')
+    if "--scenery" in sys.argv:
+        from title34_light import background as light_hull
+        hull = light_hull(hull)
     for width in (2560, 1280):
         plate = hull.resize((width, width * 9 // 16), resize)
         plate.save(out / f'background-{width}.webp', quality=86, method=6)
