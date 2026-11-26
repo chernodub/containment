@@ -343,13 +343,12 @@ export class EnemySystem {
   #cachedSnapshot:EnemySystemSnapshot|null=null;
   getSystemSnapshot(): EnemySystemSnapshot {
     if(this.#cachedSnapshot)return this.#cachedSnapshot;
-    const enemies = Object.freeze(
-      [...this.#enemies.values()].map((enemy) => this.#snapshotEnemy(enemy)),
-    );
+    const enemies: EnemySnapshot[] = [];
+    for (const enemy of this.#enemies.values()) enemies.push(this.#snapshotEnemy(enemy));
     return this.#cachedSnapshot=Object.freeze({
       activeCount: this.activeCount,
       reservedCount: this.reservedCount,
-      enemies,
+      enemies: Object.freeze(enemies),
     });
   }
 

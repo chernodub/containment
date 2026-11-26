@@ -706,6 +706,9 @@ export class DepthGame {
   }
   return{x,y,blocked};
  }
+ private readonly previousTargetPositions = new Map<number, {x:number;y:number}>();
+ private readonly shotRadii = new Map<number, number>();
+ private readonly previousTargetBuffer: {x:number;y:number}[] = [];
  private targetCache:MutationTarget[]|null=null;private targetSnapshot:unknown;
  targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
  private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={},shutterSpitter?:true,approachLeadMs?:number){
@@ -1162,7 +1165,15 @@ export class DepthGame {
     else multiplier=enemy?.type==='crawler'?.42:.7;
    }
    const n=calculateSplashDamage(b.request.damage*multiplier,distance,b.request.splashRadius);if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,n,{x:(t.x-b.x)/(distance||1)*b.request.knockback,y:(t.y-b.y)/(distance||1)*b.request.knockback},'weapon',true,b.kind==='player'?b.request.weaponId:undefined);if(r.applied){if(b.kind==='player'&&++rocketHits===2)this.completeWeaponLesson(2);if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}this.mutations.hit(cause.chainId,b.request.weaponId,t,{x:(t.x-b.x)/(distance||1),y:(t.y-b.y)/(distance||1)},b.request.primed);if(r.died)this.mutations.kill(t,'direct',cause);}}}
- private updateBullets(dt:number,previousTargets:ReadonlyMap<number,{x:number;y:number}>=new Map(),hostileScale=this.abilities.hostileTimeScale){const shotRadii=new Map(this.enemies.snapshot.enemies.map(e=>[e.id,e.champion==='matron'?e.radius:enemyShotRadius(e.type,e.elite)]));for(const b of [...this.bullets]){if(this.status!=='playing')break;if((b.previewAt??0)>this.elapsed)continue;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
+ private updateBullets(dt:number,previousTargets:ReadonlyMap<number,{x:number;y:number}>=new Map(),hostileScale=this.abilities.hostileTimeScale){
+  const shotRadii=this.shotRadii;
+  shotRadii.clear();
+  for(const enemy of this.enemies.snapshot.enemies){
+   shotRadii.set(enemy.id,enemy.champion==='matron'?enemy.radius:enemyShotRadius(enemy.type,enemy.elite));
+  }
+  const contacts: {t:MutationTarget;entry:number}[]=[];
+  const start={x:0,y:0},end={x:0,y:0},origin={x:0,y:0},impact={x:0,y:0};
+  for(const b of [...this.bullets]){if(this.status!=='playing')break;if((b.previewAt??0)>this.elapsed)continue;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
    const from={x:b.x,y:b.y},next={x:b.x+dx/steps,y:b.y+dy/steps};const barrierBlocked=b.kind==='hazard'&&!b.preview&&this.abilities.interceptProjectile(from,next,b.request.radius,b.request.damage);if(barrierBlocked){done=true;break;}const shutter=b.kind==='player'&&this.relayShutter;
    if(shutter&&segmentIntersectsRect(from,next,shutter)){
     this.presentation.push({type:'hit',x:from.x,y:from.y,angle:b.request.angle,weapon:b.request.weaponId});
@@ -1181,10 +1192,19 @@ export class DepthGame {
           Math.max(0,lesson.cover.y-next.y,next.y-lesson.cover.y-lesson.cover.height))<=42)
       &&segmentIntersectsRect({x:b.sourceX,y:b.sourceY},this.player,lesson.cover))lesson.learned=true;if(b.kind==='grenade'){b.request={...b.request,speed:0};break;}if(b.request.splashRadius)this.blast(b);else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;break;}b.x=next.x;b.y=next.y;
    if(b.kind==='hazard'){if(!b.preview&&Math.hypot(b.x-this.player.x,b.y-this.player.y)<b.request.radius+16){this.presentation.push({type:'acid',x:b.x,y:b.y,angle:b.request.angle});this.hurt(b.request.damage,Number.isFinite(b.sourceX)&&Number.isFinite(b.sourceY)?{x:b.sourceX!,y:b.sourceY!}:undefined,{source:'enemy-projectile',enemyFamily:'spitter'},undefined,b.hostileOwner);done=true;}continue;}if(b.kind==='grenade')continue;
-   const contacts=this.targets().map(t=>{const radius=shotRadii.get(t.id)??t.radius;const previous=previousTargets.get(t.id)??t,mx=t.x-previous.x,my=t.y-previous.y;
-    const start={x:from.x-previous.x-mx*i/steps,y:from.y-previous.y-my*i/steps},end={x:next.x-previous.x-mx*(i+1)/steps,y:next.y-previous.y-my*(i+1)/steps};
-    return {t,entry:sweptCircle(start,end,{x:0,y:0},radius+b.request.radius)};}).filter(c=>c.entry!==null&&hasClearExpeditionShot(this.geometry,from,c.t)&&canTraverseExpedition(this.geometry,from,{x:from.x+(next.x-from.x)*c.entry,y:from.y+(next.y-from.y)*c.entry},b.request.radius)).sort((a,b)=>a.entry!-b.entry!);
-   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
+   contacts.length=0;
+   for(const t of this.targets()){
+    const radius=shotRadii.get(t.id)??t.radius;
+    const previous=previousTargets.get(t.id)??t,mx=t.x-previous.x,my=t.y-previous.y;
+    start.x=from.x-previous.x-mx*i/steps;start.y=from.y-previous.y-my*i/steps;
+    end.x=next.x-previous.x-mx*(i+1)/steps;end.y=next.y-previous.y-my*(i+1)/steps;
+    const entry=sweptCircle(start,end,origin,radius+b.request.radius);
+    if(entry===null||!hasClearExpeditionShot(this.geometry,from,t))continue;
+    impact.x=from.x+(next.x-from.x)*entry;impact.y=from.y+(next.y-from.y)*entry;
+    if(canTraverseExpedition(this.geometry,from,impact,b.request.radius))contacts.push({t,entry});
+   }
+   contacts.sort((a,b)=>a.entry-b.entry);
+   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry;b.y=from.y+(next.y-from.y)*entry;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry,y:from.y+(next.y-from.y)*entry,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
     const firstStrip=this.expedition.run.version===3&&!((this.expedition.run.weaponLessons??0)&1);
     this.completeWeaponLesson(1);
     if(this.node.templateId==='residential-gallery'||firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
@@ -1373,7 +1393,14 @@ export class DepthGame {
   if(input.angle!==null&&Number.isFinite(input.angle))this.player.angle=input.angle;else if(input.autoAim){const q=this.boss.snapshot,target=this.targets().filter(t=>(t.id!==-1||q.vulnerable)&&Math.hypot(t.x-this.player.x,t.y-this.player.y)<(this.condition?.id==='dark'?CONDITION_LIGHT_RADIUS:720)&&hasClearExpeditionShot(this.geometry,this.player,t)).sort((a,b)=>Math.hypot(a.x-this.player.x,a.y-this.player.y)-Math.hypot(b.x-this.player.x,b.y-this.player.y))[0];if(target)this.player.angle=Math.atan2(target.y-this.player.y,target.x-this.player.x);}
   this.feedbackBatch=true;try{this.abilities.update(ms);}finally{this.flushFeedback();}this.player.vx=dt?(this.player.x-frameX)/dt:0;this.player.vy=dt?(this.player.y-frameY)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.syncOverclock(weaponOverclock);if(this.status!=='playing')return;
   const reloadBefore=this.combat.snapshot;this.combat.regenerateReserves(ms);this.combat.update(ms,input.fire);if(reloadBefore.reloading&&!this.combat.snapshot.reloading&&this.combat.snapshot.magazine>reloadBefore.magazine)this.mutations.completedReload(this.player);if(input.fire){const shots=this.combat.fire(this.player.angle);if(shots.length){this.runStats.recordShot();const hitReceipt={hit:false};this.presentation.push({type:'shot',x:this.player.x,y:this.player.y,weapon:shots[0].weaponId,angle:this.player.angle});for(const request of shots)this.bullets.push({sourceX:this.player.x,sourceY:this.player.y,x:this.player.x,y:this.player.y,life:2,kind:'player',request,hitReceipt,tracker:new ProjectileHitTracker(request.penetration)});}}this.combat.reloadIfEmpty();
-  const previousTargets=new Map(this.targets().map(t=>[t.id,{x:t.x,y:t.y}]));
+  const previousTargets=this.previousTargetPositions;
+  previousTargets.clear();
+  let previousIndex=0;
+  for(const target of this.targets()){
+   const point=this.previousTargetBuffer[previousIndex]??(this.previousTargetBuffer[previousIndex]={x:0,y:0});
+   point.x=target.x;point.y=target.y;
+   previousTargets.set(target.id,point);previousIndex++;
+  }
   if(this.rigDrill&&this.elapsed>=this.rigDrill.until)this.finishRigDrill();
   this.updateCleanup(ms);this.navigation.prepare(this.player,1);this.enemyEvents(this.enemies.update(hostileMs,this.player));if(this.broodSupply){
    const pod=this.enemies.getSnapshot(this.broodSupply.pod);
