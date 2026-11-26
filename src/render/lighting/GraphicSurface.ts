@@ -259,30 +259,9 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             graphicActorHue=mix(vec3(1.),graphicActorHue,.3);
           }
 #ifdef BROOD_PLANES
-          float broodHide=hideFinish(actorPosition,vActorRegion>=3. && vActorRegion<=5. && !broodSac,broodSac);
           if(broodFinish && broodBody){
-            float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
-            // Keep the atlas zone and deck tint as the upper bound for each fragment.
-            // The edge retains its original value. Both larger planes subtract light.
-            float lit=actorBroodForm.w==1. && !broodSac ? .74 : .92;
-            float shade=broodSac ? .61 : actorBroodForm.z;
-            float plane=mix(shade,lit,step(actorBroodForm.x,key));
-            float localLight=graphicActorLight;
-            // The forward-facing sac and joint ridges pick up the same cold key.
-            float edge=actorBroodForm.y;
-            if(broodSac && actorBroodForm.z>.42)edge-=.14*step(.45,normalize(vNormal).z);
-            graphicActorLight*=mix(plane*broodHide,1.,step(edge,key));
-            float silhouette=abs(dot(normalize(vNormal),normalize(vViewPosition)));
-            float rim=step(.14,key)*step(silhouette,min(.53,2.35*fwidth(silhouette)));
-            graphicActorLight=mix(graphicActorLight,max(graphicActorLight,localLight*min(1.,lit+.07)),rim);
-            diffuseColor.rgb+=vec3(.060,.082,.119)*rim;
-            graphicActorHue*=mix(vec3(1.),vec3(.97,1.04,1.13),rim);
-            if(actorBroodForm.w==1. && !broodSac && vActorRegion>=3. && vActorRegion<=5.){
-              float ridge=max(rim,step(.85,key));
-              diffuseColor.rgb+=ridge*vec3(.012,.009,.022);
-            }
-            if(vActorRegion>=2. && vActorRegion<=5.)diffuseColor.rgb+=vec3(.048,.052,.075)*actorAttackLoad*step(-.15,key);
-            if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
+            graphicActorLight=1.;
+            graphicActorHue=vec3(1.);
           }
 #endif
 

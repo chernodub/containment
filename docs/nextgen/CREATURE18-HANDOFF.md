@@ -1711,72 +1711,33 @@ The stable brood marks use yellow, lime, blue and violet. Bright red in the stag
 
 The production build passed. Crew Checkpoint, seed 1729 with Pyro, recorded median draws of 159 → 159 on High and 145 → 145 on Low, with zero combat shader compiles on both builds and tiers. Standard competent cohorts cleared 9/12 with Cryo and 9/12 with Arc. The native Pyro campaign cleared eight rooms with zero errors. Both runs returned status 1 for room-loading diagnostics. The first flagged Passenger Vault, Residential Gallery and Crew Checkpoint. The repeat flagged Passenger Vault and Residential Gallery, again with eight clears and zero errors. The full gallery and campaigns used the build before the final pooled Spitter timer reset. The reset received a fresh production build and a Crew Checkpoint release capture with zero browser errors. The proof index contains 83 annotated comparisons.
 
-## HEAVY42 — painted heavy surfaces and the Warden's open jaw
 
-The heavy family carries a triangle-constant custom glTF vertex attribute, `_HEAVYZONE`. At build time, `brute.surface_zones` finds the winning SDF primitive at the center of each decimated face. A shell band uses its own longitudinal bevel and flank depth to divide the crown, rim and flank. A limb uses a fixed bind-space cut. Hands, individual digits, mask brow, cheeks and throat inherit their primitive's paint. The low four bits select the paint. The remaining bits distinguish adjoining pieces even when they use the same pigment. The exporter splits vertices on this attribute and writes it beside the skin weights. Skinning carries the painted boundary with the anatomy.
+## BROOD41
 
-To use the approach on another family, implement `surface_zones(sculpture, centers)` in its generator. The build and contract exporter pick up that hook. Classify by feature and primitive-local geometry, assign the same anatomical ID to pieces that should blend, and reserve distinct IDs for seams. In the loader, prepare the family's zone edges before reindexing. Each shared edge whose IDs differ gets a barycentric ink line. In the material, pass the paint index to the fragment shader and map it to the family's pigments. Preserve its emission and status channels. The heavy palette has three body values, two mask values and a throat light. Only the narrow key-side rim responds to the posed normal.
+Brood chitin uses the K11 primitive atlas cell carried by the skin UVs. Top paint is linear RGB (.096, .081, .121), flank (.047, .039, .065), and underside and limbs (.025, .022, .037). Sac planes use (.108, .052, .141) and (.064, .029, .090). Matching bind-position vertices on different atlas cells supply a seam mask. The ink target is (.012, .010, .020), with a nominal .85-pixel transition. A cool rim follows the key-facing silhouette. The hide modulation and normal-threshold body planes are removed from the brood finish.
 
-A beveled palm carries three splayed tapered digits. The hind foot has a flat sole. The rib cage transfers toward the planted hand ahead of the opposite heel lift. Both Brute masks have a raised brow and swept cheek planes. The Warden's more upright sail, projecting lower lip and broader transverse throat change its profile. The jaw advances as it drops during the windup. At wall contact the head turns early toward the room and the open jaw holds through the start of recovery. The Warden uses the shared dark contour during commitment. Its charge warning remains on the floor.
+Three separated straw spines, eyes and short hook edges use (2.9, 2.45, .76). The longitudinal emission halo is removed. The splayed feet and dark intervals separate the Crawler from a single cartridge. Its outside hook travels laterally by .32 of the permitted presentation lunge, held into early recovery. During strike and the first 35% of recovery the nearest waiting Crawler loses 52% of its mark intensity. The Stalker's right foreleg extends forward and out from the folded blade.
 
-After the first native review, the packer also relaxes bevel and flank seams within each primitive. It follows the two neighbouring seam vertices, limits displacement by the local span, and leaves junctions and the borders of separate anatomical pieces fixed. This reduces the sawtooth left by selecting a whole decimated triangle at the cut. Some crown edges still look angular in a native enlargement.
+Elemental status tints a top plane by at most 40%, with a separate rim. The tint colours are ice (.31, .66, .89), fire (.74, .27, .048) and shock (.48, .22, .86). Chilled uses .32 strength, frozen 1.0, and sustained fire and shock .82. The HEAVY42 zone contract uses 1 for crown, 7–8 for bone and 9 for luminous maw. On that shader the status pass also excludes its authored interior ink. The integration branch's heavy model and shader supply the heavy screenshots in this gallery.
 
-| Native measurement | final23 | HEAVY42 |
-|---|---|---|
-| Skeleton | 63 joints, `144d320c6cae75d7` | 63 joints, `144d320c6cae75d7` |
-| Public height, Brute / elite / Warden (m) | 3.030 / 3.272 / 4.500 | 3.030 / 3.272 / 4.500 |
-| Drawn height, same order (m) | 2.81 / 3.33 / 4.40 | 2.82 / 3.33 / 4.45 |
-| Contact radius, same order (simulation units) | 42.90 / 55.77 / 64.00 | 42.90 / 55.77 / 64.00 |
+The paired gallery uses a local production rebuild of final23 at `63990654`. Native crops compare final23 on the left and BROOD41 on the right. The 480×270 files show the whole current frame. The reference and current runs use native attack phases. Independent room entry can change extra spawns, camera placement and the exact facing of an actor.
 
-All 38 clip durations match. The packed base, elite, Warden and distance mesh each have zero triangles spanning multiple paint IDs. The simulation diff against `e1d3fb55` is empty. The twelve-seed standard competent Breacher cohort finished 9/12 campaigns, matching the lead's post-policy result. Seeds 23, 512 and 4096 died in room 12 after 11 clears. The cohort runs the simulation and bot policy without rendering.
+| Full frame at 480×270 | Crawler | Spitter | Stalker | Carrier | Brute | First-look read |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Swarm Junction | 8/10 | 2/2 | 3/3 | 2/2 | 3/3 | Three straw marks and the dark leg fan read where exposed. Side-on backs on the upper dark deck are easiest to miss. |
+| Relay Racks | 7/10 | 2/2 | 2/3 | 2/2 | 3/3 | Railings interrupt small backs and the rear blue blade. |
+| Crew Checkpoint | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | The hooked bite reads against the red fan. One dark back sits against the central furnishing. |
+| Ordered crowd | 9/10 | 2/2 | 3/3 | 2/2 | 3/3 | The backs read as segmented animals. One waiting Crawler loses its mark near the fan. |
+| Three at the boots | 3/3 | — | — | — | — | Three approach directions remain visible, though the far animal's trunk is under the gun. |
+| Pyro overlap | 8/10 | 2/2 | 2/3 | 2/2 | 3/3 | Straw stays separate from orange. The flame fragments compete with the far small bodies. |
+| Napalm charge | 4/6 | 4/5 | 5/5 | 5/5 | 5/5 | Splayed legs, lime firing ends and blue blades persist in the fire. The central overlapping Crawlers remain difficult to count. |
 
-The first stun capture placed the center of the lower lip at world height 0.67 m and the throat at 3.69 m. Rotating the original tyrant jaw joint made its lower lip fall almost to the deck. The shipped ram clips instead build the lower-jaw transform from the head's posed skin transform and the cheek hinge at design coordinates (3.15, 0, 5.99). The original joints, inverse binds and clip windows are retained. In the wall-stun crop the lower lip now projects toward the room in front of the dark chin. The warm throat is visible between it and the upper plate.
+The numerator is an estimate from the first inspection of the full frame. The denominator is the native fixture actor list. This was a visual review, without timed human trials.
 
-| Native attack clock in ms | final23 warning / release / recovery / ready | HEAVY42 |
-|---|---|---|
-| Brute | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
-| Elite Brute | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
-| Warden | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+On the two pose floors the broad body planes now read closer to the marine's plates. The Crawler has three separate pale bars at rest and from behind. The side-on strike leaves a thin pale hook beyond the boot; the head-on angle still compresses that gap. The Spitter's forelegs bracket the sightline and its muzzle survives the projectile crossing. The Stalker's planted foreleg gives the calm silhouette an extra point of contact. Its blade remains the strongest shape through release. The Carrier and Matron sacs show quieter, flatter planes. Small irregular flecks remain along the sac seams and the bright joints, particularly in the rear Carrier view. At full-room scale some black leg tips merge with Swarm Junction's pipework.
 
-The comparison index is `artifacts/nextgen/heavy42/sheets/index.html`. Native pairs show final23 on the left and HEAVY42 on the right. Each full-room 480×270 view shows the current game. The three close comparisons put crops of the marine and heavy beside each other at equal native pixel scale. The six-step gait comparisons use fresh captures of the final23 source revision `63990654` and HEAVY42, with matched stride inputs.
+The native socket comparison matched all 448 samples. The matched 180-tick Crew Checkpoint Pyro benchmarks measured median draws of 141 → 141 on High and 131 → 131 on Low, with zero combat compiles on both revisions and tiers. The Standard competent cohorts cleared 11/12 on Cryo and 10/12 on Arc.
 
-### Game-camera read
+The 120 annotated sheets are linked from `artifacts/nextgen/brood41/index.html`. Eleven additional sheets exercise the sibling HEAVY42 models, authored zones and ink with this status pass in a disposable compatibility build. Both builds rendered the status fixtures with zero browser errors. A native freeze attempt staggers the resistant Warden. The separately labelled renderer-only frozen Warden sample exercises the full frozen finish. Its jaw, hands and dark underside remain visible.
 
-I judged the full frames at 480×270 before enlarging the pairs. In uninjured poses the paint stays with the shell during turns. I can distinguish three body values in the lineup and walking strips. The wrist, cheek and inter-band boundaries have dark ink. On a small or overlapped actor I can often distinguish only the crown and dark body. The marine's visor, skull marks, health bars and warning sectors remain identifiable.
-
-| Pose sheet | Brute | Elite Brute | Warden |
-|---|---|---|---|
-| Calm | The crown stripes and forearm overlap read as inked plates. Mask points down-left. | Horns frame the mask and the planted hand splits into digits. | The dark cheek separates the warm mouth from the rust forequarters. |
-| Windup | The hook opens away from the shoulder. Three points show on the planted hand. Red sector reads immediately. | Clear gap under the hook, pale mask between the horns, clean red sector. | Face-on view separates the prow, warm slot and lower jaw between the wide hands. |
-| Release | Ink separates the two arms from the back. The marine covers part of the extended hand. | Clear three-band back. The mask meets the marine where the swing lands. | Dark chin and bone lip project past the light. The long jaw is prominent in this pose. |
-| Recovery | Gold arc stays clear. The near hand and skull overlap the marine at the first recovery tick. | Shoulder and back planes remain visible over the suit. The near horn overlaps the suit in the center. | The jaw tip and dark chin show below the gun. The marine obscures much of the opening. |
-| Behind | The three crowns cross a dark rump. Two heels and the pale back edge of the mask show. | Band seams and the root of the far horn remain visible. The nearer horn crosses the crown. | The marine overlaps the brow and the rear-angle throat is a thin crescent. The dark collars and rust plates still separate. |
-| Side | Wrist, planted digits and sole have separate profiles. The eye slit survives at native scale. | The cheek and horn merge into one pale sweep at this distance. The inked shell remains distinct. | Three sail tips, paired rust shoulders and a bright mouth are clear in profile. The lower lip projects in front of the slot. |
-| Six-frame walk | The rib cage crosses the hand while the heel changes support. Flat paint stays attached throughout the stride. | The mantle rocks with the planted shoulder and the dark wrist stays separate. | The long sail and shell rock together. The front claws split clearly. The far sole looks square in profile. |
-
-| Comparison | Read |
-|---|---|
-| Lineup colour | Three body values, two mask values and dark lines. The marine's visor and the Warden's throat are the small bright marks. |
-| Lineup greyscale | Crowns, limbs and underbody still separate. The two Brutes' hands stay darker than their masks. |
-| Lineup silhouette | Three digit tips on the nearer hands, broader heels and a distinct Warden sail. Paint and internal ink cannot be assessed in solid black. |
-| Brute beside marine | Both carry flat pigment and a strong contour. The Brute's band-front lines are rougher than the marine's shield edge at native size. |
-| Elite beside marine | Yoke, brow and cheek remain bounded shapes beside the marine's armour. At 480 the horn draws attention before the cheek plane. |
-| Warden beside marine | Flat rust caps and near-black joints share the marine's treatment. The larger, square rear sole reads more like a boot. |
-| Native calm | The warm slot leads to the prow and dark lower cheek. The marine is clear at upper left. |
-| Native charge windup | The long dark lower jaw leads the shoulder in profile. The pale prow masks part of the slot. The red charge capsule remains clear. |
-| Native charge | The lit edge shows beside the upper plate. The sail and the escort overlap behind the head. |
-| Native wall stun | I find the white throat within a second. The prow lies above it, the dark open chin extends left, and the lower lip closes the outline. The brackets and bar remain separate. |
-| Native recovery | The lit mouth swings back toward the room. The lower lip stays visible at 50 and 117 ms, even with the nearby red impact cue. The supplemental samples are in `artifacts/nextgen/heavy42/punish-strip.png`. |
-| Native death | The mouth remains visible behind the fallen flank. The marine and nearby escort overlap part of the body. |
-| Native ragdoll | The underside faces the camera and the throat is hidden. Rust feet and the fallen shape separate from the live escort. Red projectiles and the marine remain visible. |
-| Swarm Junction crowd | The marine and yellow attack mark draw my eye before the three Brutes. I can follow the shell bands on the nearer pair. The rear Brute's cheek is too small to resolve. The lime and violet small families retain their identity. |
-| Crew Checkpoint crowd | The marine and red fan stay clear against the bright deck. Three olive backs and their pale skulls remain distinguishable. At this distance the near hand reads as one planted shape. |
-| Frozen | The blue frozen pose, pale skull and red fan remain distinct. The frozen finish intentionally overrides natural shell paint. |
-| Chilled | The active Brute still carries a blue glaze. The central Brute's posture separates the chilled sample from the slumped frozen sample. |
-| Burning | Orange contours and flame fragments stand out against the affected bodies. Unaffected Brutes keep the olive zones. |
-| Shocked | Violet discharge and the purple affected Brute read separately from the uninjured Brutes and the marine's visor. |
-| Native Relay Racks shutter impact | The throat is the small white mark above a dark opening and pale lower lip. I find it before the brackets. The marine, health bar, red marker and shutter callout remain distinct against the cracked floor. |
-
-The three weakest frames are the Brute calm close-up, where some crown edges still show the decimated contour, the elite side, where horn and cheek merge, and the staged Warden recovery, where the marine's gun covers the opening. The native shutter impact and the 50 / 117 ms recovery samples show the face under less occlusion.
-
-The production build passed. The native Breacher, seed 1729, cleared nine rooms with zero errors. The runner returned status 1 for two room-loading diagnostics over five seconds, in Passenger Vault and Residential Gallery. The report and shutter capture are in `artifacts/nextgen/playtest/heavy42-hinge-breacher/`. The twelve-seed cohort report is in `artifacts/nextgen/playtest/heavy42-standard-breacher/summary.json`. The title cast and creature cards were rendered through `title28.sh` with the installed Pillow environment. The proof gallery has 41 native pairs and 41 current 480×270 views.
+The three weakest reads are Relay Racks (rail occlusion), the Carrier from behind in Swarm Junction (busy seam detail above feet on a dark pipe), and the Napalm centre (overlapping Crawlers). The native production Pyro run on seed 1729 cleared all eight rooms with zero errors. The runner returned status 1 for four room-loading diagnostics. An earlier attempt exhausted temporary disk space and another timed out during screenshot capture under load. The completed campaign is `artifacts/nextgen/playtest/brood41-shipped-pyro/index.html`.

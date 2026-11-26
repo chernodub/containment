@@ -138,6 +138,7 @@ def extend(suit, rig, portrait=False):
     elif rig == 'pyro':
         for s in (-1, 1):
             base = V((s * (.40 if s < 0 else .32), -.19, 1.02 if s < 0 else .98))
+            tube('exhaust load yoke', [V((0,-.23,1.39)),V((s*.24,-.26,1.32)),base+V((0,-.02,.15))], .073, 'gunmetal')
             bottle_axis = V((s * (.65 if s < 0 else .12), -.65, .78)).normalized()
             lathe('kit24 paint fuel bottle', [(0, 0), (.075, 0), (.102, .04), (.104, .06), (.104, .30), (.088, .36), (.05, .385), (0, .385)],
                   base, bottle_axis, colour)

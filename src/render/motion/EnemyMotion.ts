@@ -231,7 +231,7 @@ export class EnemyMotion {
       // The outer hook reaches around the boot at contact. Leave the shell
       // beside the ankle so its cutting edge stays clear of the suit.
       if(this.biteHook && extension>0){
-        const lateral=-limit*.24*extension;
+        const lateral=-limit*.32*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
         this.body.position.x+=Math.cos(strikeDirection)*lateral-Math.sin(strikeDirection)*limit*.18*extension;
         this.body.position.z-=Math.sin(strikeDirection)*lateral+Math.cos(strikeDirection)*limit*.18*extension;
       }
