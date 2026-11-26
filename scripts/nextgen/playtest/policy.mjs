@@ -286,7 +286,10 @@ export function chooseActions(s) {
     s.enemies.some(enemy=>enemy.id===id&&(enemy.type==='spitter'||distance(enemy,s.player)<245)));
   if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && (s.enemies.length >= 2 || usefulBulwark)) keys.push('f');
   const earlyFight = s.node?.depth < 4 && s.enemies.filter(enemy => enemy.visible && distance(enemy, s.player) < 350).length >= 3;
-  if (slots?.overdrive?.ready && (earlyFight || s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
+  const railTargets=s.rig==='breacher'?s.abilityAims?.overdrive?.targets??[]:[];
+  const railOpening=railTargets.length>=2&&s.enemies.filter(enemy=>railTargets.includes(enemy.id))
+    .reduce((health,enemy)=>health+enemy.health+enemy.armor,0)>=420;
+  if (slots?.overdrive?.ready && (railOpening||earlyFight || s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
   if (s.combat.magazine < s.combat.magazineCapacity * .25 && !s.combat.reloading && near > 300) keys.push('r');
   if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= (emergency?2:4)) keys.push('g');
   return keys.filter(key => {
