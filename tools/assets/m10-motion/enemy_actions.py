@@ -195,6 +195,18 @@ class Creature:
                 release=head+FWD*W*.35+SIDE*side*W*.20-UP*H*.45
             self.solve(arm,arm['rest'].lerp(ready,reach).lerp(release,strike),14)
 
+    def ram_jaw(self, opening):
+        # The original tyrant jaw pivots behind the rebuilt cheek. Bind the
+        # authored lower jaw to its actual hinge before opening it, so a head
+        # roll cannot swing the lip several metres away from the throat.
+        to_arm = self.arm.matrix_world.inverted_safe()
+        hinge = to_arm @ Vector((3.15, -5.99/1.8, 0))
+        head_skin = self.m['head'] @ self.rest['head'].inverted_safe()
+        pivot = Matrix.Translation(hinge) @ Quaternion(SIDE, .29*opening).to_matrix().to_4x4()
+        slide = Matrix.Translation(FWD*.32*opening)
+        desired = head_skin @ slide @ pivot @ Matrix.Translation(-hinge) @ self.rest['jaw']
+        self.transform('jaw', desired @ self.m['jaw'].inverted_safe())
+
     def mouth(self, amount, time=0.):
         self.rotate('jaw',SIDE,.65*amount)
         if self.family not in ['crawler','brute']:
@@ -662,7 +674,7 @@ class Creature:
             action = 'm10-run'
         if ram == 'm10-ram-load':
             self.ram_load(t, targets)
-            self.rotate('jaw',SIDE,.48*smooth(t))
+            self.ram_jaw(smooth(t))
         elif action in ('m10-waiting','m10-waiting-low'):
             if action=='m10-waiting-low':
                 self.move(self.center,-SIDE*W*.22-UP*H*.21)
@@ -693,15 +705,15 @@ class Creature:
             self.move(self.center,UP*H*(.025+.025*math.cos(phase*2)))
             self.rotate(self.center,FWD,.075*math.sin(phase))
             self.rotate(self.center,SIDE,.11 if crawler else .07)
-            if self.family=='brute' and not ram:
-                plant=math.sin(phase)
-                self.move(self.center,SIDE*W*.075*plant)
+            if self.family=='brute':
+                plant=math.sin(phase+.22*math.pi)
+                self.move(self.center,SIDE*W*.105*plant)
                 self.rotate(self.center,FWD,.16*plant)
                 self.rotate('chest',UP,.22*plant)
                 self.rotate('tail',UP,-.18*plant)
             for leg in self.legs:
                 i=leg['index'];opposite=(i%2) if crawler else (0 if i in [0,3] else 1)
-                cycle=(t+.5*opposite)%1
+                cycle=(t+.5*opposite-(.045 if self.family=='brute' else 0))%1
                 swing=cycle<.42
                 x=between(cycle,[(0,-.5),(.42,.5),(1,-.5)])
                 lift=math.sin(math.pi*cycle/.42) if swing else 0
@@ -719,10 +731,10 @@ class Creature:
             self.rotate(self.center,FWD,.10+.20*slump)
             self.move('tail',FWD*W*.26*(1-slump))
             self.move('head',-FWD*W*(.12+.07*slump)+UP*H*(.06+.04*slump)+SIDE*W*.05*slump)
-            self.rotate('head',UP,.65+.55*slump)
+            self.rotate('head',UP,1.04+.39*slump)
             self.rotate('head',SIDE,-.44-.10*slump)
             self.rotate('head',FWD,.28+.16*slump)
-            self.rotate('jaw',SIDE,.36+.24*slump)
+            self.ram_jaw(.92+.16*slump)
             for arm in self.arms:
                 if arm['index']<0:   # club forefoot braced on the wall foot
                     self.solve(arm,arm['rest']+FWD*W*.22-UP*H*.12,16)
@@ -927,7 +939,7 @@ class Creature:
             self.rotate('neck_lo',UP,-.50*side)
             self.move(self.center,SIDE*W*.14*side-UP*H*.1)
         if ram == 'm10-ram-charge':
-            self.rotate('jaw',SIDE,.52)
+            self.ram_jaw(1.)
             self.move(self.center,FWD*W*(.23+.035*math.cos(t*math.tau))-UP*H*.05)
             self.move('head',FWD*W*.13+UP*H*.025)
             self.rotate('head',SIDE,-.11)

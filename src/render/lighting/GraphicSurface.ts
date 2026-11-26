@@ -247,7 +247,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             graphicActorHue=vec3(1.);
           }else if(bruteBody){
             float key=dot(graphicActorNormal,normalize(vec3(-.78,.40,.48)));
-            graphicActorLight=.19+.81*step(.225,key)+.45*step(.94,key);
+            graphicActorLight=actorBroodForm.x>=-1. ? 1. : .19+.81*step(.225,key)+.45*step(.94,key);
             graphicActorHue=vec3(1.);
           }else
 #endif
@@ -285,23 +285,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
             if(broodSac)graphicActorHue*=vec3(.98,.84,1.);
           }
 #endif
-#ifdef BRUTE_PLANES
-          float heavyHide=hideFinish(actorPosition,vActorRegion>=3. && vActorRegion<=5.,false);
-          vec3 heavyNormal=normalize(vNormal);
-          float heavyUp=dot(heavyNormal,viewMatrix[1].xyz);
-          float heavyKey=dot(heavyNormal,normalize(vec3(-.78,.40,.48)));
-          float heavyFacing=abs(dot(heavyNormal,normalize(vViewPosition)));
-          float heavyRim=max(plateEdgeRim(),step(.14,heavyKey)*step(heavyFacing,min(.40,1.5*fwidth(heavyFacing))));
-          if(bruteFace){graphicActorLight=1.0;graphicActorHue=vec3(1.);}
-          if(bruteBody){
-            bool naturalFinish=actorBroodForm.x>=-1.;
-            float side=step(-.18,heavyUp)*step(.06,heavyKey);
-            float plane=mix(mix(.17,.64,side),1.45,step(.66,heavyUp));
-            float legacy=.19+.81*step(.225,heavyKey)+.45*step(.94,heavyKey);
-            graphicActorLight=naturalFinish?mix(plane*heavyHide,1.45,heavyRim):legacy;
-            graphicActorHue=mix(vec3(1.),vec3(.91,.99,1.16),naturalFinish?heavyRim:0.);
-          }
-#endif
+
         }
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,

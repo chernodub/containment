@@ -4,17 +4,15 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 // Rest-space waves form shallow pores, parallel limb flutes and small sac dimples.
 const creatureHide = `
-#if defined(BROOD_PLANES) || defined(BRUTE_PLANES)
 #ifdef BRUTE_PLANES
 varying vec3 vPlateEdge;
-float plateEdgeRim(){
-  vec3 dx=dFdx(vPlateEdge),dy=dFdy(vPlateEdge);
-  vec3 gradient=max(sqrt(dx*dx+dy*dy),vec3(.00001));
-  vec3 onKey=step(vec3(.20),(.89*dx-.46*dy)/gradient);
-  vec3 rim=onKey*step(vPlateEdge,1.5*gradient);
-  return max(rim.x,max(rim.y,rim.z));
+varying float vHeavyZone;
+float heavyInk(){
+  vec3 distancePx=vPlateEdge/max(fwidth(vPlateEdge),vec3(.00001));
+  return 1.-smoothstep(.22,.78,min(distancePx.x,min(distancePx.y,distancePx.z)));
 }
 #endif
+#ifdef BROOD_PLANES
 uniform float actorHideFrequency;
 float hideFinish(vec3 position, bool limb, bool sac) {
   vec3 p = position * actorHideFrequency * (sac ? 1.45 : 1.);
@@ -67,7 +65,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;');
+        shader.vertexShader='attribute float _heavyzone; varying float vHeavyZone; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);');
       }
       shader.fragmentShader = `${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
@@ -155,9 +153,10 @@ if(broodFinish && broodBody){
 ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
-bool wardenMaw=actorWarden>.5 && band==3;
+float heavyPaint=floor(vHeavyZone+.5);
+bool wardenMaw=actorWarden>.5 && heavyPaint==9.;
 if(wardenMaw)diffuseColor.rgb=vec3(.025,.012,.005);
-bool bruteFace=band==5;
+bool bruteFace=heavyPaint==7. || heavyPaint==8.;
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
@@ -220,6 +219,22 @@ if(bruteFace)ceiling=.355;
 float bounded=min(bodyValue,ceiling);
 float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
+#ifdef BRUTE_PLANES
+if(actorBroodForm.x>=-1.){
+  vec3 middle=mix(vec3(.050,.074,.048),vec3(.108,.055,.031),actorWarden);
+  vec3 crown=mix(vec3(.094,.147,.098),vec3(.187,.101,.060),actorWarden);
+  vec3 paint=vec3(.020,.024,.015);
+  if(heavyPaint==1.)paint=crown;
+  if(heavyPaint==2. || heavyPaint==4. || heavyPaint==6.)paint=middle;
+  if(heavyPaint==7.)paint=vec3(.49,.435,.337);
+  if(heavyPaint==8.)paint=vec3(.275,.236,.172);
+  if(heavyPaint==9.)paint=vec3(5.9,3.85,1.50);
+  vec3 n=normalize(vNormal);
+  float facing=abs(dot(n,normalize(vViewPosition)));
+  float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));
+  outgoingLight=mix(mix(paint,vec3(.19,.23,.24),rim*step(heavyPaint,6.)),vec3(.008,.011,.009),heavyInk());
+}
+#endif
 #ifdef BROOD_PLANES
 if(broodFinish && sacPatch && !broodMark)outgoingLight=creatureBody*.55+vec3(.021,.009,.045);
 if(broodFinish && broodMark){
@@ -333,7 +348,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-fx31:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-heavy42:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);

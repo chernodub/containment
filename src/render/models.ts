@@ -30,7 +30,8 @@ const SMALL_FAMILY_SHADOW_PLANE=.68;
 // CREATURE26: Brute zone levels (lit albedo: carapace, plate, flesh, bone) for its three anatomy value shapes.
 // CREATURE26: the Warden's rank scale fell 3.8 -> 2.79 so its drawn reach is ~2.3 m; this presentation-only
 // stature factor (was .86) keeps its in-game height at the WARDEN25 4.41 m.
-const WARDEN_STATURE=1.175;
+// Preserve the public fit with the taller vertical sail (HEAVY42 bind height 8.817).
+const WARDEN_STATURE=1.146;
 // Armour, plate, flesh, bone and the wet highlight on flesh.
 const CREATURE_ZONE_LEVELS: Readonly<Partial<Record<string, readonly [number, number, number, number, number]>>> = {
  crawler: [.050, .050, .14308, .180, .08],

@@ -838,7 +838,7 @@ export class DepthRenderer {
   this.post.beginCombatOutlines();
   if(!menu&&this.graphicsAblation!=='silhouette')for(const enemy of enemies){
    // The contour marks the attack that lands next (PLAY25 order) and the strike itself; ranged wind-ups and charges always.
-   if(enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleeOrder===1||enemy.meleePhase==='strike'))continue;
+   if(enemy.champion==='warden'||enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleeOrder===1||enemy.meleePhase==='strike'))continue;
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
   this.post.finishCombatOutlines();
