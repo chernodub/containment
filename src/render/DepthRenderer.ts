@@ -662,10 +662,10 @@ export class DepthRenderer {
   if(this.roomLoading)return;
   if(!menu&&game.status==='playing'&&this.prefetchKey!==game.node.id){
    this.prefetchKey=game.node.id;
-   const next=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes.find(node=>game.node.next.includes(node.id));
+   const next=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder).nodes.find(node=>game.node.next.includes(node.id));
    if(next&&INTERIOR_ROOMS.has(next.templateId))this.cancelRoomPrefetch=prefetchOriginalRoomInteriors(ROOM_TEMPLATES[next.templateId],this.renderer);
   }
-  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
+  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
   this.captureRoomReflections();
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;

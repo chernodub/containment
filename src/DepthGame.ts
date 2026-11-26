@@ -36,6 +36,7 @@ import {FacilityNavigation} from './game/world/FacilityNavigation';
 import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot,clipExpeditionLane} from './game/world/expeditionGeometry';
 import {rerollExpedition,createExpedition,completeExpeditionRoom,claimExpeditionMutation,claimExpeditionResources,chooseExpeditionRoute,defeatExpedition,restoreExpedition,type Expedition,type ExpeditionStartOptions} from './game/roguelike/expedition';
 import {progressionFor} from './game/roguelike/progression';
+import {orderRoom,ORDER_REPAIR} from './game/roguelike/orderJunctions';
 import {generateRun} from './game/roguelike/run';
 import {authorizeExpeditionDestruction} from './game/roguelike/expedition';
 import {storyRoomFor,SACRIFICE_ENDING} from './game/roguelike/storyRooms';
@@ -118,7 +119,7 @@ export class DepthGame {
   if(!storage)this.checkpointState='unavailable';
   this.expedition=createExpedition(1729,this.combat.getRunResources());this.node=this.findNode();this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.director=this.makeDirector();this.mutations=this.makeMutations();this.abilities=this.makeAbilities();this.abilities.setRig('breacher');Object.assign(this.player,this.geometry.playerSpawn);
  }
- private findNode(){return generateRun(this.expedition.run.seed,this.expedition.run.version).nodes.find(n=>n.id===this.expedition.run.currentNodeId)!;}
+ private findNode(){return generateRun(this.expedition.run.seed,this.expedition.run.version,this.expedition.run.roomOrder).nodes.find(n=>n.id===this.expedition.run.currentNodeId)!;}
  private roomStartCredits=0;
  private hiddenEnemiesMs=0;
  private roomCondition:RoomConditionRuntime|null=null;
@@ -133,7 +134,7 @@ export class DepthGame {
   const breaches=this.openBreaches;
   const hold=this.condition?.id==='sealed'&&/relay/i.test(this.openingName(this.node.depth,this.expedition.run.detour?.choice==='salvage')??'');
   if(this.roomCondition)this.roomCondition.sealedHold=hold;
-  return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,runStructure:this.expedition.run.runStructure,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
+  return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,runStructure:this.expedition.run.runStructure,roomOrder:this.expedition.run.roomOrder,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
  }
  private broodSupply?:{pod:number;pickup:number};
  private savedArmour?:{id:number;at:number;room:number};
@@ -1076,7 +1077,7 @@ export class DepthGame {
   else if(enemy.meleePhase==='recovery'){drill.entered=false;}
   else if(enemy.meleePhase==='approach'){drill.entered=false;drill.evaded=false;}
  }
- private clearRoom(){if(this.combat.snapshot.dead||this.expedition.run.phase!=='combat')return;this.dodgeDrill=null;this.collectLoot(true);if(this.condition?.id==='brood')this.awardCredits(Math.round(Math.max(0,this.combat.snapshot.credits-this.roomStartCredits)*.3));if(this.node.depth===7&&(this.expedition.run.guardianRoute||this.expedition.run.junctions?.[3]==='salvage'))this.awardCredits(35);if(this.node.depth===GUARDIAN_ROUTE_DEPTH&&this.expedition.run.guardianRoute){this.combat.restoreHealth(35);this.combat.restoreArmor(25);}if(this.difficulty==='story'&&this.node.depth===2)this.combat.restoreHealth(35);if(this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage'){if(this.node.depth===15)this.awardCredits(160);if(this.node.depth===18)this.abilities.addCharge(24000);}this.settleContract();this.expedition=completeExpeditionRoom(this.expedition,this.combat.getRunResources());this.bullets=[];this.pools=[];this.pending=[];this.enemies.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.player.moving=false;this.status=this.expedition.run.phase==='complete'?'complete':'reward';if(this.status==='complete'){this.rememberExpedition();if(this.storyRoom){this.combat.applyDamage(1000000);this.expedition=Object.freeze({...this.expedition,resources:this.combat.getRunResources()});this.presentation.push({type:'explosion',x:this.player.x,y:this.player.y,radius:900});}this.discardCheckpoint();}else this.save();}
+ private clearRoom(){if(this.combat.snapshot.dead||this.expedition.run.phase!=='combat')return;this.dodgeDrill=null;this.collectLoot(true);const ordered=orderRoom(this.expedition.run.roomOrder,this.node.depth);if(ordered.opening!==undefined&&!ordered.second)this.combat.restoreHealth(ORDER_REPAIR);if(this.condition?.id==='brood')this.awardCredits(Math.round(Math.max(0,this.combat.snapshot.credits-this.roomStartCredits)*.3));if(this.node.depth===7&&(this.expedition.run.guardianRoute||this.expedition.run.junctions?.[3]==='salvage'))this.awardCredits(35);if(this.node.depth===GUARDIAN_ROUTE_DEPTH&&this.expedition.run.guardianRoute){this.combat.restoreHealth(35);this.combat.restoreArmor(25);}if(this.difficulty==='story'&&this.node.depth===2)this.combat.restoreHealth(35);if(this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage'){if(this.node.depth===15)this.awardCredits(160);if(this.node.depth===18)this.abilities.addCharge(24000);}this.settleContract();this.expedition=completeExpeditionRoom(this.expedition,this.combat.getRunResources());this.bullets=[];this.pools=[];this.pending=[];this.enemies.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.player.moving=false;this.status=this.expedition.run.phase==='complete'?'complete':'reward';if(this.status==='complete'){this.rememberExpedition();if(this.storyRoom){this.combat.applyDamage(1000000);this.expedition=Object.freeze({...this.expedition,resources:this.combat.getRunResources()});this.presentation.push({type:'explosion',x:this.player.x,y:this.player.y,radius:900});}this.discardCheckpoint();}else this.save();}
  private relayHeavyRecovered=false;
  private relayHeavyRecovering=false;
  private readonly broodStarted=new Set<number>();

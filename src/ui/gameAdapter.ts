@@ -587,7 +587,7 @@ export function getRouteThreat(game: DepthGame, destination: RunNode, salvage: b
   if(destination.kind!=='combat'&&destination.kind!=='elite')return undefined;
   const {run}=game.expedition;
   const opening=createEncounterPlan({
-    seed:run.seed,node:destination,difficulty:game.difficulty,runStructure:run.runStructure,
+    seed:run.seed,node:destination,difficulty:game.difficulty,runStructure:run.runStructure,roomOrder:run.roomOrder,
     guardianRoute:run.guardianRoute,junctions:salvage?{...run.junctions,[destination.depth]:'salvage'}:run.junctions,
     salvage,breachIds:['preview'],
   }).schedule[0];

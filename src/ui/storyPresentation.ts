@@ -41,7 +41,7 @@ export function clearRoomRecord(game: DepthGame): string {
 /** Skipping a beat never removes it from the pause archive, including on Continue. */
 export function pauseRoomRecords(game: DepthGame): string {
   if (!game.storyRoom) return '';
-  const visited = new Set(generateRun(game.expedition.run.seed, game.expedition.run.version).nodes.filter(node => node.id === game.node.id || game.expedition.run.completedNodeIds.includes(node.id)).map(node => node.templateId));
+  const visited = new Set(generateRun(game.expedition.run.seed, game.expedition.run.version, game.expedition.run.roomOrder).nodes.filter(node => node.id === game.node.id || game.expedition.run.completedNodeIds.includes(node.id)).map(node => node.templateId));
   const records = ROOM_STORY_ROUTE.filter(room => visited.has(room.templateId));
   const current = records.find(room => room.templateId === game.node.templateId);
   const earlier = records.filter(room => room !== current);

@@ -85,8 +85,10 @@ function generateLegacyRun(seed: number): RunGraph {
 }
 
 /** New runs use three acts; version one remains byte-for-byte deterministic for old saves. */
-export function generateRun(seed:number,version:1|2|3=3):RunGraph{
- if(version===3)return generateStoryRun(seed);
+import {orderJunction,orderRoom,type RoomOrder} from './orderJunctions';
+
+export function generateRun(seed:number,version:1|2|3=3,order?:RoomOrder):RunGraph{
+ if(version===3)return generateStoryRun(seed,order);
  if(version===1)return generateLegacyRun(seed);
  if(!isSeed(seed))throw new RangeError('Run seed must be an unsigned 32-bit integer.');
  const random=randomFor(seed),decks:TemplateId[][]=[
@@ -105,12 +107,12 @@ export function generateRun(seed:number,version:1|2|3=3):RunGraph{
 }
 
 /** Twenty encounters, with rewards independent from encounter kind. Legacy saves keep their graphs. */
-function generateStoryRun(seed:number):RunGraph {
+function generateStoryRun(seed:number,order?:RoomOrder):RunGraph {
  if(!isSeed(seed))throw new RangeError('Run seed must be an unsigned 32-bit integer.');
  const id=(depth:number)=>`${seed}:v3-r${depth}`;
- const nodes:RunNode[]=ROOM_STORY_ROUTE.map((room,depth)=>Object.freeze({
-  id:id(depth),depth,templateId:room.templateId,
-  kind:depth===5||depth===15?'elite' as const:'combat' as const,
+ const nodes:RunNode[]=ROOM_STORY_ROUTE.map((_,depth)=>Object.freeze({
+  id:id(depth),depth,templateId:ROOM_STORY_ROUTE[orderRoom(order,depth).depth].templateId,
+  kind:depth===5||orderRoom(order,depth).depth===15?'elite' as const:'combat' as const,
   reward:depth===19?'victory' as const:depth===5||depth===15?'rare-upgrade' as const:
    [3,11].includes(depth)?'healing' as const:[7,14,18].includes(depth)?'supplies' as const:'upgrade' as const,
   next:Object.freeze(depth===19?[]:[id(depth+1)]),
@@ -122,6 +124,7 @@ export function freezeRunState(state: RunState): RunState {
   return Object.freeze({
     ...state,
     completedNodeIds: Object.freeze([...state.completedNodeIds]),
+    ...(state.roomOrder ? {roomOrder:Object.freeze({...state.roomOrder})} : {}),
     ...(state.junctions ? {junctions:Object.freeze({...state.junctions})} : {}),
     ...(state.contract ? {contract:Object.freeze({...state.contract})} : {}),
     ...(state.service ? {service:Object.freeze({...state.service,purchases:Object.freeze([...state.service.purchases])})} : {}),
@@ -145,7 +148,7 @@ export function isValidRunState(value: unknown): value is RunState {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
-  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','guardianRoute','weaponLessons','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
+  if (!STATE_KEYS.every(key => Object.hasOwn(record,key)) || keys.some(key=>!STATE_KEYS.includes(key)&&!['runStructure','roomOrder','guardianRoute','weaponLessons','contract','junctions','draftRoll','service','detour','rerollTokens','finaleRevive'].includes(key)))return false;
   if(record.runStructure!==undefined&&(record.runStructure!==1||record.version!==3))return false;
   if(record.rerollTokens!==undefined&&(!Number.isInteger(record.rerollTokens)||Number(record.rerollTokens)<0||Number(record.rerollTokens)>3))return false;
   if(record.service!==undefined){const q=record.service as RunState['service'];if(!q||typeof q!=='object'||Array.isArray(q)||Object.keys(q).sort().join(',')!=='allocationClaimed,nodeId,purchases'||q.nodeId!==record.currentNodeId||typeof q.allocationClaimed!=='boolean'||!Array.isArray(q.purchases)||q.purchases.length>11||q.purchases.length>0&&!q.allocationClaimed||Array.from({length:q.purchases.length},(_,i)=>i).some(i=>!Object.hasOwn(q.purchases,i))||q.purchases.some(id=>!SERVICE_IDS.includes(id)||id==='rig-return'&&(record.version!==3||!String(record.currentNodeId).endsWith(':v3-r7')))||SERVICE_IDS.some(id=>q.purchases.filter(x=>x===id).length>SERVICE_CATALOG[id].stock))return false;}
@@ -158,6 +161,15 @@ export function isValidRunState(value: unknown): value is RunState {
   const graph = generateRun(record.seed,record.version as 1|2|3);
   const current = graph.nodes.find(node => node.id === record.currentNodeId);
   if (!current) return false;
+  if(record.roomOrder!==undefined){
+    const order=record.roomOrder;
+    if(record.runStructure!==1||!order||typeof order!=='object'||Array.isArray(order))return false;
+    for(const depth of [5,13]){
+      const choice=(order as RoomOrder)[depth];
+      if(current.depth>depth ? choice!=='direct'&&choice!=='salvage' : choice!==undefined)return false;
+    }
+    if(Object.keys(order).some(key=>key!=='5'&&key!=='13'))return false;
+  }
   if(record.contract!==undefined){
     const contract=record.contract as RunState['contract'];
     if(record.runStructure!==1||!contract||typeof contract!=='object'||Array.isArray(contract)||Object.keys(contract).some(key=>!['earned','progress','lastPayout'].includes(key))||(contract.lastPayout!==undefined&&typeof contract.lastPayout!=='boolean')||!Number.isFinite(contract.progress)||contract.progress<0||contract.progress>20000||!Number.isInteger(contract.earned)||contract.earned<0||contract.earned>3)return false;
@@ -227,6 +239,11 @@ export function enterRoom(state: RunState, nextId: string, action?:'destroy-ship
   const current = generateRun(state.seed,state.version).nodes.find(node => node.id === state.currentNodeId)!;
   if (current.templateId === 'manual-control-chamber' && action !== 'destroy-ship') throw new Error('Explicit destruction authorization required.');
   if (!current.next.includes(nextId)) throw new Error('Requested room is not an available route.');
+  if(orderJunction(state,current.depth)){
+    if(detour!=='direct'&&detour!=='salvage')throw new Error('Choose a room order.');
+    const {service: _service,detour: _detour,...continuation}=state;
+    return freezeRunState({...continuation,roomOrder:{...state.roomOrder,[current.depth]:detour},currentNodeId:nextId,phase:'combat',draftRoll:0});
+  }
   if(detour!==undefined&&(state.version!==3||!DETOUR_DEPTHS.includes(current.depth as typeof DETOUR_DEPTHS[number])||!['direct','salvage'].includes(detour)))throw new Error('Preparation choice unavailable.');
   const {service: _service,detour: _detour,...continuation}=state;
   const junctions=state.runStructure&&isJunction(current.depth+1)?{...state.junctions,[current.depth+1]:detour??'direct'}:state.junctions;

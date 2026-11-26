@@ -39,7 +39,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, a
   const diagram = lastExchangeDiagram(game);
   const ready=game.deathReadyAbility;
   const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
-  const node = generateRun(game.expedition.run.seed, game.expedition.run.version).nodes.find(candidate => candidate.id === last.room);
+  const node = generateRun(game.expedition.run.seed, game.expedition.run.version, game.expedition.run.roomOrder).nodes.find(candidate => candidate.id === last.room);
   const room = node ? ROOM_TEMPLATES[node.templateId].name : 'Unknown room';
   const sources = new Map<string, number>();
   for (const receipt of getRoomDamage(game)) {
