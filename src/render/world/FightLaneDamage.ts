@@ -53,6 +53,9 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
       lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x171d20);
       lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
+      lip.box(-49,20,5,98,21,5,0x424c50);
+      lip.box(-2,18,-7,5,35,24,0x796446);
+      lip.box(-49,29,7,95,2.6,3,0xbd7838);
       for(const x of [-90,-64,-38]){
         const front=-x*.092;
         lip.face([[x,22,front+.6],[x+19,22,front-1.2],[x+19,29,front-1.2],[x,29,front+.6]],0x353b3d);
@@ -68,6 +71,7 @@ export function addFightLaneDamage(root:Group,id:string){
       for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
       const steel=new MeshBasicMaterial({vertexColors:true});
       const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
+      sill.scale.y=1.48;
       sill.castShadow=true;sill.receiveShadow=true;
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
         p.box(x,3,z,54,6,32,0x374245);
@@ -153,6 +157,7 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
         c.fillStyle='#43494a';c.fillRect(x-7,z-17,14,34);c.fillStyle='#b57c48';c.fillRect(x-4,z-12,5,24);
       }
       c.save();c.translate(833.71249,349.81813);
+      c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
       const shade=c.createLinearGradient(0,-14,0,-56);
       shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
       c.fillStyle=shade;c.fill(new Path2D('M-101 2H0L-25 -54 -123 -49Z'));c.restore();
