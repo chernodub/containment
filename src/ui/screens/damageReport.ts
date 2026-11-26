@@ -125,12 +125,13 @@ export function lastExchangeDiagram(game: DepthGame): string {
     return `<g class="exchange-attack" data-fatal="${attack === fatal}">${body}</g>`;
   };
   const pose = (position: typeof marine, ghost = false) => `<path class="exchange-marine${ghost?' exchange-ghost':''}" transform="translate(${xy(position.x,position.y)}) rotate(${position.angle*180/Math.PI})" d="M14 0 -10 -9 -7 0 -10 9Z"/>`;
-  const path = earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
+  const held = earlier && Math.hypot(earlier.x-marine.x,earlier.y-marine.y) < 1;
+  const path = held ? `<circle class="exchange-held" cx="${earlier.x}" cy="${earlier.y}" r="${marine.radius+7}"/>` : earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
   const exit = step ? `<path class="exchange-exit" marker-end="url(#exchange-arrow)" d="M${xy(marine.x,marine.y)} L${xy(step.x,step.y)}"/>` : '';
   const advice = step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
   const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : ENEMIES[fatal.family].label;
   return `<figure class="last-exchange" aria-label="Last exchange">
-    <div class="exchange-key"><b>${family} · fatal attack</b><span>◇ Earlier · ◆ Impact · → Step</span></div>
+    <div class="exchange-key"><b>${family} · fatal attack</b><span>${held?'Earlier and impact coincide':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}</span></div>
     <svg role="img" aria-label="Coral fatal footprint, muted nearby attacks, marine at impact and one second earlier, and a clear step when available." viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}

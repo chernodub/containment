@@ -1315,7 +1315,7 @@ SCENARIOS.push(
  }},
 );
 
-SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
+SCENARIOS.push(...['stalker','spitter','crawler','charge','pool'].map(family=>({
  id:`ui31-fatal-${family}`,diagnosticOnly:true,state:'dead',setupArgument:family,
  nativeKeys:[['Shift+Tab',0],['Tab',0]],required:['#retry-rig','.last-exchange'],
  setup:async family=>{
@@ -1347,7 +1347,16 @@ SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
   }
   const resources=g.combat.getRunResources();
   g.combat.restoreRunResources({...resources,health:1,armor:0});
-  if(family==='spitter'){
+  if(family==='pool'){
+   g.hurt(90,{...point,radius:62},{source:'acid-pool',enemyFamily:'queen'});
+  }else if(family==='charge'){
+   const lane=attack(901,'brute',.35,120,48);
+   g.exchangeHistory.record([
+    {type:'attack-warning',enemyId:901,enemyType:'brute',x:lane.x,y:lane.y,targetX:point.x,targetY:point.y,durationMs:450},
+    {type:'contact-attack',enemyId:901,enemyType:'brute',chargeFootprint:{...point,angle:lane.angle,shape:{kind:'line',range:5,halfAngle:0,width:48}}},
+   ],g.elapsed,18);
+   g.hurt(90,point,{source:'enemy-charge',enemyFamily:'brute'},'warden',901);
+  }else if(family==='spitter'){
    const shooter=offsets.map(([x,y])=>({x:point.x+x*3,y:point.y+y*3}))
     .find(p=>d.canStand(p.x,p.y,18)&&d.clearShot(p.x,p.y,point))??earlier;
    g.hurt(90,shooter,{source:'enemy-projectile',enemyFamily:'spitter'},undefined,901);

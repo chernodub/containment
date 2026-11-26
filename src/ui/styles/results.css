@@ -192,3 +192,4 @@
   padding: 12px 0 0;
 }
 #overlay .fatal-details .result-actions .primary { flex-basis: 100%; }
+.exchange-held { fill: none; stroke: #e2e9ec; stroke-width: 2.5; stroke-dasharray: 4 4; }
