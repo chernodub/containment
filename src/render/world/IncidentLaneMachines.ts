@@ -188,6 +188,21 @@ export function addIncidentLane(root:Group,id:string,layout:IncidentLaneLayout):
       for(const x of [-22,-11,0,11,22])pipe(L+x,-15,L+x,15,10,4,0xffb56c);
       break;
   }
+  // Inspection plates sit on the actual casing, blanket, worktop or cradle.
+  const labels:Record<string,[number,number,number,number]>={
+    'awakening-bay':[L-46,9.3,23,0xb38b5e], 'passenger-vault':[L-60,13,14,0x738f89],
+    'residential-gallery':[L-77,17,12,0xa18366], 'freight-hold':[L-38,8,22,0xa38763],
+    'diagnostic-gallery':[L+17,18,55,0x72958c], 'safety-interlock-station':[L+13,10,8,0xab8855],
+    'infested-workshop':[L-13,26,-15,0x927951], 'swarm-junction':[L,10,11,0x896d73],
+    'containment-annulus':[L-12,16,0,0x74988b], 'overload-floor':[L-14,23,-20,0xbc8755],
+  };
+  const label=labels[id];
+  if(label){
+    const [x,y,z,accent]=label;
+    box(x,y,z,17,.8,7,boot);
+    box(x-4,y+.6,z,7,.6,5,accent);
+    for(const dx of [2,5])box(x+dx,y+.6,z,1,.6,4,steel);
+  }
   brokenLaneEnd(p,id,L);
   const articulated=['diagnostic-gallery','freight-hold','infested-workshop'].includes(id);
   const mesh=p.finish(root,'lane-machine-'+id,sx,sz,undefined,articulated);
