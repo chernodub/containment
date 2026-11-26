@@ -140,6 +140,23 @@ export function lastExchangeDiagram(game: DepthGame): string {
   const held = earlier && movement < 29*glyphScale;
   const path = held ? `<circle class="exchange-trail" cx="${marine.x}" cy="${marine.y}" r="${17*glyphScale}"/>${movement>1?`<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>`: ''}` : earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
   const exit = step ? `<path class="exchange-exit" marker-end="url(#exchange-arrow)" d="M${xy(marine.x,marine.y)} L${xy(step.x,step.y)}"/>` : '';
+  const coverEdge = (blocker: typeof blockers[number]) => {
+    if (!fatal || !step || fatal.shape.kind === 'circle') return '';
+    const dx = step.x-fatal.x, dy = step.y-fatal.y;
+    const edges = [
+      [blocker.x,blocker.y,blocker.x+blocker.width,blocker.y],
+      [blocker.x,blocker.y+blocker.height,blocker.x+blocker.width,blocker.y+blocker.height],
+      [blocker.x,blocker.y,blocker.x,blocker.y+blocker.height],
+      [blocker.x+blocker.width,blocker.y,blocker.x+blocker.width,blocker.y+blocker.height],
+    ];
+    return edges.map(([x,y,endX,endY])=>{
+      const horizontal = y===endY;
+      const t = horizontal ? (y-fatal.y)/dy : (x-fatal.x)/dx;
+      const crossing = horizontal ? fatal.x+t*dx : fatal.y+t*dy;
+      if (!(t>0 && t<1 && crossing >= (horizontal?x:y) && crossing <= (horizontal?endX:endY))) return '';
+      return `<path d="M${xy(x,y)} L${xy(endX,endY)}" stroke="#d4e7ef" stroke-width="5" vector-effect="non-scaling-stroke"/>`;
+    }).join('');
+  };
   const advice = !fatal ? 'Move toward clear ground when the danger cue appears.' : step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
   const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : fatal ? ENEMIES[fatal.family].label : 'Unrecorded attack';
   return `<figure class="last-exchange" aria-label="Last exchange">
@@ -148,6 +165,6 @@ export function lastExchangeDiagram(game: DepthGame): string {
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
       ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
-      ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle,glyphScale)).join('')}${path}${pose(marine)}${exit}
+      ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle,glyphScale)).join('')}${blockers.map(coverEdge).join('')}${path}${pose(marine)}${exit}
     </svg><figcaption>${advice}</figcaption></figure>`;
 }
