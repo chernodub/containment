@@ -202,7 +202,7 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  float energy;
  vec3 accent;
  if(actorContact.x<1.5){
-  energy=edge*(.38+.62*smoothstep(-.45,.48,vein))*(.58+.42*limb);
+  energy=smoothstep(.17,.49,actorRim)*smoothstep(-.20,.62,vein)*(.20+.80*limb);
   accent=vec3(.59,1.44,1.68);
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
@@ -219,7 +219,7 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  // patch on those planes too, particularly on the outer joints.
 #ifdef BRUTE_PLANES
  if(actorContact.x<1.5 && !wardenMaw){
-  float top=smoothstep(.18,.77,normal.y);
+  float top=smoothstep(.18,.77,inverseTransformDirection(normal,viewMatrix).y);
   vec3 plateIce=mix(vec3(.025,.071,.12),vec3(.28,.46,.54),top);
   outgoingLight=mix(outgoingLight,plateIce,actorContact.y*.87*safe);
   energy=edge*smoothstep(-.15,.60,vein)*.60;

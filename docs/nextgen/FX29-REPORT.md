@@ -116,3 +116,48 @@ The Crew Checkpoint benchmark used 600 fixed ticks per rig and tier at fixed res
 | Pyro | 159 → 159 | 145 → 145 | 0 / 0 |
 | Breacher | 143 → 142 | 134 → 133 | 0 / 0 |
 | Arc | 155 → 155 | 144 → 144 | 0 / 0 |
+
+## FX32
+
+Whiteout leaves strips of exposed steel between wind-aligned frost banks. Nearby walls, obstacles and heavy bodies shelter the deposits. The marine and small actors thin the snow underfoot through the existing priority mask. Cryo Nova concentrates its crystals at the advancing edge and keeps the center translucent. Seismic Slam separates a few lifted plates with dark gaps, shadows and narrow amber fractures. Meltdown has a dark cooling skin with short openings onto the hotter pool. The openings recede around the marine’s boots.
+
+Flashfire keeps its initial cast direction, then dims its tongues behind the struck silhouettes. Napalm’s darker fuel and soot leave the yellow-white contact rim and joint ember readable on a burning body. Brute and Warden plates use their world-facing normals for pale upper ice and blue side planes. The native family marks and the attacking limb retain their own shading. These changes reuse the existing lights, materials and instance batches.
+
+The gallery pairs final21 on the left with FX32 on the right at native resolution. Its thumbnails show FX32 alone at 480×270. The dense frames use the same Crew Checkpoint casts and sampling offsets as final21. The second frame is 300 ms after the first. [Gallery](../../artifacts/nextgen/fx32/index.html) · [Armor status detail](../../artifacts/nextgen/fx32/status-detail.png)
+
+I counted distinct enemy silhouettes or family marks in a quick look at each thumbnail. The denominator comes from living enemy centers inside the native radius or cone in that frame, including actors pushed off screen or behind another actor. A health bar alone did not count. These are visual counts, not the number of enemies damaged at cast time. The peak Meltdown fixture has nearby enemies but none inside its 130-unit aura at that instant. [Fixture counts and projected centers](../../artifacts/nextgen/fx32/enemy-locations.txt)
+
+| Dense power | Found at peak | Found at +300 ms | Deck at boots | Red warnings | Brightest effect accent after flash |
+| --- | ---: | ---: | --- | --- | --- |
+| Whiteout | 18/26 | 17/26 | Visible between drifts | Clear | Mostly on frosted heavy plates. Several small joints still blend into the pack. |
+| Cryo Nova | 5/6 | 8/11 | Visible through center | Clear | Mixed. The crystal band still competes with small targets. |
+| Seismic Slam | 2/3 | 5/7 | Visible between plates | Clear | On staggered bodies. Two projected centers have crossed the bottom edge at +300 ms. |
+| Meltdown | 0/0 | 3/3 | Boot outline clear; some deck detail lost under hot skin | Clear | The crawler’s mark and lit edge stand out over the cooling skin. The marine’s vents remain bright too. |
+| Flashfire | 7/8 | 8/9 | Visible | Clear | The victim accents outlast the fan. A few orange tips remain comparably bright. |
+| Napalm | 7/10 | 6/8 | Visible beside fuel | Clear | Mixed. The struck Brute has a bright flank; exposed fuel tips still compete. |
+
+All four overlap thumbnails preserve the red hostile arc across the marine. The native Passenger Vault midpoint records one visible burning Brute. On the native comparison its lit flank separates from the darker patch on the deck. The frozen and chilled heavies have blue-gray plate faces and inked edges. Burning shows a warm rim and shocked shows a violet edge. [Native Pyro comparison](../../artifacts/nextgen/fx32/native-pyro-native.png) · [Native fight snapshot](../../artifacts/nextgen/playtest/fx32-delivery-pyro/r2-passenger-vault-mid.json) · [Warden overview](../../artifacts/nextgen/fx32/warden-overview.png)
+
+At native size the chilled Brute has the clearest separation between blue plate planes. The fully frozen Brute is paler and more uniform at 480×270; its outer ink remains easier to pick out than its individual joints. The burning Brute and Warden fixtures also record shock, so those two panels show combined status. [Brute and Warden crops](../../artifacts/nextgen/fx32/status-detail.png)
+
+Every sampled dense cast matched final21’s draw count on both frames.
+
+| Power | Peak draws, final21 / FX32 | +300 ms draws, final21 / FX32 |
+| --- | ---: | ---: |
+| Whiteout | 125 / 125 | 122 / 122 |
+| Cryo Nova | 125 / 125 | 126 / 126 |
+| Seismic Slam | 125 / 125 | 120 / 120 |
+| Meltdown | 127 / 127 | 128 / 128 |
+| Flashfire | 124 / 124 | 123 / 123 |
+| Napalm | 124 / 124 | 123 / 123 |
+
+The production build passed. Both benchmark builds used Crew Checkpoint, fixed resolution and 600 fixed ticks per rig and tier. [Baseline benchmark](../../artifacts/nextgen/fx32-base/benchmark.json) · [Delivery benchmark](../../artifacts/nextgen/fx32-delivery-bench/benchmark.json)
+
+| Rig and tier | Baseline peak draws | FX32 peak draws | Combat shader compiles, baseline / FX32 |
+| --- | ---: | ---: | ---: |
+| Pyro High | 159 | 159 | 0 / 0 |
+| Pyro Low | 145 | 145 | 0 / 0 |
+| Cryo High | 147 | 147 | 0 / 0 |
+| Cryo Low | 134 | 134 | 0 / 0 |
+
+The native seed-1729 Pyro campaign cleared all eight rooms with zero errors. The runner exited 1 for room-loading diagnostics in Awakening Bay, Passenger Vault and Residential Gallery. [Campaign report](../../artifacts/nextgen/playtest/fx32-delivery-pyro/report.json) · [Build log](../../artifacts/nextgen/fx32/delivery-build.log)

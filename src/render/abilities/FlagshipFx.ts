@@ -184,6 +184,7 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   float band=(1.-smoothstep(.18,1.0,back))*bed;
   float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
   alpha*=mix(.48,1.,band);
+  base*=mix(.36,1.,band);
   emit=emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
  }
 }
@@ -528,7 +529,6 @@ void main(){
    float warningDistance=texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5).g;
    fissure*=mix(.5,1.,smoothstep(.08,.29,abs(warningDistance-.5)));
    #endif
-   float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
    float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
@@ -539,10 +539,11 @@ void main(){
    float core=(1.-smoothstep(.14,.55,r))*peak;
    float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
    float skin=smoothstep(.34,.60,lava+.12*cell.z);
-   float cracks=fissure*crust*(1.-smoothstep(.40,.57,lava));
+   float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
-   base=mix(vec3(.18,.042,.008),vec3(.014,.018,.021),skin);
-   emit=vec3(.42,.093,.006)*crust*(1.-skin)+vec3(.67,.21,.018)*(cracks*.75+ember*.48);
+   base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
+   float cooling=mix(1.,.30,smoothstep(.045,.20,age));
+   emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
    emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
    alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
    float foothold=smoothstep(.24,1.18,r+.13*n);
@@ -665,6 +666,7 @@ export class FlagshipFx {
   private readonly color = new T.Color();
 
   blockers: readonly Rect[] = [];
+  enemies: readonly {type:string; health:number; x:number; y:number; radius:number}[] = [];
   constructor(parent: T.Object3D, capacity = 32) {
     this.root.name = 'ability-flagship-fx';
     const fuelMaterials: T.ShaderMaterial[] = [], meltdownMaterials: T.ShaderMaterial[] = [];
@@ -788,6 +790,15 @@ export class FlagshipFx {
       if (usesDeckBlockers) {
         const boxes: T.Vector4[] = u.deckBlockers.value;
         let count = 0;
+        if (slot.mode === FxMode.Climax && slot.arc < 1.5) {
+          for (const enemy of this.enemies) {
+            if (enemy.health <= 0 || (enemy.type !== 'brute' && enemy.type !== 'carrier')) continue;
+            const x=enemy.x/UNIT, z=enemy.y/UNIT, radius=enemy.radius/UNIT;
+            if (Math.hypot(x-slot.x,z-slot.z)>slot.range+radius) continue;
+            boxes[count++].set(x,z,radius*.75,radius*.72);
+            if (count===4) break;
+          }
+        }
         for (const rect of this.blockers) {
           const hw = rect.width / (2*UNIT), hd = rect.height / (2*UNIT);
           const cx = rect.x / UNIT + hw, cz = rect.y / UNIT + hd;
