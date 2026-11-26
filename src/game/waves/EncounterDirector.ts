@@ -199,7 +199,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(next>=0)arrivals[next]=Object.freeze({...arrivals[next],atMs:Math.max(arrivals[next].atMs,first.atMs+1050)});
    }
   }
-  if(node.templateId==='swarm-junction'&&beatIndex===0){
+  if(node.templateId==='swarm-junction'){
    const matron=arrivals.find(request=>request.guardian==='matron');
    if(matron)for(let index=0;index<arrivals.length;index++){
     const request=arrivals[index];
