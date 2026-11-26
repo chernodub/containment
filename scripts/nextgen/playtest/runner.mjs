@@ -420,6 +420,9 @@ try {
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
       'grille-waiting':s.recoveryGrille?.state==='waiting'&&!s.enemies.some(e=>e.id===s.recoveryGrille.attackerId&&e.meleePhase==='recovery'),
+      'crawler-queue':freshEvents.some(event=>event.type==='enemy-attack'&&event.family==='crawler')&&
+        s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
+          enemy.visible&&distance(enemy,s.player)<96),
       'grille-closed':freshEvents.some(event=>event.type==='recovery-grille-closed'),
       'exchange-bait':decision.exchangeStep==='bait',
       'exchange-landing':decision.exchangeStep==='landing',
