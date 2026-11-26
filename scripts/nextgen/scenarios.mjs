@@ -1317,7 +1317,7 @@ SCENARIOS.push(
 
 SCENARIOS.push(...['stalker','spitter','crawler','charge','pool'].map(family=>({
  id:`ui31-fatal-${family}`,diagnosticOnly:true,state:'dead',setupArgument:family,
- nativeKeys:[['Shift+Tab',0],['Tab',0]],required:['#retry-rig','.last-exchange'],
+ nativeKeys:[['Tab',0],['Shift+Tab',0]],required:['#retry-rig','.last-exchange'],
  setup:async family=>{
   const d=window.__containmentDebug,g=d.game;
   const room=family==='stalker'?'manual-control-chamber':'relay-racks';

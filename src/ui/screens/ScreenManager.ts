@@ -329,14 +329,13 @@ export function createScreens(context: ScreenContext) {
     if(resultExpanded) root.querySelector<HTMLDetailsElement>('.result-details')?.setAttribute('open','');
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
-    if(focusReplacement instanceof HTMLButtonElement&&focusReplacement.disabled&&focusId?.startsWith('purchase-')) (root.querySelector<HTMLElement>('[data-purchase]:not(:disabled)')??root.querySelector<HTMLElement>('#claim'))?.focus({preventScroll:true});
+    if(status==='dead'&&status!==previousStatus&&!graphicsBlocked) root.querySelector<HTMLElement>('#retry-rig')?.focus({preventScroll:true});
+    else if(focusReplacement instanceof HTMLButtonElement&&focusReplacement.disabled&&focusId?.startsWith('purchase-')) (root.querySelector<HTMLElement>('[data-purchase]:not(:disabled)')??root.querySelector<HTMLElement>('#claim'))?.focus({preventScroll:true});
     else if(focusReplacement) focusReplacement.focus({preventScroll:true});
     else if(status!==previousStatus||graphicsBlocked) {
       // A held fire key must never activate a newly arrived choice or restart.
       // Keyboard users can deliberately Tab to a native action or use its number key.
-      if(status==='dead'&&!graphicsBlocked) {
-        root.querySelector<HTMLElement>('#retry-rig')?.focus({preventScroll:true});
-      } else if(['reward','route','dead','complete'].includes(status)) {
+      if(['reward','route','dead','complete'].includes(status)) {
         const panel=root.firstElementChild as HTMLElement|null;
         if(panel) {panel.tabIndex=-1;panel.focus({preventScroll:true});}
       } else {
