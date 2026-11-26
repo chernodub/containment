@@ -1353,10 +1353,10 @@ SCENARIOS.push({
 });
 
 SCENARIOS.push({
- id:'ui32-dense-pyro',diagnosticOnly:true,state:'playing',room:'containment-annulus',
+ id:'ui32-dense-pyro',diagnosticOnly:true,state:'playing',room:'crew-checkpoint',
  setup:async()=>{
   const d=window.__containmentDebug,g=d.game;
-  await d.gotoRoom('containment-annulus',{rig:'pyro'});
+  await d.gotoRoom('crew-checkpoint',{rig:'pyro'});
   d.invulnerable(true);g.skipStory();g.enemies.reset();
   const origin=g.player;
   const formation=Array.from({length:48},(_,i)=>{
