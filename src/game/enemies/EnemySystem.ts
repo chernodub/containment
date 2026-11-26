@@ -493,6 +493,10 @@ export class EnemySystem {
       }
       enemy.repositionRemainingMs=Math.max(0,enemy.repositionRemainingMs-timerDelta);
       enemy.stunRemainingMs=Math.max(0,enemy.stunRemainingMs-timerDelta);
+      if(enemy.recoveryFloorMs&&enemy.meleePhase==='recovery'&&(enemy.speed===0||enemy.stunRemainingMs>0)){
+        this.#advanceMelee(enemy,player,timerDelta,events);
+        continue;
+      }
       if(enemy.stunRemainingMs>0){enemy.velocityX=enemy.velocityY=0;continue;}
       if(enemy.champion==='matron'&&enemy.speed>0&&!this.#launched?.(enemy.id)){
         enemy.specialCooldownMs=Math.max(0,enemy.specialCooldownMs-timerDelta/this.#rest);
@@ -1220,7 +1224,7 @@ export class EnemySystem {
   }
 
   #cancelMelee(enemy:EnemyState):void {
-    if(enemy.meleePhase==='approach'||enemy.arrivalSwing)return;
+    if(enemy.meleePhase==='approach'||enemy.arrivalSwing||enemy.recoveryFloorMs&&enemy.meleePhase==='recovery')return;
     // Control releases the berth immediately. A resolved hit still owes its
     // remaining strike/recovery and full rest, without replaying that strike.
     const profile=MELEE_ATTACKS[enemy.type];
@@ -1274,7 +1278,6 @@ export class EnemySystem {
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         if(enemy.recoveryFloorMs){
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(enemy.meleeRemainingMs,enemy.recoveryFloorMs);
-          enemy.recoveryFloorMs=undefined;
         }
         enemy.recoveryPunished=false;
         if(!enemy.champion&&!enemy.meleeConnected){
@@ -1283,6 +1286,7 @@ export class EnemySystem {
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }
       }else{
+        enemy.recoveryFloorMs=undefined;
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest*(enemy.champion?1:this.#ordinaryIdleScale);
         this.#yieldMeleeBerth(enemy);
       }
