@@ -1111,8 +1111,10 @@ export class DepthGame {
    if(weapon&&before?.exposedMs){amount*=!before.champion&&(before.type==='brute'||before.type==='carrier')?1.4:1.15;exposedHit=true;}
    const landing=this.manualExchange?.landing;
    if(exposedHit&&id===this.consoleLeadId&&landing&&before?.meleePhase==='recovery'&&
-    Math.hypot(this.player.x-landing.x,this.player.y-landing.y)<=32)
+    Math.hypot(this.player.x-landing.x,this.player.y-landing.y)<=32){
     amount+=before.armor;
+    this.director.reportConsolePunished();
+   }
    let ambush=false;
    if(before&&!before.pod&&condition?.condition.id==='dark'&&!condition.ambushed.has(id)&&source!=='status'){
     condition.ambushed.add(id);

@@ -70,6 +70,13 @@ export class CameraObserver {
         const rawDelta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
         const delta = this.presentationHold.advance(rawDelta,1,false);
         if(!this.hud.hasEngagement||bossActive)this.desired.set(f.x,0,f.z);
+        const bait = game.manualExchange?.bait;
+        if (bait) {
+            const dx = bait.x/32-this.desired.x, dz = bait.y/32-this.desired.z;
+            const weight = Math.min(.55,4/Math.max(1,Math.hypot(dx,dz)));
+            this.desired.x += dx*weight;
+            this.desired.z += dz*weight;
+        }
         this.rig.update(delta, this.desired.x, this.desired.z, 1, false);
         this.rig.apply(this.camera, zoom, VIEW, 1);
         this.hud.center(this.camera,this.rig.focus,this.point,this.target);
