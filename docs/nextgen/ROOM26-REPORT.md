@@ -346,3 +346,42 @@ All 20 pressure restages match the native living-enemy counts. Nineteen also mat
 ## ROOM33
 
 The baseline production build is 8ea499b4. Arena-centre, incident-facing and kiting captures use the ROOM32 cameras at 1920 × 1080. The Pyro comparison uses eight rooms, seed 1729 and fast native rendering. Capture and benchmark receipts live under artifacts/nextgen.
+
+### Feeder and crossing
+
+The base approach fixture measured the existing shot from (1140, 520) toward the first protected step at (778.353, 319.059) in ship-plan units. It first clips at (833.71249, 349.81813). The upper shooter-facing corner of `inc13-reactor-feeder-refuge` is at Three.js world **(26.05352, 1.046875, 10.93182)** in metres (x, height, z). The dark front web faces positive z and the short right face faces positive x. Two conductors run west behind the cap. The contact flash belongs to gameplay presentation.
+
+### Room construction
+
+The berth pans, toppled queue bars, open waveguides and bus shoes use vertex-coloured static batches. Their scars and the twelve rooms’ paired hardware deposits use the existing clipped .0214 m deck skin. Two beam textures and the pooled service light use the physical terminal orientation. The new aperture shapes also feed the static deck irradiance bake. Source particles use the prepared story particle family and the existing High atmosphere option.
+
+### Captures and visual review
+
+All twenty rooms have three 1920 × 1080 comparisons and three 480 × 270 frames. The incident and calm contact sheets have colour and greyscale editions for both builds. The four extended lanes each have three additional fights cropped to 600 × 340 around legal marine positions. The refuge pair uses the same approach position before the first shot. [Gallery and per-room pairs](../../artifacts/nextgen/room33/sheets/index.html) · [Four fighting floors](../../artifacts/nextgen/room33/sheets/four-lanes.jpg) · [Refuge approach](../../artifacts/nextgen/room33/sheets/refuge-approach-native.jpg)
+
+The baseline dist was held fixed while the later incident and kiting jobs recorded the changing checkout SHA. The baseline bundle inventory identifies the executable these jobs used. Passenger was recaptured after the foreground correction. The selected room manifests retain its source receipt. [Baseline bundle inventory](../../artifacts/nextgen/room33/base/bundle.json)
+
+| Room | Falloff | Floor detail | What reads in the frame |
+|---|---|---|---|
+| awakening-bay | Strip | Pleated liner | The long thaw fitting leads back to the pods, and the ribbed floor stays visible under its lamp. |
+| passenger-vault | Under-glow | Berth shoes | Three bent berth pans break the foreground wall, and their gauge repeats in paired scars beside the fight. |
+| residential-gallery | Spill | Broken crockery | The overturned trolley and separated dishes make a domestic spill against the brown service aisle. |
+| communal-atrium | Broken ring | Split stems | The pipe links the fallen planter to the fight, but branches and broken furniture still merge at thumbnail size. |
+| crew-checkpoint | Strip | Anchor plates | The raised rails and long curved scrape trace the dragged barrier through the checkpoint. |
+| armory | Split fan | Cartridge clips | The linked ammunition is clear in the centre view, though the incident crop still leaves the cartridge tips looking like spikes. |
+| freight-hold | Under-glow | Existing runners | The splayed cargo runner and loose restraint cross several deck plates and remain visible under the crate. |
+| breached-loading-bay | Split fan | Existing torn deck | The lifted edges and frost follow the breach diagonally while the marine stands clear of the dark seam. |
+| relay-racks | Strip | Existing cable combs | The parallel cable runs lead directly into the rack, and their comb teeth are visible below the fitting. |
+| transmission-chamber | Split fan | Feeder offcuts | The hollow-ended guide sections and stepped trench carry the transmitter’s shape out into the lane. |
+| diagnostic-gallery | Under-glow | Existing bed hardware | The tilted bed and caster track read clearly beside the dark diagnostic sign. |
+| safety-interlock-station | Broken ring | Switch contacts | A small crescent picks out the broken contact, though the sign occupies much of the centre view. |
+| coolant-plant | Spill | Runoff lobes | The dark bands on the split header give the marine’s leg a clearer edge above the pale runoff. |
+| service-shaft-landing | Broken ring | Wire-rope loops | The rope ties the wheel to the hoist, but the wheel and support still sink into the green shadows. |
+| infested-workshop | Split fan | Existing impeller fragments | The thrown blade sits against the slotted work surface and the growth follows the edge of the bench. |
+| swarm-junction | Spill | Existing shed shells | The broken pipe and shell trail form a branching silhouette under the magenta growth. |
+| shielding-gate | Strip | Existing gear teeth | The row of dropped teeth follows the gate track, leaving the marine distinct along its lower edge. |
+| containment-annulus | Broken ring | Existing gasket clamps | The separated clamps continue the jacket’s curve around the encounter floor. |
+| manual-control-chamber | Under-glow | Keyed plugs | The darker reader face separates the marine from the console, and the short leads point back to the controls. |
+| overload-floor | Spill | Bus links | Repeated bus shoes connect the generator to the far bank, where the capped feeder has a visible stopping face. |
+
+The three weakest incident compositions are Communal Atrium, Armory and Service Shaft Landing. Foliage merges with the fallen furniture in the Atrium, the Armory view crops the ammunition source, and the Shaft wheel is too dim against its support. [Atrium](../../artifacts/nextgen/room33/sheets/communal-atrium/incident-native.jpg) · [Armory](../../artifacts/nextgen/room33/sheets/armory/incident-native.jpg) · [Shaft](../../artifacts/nextgen/room33/sheets/service-shaft-landing/incident-native.jpg)
