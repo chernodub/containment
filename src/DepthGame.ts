@@ -755,7 +755,13 @@ export class DepthGame {
       this.platedLessonTarget=result.enemy.id;
      if(this.node.templateId==='passenger-vault'&&options.lesson==='brute'){
       this.platedLessonTarget=result.enemy.id;
-      this.enemies.stagger(result.enemy.id,3200);
+      const angle=Math.atan2(p.y-this.player.y,p.x-this.player.x)+Math.PI/2;
+      for(const side of [1,-1]){
+       const step={x:this.player.x+side*78*Math.cos(angle),y:this.player.y+side*78*Math.sin(angle)};
+       if(!canTraverseExpedition(this.geometry,this.player,step,this.player.radius))continue;
+       this.pickups.spawn('armor',12,step.x,step.y);
+       break;
+      }
       this.startWeaponLesson('plasma',result.enemy.id);
      }
     }
@@ -916,14 +922,14 @@ export class DepthGame {
   if(this.residentialLane)({x,y}=this.residentialLane.plate);
  }
  if(e.lesson){
-  const distance=e.lesson==='brute'&&this.node.templateId==='passenger-vault'?84:e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
+  const distance=e.lesson==='brute'&&this.node.templateId==='passenger-vault'?70:e.lesson==='brute'?215:e.lesson==='crawler'?90:100;
   const offsets=e.lesson==='brute'?[0,.2,-.2,.35,-.35,.5,-.5,1,-1]:e.lesson==='stalker'?[1,-1,1.5,-1.5,.5,-.5,0]:[0,.5,-.5,1,-1];
   const legal=offsets.map(offset=>{
    const angle=this.player.angle+offset;
    return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance};
   }).filter(point=>canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite))&&hasClearExpeditionShot(this.geometry,this.player,point));
   const cover=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
-  const nearCover=e.lesson==='brute'?legal.find(point=>cover.some(rect=>
+  const nearCover=e.lesson==='brute'&&this.node.templateId!=='passenger-vault'?legal.find(point=>cover.some(rect=>
    Math.hypot(Math.max(rect.x-point.x,0,point.x-rect.x-rect.width),Math.max(rect.y-point.y,0,point.y-rect.y-rect.height))<55)):undefined;
   const sidestep=e.lesson==='stalker'?legal.find(point=>{
    const angle=Math.atan2(point.y-this.player.y,point.x-this.player.x)+Math.PI/2;
