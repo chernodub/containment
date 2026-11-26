@@ -1,3 +1,4 @@
+import {paintWorkingLane} from './WorkingLane';
 import {paintLaneAftermath} from './LaneAftermath';
 import {paintLaneContacts} from './LaneContactPaint';
 import {paintMachineSpill} from './MachineEmitters';
@@ -101,6 +102,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
     paintFightingDeck(c,room,arena);
+    c.save();clipFightingDeck(c,room);paintWorkingLane(c,room,arena);c.restore();
     contactShadows(c, room);
     paintServiceDeck(c, room, arena);
     paintLaneContacts(c,room,root);
