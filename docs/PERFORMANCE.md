@@ -262,3 +262,29 @@ The three matched 1920×1080 High captures changed 255 pixels (0.0123%) in the I
 High's sampled inclusive `fitRankBounds` cost in the slow-render cohort was 0.937 → 0.563 ms/frame. Median GL state calls were 770 → 783 on High and 673 → 704 on Low. All four paired windows recorded zero combat shader compiles.
 
 The production build passed. The Pyro seed 1729 playtest cleared all 13 rooms, including Safety Interlock at room 12, with zero errors and exit status 0. The receipt is `artifacts/nextgen/playtest/perf44-pyro/report.json`. High capture evidence is in `artifacts/nextgen/perf44-visual-after/manifest.json`. The original Low benchmark capture attempted to stage combat while the tier change was preparing materials. Selecting Low before staging the room resolved the capture, with an empty error and failure list in `artifacts/nextgen/perf44-low-fight/manifest.json`.
+
+## PERF45 — ragdoll presentation time budget
+
+The baseline runtime was `2644531f` plus measurement hooks. The 15 s High Pyro and Arc profiles recorded frame-indexed Rapier solve duration, broader ragdoll scope time, active corpses, bodies, joints, end-of-frame contact pairs, solve count and physics admissions. A contact pair is Rapier's narrow-phase pair entry reported per ragdoll collider, including candidates with no active contact point. The count is a workload indicator. It does not count contact points or establish which individual corpse has slept.
+
+### Baseline attribution
+
+Values are p50 / p95 / p99 / max over the initial observed frame windows.
+
+| Rig | Frames | Solver ms | Active records | Bodies | Joints | Contact pairs | Sub-steps | Physics starts |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Pyro | 549 | 0 / 6.8 / 9.3 / 13.4 | 1 / 6 / 6 / 6 | 0 / 87 / 87 / 87 | 0 / 81 / 81 / 81 | 0 / 1710 / 1721 / 1721 | 0 / 6 / 6 / 6 | 0 / 0 / 0 / 5 |
+| Arc | 576 | 1.0 / 3.5 / 5.0 / 7.4 | 1 / 3 / 3 / 3 | 15 / 44 / 44 / 44 | 14 / 41 / 41 / 41 | 353 / 885 / 900 / 908 | 2 / 5 / 6 / 6 | 0 / 0 / 0 / 1 |
+
+The slowest 5% of Pyro frames all had six active records with 87 bodies and 81 joints. The median was 1,690 contact pairs and three solves, with up to six solves. Arc's slow cohort had three active records, with medians of 41 bodies, 38 joints, 753 contact pairs and four solves. Neither slow cohort had any multi-start frames. Pyro had a five-start frame elsewhere in the window. The data point to repeated solves with loaded contact graphs rather than admission bursts. They do not identify a never-sleeping record.
+
+### Scheduler and paired run
+
+The presentation world performs at most two solves per render. After an expensive solve, a subsequent frame can use a 60 Hz step when enough time is available. The scheduler uses a rolling solve estimate and an elapsed admission budget of 1.5 ms on High or 1.0 ms on Low before admitting another solve. It drops unpaid whole-step debt. One Rapier solve is synchronous and can exceed the soft budget. Body and joint budgets, collision geometry, solver iterations, admission order and retirement rules are preserved. The 60 Hz step advances hold and terminal timers by the simulated time. The renderer retains existing fall/support handling.
+
+| High rig | Load before / after (start → end) | Frames | Solver p50 / p95 / p99 / max ms before → after | Frames above 2 ms | Render p95 ms | Frame share >20 ms |
+|---|---|---:|---|---:|---:|---:|
+| Pyro | 5.19→4.95 / 4.71→3.98 | 686 → 661 | 2.1 / 4.7 / 8.9 / 12.2 → 1.2 / 2.3 / 2.5 / 8.4 | 388 → 72 | 13.2 → 10.4 | 16.64% → 27.42% |
+| Arc | 4.95→4.59 / 3.98→3.65 | 701 → 655 | 1.5 / 3.8 / 5.0 / 9.3 → 0.8 / 1.4 / 1.9 / 6.6 | 193 → 6 | 11.4 → 10.1 | 23.00% → 25.69% |
+
+Maximum sub-steps fell from six to two in both cases. The broader ragdoll scope p95 was 5.2 → 2.5 ms for Pyro and 4.0 → 1.5 ms for Arc. The runtime retains six visible High ragdolls. The actual maximum active in the Pyro pair was six before and five after, with peak dynamic bodies 71 → 78. All paired windows had zero combat shader compiles. Lower solve and render tails should help on a quiet machine. Instrumented frame shares rose and do not establish that the quiet matrix will meet the 5% goal. Raw profiles and indexed metrics are in `artifacts/nextgen/perf45/`.
