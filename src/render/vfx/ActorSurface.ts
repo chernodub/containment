@@ -319,6 +319,7 @@ ${friendly ? `// SHADE15: one even self-light over the whole suit.
 // The shipped marine stores its bind pose in Z-up authoring units.
 float browLight=smoothstep(.04,.30,min(totalEmissiveRadiance.g,totalEmissiveRadiance.b)-totalEmissiveRadiance.r)*smoothstep(11.4,12.2,actorPosition.z);
 float domePaint=step(.5,vRigPaint)*(1.-equipmentPaint)*smoothstep(9.0,10.2,actorPosition.z);
+totalEmissiveRadiance+=vec3(.24,.42,.50)*actorReveal*smoothstep(.65,.96,actorRim);
 float signatureEdge=smoothstep(.08,.55,actorRim)*max(browLight,domePaint);
 totalEmissiveRadiance=mix(totalEmissiveRadiance*.48,vec3(.035,1.05,1.20),max(visorBand,browLight*helmet))*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*.30*actorStageLight;
 totalEmissiveRadiance+=vec3(.72,.77,.80)*signatureEdge*(1.0-actorDissolve);` : `float limb=step(2.5,vActorRegion)*step(vActorRegion,5.5);

@@ -619,7 +619,7 @@ void main(){
  float coreCover=max(prioritySample.b,prioritySample.a);
  if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
    // Keep the marine cap here. Actor coverage attenuates premultiplied output once, after shading.
-   keep*=1.-.83*coreCover;
+   keep*=1.-.97*coreCover;
  }
  #endif
  // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
