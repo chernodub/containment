@@ -79,6 +79,10 @@ function attackGuide(receipt: RunStatsSnapshot['lastDamage']): LastExchange {
 
 /** Plot local collision geometry and the footprints retained by the death receipt. */
 export function lastExchangeDiagram(game: DepthGame): string {
+  const receipt = game.stats.lastDamage;
+  if (!receipt || receipt.source === 'scripted' || receipt.source === 'unknown') {
+    return `<div class="exchange-facts"><h3>Recorded damage</h3><p>${receipt ? `${incomingDamageLabel(receipt)} · ${Math.round(receipt.amount)} HP + armor lost` : 'No damage receipt available.'}</p><p>Attack position and direction unavailable.</p></div>`;
+  }
   const recorded = !!game.deathExchange?.fatal;
   const exchange = recorded ? game.deathExchange! : attackGuide(game.stats.lastDamage);
   const {marine, earlier, fatal, attacks, blockers} = exchange;
@@ -90,11 +94,12 @@ export function lastExchangeDiagram(game: DepthGame): string {
   // Search outward from the impact. Keep steps traversable from the earlier pose
   // when available, so an obstacle crossed later does not suggest an escape.
   let step: {x:number;y:number} | undefined = fatal ? undefined : {x:marine.x,y:marine.y-45};
-  for (let distance=4; distance<=240 && !step; distance+=4) {
+  for (let distance=52; distance<=240 && !step; distance+=4) {
     for (let direction=0; direction<64; direction++) {
       const angle = direction * Math.PI / 32;
       const point = {x:marine.x+distance*Math.cos(angle),y:marine.y+distance*Math.sin(angle)};
-      if (shapes.some(attack => contains(attack,point.x,point.y))) continue;
+      if (shapes.some(attack => contains(attack,point.x,point.y) ||
+        contains(attack,point.x-8*Math.cos(angle),point.y-8*Math.sin(angle)))) continue;
       if (recorded && (!canTraverseExpedition(game.geometry, marine, point, marine.radius)
         || earlier && !canTraverseExpedition(game.geometry, earlier, point, marine.radius))) continue;
       if (!recorded && blockers.some(b => point.x>=b.x-marine.radius&&point.x<=b.x+b.width+marine.radius
@@ -103,10 +108,25 @@ export function lastExchangeDiagram(game: DepthGame): string {
       break;
     }
   }
-  const left = Math.min(marine.x-105, (fatal?.x??marine.x)-40, earlier?.x??marine.x, step?.x??marine.x)-24;
-  const right = Math.max(marine.x+105, (fatal?.x??marine.x)+40, earlier?.x??marine.x, step?.x??marine.x)+24;
-  const top = Math.min(marine.y-90, (fatal?.y??marine.y)-36, earlier?.y??marine.y, step?.y??marine.y)-24;
-  const bottom = Math.max(marine.y+90, (fatal?.y??marine.y)+36, earlier?.y??marine.y, step?.y??marine.y)+24;
+  const focus: {x:number;y:number}[] = [marine, ...(earlier ? [earlier] : []), ...(step ? [step] : [])];
+  if (fatal) {
+    const reach = fatal.shape.range;
+    if (fatal.shape.kind === 'circle') {
+      focus.push({x:fatal.x-reach,y:fatal.y-reach},{x:fatal.x+reach,y:fatal.y+reach});
+    } else {
+      const trailing = fatal.shape.kind === 'line' ? Math.min(reach, 120) : reach;
+      focus.push({x:marine.x-Math.cos(fatal.angle)*trailing,y:marine.y-Math.sin(fatal.angle)*trailing});
+      for (const angle of [fatal.angle-fatal.shape.halfAngle,fatal.angle+fatal.shape.halfAngle]) {
+        const length = fatal.shape.kind === 'line' ? Math.min(reach, Math.hypot(marine.x-fatal.x,marine.y-fatal.y)+30) : reach;
+        focus.push({x:fatal.x+Math.cos(angle)*length,y:fatal.y+Math.sin(angle)*length});
+      }
+    }
+  }
+  const left = Math.min(...focus.map(p=>p.x))-25;
+  const right = Math.max(...focus.map(p=>p.x))+25;
+  const top = Math.min(...focus.map(p=>p.y))-25;
+  const bottom = Math.max(...focus.map(p=>p.y))+25;
+  const glyphScale = Math.max(1.1,(bottom-top)/217,(right-left)/630);
   const mapAttack = (attack: AttackFootprint) => {
     const {shape, x, y, angle} = attack;
     const point = (direction: number) => xy(x + Math.cos(direction) * shape.range, y + Math.sin(direction) * shape.range);
@@ -115,18 +135,19 @@ export function lastExchangeDiagram(game: DepthGame): string {
       : `<path d="M${xy(x,y)} L${point(angle-shape.halfAngle)} A${shape.range} ${shape.range} 0 0 1 ${point(angle+shape.halfAngle)} Z"/>`;
     return `<g class="exchange-attack" data-fatal="${attack === fatal}">${body}</g>`;
   };
-  const pose = (p: typeof marine, ghost = false) => exchangeMarine(p.x,p.y,p.angle,ghost);
-  const held = earlier && Math.hypot(earlier.x-marine.x,earlier.y-marine.y) < 1;
-  const path = held ? `<circle class="exchange-held" cx="${earlier.x}" cy="${earlier.y}" r="${marine.radius+7}"/>` : earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
+  const pose = (p: typeof marine, ghost = false) => exchangeMarine(p.x,p.y,p.angle,ghost,glyphScale);
+  const movement = earlier ? Math.hypot(earlier.x-marine.x,earlier.y-marine.y) : 0;
+  const held = earlier && movement < 29*glyphScale;
+  const path = held ? `<circle class="exchange-trail" cx="${marine.x}" cy="${marine.y}" r="${17*glyphScale}"/>${movement>1?`<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>`: ''}` : earlier ? `<path class="exchange-trail" d="M${xy(earlier.x,earlier.y)} L${xy(marine.x,marine.y)}"/>${pose(earlier,true)}` : '';
   const exit = step ? `<path class="exchange-exit" marker-end="url(#exchange-arrow)" d="M${xy(marine.x,marine.y)} L${xy(step.x,step.y)}"/>` : '';
   const advice = !fatal ? 'Move toward clear ground when the danger cue appears.' : step ? 'Take the marked step before the attack lands.' : 'Reposition earlier, before the attack lanes close.';
   const family = game.stats.lastDamage?.source === 'self-blast' ? 'Your blast' : fatal ? ENEMIES[fatal.family].label : 'Unrecorded attack';
   return `<figure class="last-exchange" aria-label="Last exchange">
-    <div class="exchange-key"><b>${family} · ${recorded?'fatal attack':'attack guide'}</b><span>${held?'Earlier and impact coincide':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}${blockers.length?' · ▰ Cover':''}</span></div>
+    <div class="exchange-key"><b>${family} · ${recorded?'fatal attack':'attack guide'}</b><span>${held?'Short movement · ◆ Impact':earlier?'◇ Earlier · ◆ Impact':'◆ Impact'}${step?' · → Step':''}${blockers.length?' · ▰ Cover':''}</span></div>
     <svg role="img" aria-label="${recorded?'Recorded fatal footprint, nearby attacks, marine poses and clearing step when available.':'Illustrated attack guide and clearing step.'}" viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
       ${shapes.map(mapAttack).join('')}${fatal?`<circle class="exchange-range" cx="${fatal.x}" cy="${fatal.y}" r="${fatal.shape.kind==='line'?Math.min(fatal.shape.range,marine.radius*2):fatal.shape.range}"/><text class="exchange-reach" x="${left+9}" y="${bottom-9}">${recorded&&game.stats.lastDamage?.source==='enemy-projectile'?'Shot travelled':'Reach'} ${(fatal.shape.range/32).toFixed(1)} m</text>`:''}
-      ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle)).join('')}${path}${pose(marine)}${exit}
+      ${shapes.filter(attack=>attack.shape.kind!=='circle').map(attack=>exchangeEnemy(attack.family,attack.x,attack.y,attack.angle,glyphScale)).join('')}${path}${pose(marine)}${exit}
     </svg><figcaption>${advice}</figcaption></figure>`;
 }
