@@ -83,9 +83,30 @@ export function installGpuPassAudit(configuration = {}) {
     pass.frames.set(frame,sample);
     if(name!=='shadows')recordResolution(pass,target?.width??gl.drawingBufferWidth,target?.height??gl.drawingBufferHeight);
   }
+  const cpu=new Map();
+  function cpuTime(name,start){
+    let samples=cpu.get(name);
+    if(!samples){samples=new Map();cpu.set(name,samples);}
+    samples.set(frame,(samples.get(frame)??0)+performance.now()-start);
+  }
+  for(const [owner,method,name] of [
+    [r.ragdolls,'update','ragdollUpdate'],[r.lighting,'update','lightUpdate'],[r.marineEnvelope,'capture','marineEnvelope'],
+    [r.effects,'update','effectUpdate'],[r.interimAbilities,'update','abilityUpdate'],
+    [r.healthBars,'update','healthBarUpdate'],[r.pickupInstances,'update','pickupUpdate'],
+  ])wrap(owner,method,original=>function(...args){
+    const start=performance.now();try{return original.apply(this,args);}finally{cpuTime(name,start);}
+  });
+  for(const method of ['bufferSubData','bufferData','useProgram','bindFramebuffer','clear',
+    'uniform1f','uniform1i','uniform2f','uniform3f','uniform4f','uniform2fv','uniform3fv','uniform4fv',
+    'uniform1fv','uniformMatrix3fv','uniformMatrix4fv']){
+    wrap(gl,method,original=>function(...args){
+      const start=performance.now();try{return original.apply(this,args);}
+      finally{cpuTime(method.startsWith('uniform')?'uniformUploads':method,start);}
+    });
+  }
   function measure(name, target, body) {
     const pass=getPass(name), before={...renderer.info.render};
-    const counted=()=>{try{return body();}finally{const after=renderer.info.render;count(name,target,Math.max(0,after.calls-before.calls),Math.max(0,after.triangles-before.triangles),name==='shadows'?0:(target?.width??gl.drawingBufferWidth)*(target?.height??gl.drawingBufferHeight));}};
+    const counted=()=>{const start=performance.now();try{return body();}finally{cpuTime(name,start);const after=renderer.info.render;count(name,target,Math.max(0,after.calls-before.calls),Math.max(0,after.triangles-before.triangles),name==='shadows'?0:(target?.width??gl.drawingBufferWidth)*(target?.height??gl.drawingBufferHeight));}};
     if (!extension || !sampling || name !== selectedStage || queriedFrame || disposed) return counted();
     if (active || gl.getQuery(extension.TIME_ELAPSED_EXT, gl.CURRENT_QUERY)) {
       diagnostics.skippedBusy++;
@@ -122,9 +143,9 @@ export function installGpuPassAudit(configuration = {}) {
     if(name&&name!=='shadows'&&extension&&sampling&&selectedStage===name&&!active&&!disposed&&pending.length<capacity&&!gl.getQuery(extension.TIME_ELAPSED_EXT,gl.CURRENT_QUERY)){
       const query=gl.createQuery();if(query){if(flush){gl.flush();diagnostics.flushCalls++;}gl.beginQuery(extension.TIME_ELAPSED_EXT,query);directQuery={query,pass:getPass(name),frame};active=true;}
     }
-    const before={...renderer.info.render},target=renderer.getRenderTarget();
+    const before={...renderer.info.render},target=renderer.getRenderTarget(),start=performance.now();
     try{return original.call(this,camera,scene,geometry,material,object,group);}
-    finally{if(name&&name!=='shadows'){const after=renderer.info.render;count(name,target,Math.max(0,after.calls-before.calls),Math.max(0,after.triangles-before.triangles),(target?.width??gl.drawingBufferWidth)*(target?.height??gl.drawingBufferHeight));}}
+    finally{if(name&&name!=='shadows'){cpuTime(object?.isSkinnedMesh?'actorDraw':name==='mainOpaque'?'roomAndOtherOpaqueDraw':name,start);const after=renderer.info.render;count(name,target,Math.max(0,after.calls-before.calls),Math.max(0,after.triangles-before.triangles),(target?.width??gl.drawingBufferWidth)*(target?.height??gl.drawingBufferHeight));}}
   });
   // DepthRenderer resets Three's retained counters exactly once before each
   // actual scene/post/HUD submission. Debug fixed stepping holds a raw render
@@ -223,7 +244,7 @@ export function installGpuPassAudit(configuration = {}) {
     supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled frame', diagnostics, poll,
     snapshot() {
       poll();
-      return { auditVersion: 2, frameBoundary: 'renderer.info.reset: one actual render submission including fixed-step raw closures', actualRenderFrames: frame, supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled actual render frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, memory: memoryInventory(), passes: [...passes.values()].map(({frameGpu,invalidFrames,frames,...pass}) => ({ ...pass, samplesMs: [...frameGpu].filter(([id])=>!invalidFrames.has(id)&&!pending.some(entry=>entry.frame===id&&entry.pass.name===pass.name)).map(([,ms])=>ms), counts: [...frames].map(([frame,sample])=>({frame,...sample})), resolutions: pass.resolutions.map(size => ({ ...size })) })) };
+      return { cpuPasses:[...cpu].map(([name,times])=>({name,samples:[...times]})), auditVersion: 2, frameBoundary: 'renderer.info.reset: one actual render submission including fixed-step raw closures', actualRenderFrames: frame, supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled actual render frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, memory: memoryInventory(), passes: [...passes.values()].map(({frameGpu,invalidFrames,frames,...pass}) => ({ ...pass, samplesMs: [...frameGpu].filter(([id])=>!invalidFrames.has(id)&&!pending.some(entry=>entry.frame===id&&entry.pass.name===pass.name)).map(([,ms])=>ms), counts: [...frames].map(([frame,sample])=>({frame,...sample})), resolutions: pass.resolutions.map(size => ({ ...size })) })) };
     },
     dispose() {
       if (disposed) return;
