@@ -338,3 +338,17 @@ The production build passed. Arc and Pyro 1729 each cleared all 20 rooms with ze
 | All five R25 Standard campaigns | 70.8% | — |
 
 The matched native share divides 631.3 Crawler and Stalker contact damage by 1057.8 total suit damage. R25's matched sample ended earlier because Arc died in the Shaft. The deterministic cohort provides a second comparison with the same 48 starting configurations and a different result.
+
+## PLAY34
+
+- The later Diagnostic Gallery, Infested Workshop and Manual Control exchanges stage an existing melee attacker across the room's incident cover. The next request leaves about one second before it arrives.
+- Workshop's clean brood-leader kill redirects the next flank to the entry farthest from the kill and cuts one arrival there. The changed entry uses the existing flank warning.
+- Protected arrivals accept rig damage and show the same banked wound as weapon damage. Armor strips immediately. Queued health damage retains its source, and queued freeze, burn, shock and chill apply after the committed strike if the target survives.
+- Residential's plated lesson opens the optional armor lane with a lateral shove and stagger when plasma breaks the plate. The novice policy had explicitly excluded Residential from lesson targeting even when the target was visible and in range.
+- Swarm Junction places its first marked brood pair together in front of the marine and gives the Matron a head start on the escort arrivals.
+- A short world-projected arrow carries the bearing from the defeated reserve target toward the persistent sealed-entry crest. The first queued silhouette advances to the grille while it waits.
+- Overload's preview stops on the cover lip and keeps the impact marked for 1.3 seconds. Crossing route arrows were removed.
+
+### Residential receipt
+
+The Story novice Cryo checkpoint replay fired three plasma shots in Residential, compared with zero in R26. Plasma broke the staged plate at 40.183 seconds. The replay cleared the room with zero suit loss and zero runtime errors. The side-on lock and banked-wound frames precede the plate break. [Native replay](../../artifacts/nextgen/playtest/play34-residential-tip/report.json) · [Side-on lock frame](../../artifacts/nextgen/playtest/play34-residential-tip/r3-residential-gallery-side-on-lock.png) · [Trace](../../artifacts/nextgen/playtest/play34-residential-tip/trace.ndjson)
