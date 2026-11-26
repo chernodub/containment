@@ -199,6 +199,13 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(next>=0)arrivals[next]=Object.freeze({...arrivals[next],atMs:Math.max(arrivals[next].atMs,first.atMs+1050)});
    }
   }
+  if(node.templateId==='swarm-junction'&&beatIndex===0){
+   const matron=arrivals.find(request=>request.guardian==='matron');
+   if(matron)for(let index=0;index<arrivals.length;index++){
+    const request=arrivals[index];
+    if(request!==matron)arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,matron.atMs+3100)});
+   }
+  }
   if(shaftLanding&&beatIndex===0&&
     arrivals[0]?.enemyId==='stalker'&&arrivals[1]?.enemyId==='stalker'){
    const early=arrivals[0].atMs+100;

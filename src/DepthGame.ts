@@ -134,11 +134,14 @@ export class DepthGame {
  private broodSupply?:{pod:number;pickup:number};
  private broodChoiceUsed=false;
  private stageBroodChoice(index:number, fallback:{x:number;y:number}){
-  const start=this.geometry.playerSpawn,end=this.geometry.exitPoint;
-  const angle=Math.atan2(end.y-start.y,end.x-start.x);
-  for(const offset of index===0?[0,40,-40,80,-80]:[160,-160,210,-210]){
-   const point={x:(start.x+end.x)/2-Math.sin(angle)*offset,y:(start.y+end.y)/2+Math.cos(angle)*offset};
-   if(canOccupyExpedition(this.geometry,point,24))return point;
+  const player=this.player,exit=this.geometry.exitPoint;
+  const bearing=Math.atan2(exit.y-player.y,exit.x-player.x);
+  for(const turn of [0,Math.PI/2,-Math.PI/2,Math.PI]){
+   const angle=bearing+turn;
+   const pair=[-1,1].map(side=>({x:player.x+Math.cos(angle)*122-side*Math.sin(angle)*59,
+    y:player.y+Math.sin(angle)*122+side*Math.cos(angle)*59}));
+   if(pair.every(point=>canOccupyExpedition(this.geometry,point,26)&&hasClearExpeditionShot(this.geometry,player,point)))
+    return pair[index]??fallback;
   }
   return fallback;
  }
