@@ -520,6 +520,25 @@ class Creature:
             else:
                 self.rotate(name,axis,face*.82)
 
+    def club_stride(self, t):
+        # The visible club skins to the shoulder. Pivot its skin transform
+        # about the authored palm, rather than solving the unused claw IK tip.
+        for side, sign in [('r', -1), ('l', 1)]:
+            phase = (t + (.5 if sign > 0 else 0)) % 1
+            support = .58
+            swing = max(0., (phase-support)/(1-support))
+            lift = math.sin(math.pi*swing)**2
+            reach = .5-phase/support if phase < support else smooth(swing)-.5
+            name = 'shoulder.'+side
+            palm = FWD*2.15 + SIDE*(3.00*sign) + UP*(4.57/1.8)
+            skin = self.base_matrices[name] @ self.rest[name].inverted_safe()
+            anchor = skin @ palm
+            travel = FWD*(1.72*reach) + UP*(.74*lift-.18)
+            spread = Matrix.Diagonal(Vector((1., .87+.20*lift, 1.08-.13*lift, 1.)))
+            roll = Quaternion(SIDE, -.40*lift).to_matrix().to_4x4()
+            desired = Matrix.Translation(anchor+travel) @ roll @ spread @ Matrix.Translation(-anchor) @ self.base_matrices[name]
+            self.transform(name, desired @ self.m[name].inverted_safe())
+
     def ram_lean(self, l):
         """WARDEN25: lead with the right ram shoulder: low, nose down, yawed left so the ram comes forward, rolled
         onto the ram side. Body rotations only; planted feet are solved afterwards."""
@@ -707,13 +726,13 @@ class Creature:
             self.rotate(self.center,SIDE,.11 if crawler else .07)
             if self.family=='brute':
                 plant=math.sin(phase+.22*math.pi)
-                self.move(self.center,SIDE*W*.105*plant)
+                self.move(self.center,SIDE*W*.15*plant-UP*H*.065*abs(plant))
                 self.rotate(self.center,FWD,.16*plant)
                 self.rotate('chest',UP,.22*plant)
                 self.rotate('tail',UP,-.18*plant)
             for leg in self.legs:
                 i=leg['index'];opposite=(i%2) if crawler else (0 if i in [0,3] else 1)
-                cycle=(t+.5*opposite-(.045 if self.family=='brute' else 0))%1
+                cycle=(t+.5*opposite-(.14 if self.family=='brute' else 0))%1
                 swing=cycle<.42
                 x=between(cycle,[(0,-.5),(.42,.5),(1,-.5)])
                 lift=math.sin(math.pi*cycle/.42) if swing else 0
@@ -945,6 +964,8 @@ class Creature:
             self.rotate('head',SIDE,-.11)
             self.move('tail',-FWD*W*.13)
         self.plant(targets)
+        if self.family=='brute' and self.current_action=='m10-run':
+            self.club_stride(t)
         if self.family!='brute' and action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
             settle=smooth((t*seconds-(seconds-.08))/.08)
