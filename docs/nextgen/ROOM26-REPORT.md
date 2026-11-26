@@ -342,3 +342,7 @@ The production build passed. Standard Cryo, seed 1729, cleared 12 rooms and died
 [ROOM32 gallery and ten sheets](../../artifacts/nextgen/room32/index.html) · [Capture inventory](../../artifacts/nextgen/room32/captures.json). Each of the five views has 20 accepted captures, a native final22/current pair per room, a current-only 480 × 270 frame and colour and greyscale sheets. The capture receipts retain 13 interrupted kiting/arena attempts from closing stalled browsers. The replacements completed after the capture harness queried shader link status synchronously during preparation. All 100 accepted captures have zero page or console errors.
 
 All 20 pressure restages match the native living-enemy counts. Nineteen also match the recorded marine coordinates exactly. The original Safety Interlock and Manual Control positions initially cropped the physical warning sign. Extra camera settling resolved Safety Interlock at the original position. Manual Control needed a legal position 128 ship units (4 m) away for its accepted frame. Both initial exact-location pairs remain available in the gallery.
+
+## ROOM33
+
+The baseline production build is 8ea499b4. Arena-centre, incident-facing and kiting captures use the ROOM32 cameras at 1920 × 1080. The Pyro comparison uses eight rooms, seed 1729 and fast native rendering. Capture and benchmark receipts live under artifacts/nextgen.
