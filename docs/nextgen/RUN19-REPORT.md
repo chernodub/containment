@@ -59,3 +59,16 @@ The native receipts under `artifacts/nextgen/playtest/run19-release-native` incl
 A player who opens Passenger Vault with a shotgun can skip the plasma lesson. The native Arc trace recorded two rifle impacts on the first plate, then the bot finished the Brute without firing plasma. The rocket prompt depends on two enemies approaching through a clear lane at arming distance, so a fast kill or a close engagement can pass the opportunity. The simulations measure campaign completion under a bot policy. They leave open how often a new player acts on either prompt.
 
 The Standard total stayed within one clear of the reproduced baseline. Pyro moved from six clears to four, and Cryo moved from two to four. With the route selected by seed parity, the six-seed cohort gives a limited comparison of the two fights' difficulty.
+
+## RUN20 · Threat order
+
+- Awakening Bay / Passenger Vault stays fixed to preserve the wake-up and first heavy lesson.
+- Passenger Vault / Residential Gallery stays fixed to teach the heavy before the lunge.
+- Residential Gallery / Communal Atrium stays fixed to put isolated lessons before the first mixed fight.
+- Crew Checkpoint / Armory stays fixed to keep the crew's defensive line ahead of equipment and the first guardian booking.
+- Freight Hold / Breached Loading Bay is the first order choice. Both cargo rooms follow the armory and precede the communications deck.
+- Relay Racks / Transmission Chamber stays fixed to restore the local relay before the uplink hold.
+- Diagnostic Gallery / Safety-interlock Station stays fixed to reveal the cost of purge before the record that the AI knew.
+- Coolant Plant / Service Shaft Landing stays fixed to keep the booked guardian and the loss of AI contact in sequence.
+- Infested Workshop / Swarm Junction is the second order choice. Both rooms follow the descent and precede shielding. The optional guardian remains with Swarm Junction.
+- Containment Annulus / Manual Control / Overload Floor stays fixed to confirm passenger survival, require authorization, then defend the overload.
