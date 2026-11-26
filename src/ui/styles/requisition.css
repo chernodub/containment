@@ -276,3 +276,6 @@
   #overlay .requisition-panel .requisition-footer { margin-top: 4px; }
   #overlay .requisition-panel .service-shop.requisition-groups { gap: 6px; }
 }
+
+#overlay svg.service-illustration { background: #0b1820; }
+#overlay .route-supply svg.service-illustration { background: none; }
