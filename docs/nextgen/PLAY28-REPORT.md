@@ -745,3 +745,12 @@ Standard damage is mean suit per completed block. Each candidate is compared wit
 | Arc | 37.55% | — | — |
 
 [Candidate OFF summary](../../artifacts/nextgen/playtest/play39-tip-off/summary.json) · [Candidate ON summary](../../artifacts/nextgen/playtest/play39-tip-on/summary.json) · [Candidate Story summary](../../artifacts/nextgen/playtest/play39-tip-story/summary.json)
+
+The pre-revision Breacher sample also supports a direct ON/OFF comparison. Mean suit and time include only seeds that entered the room in both arms. Final-room deaths in this sample remain in those means.
+
+| Encounter | Same-seed campaigns | Visitors OFF / ON | Paired visitors | Suit OFF → ON | Seconds OFF → ON | Deaths OFF → ON |
+|---|---:|---:|---:|---:|---:|---:|
+| Communal Atrium | 9 | 9 / 9 | 9 | 6.21 → 6.21 | 25.00 → 23.40 | 0 → 0 |
+| Manual Control | 9 | 7 / 9 | 7 | 29.99 → 29.66 | 45.43 → 47.41 | 1 → 0 |
+
+The production build passed on the opt-in revision. Standard and Story simulator cohorts for that build are separate from the experiments. The full native Breacher replay was restarted on the same seed after a screenshot timeout on its first attempt. The corrected Manual Control pair initially failed to bind its localhost port under the sandbox and was restarted using approved local access. The native 20-room runs, final simulator cohorts, and three adjacent Crawler queue frames had not graduated to verified evidence at this snapshot.
