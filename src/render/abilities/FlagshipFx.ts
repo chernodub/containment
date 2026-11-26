@@ -180,6 +180,11 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
   float deposit=smoothstep(.58,.72,drift+shelter*.30);
   alpha*=mix(.045,1.,deposit);
   emit*=deposit;
+ }else{
+  float band=(1.-smoothstep(.18,1.0,back))*bed;
+  float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
+  alpha*=mix(.48,1.,band);
+  emit=emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
  }
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
@@ -339,16 +344,16 @@ void main(){
   }else{
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
-   vec3 tile=fxCells(p*vec2(.81,1.12)+grit*.27);
+   vec3 tile=fxCells(vec2(p.x*.45+p.y*.28,p.y*.87)+vec2(grit,fxNoise(p*.63))*.89);
    float face=smoothstep(.012,.11,tile.y-tile.x);
    float bank=1.-smoothstep(0.,.65,abs(deckClearance(fxWorld.xz)));
    float back=front-r-(1.-tile.z)*(.42+.72*bank);
    float material=smoothstep(-.015,.13,back);
    float dust=smoothstep(.33,.70,grit+tile.x*.12);
-   base=mix(vec3(.036,.021,.013),vec3(.12,.092,.059),face*(.2+.8*tile.z));
-   base+=vec3(.035,.022,.010)*dust;
+   base=mix(vec3(.006,.010,.015),vec3(.041,.054,.060),face*tile.z);
+   base+=vec3(.013)*dust;
    emit=vec3(.17,.085,.023)*(1.-face)*smoothstep(.29,.65,grit)*material;
-   alpha=.42*material*(.83+.28*dust);
+   alpha=material*(.08+.31*smoothstep(.28,.84,r/max(.001,front))*smoothstep(.27,.7,grit));
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
   float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)

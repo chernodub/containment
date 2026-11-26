@@ -347,12 +347,14 @@ export class BreacherPresentation implements AbilityPresentation {
     const buckle = Math.max(0, 1 - p.age / .58), sectors = k.low ? 3 : 6;
     for (let i = 0; i < sectors && buckle > 0; i++) {
       const a = p.angle + i * TAU / sectors, c = Math.cos(a), s = Math.sin(a);
-      const inner = p.size * .09, outer = p.size * (.34 + i % 2 * .055);
+      const inner = p.size * .09, outer = p.size * (.24 + .34 * (Math.sin(i * 3.76 + .2) ** 2));
       const bend = .06 + Math.sin(Math.min(1, p.age / .48) * Math.PI) * .48;
       k.ribbon(p.x + c * inner, .052, p.z + s * inner,
         p.x + c * outer, .052, p.z + s * outer, 0x101b22, .06, buckle * .85, false);
+      k.draw('shard', p.x + c * outer * .64 + bend * .24, .045, p.z + s * outer * .64 + bend * .16,
+        p.size * (.085 + .11 * (Math.sin(i * 2.1) ** 2)), .018, (outer-inner)*.45, 0x080d11, buckle*.85, Math.PI/2-a, 0, 31);
       k.draw('shard', p.x + c * outer * .64, .048 + bend * .75, p.z + s * outer * .64,
-        p.size * (.12 + i % 2 * .04), .075, (outer - inner) * .45, STEEL, buckle * .8,
+        p.size * (.085 + .11 * (Math.sin(i * 2.1) ** 2)), .075, (outer - inner) * .45, STEEL, buckle * .8,
         Math.PI / 2 - a, bend, 31);
       k.ribbon(p.x + c * inner - s * .07, .061, p.z + s * inner + c * .07,
         p.x + c * outer - s * .07, .061, p.z + s * outer + c * .07, 0x91a5ad, .012, buckle * .5, false);
