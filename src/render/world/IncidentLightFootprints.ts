@@ -1,7 +1,8 @@
-import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,type Group} from 'three';
+import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,Vector4,type Group} from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {incidentApertures,paintIncidentAperture} from '../lighting/IncidentAperture';
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
+import {MARINE_FLOOR_GLOW} from '../lighting/RoomValueStandard';
 import {laneTerminal} from '../lighting/LaneWorklight';
 import {clipFightingDeck} from './FightingDeck';
 import {incidentPracticalColors} from './MachineEmitters';
@@ -10,18 +11,48 @@ import {storyIncidentSource} from './Inc13StoryIncidents';
 // Set exposure at the fixture, so its throw keeps the same value as the
 // combat camera moves. Narrow reflector hoods have a wider penumbra.
 const reflectorGain:Readonly<Record<string,number>>={
-  'awakening-bay':.63,'crew-checkpoint':.96,'relay-racks':.86,'shielding-gate':.79,
-  'communal-atrium':.58,armory:.51,'breached-loading-bay':.83,
-  'transmission-chamber':.62,'diagnostic-gallery':.91,'safety-interlock-station':.49,
-  'infested-workshop':.59,'manual-control-chamber':.84,'overload-floor':.61,
+  'awakening-bay':.63,'crew-checkpoint':.96,'relay-racks':.86,'shielding-gate':.92,
+  'communal-atrium':.58,armory:.51,'breached-loading-bay':.93,
+  'transmission-chamber':.62,'diagnostic-gallery':.95,'safety-interlock-station':.49,
+  'infested-workshop':.59,'manual-control-chamber':.84,'overload-floor':.61,'coolant-plant':.83,'containment-annulus':.75,
 };
 
 // Soot, rubber and oil on these receivers absorb the white deck reflection.
 // Keep the softer return in the same texture and draw as the coloured throw.
-const smokedReceivers:Readonly<Record<string,number>>={
-  'awakening-bay':.48,armory:.81,'safety-interlock-station':.73,
-  'infested-workshop':.40,'manual-control-chamber':.58,'service-shaft-landing':.38,
+type Receiver=readonly [absorption:number,farCoverage:number,farGain:number,nearCoverage:number,nearGain:number];
+const smokedReceivers:Readonly<Record<string,Receiver>>={
+  'awakening-bay':[.48,.45,2.43,.75,7],armory:[.81,1,5,1,16],
+  'safety-interlock-station':[.73,.72,3.4,1,10],
+  'infested-workshop':[.40,.45,2.4,.75,7],
+  'manual-control-chamber':[.58,.72,3.4,.45,3.4],
+  'service-shaft-landing':[.38,.72,2.4,.72,3.4],
 };
+
+// A metal receiver also returns the suit light when the marine walks past.
+// Choose the local fitting per fragment so the distant source stays steady.
+function finishSmokedReceiver(material:MeshBasicMaterial,receiver:Receiver,a:readonly number[],b:readonly number[]){
+  const [absorption,farCoverage,farGain,nearCoverage,nearGain]=receiver;
+  material.color.multiplyScalar(1-absorption*.55);
+  const mounts=new Vector4(a[0]/32,a[1]/32,b[0]/32,b[1]/32);
+  const response=new Vector4(nearCoverage,nearCoverage*nearGain,farCoverage,farCoverage*farGain);
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.receiverMounts={value:mounts};
+    shader.uniforms.receiverResponse={value:response};
+    shader.uniforms.receiverMarine=MARINE_FLOOR_GLOW;
+    shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
+    shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMounts,receiverMarine,receiverResponse;\n'+
+      shader.fragmentShader.replace('#include <opaque_fragment>',`
+        vec2 a=receiverMounts.xy,b=receiverMounts.zw;
+        vec2 localMount=distance(receiverXZ,a)<distance(receiverXZ,b)?a:b;
+        float away=smoothstep(2.55,4.9,distance(localMount,receiverMarine.xy));
+        vec2 response=mix(receiverResponse.xy,receiverResponse.zw,away);
+        diffuseColor.a*=response.x;
+        outgoingLight*=response.y/response.x;
+        #include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey=()=>'smoked-incident-receiver-v1';
+}
 
 export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const terminal=laneTerminal(room.id),profile=incidentApertures[room.id];
@@ -29,7 +60,8 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const tint=incidentPracticalColors[room.id],lane=incidentLanes[room.id];
   const angle=lane?Math.atan2(lane[3]-lane[1],lane[2]-lane[0]):0;
   const source=storyIncidentSource(room.id);
-  const absorb=smokedReceivers[room.id]??0;
+  const receiver=smokedReceivers[room.id];
+  const absorb=receiver?.[0]??0;
   const gain=reflectorGain[room.id]??.69;
   const mounts=[{pin:terminal,angle}];
   if(source&&Math.hypot(source[0]-terminal[0],source[1]-terminal[1])>110)mounts.push({pin:source,angle:Math.atan2(source[0]-terminal[0],terminal[1]-source[1])});
@@ -54,7 +86,8 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
       c.globalAlpha=absorb;c.fillStyle=soot;c.fillRect(-1,-1,2,2);
       c.restore();
     }
-    c.scale(profile[0]==='strip'?5.7:closeThrow?2.2:3.3,closeThrow?1.45:1.95);
+    const broadFan=room.id==='armory'||room.id==='safety-interlock-station';
+    c.scale(profile[0]==='strip'?5.7:closeThrow?2.2:broadFan?4.3:3.3,closeThrow?1.45:1.95);
     c.globalAlpha=absorb?gain:closeThrow?.76:1;
     paintIncidentAperture(c,room.id,tint);
     c.restore();
@@ -62,7 +95,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:absorb?NormalBlending:AdditiveBlending,
     opacity:absorb?1:gain,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
-  if(absorb)material.color.multiplyScalar(1-absorb*.55);
+  if(receiver)finishSmokedReceiver(material,receiver,terminal,mounts[1]?.pin??terminal);
   material.userData.actorMaterial=true;
   material.addEventListener('dispose',()=>texture.dispose());
   const mesh=new Mesh(new PlaneGeometry(room.width/32,room.height/32).rotateX(-Math.PI/2),material);
