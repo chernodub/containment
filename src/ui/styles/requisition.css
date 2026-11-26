@@ -233,3 +233,13 @@
   clip-path: inset(50%);
 }
 #overlay .requisition-groups:is(:focus-within,:hover) .stock-summary { display: none; }
+#overlay .requisition-groups .route-supply { grid-column: 1 / -1; margin: 0; }
+#overlay .requisition-groups[data-pair-pending=true]:not(:focus-within):not(:hover) .route-supply {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#overlay .requisition-footer #claim .augment-target { display: inline-flex; margin: 0 4px; }
+#overlay .requisition-footer #claim .augment-target > span { display: none; }
