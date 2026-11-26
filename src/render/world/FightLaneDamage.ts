@@ -1,4 +1,4 @@
-import type {Group} from 'three';
+import {MeshBasicMaterial,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
 /** Ship-plan coordinates along the service edges. These are fragments of the
@@ -34,15 +34,15 @@ export function addFightLaneDamage(root:Group,id:string){
       // The shot enters from the south-east. Keep the right-hand upper
       // corner on the native clipped ray and run the feed west behind it.
       const lip=new IncidentPieces();
-      lip.box(-40,11,-7,80,22,14,0x344346);
-      lip.box(-40,22,-7,80,3,14,0x83918a);
+      lip.box(-40,16,-7,80,32,14,0x354043);
+      lip.box(-40,32,-8,80,3,16,0x747b70);
       for(const dx of [-73,-50,-27]){
-        lip.box(dx,12,-9,5,23,16,0x556263);
-        lip.box(dx,24,-15,7,3,29,0x92806a);
+        lip.box(dx,16,-9,5,32,16,0x4b5351);
+        lip.box(dx,34,-15,7,3,29,0x766653);
       }
       lip.rod([-76,10,-12],[-167,7,-26],5,0x596768);
       lip.rod([-76,10,-18],[-165,7,-32],3,0x83735f);
-      lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813);
+      lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,new MeshBasicMaterial({vertexColors:true}));
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
         p.box(x,3,z,54,6,32,0x374245);
         for(const dx of [-15,0,15]){
