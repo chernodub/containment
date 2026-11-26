@@ -60,6 +60,19 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     const count = Math.ceil(length/4.1);
     for (let j = 0; j < count; j++) {
       const start = length*j/count+.08, end = length*(j+1)/count-.08;
+      // Two faceted conduits and their retaining clips run outboard on long wall caps.
+      if(length>4 && (Math.abs(tz)>.75 || a.y>plan.arena.y)){
+        for(const offset of [.36,.53]){
+          const tube=(t:number,out:number,lift:number)=>{const v=point(t,out);v[1]=.47+lift;return v;};
+          const quad=(a:number[],b:number[],c:number[],d:number[],color:T.Color)=>{
+            rim.push(...a,...b,...c,...a,...c,...d);
+            for(let n=0;n<6;n++)colors.push(color.r,color.g,color.b);
+          };
+          quad(tube(start,offset,0),tube(end,offset,0),tube(end,offset+.05,.08),tube(start,offset+.05,.08),fascia);
+          quad(tube(start,offset+.05,.08),tube(end,offset+.05,.08),tube(end,offset+.13,0),tube(start,offset+.13,0),underside);
+          quad(tube(start+.06,offset-.01,.05),tube(start+.15,offset-.01,.05),tube(start+.15,offset+.14,.08),tube(start+.06,offset+.14,.08),fascia);
+        }
+      }
       const near = point(start,.18), far = point(end,.26);
       const innerEnd=point(end,.18);
       rim.push(...near,...innerEnd,...far,...near,...far,...point(start,.26));

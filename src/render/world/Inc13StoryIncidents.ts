@@ -58,6 +58,13 @@ export class IncidentPieces {
       geometry.setIndex(Array.from({length:start},(_,i)=>i));
       geometry.index!.setUsage(T.DynamicDrawUsage);
     }
+    if(id.startsWith('lane-machine-')){
+      const normals=geometry.attributes.normal,colors=geometry.attributes.color;
+      for(let i=0;i<colors.count;i++){
+        const gain=1+.38*Math.max(0,normals.getY(i));
+        colors.setXYZ(i,Math.min(1,colors.getX(i)*gain),Math.min(1,colors.getY(i)*gain),Math.min(1,colors.getZ(i)*gain));
+      }
+    }
     const laneContactBounds=id.startsWith('lane-machine-')?this.parts.flatMap(part=>{
       part.computeBoundingBox();const box=part.boundingBox!;
       if(box.max.y<3||box.min.y>29||(box.max.x-box.min.x)*(box.max.z-box.min.z)<145)return [];
