@@ -72,3 +72,40 @@ The Standard total stayed within one clear of the reproduced baseline. Pyro move
 - Coolant Plant / Service Shaft Landing stays fixed to keep the booked guardian and the loss of AI contact in sequence.
 - Infested Workshop / Swarm Junction is the second order choice. Both rooms follow the descent and precede shielding. The optional guardian remains with Swarm Junction.
 - Containment Annulus / Manual Control / Overload Floor stays fixed to confirm passenger survival, require authorization, then defend the overload.
+
+The cargo decision moves the Field Requisition junction forward one stop, to the Armory exit. The second decision is at the Service Shaft Landing exit. A new run earns up to 20 HP when it clears the first room of either pair. Non-guardian enemies in the second room receive 10% more health. Swarm Junction's optional Matron stays with that room. The first card gets the initial highlight, and seed parity alternates which card is first. Number shortcuts and the existing route buttons select either order.
+
+The room position still controls encounter scaling and the supply schedule. The cargo pair still ends with the sector-eight supplies and exclusive rig augment. The workshop pair still has a supply stop after sector 15. Legacy saves keep their original junctions, room sequence and repair rules.
+
+Both bot profiles use the same order rule. Arc takes the Freight Hold rush first on the rocket booking and Loading Bay crossfire first on the plasma booking. Breacher takes the ranged threat first with its shield. Cryo and Pyro take each rush first. The cohort override forces the first listed room at both junctions with `--room-order=direct`, or the second listed room with `--room-order=salvage`.
+
+### Arc route comparison
+
+Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. It records the actual room entered at sector 7 and projects the remaining order from the selected graph. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json)
+
+| Sector | Arc 1729 · rocket booking | Arc 2718 · plasma booking |
+| ---: | --- | --- |
+| 1 | Awakening Bay | Awakening Bay |
+| 2 | Passenger Vault | Passenger Vault |
+| 3 | Residential Gallery | Residential Gallery |
+| 4 | Communal Atrium | Communal Atrium |
+| 5 | Crew Checkpoint | Crew Checkpoint |
+| 6 | Armory | Armory |
+| 7 | **Freight Hold** | **Breached Loading Bay** |
+| 8 | **Breached Loading Bay** | **Freight Hold** |
+| 9 | Relay Racks | Relay Racks |
+| 10 | Transmission Chamber | Transmission Chamber |
+| 11 | Diagnostic Gallery | Diagnostic Gallery |
+
+### Verification
+
+The baseline install and build passed. The production build passed again with the junctions and evidence fixtures. The old-format checkpoint reconstructed from the pre-change earned Freight Hold exit loads through the game's Continue method and enters Breached Loading Bay in slot 8 with the original junction system. [Continuation receipt](../../artifacts/nextgen/run20-checkpoint/continuation.json)
+
+| Route panel | 1920×1080 | 1280×720 |
+| --- | --- | --- |
+| Cargo | [Freight Hold first highlighted](../../artifacts/nextgen/run20-1080/run20-cargo.png) | [Loading Bay first highlighted](../../artifacts/nextgen/run20-720/run20-cargo.png) |
+| Infestation | [Workshop first highlighted](../../artifacts/nextgen/run20-1080/run20-infestation.png) | [Swarm Junction first highlighted](../../artifacts/nextgen/run20-720/run20-infestation.png) |
+
+I inspected all four route images at their native sizes and at 480×270. The names and the before/after terms fit on their own lines. At 480×270, the names remain easy to distinguish and the smaller terms are best read at the native sizes.
+
+The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire order. Its first capture hit the original ship kit preparation timeout. The retry used seed 1729 again and completed with zero capture errors. I inspected both sizes. [Arrival](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay.png) · [480×270](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay-480.png)
