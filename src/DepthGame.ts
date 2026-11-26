@@ -862,15 +862,26 @@ export class DepthGame {
   this.consoleRelease=this.elapsed+4.8;
   const console=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles?.[0];
   if(console){
-   const end=this.player.x<console.x+console.width/2?console.x:console.x+console.width;
-   const side=end===console.x?-1:1;
-   const target={x:end+side*48,y:console.y+console.height/2};
-   const bait={x:target.x+side*76,y:target.y};
-   const landing={x:bait.x,y:bait.y+(this.player.y<bait.y?-72:72)};
    const radius=enemyBodyRadius(e.enemyId,e.elite);
-   if(canOccupyExpedition(this.geometry,target,radius)&&canTraverseExpedition(this.geometry,bait,landing,this.player.radius)&&hasClearExpeditionShot(this.geometry,landing,target)){
+   const nearSide=this.player.y<console.y+console.height/2?-1:1;
+   const nearY=nearSide<0?console.y:console.y+console.height;
+   const farY=nearSide<0?console.y+console.height:console.y;
+   const midX=console.x+console.width/2;
+   const ends=this.player.x<midX?[console.x,console.x+console.width]:[console.x+console.width,console.x];
+   for(const end of ends){
+    const side=end<midX?-1:1;
+    const target={x:end-side*28,y:farY-nearSide*(radius+8)};
+    const bait={x:end+side*58,y:nearY+nearSide*22};
+    const landing={x:end+side*62,y:farY-nearSide*24};
+    const retreat={x:midX,y:nearY+nearSide*95};
+    if(!canOccupyExpedition(this.geometry,target,radius)||
+     !canTraverseExpedition(this.geometry,bait,landing,this.player.radius)||
+     !hasClearExpeditionShot(this.geometry,bait,target)||
+     !hasClearExpeditionShot(this.geometry,landing,target)||
+     hasClearExpeditionShot(this.geometry,retreat,target))continue;
     this.consoleExchange={bait,landing,target};
     ({x,y}=target);
+    break;
    }
   }
   if(!this.consoleExchange){
