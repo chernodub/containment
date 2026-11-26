@@ -120,17 +120,24 @@ bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
 bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
 bool broodMark=broodBand==3 || broodBand==4 ||
   ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
-bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && broodRestUp>.30;
-broodMark=broodMark || (broodBody && (
+// The longitudinal ridge widens toward the tail; the hooks form a separate pair.
+float ridgeWidth=crawlerSkin?mix(.145,.095,smoothstep(-.8,.65,actorPosition.x)):.50;
+float ridgeDistance=abs(actorPosition.y)/ridgeWidth;
+bool ridgeSkin=(crawlerSkin || spitterSkin) && broodBody && broodRestUp>.12;
+bool dorsal=ridgeSkin && ridgeDistance<1.;
+bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
+                 actorPosition.x>.52 && abs(actorPosition.y)>.09;
+broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
   (stalkerSkin && ((vActorRegion==2. && broodRestUp>.68) ||
                    (vActorRegion==1. && abs(actorPosition.y)<.27 && broodRestUp>.25) ||
-                   (vActorRegion==3. && broodRestUp>.72))) ||
-  (carrierSkin && !broodSac && vActorRegion==4. && broodRestUp>.80) ||
+                   (vActorRegion>=3. && vActorRegion<=4. && broodRestUp>.55))) ||
+  (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.65)));
-vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
-              spitterSkin?vec3(.35,.51,.095):vec3(.16,.51,.89);
+vec3 broodInk=carrierSkin?vec3(2.8,.12,1.8):crawlerSkin?vec3(3.9,.22,.85):
+              spitterSkin?vec3(.60,2.65,.025):vec3(.22,1.45,3.2);
+float ridgeGlow=ridgeSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
   diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
@@ -274,10 +281,10 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
-if(broodFinish && broodMark){
+if(broodFinish && (broodMark || ridgeGlow>0.)){
   // Keep the identification mark visible through the resting Stalker's camouflage.
   float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
-  lanternEmission=broodInk*.78*mix(.85,1.,actorStageLight)*markVisibility;
+  lanternEmission=broodInk*(broodMark?1.:ridgeGlow)*mix(.92,1.,actorStageLight)*markVisibility;
   totalEmissiveRadiance=lanternEmission;
 }
 #endif
