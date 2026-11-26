@@ -295,7 +295,10 @@ export function alien(kind:string,elite=false):ActorModel{
    }}}
   if(contacts){
    const walk=!champion&&!dead&&!status.frozen&&moving>.3&&authored.player.isCurrent('m10-run')?r.action('m10-run'):undefined;
-   contacts.apply(walk?walk.time/walk.getClip().duration:-1);
+   const phase=walk?walk.time/walk.getClip().duration:-1;
+   contacts.apply(phase);
+   const grip=(u:number)=>walk?Math.tanh(8*Math.sin(2*Math.PI*(u+.03))):0;
+   surface.grip(grip(phase),grip(phase+.5));
   }
   if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);
   const boost=1+flash*.65+(elite?.28:0)+(champion==='matron'?1.45:champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0);
