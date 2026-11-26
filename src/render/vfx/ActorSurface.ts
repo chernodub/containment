@@ -217,7 +217,16 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  }
  // Faceted armour can face the camera squarely. Leave a broken contact
  // patch on those planes too, particularly on the outer joints.
+#ifdef BRUTE_PLANES
+ if(actorContact.x<1.5 && !wardenMaw){
+  float top=smoothstep(.18,.77,normal.y);
+  vec3 plateIce=mix(vec3(.025,.071,.12),vec3(.28,.46,.54),top);
+  outgoingLight=mix(outgoingLight,plateIce,actorContact.y*.87*safe);
+  energy=edge*smoothstep(-.15,.60,vein)*.60;
+ }
+#endif
  float deposit=smoothstep(.48,.94,vein)*(.25+.52*limb);
+ if(actorContact.x<1.5)deposit*=.12;
  outgoingLight+=accent*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
  if(actorContact.x>1.5 && actorContact.x<2.5){
   // The pale centre of a live coal follows the skin even as a limb turns
