@@ -3,13 +3,11 @@ import type { Rect } from '../../game/roguelike/types';
 import { ELEMENT_COLORS, UNIT } from './types';
 
 /**
- * VFX13/VFX14 surfaces: one retained procedural program for the hero
- * ability moments (fire volume slices, cooling scorch, rail lance and wake,
- * shock rings, frost, Overdrive floor states). Every pooled mesh shares the
- * same geometry and shader source; modes are uniforms, so warm-up compiles a
- * single program and combat never creates one. Shapes are generated in the
- * vertex shader from native footprints. Meltdown reserves a narrow cosmetic
- * apron beyond its hard detonation front.
+ * Pooled procedural ability surfaces. Most modes share the general program.
+ * Fuel and Meltdown use fixed-mode programs prepared with the general pool,
+ * and Fuel shares a simpler mesh with the same perimeter.
+ * Shapes follow native footprints in the vertex shader. Meltdown reserves a
+ * narrow cosmetic apron beyond its hard detonation front.
  */
 export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14, Tongues: 15 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
