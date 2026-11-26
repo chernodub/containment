@@ -1327,12 +1327,8 @@ SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
   const offsets=[[-44,0],[44,0],[0,-44],[0,44],[-31,-31],[31,31]];
   const earlier=offsets.map(([x,y])=>({x:point.x+x,y:point.y+y}))
    .find(p=>d.canStand(p.x,p.y)&&d.clearShot(p.x,p.y,point));
-  Object.assign(g.player,earlier??point);
-  d.invulnerable(true);
-  for(let i=0;i<32;i++) d.step(33);
-  Object.assign(g.player,point);
-  d.invulnerable(false);
   const at=g.elapsed;
+  g.exchangeHistory.sample({...g.player,...earlier},at-1);
   const attack=(owner,enemyType,bearing,range,width,halfAngle=0)=>{
    const distance=range*.7;
    const poses=[0,1,-1,2,-2,3,-3,4].map(offset=>{
@@ -1347,7 +1343,7 @@ SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
   g.exchangeHistory.record([crossing],at-.28,20);
   if(family!=='stalker'){
    g.hurt(35,undefined,{source:'enemy-contact',enemyFamily:'brute'});
-   for(let i=0;i<8;i++) d.step(33);
+   g.hurtCooldown=0;
   }
   const resources=g.combat.getRunResources();
   g.combat.restoreRunResources({...resources,health:1,armor:0});
