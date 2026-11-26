@@ -240,7 +240,7 @@ export class DepthGame {
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
    this.pending.push({type:'spitter',...shooter,elite:false,delay:350,
-    options:{closeIngress:true,openingVolley:origin}});
+    options:{closeIngress:true,openingVolley:'marine'}});
    this.presentation.push({type:'enemy-warning',...shooter,durationMs:350,radius:32});
    this.pickups.spawn('armor',13,reward.x,reward.y);
    break;
