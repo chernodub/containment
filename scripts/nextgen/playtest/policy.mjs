@@ -80,6 +80,29 @@ function candidateVelocity(s,candidate) {
   return {x:x/length*speed,y:y/length*speed};
 }
 
+/** The recovery shot counts from the half of the fight facing the waiting escorts. */
+function inReturnArc(grille, target, player) {
+  const x=player.x-target.x,y=player.y-target.y,gx=grille.x-target.x,gy=grille.y-target.y;
+  return x*gx+y*gy >= grille.returnArcCosine*Math.hypot(x,y)*Math.hypot(gx,gy);
+}
+
+function grilleApproach(s, grille) {
+  const waypoint=grille.waypoint??grille;
+  const warnings=visibleEnemies(s).filter(enemy=>enemy.meleeShape);
+  let result, remaining=distance(s.player,waypoint);
+  for(const candidate of s.candidates){
+    if(!candidate.legal||!(candidate.dx||candidate.dy))continue;
+    const velocity=candidateVelocity(s,candidate);
+    const at=f=>({x:s.player.x+velocity.x*HUMAN_OBSERVATION_MS/1000*f,
+      y:s.player.y+velocity.y*HUMAN_OBSERVATION_MS/1000*f,radius:s.player.radius});
+    const next=distance(at(1),waypoint);
+    if(next>=remaining-.5||[.33,.66,1].some(f=>warnings.some(enemy=>insideMeleeWarning(enemy,at(f)))))continue;
+    result=candidate;
+    remaining=next;
+  }
+  return result;
+}
+
 /** Escape the visible shape itself, before ordinary fire-lane/spacing preferences. */
 function meleeEscapePlan(s) {
   const warnings=visibleEnemies(s).filter(enemy=>enemy.meleePhase==='windup'&&enemy.meleeShape);
@@ -411,13 +434,19 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       const escape = meleeEscapePlan(perceived);
       // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
       const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
-      const returnTarget = grille?.state === 'waiting' && visible.find(enemy =>
-        enemy.id === grille.attackerId && enemy.clear && enemy.meleePhase === 'recovery');
+      const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);
+      const onReturnSide = attacker && (grille.returnArcCosine===undefined||inReturnArc(grille,attacker,s.player));
+      const returnTarget = onReturnSide && attacker.clear && attacker.meleePhase === 'recovery' && attacker;
       if (returnTarget && !escape) {
         const plasma = s.resources?.ammo.plasma;
         const weapon = returnTarget.armor > 0 && returnTarget.plasmaClear &&
           plasma && plasma.magazine + plasma.reserve > 0 ? 'plasma' : s.combat.weapon;
         return {target:returnTarget,movement:{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS};
+      }
+      if(grille?.state==='waiting'&&grille.returnArcCosine!==undefined&&!escape&&(!onReturnSide||!attacker?.clear)){
+        const approach=grilleApproach(perceived,grille);
+        if(approach)return {target:chooseTarget(perceived.enemies,s.player,s.weaponRange),
+          movement:approach,actions:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};
       }
       if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
         const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});

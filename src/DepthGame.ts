@@ -104,7 +104,7 @@ export class DepthGame {
   const grille=this.recoveryGrilleState;
   if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4)){
    const {attackStarted:_,...visible}=grille;
-   return visible;
+   return {...visible,returnArcCosine:this.recoveryGrilles===true?Math.cos(55*Math.PI/180):undefined};
   }
  }
  private resolveRecoveryGrille(closed:boolean){
@@ -1226,14 +1226,20 @@ export class DepthGame {
  }else if(e.type==='attack-warning'){if(e.enemyType==='carrier'){this.broodPodsDestroyed=0;this.broodStarted.add(e.enemyId);}this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});}else if(e.type==='hazard-attack'){const angle=Math.atan2(e.targetY-e.sourceY,e.targetX-e.sourceX);this.presentation.push({type:'enemy-attack',id:e.enemyId,family:'spitter',x:e.sourceX,y:e.sourceY,angle});this.bullets.push({hostileOwner:e.enemyId,sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,life:ENEMY_ATTACK_SHAPES.spitterProjectileLife,kind:'hazard',request:{weaponId:'plasma',damage:e.damage,speed:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed,radius:SPITTER_PROJECTILE_RADIUS,angle,penetration:1,splashRadius:0,knockback:0},tracker:new ProjectileHitTracker(1)});}}}
  private queenEvents(events:readonly QueenBossEvent[]){for(const e of events){if(e.type==='minion-spawn-request'&&this.enemies.activeCount+this.pending.length<20)this.pending.push({type:'crawler',x:e.x,y:e.y,elite:false,delay:650});else if(e.type==='area-attack'){this.presentation.push({type:'enemy-attack',id:-1,x:this.boss.snapshot.x,y:this.boss.snapshot.y});this.presentation.push({type:'acid',x:e.x,y:e.y,radius:e.radius});if(Math.hypot(this.player.x-e.x,this.player.y-e.y)<e.radius+16)this.hurt(e.damage,{x:e.x,y:e.y,radius:e.radius},{source:'boss-attack',enemyFamily:'queen'});this.pools.push({id:++this.poolId,x:e.x,y:e.y,radius:e.radius*.75,life:2,warning:0,damage:6,tick:.5});}else if(e.type==='nest-destroyed')this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:64});else if(e.type==='queen-defeated'){this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:240});this.encounterEvents(this.director.reportBossDefeated());}}}
  observeWeaponDamage?: (weapon: WeaponId, family: string, damage: number, lethal: boolean) => void;
- damage(id:number,amount:number,impulse?:{x:number;y:number},source:DamageSource='weapon',feedback=true,weapon?:WeaponId){if(this.isShutterProtected(id))return {applied:false,died:false,absorbedByArmor:0,damage:0,exposedHit:undefined};const target=this.targets().find(t=>t.id===id),frozen=target?this.mutations.statuses(id).frozen:false;this.targetCache=null;let applied=false,died=false,absorbedByArmor=0,damage=0;let exposedHit: true|undefined;
+ damage(id:number,amount:number,impulse?:{x:number;y:number},source:DamageSource='weapon',feedback=true,weapon?:WeaponId,shot?:Pick<Bullet,'sourceX'|'sourceY'>){if(this.isShutterProtected(id))return {applied:false,died:false,absorbedByArmor:0,damage:0,exposedHit:undefined};const target=this.targets().find(t=>t.id===id),frozen=target?this.mutations.statuses(id).frozen:false;this.targetCache=null;let applied=false,died=false,absorbedByArmor=0,damage=0;let exposedHit: true|undefined;
   const drill=this.dodgeDrill;
   const practicing=drill?.id===id;
   if(practicing&&(!drill.evaded||this.enemies.getSnapshot(id)?.meleePhase!=='recovery'))return {applied:false,died:false,absorbedByArmor:0,damage:0};
   if(id>0){const before=this.enemies.getSnapshot(id);const condition=this.roomCondition;
    if(weapon&&before?.exposedMs){amount*=!before.champion&&(before.type==='brute'||before.type==='carrier')?1.4:1.15;exposedHit=true;}
-   if(weapon&&this.recoveryGrilles===true&&this.recoveryGrilleState?.attackerId===id&&before?.meleePhase==='recovery')
-    this.resolveRecoveryGrille(true);
+   const grille=this.recoveryGrille;
+   if(weapon&&grille?.returnArcCosine!==undefined&&grille.state==='waiting'&&grille.attackerId===id&&
+    before?.meleePhase==='recovery'&&shot?.sourceX!==undefined&&shot.sourceY!==undefined){
+    const dx=shot.sourceX-before.x,dy=shot.sourceY-before.y;
+    const gx=grille.x-before.x,gy=grille.y-before.y;
+    if(dx*gx+dy*gy>=grille.returnArcCosine*Math.hypot(dx,dy)*Math.hypot(gx,gy))
+     this.resolveRecoveryGrille(true);
+   }
    let ambush=false;
    if(before&&!before.pod&&condition?.condition.id==='dark'&&!condition.ambushed.has(id)&&source!=='status'){
     condition.ambushed.add(id);
@@ -1336,7 +1342,7 @@ export class DepthGame {
     else if(pincer&&enemy?.role==='flanker')multiplier=1.1;
     else multiplier=enemy?.type==='crawler'?.42:.7;
    }
-   const n=calculateSplashDamage(b.request.damage*multiplier,distance,b.request.splashRadius);if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,n,{x:(t.x-b.x)/(distance||1)*b.request.knockback,y:(t.y-b.y)/(distance||1)*b.request.knockback},'weapon',true,b.kind==='player'?b.request.weaponId:undefined);if(r.applied){if(b.kind==='player'&&++rocketHits===2)this.completeWeaponLesson(2);if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}this.mutations.hit(cause.chainId,b.request.weaponId,t,{x:(t.x-b.x)/(distance||1),y:(t.y-b.y)/(distance||1)},b.request.primed);if(r.died)this.mutations.kill(t,'direct',cause);}}}
+   const n=calculateSplashDamage(b.request.damage*multiplier,distance,b.request.splashRadius);if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,n,{x:(t.x-b.x)/(distance||1)*b.request.knockback,y:(t.y-b.y)/(distance||1)*b.request.knockback},'weapon',true,b.kind==='player'?b.request.weaponId:undefined,b);if(r.applied){if(b.kind==='player'&&++rocketHits===2)this.completeWeaponLesson(2);if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}this.mutations.hit(cause.chainId,b.request.weaponId,t,{x:(t.x-b.x)/(distance||1),y:(t.y-b.y)/(distance||1)},b.request.primed);if(r.died)this.mutations.kill(t,'direct',cause);}}}
  private updateBullets(dt:number,previousTargets:ReadonlyMap<number,{x:number;y:number}>=new Map(),hostileScale=this.abilities.hostileTimeScale){
   const shotRadii=this.shotRadii;
   shotRadii.clear();
@@ -1378,7 +1384,7 @@ export class DepthGame {
     if(canTraverseExpedition(this.geometry,from,impact,b.request.radius))contacts.push({t,entry});
    }
    contacts.sort((a,b)=>a.entry-b.entry);
-   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry;b.y=from.y+(next.y-from.y)*entry;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry,y:from.y+(next.y-from.y)*entry,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
+   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry;b.y=from.y+(next.y-from.y)*entry;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId,b);const plateBroken=b.request.weaponId==='plasma'&&r.absorbedByArmor>0&&!this.enemies.getSnapshot(t.id)?.armor;this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry,y:from.y+(next.y-from.y)*entry,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const,plateBroken:plateBroken?true as const:undefined,exposedHit:r.exposedHit}:{})});if(plateBroken){
     const firstStrip=this.expedition.run.version===3&&!((this.expedition.run.weaponLessons??0)&1);
     this.completeWeaponLesson(1);
     if(this.node.templateId==='residential-gallery'||firstStrip&&(this.difficulty==='story'||t.id===this.platedLessonTarget)){
