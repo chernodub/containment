@@ -42,7 +42,7 @@ const CREATURE_ZONE_LEVELS: Readonly<Partial<Record<string, readonly [number, nu
 };
 import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,CREATURE_DECK_TINTS,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
-export type ActorModel={elementContact?:(element:AbilityElement)=>void;root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
+export type ActorModel={strikeSocket?:(out:T.Vector3)=>T.Vector3|undefined;elementContact?:(element:AbilityElement)=>void;root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
  /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
  syncWeaponPose?:()=>void;
@@ -228,7 +228,27 @@ export function alien(kind:string,elite=false):ActorModel{
   halo.name='elite-ground-halo';halo.rotation.x=-Math.PI/2;halo.position.y=.026;
   r.root.add(halo);
  }
- return{root:r.root,body:r.body,limbs:[],elementContact(element){
+ // Offsets use the K11 mesh bind coordinates and follow the posed joint,
+ // including the presentation-only bite extension and rank fit.
+ const sockets = new Map<string,{bone:T.Bone,local:T.Vector3}>();
+ const attach = (key:string,name:string,point?:T.Vector3) => {
+  let skin:T.SkinnedMesh|undefined;
+  r.assetRoot.traverse(o=>{if(!skin && o instanceof T.SkinnedMesh)skin=o;});
+  if(!skin)return;
+  const index=skin.skeleton.bones.findIndex(b=>b.name===name || b.name===T.PropertyBinding.sanitizeNodeName(name));
+  if(index<0)return;
+  sockets.set(key,{bone:skin.skeleton.bones[index],local:point?point.applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]):new T.Vector3()});
+ };
+ if(kind==='crawler')attach('attack','antenna_right0',new T.Vector3(1.08,-.51,.42));
+ if(kind==='stalker')attach('attack','claw.R',new T.Vector3(-1.30,-1.58,1.04));
+ if(kind==='spitter')attach('attack','jaw',new T.Vector3(4.72,0,2.62));
+ if(kind==='carrier'){attach('attack','claw.R');attach('brood','tip');}
+ if(kind==='brute'){attach('attack','fingertip.0.r');attach('ram','jaw');}
+ return{root:r.root,body:r.body,limbs:[],strikeSocket(out){
+   const key=champion==='matron' && brood>0?'brood':champion==='warden' && threatKind==='charge'?'ram':'attack';
+   const socket=sockets.get(key);
+   return socket?.bone.localToWorld(out.copy(socket.local));
+  },elementContact(element){
    contactKind=element==='cryo'?1:element==='pyro'?2:element==='arc'?3:4;
    contactLife=.62;
   },setQueuedBite(queued){surface.prime(queued?1:0);},shadeCastPeak(){castShadeTime=.18;surface.castShade(1);},setPlateOpen(open){if(kind==='brute'){surface.expose(open);surface.shedShoulder(open>=1?1:0);}},setEmissionRegion:emission.set,setBossState(stunMs,broodMs,chargeMs,specialCooldownMs=0){if(kind==='carrier')surface.prime(broodMs>0?Math.sin(Math.PI*Math.min(1,broodMs/1000)):0);if(brood>0 && broodMs===0 && specialCooldownMs>4000)broodRelease=.16;const wasStunned=bossStun>0;bossStun=Math.max(0,stunMs);bossCharge=Math.max(0,chargeMs);brood=Math.max(0,broodMs);if(bossStun>0&&!wasStunned){wallStunStartMs=bossStun;authored.player.snapNext();authored.player.sample(champion==='warden'?'m10-wall-stun':'m10-stagger',champion==='warden'?0:.4,0,0);r.body.rotation.set(0,0,0);r.body.scale.set(1,1,1);}else if(wasStunned&&bossStun===0){authored.player.snapNext();if(champion==='warden')wardenTurnRemaining=.24;}stunIndicator?.update(bossStun,attachmentHeight());if(champion==='warden')emission.set('warden-ram',bossStun>0||wardenTurnRemaining>0?2.5:chargeMs>0?2.5:windup>0?1.8*(1-Math.min(1,windup/windupDuration)):0);if(champion==='matron')emission.set('matron-vents',broodMs>0?1.5*(1-Math.min(1,broodMs/1000)):0);},get height(){return attachmentHeight();},setColliderDebug,setStageLight(strength){stageLight=strength;surface.stage(strength);identity.mesh.material.uniforms.identityStageLight.value=T.MathUtils.clamp(strength,0,1);},setDeathAge(age){if(deathCue==='acid'){terminalDissolve=Math.min(1,.10+Math.max(0,age-.04)/1.15);surface.dissolve(terminalDissolve);identity.mesh.material.uniforms.identityDissolve.value=terminalDissolve;}r.root.userData.motionDeathProgress=terminalDissolve;},dissolve(progress){const amount=Math.max(progress,terminalDissolve);surface.dissolve(amount);identity.mesh.material.uniforms.identityDissolve.value=amount;},setFlashIntensity:surface.setFlashIntensity,recoveryStagger:authored.stagger.bind(authored),setMotionVisible:authored.setVisible.bind(authored),setMotionOptions(strength,reduced){motion.setOptions(strength,reduced);authored.setOptions(strength,reduced);},setWaitingState(waiting,feintProgress,ordinary,paceSide,planted){authored.setWaitingState(waiting,feintProgress,ordinary??!champion,paceSide,planted);},setMotionSeed(seed){authored.seedWaiting(seed);motion.setSeed(seed);r.setPhase(seed);const h=Math.imul((seed|0)^0x9e3779b9,0x85ebca6b)>>>0;visualJitter=.94+.12*((h%1000)/999);fitFootprint(champion);},setAttackState(phase,progress,angle,shape){const meleeLoad=phase==='windup'?progress:phase==='strike'?1:phase==='recovery'?1-progress:0;const spitLoad=kind==='spitter' && threatKind==='spit'?.4+.6*(1-windup/windupDuration):spitFollowThrough/.10;surface.load(Math.max(meleeLoad,spitLoad));if(kind==='stalker')surface.reveal(phase==='windup'?.55+progress*.65:phase==='strike'?1.2:phase==='recovery'?.45:0);motion.setAttackState(phase,progress,angle,shape);authored.state(phase,progress);},elementalHold:()=>authored.elementalHold,corpseEffectReady:seconds=>!authored.elementalHold||seconds>=.43,terminalCue:authored.terminalCue.bind(authored),reactToElement(element,direction){authored.reactToElement(element);

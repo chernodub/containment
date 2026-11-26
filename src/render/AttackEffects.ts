@@ -54,7 +54,7 @@ else if(style>5.5 && vFrame>.5){
  float organ=1.-smoothstep(.55,1.,length(vec2((vUv.x-.10)*9.,p.y)));
  float pulse=.72+.28*sin(vShape.x*7.85);
  color=vec3(1.65,.018,.044);
- if(vFrame>1.5)color=mix(color,vec3(2.3,2.1,1.95),max(organ,1.-smoothstep(.02,.16,abs(p.y))));
+ if(vFrame>1.5)color=mix(vColor,vec3(1.9),.52*organ);
  alpha*=max(shaft*.78,organ*pulse);
 }
 else if(style>5.5){
@@ -230,6 +230,13 @@ export class AttackEffects {
  private readonly warningOrigins=Array.from({length:57},()=>new T.Vector4());
  private readonly warningSizes=Array.from({length:57},()=>new T.Vector4());
  private readonly warningTimes=Array.from({length:57},()=>new T.Vector4());
+ private lastStrikeOwner=-1;
+ private readonly strikeRight=new T.Vector3();
+ private readonly strikeAlong=new T.Vector3();
+ private readonly strikeNormal=new T.Vector3();
+ private readonly strikeBasis=new T.Matrix4();
+ private readonly strikeColor=new T.Color();
+ private readonly warningOwners=new Int32Array(57);
  private readonly warningFamilies:string[]=Array(57).fill('');
  private readonly warningParents=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
  private readonly unionCount={value:0};private readonly unionFillScale={value:1};
@@ -284,8 +291,9 @@ export class AttackEffects {
  beginPriorityActors(camera:T.Camera){this.priorityCamera=camera;}
  /** Retained caller API; no screen-space discs or approximate body cut-outs. */
  addPriorityActor(_x:number,_z:number,_radius:number,_height:number){}
- private queueWarning(x:number,z:number,radius:number,length:number,angle:number,arc:number,kind:number,progress:number,remaining:number,heavy:boolean,marineX:number,marineZ:number,marineRadius:number,family="",outlineOnly=false){
+ private queueWarning(x:number,z:number,radius:number,length:number,angle:number,arc:number,kind:number,progress:number,remaining:number,heavy:boolean,marineX:number,marineZ:number,marineRadius:number,family="",outlineOnly=false,owner=-1){
   const i=this.unionCount.value;if(i>=57||radius<=0)return;
+  this.warningOwners[i]=owner;
   this.warningFamilies[i]=family;
   this.warningOrigins[i].set(x,z,Math.cos(angle),Math.sin(angle));
   this.warningSizes[i].set(radius,length,arc,kind);this.warningTimes[i].set(progress,Math.max(0,remaining)/1000,outlineOnly?-1:heavy?1:0,0);this.unionCount.value++;
@@ -825,7 +833,7 @@ export class AttackEffects {
   }
  }
  private readonly bulletSkipPoint=new T.Vector3();
- update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined){
+ update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined,strikePosition?:(id:number)=>T.Vector3|undefined){
   if(dt<=0||this.disposed)return;
   for(let i=0;i<2&&this.wallQueue.length;i++)this.wallQueue.shift()!();
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
@@ -923,10 +931,10 @@ export class AttackEffects {
    if(this.warningVisible(x,z,radius,length,angle))this.queueWarning(x,z,radius,length,angle,shape.halfAngle,line?1:2,enemy.feintProgress,0,false,marineX,marineZ,marineRadius,enemy.type,true);
   }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
-   if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius,native.family,native.melee&&native.later);
+   if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius,native.family,native.melee&&native.later,native.id);
    if(native.brooding){
     const pod=native.secondPod;
-    if(this.warningVisible(pod.x,pod.z,radius))this.queueWarning(pod.x,pod.z,radius,0,0,0,0,pod.progress??0,native.remainingMs,true,marineX,marineZ,marineRadius,native.family);
+    if(this.warningVisible(pod.x,pod.z,radius))this.queueWarning(pod.x,pod.z,radius,0,0,0,0,pod.progress??0,native.remainingMs,true,marineX,marineZ,marineRadius,native.family,false,native.id);
    }
   }
   if(this.bossWarning){const w=this.bossWarning;if(this.warningVisible(w.x,w.z,w.radius))this.queueWarning(w.x,w.z,w.radius,0,0,0,0,w.progress,(1-w.progress)*1000,true,marineX,marineZ,marineRadius);}
@@ -934,7 +942,7 @@ export class AttackEffects {
   (this.hostileWarningMesh.material as T.ShaderMaterial).uniforms.warningMarine.value.set(marineX,marineZ);
   this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,camera),targets,actorPosition));
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,strikePosition),targets,actorPosition));
 
  }
  private drawRecovery(count:number, targets:readonly EnemySnapshot[]|undefined,actorPosition?:(id:number)=>T.Vector3|undefined):number {
@@ -955,30 +963,42 @@ export class AttackEffects {
   }
   return count;
  }
- private drawFirstLimb(count:number, targets:readonly EnemySnapshot[]|undefined, camera:T.Camera):number {
-  if(!targets) return count;
-  let first:EnemySnapshot|undefined, earliest=Infinity;
-  for(const e of targets){
-   const eta=e.meleePhase==='windup'?e.meleeRemainingMs:e.windupMs;
-   if(e.health<=0||eta<=0||eta>=earliest||(e.meleeOrder??1)>1)continue;
-   if(e.meleeOrder===1){first=e;break;}
-   const p=this.priorityPoint.set(e.x/32,.7,e.y/32).project(camera);
-   const x=p.x,y=p.y;
-   const radius=Math.abs(p.set((e.x+e.radius)/32,.7,e.y/32).project(camera).x-x);
-   for(const other of targets){
-    if(other===e||other.health<=0||(other.meleePhase!=='windup'&&other.windupMs<=0))continue;
-    p.set(other.x/32,.7,other.y/32).project(camera);
-    const dx=p.x-x,dy=p.y-y,span=radius*(1+other.radius/Math.max(1,e.radius));
-    if(dx*dx+dy*dy*.36<span*span){first=e;earliest=eta;break;}
+ private drawFirstLimb(count:number,targets:readonly EnemySnapshot[]|undefined,socket?: (id:number)=>T.Vector3|undefined):number {
+  const primary=this.primaryWarning.value;
+  const id=primary>=0?this.warningOwners[primary]:this.lastStrikeOwner;
+  const first=targets?.find(e=>e.id===id);
+  if(!first || (primary<0 && first.meleePhase!=='strike')){this.lastStrikeOwner=-1;return count;}
+  this.lastStrikeOwner=id;
+  const point=socket?.(id);
+  if(!point||count>=this.hostileWarningMesh.instanceMatrix.count)return count;
+  const mesh=this.hostileWarningMesh;
+  let angle=first.meleeAngle,originX=first.meleeOriginX/32,originZ=first.meleeOriginY/32;
+  if(primary>=0){
+   const axis=this.warningOrigins[primary];
+   angle=Math.atan2(axis.w,axis.z);originX=axis.x;originZ=axis.y;
+   if(this.warningSizes[primary].w===0){
+    angle=Math.atan2(originZ-point.z,originX-point.x);
+    originX=point.x;originZ=point.z;
    }
   }
-  if(!first)return count;
-  const mesh=this.hostileWarningMesh,angle=first.meleePhase==='windup'?first.meleeAngle:
-   Math.atan2(first.pendingAttack==='charge'?first.lockY:first.lockY-first.y,first.pendingAttack==='charge'?first.lockX:first.lockX-first.x);
-  const reach=first.radius/32;
-  this.dummy.position.set(first.x/32+Math.cos(angle)*reach*.68,.62,first.y/32+Math.sin(angle)*reach*.68);
-  this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(reach*.65,.105,1);this.dummy.updateMatrix();
-  mesh.setMatrixAt(count,this.dummy.matrix);mesh.setColorAt(count,WHITE);
+  // Join the posed tip to the native centre line on the deck. Keep the
+  // outer warning perimeter in its authoritative simulation coordinates.
+  const dx=Math.cos(angle),dz=Math.sin(angle);
+  const reach=Math.max(.35,first.radius/32*.72)+(point.x-originX)*dx+(point.z-originZ)*dz;
+  const along=this.strikeAlong.set(originX+reach*dx-point.x,.07-point.y,originZ+reach*dz-point.z);
+  const length=along.length();
+  if(length<.001)return count;
+  along.divideScalar(length);
+  const right=this.strikeRight.set(-dz,0,dx);
+  const normal=this.strikeNormal.crossVectors(along,right).normalize();
+  right.crossVectors(normal,along);
+  this.dummy.quaternion.setFromRotationMatrix(this.strikeBasis.makeBasis(along,right,normal));
+  this.dummy.position.copy(point).addScaledVector(along,length*.4);
+  this.dummy.position.y+=.04;
+  this.dummy.scale.set(length*.5,.095,1);
+  this.dummy.updateMatrix();
+  mesh.setMatrixAt(count,this.dummy.matrix);
+  mesh.setColorAt(count,this.strikeColor.setHex(first.type==='crawler'?0xffefa2:first.type==='spitter'?0xc6ff80:first.type==='carrier'?0xd1acff:first.type==='stalker'?0xadebff:0xb4e3cb));
   (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(count,2);
   (mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setX(count,1);
   (mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(count,1);
@@ -1011,7 +1031,7 @@ export class AttackEffects {
   }
   return count;
  }
- clear(){this.wallQueue.length=0;this.shooters.clear();this.activeShooters.clear();this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){this.lastStrikeOwner=-1;this.wallQueue.length=0;this.shooters.clear();this.activeShooters.clear();this.skippedRifles.fill(undefined);this.skipCursor=0;for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.wallProbe.clear();this.disposed=true;this.emptyPriorityTexture.dispose();this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
