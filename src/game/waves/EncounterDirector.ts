@@ -25,7 +25,7 @@ export type EncounterEvent = EncounterSpawn | ReserveCut
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;runStructure?:1;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;recoveryGrilles?:boolean;salvage?:boolean;runStructure?:1;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
@@ -141,7 +141,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
  const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
   group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
- const grilleLessonBeat=node.templateId==='communal-atrium'?source.findIndex(beat=>
+ const grilleLessonBeat=options.recoveryGrilles&&node.templateId==='communal-atrium'?source.findIndex(beat=>
   beat.groups.some(group=>group.family==='brute'&&!group.guardian&&!group.reinforcement)):-1;
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
@@ -202,7 +202,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
     const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
-    const escorts=others.filter(request=>!request.guardian&&(consoleExchange||!request.priority)).slice(0,consoleExchange?3:2);
+    const escorts=options.recoveryGrilles
+     ?others.filter(request=>!request.guardian&&(consoleExchange||!request.priority)).slice(0,consoleExchange?3:2):[];
     let previous=4900;
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;

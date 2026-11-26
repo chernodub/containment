@@ -137,6 +137,7 @@ export type SimOptions = {
     maxRoomSeconds?: number;
     trace?: boolean;
     readExchange?: boolean;
+    recoveryGrilles?: boolean;
     metrics?: Record<string, {
         height: number;
     }>;
@@ -214,7 +215,7 @@ export function runSimulation(options: SimOptions) {
         if (e.type === 'shot')
             camera.rig.kick(e.angle ?? 0, e.weapon === 'shotgun' ? .08 : e.weapon === 'rocket' ? .12 : .025);
     };
-    game = new DepthGame(onEffect);
+    game = new DepthGame(onEffect, null, options.recoveryGrilles);
     game.observeWeaponDamage = (weapon, family, damage, lethal) => {
         const usage = weaponUsage[weapon];
         const target = usage.families[family] ??= {damage: 0, kills: 0};
