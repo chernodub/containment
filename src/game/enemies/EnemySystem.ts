@@ -562,6 +562,31 @@ export class EnemySystem {
       }
     }
 
+    const striker=[...this.#enemies.values()].find(enemy=>enemy.type==='crawler'&&
+      (enemy.meleePhase==='windup'||enemy.meleePhase==='strike'));
+    if(striker){
+      const strikeSide=striker.meleeAngle+Math.PI;
+      for(const enemy of this.#enemies.values()){
+        if(enemy.type!=='crawler'||enemy.meleePhase!=='approach'||enemy.pod||
+          enemy.stunRemainingMs>0||enemy.speed===0||this.#launched?.(enemy.id))continue;
+        const dx=enemy.x-player.x,dy=enemy.y-player.y;
+        const radius=Math.hypot(dx,dy);
+        if(radius<1||radius>96)continue;
+        const bearing=Math.atan2(dy,dx);
+        const offset=Math.atan2(Math.sin(bearing-strikeSide),Math.cos(bearing-strikeSide));
+        if(Math.abs(offset)*radius>=28.8)continue;
+        const side=Math.abs(offset)<.05?(enemy.id%2?1:-1):Math.sign(offset);
+        for(const turn of [side,-side]){
+          const vx=-dy/radius*enemy.speed*this.#movement*turn;
+          const vy=dx/radius*enemy.speed*this.#movement*turn;
+          if(!this.#movementAllowed(enemy,enemy.x+vx*movementDelta/1000,enemy.y+vy*movementDelta/1000))continue;
+          enemy.velocityX=vx;
+          enemy.velocityY=vy;
+          break;
+        }
+      }
+    }
+
     this.#rebuildSpatialHash();
     for (const enemy of this.#enemies.values()) {
       if(enemy.speed===0||enemy.stunRemainingMs>0||enemy.pod||enemy.broodRemainingMs>0)continue;
