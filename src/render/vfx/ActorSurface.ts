@@ -258,6 +258,12 @@ if(broodFinish && (broodBody || sacPatch) && !broodMark){
  outgoingLight=mix(flatInk,vec3(.012,.010,.020),line)*actorStageLight*actorCamouflage;
  outgoingLight+=vec3(.085,.11,.15)*keyRim;
 }
+// Give the modeled shoulder bevels a quiet bone value even when their
+// outside faces turn away from the room key at the end of a stride.
+bool crawlerShoulder=crawlerSkin && (broodBand==2 || broodBand==5) &&
+                     actorPosition.x>.16 && actorPosition.x<.64 && abs(actorPosition.y)>.10;
+if(broodFinish && crawlerShoulder && !broodMark)
+ outgoingLight=vec3(.46,.395,.28)*mix(.76,1.,actorStageLight);
 if(broodFinish && broodMark){
  float frost=actorContact.x<1.5 ? actorContact.y : 0.;
  outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
