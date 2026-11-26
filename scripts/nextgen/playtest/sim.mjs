@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off']);
+const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off','exchange-marks']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
@@ -92,7 +92,7 @@ const queue = rigs.flatMap(rig => seeds.map(seed => ({ rig, seed })));
 async function worker() {
     while (queue.length) {
         const { rig, seed } = queue.shift();
-        const options = { rig, seed, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
+        const options = { rig, seed, readExchange:args['exchange-marks']!=='off', difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
         const report = workers === 1 ? runSimulation(options) : await new Promise((ok, fail) => {
             const child = spawn(process.execPath, [resolve(source,'sim-worker.mjs'), resolve(source, 'sim-core.mjs'), JSON.stringify(options)], { stdio: ['ignore', 'pipe', 'inherit'] });
             const parts = [];

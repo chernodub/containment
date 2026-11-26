@@ -337,7 +337,7 @@ export const HUMAN_PROFILES = Object.freeze({
 export const HUMAN_OBSERVATION_MS = 100;
 
 /** Shared native/sim controller. Its RNG is independent of the game seed stream. */
-export function createHumanPolicy(seed, profile = 'competent') {
+export function createHumanPolicy(seed, profile = 'competent', readExchange = true) {
   const config = HUMAN_PROFILES[profile];
   if (!config) throw Error(`Unknown human profile ${profile}`);
   let state = (seed ^ 0xb10b10) >>> 0;
@@ -356,6 +356,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
   let lastMove = -Infinity;
+  let exchangeCommitted = false, exchangeSeen = false;
   let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
@@ -409,6 +410,34 @@ export function createHumanPolicy(seed, profile = 'competent') {
       }
       perceived.human = {spacing,exactSpacing:false};
       const escape = meleeEscapePlan(perceived);
+      const marks = readExchange && profile === 'competent' ? s.drawnExchange : undefined;
+      if (!marks?.bait && !marks?.landing && !marks?.lane) exchangeCommitted = exchangeSeen = false;
+      else if (marks) {
+        const heavy = marks.lane && visible.find(enemy => enemy.type === 'brute' && distance(enemy, marks.lane.to) < 55);
+        if (heavy?.meleePhase === 'windup' && marks.bait && distance(s.player, marks.bait) <= 22) exchangeSeen = true;
+        if (heavy?.meleePhase === 'strike' || heavy?.meleePhase === 'recovery' ||
+            exchangeSeen && heavy?.meleePhase === 'windup') exchangeCommitted = true;
+        const mark = exchangeCommitted ? marks.landing : marks.bait;
+        if (mark && mark.waypoint) {
+          const atMark = distance(s.player, mark) <= 22;
+          const safe = point => !active.some(enemy => insideMeleeWarning(enemy, point)) &&
+            !visibleHazards.some(hazard => hazard.kind !== 'projectile' && distance(hazard, point) <= hazard.radius + (s.player.radius ?? 16));
+          const choices = s.candidates.filter(candidate => {
+            if (!candidate.legal || !Math.hypot(candidate.dx,candidate.dy)) return false;
+            const velocity = candidateVelocity(s,candidate);
+            return [0.04,0.08,0.12].every(t => safe({...s.player,x:s.player.x+velocity.x*t,y:s.player.y+velocity.y*t}));
+          }).sort((a,b)=>distance(a,mark.waypoint)-distance(b,mark.waypoint));
+          if ((!atMark && choices.length) || atMark && (safe(s.player) || exchangeCommitted)) {
+            const target = exchangeCommitted && atMark && heavy?.meleePhase === 'recovery' && heavy.clear ? heavy : null;
+            const preferred = s.resources?.ammo.plasma;
+            const weapon = preferred && preferred.magazine + preferred.reserve > 0 && (!target || target.armor > 0) &&
+              (!target || target.plasmaClear) ? 'plasma' : s.combat.weapon;
+            return {target, movement:atMark ? {dx:0,dy:0} : choices[0], actions:[],weapon,
+              exchangeStep:atMark ? (exchangeCommitted ? 'landing' : 'bait') : undefined,stepMs:HUMAN_OBSERVATION_MS};
+          }
+        }
+      }
+
       if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
         const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});
         movement = fixation && visible.length && !escape ? {dx:0,dy:0} : next;

@@ -129,6 +129,7 @@ export type SimOptions = {
     legacy?: boolean;
     maxRoomSeconds?: number;
     trace?: boolean;
+    readExchange?: boolean;
     metrics?: Record<string, {
         height: number;
     }>;
@@ -137,7 +138,7 @@ export type SimReport = ReturnType<typeof runSimulation>;
 /** Fight a complete earned campaign with the browser player's pure decision helpers. */
 export function runSimulation(options: SimOptions) {
     const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver(options.metrics??{});
-    const human = createHumanPolicy(options.seed, options.profile ?? 'competent');
+    const human = createHumanPolicy(options.seed, options.profile ?? 'competent', options.readExchange);
     let game: DepthGame;
     const events: Array<GameEffect & {
         at: number;
@@ -279,8 +280,15 @@ export function runSimulation(options: SimOptions) {
             const blockedByFriendlyWall=legal&&game.abilities.blocksMovement(game.player,{x,y},game.player.radius);
             candidates.push({ x, y, dx, dy, legal:legal&&!blockedByFriendlyWall, blockedByFriendlyWall, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
+        const exchange = game.manualExchange;
+        const mark = (p: {x:number;y:number}) => {
+            const screen = camera.project(p.x,p.y,.08);
+            return camera.visible(p.x,p.y) ? {...p,screen,waypoint:botWaypoint(game,p)} : undefined;
+        };
+        const landing = exchange && mark(exchange.landing), endpoint = exchange && mark(exchange.target);
+        const drawnExchange = exchange && {bait:mark(exchange.bait),landing,lane:landing&&endpoint?{from:landing,to:endpoint}:undefined};
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { drawnExchange, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
