@@ -22,6 +22,12 @@ const rigidEquipmentOwners = new Set([
   'l8-equipment', 'armory-carousel-and-issue-bay',
   'safety-recorder', 'disconnected-ai-housing', 'split-contactor-battery',
 ]);
+// These fixed equipment pieces have descriptive leaf names only.
+// Their original names remain available to collider consumers in collider parts.
+const interchangeableEquipmentParts = new Set([
+  'safety-recorder', 'disconnected-ai-housing', 'split-contactor-battery',
+  'armory-carousel-and-issue-bay',
+]);
 const sharedRoomFinishKeys = new Map<T.Material, string>(
   Object.values(MAT).map(material => [material, material.customProgramCacheKey()]),
 );
@@ -104,7 +110,7 @@ function geometryKey(geometry: T.BufferGeometry): string | undefined {
   return JSON.stringify(layout);
 }
 
-function meshKey(mesh: T.Mesh, rigidEquipment = false): string | undefined {
+function meshKey(mesh: T.Mesh, rigidEquipment = false, interchangeableNames = false): string | undefined {
   if (mesh.constructor !== T.Mesh || (!rigidEquipment && !mesh.userData.bakedEnvironment) || !mesh.visible ||
       mesh.children.length || Array.isArray(mesh.material) || mesh.material.transparent ||
       mesh.material.alphaHash || !mesh.material.depthTest || !mesh.material.depthWrite ||
@@ -118,7 +124,7 @@ function meshKey(mesh: T.Mesh, rigidEquipment = false): string | undefined {
   const layout = geometryKey(mesh.geometry), data = exactValue(mesh.userData);
   if (!layout || data === unsupported) return;
   // Retain names and userData as well as render flags; authored hooks stay valid.
-  return JSON.stringify([layout, mesh.name, data, mesh.castShadow, mesh.receiveShadow,
+  return JSON.stringify([layout, interchangeableNames ? '' : mesh.name, data, mesh.castShadow, mesh.receiveShadow,
     mesh.renderOrder, mesh.layers.mask, mesh.frustumCulled]);
 }
 
@@ -166,6 +172,7 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
     ...rigidOwners.map(parent => ({ parent, rigid: true })),
   ];
   for (const { parent, rigid } of passes) {
+    const interchangeableNames = rigid && interchangeableEquipmentParts.has(parent.name);
     const inverse = rigid ? parent.matrixWorld.clone().invert() : undefined;
     const localMatrix = (mesh: T.Mesh) => inverse ? new T.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld) : mesh.matrix;
     const finishes = new Map<string, T.Material>();
@@ -173,7 +180,7 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
     const buckets = new Map<T.Material, Map<string, Bucket>>();
     for (const object of rigid ? rigidMeshes(parent) : parent.children) {
       if (!(object instanceof T.Mesh)) continue;
-      const key = meshKey(object, rigid);
+      const key = meshKey(object, rigid, interchangeableNames);
       if (!key) continue;
       const source = object.material as T.Material;
       if (!materialKeys.has(source)) materialKeys.set(source, materialKey(source));
