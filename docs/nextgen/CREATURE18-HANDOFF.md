@@ -1293,3 +1293,37 @@ Crew Checkpoint, Pyro, fixed resolution, 300 simulation ticks per tier. The thre
 HEAVY37 and SKIN37 also match on minimum, P95 and mean draw calls for both tiers. Compared with final20, their means are higher by one draw across 37 samples. The integrated P95 submit time increased on both tiers. The captures and campaign shared the machine during the run, so these timings include host contention. Reports are in `artifacts/nextgen/{skin37-fixed-before,skin37-heavy-control,skin37-integrated}/benchmark.json`.
 
 The final production build passed. Arc, seed 1729, cleared all eight rooms with zero errors and zero runner defects in the isolated replay (`artifacts/nextgen/playtest/skin37-solo-arc/report.json`). An earlier replay during the gallery captures also cleared eight rooms with zero runtime errors, but recorded slow room preparation in Passenger Vault and Residential Gallery. The review index links all 37 native sheets and all 35 reduced sheets. The two motion strips are native only.
+
+## PALETTE38
+
+The five brood families share a desaturated violet-black carapace. The existing atlas supplies its value differences, and the SKIN37 normals, stepped key and filtered hide describe the surface. Carrier and Matron sac tissue keeps 72% of its original chroma at 76% of its former linear diffuse value. A key-side rim lifts the contour. The palette and organ paint use the existing skinned mesh draw and the native status-finish switch.
+
+The Crawler carries a rose stripe and hooks. The Spitter’s yellow-green lip connects to a narrow dorsal line. The Stalker’s ice-blue blade, head, upper back and shoulder remain marked through the folded pose. The Carrier has pink-violet sac seams and upper joint lights. The Matron adds oblique seams across the enlarged sac. Gold elite trim retains its atlas cells. The existing heavy shader and heavy assets are outside the change.
+
+The standard competent simulator cleared **9/12 Cryo and 9/12 Arc**, matching the lead’s baseline. The simulator uses the game state and does not sample the rendered colours. Seeds were 7, 11, 23, 99, 256, 512, 1024, 2025, 4096, 6561, 9001 and 65537.
+
+The folded Stalker was the limiting silhouette. Its shoulder and dorsal stripe extend the blade colour onto the upper body. A soft blue spill uses its existing ground-contact instance. Native Blackout contact and warning treatment retain priority. On the dark Relay deck most folded-blade pixels still lie in the contour, so the floor light does much of the work. The matched native frozen Crawler is visibly paler across its shell and keeps its cold hit indicator; see `artifacts/nextgen/palette38/frozen.png`.
+
+| 480×270 crowd | Crawler | Spitter | Stalker | Carrier | Visual read |
+|---|---:|---:|---:|---:|---|
+| Swarm Junction | 10/10 | 2/2 | 3/3 | 2/2 | The red sector leads from the marine. The lower blue spill separates the folded scythe from the purple deck. |
+| Relay Racks | 10/10 | 2/2 | 3/3 | 2/2 | The marine leads among the actors. The upper-right Stalker still crosses the bright rack. Locating that blade takes a second look. |
+| Crew Checkpoint | 10/10 | 2/2 | 3/3 | 2/2 | The marine stands out inside the red arc. Pink hooks and dorsal stripes stay inside the small animal silhouettes. |
+| Ordered Swarm | 10/10 | 2/2 | 3/3 | 2/2 | The facing ranks show the bite ends and blades more clearly. The marine and red warning remain distinct in the central overlap. |
+| Three Crawlers at the boots | 3/3 | — | — | — | The marine reads first. The left wind-up and lower bite are clear. The right hooks overlap the gun. |
+| Infested Workshop | 10/10 | 2/2 | 3/3 | 2/2 | The marine leads against the violet floor. Lower Stalker spill separates from the deck, while distant rear-facing Crawler hooks are tiny. |
+| Transmission Chamber | 10/10 | 2/2 | 3/3 | 2/2 | The two blue spills along the left floor separate the Stalkers from the adjacent Crawlers. The marine and red attack sector lead in the centre. |
+
+Counts are visually identified / fixture actors. The staged Swarm Junction and Crew Checkpoint rows use the same native 20-enemy fixture as their stock crowd rows. Each full crowd also contains three jade Brutes. The brood reads as one dark species in all seven scenes; red keeps its area-warning shape. A glance locates the family groups, but exact enumeration of all twenty actors takes a deliberate scan. The proof includes native crops and 480×270 full frames in colour and greyscale under `artifacts/nextgen/palette38/sheets/`.
+
+Display luma uses Rec.709 weights on the production screenshot. A separate registered G-buffer capture identifies mark pixels, the lit body plane and ivory marine plate. Mark coverage divides visible mark pixels by all visible pixels of that family. Floor spill, warning sectors and marine plate fall outside the mark denominator.
+
+| Crew Checkpoint calm | Mark area | Mark median | Lit body P90 | Marine plate P90 |
+|---|---:|---:|---:|---:|
+| Crawler | 15.5% | 158 | 91 | 194 |
+| Spitter | 16.8% | 162 | 68 | 195 |
+| Stalker | 36.5% | 139 | 56 | 194 |
+| Carrier | 19.5% | 122 | 55 | 195 |
+| Matron | 12.2% | 119 | 55 | 195 |
+
+The Stalker exceeds the 12–20% guide in the calm profile, where the whole blade is exposed. Folded Stalkers in the five unordered crowds expose only 7–8%. The broad calm blade and the floor spill in the folded pose preserve both reads. Body and mark measurements for every crowd are in `artifacts/nextgen/palette38/measure.tsv`. The weakest frames are Relay Racks (blade against machinery), Infested Workshop (rear-facing bite ends) and the boots close-up (gun over the right claw).
