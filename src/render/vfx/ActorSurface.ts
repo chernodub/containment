@@ -220,7 +220,11 @@ if(broodFinish && broodMark)outgoingLight=lanternEmission;
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
-if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
+bool contactSkin=lanternPeak<.015 && vActorRegion<6.5;
+#ifdef BROOD_PLANES
+contactSkin=contactSkin && !(broodFinish && broodMark);
+#endif
+if(actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
  float edge=smoothstep(.025,.34,actorRim);
  vec3 p=actorPosition;
@@ -233,7 +237,7 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
   energy=smoothstep(.08,.38,actorRim)*(.45+.55*smoothstep(-.62,.40,flicker));
-  accent=mix(vec3(.85,.16,.012),vec3(3.1,2.4,.95),smoothstep(.35,.88,flicker));
+  accent=mix(vec3(.98,.55,.12),vec3(3.1,2.65,1.55),smoothstep(.35,.88,flicker));
  }else if(actorContact.x<3.5){
   energy=edge*(.24+.76*smoothstep(.05,.62,sin(vein*5.+actorContact.z*8.)));
   accent=vec3(1.14,.66,1.92);
