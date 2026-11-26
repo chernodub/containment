@@ -295,7 +295,12 @@ void main(){
   float heat=exp(-age*1.0);float hot=exp(-age*4.);
   float on=smoothstep(.1,.25,age);
   emit=(vec3(3.2,1.2,.08)*speck*heat+vec3(.9,.3,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
+  float ignition=1.-smoothstep(.08,.19,age);
+  float edge=(1.-smoothstep(.018,.075,abs(r-front)))*(.35+.65*n);
+  float muzzle=(1.-smoothstep(.045,.19,r))*(1.-smoothstep(.18,.68,abs(s)));
+  emit+=ignition*(vec3(.85,.21,.018)*edge+vec3(2.5,2.05,1.25)*muzzle+vec3(.18,.035,.003)*body*step(r,front));
   alpha=soot*.62*on*(1.-smoothstep(.55,1.,k));
+  alpha=max(alpha,ignition*(.16*body*step(r,front)+.44*edge+.55*muzzle));
   base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
  }else if(m<2.5){
