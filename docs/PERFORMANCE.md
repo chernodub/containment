@@ -46,3 +46,57 @@ Regression coverage checks pure/live event equivalence, history isolation and sa
 For future device diagnosis, `window.__containmentPerformance` returns a local snapshot on demand: recent frame times, update CPU times, render-submission CPU times, frames over 50 ms, effective quality, all-pass draw calls/triangles, geometry/texture counts and context-loss state. A fixed 120-sample ring records numbers; it does not write logs, send telemetry or add gameplay UI. Render-submission timing is not GPU execution timing.
 
 No physical MacBook, Safari, or browser performance trace was available in this pass. Browser testing was not performed. First-time room construction, audio decode, driver behavior and device-specific GPU limits can still produce pauses; the changes target reproduced CPU scaling defects and identified rendering costs.
+
+## PERF42 — Safety Interlock update spikes
+
+CDP sampled the renderer thread at a requested 100 µs interval in each 15 s combat window. A User Timing marker aligned the trace clock with the native frame observer. The observer's update window includes synchronous presentation callbacks from simulation events. It excludes render submission and the bench's fixture work. Figures below are sampled milliseconds per selected frame. The first comparison uses the three slowest and three middle updates out of 56 High Pyro frames on a shared host. Inclusive rows overlap. Native built-ins can lack source coordinates.
+
+| Function and source line | Work | Slow self / inclusive | Middle self / inclusive | Excess self |
+|---|---|---:|---:|---:|
+| `checkGeometryIntersection`, Three core 23731 | Wall decal raycast | 3.044 / 6.314 | 0 / 0 | 3.044 |
+| `synthesize`, `src/game/audio/synthesis.ts:52` | Audio presentation | 2.300 / 2.414 | 0 / 0 | 2.300 |
+| `Mesh.getVertexPosition`, Three core 23467 | Wall decal raycast | 2.068 / 2.068 | 0 / 0 | 2.068 |
+| `AudioSystem.buffer`, `src/game/audio/AudioSystem.ts:316` | Audio presentation | 1.503 / 3.970 | 0 / 0 | 1.503 |
+| `Ray.intersectTriangle`, Three core 22920 | Wall decal raycast | 1.287 / 1.287 | 0 / 0 | 1.287 |
+| `createBufferSource`, via `src/game/audio/MixEngine.ts:102` | Audio presentation | 1.266 / 1.266 | 0 / 0 | 1.266 |
+| `Mesh._computeIntersections`, Three core 23563 | Wall decal raycast | 0.662 / 7.357 | 0 / 0 | 0.662 |
+| `#snapshotEnemy`, `src/game/enemies/EnemySystem.ts:739` | Simulation snapshot | 0.606 / 0.606 | 0.103 / 0.103 | 0.503 |
+| `Vector3[Symbol.iterator]`, Three core 6030 | Renderer corpse grounding | 0.485 / 0.485 | 0 / 0 | 0.485 |
+| `intersect`, Three core 56188 | Wall decal raycast traversal | 0.425 / 7.793 | 0 / 0 | 0.425 |
+
+The recurring stack is `DepthGame.update → updateBullets → AttackEffects.event → wallSurface → Raycaster`. It pays for triangle tests before discarding hits under hidden parents, then casts up to four more rays to validate a decal's support. An independent High trace reproduced the raycast and also had GC among the top sampled frames. Shader compilation and texture upload were absent from these leading stacks.
+
+For the audio owner, extend `AudioSystem.scheduleWarm` and `requestWorkerBuffer` to warm the active rig’s `handleAbility` cues before general recipes, plus all three gun variants. Key jobs by `recipe.id:variant`. Send the variant to the existing synthesis worker and use its PCM to populate `cueBuffers`. Retain the synchronous fallback for unavailable workers. In `EnemySystem.getSystemSnapshot`, investigate reusing immutable per-enemy snapshots by state revision on the full-list path before replacing the per-update freeze. Keep the readonly API and invalidate on every snapshot-visible mutation.
+
+### Renderer change and paired profiles
+
+Wall and impact decals now share a renderer-owned probe with reusable scratch vectors and hit buffers. The recursive cast prunes invisible branches before they produce hits, and standard rigid meshes get a local bounding box during room preparation. The initial ray still uses Three's geometry, side, layer rules and stable distance order. A supported mark still requires all four support points to reach a coplanar surface. A failed corner terminates the support checks immediately.
+
+The same pre-change probe occupied 10.91 ms per selected slow frame on Interlock Low and 17.05 ms on Transmission High. Low therefore shares the update spike. It showed more render-submission headroom in this sample, with a render p95 of 14.1 ms against 20.6 ms at Interlock High. The wall-probe inclusive samples averaged 7.84 → 7.10 ms per selected slow frame at Interlock High, 10.91 → 0 sampled ms at Interlock Low and 17.05 → 6.94 ms at Transmission High. A later Interlock High slow frame also contained corpse grounding in `models.ts` via precise `Box3.setFromObject`, which transforms skinned vertices on death.
+
+| Pyro room and tier | One-minute load before start → end / after start → end | Frames | Update p95 ms | Update p99 ms | Updates >8 ms | GC count / total ms |
+|---|---|---:|---:|---:|---:|---:|
+| Safety Interlock High | 25.48 → 25.41 / 21.34 → 22.55 | 56 → 27 | 10.9 → 10.0 | 27.2 → 22.2 | 7 → 4 | 15 / 57.82 → 5 / 18.74 |
+| Safety Interlock Low | 25.41 → 21.09 / 22.55 → 26.11 | 34 → 32 | 11.2 → 8.3 | 25.8 → 8.7 | 3 → 2 | 5 / 10.33 → 5 / 9.53 |
+| Transmission High | 21.09 → 22.01 / 26.11 → 22.77 | 37 → 46 | 22.5 → 17.7 | 43.6 → 43.0 | 21 → 20 | 103 / 70.56 → 109 / 65.85 |
+
+GC counts use main renderer-thread Chrome trace events inside the combat window. Maximum pauses were 23.97 → 9.45 ms, 6.54 → 5.60 ms and 10.30 → 5.69 ms respectively. No combat shaders compiled in the paired windows. The unchanged population guard flagged Interlock Low on both builds (average/median 19.76/20 → 18.94/17). The windows advanced only 1.3–2.7 simulation seconds under host contention. The proportion of Interlock High updates over 8 ms was 12.5% → 14.8%. The small cohorts and varying load leave the overall update tail unresolved. Raw profiles, frame timings, exact GC events and the attribution script are retained under `artifacts/nextgen/perf42/`.
+
+### Matched captures
+
+The 1920×1080 Safety Interlock rifle-impact pair is identical at every RGB pixel. Five shots produced four identical marks with matching positions and normals. An instrumented count in the capture recorded 512 → 504 mesh raycast entries, before Three's geometry bounds and triangle tests. The pincer pair differs at 198 pixels (0.00955%), with small local differences around the creature silhouettes. Both pairs were inspected at native crop size and 480×270. Native/480 pairs and pixel counts are retained under `artifacts/nextgen/perf42/visual/`.
+
+### Loading holds
+
+The current runner exercised Pyro seed 1729 on the frozen `94e3167d` build through three rooms, then used the same flags through thirteen rooms on PERF42. They ran serially. The candidate load was higher, so the elapsed differences are observational.
+
+| Build and room | Runner hold (s) | One-minute load start → end | Renderer preparation (s) | Assets wait (s) | Model parse / transcode (s) | Reflection (s) | Shader wait (s) | Texture uploads (ms) |
+|---|---:|---|---:|---:|---:|---:|---:|---:|
+| 94e3167d Passenger Vault | 4.39 | 24.20 → 24.67 | 3.23 | 0.86 | 0.43 / 0.32 | 2.00 | 0.03 | 7.0 |
+| PERF42 Passenger Vault | 9.05 | 29.85 → 29.36 | 4.36 | 0.81 | 0.35 / 0.22 | 3.19 | 0.07 | 7.5 |
+| 94e3167d Residential Gallery | 8.19 | 25.20 → 26.34 | 3.65 | <0.01 | 0.02 / — | 1.84 | 1.19 | 25.4 |
+| PERF42 Residential Gallery | 7.93 | 30.90 → 31.22 | 4.24 | <0.01 | 0.07 / — | 3.33 | 0.11 | 19.1 |
+
+Residential Gallery reproduced the five-second defect on the baseline. Passenger Vault crossed it in the candidate trial and also in the earlier PERF41 run on the same-era renderer at much higher load (20.03 s with Arc). The serial comparison cannot isolate a regression at matched load. Reflection capture renders six room views and builds a filtered environment map. It was the largest measured preparation phase in both rooms. Shader readiness was a secondary cost in the older Gallery run. The asset wait includes the ability asset promise, and atlas upload has no separate timer. The runner's hold includes polling/scheduling and can include the time spent saving the loading evidence, so it does not necessarily equal the renderer's preparation total.
+
+The production build passed. The PERF42 native Pyro campaign reached Safety Interlock as room 12, cleared it, and finished at the 13-room limit with zero browser or runner errors. The runner returned exit 1 for the recorded loading defects in Passenger Vault and Residential Gallery. The three-room baseline completed with zero errors and recorded the Residential Gallery loading defect. Receipts are `artifacts/nextgen/playtest/perf42-pyro/report.json` and `artifacts/nextgen/playtest/perf42-w32-load/report.json`.

@@ -30,7 +30,7 @@ export type PresentationDebug = {
  effect(event:Record<string,unknown>):void;
  step(ms:number,input:GameInput,update:(ms:number,input:GameInput)=>void):void;
 };
-export type PerformanceSample = {frame:number;update:number;render:number;hud:number;audio:number};
+export type PerformanceSample = {frame:number;updateStart:number;update:number;render:number;hud:number;audio:number};
 export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean,liveObservation=false,observePerformance?:(listener:((sample:PerformanceSample)=>void)|undefined)=>void){
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);

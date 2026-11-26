@@ -42,10 +42,10 @@ export async function attributeCpuSelf(profile, dist) {
         }
       }
       const map = maps.get(file);
-      const position = map?.originalPositionFor({
+      const position = frame.lineNumber >= 0 && frame.columnNumber >= 0 ? map?.originalPositionFor({
         line: frame.lineNumber + 1,
         column: frame.columnNumber,
-      });
+      }) : undefined;
       source = position?.source ?? '';
       // Three's bundled class methods often have generic names such as update.
       // Recover the containing class from the original, unminified core source.

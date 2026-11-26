@@ -110,7 +110,7 @@ export class DepthRenderer {
  private presentationHold=new PresentationHold();private marineDeathStarted=false; // M10
  private readonly overdriveReactions=new OverdriveReactions();
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
- private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
+ private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;this.effects.prepareWallSurfaces();const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  // M10: conservative pose-only culling; roots, warnings and actor visibility stay native.
  private actorPoseFrustum=new T.Frustum();private actorPoseMatrix=new T.Matrix4();private actorPoseBounds=new T.Sphere();
  private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
@@ -568,6 +568,7 @@ export class DepthRenderer {
    const kitWorld=this.world,changed=()=>{if(this.world!==kitWorld)return;setCeilingQuality(kitWorld,this.tier==='high');setOriginalShipKitQuality(kitWorld,this.tier==='high');const lightingStarted=performance.now();if(INTERIOR_ROOMS.has(node.templateId))this.lighting.loadRoom(kitWorld,w,h,this.roomEnvironment,node.templateId);applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);timing.phases.lightingSetup+=performance.now()-lightingStarted;staticLoaded();};
    this.kitDressing=INTERIOR_ROOMS.has(node.templateId)?attachOriginalRoomInteriors(kitWorld,t,changed,Promise.all([this.passengerVault?.ready,this.communalGarden?.ready,this.residentialGalleryEquipment?.ready]),()=>this.tier==='high',this.renderer,(phase,ms)=>{timing.phases[phase]=(timing.phases[phase]??0)+ms;}):attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,changed,this.residentialGalleryEquipment?.ready);
   }
+  this.effects.prepareWallSurfaces();
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&this.gameplayPresentationStarted&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}

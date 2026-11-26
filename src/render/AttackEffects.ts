@@ -11,7 +11,7 @@ import type {WeaponId} from '../game/combat/types';
 import type {Bullet,GameEffect} from '../DepthGame';
 import {WEAPON_APPEARANCE} from './weapons';
 import {FAMILY_IDENTITY} from './ActorIdentity';
-import {wallSurface} from './wallSurface';
+import {WallSurfaceProbe} from './wallSurface';
 import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
 import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
@@ -418,7 +418,9 @@ export class AttackEffects {
   this.feedback.flash?.({position,color,intensity:intensity*(this.options.flashIntensity??1)*(this.options.reducedMotion?.5:1),radius,duration,priority});
  }
  /** Room loads replace the rendered geometry group. Never retain its disposed predecessor. */
+ private readonly wallProbe=new WallSurfaceProbe();
  setWorld(world:T.Object3D){this.world=world;}
+ prepareWallSurfaces(){if(this.world)this.wallProbe.prepare(this.world);}
  private particle(list:Particle[],limit:number,p:T.Vector3,color:number,size:number,life:number,v?:T.Vector3,gravity=0,stretch=1){
   const cap=this.options.tier==='low'?Math.max(4,Math.floor(limit*.45)):limit;
   const item=list.length>=cap?list.shift()!:this.particleFree.get(list)!.pop()!;
@@ -654,7 +656,7 @@ export class AttackEffects {
    if(!acid){
     this.flash(p,impactColor,.7,1.8,.08,1);
     if(e.targetId===undefined){
-     const surface=this.world&&wallSurface(this.world,p,forward.clone().negate(),.3);
+     const surface=this.world&&this.wallProbe.resolve(this.world,p,forward.clone().negate(),.3);
      this.particle(this.decals,EFFECT_LIMITS.decals,surface?.supported?surface.point:new T.Vector3(p.x,.012,p.z),0x1a2224,e.weapon==='plasma'?.34:.2,18);
      const mark=this.decals[this.decals.length-1];mark.variant=e.weapon==='plasma'?1:0;mark.ground=true;mark.spin=0;if(surface?.supported)mark.wall=surface.normal;
     }
@@ -731,7 +733,7 @@ export class AttackEffects {
  /** Body-sized contact fan. No explosion atlas, ground ring or radial particle burst. */
  private wallSlam(e:GameEffect,p:T.Vector3){
   let n=new T.Vector3(e.wall!.x,0,e.wall!.y).normalize();
-  const surface=this.world&&wallSurface(this.world,p,n,.35);
+  const surface=this.world&&this.wallProbe.resolve(this.world,p,n,.35);
   if(surface){p.copy(surface.point);n=surface.normal;}
   p.addScaledVector(n,.025);
   const tangent=new T.Vector3(-n.z,0,n.x);
