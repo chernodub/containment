@@ -62,7 +62,7 @@ for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','s
 const distributionAssets={};
 for(const file of (await readdir(resolve(distRoot,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort())distributionAssets[file]=createHash('sha256').update(await readFile(resolve(distRoot,'assets',file))).digest('hex');
 const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8').then(value=>value.trim()).catch(()=>null);
-const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',options['exchange-marks']!=='off');
+const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',options['exchange-marks']==='on');
 const report = {
   profile:human.profile, humanParameters:human.config,
   label, rig, seed, difficulty, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,

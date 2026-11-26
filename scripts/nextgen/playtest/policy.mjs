@@ -337,7 +337,7 @@ export const HUMAN_PROFILES = Object.freeze({
 export const HUMAN_OBSERVATION_MS = 100;
 
 /** Shared native/sim controller. Its RNG is independent of the game seed stream. */
-export function createHumanPolicy(seed, profile = 'competent', readExchange = true) {
+export function createHumanPolicy(seed, profile = 'competent', readExchange = false) {
   const config = HUMAN_PROFILES[profile];
   if (!config) throw Error(`Unknown human profile ${profile}`);
   let state = (seed ^ 0xb10b10) >>> 0;
