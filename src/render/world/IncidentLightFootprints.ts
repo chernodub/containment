@@ -8,6 +8,10 @@ import {clipFightingDeck} from './FightingDeck';
 import {incidentPracticalColors} from './MachineEmitters';
 import {storyIncidentSource} from './Inc13StoryIncidents';
 
+// The incident is the third read after the marine and the creatures: its
+// footprint stays below the marine's own pool in every fight frame.
+const INCIDENT_LEVEL=.62;
+
 // Set exposure at the fixture, so its throw keeps the same value as the
 // combat camera moves. Narrow reflector hoods have a wider penumbra.
 const reflectorGain:Readonly<Record<string,number>>={
@@ -21,7 +25,7 @@ const reflectorGain:Readonly<Record<string,number>>={
 // Keep the softer return in the same texture and draw as the coloured throw.
 type Receiver=readonly [absorption:number,farCoverage:number,farGain:number,nearCoverage:number,nearGain:number];
 const diffuseReturn:Readonly<Record<string,number>>={
-  'breached-loading-bay':1.38,'coolant-plant':1.88,'diagnostic-gallery':1.565,
+  'breached-loading-bay':1.1,'coolant-plant':1.2,'diagnostic-gallery':1.15,
 };
 const receiverResponses:Readonly<Record<string,Receiver>>={
   'awakening-bay':[.48,.45,2.43,.75,7],armory:[.81,1,5,1,17],
@@ -108,7 +112,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   }
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:absorb?NormalBlending:AdditiveBlending,
-    opacity:absorb?1:gain,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
+    opacity:(absorb?1:gain)*INCIDENT_LEVEL,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
   material.color.multiplyScalar(diffuseReturn[room.id]??1);
   if(receiver)applyReceiverResponse(material,receiver,terminal,mounts[1]?.pin??terminal,room.id);
   material.userData.actorMaterial=true;
