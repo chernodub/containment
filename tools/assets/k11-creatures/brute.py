@@ -72,15 +72,25 @@ def surface_zones(sculpture, centers):
             paint = 8
         elif isinstance(prim, S.ShellBand) and prim.plate != UNDER:
             local = (points - prim.c) @ prim.R
-            paint = np.where(local[:, 2] < -.58 * prim.drop, 3,
+            paint = np.where(local[:, 2] < -.42 * prim.drop, 3,
                              np.where(abs(local[:, 0]) > prim.half - prim.bev * 1.6, 2, 1))
-        elif prim.plate in (76, 80, 81, 82, 83):
-            paint = 6
-        elif prim.plate != UNDER and prim.zone == FLESH:
-            lo, hi = prim.bounds()
-            paint = np.where(points[:, 2] > (lo[2] + hi[2]) * .5, 4, 5)
-        # Adjacent pieces of flesh share their ink region. Armour and digits have separate outlines.
-        region = i + 1 if isinstance(prim, S.ShellBand) or prim.plate in (50,51,52,76,80,81,82,83,450,451,452) else 0
+        elif prim.zone == FLESH and prim.plate != UNDER:
+            # Cross-section in a fixed dorsal/lateral direction. Along a
+            # sloping shin the dividing plane follows the shaft to the ankle.
+            side = np.sign(points[:, 1].mean())
+            dorsal = v3((.22, -.50 * side, 1))
+            if isinstance(prim, (RoundCone, S.Prism)):
+                length = prim.b - prim.a
+                t = np.clip((points - prim.a) @ length / (length @ length), 0, 1)
+                offset = points - prim.a - t[:, None] * length
+                radius = prim.ra if isinstance(prim, RoundCone) else prim.r0
+            else:
+                lo, hi = prim.bounds()
+                offset = points - (lo + hi) * .5
+                radius = (hi[2] - lo[2]) * .5
+            height = offset @ dorsal / max(radius, .01)
+            paint = np.where(height > .40, 4, np.where(height > -.45, 5, 0))
+        region = i + 1 if prim.plate != UNDER else 0
         result[mask] = region * 16 + paint
     return result
 

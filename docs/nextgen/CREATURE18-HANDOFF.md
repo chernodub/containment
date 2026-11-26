@@ -1741,3 +1741,80 @@ The native socket comparison matched all 448 samples. The matched 180-tick Crew 
 The 120 annotated sheets are linked from `artifacts/nextgen/brood41/index.html`. Eleven additional sheets exercise the sibling HEAVY42 models, authored zones and ink with this status pass in a disposable compatibility build. Both builds rendered the status fixtures with zero browser errors. A native freeze attempt staggers the resistant Warden. The separately labelled renderer-only frozen Warden sample exercises the full frozen finish. Its jaw, hands and dark underside remain visible.
 
 The three weakest reads are Relay Racks (rail occlusion), the Carrier from behind in Swarm Junction (busy seam detail above feet on a dark pipe), and the Napalm centre (overlapping Crawlers). The native production Pyro run on seed 1729 cleared all eight rooms with zero errors. The runner returned status 1 for four room-loading diagnostics. An earlier attempt exhausted temporary disk space and another timed out during screenshot capture under load. The completed campaign is `artifacts/nextgen/playtest/brood41-shipped-pyro/index.html`.
+
+## HEAVY43 — shadows on the limbs and planted Warden claws
+
+Each limb is painted in its own bind-space cross section. The exporter projects a face centre onto the tapered shaft and measures the offset toward a fixed dorsal direction. That places the light patch along the shaft through the pose. The underside meets a near-black joint. Shell crowns retain their own top, narrow leading edge and darker flank. The shader changes only the heavy paint palette and the heavy ink width calculation in ActorSurface. The Brutes retain a cool grazing edge and the Warden retains the warm throat. The small-family and status branches have an empty diff.
+
+The Warden's fore and hind supports use a rounded heel, an inclined wedge through the instep and three splayed toes. The first native lineup showed only pinpoints of bone. Extending the bone back to the knuckle makes the toes countable in profile. In the packed mesh, the seam filter follows edges actually shared by faces with different zone IDs, including borders between primitives. It rounds their vertices with a five-tap filter, pins three-way junctions and caps displacement at the shorter edge. Ink width is measured perpendicular to each screen-space edge. Some large polygons still show corners in close-up. All four packed meshes have zero triangles spanning multiple zone IDs.
+
+| Native measurement | HEAVY42 | HEAVY43 |
+|---|---|---|
+| Joints and rig fingerprint | 63, `144d320c6cae75d7` | 63, `144d320c6cae75d7` |
+| Public height, Brute / elite / Warden, m | 3.030 / 3.272 / 4.500 | 3.030 / 3.272 / 4.500 |
+| Drawn height in lineup, same order, m | 2.82 / 3.33 / 4.45 | 2.82 / 3.33 / 4.45 |
+| Simulation contact radius, same order | 42.90 / 55.77 / 64.00 | 42.90 / 55.77 / 64.00 |
+| Motion bank | 38 clip durations | 38 identical durations |
+| Embedded model animations | 12 clip durations | 12 identical durations |
+
+The native Warden's visible bounds in the lineup changed from 4.16 × 3.54 m to 4.12 × 3.43 m across and along the floor. Its slimmer contacts produce this difference. The simulation diff against `a88be35e` is empty.
+
+| Warning / release / recovery / ready (ms) | HEAVY42 | HEAVY43 |
+|---|---|---|
+| Brute | 17 / 733 / 850 / 1167 | 17 / 733 / 850 / 1167 |
+| Elite Brute | 17 / 683 / 817 / 1083 | 17 / 683 / 817 / 1083 |
+| Warden | 17 / 883 / 1300 / 2800 | 17 / 883 / 1300 / 2800 |
+
+The native pairs show HEAVY42 on the left and HEAVY43 on the right. The 480×270 images show HEAVY43. The comparison index is `artifacts/nextgen/heavy43/sheets/index.html`. Each row below names a pair under that directory, with suffixes `-native.png` and `-480.png`. Measurements are in `heavy43/rig.txt`, `clip-times.txt`, `embedded-clip-times.txt`, `heavies/trio.json`, `timings/manifest.json` and `simulation.diff` under `artifacts/nextgen`.
+
+| Sheet | At game scale |
+|---|---|
+| `lineup-colour` | The two sage ranks recede behind the marine's light pool. The Warden's rust shell is distinct from its bone sail. |
+| `lineup-grey` | Sail, masks and jaw separate from the mid-value crowns, and the near Warden forelimb has a dark underside. |
+| `lineup-silhouette` | The Warden's three near toes break the outline. Its long jaw and low body distinguish it from the Brutes. |
+| `marine-brute` | The marine has the brighter plates. The Brute repeats the light top and dark joint on the forearm. |
+| `marine-brute-grey` | The skull is the lightest Brute shape. The small arm-side step is visible between the outlined wrist and elbow. |
+| `marine-elite-brute` | The yoke and mask interrupt the dark green shoulder. The marine's gold crown still stands out. |
+| `marine-elite-brute-grey` | The brighter yoke crosses a dark flank, with the guard and wrist a separate pair of values below. |
+| `marine-warden` | The near forearm has a rust top and olive underside. Three bone claws project from the rounded instep. |
+| `marine-warden-grey` | The sail and jaw stay lighter than the shell. The marine has more internal detail, particularly at the wrist. |
+| `brute-calm` | The mask is the first light shape. Two sage shoulder crowns stand over a near-black belly. |
+| `brute-windup` | Daylight inside the cocked arm survives. The lifted fist is mostly shadow against the deck. |
+| `brute-release` | The back stripes cross the red sector cleanly. The pale marine overlaps the lowered head. |
+| `brute-recovery` | The raised back and trailing hand give a different outline. The dark side hides much of the near wrist. |
+| `brute-behind` | The light mask projects above the back. The two dark hind legs separate against the lit floor. |
+| `brute-side` | A dark elbow interrupts the sage forearm, and the skull points across the floor toward the marine. |
+| `brute-walk` | The sage bands roll over the dark support. The front wrist reads most clearly with the hand extended. |
+| `elite-brute-calm` | The horn and skull lead the eye, with a dark shoulder socket under the wider crown. |
+| `elite-brute-windup` | The cocked fist stays outside the torso. The paired horns frame the mask above the red arc. |
+| `elite-brute-release` | The pale horn crosses the darker flank as the arm sweeps outward. The warning sector remains visible. |
+| `elite-brute-recovery` | The forearm reaches toward the marine below the back. The gold ring is uninterrupted on the near side. |
+| `elite-brute-behind` | Broad shoulder tops frame the spine. Only the upper edge of the skull and swept horn show past them. |
+| `elite-brute-side` | The horn crosses the dark shoulder and leads to the skull. The forearm is darker than the crown. |
+| `elite-brute-walk` | The horn crosses the lit shoulder during the weight shift. The dark forearm stays separate from it. |
+| `warden-calm` | The sail crosses the dark neck. The rust top follows the forearm down to the pale claws. |
+| `warden-windup` | The straight bone keel points between planted hands, each tipped with three claws against the red capsule. |
+| `warden-release` | The leading jaw and bright throat clear the dark chin. The near claw tips read against the deck. |
+| `warden-recovery` | The marine overlaps the head. The open jaw is harder to isolate here than during the actual wall stun. |
+| `warden-behind` | The bone crest leads up toward the marine. The dark supports separate, though the rearward cheek covers the throat. |
+| `warden-side` | The long jaw, throat, rust forearm and near splayed foot each have their own outline in profile. |
+| `warden-walk` | The heel lifts away from the three toe ends. The light on the forearm stays attached to the moving form. |
+| `cycle-calm` | The Warden stands on splayed claws. The bright throat sits at the right of the open jaw. |
+| `cycle-charge-windup` | The red capsule is clear between the planted supports. Bone sail and shoulder cap overlap from this angle. |
+| `cycle-charge` | The prow leads up-left. The dark elbow and lighter guard separate on the driving forelimb. |
+| `cycle-wall-stun` | The exposed throat sits left of the brackets. The nearer bent support has a dark side against the red marker. |
+| `cycle-recovery` | The lower jaw hangs out past the warm slot. The planted far foot overlaps the marine and its marker. |
+| `cycle-death` | The roll exposes the belly, and the toes project off the deck. The face rotates away. |
+| `cycle-ragdoll` | The dark belly dominates and one clawed limb breaks the silhouette. The throat is occluded on the settled corpse. |
+| `relay-impact` | The warm opening sits under the reticle. Impact light flattens the rust value briefly, but the chin, brackets and marine remain visible. |
+| `crowd-swarm-junction` | The marine wins the light pool. Skull and band tops still locate the three darker bodies on purple steel. |
+| `crowd-crew-checkpoint` | The marine and red sector read first. The rear Brute's feet merge into one dark shape at this distance. |
+| `crowd-relay-racks` | The marine and red sector remain distinct on teal. The rear Brute's dark limbs merge with the rack bars. |
+| `brute-frozen` | Pale caps and straight front limbs distinguish the frozen body. The skull and health bars stay clear. |
+| `brute-chilled` | Blue-grey accents and the bent posture leave the darker back and skull readable amid the chill effects. |
+| `brute-burning` | Orange cuts across the lower two Brutes. The dark bands interrupt it and the skulls remain distinct. |
+| `brute-shocked` | Violet contacts stand out against the lower Brute's dark limbs, and the brighter marine remains easy to locate. |
+
+The weakest three live reads are the Warden pose-fixture recovery, where the marine occludes the mouth, the rear Brute in the teal Relay Racks crowd, where its support blends into the rack bars, and the Brute windup, where the outline carries more information than the shadowed fist. The red warnings, skull plates, health bars and status colours remain readable in the paired shots.
+
+The production build passed. The seed-1729 native Breacher campaign cleared all nine rooms, including Relay Racks, with zero errors and zero recorded defects. Residential Gallery had the only loading hold above five seconds, at 5,770 ms. Its report and shutter impact are under `artifacts/nextgen/playtest/heavy43-breacher/`. The full title and card run refreshed the Warden title cast and twelve heavy route and lesson cards. The committed title composite uses the existing background, fog and foreground layers.

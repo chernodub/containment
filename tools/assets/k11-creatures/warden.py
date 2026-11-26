@@ -2,7 +2,7 @@
 jade shell bands under a tall bone sail along the spine ridge, heavier forequarters, and a head built around an
 open jaw (bone prow on the upper jaw, a dark lower jaw on visible cheek hinges, dark teeth across a lit throat)."""
 
-from heavy_support import planted_hand, sole
+from heavy_support import warden_foot
 import math
 
 from sdf import AnglePlate, Ellipsoid, Prism, RoundCone, ShellBand, frame, normalize, v3, ARMOR, FLESH, CREST, ORGAN
@@ -58,13 +58,13 @@ def build(sk, a):
                         zone=ARMOR, bone="chest", plate=JADE + 9, hard=1.0))
         lobe(wr, (.72, .76, .49), "chest", k=.05)
         fist = wr + v3((.45, .02 * s, -.10))
-        planted_hand(w, fist, "chest", 1.16)
+        warden_foot(w, fist, "chest", 1.72, 1.12, .68)
         # hind legs: thigh, dark knee, shin, dark foot
         hip, knee, foot = v3((-2.95, 1.05 * s, 4.25)), v3((-2.55, 1.75 * s, 2.65)), v3((-3.05, 1.95 * s, .50))
         w.add(RoundCone(hip, knee, .95, .74, zone=FLESH, bone=f"leg.back.{side}", k=.15, plate=JADE + 6))
         w.add(Ellipsoid(knee, (.76,) * 3, zone=FLESH, bone=("blend", f"leg.back.{side}", f"foot.back.{side}", hip, foot), k=.04, plate=UNDER))
         w.add(RoundCone(knee, foot + v3((0, 0, .2)), .66, .52, zone=FLESH, bone=f"foot.back.{side}", k=.06, plate=JADE + 6))
-        sole(w, foot + v3((.38, 0, -.06)), f"foot.back.{side}", (1.12, .73, .31))
+        warden_foot(w, foot + v3((-.40, 0, -.06)), f"foot.back.{side}", 1.70, .76, .49)
     # --- neck: narrow and dark from the chest to the jaw hinge, a crease back to the leading shoulders ---------------
     w.add(RoundCone((1.70, 0, 5.55), (3.05, 0, 5.80), .82, .66, zone=FLESH,
                     bone=("blend", "chest", "head", (1.7, 0, 5.5), (3.1, 0, 5.8)), k=.10, plate=UNDER))

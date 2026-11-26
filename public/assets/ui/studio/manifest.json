@@ -2392,7 +2392,7 @@
   },
   "lesson-brute": {
     "file": "lesson-brute.webp",
-    "bytes": 12788,
+    "bytes": 12926,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2454,7 +2454,7 @@
   },
   "lesson-warden": {
     "file": "lesson-warden.webp",
-    "bytes": 13012,
+    "bytes": 12800,
     "shot": {
       "width": 640,
       "height": 360,
@@ -2543,7 +2543,7 @@
   },
   "route-passenger-vault": {
     "file": "route-passenger-vault.webp",
-    "bytes": 14842,
+    "bytes": 13808,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2694,7 +2694,7 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 25112,
+    "bytes": 24068,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2719,7 +2719,7 @@
   },
   "route-relay-racks": {
     "file": "route-relay-racks.webp",
-    "bytes": 19218,
+    "bytes": 18358,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2770,7 +2770,7 @@
   },
   "route-diagnostic-gallery": {
     "file": "route-diagnostic-gallery.webp",
-    "bytes": 16032,
+    "bytes": 14874,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -2970,7 +2970,7 @@
   },
   "route-manual-control-chamber": {
     "file": "route-manual-control-chamber.webp",
-    "bytes": 14216,
+    "bytes": 13258,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3092,7 +3092,7 @@
   },
   "route-warden-cache": {
     "file": "route-warden-cache.webp",
-    "bytes": 38176,
+    "bytes": 36544,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3780,7 +3780,7 @@
   },
   "route-protected-passage": {
     "file": "route-protected-passage.webp",
-    "bytes": 11458,
+    "bytes": 10704,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -3828,7 +3828,7 @@
   },
   "route-plate-breaker": {
     "file": "route-plate-breaker.webp",
-    "bytes": 31002,
+    "bytes": 29952,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4048,7 +4048,7 @@
   },
   "route-threat-brute": {
     "file": "route-threat-brute.webp",
-    "bytes": 11458,
+    "bytes": 10714,
     "shot": {
       "width": 1120,
       "height": 476,
@@ -4088,7 +4088,7 @@
   },
   "route-threat-warden": {
     "file": "route-threat-warden.webp",
-    "bytes": 10292,
+    "bytes": 9622,
     "shot": {
       "width": 1120,
       "height": 476,

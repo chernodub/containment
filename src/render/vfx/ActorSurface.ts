@@ -8,7 +8,8 @@ const creatureHide = `
 varying vec3 vPlateEdge;
 varying float vHeavyZone;
 float heavyInk(){
-  vec3 distancePx=vPlateEdge/max(fwidth(vPlateEdge),vec3(.00001));
+  vec3 dx=dFdx(vPlateEdge), dy=dFdy(vPlateEdge);
+  vec3 distancePx=vPlateEdge/max(sqrt(dx*dx+dy*dy),vec3(.00001));
   return 1.-smoothstep(.22,.78,min(distancePx.x,min(distancePx.y,distancePx.z)));
 }
 #endif
@@ -230,11 +231,13 @@ float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 #ifdef BRUTE_PLANES
 if(actorBroodForm.x>=-1.){
-  vec3 middle=mix(vec3(.050,.074,.048),vec3(.108,.055,.031),actorWarden);
-  vec3 crown=mix(vec3(.094,.147,.098),vec3(.187,.101,.060),actorWarden);
-  vec3 paint=vec3(.020,.024,.015);
+  vec3 middle=mix(vec3(.023,.036,.024),vec3(.044,.025,.016),actorWarden);
+  vec3 crown=mix(vec3(.061,.096,.065),vec3(.116,.060,.034),actorWarden);
+  vec3 paint=vec3(.008,.011,.008);
   if(heavyPaint==1.)paint=crown;
-  if(heavyPaint==2. || heavyPaint==4. || heavyPaint==6.)paint=middle;
+  if(heavyPaint==5. || heavyPaint==3.)paint=middle;
+  if(heavyPaint==2. || heavyPaint==6.)paint=middle;
+  if(heavyPaint==4.)paint=mix(middle,crown,.54);
   if(heavyPaint==7.)paint=vec3(.49,.435,.337);
   if(heavyPaint==8.)paint=vec3(.275,.236,.172);
   if(heavyPaint==9.)paint=vec3(5.9,3.85,1.50);
