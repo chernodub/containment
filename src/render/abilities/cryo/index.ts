@@ -127,6 +127,7 @@ class CryoPresentation implements AbilityPresentation {
           size, size * (wave.shatter ? 3.6 : 2.7), size * .8, i % 3 ? ICE : CORE, fade * .85, angle + Math.sin(seed * 2.3) * .55, .1 + Math.sin(seed) * .12);
 
       }
+      if (wave.aftermath) this.obstacleCrystals(wave.x, wave.z, radius, localYield);
       if (wave.aftermath) {
         // Crystal spikes erupt from the deck where the front passes, in leaning clusters, then sink.
         const clusters = k.low ? 6 : 16, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
@@ -269,10 +270,28 @@ class CryoPresentation implements AbilityPresentation {
       k.draw('shard', px + .16, h * .33, pz, .105, h * .70, .09, CORE, fade, angle, -.16);
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
+    this.obstacleCrystals(x, z, front, fade);
     this.frostRims(zone, frame, fade * .85);
     k.impact();
   }
 
+
+  private obstacleCrystals(x: number, z: number, radius: number, opacity: number): void {
+    const k = this.kit;
+    let clusters = 0;
+    for (const rect of k.fx.blockers) {
+      const px = Math.max(rect.x / UNIT, Math.min(x, (rect.x + rect.width) / UNIT));
+      const pz = Math.max(rect.y / UNIT, Math.min(z, (rect.y + rect.height) / UNIT));
+      const dx = x - px, dz = z - pz, d = Math.hypot(dx, dz);
+      if (d < .01 || d + .18 > radius) continue;
+      const angle = Math.atan2(dz, dx);
+      k.draw('shard', px + dx / d * .18, .34, pz + dz / d * .18,
+        .21, .72, .14, ICE, opacity, angle, .31);
+      k.draw('shard', px + dx / d * .32, .29, pz + dz / d * .32,
+        .10, .58, .08, CORE, opacity, angle, -.18);
+      if (++clusters >= (k.low ? 2 : 4)) break;
+    }
+  }
 
   private frostRims(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
     const geometry=frame.game?.geometry;
