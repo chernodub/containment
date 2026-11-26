@@ -202,12 +202,12 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  float energy;
  vec3 accent;
  if(actorContact.x<1.5){
-  energy=edge*(.38+.62*smoothstep(-.45,.48,vein))*(.58+.42*limb);
+  energy=smoothstep(.17,.49,actorRim)*smoothstep(-.20,.62,vein)*(.20+.80*limb);
   accent=vec3(.59,1.44,1.68);
  }else if(actorContact.x<2.5){
   float flicker=sin(vein*3.+p.z*1.7-actorContact.z*6.);
-  energy=edge*(.34+.66*smoothstep(-.62,.40,flicker));
-  accent=mix(vec3(.85,.16,.012),vec3(1.9,.96,.16),smoothstep(.35,.88,flicker));
+  energy=smoothstep(.08,.38,actorRim)*(.45+.55*smoothstep(-.62,.40,flicker));
+  accent=mix(vec3(.85,.16,.012),vec3(3.1,2.4,.95),smoothstep(.35,.88,flicker));
  }else if(actorContact.x<3.5){
   energy=edge*(.24+.76*smoothstep(.05,.62,sin(vein*5.+actorContact.z*8.)));
   accent=vec3(1.14,.66,1.92);
@@ -217,7 +217,16 @@ if(actorContact.y>0. && lanternPeak<.015 && vActorRegion<6.5){
  }
  // Faceted armour can face the camera squarely. Leave a broken contact
  // patch on those planes too, particularly on the outer joints.
+#ifdef BRUTE_PLANES
+ if(actorContact.x<1.5 && !wardenMaw){
+  float top=smoothstep(.18,.77,inverseTransformDirection(normal,viewMatrix).y);
+  vec3 plateIce=mix(vec3(.025,.071,.12),vec3(.28,.46,.54),top);
+  outgoingLight=mix(outgoingLight,plateIce,actorContact.y*.87*safe);
+  energy=edge*smoothstep(-.15,.60,vein)*.60;
+ }
+#endif
  float deposit=smoothstep(.48,.94,vein)*(.25+.52*limb);
+ if(actorContact.x<1.5)deposit*=.12;
  outgoingLight+=accent*max(energy,deposit)*safe*actorContact.y*(1.55+.45*actorFlashIntensity);
  if(actorContact.x>1.5 && actorContact.x<2.5){
   // The pale centre of a live coal follows the skin even as a limb turns

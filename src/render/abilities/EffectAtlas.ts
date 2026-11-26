@@ -158,6 +158,7 @@ export const TEXTURED_FIRE_GLSL = `
   float tip=smoothstep(.6,.72,t+.08*sin(signedSide*3.+seed));
   c=mix(vec3(.38,.068,.002),vec3(1.65,.40,.009),body);
   c=mix(c,vec3(2.4,1.72,.38),tip*body);
+  if(phase>=${POOL_FLAME_PHASE}.)c=mix(vec3(.045,.019,.009),vec3(.68,.18,.015),body*(.5+.5*t));
  }
  a*=coverage;
  // Every path hides all four card edges, including the source end of a jet.

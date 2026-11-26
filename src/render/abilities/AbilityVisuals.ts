@@ -95,7 +95,11 @@ export class AbilityVisuals extends AbilityGeometry {
                 material.stencilWrite = protect !== 0 && !(protect === 1 && material === this.kit.ribbons.mesh.material);
                 material.stencilFunc = T.EqualStencilFunc;
                 material.stencilRef = 0;
-                material.stencilFuncMask = material === this.kit.batches.contact.mesh.material ? 2 : protect;
+                // The flame shader clips floor fire against the actor mask. Its
+                // joint-bound ember shares that draw and must reach the skin.
+                const bodyContact = material === this.kit.batches.contact.mesh.material ||
+                    material === this.kit.batches.flame.mesh.material;
+                material.stencilFuncMask = bodyContact ? protect & 2 : protect;
             }
         }
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
@@ -104,7 +108,10 @@ export class AbilityVisuals extends AbilityGeometry {
         if (visible) for (const zone of snapshot?.zones ?? []) if (zone.ability === 'whiteout' && zone.remainingMs > 0) {
             this.kit.rings.setColdDominance(zone.x / 32, zone.y / 32, zone.radius / 32); break;
         }
-        if (game) this.kit.fx.blockers = game.geometry.blockers;
+        if (game) {
+            this.kit.fx.blockers = game.geometry.blockers;
+            this.kit.fx.enemies = game.enemies.snapshot.enemies;
+        }
         this.kit.begin(dt);
         super.update(visible ? snapshot : undefined, dt, visible);
         const f = this.frame;

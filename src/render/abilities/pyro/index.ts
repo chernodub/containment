@@ -323,12 +323,13 @@ class PyroPresentation implements AbilityPresentation {
         kit.draw('contact',hx+side*dz/distance*.22,hit.y+.16,hz-side*dx/distance*.22,
           .12,.24,1,HOT,(1.-age)*.88,0,side*.72,900+age);
       }
-      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, fade, this.source.y, this.source.x, this.source.z, p.age <= .15);
+      const tongueOpacity = fade * (.16 + .84 * Math.max(0, 1 - Math.max(0, p.age - .045) / .15));
+      kit.fireFan(p.x, p.z, p.range, p.angle, p.arc, tongueOpacity, this.source.y, this.source.x, this.source.z, p.age <= .15);
       kit.impact();
     }
     // Compact white-yellow muzzle core, only for the first beats.
-    if (p.age < .2) {
-      const k = 1 - p.age / .2;
+    if (p.age < .055) {
+      const k = 1 - p.age / .055;
       kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .68 * k + .16, .46 * k + .12, 1, 0xfff9e9, k);
       kit.draw('spark', this.source.x + c * .4, this.source.y, this.source.z + s * .4, .5 * k, .14 * k, 1, 0xffd27a, .8 * k, 0, -p.angle);
     }
@@ -534,7 +535,7 @@ class PyroPresentation implements AbilityPresentation {
         target = Math.max(target, Math.min(1, (1.22 - clearance) / .4));
       }
       const previous = pool?.weight[i] ?? target;
-      const step = Math.max(0, frame.dt) / .15;
+      const step = Math.max(0, frame.dt) / (target > previous ? .045 : .18);
       const weight = previous + Math.min(step, Math.max(-step, target - previous));
       if (pool) pool.weight[i] = weight;
       const height = ((napalm ? .18 + 1.45 * scatter * scatter : .40 + .66 * scatter) + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);

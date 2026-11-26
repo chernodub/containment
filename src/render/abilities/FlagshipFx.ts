@@ -173,6 +173,20 @@ void frostBed(vec2 p,float r,float front,float age,bool storm,out vec3 base,out 
  alpha=bed*mix(.16,.42,peak)*(.82+.28*crust);
  base=mix(vec3(.010,.029,.045),vec3(.115,.228,.245),crust*facet);
  emit=vec3(.027,.063,.075)*crust*(1.-facet)*bed+vec3(.045,.112,.134)*ridge;
+ if(storm){
+  vec2 lee=vec2(.76,-.34);
+  float shelter=smoothstep(.08,.68,clear-deckClearance(p-lee));
+  float drift=fxFbm(vec2(p.x*.42+p.y*.28,p.y*1.24)+wind*.28);
+  float deposit=smoothstep(.58,.72,drift+shelter*.30);
+  alpha*=mix(.045,1.,deposit);
+  emit*=deposit;
+ }else{
+  float band=(1.-smoothstep(.18,1.0,back))*bed;
+  float glint=pow(max(0.,sin(p.x*3.7+p.y*6.8+fxTime*9.)),20.)*smoothstep(.55,.63,grain);
+  alpha*=mix(.48,1.,band);
+  base*=mix(.36,1.,band);
+  emit=emit*.35+band*crust*(vec3(.09,.24,.31)+vec3(.36,.48,.55)*glint);
+ }
 }
 void burnSurface(float distanceToEdge,vec2 p,out vec3 base,out vec3 emit,out float alpha){
  // All pools sample the same deck coordinates, including at ownership seams.
@@ -331,16 +345,16 @@ void main(){
   }else{
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
-   vec3 tile=fxCells(p*vec2(.81,1.12)+grit*.27);
+   vec3 tile=fxCells(vec2(p.x*.45+p.y*.28,p.y*.87)+vec2(grit,fxNoise(p*.63))*.89);
    float face=smoothstep(.012,.11,tile.y-tile.x);
    float bank=1.-smoothstep(0.,.65,abs(deckClearance(fxWorld.xz)));
    float back=front-r-(1.-tile.z)*(.42+.72*bank);
    float material=smoothstep(-.015,.13,back);
    float dust=smoothstep(.33,.70,grit+tile.x*.12);
-   base=mix(vec3(.036,.021,.013),vec3(.12,.092,.059),face*(.2+.8*tile.z));
-   base+=vec3(.035,.022,.010)*dust;
+   base=mix(vec3(.006,.010,.015),vec3(.041,.054,.060),face*tile.z);
+   base+=vec3(.013)*dust;
    emit=vec3(.17,.085,.023)*(1.-face)*smoothstep(.29,.65,grit)*material;
-   alpha=.42*material*(.83+.28*dust);
+   alpha=material*(.08+.31*smoothstep(.28,.84,r/max(.001,front))*smoothstep(.27,.7,grit));
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
   float settle=fxParam<1.5?1.-smoothstep(.17,.46,age)
@@ -515,25 +529,25 @@ void main(){
    float warningDistance=texture2D(abilityPriorityMap,priorityClip.xy/priorityClip.w*.5+.5).g;
    fissure*=mix(.5,1.,smoothstep(.08,.29,abs(warningDistance-.5)));
    #endif
-   float heat=.5+.5*sin(t*3.-r*1.4+cell.z*4.);
    float peak=1.-smoothstep(.16,.25,age);
    float normalized=r/R;
    float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
    float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
    float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
-   float radial=abs(sin(a*5.+.60*n+.26*sin(r*2.)));
-   float finger=(1.-smoothstep(.018,.10,radial))*(1.-smoothstep(.91+n*.10,1.14,normalized));
-   float cracks=fissure*crust+finger*smoothstep(.42,.83,normalized);
    float rays=pow(abs(cos(a*5.+.28*n)),12.);
    float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
    float core=(1.-smoothstep(.14,.55,r))*peak;
    float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
-   float skin=smoothstep(.30,.68,lava+cell.z*.16);
+   float skin=smoothstep(.34,.60,lava+.12*cell.z);
+   float cracks=fissure*crust*(1.-smoothstep(.34,.48,lava));
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
-   base=mix(vec3(.25,.081,.012),vec3(.033,.017,.012),skin);
-   emit=vec3(.42,.093,.006)*crust*(1.-skin)+vec3(.67,.21,.018)*(cracks*.75+ember*.48);
+   base=mix(vec3(.13,.038,.013),vec3(.014,.018,.021),skin);
+   float cooling=mix(1.,.30,smoothstep(.045,.20,age));
+   emit=cooling*(vec3(.27,.060,.005)*crust*(1.-skin)+vec3(.43,.13,.013)*(cracks*.75+ember*.48));
    emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
-   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.20*cracks+.12*ember;
+   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
+   float foothold=smoothstep(.24,1.18,r+.13*n);
+   alpha*=foothold;emit*=mix(foothold,1.,peak);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
@@ -570,6 +584,10 @@ void main(){
  // Ground sheets keep a flat, quiet tint underneath the warning.
  // These depth-tested deck decals are sorted below the hostile warnings.
  // The exact actor depth silhouettes supply coverage, including at the feet.
+ if(m>13.5 && m<14.5 && fxArc<1.5){
+  float margin=1.-smoothstep(.02,.9,max(prioritySample.r,prioritySample.b));
+  alpha*=margin;emit*=margin;
+ }
  if((m>3.5 && m<4.5 && fxParam>.5)||(m>13.5 && m<14.5 && fxArc<2.5))prioritySample=vec4(0.);
  bool groundSheet=(m>.5&&m<1.5)||(m>3.5&&m<9.)||(m>10.5&&m<13.5)||(m>13.5&&m<14.5);
  if(groundSheet){
@@ -583,6 +601,7 @@ void main(){
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
  #ifdef HAS_ABILITY_PRIORITY_MASK
+ if(m<.5 || m>14.5)keep*=1.-smoothstep(.12,.88,prioritySample.r);
  float coreCover=max(prioritySample.b,prioritySample.a);
  if(groundSheet || m<.5 || m>14.5 || coldOwner>=0){
    // Keep the marine cap here. Actor coverage attenuates premultiplied output once, after shading.
@@ -647,6 +666,7 @@ export class FlagshipFx {
   private readonly color = new T.Color();
 
   blockers: readonly Rect[] = [];
+  enemies: readonly {type:string; health:number; x:number; y:number; radius:number}[] = [];
   constructor(parent: T.Object3D, capacity = 32) {
     this.root.name = 'ability-flagship-fx';
     const fuelMaterials: T.ShaderMaterial[] = [], meltdownMaterials: T.ShaderMaterial[] = [];
@@ -770,6 +790,15 @@ export class FlagshipFx {
       if (usesDeckBlockers) {
         const boxes: T.Vector4[] = u.deckBlockers.value;
         let count = 0;
+        if (slot.mode === FxMode.Climax && slot.arc < 1.5) {
+          for (const enemy of this.enemies) {
+            if (enemy.health <= 0 || (enemy.type !== 'brute' && enemy.type !== 'carrier')) continue;
+            const x=enemy.x/UNIT, z=enemy.y/UNIT, radius=enemy.radius/UNIT;
+            if (Math.hypot(x-slot.x,z-slot.z)>slot.range+radius) continue;
+            boxes[count++].set(x,z,radius*.75,radius*.72);
+            if (count===4) break;
+          }
+        }
         for (const rect of this.blockers) {
           const hw = rect.width / (2*UNIT), hd = rect.height / (2*UNIT);
           const cx = rect.x / UNIT + hw, cz = rect.y / UNIT + hd;
