@@ -1,3 +1,4 @@
+import {paintIncidentClusters} from './IncidentDeckClusters';
 import {paintIncidentAperture} from '../lighting/IncidentAperture';
 import {paintFightLaneDamage} from './FightLaneDamage';
 import {paintWorkingLane} from './WorkingLane';
@@ -180,7 +181,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     serviceJoints(c, room.id);
     c.restore();
 
-    c.save();clipFightingDeck(c,room);paintFightLaneDamage(c,room.id);paintLaneAftermath(c,room.id,arena);c.restore();
+    c.save();clipFightingDeck(c,room);paintIncidentClusters(c,room.id);paintFightLaneDamage(c,room.id);paintLaneAftermath(c,room.id,arena);c.restore();
 
     const dx = arena.x - room.spawn.x, dy = arena.y - room.spawn.y;
     c.translate(room.spawn.x, room.spawn.y);
