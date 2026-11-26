@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 from PIL import Image,ImageDraw,ImageFilter,ImageChops,ImageOps
 from ink_contour import contour
+from title34_hull import structure, left_return, contacts
 
 raw=Path(sys.argv[1])
 size=(2560,1440)
@@ -80,21 +81,12 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
     plate=outlined.resize((round(outlined.width*scale),round(outlined.height*scale)),Image.Resampling.LANCZOS)
     layer.alpha_composite(plate,(x,y))
 
-layer=Image.new('RGBA',size)
-# The broken sill recedes toward the hind foot. The forward knuckles cross
-# its leading edge, with the exposed cut of the plate visible below the hand.
-sill=Image.new('RGBA',(1600,440))
-d=ImageDraw.Draw(sill)
-def facet(coords,fill):
-    d.polygon([(2*(x-850),2*(y-1090-max(0,x-1010)*.045)) for x,y in coords],fill=fill)
-facet([(902,1140),(1036,1125),(1490,1194),(1580,1227),(1514,1250),(987,1182)],'#293345')
-facet([(902,1140),(987,1182),(1514,1250),(1494,1281),(1360,1252),(1316,1258),(974,1203)],'#151d2c')
-facet([(902,1140),(987,1176),(1514,1244),(1514,1250),(987,1182)],'#647795')
-facet([(1045,1148),(1094,1153),(1382,1208),(1354,1206)],'#435168')
-layer.alpha_composite(sill.resize((800,220),Image.Resampling.LANCZOS),(820,1082))
+layer=structure()
+layer.alpha_composite(contacts())
+place(layer,'crawler',1142,465,222,bank=-22)
+place(layer,'stalker',824,650,205,bank=17)
+layer.alpha_composite(left_return())
 place(layer,'warden',895,814,720)
-place(layer,'crawler',1130,487,222,bank=-24)
-place(layer,'stalker',898,679,196,bank=20)
 layer.save(raw/'midground.png')
 layer=Image.new('RGBA',size)
 place(layer,'breacher',1525,358,1330,vertical=True)
