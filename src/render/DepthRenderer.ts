@@ -97,6 +97,9 @@ const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
 export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number;materialProfiles:number};
 type Corpse={podFall?:{x:number;z:number;dx:number;dz:number};pendingEffect?:GameEffect;model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
+// Negative contact indices select soft brood spill. Positive values belong to Blackout warnings.
+const BROOD_SPILL: Readonly<Partial<Record<string,number>>> = {stalker:-1,crawler:-2,spitter:-3,carrier:-4};
+
 export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
@@ -765,9 +768,9 @@ export class DepthRenderer {
     const attacking=e.windupMs>0||e.meleePhase==='windup'||e.meleePhase==='strike'||e.chargeMs>0;
     const contact=blackout&&e.health>0&&(attacking||Math.hypot(e.x-p.x,e.y-p.y)<=6*UNIT);
     const shooter=e.type==='spitter'&&!e.pod&&e.windupMs>0&&e.pendingAttack==='spit';
-    const bladeSpill=!blackout && e.type==='stalker' && !e.pod && e.health>0;
-    const contactScale=bladeSpill?1.48:contact&&!shooter?1.25:1;
-    const contactInk=bladeSpill?-1:contact?(shooter?3:1):0;
+    const broodSpill=!blackout && !e.pod && e.health>0 ? BROOD_SPILL[e.type]??0 : 0;
+    const contactScale=broodSpill?1.48:contact&&!shooter?1.25:1;
+    const contactInk=broodSpill || (contact?(shooter?3:1):0);
     if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*contactScale,contactInk,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
