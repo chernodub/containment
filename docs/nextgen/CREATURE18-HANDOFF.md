@@ -1327,3 +1327,14 @@ Display luma uses Rec.709 weights on the production screenshot. A separate regis
 | Matron | 12.2% | 119 | 55 | 195 |
 
 The Stalker exceeds the 12–20% guide in the calm profile, where the whole blade is exposed. Folded Stalkers in the five unordered crowds expose only 7–8%. The broad calm blade and the floor spill in the folded pose preserve both reads. Body and mark measurements for every crowd are in `artifacts/nextgen/palette38/measure.tsv`. The weakest frames are Relay Racks (blade against machinery), Infested Workshop (rear-facing bite ends) and the boots close-up (gun over the right claw).
+
+Crew Checkpoint combat, Cryo, fixed 300 ticks per tier, gave the following draw counts and combat program creations. Both builds used the same measured encounter.
+
+| Tier | Draws median, final21 → PALETTE38 | Draws peak | Combat shader compiles |
+|---|---:|---:|---:|
+| High | 134 → 134 | 139 → 139 | 0 → 0 |
+| Low | 124 → 124 | 130 → 130 | 0 → 0 |
+
+The production build passed. Benchmark reports are under `artifacts/nextgen/palette38-{before,shipped}-profile/benchmark.json`.
+
+Native Cryo, seed 1729, cleared eight rooms with zero errors and zero runner defects in `artifacts/nextgen/playtest/palette38-replay/report.json`. The preceding eight-room clear had zero runtime errors and one 5.38-second Passenger Vault loading observation. The replay passed that room without a loading defect.
