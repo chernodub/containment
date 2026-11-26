@@ -111,6 +111,18 @@ bool broodFinish=actorBroodForm.x>=-1.;
 // its raised hind volume in the skin's Z-up bind pose, clear of the legs.
 bool sacTip=vActorRegion==1. && actorPosition.x < -1. && actorPosition.z > 9.5;
 bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRegion==7. || sacTip);
+// The fourth form component identifies the shared atlas layout.
+bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
+bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
+bool broodMark=broodBand==3 || broodBand==4 ||
+  ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
+bool dorsal=abs(actorPosition.y)<(spitterSkin?.35:.11) && normalize(vNormal).z>.30;
+broodMark=broodMark || (broodBody && (
+  (spitterSkin && dorsal && vActorRegion<=2.) ||
+  (stalkerSkin && vActorRegion==2. && normalize(vNormal).z>.68) ||
+  (carrierSkin && !broodSac && vActorRegion==4. && normalize(vNormal).z>.80)));
+vec3 broodInk=carrierSkin?vec3(.46,.135,.38):crawlerSkin?vec3(.58,.235,.31):
+              spitterSkin?vec3(.35,.51,.095):vec3(.20,.39,.59);
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
   diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
@@ -253,6 +265,12 @@ totalEmissiveRadiance=lanternEmission;
 // CREATURE26: a small wet specular pick from the fixed key, on flesh zones only (0 = off for families not rebuilt).
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
+#ifdef BROOD_PLANES
+if(broodFinish && broodMark){
+  reflectedLight.directDiffuse*=.15;
+  totalEmissiveRadiance=broodInk*actorStageLight*actorCamouflage;
+}
+#endif
 #ifdef BRUTE_PLANES
 if(wardenMaw){
   float core=smoothstep(.64,.80,max(dot(normalize(normal),normalize(vViewPosition)),0.));

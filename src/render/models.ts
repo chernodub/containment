@@ -22,7 +22,7 @@ import {setGraphicShadowPlane} from './lighting/GraphicSurface';
 const HIDE_FREQUENCY: Readonly<Partial<Record<string,number>>> = {crawler:50,stalker:25,spitter:15,carrier:7};
 // Shadow terminator, edge terminator, shadow gain and Carrier atlas flag.
 const BROOD_FORM: Readonly<Partial<Record<string, readonly [number, number, number, number]>>> = {
- crawler: [-.06,.94,.34,0], spitter: [-.24,.94,.38,0], stalker: [.26,.95,.32,0],
+ crawler: [-.06,.94,.34,2], spitter: [-.24,.94,.38,3], stalker: [.26,.95,.32,4],
  carrier: [-.04,.93,.40,1], matron: [-.20,.94,.45,1],
 };
 /** SHADER25b: small families keep a lighter shadow plane so they stay findable on the darkest decks. */
