@@ -146,7 +146,7 @@ export function addLaneMachine(root:Group,id:string){
       for(const z of [-7,0,7])run([[-182,-4+z],[-145,24+z],[-64,26+z],[-29,10+z],[0,z]],4,3,z===0?0x928170:rubber);
       p.box(0,7,0,58,14,42,metal);
       p.box(0,15,0,50,2,35,rubber);
-      p.box(0,17,-23,53,5,25,edge,0,.18);
+      p.box(0,17,-23,53,5,25,0x536769,0,.18);
       for(const x of [-19,-8,7])p.rod([x,17,-12],[x+8,19,14],2.3,0xd69a69);
       for(let i=0;i<5;i++)p.box(-14+i*7,14,0,4,4,15,0x84ad9c);
       break;
@@ -161,8 +161,8 @@ export function addLaneMachine(root:Group,id:string){
         p.face([[x-5,2,z],[x+5,3,z-8],[x+9,2,z+4],[x+1,2,z+8]],i%2?0x899fa1:0x70898c);
       }
       p.rod([-26,11,4],[26,11,4],11,0x6e939a);
-      for(const x of [-23,-14,-5,4,13,22])p.rod([x,11,4],[x+3,11,4],13,0xc2dde1);
-      p.rod([-20,22,8],[21,22,8],2.8,0xd9e8e3);
+      for(const x of [-23,-14,-5,4,13,22])p.rod([x,11,4],[x+3,11,4],13,0x82999a);
+      p.rod([-20,22,8],[21,22,8],2.8,0x8b9d9b);
   }
   brokenLaneEnd(p,id,0);
   const articulated=['transmission-chamber','crew-checkpoint','shielding-gate'].includes(id);

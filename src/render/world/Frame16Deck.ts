@@ -1,3 +1,4 @@
+import {paintIncidentAperture} from '../lighting/IncidentAperture';
 import {paintFightLaneDamage} from './FightLaneDamage';
 import {paintWorkingLane} from './WorkingLane';
 import {paintLaneAftermath} from './LaneAftermath';
@@ -88,17 +89,13 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   function paintLights(c:CanvasRenderingContext2D, materialResponse=false){
     if(materialResponse){c.save();c.globalAlpha=.47;paintFightingDeck(c,room,arena);c.restore();}
     c.save();clipFightingDeck(c,room);paintMachineSpill(c,room.id);c.restore();
+    c.save();clipFightingDeck(c,room);
     for(const lamp of fixtures){
       if(!lamp)continue;
       c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
-      const tint='#'+lamp.color.toString(16).padStart(6,'0');
-      const wash=c.createRadialGradient(0,12,4,0,28,71);
-      wash.addColorStop(0,tint+'db');wash.addColorStop(.34,tint+'ac');
-      wash.addColorStop(.75,tint+'48');wash.addColorStop(1,tint+'00');
-      c.fillStyle=wash;c.beginPath();c.moveTo(-15,-3);
-      c.quadraticCurveTo(-22,19,-55,82);c.lineTo(55,82);
-      c.quadraticCurveTo(22,19,15,-3);c.closePath();c.fill();c.restore();
+      paintIncidentAperture(c,room.id,lamp.color);c.restore();
     }
+    c.restore();
   }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();

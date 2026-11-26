@@ -77,18 +77,6 @@ export function paintMachineSpill(c:CanvasRenderingContext2D,id:string){
   const mount=mountedStrips(id);if(!mount)return;
   c.save();c.translate(mount.origin[0],mount.origin[1]);c.rotate(mount.angle);
   const tint='#'+mount.color.toString(16).padStart(6,'0');
-  // Metal visor cuts off the rectangular work lamp at the edge of its service area.
-  c.save();c.translate(mount.lamp[0],mount.lamp[1]);
-  const pool=c.createLinearGradient(0,0,0,104);
-  pool.addColorStop(0,tint+'ef');pool.addColorStop(.65,tint+'ac');pool.addColorStop(1,tint+'63');
-  c.fillStyle=pool;c.fill(new Path2D('M-18 0H18L73 102H-72Z'));c.restore();
-  if(mount.inspection){
-    const [x,z,,,,yaw]=mount.inspection;
-    c.save();c.translate(x,z);c.rotate(-yaw+.48);
-    const throwLight=c.createLinearGradient(0,0,0,59);
-    throwLight.addColorStop(0,tint+'bc');throwLight.addColorStop(.64,tint+'57');throwLight.addColorStop(1,tint+'18');
-    c.fillStyle=throwLight;c.fill(new Path2D('M-8 0H8L35 59H-30Z'));c.restore();
-  }
   for(const [x,z,,w,d,yaw] of mount.parts){
     c.save();c.translate(x,z);c.rotate(-yaw);c.scale(w*.55+15,d*.55+20);
     const glow=c.createRadialGradient(0,0,.08,0,0,1);

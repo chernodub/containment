@@ -1,3 +1,4 @@
+import {laneWorklight} from '../lighting/LaneWorklight';
 import * as T from 'three';
 import {MAT,box,rod,batch} from '../meshParts';
 import type {ShipEnvironment} from '../ShipEnvironments';
@@ -124,6 +125,8 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
     const leaks=world.getObjectByName('g2-world-dressing')?.userData.leakOrigins as Array<{x:number;y:number;z:number}>|undefined;
     for(const leak of leaks??[])origins.push({...leak,kind:2});
   }
+  const source=laneWorklight(templateId);
+  if(source)origins.push({x:source.x/32,y:source.y,z:source.z/32,kind:environment==='cryogenics'?1:0});
   batch(root);for(const g of ownedRoots)g.dispose();
   if(origins.length){const mesh=createAnchoredStoryParticles(origins,environmentClock);root.add(mesh);roomParticles.set(world,mesh);}else roomParticles.delete(world);
   root.userData.sourceCount=origins.length;root.userData.templateId=templateId;

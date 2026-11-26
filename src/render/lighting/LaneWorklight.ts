@@ -20,7 +20,7 @@ export function laneWorklight(id:string){
   const reach=Math.min(1,92/Math.max(1,Math.hypot(dx,dz)));
   const [x,z]=laneTerminal(id)??[arena.x+dx*reach,arena.y+dz*reach];
   const color=id==='manual-control-chamber'?0x9acbbb:source.color;
-  return {x:x+9,z:z-10,color,y:.76,angle:Math.atan2(arena.x-x,arena.y-z)};
+  return {x:x+9,z:z-10,color,y:.76,angle:Math.atan2(source.at[0]-x,source.at[1]-z)};
 }
 
 // The second housing is fastened to the receiver flange or the split pipe header.
