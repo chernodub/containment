@@ -81,7 +81,7 @@ Both bot profiles use the same order rule. Arc takes the Freight Hold rush first
 
 ### Arc route comparison
 
-Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. It records the actual room entered at sector 7 and projects the remaining order from the selected graph. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json)
+Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. The native desktop retries also confirmed both entries at sector 7, with the Crawler rush for seed 1729 and Spitter crossfire for seed 2718. Sectors 8–11 below are projected from the selected graph. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json) · [1729 native arrival](../../artifacts/nextgen/playtest/run20-arc-1729-retry/r7-freight-hold-start.json) · [2718 native arrival](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/r7-breached-loading-bay-start.json)
 
 | Sector | Arc 1729 · rocket booking | Arc 2718 · plasma booking |
 | ---: | --- | --- |
@@ -112,12 +112,12 @@ The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire or
 
 The desktop Continue flow reached and cleared Breached Loading Bay at sector 8 with zero runtime errors. The runner recorded a loading hold just over five seconds. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
 
-The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. The first four completed Breacher trials with Freight Hold and Infested Workshop forced first yielded one completion and three deaths, in sectors 10, 17 and 20. This is a partial result under host contention. The first worker finished after about 12 minutes of wall time. Full totals require all twelve trials per rig per mode.
+The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. The complete Breacher sample with Freight Hold and Infested Workshop forced first yielded nine completions and three deaths, in sectors 10, 17 and 20. Other cells reflect the completed samples at the time of this report. Full totals require all twelve trials per rig per mode.
 
 | Rig | Starting reference | Freight / Workshop first | Loading / Swarm first | Policy |
 | --- | ---: | ---: | ---: | ---: |
-| Breacher | 11/12 | 1/4 so far | Pending | Pending |
-| Cryo | 10/12 | Pending | Pending | Pending |
+| Breacher | 11/12 | 9/12 | 9/9 so far | 9/9 so far |
+| Cryo | 10/12 | 1/1 so far | Pending | Pending |
 | Pyro | 10/12 | Pending | Pending | Pending |
 | Arc | 12/12 | Pending | Pending | Pending |
 
