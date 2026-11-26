@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 215121,
+    "bytes": 217739,
     "shot": {
       "source": "selection24",
       "rig": "breacher",
@@ -23,7 +23,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 187639,
+    "bytes": 188551,
     "shot": {
       "source": "selection24",
       "rig": "pyro",
@@ -34,7 +34,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 178268,
+    "bytes": 180407,
     "shot": {
       "source": "selection24",
       "rig": "arc",
