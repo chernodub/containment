@@ -451,3 +451,41 @@ All 96 final simulator runs had zero stalls. Usual Standard is inside the band a
 Arc selected Coolant breach 3 on its 494.600-second reserve cut. The marked-entry frame is at 494.767; this verifies the nearer entry was selected. The replay did not verify a waiting body at that closed grille. [Coolant seal frame](../../artifacts/nextgen/playtest/play35-full-arc/r13-coolant-plant-sealed-entry.png)
 
 The final production build passed. I stopped the full native campaigns at their one-hour wall budget. Arc had cleared 13 rooms and Breacher 14, with zero runtime errors before shutdown. Shutdown itself was recorded as a closed-browser runner error. A separate Arc finale checkpoint replay cleared the final room after one renderer kit preparation error. Breacher's finale restarts hit loading timeouts. The requested two zero-error full native clears remain unverified. [Arc full attempt](../../artifacts/nextgen/playtest/play35-full-arc/report.json) · [Breacher full attempt](../../artifacts/nextgen/playtest/play35-full-breacher/report.json) · [Arc finale replay](../../artifacts/nextgen/playtest/play35-finale-arc/report.json)
+
+## PLAY36
+
+### Breacher diagnosis
+
+The five lead-reported Standard losses end in different rooms. Two finish with Crawler contact, one with Stalker contact, one with a Brute hit and one with Spitter fire.
+
+| Seed | Fatal room | Beat | Fatal family | Entry suit |
+|---|---|---|---|---:|
+| 7 | 11 · Diagnostic Gallery | 0 · Cut back around the recorder | Stalker | 7.7 |
+| 23 | 17 · Shielding Gate | 1 · Silence the two firing lanes | Spitter | 28.3 |
+| 512 | 20 · Overload Floor | 2 · Hold the relay and turn the final flank | Crawler | 120.3 |
+| 4096 | 13 · Coolant Plant | 1 · Silence the two firing lanes | Crawler | 92.6 |
+| 6561 | 12 · Safety Interlock | 1 · Hold a lane, then change position | Brute | 82.0 |
+
+| Lead's 12 usual Standard seeds | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| Clears | 7 | 11 | 12 | 10 |
+| Dash / tactical / power / overdrive uses per run | 90.7 / 104.0 / 26.1 / 8.5 | 140.4 / 75.1 / 75.4 / 11.4 | 103.8 / 120.5 / 54.4 / 10.8 | 107.9 / 108.5 / 43.3 / 10.3 |
+| Direct ability damage per use, all slots | 87.6 | 72.7 | 121.4 | 92.2 |
+| Crawler suit loss per run | 230.4 | 419.2 | 181.5 | 161.9 |
+| Projectile suit loss per run | 160.8 | 198.1 | 126.6 | 145.0 |
+
+Seed 7 reached Diagnostic with 7.7 suit on Breacher compared with 83.4, 107.2 and 75.5 for Cryo, Pyro and Arc. Seed 23 reached Shielding Gate with 28.3 compared with 137.5 and 168.2 for Cryo and Pyro. Arc had already died. In seed 512's finale, the four rigs entered with 120–130 suit. Breacher dealt 1,377 direct ability damage there and died. Cryo, Pyro and Arc dealt 4,552, 3,767 and 1,590 and cleared. For seed 6561, Arc entered Interlock with 69.1 suit versus Breacher's 82.0 and cleared while dealing 1,744 direct ability damage compared with Breacher's 846. Breacher therefore has both carry-in losses and late exchanges it cannot survive from comparable suit.
+
+In the four R27 native seed-1729 traces, receipt damage per actual use and target contacts per use were as follows. Contacts count repeated effects on the same actor. The damage column only counts recorded direct ability receipts. It omits status damage, blocked projectiles and utility such as Arc's Overclock.
+
+| Slot · damage / target contacts per use | Breacher | Cryo | Pyro | Arc |
+|---|---:|---:|---:|---:|
+| Tactical | 156.1 / 2.43 | 151.2 / 4.48 | 193.7 / 14.28 | 147.9 / 7.12 |
+| Power | 0.0 / 5.12 | 119.7 / 2.01 | 174.5 / 30.57 | 212.8 / 9.54 |
+| Overdrive | 256.0 / 4.50 | 393.9 / 61.83 | 265.0 / 22.91 | 0.0 / 0.00 |
+
+The 169 Breacher power target receipts are Siege Plow contacts. The bot did use the augment. Bulwark's projectile interception changes barrier health without emitting a dedicated blocked-damage receipt, so these logs cannot rank its protection per use. Likewise Cryo's frequent dashes and freeze ticks describe how its toolkit is used but do not directly measure escaping a lethal lane.
+
+### Policy correction
+
+The baseline aim scored Bulwark like an attack centered on an enemy, requiring a body inside the barrier's 18-unit footprint. Static Bulwark now looks for an enemy approach or visible firing lane beyond a legal barrier. Siege Plow scores a shorter forward corridor and checks that the wall can travel along it. The bot can also deploy against a single nearby threat or Spitter when the lane is useful. This is a playtest policy fault. The game kit, enemies and repair economy were left untouched.
