@@ -265,3 +265,14 @@
   padding-inline-start: 6px;
 }
 #overlay .route-supply .service-illustration { display: inline-block; width: 28px; height: 28px; vertical-align: middle; background: none; }
+
+@media (min-width: 900px) and (max-height: 740px) {
+  #overlay .requisition-panel .route-supply-guardian { height: 32px; }
+  #overlay .requisition-panel .route-supply-heading p { margin: 0; }
+  #overlay .requisition-panel .route-supply button { min-height: 36px; padding-block: 4px; }
+  #overlay .requisition-panel .route-supply button small { display: inline; }
+  #overlay .requisition-medical-art { height: 66px; }
+  #overlay .requisition-medical-art .service-illustration { height: 51px; }
+  #overlay .requisition-panel .requisition-footer { margin-top: 4px; }
+  #overlay .requisition-panel .service-shop.requisition-groups { gap: 6px; }
+}
