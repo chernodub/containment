@@ -160,3 +160,11 @@ In the render segment corresponding to the Interlock High slow-update cohort, th
 | `Mesh.getVertexPosition` sampled allocation MB, all stacks | 87.3 | 55.5 |
 
 The candidate produced nearly twice as many Transmission frames in the same wall-clock window. The remaining absolute allocation growth was led by navigation. The unusually large `captureSkin` allocation leaf from the initial attribution run was absent in both paired windows, so that allocation reduction cannot be isolated from these profiles. Raw profiles, traces and analysis scripts are retained under `artifacts/nextgen/perf43/`.
+
+### Matched decal captures and room preparation
+
+The 1920×1080 pairs use staged rifle and shotgun hit events against the authored ivory recorder face, the steel island base, and a controlled rotated, mirrored two-sided panel. The panel was added to the visual fixture only. All six decal positions and normals match exactly. Each full image pair had zero differing RGB pixels with the HUD hidden. The native crops were inspected. The pairs are `artifacts/nextgen/perf43/visual/wall-1-native.png` through `wall-3-native.png`.
+
+Reflection capture still reuses its filtered target for a valid room world. Reloads can recreate geometry, dressing and light state, so a room ID alone is insufficient for reuse across a reload. Splitting the six views across frames would spread submission without removing the work from the startup hold. It would also require freezing scene inputs across those frames to preserve the current result. This pass retains capture and filtering within the existing preparation boundary. In the Arc run, Passenger Vault held for 3.37 s at load 22.65, with 2.09 s spent capturing/filtering reflections. Residential Gallery held for 1.66 s at load 20.55, with 0.82 s in reflections. These timings are observations across builds and rigs, with no reflection change to isolate.
+
+The production build passed. The requested Arc seed 1729 campaign cleared Safety Interlock as room 12 and finished at 13 rooms with zero errors, zero recorded defects, and exit status 0. The campaign receipt is `artifacts/nextgen/playtest/perf43-arc/report.json`. The paired profile baseline was `931092c1` and the candidate runtime was `d262ef54`.
