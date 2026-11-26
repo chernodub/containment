@@ -718,39 +718,56 @@ Denominators below count finished simulator reports available at this snapshot. 
 
 | Profile / rig | Wave 33 | Candidate OFF | Candidate ON |
 |---|---:|---:|---:|
-| Standard Breacher | 11/12 | 7/10 | 8/9 |
+| Standard Breacher | 11/12 | 8/11 | 10/11 |
 | Standard Cryo | 10/12 | — | — |
 | Standard Pyro | 10/12 | — | — |
 | Standard Arc | 12/12 | — | — |
-| **Standard all** | **43/48** | **7/10** | **8/9** |
-| Story Cryo | 10/12 | 8/9 | — |
+| **Standard all** | **43/48** | **8/11** | **10/11** |
+| Story Cryo | 10/12 | 11/12 | — |
 | Story Breacher | 12/12 | — | — |
-| **Story all** | **22/24** | **8/9** | — |
+| **Story all** | **22/24** | **11/12** | — |
 
 Standard damage is mean suit per completed block. Each candidate is compared with the same rigs and seeds from Wave 33 that finished the block in both builds. The full Wave 33 block mean is also shown for reference.
 
 | Sectors | Wave 33 all | OFF pairs | Wave 33 → OFF | ON pairs | Wave 33 → ON |
 |---|---:|---:|---:|---:|---:|
-| 1–4 | 7.21 | 10 | 6.06 → 8.89 | 9 | 4.73 → 9.55 |
-| 5–8 | 97.55 | 10 | 69.36 → 95.95 | 9 | 65.49 → 118.86 |
-| 9–12 | 176.12 | 9 | 144.75 → 181.28 | 9 | 151.33 → 149.07 |
-| 13–16 | 198.38 | 9 | 171.48 → 149.23 | 9 | 173.76 → 183.84 |
-| 17–20 | 195.72 | 7 | 157.73 → 187.43 | 7 | 185.29 → 185.01 |
+| 1–4 | 7.21 | 11 | 5.51 → 8.08 | 11 | 5.51 → 8.63 |
+| 5–8 | 97.55 | 11 | 72.72 → 101.22 | 11 | 72.72 → 118.19 |
+| 9–12 | 176.12 | 10 | 151.80 → 192.63 | 11 | 151.05 → 147.26 |
+| 13–16 | 198.38 | 10 | 171.56 → 146.60 | 11 | 172.07 → 177.29 |
+| 17–20 | 195.72 | 8 | 165.36 → 186.60 | 9 | 174.13 → 182.62 |
 
 | Standard Crawler share | Wave 33 all | Candidate OFF | Candidate ON |
 |---|---:|---:|---:|
-| Breacher | 39.32% | 36.59% (10) | 35.14% (9) |
+| Breacher | 39.32% | 35.93% (11) | 35.58% (11) |
 | Cryo | 39.63% | — | — |
 | Pyro | 41.25% | — | — |
 | Arc | 37.55% | — | — |
 
 [Candidate OFF summary](../../artifacts/nextgen/playtest/play39-tip-off/summary.json) · [Candidate ON summary](../../artifacts/nextgen/playtest/play39-tip-on/summary.json) · [Candidate Story summary](../../artifacts/nextgen/playtest/play39-tip-story/summary.json)
 
-The pre-revision Breacher sample also supports a direct ON/OFF comparison. Mean suit and time include only seeds that entered the room in both arms. Final-room deaths in this sample remain in those means.
+The three superseded candidate simulations were stopped after recording these samples to free capacity for final-build measurements. The pre-revision Breacher sample supports a direct ON/OFF comparison. Mean suit and time include only seeds that entered the room in both arms. Final-room deaths in this sample remain in those means.
 
 | Encounter | Same-seed campaigns | Visitors OFF / ON | Paired visitors | Suit OFF → ON | Seconds OFF → ON | Deaths OFF → ON |
 |---|---:|---:|---:|---:|---:|---:|
-| Communal Atrium | 9 | 9 / 9 | 9 | 6.21 → 6.21 | 25.00 → 23.40 | 0 → 0 |
-| Manual Control | 9 | 7 / 9 | 7 | 29.99 → 29.66 | 45.43 → 47.41 | 1 → 0 |
+| Communal Atrium | 11 | 11 / 11 | 11 | 5.36 → 5.90 | 23.81 → 22.68 | 0 → 0 |
+| Manual Control | 11 | 9 / 11 | 9 | 32.28 → 31.07 | 48.34 → 50.66 | 1 → 0 |
 
 The production build passed on the opt-in revision. Standard and Story simulator cohorts for that build are separate from the experiments. The full native Breacher replay was restarted on the same seed after a screenshot timeout on its first attempt. The corrected Manual Control pair initially failed to bind its localhost port under the sandbox and was restarted using approved local access. The native 20-room runs, final simulator cohorts, and three adjacent Crawler queue frames had not graduated to verified evidence at this snapshot.
+
+### Production-build opening sample
+
+A separate eight-room Standard run used seed 1729 in all four rigs after the revised Spitter timing and with the grille experiment disabled. It is a diagnostic seed outside the twelve-seed cohort. Sectors 1–4 still averaged only 5.0 suit across these four runs, below the 20–40 target. Sectors 5–8 averaged 157.1. This sample does not establish either cohort target.
+
+| Seed 1729 rig | Sectors 1–4 suit | Sectors 5–8 suit |
+|---|---:|---:|
+| Breacher | 0.0 | 179.1 |
+| Cryo | 10.0 | 226.7 |
+| Pyro | 0.0 | 142.2 |
+| Arc | 10.0 | 80.4 |
+
+[Production opening sample](../../artifacts/nextgen/playtest/play39-ship-early-sample/summary.json)
+
+### Crawler contact-line probe
+
+A deterministic open-floor probe started two Crawlers on the same line to the marine. The queued Crawler moved sideways and cleared 29.94 units of arc 167 ms into the first wind-up. At the strike it was 32.48 units away around the arc, past the 28.8-unit target. This staged receipt establishes movement in open space. [Probe receipt](../../artifacts/nextgen/play39-analysis/crawler.json)
