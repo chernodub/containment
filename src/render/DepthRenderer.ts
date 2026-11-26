@@ -686,6 +686,13 @@ export class DepthRenderer {
   }
   // WARN16 look-ahead precedes the existing room AABB and marine-envelope fit.
   if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint,this.hudCoachedTargetId);
+  const encounterFocus=menu?undefined:game.sealedEntryBearing?.to??game.shutterCameraPoint;
+  if(encounterFocus){
+   const dx=encounterFocus.x/UNIT-this.desiredFocus.x,dz=encounterFocus.y/UNIT-this.desiredFocus.z;
+   const weight=Math.min(.55,4/Math.max(1,Math.hypot(dx,dz)));
+   this.desiredFocus.x+=dx*weight;
+   this.desiredFocus.z+=dz*weight;
+  }
   if(condition?.condition.id==='vent'&&condition.ventLive&&dt>0)this.cameraRig.setRumbleFloor(.19);
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);

@@ -160,7 +160,7 @@ export class DepthGame {
   }
   return fallback;
  }
- private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean;openedAt?:number}|undefined;
+ private rackShutter:{wardenId?:number;spitterId?:number;broken:boolean;openedAt?:number;shotThrough?:boolean}|undefined;
  get relayShutterFrame(){
   return this.rackShutter?{x:491,y:158,width:18,height:140,broken:this.rackShutter.broken}:undefined;
  }
@@ -172,6 +172,13 @@ export class DepthGame {
   const shutter=this.rackShutter;
   return !!shutter&&!shutter.broken&&shutter.spitterId===id&&
     (shutter.wardenId===undefined||!!this.enemies.getSnapshot(shutter.wardenId));
+ }
+ get shutterCameraPoint(){
+  const shutter=this.rackShutter,frame=this.relayShutterFrame;
+  if(!shutter||!frame||shutter.shotThrough)return;
+  const warden=shutter.wardenId===undefined?undefined:this.enemies.getSnapshot(shutter.wardenId);
+  if(warden?.pendingAttack==='charge'||warden?.chargeMs||shutter.broken&&this.elapsed-(shutter.openedAt??0)<2)
+   return {x:frame.x+frame.width/2,y:frame.y+frame.height/2};
  }
  get shutterBait(){
   const shutter=this.relayShutter,warden=this.rackShutter?.wardenId;
@@ -779,7 +786,7 @@ export class DepthGame {
  private encounterEvents(events:readonly EncounterEvent[]){for(const e of events){if(e.type==='reserve-cut'){
  const breach=this.geometry.breaches.find(point=>point.id===e.breachId);
  const closed=this.geometry.breaches.find(point=>point.id===e.closedEntry);
- if(closed&&this.lastPriorityPoint)this.reserveBearing={from:this.lastPriorityPoint,to:closed,until:this.elapsed+1.7,room:this.roomRevision};
+ if(closed&&this.lastPriorityPoint)this.reserveBearing={from:this.lastPriorityPoint,to:closed,until:this.elapsed+2,room:this.roomRevision};
  if(breach)this.presentation.push({type:'reserve-cut',x:breach.x,y:breach.y,durationMs:3000,reserveCut:e});
  }else if(e.type==='spawn-request'){const chosen=this.geometry.breaches.find(b=>b.id===e.breachId)??this.geometry.breaches[0];
  let x=chosen.x+(chosen.facing==='east'?56:-56),y=chosen.y;
@@ -1192,6 +1199,8 @@ export class DepthGame {
   const start={x:0,y:0},end={x:0,y:0},origin={x:0,y:0},impact={x:0,y:0};
   for(const b of [...this.bullets]){if(this.status!=='playing')break;if((b.previewAt??0)>this.elapsed)continue;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
    const from={x:b.x,y:b.y},next={x:b.x+dx/steps,y:b.y+dy/steps};const barrierBlocked=b.kind==='hazard'&&!b.preview&&this.abilities.interceptProjectile(from,next,b.request.radius,b.request.damage);if(barrierBlocked){done=true;break;}const shutter=b.kind==='player'&&this.relayShutter;
+   const opened=b.kind==='player'&&this.rackShutter?.broken&&this.relayShutterFrame;
+   if(opened&&this.rackShutter&&segmentIntersectsRect(from,next,opened))this.rackShutter.shotThrough=true;
    if(shutter&&segmentIntersectsRect(from,next,shutter)){
     this.presentation.push({type:'hit',x:from.x,y:from.y,angle:b.request.angle,weapon:b.request.weaponId});
     done=true;break;
