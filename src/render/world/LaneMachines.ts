@@ -1,3 +1,4 @@
+import {addFightLaneDamage} from './FightLaneDamage';
 import {brokenLaneEnd} from './BrokenLaneEnds';
 import {addIncidentLane} from './IncidentLaneMachines';
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
@@ -9,6 +10,7 @@ import {laneTerminal} from '../lighting/LaneWorklight';
 type Pin=[number,number];
 
 export function addLaneMachine(root:Group,id:string){
+  addFightLaneDamage(root,id);
   const incident=incidentLanes[id];
   if(incident){addIncidentLane(root,id,incident);return;}
   const end=laneTerminal(id);if(!end)return;
