@@ -283,7 +283,7 @@ export function runSimulation(options: SimOptions) {
         const exchange = game.manualExchange;
         const mark = (p: {x:number;y:number}) => {
             const screen = camera.project(p.x,p.y,.08);
-            return camera.visible(p.x,p.y) ? {...p,screen,waypoint:botWaypoint(game,p)} : undefined;
+            return camera.visible(p.x,p.y) ? {...p,screen,waypoint:canTraverseExpedition(game.geometry,game.player,p,game.player.radius)?p:botWaypoint(game,p)} : undefined;
         };
         const landing = exchange && mark(exchange.landing), endpoint = exchange && mark(exchange.target);
         const drawnExchange = exchange && {bait:mark(exchange.bait),landing,lane:landing&&endpoint?{from:landing,to:endpoint}:undefined};

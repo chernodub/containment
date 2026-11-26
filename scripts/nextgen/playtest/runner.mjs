@@ -157,7 +157,6 @@ async function snapshot(stagnantSince=Infinity) {
       candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.botShotClear(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.botShotClear(nearest.x,nearest.y,{x,y}):false});
     }
     const marks=d.drawnExchange();
-    if(marks)for(const mark of [marks.bait,marks.landing])if(mark)mark.waypoint=d.botWaypoint(mark);
     const hatch=g.delayedPincerHatch;
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
