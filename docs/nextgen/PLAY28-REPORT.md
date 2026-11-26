@@ -662,3 +662,35 @@ The suit ledger matches each rig and seed pair and includes only pairs that clea
 | 17–20 | 38 | 7,301.3 | 7,908.6 |
 
 [Final Standard](../../artifacts/nextgen/playtest/play38-ship-repair-three-off/summary.json) · [Final Story](../../artifacts/nextgen/playtest/play38-ship-story/summary.json) · [21/16 trial](../../artifacts/nextgen/playtest/play38-ship-repair-one-off/summary.json) · [20/15 trial](../../artifacts/nextgen/playtest/play38-ship-repair-two-off/summary.json)
+
+## PLAY39
+
+### Encounter implementation
+
+- Communal Atrium and Manual Control stage a visible escort group at a common recovery grille. A weapon hit during the featured Brute's recovery closes it and cancels the held group. When recovery ends without the shot, the group enters. Both arms use the same mechanics. The ON policy prioritizes the visible recovering attacker when the adjacent group is also visible. An initial Atrium attempt hardcoded the wrong beat and never staged a grille on Breacher 1729. The revision locates the room's first unguarded Brute. A later framing pass requested focus on the grille and made the late escort selection include the available waiting priority arrivals.
+- Standard stages an additional telegraphed Spitter lane in sectors 3–8 with a 13-armour recovery opportunity. Residential's plated lane moves the optional armour behind nearby cover when there is a legal authored shoulder. Story does not receive this Standard opening lane.
+- Story's Interlock pad holds its partial charge for 2.5 seconds when the marine leaves during a strike aimed at the pad. The same uninterrupted strike cannot grant the respite again. The normal pad reset resumes after the grace expires.
+- A Crawler preparing or committing a bite designates a contact line. Nearby Crawlers still in approach step tangentially until they clear 28.8 simulation units of arc where movement allows it.
+- Coolant estimates an in-view set of entries around the simulated camera target and prefers the closest entry to the defeated leader from that set. A preview silhouette moves to a legal interior bend before the cut. Transmission's competent policy prioritizes a valid cast of its equipped exclusive at the existing two-sided opening. Relay Racks gives the released Spitter an opening volley through the center of the broken shutter.
+
+### Presentation interfaces
+
+- `DepthGame.recoveryGrille` exposes `x`, `y`, `angle`, `escorts`, `attackerId`, `state`, `changedAt`, and `expiresAt`. Its states are `waiting`, `closed`, and `entered`.
+- `GameEffect` emits `recovery-grille-closed` and `recovery-escort-entered` with `x`, `y`, `angle`, and `grilleEscorts`.
+- `DepthGame.storyHoldGrace` exposes pad `id`, `x`, `y`, retained charge `ms`, `remainingMs`, and `durationMs`. `GameEffect` emits `story-hold-grace` with pad coordinates, the striker's `id`, and `durationMs: 2500`.
+- `DepthGame.coolantQueuedBend` exposes `x`, `y`, and `angle` for the waiting silhouette.
+
+### Native ON/OFF evidence
+
+These checkpoint samples held the earned room boundary constant. OFF can still close a grille through ordinary fire. A closure in both arms therefore verifies the gameplay consequence while providing no estimate of the benefit of forcing the return-shot policy.
+
+| Native case | Recovery hits OFF → ON | Grilles closed OFF → ON | Escorts canceled OFF → ON | Room suit OFF → ON | Room seconds OFF → ON |
+|---|---:|---:|---:|---:|---:|
+| Breacher 1729, Atrium | 4 → 4 | 1 → 1 | 1 → 1 | 13.2 → 13.2 | 22.48 → 22.48 |
+| Cryo 1729, Atrium | 0 → 0 | 0 → 0 | 0 → 0 | 13.2 → 13.2 | 17.05 → 17.05 |
+
+Breacher's native Atrium closure was visible in both arms. Cryo's initial OFF sample had one interior preparation timeout and was restarted on the same seed. The Manual Control Breacher pair also hit interior preparation and screenshot timeouts on both attempts. Later replays allow up to 90 seconds for an evidence screenshot when the caller explicitly extends the startup budget. [Atrium waiting](../../artifacts/nextgen/playtest/play39-tip-on-breacher-4/r4-communal-atrium-grille-waiting.png) · [Atrium hit and close](../../artifacts/nextgen/playtest/play39-tip-on-breacher-4/r4-communal-atrium-grille-closed.png)
+
+### Story hold probe
+
+A controlled deterministic probe from the earned Story Cryo 1729 checkpoint charged 336 ms on the Interlock pad before stepping out of a staged Brute swing. Charge stayed at 336 ms while the grace interval counted down from 2,404 to 804 ms and expired after 2.5 seconds. The probe emitted one `story-hold-grace` effect. The original Final24 native loss was 110.8 suit. The first PLAY39 native replay hit its wall budget with an interior preparation timeout. Its same-seed retry hit a screenshot timeout. Neither produced a final room-loss total. [Probe receipt](../../artifacts/nextgen/play39-analysis/hold.json) · [First replay](../../artifacts/nextgen/playtest/play39-hold-story/report.json) · [Retry](../../artifacts/nextgen/playtest/play39-hold-story-retry/report.json)
