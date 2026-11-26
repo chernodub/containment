@@ -26,6 +26,10 @@ export function paintLaneAftermath(c:Brush,id:string,arena:Point){
       for(const d of ['M-49 1l17 12 11 2','M-32 14l16 13 14 2','M-17 20l14 11 13 5'])seam(c,d,2,'#637f83');
       break;
     case 'passenger-vault':
+      for(const z of [-24,24]){
+        c.save();c.translate(0,z);seam(c,'M-148 162Q-75 118 -38 82T34 18',7,'#535954');
+        seam(c,'M-148 160Q-75 116 -38 80T34 16',2,'#a09e89');c.restore();
+      }
       // A knitted scarf has caught on the berth latch; a pair of shoes fell apart.
       fragment(c,'M39 15Q17 24 15 41T-13 54Q-38 50 -55 63L-62 52Q-42 39 -18 43T3 28Q12 14 34 9Z','#a28b73');
       for(const x of [-53,-47,-40])seam(c,`M${x} 48l5 11`,2,'#666d68');
