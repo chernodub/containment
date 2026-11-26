@@ -1,3 +1,5 @@
+import {orderRoom} from '../game/roguelike/orderJunctions';
+import {storyBeats} from '../game/waves/authoredEncounters';
 import {hudObstructs} from './hud/layout';
 import {createEncounterPlan} from '../game/waves/EncounterDirector';
 import type {RunNode} from '../game/roguelike/types';
@@ -579,6 +581,10 @@ export function getMasteryPreview(game: DepthGame) {
 
 
 export function getRoomOpening(game: DepthGame, depth?: number, salvage?: boolean) {
+  if (depth !== undefined) {
+    const ordered = orderRoom(game.expedition.run.roomOrder, depth);
+    if (ordered.opening !== undefined) return storyBeats(ordered.depth, game.difficulty === 'story')[ordered.opening].label;
+  }
   return game.openingName(depth, salvage);
 }
 
