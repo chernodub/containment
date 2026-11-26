@@ -10,7 +10,7 @@ export function heavyContacts(root:T.Object3D) {
  const point=new T.Vector3(), anchorLocal=new T.Vector3();
  const pads=[-1,1].flatMap(side=>[true,false].flatMap(hand=>{
   const suffix=side<0?'r':'l';
-  const joint=skin.skeleton.bones.findIndex(b=>b.name===(hand?'shoulder':'foot_back')+'_'+suffix || b.name===(hand?'shoulder':'foot.back')+'.'+suffix);
+  const joint=skin.skeleton.bones.findIndex(b=>b.name.replace(/[._]/g,'')===(hand?'shoulder':'footback')+suffix);
   if(joint<0)return [];
   const bone=skin.skeleton.bones[joint];
   const bind=new T.Vector3(hand?2.4:-1.4,side*(hand?3:1.95),hand?2.40:.12);
