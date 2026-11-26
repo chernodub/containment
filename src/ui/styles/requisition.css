@@ -243,3 +243,24 @@
 }
 #overlay .requisition-footer #claim .augment-target { display: inline-flex; margin: 0 4px; }
 #overlay .requisition-footer #claim .augment-target > span { display: none; }
+
+#overlay .requisition-panel {
+  border-bottom: 12px solid #796650;
+  box-shadow: inset 0 -3px #b49669, 0 20px 50px #0008;
+}
+#overlay .requisition-footer { padding-bottom: 5px; }
+
+#overlay .draft-panel[data-draft-kind=boon] .choice-grid {
+  padding: 0 0 9px;
+  border-bottom: 5px double #b0a17b;
+  background: linear-gradient(transparent 85%, #72603d3c);
+}
+#overlay .draft-panel[data-draft-kind=augment] .screen-heading {
+  border-inline-start: 7px solid #bdaed4;
+  padding-inline-start: 14px;
+  background: linear-gradient(90deg, #5e4c724d, transparent 65%);
+}
+#overlay .draft-panel[data-draft-kind=augment] .augment-target {
+  border-inline-start: 3px solid #bcabd6;
+  padding-inline-start: 6px;
+}
