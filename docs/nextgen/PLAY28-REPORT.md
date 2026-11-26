@@ -520,3 +520,32 @@ The production build passed. The native checkpoint replay above used the same Bu
 | Standard fresh · Cryo | 15/24 | 15/24 |
 
 The usual Standard cohort finished two clears above the band. Pyro led both samples with 12/12 usual and 24/24 fresh, and the two additional usual clears came from Breacher. The usual spread was three clears. On fresh seeds, the two rerun rigs were four clears apart, and the baseline spread across all four was nine. The within-two target remains unmet. There were zero stalls across all 120 final simulator runs. [Usual Standard](../../artifacts/nextgen/playtest/play36-aim-usual/summary.json) · [Story](../../artifacts/nextgen/playtest/play36-aim-story/summary.json) · [Fresh Standard](../../artifacts/nextgen/playtest/play36-aim-fresh/summary.json) · [Fresh baseline Breacher](../../artifacts/nextgen/playtest/play36-base-breacher/summary.json) · [Fresh baseline Cryo](../../artifacts/nextgen/playtest/play36-base-cryo/summary.json) · [Fresh baseline Pyro](../../artifacts/nextgen/playtest/play36-base-pyro/summary.json) · [Fresh baseline Arc](../../artifacts/nextgen/playtest/play36-base-arc/summary.json)
+
+## PLAY37
+
+### Encounter changes
+
+- Manual Control searches both ends of the existing console for a legal Brute position. The bait and landing have clear sightlines. The center retreat line must intersect cover. The 1.5-second recovery floor and the ordinary bot policy are retained.
+- Passenger Vault stages its opening Brute within the sweep's range on a clear lane and puts 12 armour at the first traversable lateral step. A melee-strike receipt records phase entry before the arc and line-of-sight tests. Suit damage additionally requires a vulnerable marine. The lesson keeps normal dodge invulnerability and its forgiving damage multiplier.
+- Coolant releases the crossfire screen into withdrawal once the featured threats are gone and the beat has dispatched. Shaft adds 220 ms of spacing per following pincer arrival. The PLAY35 encounter diff does not contain a direct Shaft staging edit, so the earlier suit increase cannot be attributed to a specific PLAY35 Shaft change.
+- Protected wounds retain their presentation glow until at least 160 ms of presentation time after the last bank effect. The release flinch uses the recovery receipt, including when the actor already entered corpse presentation. Simulation damage timing is unchanged.
+- Coolant and the Relay Racks shutter request up to four world units of focus shift before the existing HUD and room constraints. The seal request lasts two seconds and shows one silhouette approach and recoil. The shutter request begins during charge commitment and clears on a shot crossing the opened frame or after two seconds.
+- Transmission searches for a second nearby obstruction around the existing corner, with a fallback to the first corner if no legal setup is found. Saving the supply pod visibly lifts the retained armour pickup. The finale retains a short bright impact line on the cover face and requires a marine-clear foothold for its shelter mark.
+
+### Verification
+
+The production build passed, including a rebuild of the final Passenger adjustment. In a stationary deterministic replay from the earned Arc 1729 Awakening checkpoint, the opening Passenger Brute took 13.23 armour (46.00 to 32.77), left health at 100, and left the 12-armour pickup 148 units along the lateral step. The native Arc and Breacher runs from the preceding build both took zero suit in Passenger. The Arc banked-wound frame is at 14.883 seconds. The Breacher trace has bank and recovery events in the same input sample at 17.633 seconds. Those receipts show the triggering case. They do not time the rendered release. [Stationary simulation](../../artifacts/nextgen/play37-probe/passenger.json) · [Native Arc wound frame](../../artifacts/nextgen/playtest/play37-native-arc/r2-passenger-vault-banked-wound.png)
+
+The Arc 1729 Manual Control checkpoint replay showed the Brute recovering at (390, 649.9) at 806.617 seconds. The marine was at (594.9, 293.8), outside the marked landing at (304, 677), with no clear shot. The window therefore shows the blocked retreat side but does not demonstrate a landing and return shot. The replay logged an original ship kit preparation timeout. [Recovery frame](../../artifacts/nextgen/playtest/play37-console-arc/r19-manual-control-chamber-console-window.png) · [Replay report](../../artifacts/nextgen/playtest/play37-console-arc/report.json)
+
+Final23 Standard suit totals were 40.1 in sectors 1–4, 453.0 in sectors 5–8 and 1,035.7 in sectors 13–16. The full native campaigns and final-head simulator series were launched under concurrent gallery load.
+
+| Verification metric | Previous | PLAY37 status |
+|---|---:|---|
+| Standard usual clears | 42/48 with PLAY36 policy | Final-head cohort launched |
+| Story novice usual clears | 23/24 | Final-head cohort launched |
+| Standard fresh Breacher / Pyro clears | 19/24 / 24/24 | Final-head cohort launched |
+| Standard native suit, sectors 1–4 / 5–8 / 13–16 | 40.1 / 453.0 / 1,035.7 | Matched aggregate pending |
+| Manual Control landing then return hits | 0 across five Final23 Standard runs | No hit in the sampled Arc replay window |
+
+Prior fresh Pyro is the PLAY36 baseline, and prior fresh Breacher is after the Bulwark policy correction. The current rig balance and stall counts require completed cohorts. No Pyro tuning has been applied.
