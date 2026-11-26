@@ -14,6 +14,17 @@ const surfaces:Record<string,Surface>={
  'freight-hold':[.12,138,'M0 -42h30v12H9v13H0Z M0 42h30V30H9V17H0Z','',''],
  'coolant-plant':[-.16,108,'M0 -28h51v56H0Z M8 -22v44m8 -44v44m8 -44v44m8 -44v44m8 -44v44','',''],
  'transmission-chamber':[0,120,'M0 -25h22l21 25 -21 25H0 M9 -17h10l14 17 -14 17H9 M43 0h20','',''],
+ 'breached-loading-bay':[-.32,129,'M0 -28h38l21 14 M0 28h31l17 -18','M-134 -245Q-101 -179 -61 -110T39 40','M-8 -3l15 -4 -6 10Z'],
+ 'relay-racks':[0,97,'M0 -20h24l14 14h25 M0 -12h20l14 14h29 M0 -4h16l14 14h33','M-190 147Q-95 137 -68 78T26 -21','M-4 -7h9v8l-4 6Z'],
+ 'diagnostic-gallery':[1.57,105,'M0 -30q-9 0 -9 12v32q0 15 10 15h49v-59Z M5 -19h14v37H5Z','M-204 171Q-137 148 -93 122T-4 66','M-6 1l4 -6 9 1 -3 8Z'],
+ 'safety-interlock-station':[0,84,'M0 -23h15v15h-15Z M48 -23h15v15H48Z M9 -11l32 -17 M55 -9v30H9v-22','M-230 -83Q-171 -86 -100 -36T32 20','M-6 -2l7 -3 5 5 -8 4Z'],
+ 'service-shaft-landing':[.72,99,'M0 -27v54 M8 -27v54 M19 -22l15 -8 15 8 M34 -30v58','M235 204Q157 121 92 93T4 12','M-10 0q7 -5 17 1l-7 2Z'],
+ 'infested-workshop':[0,122,'M0 -19h42v38H0Z M7 -10h28v7H7Z M7 4h28v7H7Z M48 -19v38','M-212 102Q-110 114 -53 67T26 -9','M-7 0q2 -8 10 -6l-3 3 -4 2 9 4 -4 3Z'],
+ 'swarm-junction':[-.37,98,'M0 -15q15 -23 30 -1l-7 -2 -4 6 -6 -5 -7 6Z M35 9q13 -18 26 0l-8 -3 -4 5Z','M-148 -121Q-118 -69 -54 6T22 114','M-8 1q5 -13 16 -3l-3 4 -5 -3 -2 3Z'],
+ 'shielding-gate':[0,105,'M0 -23h64 M0 23h64 M9 -18h22l-5 18H15Z','M-209 99Q-122 79 -77 54T57 -38','M-5 -2h11v5H-5Z'],
+ 'containment-annulus':[-.58,117,'M0 -23q32 8 61 3 M0 -12q35 9 61 3 M12 -25v20 M45 -23v20','M-233 -114Q-174 -70 -102 -47T38 22','M-11 -1q11 2 18 -3l-2 5 -13 2Z'],
+ 'manual-control-chamber':[0,93,'M0 -19h26v37H0Z M5 -13h13v13H5Z M26 3h15v12h24 M46 -12h17v12H46Z','M-236 73Q-164 102 -103 49T21 24','M-7 -3h10v3h5v4H-7Z'],
+ 'overload-floor':[.13,121,'M0 -19h52v38H0Z M9 -23v46 M21 -23v46 M33 -23v46 M45 -23v46','M-194 -114Q-148 -64 -94 -44T36 48','M-7 -4l11 2 3 6 -13 -2Z'],
 };
 
 export function paintWorkingLane(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Point){
