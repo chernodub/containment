@@ -385,3 +385,40 @@ The baseline dist was held fixed while the later incident and kiting jobs record
 | overload-floor | Spill | Bus links | Repeated bus shoes connect the generator to the far bank, where the capped feeder has a visible stopping face. |
 
 The three weakest incident compositions are Communal Atrium, Armory and Service Shaft Landing. Foliage merges with the fallen furniture in the Atrium, the Armory view crops the ammunition source, and the Shaft wheel is too dim against its support. [Atrium](../../artifacts/nextgen/room33/sheets/communal-atrium/incident-native.jpg) · [Armory](../../artifacts/nextgen/room33/sheets/armory/incident-native.jpg) · [Shaft](../../artifacts/nextgen/room33/sheets/service-shaft-landing/incident-native.jpg)
+
+### Desktop verification
+
+Peak draws below use a matched native kiting fixture at both tiers. Each sample advances the running battle by 50 ms and records the renderer’s submitted draw calls. Each cell covers 30 samples following preparation. WebGL compileShader calls were counted during that interval. [Baseline diagnostics](../../artifacts/nextgen/room33/base/draws/manifest.json) · [Current diagnostics](../../artifacts/nextgen/room33/now/draws/manifest.json) · [Final Passenger diagnostic](../../artifacts/nextgen/room33/now/passenger-lane-draws/manifest.json)
+
+| Room | High base → ROOM33 | Low base → ROOM33 | Combat shader compiles, base → ROOM33 |
+|---|---:|---:|---:|
+| awakening-bay | 138 → 139 | 127 → 127 | 0 → 0 |
+| passenger-vault | 115 → 118 | 104 → 106 | 0 → 0 |
+| residential-gallery | 113 → 114 | 104 → 104 | 0 → 0 |
+| communal-atrium | 130 → 131 | 121 → 121 | 0 → 0 |
+| crew-checkpoint | 107 → 109 | 98 → 99 | 0 → 0 |
+| armory | 199 → 200 | 190 → 190 | 0 → 0 |
+| freight-hold | 118 → 119 | 107 → 107 | 0 → 0 |
+| breached-loading-bay | 126 → 127 | 116 → 116 | 0 → 0 |
+| relay-racks | 135 → 136 | 125 → 125 | 0 → 0 |
+| transmission-chamber | 120 → 122 | 109 → 110 | 0 → 0 |
+| diagnostic-gallery | 120 → 121 | 108 → 108 | 0 → 0 |
+| safety-interlock-station | 269 → 270 | 258 → 258 | 0 → 0 |
+| coolant-plant | 120 → 121 | 108 → 108 | 0 → 0 |
+| service-shaft-landing | 116 → 117 | 105 → 105 | 0 → 0 |
+| infested-workshop | 189 → 190 | 179 → 179 | 0 → 0 |
+| swarm-junction | 105 → 106 | 94 → 94 | 0 → 0 |
+| shielding-gate | 258 → 259 | 247 → 247 | 0 → 0 |
+| containment-annulus | 130 → 131 | 119 → 119 | 0 → 0 |
+| manual-control-chamber | 153 → 154 | 141 → 141 | 0 → 0 |
+| overload-floor | 138 → 140 | 125 → 127 | 0 → 0 |
+
+The separate Safety Interlock Arc benchmark peaked at **273 → 245 High draws** with zero combat shader compiles. Both trials recorded at least five seconds of live simulation and zero trial errors. Shared-host timings do not establish hardware frame rate. A preliminary timed all-room benchmark lacked full-kit receipts under contention and was stopped. The table uses the fixed-step capture diagnostics. [Base Arc benchmark](../../artifacts/nextgen/room33-safety-base/benchmark.json) · [ROOM33 Arc benchmark](../../artifacts/nextgen/room33-safety-now/benchmark.json)
+
+Baseline Pyro cleared 8 rooms on seed 1729 and ended at the room limit with 0 runtime errors. The runner flagged loading holds over five seconds in passenger-vault (6.82 s), residential-gallery (5.79 s). [Campaign receipt](../../artifacts/nextgen/playtest/room33-pyro-base/report.json)
+
+ROOM33 Pyro cleared 8 rooms on seed 1729 and ended at the room limit with 0 runtime errors. The runner flagged loading holds over five seconds in passenger-vault (5.77 s), residential-gallery (6.34 s). [Campaign receipt](../../artifacts/nextgen/playtest/room33-pyro/report.json)
+
+The production build passed. The first contact flash remains with the play delegate. The third-tier read is weakest at the Shaft and in the Atrium, and the Armory source still falls outside its incident crop.
+
+Both campaigns returned exit code 1 because the runner recorded loading defects. The final run’s total Crew Checkpoint hold was 6.26 seconds versus 4.55 seconds at baseline. The runner did not classify Crew Checkpoint as a loading defect. Safety Interlock’s highest observed ROOM33 result across the matched capture and full Arc benchmark was 270 High draws.
