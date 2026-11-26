@@ -534,19 +534,19 @@ void main(){
    float bank=1.-smoothstep(0.,.75,abs(deckClearance(fxWorld.xz)));
    float bed=.74+.13*sin(a*3.+.8)+.08*sin(a*8.+n)-bank*.065;
    float crust=1.-smoothstep(bed-.09,bed+.02,normalized);
-   float radial=abs(sin(a*5.+.60*n+.26*sin(r*2.)));
-   float finger=(1.-smoothstep(.018,.10,radial))*(1.-smoothstep(.91+n*.10,1.14,normalized));
-   float cracks=fissure*crust+finger*smoothstep(.42,.83,normalized);
    float rays=pow(abs(cos(a*5.+.28*n)),12.);
    float star=(1.-smoothstep(.07+.19*rays,.14+.27*rays,normalized))*peak;
    float core=(1.-smoothstep(.14,.55,r))*peak;
    float lava=fxFbm(q*1.35+vec2(t*.16,-t*.10));
-   float skin=smoothstep(.30,.68,lava+cell.z*.16);
+   float skin=smoothstep(.34,.60,lava+.12*cell.z);
+   float cracks=fissure*crust*(1.-smoothstep(.40,.57,lava));
    float ember=(1.-smoothstep(.015,.12,abs(normalized-bed)*R))*smoothstep(.30,.65,lava);
-   base=mix(vec3(.25,.081,.012),vec3(.033,.017,.012),skin);
+   base=mix(vec3(.18,.042,.008),vec3(.014,.018,.021),skin);
    emit=vec3(.42,.093,.006)*crust*(1.-skin)+vec3(.67,.21,.018)*(cracks*.75+ember*.48);
    emit+=vec3(1.1,.56,.12)*star*.45+vec3(1.-smoothstep(.033,.051,age))*core;
-   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.20*cracks+.12*ember;
+   alpha=mix(.24,.42,1.-smoothstep(.10,.65,age))*crust+.14*cracks+.08*ember;
+   float foothold=smoothstep(.24,1.18,r+.13*n);
+   alpha*=foothold;emit*=mix(foothold,1.,peak);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
