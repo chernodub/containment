@@ -168,3 +168,97 @@ The 1920×1080 pairs use staged rifle and shotgun hit events against the authore
 Reflection capture still reuses its filtered target for a valid room world. Reloads can recreate geometry, dressing and light state, so a room ID alone is insufficient for reuse across a reload. Splitting the six views across frames would spread submission without removing the work from the startup hold. It would also require freezing scene inputs across those frames to preserve the current result. This pass retains capture and filtering within the existing preparation boundary. In the Arc run, Passenger Vault held for 3.37 s at load 22.65, with 2.09 s spent capturing/filtering reflections. Residential Gallery held for 1.66 s at load 20.55, with 0.82 s in reflections. These timings are observations across builds and rigs, with no reflection change to isolate.
 
 The production build passed. The requested Arc seed 1729 campaign cleared Safety Interlock as room 12 and finished at 13 rooms with zero errors, zero recorded defects, and exit status 0. The campaign receipt is `artifacts/nextgen/playtest/perf43-arc/report.json`. The paired profile baseline was `931092c1` and the candidate runtime was `d262ef54`.
+
+## PERF44 — Safety Interlock High render submission
+
+Cleaned former PERF37–PERF42 artifacts and old performance playtests from the assigned worktree. `df -h /Users/chernodub` available space increased from 18 GiB to 34 GiB. PERF43 evidence was retained. The baseline runtime was `d34a6a86`, and the candidate runtime was `2dc1a5be`.
+
+The 15-second Pyro windows used the 100 µs CDP CPU sampler, native frame indices and the existing timestamp anchor. The render interval starts immediately after native update. The middle 5% and slowest 5% are selected by native render duration. Function times below are sampled milliseconds per selected frame. Inclusive rows overlap. Rapier WASM functions are listed by their profiler identifier because the browser build has no Rust line mapping. The corresponding JS call chain reaches `DeathRagdolls.update` at `src/render/DeathRagdolls.ts:219` and `World.step` at line 245. In the initial High profile, the same WASM stack led the tail.
+
+The GPU pass audit now records CPU scope durations alongside the existing asynchronous GPU samples. Scene color includes draw submission, which includes GL calls. The actor draw bucket covers skinned submissions. Light, envelope and effect preparation run before Three resets its counters, so their per-pass means use the adjacent render index. Ink is part of composite, and transparent render time includes gas draws where present. DOM HUD time is the existing native observer's HUD duration. Audit wrappers add CPU overhead. Counts below are direct observations from the instrumented trials.
+
+| Case | Load | Frames | Render p50 / p95 / p99 ms | Program switches p50 | Uniform uploads p50 | Draws peak | DOM HUD p95 ms |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Before High | 4.17 → 4.87 | 754 | 10.500 / 15.000 / 18.300 | 93 | 1498 | 201 | 2.10 |
+| Before Low | 4.87 → 5.31 | 839 | 9.800 / 12.800 / 14.900 | 86 | 1046 | 187 | 1.90 |
+| After High | 5.31 → 4.86 | 777 | 10.400 / 13.000 / 14.800 | 98 | 1543 | 211 | 2.10 |
+| After Low | 4.86 → 4.66 | 842 | 9.700 / 12.200 / 15.100 | 89 | 1090 | 197 | 1.90 |
+
+| CPU scope (mean ms/frame) | Before High | Before Low | After High | After Low |
+| --- | --- | --- | --- | --- |
+| ragdollUpdate | 1.795 | 1.296 | 1.445 | 1.312 |
+| lightUpdate | 0.005 | 0.003 | 0.006 | 0.004 |
+| abilityUpdate | 0.288 | 0.258 | 0.296 | 0.250 |
+| marineEnvelope | 0.815 | 0.825 | 0.801 | 0.812 |
+| healthBarUpdate | 0.044 | 0.049 | 0.047 | 0.045 |
+| effectUpdate | 0.208 | 0.185 | 0.186 | 0.193 |
+| pickupUpdate | 0.005 | 0.003 | 0.007 | 0.008 |
+| bindFramebuffer | 0.012 | 0.009 | 0.012 | 0.010 |
+| bufferSubData | 0.105 | 0.101 | 0.101 | 0.105 |
+| bufferData | 0.000 | 0.000 | 0.000 | 0.000 |
+| clear | 0.004 | 0.003 | 0.003 | 0.002 |
+| useProgram | 0.045 | 0.040 | 0.037 | 0.038 |
+| uniformUploads | 0.460 | 0.352 | 0.470 | 0.356 |
+| roomAndOtherOpaqueDraw | 1.262 | 1.118 | 1.250 | 1.081 |
+| actorDraw | 0.858 | 0.770 | 0.838 | 0.765 |
+| transparentVFX | 0.611 | 0.554 | 0.608 | 0.531 |
+| gasDepthSnapshot | 0.012 | — | 0.012 | — |
+| sceneColor | 4.526 | 4.271 | 4.470 | 4.189 |
+| gtao | 0.059 | — | 0.054 | — |
+| aoDenoise | 0.017 | — | 0.022 | — |
+| bloomExtract | 0.017 | — | 0.017 | — |
+| bloomBlurHorizontal | 0.012 | — | 0.011 | — |
+| bloomBlurVertical | 0.011 | — | 0.008 | — |
+| distortion | 0.017 | — | 0.017 | — |
+| composite | 0.024 | 0.075 | 0.026 | 0.072 |
+| finalAA | 0.021 | 0.030 | 0.023 | 0.025 |
+| frameTotal | 4.773 | 4.424 | 4.715 | 4.334 |
+| hud | 0.102 | 0.102 | 0.102 | 0.104 |
+
+#### High median versus Low median
+| Function and source | High self / inclusive | Reference self / inclusive | Excess self |
+| --- | --- | --- | --- |
+| `wasm-function[417] · 007b5d42 · 1` | 0.223 / 0.223 | 0.114 / 0.114 | 0.108 |
+| `updateMatrixWorld · node_modules/three/build/three.core.js · 12900` | 0.314 / 0.919 | 0.232 / 0.896 | 0.082 |
+| `setValueV3f · Three module · 5234` | 0.157 / 0.393 | 0.090 / 0.256 | 0.068 |
+| `toArray · node_modules/three/build/three.core.js · 11146` | 0.166 / 0.166 | 0.104 / 0.104 | 0.061 |
+| `wasm-function[42] · 007b5d42 · 1` | 0.109 / 0.248 | 0.048 / 0.158 | 0.061 |
+| `addCoordinates · src/render/camera/DrawnMarineEnvelope.ts · 109` | 0.213 / 0.213 | 0.153 / 0.153 | 0.060 |
+| `project · node_modules/three/build/three.core.js · 5279` | 0.119 / 0.179 | 0.060 / 0.094 | 0.059 |
+| `multiplyMatrices · node_modules/three/build/three.core.js · 10407` | 0.154 / 0.154 | 0.106 / 0.106 | 0.048 |
+| `wasm-function[251] · 007b5d42 · 1` | 0.100 / 0.251 | 0.052 / 0.202 | 0.048 |
+| `render · src/render/DepthRenderer.ts · 645` | 0.149 / 9.984 | 0.102 / 9.251 | 0.047 |
+
+#### High slowest 5% versus High median
+| Function and source | High self / inclusive | Reference self / inclusive | Excess self |
+| --- | --- | --- | --- |
+| `wasm-function[28] · 007b5d42 · 1` | 0.885 / 0.990 | 0.173 / 0.177 | 0.712 |
+| `wasm-function[417] · 007b5d42 · 1` | 0.710 / 0.710 | 0.223 / 0.223 | 0.487 |
+| `(garbage collector) ·  · 0` | 0.402 / 0.402 | 0.020 / 0.020 | 0.381 |
+| `wasm-function[35] · 007b5d42 · 1` | 0.401 / 4.889 | 0.077 / 1.207 | 0.325 |
+| `fitRankBounds · src/render/OriginalCreatureAnatomy.ts · 140` | 0.311 / 0.937 | 0.000 / 0.000 | 0.311 |
+| `wasm-function[385] · 007b5d42 · 1` | 0.342 / 0.342 | 0.066 / 0.066 | 0.276 |
+| `getComponent · node_modules/three/build/three.core.js · 17113` | 0.260 / 0.273 | 0.000 / 0.000 | 0.260 |
+| `wasm-function[325] · 007b5d42 · 1` | 0.363 / 0.363 | 0.127 / 0.127 | 0.236 |
+| `applyMatrix4 · node_modules/three/build/three.core.js · 8471` | 0.231 / 0.231 | 0.013 / 0.013 | 0.218 |
+| `wasm-function[71] · 007b5d42 · 1` | 0.241 / 0.479 | 0.037 / 0.095 | 0.204 |
+
+#### GPU query receipts
+| Case | Scopes | Frame total samples / query p50 ms | Scene color query p50 ms | Composite query p50 ms |
+| --- | --- | --- | --- | --- |
+| Before High | 14 | 18 / 31.570 | 24.781 | 15.875 |
+| Before Low | 7 | 40 / 11.034 | 9.939 | 9.481 |
+| After High | 14 | 19 / 50.993 | 28.715 | 18.882 |
+| After Low | 7 | 41 / 10.954 | 9.804 | 9.436 |
+
+The largest baseline CPU scope differences were ragdoll stepping (0.50 ms/frame), the inclusive scene submission (0.26 ms), opaque draws outside the skinned bucket (0.14 ms), and uniform uploads (0.11 ms). Light updates, framebuffer binds, clears, buffer uploads and GL program switches were small differences. High had substantially more uniform calls. Three's `setValueV3f` already caches equal values at the uniform location. The observed cost did not justify bypassing that cache or reordering material submissions. State calls (all state-changing APIs) were counted in the bench receipts.
+
+The runtime now caches weighted bone slot inventories per shared geometry and attribute revision, and computes only the three used components of each affine rank-bound transform in the same arithmetic order. Rank bounds still fit the current pose, and Rapier stepping and the High effect pipeline retain their original quality. High p95 fell by 2.0 ms in the instrumented pair. The lower measured ragdoll cost accounts for part of that delta, and the candidate drew more objects. A small improvement in the quiet render tail is plausible, with low confidence that this change alone will meet the 5% budget.
+
+The browser exposed EXT_disjoint_timer_query_webgl2 and returned samples. The High total and scene query medians were consistently larger than Low. Even tiny fullscreen stages reported 15–19 ms and the measured High query envelope exceeded displayed frame intervals. The readings point toward greater High GPU-side pressure, with queue and scheduling time confounded. They cannot establish standalone GPU pass costs or conclusively classify the quiet slips as GPU-bound. The CPU profile separately establishes a ragdoll-heavy submission tail.
+
+The three matched 1920×1080 High captures changed 255 pixels (0.0123%) in the Interlock pincer, 134 (0.0065%) in the Interlock edge warning, and zero in the Swarm Junction crowd. The native crops were inspected. Full-frame differences are below 0.2%, including moving effects. Before and after High manifests had empty error and failure lists.
+
+High's sampled inclusive `fitRankBounds` cost in the slow-render cohort was 0.937 → 0.563 ms/frame. Median GL state calls were 770 → 783 on High and 673 → 704 on Low. All four paired windows recorded zero combat shader compiles.
+
+The production build passed. The Pyro seed 1729 playtest cleared all 13 rooms, including Safety Interlock at room 12, with zero errors and exit status 0. The receipt is `artifacts/nextgen/playtest/perf44-pyro/report.json`. High capture evidence is in `artifacts/nextgen/perf44-visual-after/manifest.json`. The original Low benchmark capture attempted to stage combat while the tier change was preparing materials. Selecting Low before staging the room resolved the capture, with an empty error and failure list in `artifacts/nextgen/perf44-low-fight/manifest.json`.
