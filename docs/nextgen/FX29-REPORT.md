@@ -229,3 +229,38 @@ Crew Checkpoint peak draw calls over 600 fixed ticks. Each cell gives pre-FX34 �
 | Cryo | 147 → 147 | 134 → 134 | 0 → 0 | 0 → 0 |
 | Arc | 156 → 156 | 145 → 145 | 0 → 0 | 0 → 0 |
 | Breacher | 143 → 143 | 134 → 134 | 0 → 0 | 0 → 0 |
+
+## FX35
+
+Meltdown's leading edge expands to the simulation radius in 150 ms. The heat field cools inward from its perimeter. Its former four floor-flame pockets have been removed. The existing aura light is weaker, and tick sparks originate at torso height and move outwards from the caster on native target receipts. Simulation damage and displacement are unchanged. A dashed green debug line in the 150 ms study projects the live zone's center and radius through the gameplay camera.
+
+Whiteout and Nova thin their ground material immediately behind actor silhouettes via the existing priority texture. Nova has a cyan cast core and a narrow crystal lip. Flashfire uses its existing scorch fan to connect the white-hot muzzle to the far edge while preserving its separate contact bursts. None of these drawings adds a light or a screen pass.
+
+The Relay Racks pressure receipt places Seismic Slam 717 ms into its cooldown, with no live ability zones and an inactive Overdrive. The overlapping cell edges in Slam's 2.2-second Shock draw produced the amber network. The owner is the Shock spawn in `src/render/abilities/breacher/index.ts:95` and the emissive plate seams in `src/render/abilities/FlagshipFx.ts:370`. The seam now lights only the narrowest gaps in broken sections, reaches zero emission at one second, and fades as dark residue before the draw retires.
+
+When three living enemies approach within four metres the marine's existing surface material fades in a cool grazing-angle accent. The power mask gives more clearance to the visor and pauldron. The grayscale Whiteout pair still shows discrete suit planes rather than a continuous selection outline.
+
+[Study gallery and native comparisons](../../artifacts/nextgen/fx35/index.html) · [Debug radius at 150 ms](../../artifacts/nextgen/fx35/fx35-meltdown-crew-checkpoint-dense-radius-crew-checkpoint-02-1920.png) · [Ability captures](../../artifacts/nextgen/fx35/abilities.html)
+
+Transparent coverage was measured separately from the ordinary benchmark. A capture-only WebGL diagnostic preserved native transparent draws, discards, depth tests and opaque depth. It cleared the color attachment to white before the first transparent submission and multiplied destination red by 0.875 for each passing fragment. Readback used the GPU's implementation format for the packed HDR target. The reported value is the largest frame-average layer count in the 45, 150, 300 and 1000 ms Slam samples. Maximum per-pixel layers also remained level at 30 on High and 23 on Low. An initial diagnostic read used an incompatible pixel format and was discarded. [Previous layers](../../artifacts/nextgen/fx35-fill-base/manifest.json) · [Current layers](../../artifacts/nextgen/fx35-fill-now/manifest.json)
+
+| Crew Checkpoint | Peak draws before → FX35 | Combat shader compiles before → FX35 | Peak mean transparent layers before → FX35 |
+| --- | ---: | ---: | ---: |
+| High | 146 → 146 | 0 → 0 | 2.335 → 2.277 |
+| Low | 136 → 136 | 0 → 0 | 2.258 → 2.165 |
+
+Draws and compiles use matched 600-tick Breacher runs at fixed resolution. The realtime attempt produced no usable frame sample under host load and was replaced by the fixed-step runs. [Before](../../artifacts/nextgen/fx35-fixed-base/benchmark.json) · [FX35](../../artifacts/nextgen/fx35-fixed-now/benchmark.json)
+
+The body response uses the existing Meltdown target reaction in `src/render/motion/OverdriveReactions.ts` together with the joint ember. At the edge the outward-moving spark is small enough that I can follow it more easily at native size. Railbreaker's body displacement is still easier to see at 480×270. Nova's left reach is clearer, though the bright lip can briefly read as a drawn arc. On Whiteout the isolated small bodies have dark space immediately behind them. Two bodies crossing in front of the same bank are still difficult to separate at thumbnail size.
+
+An isolated readback retained the actual Shock shader's emitted-light term, depth test and discards. At 30, 150, 300, 600 and 1000 ms, the highest count was 25,369 lit pixels on High and 27,061 on Low in a 1920×1080 frame. That is 1.22% and 1.31% of the viewport. Both recorded zero lit Shock pixels at one second. The visible deck occupies well over a tenth of these frames, putting the observed crack coverage below 15% of the visible deck. The matte also includes the brief central flash. [Emission measurements](../../artifacts/nextgen/fx35-crack-matte/manifest.json)
+
+The native crowd comparisons use each room's own spawns. The marine walked toward them with firing off. The captured counts within four metres were four in Crew Checkpoint and three each in Freight Hold, Relay Racks and Overload Floor on both builds. The rim stays on the visible armor and visor. A Brute standing in front of the suit can still conceal part of it. Each color and grayscale pair is in the gallery; the separate room-pressure frames come from the Pyro campaign.
+
+The production build passed. The catalog has sixteen equipped abilities across four rigs, including four Overdrives. Each produced cast, impact and aftermath receipts on both High and Low. All 96 selected receipts have an empty errors array. Tesla Pylon was recaptured at native resolution after its compact viewport put the HUD over the marine. The final Flashfire study extends the peak tongues to the far arc and whitens the muzzle. Meltdown's underlying mesh now ends at the native radius. [All 96 frames](../../artifacts/nextgen/fx35/abilities.html) · [Receipt index](../../artifacts/nextgen/fx35/ability-receipts.json) · [Production build](../../artifacts/nextgen/fx35/release-build.log)
+
+The one- and five-second native Slam pairs use the same seed, original room spawns and simulation offsets in Relay Racks, Crew Checkpoint, Safety Interlock and Overload Floor. At one second the hazard stripes and broken lamp housing on Overload Floor are visible through the cooled impact. At five seconds the red attack fan is visible beside the marine. The dense Safety Interlock staging put its recorder outside the HUD-safe view, so the reported comparison uses the native room setup. Ship-kit preparation timeouts in Relay Racks, Safety Interlock and Freight Hold required fresh invocations. The Overload Floor capture was also restarted after it stopped advancing. [One second](../../artifacts/nextgen/fx35/fx35-native-overload-floor-overload-floor-01-480.png) · [Five seconds](../../artifacts/nextgen/fx35/fx35-native-overload-floor-overload-floor-02-480.png)
+
+The seed-1729 Pyro campaign cleared all ten rooms with zero errors across the final run and its earned-checkpoint continuation. The first screenshot attempt timed out and was retried. On the final build the one-hour runner limit expired after eight clears. The continuation used the recorded Breached Loading Bay reward boundary and cleared Relay Racks and Transmission Chamber. Its outcome is `room-limit` with five room-loading diagnostics, exit status 1. [First eight rooms](../../artifacts/nextgen/playtest/fx35/report.json) · [Ten-room result](../../artifacts/nextgen/playtest/fx35-continuation/report.json)
+
+At the start, `df -h /Users/chernodub` reported 926 GiB total, 859 GiB used and 41 GiB available (96%). At completion it reported 926 GiB total, 805 GiB used and 90 GiB available (90%). This worktree's nextgen artifacts measured 17 GB before cleanup and 1.8 GB after verification.

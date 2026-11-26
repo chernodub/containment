@@ -61,8 +61,8 @@ void main(){
   w=base+right*(s*W*(1.-.55*v))+vec3(0.,v*H,0.);
   fxLocal=vec2(s,v);fxSeg=seg+step(39.5,col)*.5;
  }else if(m>13.5){
-  // Meltdown alone reserves a narrow apron for cosmetic cracks beyond its front.
-  float a=g.x*6.2831853;float r=g.y*fxRange*(fxArc==2.?1.18:1.);
+  // The last vertex lies on the authoritative effect boundary.
+  float a=g.x*6.2831853;float r=g.y*fxRange;
   w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
  }else if(m>12.5){
   float a=g.x*6.2831853,polar=g.y*1.5707963;
