@@ -288,3 +288,9 @@ The presentation world performs at most two solves per render. After an expensiv
 | Arc | 4.95→4.59 / 3.98→3.65 | 701 → 655 | 1.5 / 3.8 / 5.0 / 9.3 → 0.8 / 1.4 / 1.9 / 6.6 | 193 → 6 | 11.4 → 10.1 | 23.00% → 25.69% |
 
 Maximum sub-steps fell from six to two in both cases. The broader ragdoll scope p95 was 5.2 → 2.5 ms for Pyro and 4.0 → 1.5 ms for Arc. The runtime retains six visible High ragdolls. The actual maximum active in the Pyro pair was six before and five after, with peak dynamic bodies 71 → 78. All paired windows had zero combat shader compiles. Lower solve and render tails should help on a quiet machine. Instrumented frame shares rose and do not establish that the quiet matrix will meet the 5% goal. Raw profiles and indexed metrics are in `artifacts/nextgen/perf45/`.
+
+### Native death strips
+
+The Pyro fixture used a live Napalm Charge to kill four staged Crawlers on the pool tick. The Arc fixture used a live Overload chain to kill four staged Crawlers. A direct lethal Brute hit exercised the native corpse path. The Brute fixture was moved clear of a sign for the final paired strip. All final capture manifests had empty error and failure lists. Individual captures are 1920×1080 at 0, 100, 250, 500 and 1,000 ms relative to the first captured kill frame.
+
+The strips use unscaled native crops, before on top and after below. Inspected samples show continued movement through the falls. I saw no pop, persistent float, mid-air freeze or stiff locked pose. Later crawler rotations differ slightly after the scheduler changes. The two Brute sequences show the same broad fold and fall, with minor differences in limb orientation. The sign obscures part of one crawler in the multi-kill views. The strips are `artifacts/nextgen/perf45/visual/pyro-crop.png`, `arc-crop.png` and `brute-crop.png` in the same directory.
