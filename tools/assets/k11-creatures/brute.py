@@ -250,6 +250,7 @@ def build(sk):
         leg(body, s, side)
     # --- elite: the same body; horns on the skull plate, a taller spine ridge and broader shoulder mantles ---------
     regalia = S.Sculpture("brute-regalia")
+    regalia.add(S.Prism((2.10,0,8.44),(1.30,0,9.42),.54,.18,sides=4,squash=.70,zone=BONE,bone="head",plate=52))
     for s, r0 in zip((-1, 1), rear):   # two pale horns swept back and out from the plate's rear corners
         pts = [r0 + pu * 0.05, r0 + v3((-0.32, 1.06 * s, -0.37)), r0 + v3((-1.28, 2.31 * s, -0.76)), r0 + v3((-2.70, 2.91 * s, -1.36))]
         regalia.add(Ellipsoid(r0, (.66, .68, .48), zone=ARMOR, bone="head", plate=74))

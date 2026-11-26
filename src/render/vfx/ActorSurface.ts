@@ -234,7 +234,8 @@ if(actorBroodForm.x>=-1.){
   vec3 middle=mix(vec3(.023,.036,.024),vec3(.044,.025,.016),actorWarden);
   vec3 crown=mix(vec3(.044,.070,.047),vec3(.116,.060,.034),actorWarden);
   vec3 paint=vec3(.008,.011,.008);
-  if(heavyPaint==1.)paint=crown;
+  float rankBone=actorEliteBody*(1.-actorWarden);
+  if(heavyPaint==1.)paint=mix(crown,vec3(.31,.29,.23),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
