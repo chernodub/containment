@@ -10,7 +10,7 @@ From the repository root, with npm dependencies, Playwright Chromium and Python 
 tools/assets/u10-keyart/title28.sh
 ```
 
-The full follow-up rebuild took 106 seconds on the M1 Pro. The command uses the production actor pool for the title and every card containing an enemy or brood pod. It writes composition A to the shipped UI directory and B’s replacement plates to `artifacts/nextgen/title28-studio/alternate/u10/`. Run `npm run build` afterward to package the images. Title and settings still load static artwork.
+The TITLE33 section below describes the current rebuild. The original TITLE28 follow-up rebuild took 106 seconds on the M1 Pro. The command uses the production actor pool for the title and every card containing an enemy or brood pod. It writes composition A to the shipped UI directory and B’s replacement plates to `artifacts/nextgen/title28-studio/alternate/u10/`. Run `npm run build` afterward to package the images. Title and settings still load static artwork.
 
 The Warden route uses the same Coolant Plant gallery as the Matron. The larger profile exposes the near shoulder plate. A blue-white plasma core and a pool of light meet on that plate. The rear leg still overlaps the torso at card size.
 
@@ -67,3 +67,19 @@ The native comparisons in `artifacts/nextgen/title32/` place final22 on the left
 At full title size the helmet lip, receiver, shoulder and shield edge have distinct thicknesses and surfaces. At thumbnail size the cyan chevron is the first detail I pick out on the figure. The larger white wordmark draws my eye first on the complete screen. Across the three widths the marks, visor and mouth clear the menu. The Warden faces the marine and reads most clearly by its bone sail and forelimb. Its recessed mouth still looks shallow at thumbnail size. The amber Crawler and ice-blue Stalker retain distinct marks and profiles.
 
 In the rig comparison, the shoulder colours, brow, weapon and shield or pack identify the same four figures in both columns. Combat has a heavier apparent contour at native scale. The lower selector camera makes the Breacher shield read broader and shows less of the Cryo hose and Arc mast than the overhead view.
+
+## TITLE33
+
+The title now reads the Warden, Crawler and Stalker directly from the shipped caste meshes. The title renderer welds the atlas seams, subdivides the surfaces, reads the authored anatomy cells and lights the result with the same stepped material shader as the marine. The Warden's jaw uses its skin weights. The broken sill runs under the near hand and recedes toward the back foot. Cool light crosses the shoulder and shell, while the mouth side takes an amber bounce.
+
+The Breacher retains the selector kit and sampled carry pose. The title master is 3584 pixels square. The four selector masters render at 1280 and reduce to 640. The Warden master renders at 2400, and the Crawler and Stalker at 1024. The cast composite fairs anatomical colour masks before final reduction and encodes the transparent plates losslessly. The deck and fog use the original stage and camera at 5120×2880. The existing transparent foreground spacer, lettering and menu are retained.
+
+From the repository root run `sh tools/assets/u10-keyart/title33.sh` with Blender and Pillow on PATH to rebuild the title and selectors. The full `title28.sh` pipeline calls that command before rebuilding the cards and ending.
+
+The 200% review prompted two corrections. Fairing the organ mask removed a row of triangular notches at the back of the mouth. Fitting the close-up glove inside the Breacher's knuckle bow cleared three fingertip plates that had broken through the shield below its insignia.
+
+Proof is in `artifacts/nextgen/title33/`. Each `title-<width>-native.png` reads final22, final23, TITLE33 from left to right. `marine-200.png` and `warden-200.png` double the original 1920 capture pixels without interpolation. The three `title-<width>-480.png` files show TITLE33 alone. Each `portrait-<rig>-native.png` pairs the previous and current 640-pixel portrait.
+
+At 200% the broad silhouette strokes and jaw bands stay continuous. At 480×270 the broken sill carries the near hand, with the amber organ visible between the jaws. The bent forelimb reads sooner than the individual claw tips. The pale rim separates the helmet and receiver from the dark hull and the rust shell from the blue aperture. I would ship this alongside the selector and game suit. Final22 still has finer material reflections, while TITLE33 gives the opposing figure a clearer head, reach and footing.
+
+The production build and all three desktop captures passed.

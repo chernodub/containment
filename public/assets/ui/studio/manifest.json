@@ -1,7 +1,7 @@
 {
   "portrait-breacher": {
     "file": "portrait-breacher.png",
-    "bytes": 182427,
+    "bytes": 215121,
     "shot": {
       "source": "selection24",
       "rig": "breacher",
@@ -12,7 +12,7 @@
   },
   "portrait-cryo": {
     "file": "portrait-cryo.png",
-    "bytes": 122482,
+    "bytes": 144699,
     "shot": {
       "source": "selection24",
       "rig": "cryo",
@@ -23,7 +23,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 162283,
+    "bytes": 187639,
     "shot": {
       "source": "selection24",
       "rig": "pyro",
@@ -34,7 +34,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 153527,
+    "bytes": 178268,
     "shot": {
       "source": "selection24",
       "rig": "arc",

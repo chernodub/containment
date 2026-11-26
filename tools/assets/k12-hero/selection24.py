@@ -37,7 +37,7 @@ for rig in (['breacher'] if args.title else args.rig):
     scene.cycles.use_denoising = False
     scene.world = bpy.data.worlds.new('Low cool studio ambient')
     scene.world.color = (.09,.105,.13)
-    resolution = 1728 if args.title else 640
+    resolution = 3584 if args.title else 1280
     if args.preview:
         resolution = 640 if args.title else 320
     scene.render.resolution_x = scene.render.resolution_y = resolution
@@ -49,6 +49,14 @@ for rig in (['breacher'] if args.title else args.rig):
     weapon, view = SHOTS[rig]
     path = hero.ROOT / 'artifacts/nextgen/title32-studio' / (rig+'-carry.json')
     objects, meshes, arm = hero.stage_hero(rig, weapon, brace=False, carry=json.loads(path.read_text()))
+    if rig=='breacher':
+        # The high-detail glove has longer armoured digits than the play hand.
+        # Close them inside the knuckle bow so they clear the solid strike face.
+        arm.pose.bones['hand.L'].scale *= .76
+        for bone in arm.pose.bones:
+            if bone.name.endswith('.L') and (bone.name.startswith('finger_') or bone.name.startswith('thumb.')):
+                bone.scale *= .68
+        bpy.context.view_layer.update()
     if args.title:
         view = (.47, 1.19, .63)
     forward = Vector(view).normalized()
@@ -64,6 +72,8 @@ for rig in (['breacher'] if args.title else args.rig):
     cam.data.type = 'ORTHO'
     cam.data.ortho_scale = max(hi-lo for lo,hi in bounds)/.90
 
-    ink.draw(scene, objects, forward*.52 - right*.58 + up*.76, resolution)
+    ink.draw(scene, objects, forward*.52 - right*.58 + up*.76, resolution, breach=[
+        (-right-up*.52+forward*.15,.87,"d78a63",.44),
+        (-right+up*.6-forward*.42,.69,"a5c7e3",.78)])
     scene.render.filepath = str(args.out / ('breacher.png' if args.title else f'portrait-{rig}.png'))
     bpy.ops.render.render(write_still=True)

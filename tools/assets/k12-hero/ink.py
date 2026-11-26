@@ -26,7 +26,7 @@ def linear(hex_colour):
     return (*[channel(i) for i in (0,2,4)],1)
 
 
-def draw(scene, objects, key, resolution, embedded=False):
+def draw(scene, objects, key, resolution, embedded=False, breach=None):
     if not embedded:
         scene.view_settings.view_transform = 'Standard'
         scene.view_settings.look = 'None'
@@ -46,7 +46,7 @@ def draw(scene, objects, key, resolution, embedded=False):
     line.select_crease = True
     line.linestyle = bpy.data.linestyles.new('Marine ink')
     line.linestyle.color = linear('151922')[:3]
-    line.linestyle.thickness = max(.9, resolution*.0019)
+    line.linestyle.thickness = max(.9, resolution*.0011)
     materials = {slot.material for obj in objects if obj.type == 'MESH' and not obj.hide_render
                  for slot in obj.material_slots if slot.material}
     for mat in materials:
@@ -71,5 +71,21 @@ def draw(scene, objects, key, resolution, embedded=False):
             stops[1].color = linear(middle)
             stops.new(.86).color = linear(high)
             tree.links.new(dot.outputs['Value'],ramp.inputs[0])
-            tree.links.new(ramp.outputs[0],emit.inputs[0])
+            colour = ramp.outputs[0]
+            if breach is not None:
+                for direction, threshold, tint, strength in breach:
+                    facing = tree.nodes.new('ShaderNodeVectorMath')
+                    facing.operation = 'DOT_PRODUCT'
+                    facing.inputs[1].default_value = direction.normalized()
+                    tree.links.new(normal, facing.inputs[0])
+                    band = tree.nodes.new('ShaderNodeMath')
+                    band.operation = 'GREATER_THAN'
+                    band.inputs[1].default_value = threshold
+                    tree.links.new(facing.outputs['Value'], band.inputs[0])
+                    mix = tree.nodes.new('ShaderNodeMixRGB')
+                    mix.inputs[2].default_value = tuple(a*(1-strength)+b*strength for a,b in zip(linear(middle),linear(tint)))
+                    tree.links.new(band.outputs[0],mix.inputs[0])
+                    tree.links.new(colour,mix.inputs[1])
+                    colour = mix.outputs[0]
+            tree.links.new(colour,emit.inputs[0])
         tree.links.new(emit.outputs[0],tree.nodes.new('ShaderNodeOutputMaterial').inputs['Surface'])
