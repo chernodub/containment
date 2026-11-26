@@ -117,6 +117,10 @@ float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
  // Reserved region for the emitting texels of the authored organ mask.
  if(lanternPeak>.04)geometryRegion=30.;
 #endif
+#ifdef BROOD_PLANES
+ // Reserve the brood organ region for its chroma and interior-ink treatment.
+ if(broodFinish && broodMark)geometryRegion=28.;
+#endif
 #ifdef BRUTE_PLANES
  if(bruteFace)geometryRegion=29.;
  if(wardenMaw)geometryRegion=30.;

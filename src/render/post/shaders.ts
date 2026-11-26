@@ -203,7 +203,9 @@ ${inkComposite}
   if(actorClass>=4.0 && actorClass<=6.0){
     float region=floor(packedClass/8.0);
     float value=dot(color,vec3(.2126,.7152,.0722));
-    bool ornament=region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
+    // Restore luminous brood chroma lost on the filmic shoulder.
+    if(region==28.0)color=max(vec3(0.),mix(vec3(value),color,1.65));
+    bool ornament=region==28.0 || region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
     if(!ornament && !danger && value>.145){
       // Region 29 is the Brute bone mark. Preserve warm ivory through the final grade.
