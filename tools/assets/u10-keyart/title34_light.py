@@ -18,9 +18,9 @@ def background(hull):
     def plane(points,fill):
         d.polygon([(4*x,4*y) for x,y in points],fill=fill)
     plane([(170,192),(430,113),(450,171),(174,255)],'#678596')
-    plane([(161,247),(450,159),(451,169),(175,257)],'#89a6b1')
+    plane([(161,247),(450,159),(451,169),(175,257)],'#7795a3')
     plane([(218,300),(450,223),(450,285),(231,343)],'#2b4554')
-    return Image.composite(distant,steel,aperture.filter(ImageFilter.GaussianBlur(1.1)))
+    return Image.composite(Image.blend(distant,steel,.23),steel,aperture.filter(ImageFilter.GaussianBlur(1.1)))
 
 def cast_shadow(deck,hero):
     # Flatten the upright figure into deck perspective, anchored below the shield.
