@@ -25,9 +25,11 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','weapon-jobs','exchange-marks'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','screenshot-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','weapon-jobs','exchange-marks'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
+const screenshotTimeout=Number(options['screenshot-timeout-ms']??20000);
+assert(Number.isFinite(screenshotTimeout)&&screenshotTimeout>0,'screenshot-timeout-ms must be positive');
 const distRoot=resolve(String(options['dist-dir']??'dist'));
 const storyboardRoom=options['storyboard-room']??null;
 const storyboardRooms=String(storyboardRoom??'').split(',').filter(Boolean);
@@ -179,7 +181,7 @@ async function snapshot(stagnantSince=Infinity) {
   return state;
 }
 async function shot(name,s,options={}) {
-  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),...options});
+  const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file),timeout:screenshotTimeout,...options});
   report.screenshots.push(file);
   // Save actual body extents only at evidence frames; policy and native inputs are unchanged.
   if(s.status==='playing'&&!s.loading)s.framingEvidence=await page.evaluate(()=>{
