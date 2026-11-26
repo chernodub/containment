@@ -116,31 +116,26 @@
   background: linear-gradient(140deg, #292329, #111b22 58%);
 }
 #overlay .debrief-panel[data-outcome=dead] .result-actions { gap: 12px; flex-wrap: wrap; }
-#overlay .last-exchange {
-  display: grid;
-  grid-template-columns: 105px 250px;
-  gap: 8px;
-  align-items: center;
-  margin: 0;
-}
-#overlay .last-exchange figcaption span { display: block; margin-top: 5px; font-size: 13px; color: #c7d9e1; }
-#overlay .last-exchange svg { width: 250px; height: 125px; background: #0c1a20; border: 1px solid #57666e; }
-.exchange-cover { fill: #39454d; stroke: #7e8a90; }
-.exchange-attack { color: #edbd78; }
+#overlay .last-exchange { margin: 0; }
+.exchange-cover { fill: #33434c; stroke: #80949f; stroke-width: 4; }
+.exchange-attack { color: #e9bd75; }
 .exchange-attack[data-fatal=true] { color: #ff826b; }
-.exchange-attack[data-committed=false] path { stroke-dasharray: 5 4; }
-.exchange-attack path, .exchange-attack circle { fill: currentColor; stroke: currentColor; opacity: .48; }
-.exchange-attack text { fill: currentColor; paint-order: stroke; stroke: #122027; stroke-width: 4; font: 600 19px var(--font-body); text-anchor: middle; }
-.exchange-exit { fill: none; stroke: #b5ffcb; stroke-width: 3; stroke-dasharray: 5 4; }
-.exchange-marine { fill: white; stroke: #14222b; stroke-width: 2; }
-
-#overlay .result-actions > aside.retry-lesson {
-  flex: 0 1 340px;
-  gap: 10px;
-  font-size: 14px;
+.exchange-attack path, .exchange-attack circle { fill: currentColor; stroke: currentColor; opacity: .56; }
+.exchange-exit { fill: none; stroke: #bcffcf; stroke-width: 3; }
+.exchange-glyph { stroke: #0a151a; stroke-width: 2.5; stroke-linejoin: round; }
+.exchange-enemy-mark { fill: none; stroke-width: 2; }
+.exchange-marine { fill: #dee9df; }
+.exchange-visor { fill: none; stroke: #56c8db; stroke-width: 3; stroke-linecap: round; }
+.exchange-range { fill: none; stroke: #d99d86; stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .85; }
+.exchange-reach { fill: #ffbea8; paint-order: stroke; stroke: #0c1a20; stroke-width: 4; font: 600 13px var(--font-body); }
+@media (prefers-reduced-motion: no-preference) {
+  .exchange-attack[data-fatal='true'], .exchange-exit { animation: exchange-emphasis 1.3s ease-in-out 2 both; }
+  .exchange-exit { animation-delay: .55s; }
 }
-#overlay .result-actions .retry-lesson-art { width: 120px; }
-#overlay .result-actions .retry-lesson p { margin: 0; }
+@keyframes exchange-emphasis {
+  0%, 48%, 100% { filter: none; }
+  24% { filter: brightness(1.6); }
+}
 
 #overlay .debrief-panel[data-outcome=dead] .incoming-report {
   grid-template-columns: minmax(0, .7fr) minmax(0, 1fr);
@@ -160,8 +155,6 @@
 .exchange-marine.exchange-ghost { fill: #13232b; stroke: white; stroke-width: 2.5; }
 .exchange-attack:not([data-fatal=true]) { opacity: .45; }
 .exchange-exit { stroke-dasharray: none; }
-#overlay .incoming-report > .retry-lesson { margin: 0; gap: 12px; }
-#overlay .incoming-report .retry-lesson-art { width: min(55%, 260px); }
 
 #overlay .debrief-panel[data-outcome=dead] { padding-block: clamp(14px, 2vh, 23px); }
 #overlay .debrief-panel[data-outcome=dead] .result-details { margin: 8px 0; }

@@ -12,6 +12,10 @@ import {addMutation} from '../../src/game/roguelike/builds';
 import {canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
 import {WEAPONS} from '../../src/game/combat/catalog';
 import {enemyShotRadius} from '../../src/game/combat/enemyContact';
+import {ENEMY_ATTACK_SHAPES} from '../../src/game/enemies/attackShapes';
+import {MELEE_ATTACKS} from '../../src/game/enemies/meleeAttacks';
+import {AREA_ATTACK_RADIUS} from '../../src/game/enemies/QueenBossSystem';
+import type {EnemyEvent} from '../../src/game/enemies/EnemySystem';
 import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
@@ -106,6 +110,68 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    }
   },
   grantBoons(ids:MutationId[]){let build=game.expedition.build;for(const id of ids)if(!build.mutations.includes(id))build=addMutation(build,id);game.expedition=Object.freeze({...game.expedition,build});game.combat.setBuild(build);refresh();},
+  async stageDeathExchange({kind,room='awakening-bay',bruteLoss=false}:{
+   kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;
+  }){
+   await api.gotoRoom(room,{rig:'cryo'});
+   game.skipStory();
+   const runtime=game as unknown as {enemyEvents(events:readonly EnemyEvent[]):void;updateBullets(dt:number):void;hurtCooldown:number};
+   const impact={x:game.player.x,y:game.player.y};
+   const positions=[[-54,0],[54,0],[0,-54],[0,54],[-38,-38],[38,38]];
+   const earlier=positions.map(([x,y])=>({x:impact.x+x,y:impact.y+y}))
+    .find(p=>canTraverseExpedition(game.geometry,impact,p,game.player.radius));
+   if(earlier)Object.assign(game.player,earlier);
+   immune=true;
+   for(let frame=0;frame<21;frame++) update(50,{x:0,y:0,fire:false,angle:null,autoAim:true});
+   immune=false;
+   Object.assign(game.player,impact);
+   game.enemies.reset();
+   const pose=(family:StandardEnemyId,distance:number,base:number)=>{
+    for(const offset of [0,1,-1,2,-2,3,-3,4]){
+     const angle=base+offset*Math.PI/4,x=impact.x-Math.cos(angle)*distance,y=impact.y-Math.sin(angle)*distance;
+     if(canOccupyExpedition(game.geometry,{x,y},ENEMIES[family].radius)&&hasClearExpeditionShot(game.geometry,{x,y},impact)
+       &&(family!=='spitter'||canTraverseExpedition(game.geometry,{x,y},impact,ENEMY_ATTACK_SHAPES.spitterProjectileRadius))){
+      const spawned=game.enemies.spawn(family,x,y,false);
+      if(spawned.spawned)return {x,y,angle,id:spawned.enemy.id};
+     }
+    }
+    throw Error('No clear attack origin in staged death room');
+   };
+   if(bruteLoss){
+    const brute=pose('brute',65,-.85);
+    runtime.enemyEvents([{type:'melee-strike',enemyId:brute.id,enemyType:'brute',...brute,shape:MELEE_ATTACKS.brute.shape}]);
+    for(let hit=0;hit<(room==='relay-racks'&&kind==='spitter'?3:1);hit++){
+     runtime.hurtCooldown=0;
+     game.hurt(60,brute,{source:'enemy-contact',enemyFamily:'brute'});
+    }
+   }
+   game.combat.restoreRunResources({...game.combat.getRunResources(),health:1,armor:0});
+   runtime.hurtCooldown=0;
+   if(kind==='pool'){
+    game.hurt(90,{...impact,radius:AREA_ATTACK_RADIUS*.75},{source:'acid-pool',enemyFamily:'queen'});
+   }else if(kind==='charge'){
+    const attacker=pose('brute',80,.35);
+    runtime.enemyEvents([
+     {type:'attack-warning',enemyId:attacker.id,enemyType:'brute',x:attacker.x,y:attacker.y,targetX:impact.x,targetY:impact.y,durationMs:450},
+     {type:'contact-attack',attack:'charge',enemyId:attacker.id,enemyType:'brute',damage:90,
+      chargeFootprint:{...impact,angle:attacker.angle,shape:{kind:'line',range:5,width:2*ENEMIES.brute.radius,halfAngle:0}}},
+    ]);
+   }else if(kind==='spitter'){
+    const attacker=pose(kind,78,.2);
+    runtime.enemyEvents([{type:'hazard-attack',enemyId:attacker.id,enemyType:kind,sourceX:attacker.x,sourceY:attacker.y,
+     targetX:impact.x,targetY:impact.y,damage:90}]);
+    for(let frame=0;frame<36&&game.status==='playing';frame++)runtime.updateBullets(1/60);
+   }else{
+    const shape=MELEE_ATTACKS[kind].shape, attacker=pose(kind,shape.range*.7,.35);
+    runtime.enemyEvents([
+     {type:'melee-strike',enemyId:attacker.id,enemyType:kind,...attacker,shape},
+     {type:'contact-attack',enemyId:attacker.id,enemyType:kind,damage:90},
+    ]);
+   }
+   if(game.status!=='dead'||!game.deathExchange?.fatal)throw Error('The staged attack did not produce a fatal exchange');
+   refresh();
+   for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++)await new Promise(requestAnimationFrame);
+  },
   spawn(type:StandardEnemyId,x:number,y:number,elite=false){const radius=ENEMIES[type]?.radius;if(!radius||!canOccupyExpedition(game.geometry,{x,y},radius)||Math.hypot(x-game.player.x,y-game.player.y)<radius+game.player.radius+12)return false;const result=game.enemies.spawn(type,x,y,elite);return result.spawned?result.enemy.id:false;},
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
   botWeaponRange:()=>WEAPONS[game.combat.snapshot.weaponId].projectileSpeed*2,

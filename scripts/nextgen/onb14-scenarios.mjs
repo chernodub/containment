@@ -33,17 +33,8 @@ async function stageDrill(phase) {
   throw Error('Requested dodge drill phase did not occur');
 }
 
-async function stageDeath(family){
-  const d=window.__containmentDebug,g=d.game;
-  await d.gotoRoom('awakening-bay',{rig:'cryo'});
-  const source={source:family==='spitter'?'enemy-projectile':'enemy-contact',enemyFamily:family};
-  if(g.status==='playing'){
-    const resources=g.combat.getRunResources();
-    g.combat.restoreRunResources({...resources,health:1,armor:0});
-    g.hurt(90,undefined,source);
-  }
-  d.refresh();
-  for(let frame=0;frame<60&&!document.querySelector('#retry-rig');frame++) await new Promise(requestAnimationFrame);
+async function stageDeath(kind){
+  await window.__containmentDebug.stageDeathExchange({kind});
 }
 
 async function stagePod(phase){
@@ -57,7 +48,7 @@ async function stagePod(phase){
 
 export const ONB14_SCENARIOS=[
   ...['before','during','after'].map(phase=>({diagnosticOnly:true,id:`onb14-drill-${phase}`,state:'playing',room:'awakening-bay',setup:stageDrill,setupArgument:phase})),
-  ...['crawler','stalker','spitter'].map(family=>({diagnosticOnly:true,id:`onb14-death-${family}`,state:'dead',nativeKeys:[['Tab',0],['Shift+Tab',0]],required:['#retry-rig','.retry-lesson'],setup:stageDeath,setupArgument:family})),
+  ...['crawler','stalker','spitter'].map(family=>({diagnosticOnly:true,id:`onb14-death-${family}`,state:'dead',nativeKeys:[['Tab',0],['Shift+Tab',0]],required:['#retry-rig','.last-exchange'],setup:stageDeath,setupArgument:family})),
   ...['sealed','swelling','opening'].map(phase=>({diagnosticOnly:true,id:`onb14-pod-${phase}`,state:'playing',room:'awakening-bay',setup:stagePod,setupArgument:phase})),
 ];
 
