@@ -28,10 +28,10 @@ export function incomingDamageLabel(receipt: Pick<IncomingDamageReceipt, 'source
 }
 
 /** Fatal source and the three largest room damage sources lead the debrief. */
-export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): string {
+export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, actions: string): string {
   const last = stats.lastDamage;
   if (!last) {
-    return '<section class="incoming-report" aria-label="Failure analysis"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p></section>';
+    return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p>${actions}</div></section>`;
   }
   const dodge = fatalDodge(last);
   const ready=game.deathReadyAbility;
@@ -46,7 +46,7 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
   const grouped = [...sources].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
   const total = grouped.reduce((sum, [, amount]) => sum + amount, 0);
   const format = (amount: number) => Math.round(amount).toLocaleString('en-US');
-  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${!game.deathExchange && dodge ? `<p class="fatal-escape">${escapeHtml(dodge)}</p>` : ''}${escape}</div>${lastExchangeDiagram(game) || retryLesson(game)}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
+  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${!game.deathExchange && dodge ? `<p class="fatal-escape">${escapeHtml(dodge)}</p>` : ''}${escape}</div>${actions}</div>${lastExchangeDiagram(game) || retryLesson(game)}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
 }
 
 /** Preserve the authored ending verbatim and give it a full-screen moment. */
@@ -134,6 +134,6 @@ export function lastExchangeDiagram(game: DepthGame): string {
     <svg role="img" aria-label="Coral fatal footprint, muted nearby attacks, marine at impact and one second earlier, and a clear step when available." viewBox="${left} ${top} ${right-left} ${bottom-top}">
       <defs><marker id="exchange-arrow" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><path fill="#b5ffcb" d="M0 0 5 2.5 0 5Z"/></marker></defs>
       ${blockers.map(b=>`<rect class="exchange-cover" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`).join('')}
-      ${shapes.map(mapAttack).join('')}${path}${exit}${pose(marine)}
+      ${shapes.map(mapAttack).join('')}${path}${pose(marine)}${exit}
     </svg><figcaption>${advice}</figcaption></figure>`;
 }

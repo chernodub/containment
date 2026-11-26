@@ -361,7 +361,10 @@ export function createScreens(context: ScreenContext) {
       return;
     }
     // Repeated Tab must remain contained; only action shortcuts reject repeats.
-    if(event.repeat) return;
+    if(event.repeat) {
+      if(status==='dead'&&(event.key==='Enter'||event.key===' ')) event.preventDefault();
+      return;
+    }
     if(context.graphicsLost()||recoveryPending) {
       if(event.key==='Escape') {event.preventDefault();el('recover')?.focus();}
       return;

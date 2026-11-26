@@ -181,3 +181,14 @@
   margin: 5px 0 0;
 }
 #overlay .debrief-panel[data-outcome=dead] .incoming-breakdown li { flex: 1 1 240px; margin: 1px 0; }
+
+#overlay .debrief-panel[data-outcome=dead] .fatal-details {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+#overlay .debrief-panel[data-outcome=dead] .fatal-details .result-actions {
+  margin: 0;
+  padding: 12px 0 0;
+}
+#overlay .fatal-details .result-actions .primary { flex-basis: 100%; }

@@ -1333,10 +1333,14 @@ SCENARIOS.push(...['stalker','spitter','crawler'].map(family=>({
   Object.assign(g.player,point);
   d.invulnerable(false);
   const at=g.elapsed;
-  const attack=(owner,enemyType,angle,range,width,halfAngle=0)=>{
+  const attack=(owner,enemyType,bearing,range,width,halfAngle=0)=>{
    const distance=range*.7;
-   return {type:'melee-strike',enemyId:owner,enemyType,x:point.x-Math.cos(angle)*distance,
-    y:point.y-Math.sin(angle)*distance,angle,shape:{kind:width?'line':'arc',range,width,halfAngle}};
+   const poses=[0,1,-1,2,-2,3,-3,4].map(offset=>{
+    const angle=bearing+offset*Math.PI/4;
+    return {x:point.x-Math.cos(angle)*distance,y:point.y-Math.sin(angle)*distance,angle};
+   });
+   const pose=poses.find(p=>d.canStand(p.x,p.y,18)&&d.clearShot(p.x,p.y,point))??poses[0];
+   return {type:'melee-strike',enemyId:owner,enemyType,...pose,shape:{kind:width?'line':'arc',range,width,halfAngle}};
   };
   const crossing=family==='stalker'?attack(902,'stalker',-.85,130,24)
    :attack(902,'brute',-.8,92,0,Math.PI/3);
