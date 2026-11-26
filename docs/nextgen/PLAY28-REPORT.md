@@ -395,3 +395,59 @@ The Cryo checkpoint continuation recorded five exposed hits and 137.2 suit lost 
 Across the matched full Breacher and Cryo traces, the share of weapon contacts on exposed actors moved from 30/4,246 (0.707%) to 32/4,823 (0.663%). R26's wider five-run sample was 84/12,460 (0.674%). Native suit costs in sectors 2–4 were 0 / 0 / 0 → 0 / 0 / 0 for Breacher and 0 / 0 / 4.8 → 0 / 0 / 0 for Cryo.
 
 The corrected Swarm replays exercised the bounded escort hold. Cryo’s matched checkpoint replay moved the first escorts from 648.200 to 654.400 seconds; the Matron was killed before a marked pair appeared. The earlier pod frame verifies placement, while the corrected trace verifies the wait and fallback. The final production build passed. [Corrected Swarm trace](../../artifacts/nextgen/playtest/play34-marked-native/trace.ndjson)
+
+## PLAY35
+
+1. Manual Control's second beat commits a Brute at the console end, marks the bait and step, and draws the return lane. The other arrivals wait outside the exchange and release in a paced sequence. The hold expires after 4.8 seconds, and the authored recovery keeps its 1.5-second opening even if the Brute loses its melee berth.
+2. Residential's optional armor is directly behind the shell's starting footprint. The follow-up Stalker shares the approach, and an obstructed corner falls back to a nearby legal plate lane. The full R27 Story Cryo trace entered with 20 plasma in the magazine and 37 in reserve. Its plated Brute appeared over 690 units away and offscreen, with only three armored samples. The policy had required the explicit lesson target and a clear line for the equipped gun. It now uses plasma clearance and can recognize a nearby visible shell if the lesson prompt is late.
+3. Passenger Vault's lesson Brute commits within reach. The Residential and Atrium lessons retain their protected warnings. These three lesson strikes use partial damage, further scaled by Story's existing multiplier. The R27 matched traces identify Crew Checkpoint crossfire, Armory priority, Freight Hold pincer and Loading Bay interception as their largest ordinary damage beats. One ordinary arrival in each receives a 950ms delay on Standard.
+4. Destroying a marked pod visibly pushes and briefly staggers the nearest small screen group. The supply pod sits beside its actual armor pickup and the relay pod is staged along the bearing to the relay.
+5. Coolant seals the nearest eligible pincer entry to the leader's death position. The choice uses game geometry and keeps the persistent crest and visible staged body.
+6. The first ordinary post-supply fight uses two existing Transmission actors. One is beyond the receiver corner and the other occupies the approach. The setup recognizes both exclusives for each rig. The staged capture uses native room setup with the chosen augment and an illustrative cast.
+7. The Overload preview sends three zero-damage projectiles to the same cover face, spaced 220ms apart. Each impact renews the held lip mark.
+
+### Manual Control native checkpoint replays
+
+The replays resume earned R27 sector-18 boundaries. Breacher, Pyro and Arc 1729 used the first build that authored the console window. Cryo used the follow-up that preserved recovery after melee berth release. Pyro and Arc 2718 were replayed once more with spaced releases and are recorded at their latest timings below. The runs retain independent bot movement and target selection.
+
+| Rig and seed | R27 beat-one exposed shot | PLAY35 beat-one exposed shot | R27 suit loss | PLAY35 suit loss |
+|---|---:|---:|---:|---:|
+| Breacher 1729 | No | 718.033s | 79.3 | 58.3 |
+| Cryo 1729 | No | No | 119.2 | 91.6 |
+| Pyro 1729 | No | 685.467s | 0.0 | 44.9 |
+| Arc 1729 | No | 845.500s | 40.3 | 27.7 |
+| Arc 2718 | No | 773.117s | 25.8 | 94.8 |
+
+Four replays landed the shot. The suit-loss ceiling failed on Pyro and Arc 2718. Cryo's 775.517s frame contains only the visible recovering Brute and the marine with a clear line. Cryo cast Q while moving and its plasma shot struck cover. Breacher had one renderer kit preparation error under host contention. The spaced Pyro and Arc 2718 replays each cleared with zero runtime errors. [Cryo window](../../artifacts/nextgen/playtest/play35-window-cryo/r19-manual-control-chamber-console-window.png) · [Breacher return](../../artifacts/nextgen/playtest/play35-manual-breacher/r19-manual-control-chamber-console-return.png) · [Pyro return](../../artifacts/nextgen/playtest/play35-spaced-pyro/r19-manual-control-chamber-console-return.png) · [Arc 1729 return](../../artifacts/nextgen/playtest/play35-manual-arc/r19-manual-control-chamber-console-return.png) · [Arc 2718 return](../../artifacts/nextgen/playtest/play35-spaced-arc-2718/r19-manual-control-chamber-console-return.png)
+
+### Residential and Overload receipts
+
+The corrected Story Cryo checkpoint replay fired three plasma shots in Residential and broke the plate at 34.867 seconds. It then cleared sector 3 with zero runtime errors. [Residential frame](../../artifacts/nextgen/playtest/play35-novice-residential/r3-residential-gallery-side-on-lock.png) · [Residential trace](../../artifacts/nextgen/playtest/play35-novice-residential/trace.ndjson)
+
+The Arc finale replay recorded three impacts at 912.633, 913.417 and 914.133 seconds on the same cover point at (833.7, 349.8). [Cover impact frame](../../artifacts/nextgen/playtest/play35-finale-arc/r20-overload-floor-shelter-impact.png)
+
+### Early pacing and exclusive captures
+
+In five matched deterministic simulations (Breacher, Cryo, Pyro and Arc 1729, plus Arc 2718), sectors 2–4 cost 27.7 → 0.0 suit and sectors 5–8 cost 729.3 → 686.7. These compare simulator checkpoints on R27 and PLAY35, separately from R27's rendered total of 0.0 and 620.5. The native attack receipts establish that the lessons commit. This simulator sample did not show the intended increase in early errors. [R27 simulator cases](../../artifacts/nextgen/playtest/play35-early-before-1729/summary.json) · [PLAY35 simulator cases](../../artifacts/nextgen/playtest/play35-early-tip-1729/summary.json)
+
+The Transmission staged gallery contains eight frames and zero capture errors. It shows Pilgrim Pylon and Live Wire, Shard Harvest and Ice Road, Siege Plow and Fault Line, Ember Relay and Meltdown Core. These are staged casts in the post-supply room. They do not establish campaign success with each augment. [Exclusive frames](../../artifacts/nextgen/play35-exclusives/index.html)
+
+Arc's Swarm replay showed the separate pod destinations at 684.767 seconds. Destroying the supply pod emitted the saved-lane pulse at 686.567, captured at 686.633. [Pod positions](../../artifacts/nextgen/playtest/play35-stake-arc/r16-swarm-junction-pod-destinations.png) · [Saved supply pulse](../../artifacts/nextgen/playtest/play35-stake-arc/r16-swarm-junction-saved-stake.png)
+
+### Balance cohorts
+
+| Cohort | R27 | PLAY35 |
+|---|---:|---:|
+| Standard usual · Breacher / Cryo / Pyro / Arc | 7 / 9 / 9 / 9 | 9 / 11 / 11 / 9 |
+| Standard usual total | 34/48 | 40/48 |
+| Standard fresh · Cryo 101–124 | 17/24 | 16/24 |
+| Story usual · Cryo / Breacher | — | 10 / 12 |
+| Story usual total | 23/24 | 22/24 |
+
+All 96 final simulator runs had zero stalls. Usual Standard is inside the band and above the repair restoration threshold, so Standard's paid repair remains 22 health and 17 armor. [Usual Standard](../../artifacts/nextgen/playtest/play35-release-usual/summary.json) · [Fresh Cryo](../../artifacts/nextgen/playtest/play35-release-fresh/summary.json) · [Story](../../artifacts/nextgen/playtest/play35-release-story/summary.json)
+
+### Coolant and verification
+
+Arc selected Coolant breach 3 on its 494.600-second reserve cut. The marked-entry frame is at 494.767; this verifies the nearer entry was selected. The replay did not verify a waiting body at that closed grille. [Coolant seal frame](../../artifacts/nextgen/playtest/play35-full-arc/r13-coolant-plant-sealed-entry.png)
+
+The final production build passed. I stopped the full native campaigns at their one-hour wall budget. Arc had cleared 13 rooms and Breacher 14, with zero runtime errors before shutdown. Shutdown itself was recorded as a closed-browser runner error. A separate Arc finale checkpoint replay cleared the final room after one renderer kit preparation error. Breacher's finale restarts hit loading timeouts. The requested two zero-error full native clears remain unverified. [Arc full attempt](../../artifacts/nextgen/playtest/play35-full-arc/report.json) · [Breacher full attempt](../../artifacts/nextgen/playtest/play35-full-breacher/report.json) · [Arc finale replay](../../artifacts/nextgen/playtest/play35-finale-arc/report.json)

@@ -53,6 +53,31 @@ export class TargetMarkers {
         if (this.canvas.height !== height) this.canvas.height = height;
         if (this.painted) ctx.clearRect(0, 0, width, height);
         this.painted = false;
+        const exchange=game.manualExchange;
+        if(exchange){
+            const bait=projectWorld(renderer,exchange.bait.x,exchange.bait.y,{x:0,y:0,visible:false},.08);
+            const landing=projectWorld(renderer,exchange.landing.x,exchange.landing.y,{x:0,y:0,visible:false},.08);
+            const target=projectWorld(renderer,exchange.target.x,exchange.target.y,this.point,.08);
+            ctx.save();
+            ctx.lineWidth=2;
+            ctx.strokeStyle='#9af0e5';
+            ctx.font='600 16px Barlow, sans-serif';
+            ctx.fillStyle='#c6fff5';
+            for(const [point,label] of [[bait,'Bait'],[landing,'Step']] as const){
+                if(!point.visible||hudObstructs(point.x-24,point.y-25,point.x+24,point.y+12))continue;
+                this.painted=true;
+                ctx.beginPath();ctx.ellipse(point.x,point.y,14,7,0,0,2*Math.PI);ctx.stroke();
+                ctx.fillText(label,point.x+18,point.y);
+            }
+            if(landing.visible&&target.visible){
+                this.painted=true;
+                ctx.setLineDash([7,7]);
+                ctx.beginPath();ctx.moveTo(landing.x,landing.y);ctx.lineTo(target.x,target.y);ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillText('Return lane',landing.x+18,landing.y+23);
+            }
+            ctx.restore();
+        }
         const bearing=game.sealedEntryBearing;
         if(bearing){
             const from=projectWorld(renderer,bearing.from.x,bearing.from.y,{x:0,y:0,visible:false},.15);

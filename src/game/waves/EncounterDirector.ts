@@ -15,7 +15,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -188,7 +188,38 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     }
    }
   }
-  const lateExchange=['diagnostic-gallery','infested-workshop','manual-control-chamber'].includes(node.templateId)&&beatIndex===1;
+  if(node.templateId==='transmission-chamber'&&beatIndex===0){
+   const shooter=arrivals.findIndex(request=>request.enemyId==='spitter');
+   const approach=arrivals.findIndex(request=>request.enemyId==='brute'||request.enemyId==='crawler');
+   if(shooter>=0)arrivals[shooter]=Object.freeze({...arrivals[shooter],augmentPosition:'shooter'});
+   if(approach>=0)arrivals[approach]=Object.freeze({...arrivals[approach],augmentPosition:'approach'});
+  }
+  if(node.templateId==='manual-control-chamber'&&beatIndex===1){
+   const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
+   if(lead){
+    const waiting=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    let previous=4900;
+    for(const request of waiting){
+     const atMs=Math.max(previous+380,request.atMs+4500);
+     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:true});
+     previous=atMs;
+    }
+    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:true});
+   }
+  }
+  const relief=(node.depth===4&&beat.grammar==='crossfire')||
+   (node.depth===5&&beat.grammar==='priority')||(node.depth===6&&beat.grammar==='pincer')||
+   (node.depth===7&&beat.grammar==='interception');
+  if(relief&&mode==='standard'){
+   const ordered=[...arrivals].sort((a,b)=>a.atMs-b.atMs);
+   const screen=ordered.find(request=>!request.guardian&&!request.priority&&
+    (request.role==='screen'||request.role==='flanker'||request.role==='ranged'));
+   if(screen){
+    const index=arrivals.indexOf(screen);
+    arrivals[index]=Object.freeze({...screen,atMs:screen.atMs+950});
+   }
+  }
+  const lateExchange=['diagnostic-gallery','infested-workshop'].includes(node.templateId)&&beatIndex===1;
   if(lateExchange){
    const lead=arrivals.findIndex(request=>!request.guardian&&!request.reinforcement&&
     (request.enemyId==='stalker'||request.enemyId==='brute'));
@@ -508,21 +539,25 @@ export class EncounterDirector {
     this.dispatched=end;
   }
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
-  reportPriorityDefeated(beat:number){
+  reportPriorityDefeated(beat:number,origin?:{x:number;y:number}){
     if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
     const plan=this.plan.beats?.[beat];
-    const cut=this.reserveCut(beat);
+    const cut=this.reserveCut(beat,origin);
     this.defusedBeats.add(beat);
     if(plan?.consequence==='leader')this.breakBeat(plan.end);
     return cut;
   }
-  private reserveCut(beat:number):ReserveCut|undefined {
+  private reserveCut(beat:number,origin?:{x:number;y:number}):ReserveCut|undefined {
     const end=this.plan.beats?.[beat]?.end??this.dispatched;
     const reserve=this.plan.schedule.slice(this.dispatched,end).filter(request=>request.reserve);
     if(!reserve.length)return;
     if(reserve[0].enemyId==='crawler'){
       const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
-      if(pincer)this.coolantEntry=this.plan.schedule[pincer.start].breachId;
+      if(pincer){
+        const entries=this.breaches.filter(entry=>this.plan.schedule.slice(pincer.start,pincer.end).some(spawn=>spawn.breachId===entry.id));
+        this.coolantEntry=origin?entries.sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]?.id:
+          this.plan.schedule[pincer.start].breachId;
+      }
     }
     return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
   }

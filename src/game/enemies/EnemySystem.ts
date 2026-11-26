@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -198,7 +198,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -405,7 +405,7 @@ export class EnemySystem {
     const reservedChildren =
       type === 'carrier' ? Math.min(CARRIER_CHILD_CAP, availableReservations) : 0;
     const state: EnemyState = {
-      broodDestination:options.broodDestination,openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
+      lessonDamageScale:options.lessonDamageScale,recoveryFloorMs:options.recoveryFloorMs,broodDestination:options.broodDestination,openingVolley:options.openingVolley,role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
       id: this.#nextId++,
       type,
       elite: elite === true,
@@ -493,6 +493,10 @@ export class EnemySystem {
       }
       enemy.repositionRemainingMs=Math.max(0,enemy.repositionRemainingMs-timerDelta);
       enemy.stunRemainingMs=Math.max(0,enemy.stunRemainingMs-timerDelta);
+      if(enemy.recoveryFloorMs&&enemy.meleePhase==='recovery'&&(enemy.speed===0||enemy.stunRemainingMs>0)){
+        this.#advanceMelee(enemy,player,timerDelta,events);
+        continue;
+      }
       if(enemy.stunRemainingMs>0){enemy.velocityX=enemy.velocityY=0;continue;}
       if(enemy.champion==='matron'&&enemy.speed>0&&!this.#launched?.(enemy.id)){
         enemy.specialCooldownMs=Math.max(0,enemy.specialCooldownMs-timerDelta/this.#rest);
@@ -1220,7 +1224,7 @@ export class EnemySystem {
   }
 
   #cancelMelee(enemy:EnemyState):void {
-    if(enemy.meleePhase==='approach'||enemy.arrivalSwing)return;
+    if(enemy.meleePhase==='approach'||enemy.arrivalSwing||enemy.recoveryFloorMs&&enemy.meleePhase==='recovery')return;
     // Control releases the berth immediately. A resolved hit still owes its
     // remaining strike/recovery and full rest, without replaying that strike.
     const profile=MELEE_ATTACKS[enemy.type];
@@ -1265,13 +1269,16 @@ export class EnemySystem {
         events.push(freezeEvent({type:'melee-strike',arrivalSwing:enemy.arrivalSwing,enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         enemy.meleeConnected=meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false;
         if(enemy.meleeConnected){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)*(enemy.lesson==='stalker'?.65:1)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)*(this.#canCommit&&!enemy.champion?1.26:1)*(enemy.lessonDamageScale??(enemy.lesson==='stalker'?.65:1))}));
         }
       }else if(enemy.meleePhase==='strike'){
         if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
         enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
+        if(enemy.recoveryFloorMs){
+          enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(enemy.meleeRemainingMs,enemy.recoveryFloorMs);
+        }
         enemy.recoveryPunished=false;
         if(!enemy.champion&&!enemy.meleeConnected){
           events.push(freezeEvent({type:'melee-miss',enemyId:enemy.id,x:enemy.x,y:enemy.y}));
@@ -1279,6 +1286,7 @@ export class EnemySystem {
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }
       }else{
+        enemy.recoveryFloorMs=undefined;
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest*(enemy.champion?1:this.#ordinaryIdleScale);
         this.#yieldMeleeBerth(enemy);
       }
