@@ -158,7 +158,10 @@ export class PincerPresentation {
         gate.root.add(silhouette);
       }
     }
-    this.updateDelayedGate(menu?undefined:game.delayedPincerHatch,unit);
+    const bearing=menu?undefined:game.sealedEntryBearing;
+    const closed=bearing&&game.geometry.breaches.find(breach=>breach.x===bearing.to.x&&breach.y===bearing.to.y);
+    const cutAge=bearing?Math.max(0,2-bearing.until+game.elapsed):0;
+    this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
     this.exit.visible = pincer?.state === 'sealed';
     if (!pincer) return;
     if (this.exit.visible) {
@@ -184,7 +187,7 @@ export class PincerPresentation {
     }
   }
 
-  private updateDelayedGate(hatch:DepthGame['delayedPincerHatch'],unit:number){
+  private updateDelayedGate(hatch:DepthGame['delayedPincerHatch'],unit:number,cutAge?:number){
     if(!hatch){
       if(this.delayedGate)this.delayedGate.root.visible=false;
       return;
@@ -207,7 +210,9 @@ export class PincerPresentation {
       if(!root.visible)return;
       const waiting=arrivals[index];
       const advance=index===0?Math.min(.48,Math.max(0,(4150-waiting)/4400)):0;
-      root.position.set(-.72+advance,Math.sin(waiting/120)*.06,
+      const approach=cutAge===undefined?advance:Math.min(.48,cutAge*1.8)-Math.max(0,cutAge-.48)*.7;
+      gate.shutter.position.y=cutAge===undefined?gate.shutter.position.y:0;
+      root.position.set(-.72+approach,cutAge===undefined?Math.sin(waiting/120)*.06:Math.max(0,1-Math.abs(cutAge-.28)*12)*.15,
         (index-(arrivals.length-1)/2)*.36);
     });
   }
