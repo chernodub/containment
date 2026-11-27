@@ -7,7 +7,14 @@ export function shapeBrute(geometry: T.BufferGeometry, regalia: boolean) {
   if (!zones) return;
   for (let i = 0; i < p.count; i++) {
     let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    if (regalia) continue;
+    if (regalia) {
+      // Carry the existing central prong out past the near shoulder.
+      if ((zones.getX(i) >> 4) === 1) {
+        const rise = T.MathUtils.smoothstep(z, 4.61, 5.23);
+        p.setXYZ(i, x - .32 * rise, y + 1.18 * rise, z + 1.65 * rise);
+      }
+      continue;
+    }
     const lateral = Math.abs(y);
     const face = T.MathUtils.smoothstep(x, 1.85, 3.45) *
       (1 - T.MathUtils.smoothstep(lateral, .95, 1.45)) * T.MathUtils.smoothstep(z, 3.5, 4);
