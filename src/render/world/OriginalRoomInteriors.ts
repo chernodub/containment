@@ -178,22 +178,19 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             addRoom14Fittings(root,t.id);
             const raised=root.children.slice(firstDetail).filter(o=>o.name.startsWith('inc13-')||o.name==='room14-landmark-worklight');
             registerOriginalInteriorCutaways(root,raised.flatMap((object):InteriorCutaway[]=>{
+                const shelter=object.name==='inc13-reactor-feeder-refuge';
                 if(object instanceof T.Mesh&&object.geometry.userData.cutawayRanges){
                     object.updateWorldMatrix(true,false);
                     const ranges=object.geometry.userData.cutawayRanges as {bounds:T.Box3;start:number;end:number}[];
                     return ranges.map(({bounds,start,end})=>({bounds:bounds.clone().applyMatrix4(object.matrixWorld),
-                        floorCover:t.id==='swarm-junction',parts:[],indices:{attribute:object.geometry.index!,start,end},hidden:false}));
+                        floorCover:shelter||t.id==='swarm-junction',actorsOnly:shelter,parts:[],indices:{attribute:object.geometry.index!,start,end},hidden:false}));
                 }
                 // A fitted accessory must disappear with the imported machine under it.
                 const owner=object.userData.cutawayAsset && root!.userData.placements.find(
                     (placement:{asset:string})=>placement.asset===object.userData.cutawayAsset);
                 const bounds=owner ? new T.Box3(new T.Vector3().fromArray(owner.bounds[0]),new T.Vector3().fromArray(owner.bounds[1]))
                     : new T.Box3().setFromObject(object);
-                // A preview volley strikes this face. Cutting it for the warning
-                // at the point of impact would make the stopped round float.
-                const shelter=object.name==='inc13-reactor-feeder-refuge';
-                return bounds.max.y>.8?[{object,bounds,floorCover:shelter||t.id==='swarm-junction',
-                    actorsOnly:shelter,parts:[],hidden:false}]:[];
+                return bounds.max.y>.8?[{object,bounds,floorCover:t.id==='swarm-junction',parts:[],hidden:false}]:[];
             }));
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');

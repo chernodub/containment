@@ -103,7 +103,12 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     c.globalAlpha=absorb?gain:closeThrow?.76:1;
     if(room.id==='swarm-junction')c.scale(.48,.54);
     if(room.id==='coolant-plant'){
-      c.beginPath();c.rect(-200,-160,400,142);c.rect(-200,16,400,144);c.clip();
+      c.scale(.82,.54);
+      c.beginPath();c.rect(-200,-160,400,137);c.rect(-200,22,400,138);c.clip();
+    }
+    if(room.id==='shielding-gate'){
+      // The gate shoe occludes the reflector downstream of its near flange.
+      c.beginPath();c.rect(-60,-39,120,65);c.clip();
     }
     paintIncidentAperture(c,room.id,tint);
     c.restore();
