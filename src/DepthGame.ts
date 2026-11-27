@@ -100,18 +100,18 @@ export class DepthGame {
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private consoleRelease=0;
- private get recoveryGrilles(){return this.grilleOverride??(this.difficulty==='standard');}
+ private get recoveryGrilles(){return this.grilleOverride??(this.difficulty==='standard'?'staged-side':false);}
  private recoveryGrilleState?:{x:number;y:number;angle:number;escorts:number;attackerId?:number;
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(this.grilleOverride===undefined||grille.attackerId!==undefined)&&
+  if(grille&&grille.attackerId!==undefined&&
    (grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
    return {...visible,
-    returnArcCosine:this.grilleOverride===undefined||this.grilleOverride==='staged-arc'?Math.cos(Math.PI/6):undefined,
-    returnRange:this.grilleOverride===true?176:undefined,returnHalfWidth:64,
-    returnAisleSide:this.grilleOverride==='staged-side'};
+    returnArcCosine:this.recoveryGrilles==='staged-arc'?Math.cos(Math.PI/6):undefined,
+    returnRange:this.recoveryGrilles===true?176:undefined,returnHalfWidth:64,
+    returnAisleSide:this.recoveryGrilles==='staged-side'};
   }
  }
  private findRecoveryAisle(lead:{x:number;y:number},approach:{x:number;y:number}){
@@ -912,16 +912,14 @@ export class DepthGame {
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined){
       const grille=this.recoveryGrilleState;
-      if(this.grilleOverride!==undefined){
-       const aisle=this.findRecoveryAisle(p,this.player);
-       if(aisle)Object.assign(grille,aisle);
-       for(const escort of this.pending){
-        if(!escort.grilleEscort)continue;
-        escort.x=grille.x+Math.cos(grille.angle)*24;
-        escort.y=grille.y+Math.sin(grille.angle)*24;
-       }
-       grille.changedAt=this.elapsed;
+      const aisle=this.findRecoveryAisle(p,this.player);
+      if(aisle)Object.assign(grille,aisle);
+      for(const escort of this.pending){
+       if(!escort.grilleEscort)continue;
+       escort.x=grille.x+Math.cos(grille.angle)*24;
+       escort.y=grille.y+Math.sin(grille.angle)*24;
       }
+      grille.changedAt=this.elapsed;
       grille.attackerId=result.enemy.id;
      }
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
@@ -1200,7 +1198,7 @@ export class DepthGame {
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
   const lead={x,y};
-  const aisle=this.grilleOverride!==undefined?this.findRecoveryAisle(lead,reference):undefined;
+  const aisle=this.findRecoveryAisle(lead,reference);
   const grille=aisle??this.findLegacyGrille(lead,reference);
   if(grille)this.recoveryGrilleState={...grille,escorts:e.grilleLead,state:'waiting',
    changedAt:this.elapsed,expiresAt:this.elapsed+7};
