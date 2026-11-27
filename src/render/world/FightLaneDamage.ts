@@ -162,6 +162,16 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       for(const [x,z] of [[257,542],[393,560],[531,628],[657,683],[756,683],[896,668],[994,590],[919,444]]){
         c.fillStyle='#43494a';c.fillRect(x-7,z-17,14,34);c.fillStyle='#b57c48';c.fillRect(x-4,z-12,5,24);
       }
+      // The feeder tees at the bend below the shooter bank. A copper spine
+      // and twin clamp bolts carry it past the last machine into open deck.
+      const spur='M994 519H1118L1190 469H1255';
+      line(spur,34,'#262c30');line(spur,22,'#9b7554');line(spur,6,'#594839');
+      for(const x of [1020,1082,1228]){
+        const z=x>1200?469:519;
+        c.fillStyle='#364147';c.fillRect(x-8,z-23,16,46);
+        c.fillStyle='#b6a58b';c.fillRect(x-6,z-22,8,44);
+        c.fillStyle='#313a3b';c.fillRect(x-5,z-20,5,5);c.fillRect(x-5,z+14,5,5);
+      }
       c.save();c.translate(833.71249,349.81813);
       c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
       line('M1 3V-65H-61',5,'#b6976e');
@@ -182,7 +192,7 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
     'passenger-vault':[[270,450,-.36],[806,447,.29]],
     'crew-checkpoint':[[358,405,.24],[874,441,-.34]],
     'transmission-chamber':[[423,494,-.37],[851,484,.43]],
-    'overload-floor':[[356,554,.42],[764,683,-.24]],
+    'overload-floor':[[356,554,.42],[764,683,-.24],[1118,519,-.32]],
   };
   for(const [x,y,turn] of banks[id]??[]){
     c.save();c.translate(x,y);c.rotate(turn);
