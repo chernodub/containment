@@ -195,6 +195,8 @@ export class ElementKit {
 
     /** Rig owners supply the native footprint. A contact only marks its point of impact. */
     contact(event: AbilityEvent, x: number, y: number): void {
+        // Slam owns its clipped cracks and dust for the entire 480 ms impact.
+        if (event.ability === 'seismic-slam') return;
         const launch = event.phase === 'dash-start';
         if (!launch && event.phase !== 'impact' && event.phase !== 'dash-end') return;
         const placed = !launch && (event.phase === 'dash-end' || event.slot === 'power' ||
