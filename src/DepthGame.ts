@@ -261,7 +261,7 @@ export class DepthGame {
    break;
   }
  }
- private makeEnemies(){return new EnemySystem({crawlerBiteCap:this.crawlerPressureRoom?2:undefined,readySeed:this.expedition.run.seed,spitWindupMs:this.condition?.id==='dark'?650:500,slick:p=>this.roomCondition?.slick(p)??false,difficulty:()=>{
+ private makeEnemies(){return new EnemySystem({crawlerWallQueue:this.difficulty!=='story'||this.node.depth>=4,crawlerBiteCap:this.crawlerPressureRoom?2:undefined,readySeed:this.expedition.run.seed,spitWindupMs:this.condition?.id==='dark'?650:500,slick:p=>this.roomCondition?.slick(p)??false,difficulty:()=>{
   const mode=this.difficulty,d=DIFFICULTIES[mode];
   const lateWindups=Math.round(d.windups*(1+(d.lateWindups-1)*latePressureProgress(this.node.depth,mode,this.expedition.run.version===3)))/d.windups;
   return {...d,lateWindups};

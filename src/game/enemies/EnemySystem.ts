@@ -64,6 +64,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
   crawlerBiteCap?:number;
+  crawlerWallQueue?:boolean;
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge', attempting?:boolean)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
@@ -281,6 +282,7 @@ export class EnemySystem {
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
   readonly #crawlerBiteCap:number;
+  readonly #crawlerWallQueue:boolean;
   readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
@@ -320,6 +322,7 @@ export class EnemySystem {
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
     this.#crawlerBiteCap=options.crawlerBiteCap??Infinity;
+    this.#crawlerWallQueue=options.crawlerWallQueue??true;
     this.#ordinaryIdleScale=options.ordinaryIdleScale??1;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
@@ -579,12 +582,13 @@ export class EnemySystem {
         const side=Math.abs(offset)<.05?(enemy.id%2?1:-1):Math.sign(offset);
         const speed=enemy.speed*this.#movement;
         const bootWidth=10;
+        const probe=this.#crawlerWallQueue?bootWidth:speed*movementDelta/1000;
         const clearSide=[side,-side].find(turn=>
-          this.#movementAllowed(enemy,enemy.x-dy/radius*bootWidth*turn,enemy.y+dx/radius*bootWidth*turn));
+          this.#movementAllowed(enemy,enemy.x-dy/radius*probe*turn,enemy.y+dx/radius*probe*turn));
         if(clearSide!==undefined){
           enemy.velocityX=-dy/radius*speed*clearSide;
           enemy.velocityY=dx/radius*speed*clearSide;
-        }else{
+        }else if(this.#crawlerWallQueue){
           // A queue jammed against solid geometry gives ground while the striker owns the lane.
           const step=Math.min(bootWidth,speed*movementDelta/1000);
           const retreat=this.#movementAllowed(enemy,enemy.x+dx/radius*step,enemy.y+dy/radius*step);
