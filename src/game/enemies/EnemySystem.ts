@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;interceptOpening?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -1227,7 +1227,7 @@ export class EnemySystem {
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
   beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
-    if(!enemy||(enemy.type!=='brute'&&enemy.lesson!=='stalker'))return [];
+    if(!enemy||(enemy.type!=='brute'&&enemy.type!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=true;

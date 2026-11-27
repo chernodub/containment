@@ -233,20 +233,23 @@ export class DepthGame {
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const lane=stageCoverLesson(this.geometry,covers,this.player);
   const origin={x:this.player.x,y:this.player.y};
+  const family=firstLane?'stalker':'spitter';
+  const ingress=firstLane?64:128;
   const travel=firstLane?Math.atan2(origin.y-firstLane.y,origin.x-firstLane.x):
    Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
   for(let turn=0;turn<16;turn++){
    const offset=turn%2?-(turn+1)/2:turn/2;
    const angle=travel+offset*Math.PI/8;
-   const shooter={x:origin.x+Math.cos(angle)*128,y:origin.y+Math.sin(angle)*128};
-   if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius('spitter',false))||
+   const shooter={x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
+   if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius(family,false))||
     !canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
    const sidesteps=[1,-1].map(side=>({x:origin.x-side*Math.sin(angle)*146,y:origin.y+side*Math.cos(angle)*146}));
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
-   this.pending.push({type:'spitter',...shooter,elite:false,delay:350,
-    options:{closeIngress:true,openingVolley:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
-   this.presentation.push({type:'enemy-warning',...shooter,durationMs:350,radius:32});
+   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?220:350,
+    options:{closeIngress:true,interceptOpening:!!firstLane,
+     openingVolley:firstLane?undefined:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
+   this.presentation.push({type:'enemy-warning',...shooter,durationMs:firstLane?220:350,radius:32});
    this.pickups.spawn('armor',this.node.depth<=3?40:24,reward.x,reward.y);
    break;
   }
@@ -838,7 +841,11 @@ export class DepthGame {
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined)this.recoveryGrilleState.attackerId=result.enemy.id;
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
-     if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery')this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,options.baitAim?{...this.player,...options.baitAim}:this.player));
+     if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
+      const lead=options.interceptOpening?.26:0;
+      const aim=options.baitAim??{x:this.player.x+this.player.vx*lead,y:this.player.y+this.player.vy*lead};
+      this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,{...this.player,...aim}));
+     }
      if(guardian)this.enemies.promote(result.enemy.id,guardian);
      if(this.rackShutter&&guardian==='warden')this.rackShutter.wardenId=result.enemy.id;
      if(options.broodDestination&&this.enemies.snapshot.enemies.filter(enemy=>enemy.broodDestination).length>=2)
