@@ -146,6 +146,22 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
  const grilleLessonBeat=options.recoveryGrilles&&node.templateId==='communal-atrium'?source.findIndex(beat=>
   beat.groups.some(group=>group.family==='brute'&&!group.guardian&&!group.reinforcement)):-1;
+ if(grilleLessonBeat>=0){
+  const lesson=source[grilleLessonBeat];
+  const alreadyWaiting=lesson.groups.filter(group=>!group.guardian&&!group.priority&&
+   !group.reinforcement&&group.family!=='brute').reduce((count,group)=>count+group.count,0);
+  if(alreadyWaiting<2){
+   // Pull one existing flanker into the grille group instead of adding a body to the room.
+   const donorIndex=source.findIndex((beat,index)=>index!==grilleLessonBeat&&beat.groups.some(group=>
+    group.family==='stalker'&&!group.reinforcement&&group.count>1));
+   if(donorIndex>=0){
+    const donor=source[donorIndex];
+    const flanker=donor.groups.find(group=>group.family==='stalker'&&!group.reinforcement&&group.count>1)!;
+    source[donorIndex]={...donor,groups:donor.groups.map(group=>group===flanker?{...group,count:group.count-1}:group)};
+    source[grilleLessonBeat]={...lesson,groups:[...lesson.groups,{...flanker,count:1}]};
+   }
+  }
+ }
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){

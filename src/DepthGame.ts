@@ -105,7 +105,7 @@ export class DepthGame {
   const grille=this.recoveryGrilleState;
   if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4)){
    const {attackStarted:_,...visible}=grille;
-   return {...visible,returnArcCosine:this.recoveryGrilles===true?Math.cos(40*Math.PI/180):undefined};
+   return {...visible,returnArcCosine:this.recoveryGrilles===true?Math.cos(30*Math.PI/180):undefined};
   }
  }
  private resolveRecoveryGrille(closed:boolean){
