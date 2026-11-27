@@ -271,9 +271,15 @@ export function alien(kind:string,elite=false):ActorModel{
  const neck=muzzle?r.assetRoot.getObjectByName('neck'):undefined;
  if(muzzle && neck)motion.bindMuzzlePose(neck,muzzle);
  if(kind==='carrier'){attach('attack','claw.R');attach('brood','tip');}
- if(kind==='brute'){attach('attack','fingertip.0.r');attach('ram','jaw');}
+ if(kind==='brute'){
+  attach('attack','fingertip.0.r');
+  attach('ram','jaw');
+  // The regular and elite club's centre digit is rigid on the shoulder.
+  // This is its distal point from heavy_support.planted_hand in mesh space.
+  attach('club','shoulder.r',new T.Vector3(2.15+1.63,-3,(4.57-.38)/1.8));
+ }
  return{root:r.root,body:r.body,limbs:[],strikeSocket(out){
-   const key=champion==='matron' && brood>0?'brood':champion==='warden' && threatKind==='charge'?'ram':'attack';
+   const key=champion==='matron' && brood>0?'brood':champion==='warden' && threatKind==='charge'?'ram':kind==='brute' && !champion?'club':'attack';
    const socket=sockets.get(key);
    return socket?.(out);
   },elementContact(element){
