@@ -253,7 +253,7 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==8.)paint=vec3(.275,.236,.172);
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);
-    vec3 antler=vec3(.156,.133,.094);
+    vec3 antler=vec3(.115,.096,.066);
     bool dorsal=part>=6. && part<=12.;
     bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9;
     bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
