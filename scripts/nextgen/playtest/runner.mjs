@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {restingBodyRegions} from '../brood43-mask.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
@@ -25,7 +26,7 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['startup-timeout-ms','screenshot-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','weapon-jobs','exchange-marks'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','screenshot-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','actor-zones','weapon-jobs','exchange-marks'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const screenshotTimeout=Number(options['screenshot-timeout-ms']??20000);
@@ -503,6 +504,10 @@ try {
       // Reuse the same file as pressure rises, retaining one native observation per room.
       if(room.peakPressure)report.screenshots.splice(report.screenshots.indexOf(name+'.png'),1);
       await shot(name,after);
+      if(options['actor-zones']){
+        const regions=await page.evaluate(restingBodyRegions);
+        await writeFile(resolve(out,name+'.zones.json'),JSON.stringify(regions));
+      }
       room.peakPressure={file:name+'.png',snapshot:name+'.json',pressure,elapsed:after.elapsed,step:steps};
     }
     if(pressure>hardest+40&&after.status==='playing') {

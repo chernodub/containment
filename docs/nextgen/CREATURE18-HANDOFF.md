@@ -2081,3 +2081,60 @@ Native pressure scores were 45, 45, 40 and 45. Four lighter Passenger Vault samp
 The second ten-room campaign on `924a0480` also cleared through Transmission Chamber with zero runtime errors. Its extra native pressure sampling run exited 1 because the runner flagged Passenger Vault (18.83 s) and Residential Gallery (9.27 s) loading holds. The baseline and current Safety Interlock continuations also finished with zero runtime errors and a loading-hold diagnostic. No run stopped on a startup or loading timeout. The final heel release and two-plane elbow and hand are covered by the `animals` capture and the final production rebuild on `408a1aa2`. Local `nextgen` was already an ancestor. The conflict-marker scan and simulation diff were empty.
 
 The final colour, greyscale, ring and sparse-room comparisons are in the review index. The rank angles and planted heel locations are in `heavy45/ranks/ranks.json`. The small palm shadow joins the existing contact instance draw. All delivered capture receipts have empty error lists. The worktree occupied about 1.0 GB under `artifacts/nextgen` at handback. The data volume reported 74 GiB free at checkout and 65 GiB free at the final build.
+
+## BROOD43
+
+At rest, keep every creature zone below the marine's legs in display luma and below the visor in saturation at 480 × 270. Check both the darkest and palest floors. Use the family silhouette and quiet local paint for identification. Reserve emission for the posed striking limb or muzzle of the creature that owns the filled hostile warning. The red warning has first claim on warm contrast. The Crawler's cutting hook may carry through contact and fade over the first 120 ms of recoil. A fresh status can brighten the shell for half a second, then the tint settles.
+
+The small bodies use their shared actor surface and the existing warning-owner ID. Their painted marks and ordinary contact shadows replace the family lanterns and floor spills. The Crawler has a dark warm shell and lighter dorsal scutes. The final grade neutralizes room-induced chroma on the darkest brood ink. The sealed pod shows its dark core through the authored shell openings and retains its swelling and opening poses. The body and contact stroke share the posed world-space socket. A heavy material can define `STRIKE_SOCKET_LIGHT` to participate with its existing socket. The continuous red stroke has a dark margin and the dock-safe shooter chevron keeps its head at full charge.
+
+For a capture, add `--actor-zones` to record the resting families' opaque geometry IDs as reduced-frame scanline spans. The native runner accepts the same option alongside `--room-pressure`. Measure a PNG with `python3 scripts/nextgen/brood43-values.py frame.png reference-patches.json frame.zones.json` using Pillow. Label visible leg and visor interiors in the reference file. The report gives the maximum display-referred Rec. 709 luma and HSV saturation among eligible pixels. The geometry readback excludes a one-pixel margin around silhouettes. Foreground effects and HUD can still cover eligible geometry. Historical PNGs without ID buffers take hand-labelled patches.
+
+The matched crowd fixtures returned the following maxima across Swarm Junction, Transmission Chamber, Crew Checkpoint and Coolant Plant. Each family was compared against the marine in its own frame. The sealed pod uses labelled interior patches when its geometry mask is unavailable. The final25 reference uses the reviewed wave-34 revision at `68050af3`.
+
+| Resting family | Final25 maximum luma | BROOD43 maximum luma | Final25 maximum saturation | BROOD43 maximum saturation |
+|---|---:|---:|---:|---:|
+| Crawler | .989 | .476 | .365 | .035 |
+| Spitter | .595 | .412 | .989 | .086 |
+| Stalker | .877 | .446 | 1.000 | .148 |
+| Carrier | .696 | .456 | .712 | .125 |
+| Matron | .711 | .465 | 1.000 | .143 |
+| Pod | .238 | .249 | 1.000 | .263 |
+
+The four ordinary crowds had leg references of .746–.800 and visor references of .307–.355. All 24 family-by-floor comparisons met both limits. Matron and pod used a sparse arrangement with their own references. The matched before/after crowd draws were 88 in Swarm Junction, 117 in Transmission Chamber, 100 in Crew Checkpoint and 101 in Coolant Plant. Settled burning, chilled, frozen and shocked crowds reached maximum small-family lumas of .460, .463, .510 and .460 against a leg reference of .796. At 480 × 270 the camouflaged Stalker is the hardest resting body to find on the dark Swarm floor.
+
+Of eight native room-pressure frames, all eight exceeded at least one figure reference in final25 and three did in BROOD43. Peak frames came from seed 1729 in the first ten rooms of each rig.
+
+| Native peak | Exceedances in final25 | Exceedances in BROOD43 |
+|---|---|---|
+| Cryo R1 | Spitter saturation | None |
+| Cryo R3 | Spitter saturation | None |
+| Cryo R4 | Crawler luma, Stalker luma and saturation | Stalker saturation +.123 |
+| Cryo R7 | Crawler luma | None |
+| Pyro R1 | Spitter saturation | None |
+| Pyro R2 | Spitter saturation | Spitter saturation +.373 |
+| Pyro R3 | Crawler luma | None |
+| Pyro R4 | Crawler luma, Stalker luma and saturation | Crawler saturation +.507, Stalker luma +.005 and saturation +.331 |
+
+These numbers describe the composed screenshot. In Pyro R4 the Crawler mask contains a red overlay pixel, and the Stalker had taken a hit about 150 ms earlier. The archived native PNGs use hand-labelled visible patches. Current native frames have geometry masks, which cover more pixels. The Cryo R4 and R7 peaks also move the marine and use fresh reference coordinates. The local comparison gallery is `artifacts/nextgen/brood43-review/index.html`. It includes the Freight Hold contact reconstructed from final25's recorded positions and warning, and a separate native Pyro queue from this run.
+
+Both release-build campaigns cleared ten rooms with zero errors. The runners returned exit 1 for room loads over five seconds (three Cryo, four Pyro). The campaigns used the pre-integration BROOD43 distribution. After merging HEAVY45 (`ca7c4738`), the production build passed and the fresh Swarm Junction crowd capture reported 88 draws and no errors. The merged shot kept all four visible small families below their references. Its Brute exceeded the visor's .348 saturation, reaching 1.000 on two near-black pixels, RGB (0, 5, 18) and (0, 0, 14). The HEAVY45 owner should have these pixel values when assessing the shared rule.
+
+### BROOD43 colour revision
+
+Keep the shell dark and use the painted fork and dorsal scutes for Crawler amber, the muzzle and pressure vessel for Spitter lime, the blade bevels and abdomen for Stalker ice blue, and sac seams and shell facets for Carrier, Matron and pod violet. Reserve red for the hostile warning. Only the striking socket earns attack emission. The resting shapes use the existing materials and draw batches. The Stalker retains a visible blue keel through camouflage on the dark Swarm Junction floor.
+
+Each cell below gives maximum display luma / maximum HSV saturation / circular mean hue in degrees at 480 × 270. The hue mean weights each pixel by its RGB chroma so neutral ink contributes little. Rooms use the existing reduced-frame body masks and the original marine reference patches. Pods use the labelled shell interiors. The four distinct hues occupy at least 44° of separation on every floor. Carrier, Matron and pod share their brood's violet.
+
+| Family | Swarm Junction | Transmission Chamber | Crew Checkpoint | Coolant Plant |
+|---|---:|---:|---:|---:|
+| Crawler | 0.606 / 0.248 / 33° | 0.639 / 0.239 / 33° | 0.616 / 0.230 / 33° | 0.619 / 0.236 / 34° |
+| Spitter | 0.630 / 0.242 / 77° | 0.609 / 0.227 / 78° | 0.599 / 0.231 / 82° | 0.632 / 0.239 / 80° |
+| Stalker | 0.604 / 0.252 / 204° | 0.630 / 0.245 / 202° | 0.607 / 0.247 / 204° | 0.622 / 0.252 / 202° |
+| Carrier | 0.569 / 0.220 / 275° | 0.562 / 0.218 / 273° | 0.572 / 0.223 / 274° | 0.573 / 0.214 / 275° |
+| Matron | 0.586 / 0.241 / 274° | 0.587 / 0.242 / 273° | 0.593 / 0.239 / 273° | 0.585 / 0.224 / 274° |
+| Pod | 0.432 / 0.220 / 278° | 0.444 / 0.243 / 266° | 0.443 / 0.213 / 276° | 0.442 / 0.215 / 277° |
+
+My three-second family count on the mixed Swarm Junction rest frame was 5/5 in final25, 3/5 in the first pass and 5/5 in the revision, including Brute. I could name Crawler, Carrier and Brute immediately in the first pass. The blue Stalker and lime Spitter were the two that returned in the revision. The Spitter at the lower-left edge is still the slowest read in the wind-up frame. These are one reviewer's impressions of a known fixture. The comparison gallery at `artifacts/nextgen/brood43-colour-review/index.html` includes the full-size sources, the colour and greyscale triptychs and the luma, saturation, hue and marine references per floor. The final25 rest pose is reconstructed on the reviewed build. Its wind-up is the archived final25 capture.
+
+The 24 revised resting comparisons used 60.3–79.8% of their visor saturation reference. Their highest luma reached 84.5% of the leg reference. On Swarm Junction the settled burning, chilled, frozen and shocked small families peaked at .610, .610, .644 and .610 luma against legs at .796. Frozen reached .300 saturation against a .309 visor. The four matched crowd fixtures used 89, 116, 101 and 102 draws on both the first-pass and revised builds, in the floor order shown above. Local nextgen through HEAVY45 was already integrated. The production rebuild and both delivery captures succeeded with empty error lists.

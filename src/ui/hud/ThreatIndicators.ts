@@ -408,7 +408,7 @@ export class ThreatIndicators {
             const lastStroke=shot&&!candidate.inFlight;
             if(lastStroke)marker.node.style.setProperty('--bearing',`${laneAngle}rad`);
             const strokeEnd=lastStroke?16+Math.max(-3,Math.hypot(laneX,laneY)*32/(30*scale)):64;
-            marker.glyph.setAttribute('d', shot ? `M3 ${16-10*(1-candidate.shotCharge)}L13 16L3 ${16+10*(1-candidate.shotCharge)}M13 16H${strokeEnd}${candidate.shotBlocked?`M${strokeEnd} 12v8`:''}` : candidate.tactical === 'sealed' ? 'M3 9l3 11h20l3-11-8 5-5-8-5 8z' : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
+            marker.glyph.setAttribute('d', shot ? `M3 ${16-(5+5*(1-candidate.shotCharge))}L13 16L3 ${16+(5+5*(1-candidate.shotCharge))}M13 16H${strokeEnd}${candidate.shotBlocked?`M${strokeEnd} 12v8`:''}` : candidate.tactical === 'sealed' ? 'M3 9l3 11h20l3-11-8 5-5-8-5 8z' : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
             marker.node.style.setProperty('--shot-strength', String(shot ? .7 + candidate.shotCharge * .3 - (candidate.inFlight ? 0 : Math.sin(candidate.shotCharge * Math.PI * 2) ** 2 * .14) : 1));
             const count = -candidate.count;
             marker.count.hidden = count <= 1;

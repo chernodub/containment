@@ -203,8 +203,12 @@ ${inkComposite}
   if(actorClass>=4.0 && actorClass<=6.0){
     float region=floor(packedClass/8.0);
     float value=dot(color,vec3(.2126,.7152,.0722));
-    // Restore luminous brood chroma lost on the filmic shoulder.
-    if(region==28.0)color=max(vec3(0.),mix(vec3(value),color,1.65));
+    // Grade the final shadow as well as the paint. Room lift can push a
+    // channel below zero on a nearly black shell, yielding saturated blue ink.
+    bool broodZone=region==31.;
+    if(broodZone && max(sharpColor.r,max(sharpColor.g,sharpColor.b))<.55){
+      color=mix(vec3(max(.010,value)),max(vec3(.006),color),.20);
+    }
     bool ornament=region==28.0 || region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
     if(!ornament && !danger && value>.145){
