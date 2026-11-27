@@ -273,14 +273,14 @@ outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+
 if(actorBroodForm.x>=-1.){
   vec3 middle=mix(vec3(.034,.034,.047),vec3(.044,.025,.016),actorWarden);
   vec3 crown=mix(vec3(.063,.066,.087),vec3(.116,.060,.034),actorWarden);
-  vec3 paint=vec3(.008,.011,.008);
+  vec3 paint=vec3(.012,.012,.017);
   float rankBone=actorEliteBody*(1.-actorWarden);
   if(heavyPaint==1.)paint=mix(crown,vec3(.046,.046,.063),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
-  if(heavyPaint==7.)paint=vec3(.30,.272,.224)*(1.-.34*actorWallRecoil);
-  if(heavyPaint==8.)paint=vec3(.175,.155,.124);
+  if(heavyPaint==7.)paint=vec3(.132,.124,.111)*(1.-.34*actorWallRecoil);
+  if(heavyPaint==8.)paint=vec3(.079,.073,.065);
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);
     vec3 antler=vec3(.115,.096,.066);
@@ -288,7 +288,7 @@ if(actorBroodForm.x>=-1.){
     bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9 && abs(actorPosition.y)<.74;
     bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
     if(edge || crest)paint=antler;
-    if(part==1. || (part==16. && heavyPaint==2.))paint=vec3(.26,.226,.187);
+    if(part==1. || (part==16. && heavyPaint==2.))paint=vec3(.14,.128,.109);
     // At broadside the swept horns cross the shoulder. Reserve bone for
     // their outer tips so the dark shaft stays distinct from the crown rims.
     if(part==3. || part==5.)paint=abs(actorPosition.y)>2.85 ? antler : vec3(.038,.042,.033);
@@ -314,7 +314,7 @@ if(actorBroodForm.x>=-1.){
     vec3 tongue=mix(vec3(.15,.050,.079),vec3(.28,.115,.145),side);
     paint=mix(vec3(.009,.004,.008),tongue,(1.-smoothstep(.85,.95,tip))*actorWallRecoil);
   }
-  if(heavyPaint==14.)paint=vec3(.32,.284,.228);
+  if(heavyPaint==14.)paint=vec3(.183,.168,.141);
   if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
