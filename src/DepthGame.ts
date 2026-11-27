@@ -231,26 +231,29 @@ export class DepthGame {
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
  private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number;hatch?:string};
- private stageEarlyPressure(firstLane?:{x:number;y:number}){
+ private stageEarlyPressure(firstLane?:{x:number;y:number;hatch?:string}){
   this.earlyPressureAt=Infinity;
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const lane=stageCoverLesson(this.geometry,covers,this.player);
   const origin={x:this.player.x,y:this.player.y};
   const family=firstLane?'brute':'spitter';
+  const breach=this.geometry.breaches.find(point=>point.id===firstLane?.hatch);
+  const ingressPoint=breach&&{x:breach.x+(breach.facing==='east'?56:-56),y:breach.y};
   const ingress=firstLane?64:128;
   const travel=firstLane?Math.atan2(origin.y-firstLane.y,origin.x-firstLane.x):
    Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
   for(let turn=0;turn<16;turn++){
    const offset=turn%2?-(turn+1)/2:turn/2;
    const angle=travel+offset*Math.PI/8;
-   const shooter=!firstLane&&this.node.depth<=3&&lane&&turn===0?lane.shooter:
+   const stagedPoint=ingressPoint??(!firstLane&&this.node.depth<=3?lane?.shooter:undefined);
+   const shooter=(turn===0?stagedPoint:undefined)??
     {x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
    if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius(family,false))||
-    (!lane||shooter!==lane.shooter)&&!canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
+    shooter!==ingressPoint&&shooter!==lane?.shooter&&!canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
    const sidesteps=[1,-1].map(side=>({x:origin.x-side*Math.sin(angle)*146,y:origin.y+side*Math.cos(angle)*146}));
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
-   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?80:350,
+   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?80:350,delayedHatch:shooter===ingressPoint?breach?.id:undefined,
     options:{closeIngress:true,interceptOpening:!!firstLane,
      openingVolley:firstLane?undefined:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
    this.presentation.push({type:'enemy-warning',...shooter,durationMs:firstLane?80:350,radius:32});
@@ -1298,7 +1301,8 @@ export class DepthGame {
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
    const away={x:2*this.player.x-e.x,y:2*this.player.y-e.y};
-   const hatch=[...this.openBreaches].sort((a,b)=>
+   const hatch=this.openBreaches.filter(breach=>canOccupyExpedition(this.geometry,
+    {x:breach.x+(breach.facing==='east'?56:-56),y:breach.y},enemyBodyRadius('brute',false))).sort((a,b)=>
     Math.hypot(a.x-away.x,a.y-away.y)-Math.hypot(b.x-away.x,b.y-away.y))[0];
    this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.64,hatch:hatch?.id};
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
