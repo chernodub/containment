@@ -101,7 +101,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.anticipate(34, .045);
 
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
-      this.dust(x, z, radius, this.kit.low ? 5 : 14);
+      this.dust(x, z, radius, this.kit.low ? 5 : 14, .48);
       // drawSlam owns the clipped deck fragments and their radial momentum.
     } else if (event.ability === 'railbreaker') {
       const shape = ABILITY_CATALOG.railbreaker.shape;
@@ -173,11 +173,11 @@ export class BreacherPresentation implements AbilityPresentation {
     p.live = true; p.kind = kind; p.x = x; p.z = z; p.angle = angle; p.size = size; p.life = life; p.age = 0; p.wallDone = false;
   }
 
-  private dust(x: number, z: number, radius: number, count: number): void {
+  private dust(x: number, z: number, radius: number, count: number, maxLife = 1.2): void {
     for (let i = 0; i < count; i++) {
       const a = TAU * i / count, r = radius * .12;
       this.kit.mote('smoke', x + Math.cos(a) * r, .15, z + Math.sin(a) * r,
-        Math.cos(a) * radius * .8, .3 + i % 4 * .16, Math.sin(a) * radius * .8, .48 + i % 3 * .14, .95 + i % 4 * .08, DUST);
+        Math.cos(a) * radius * .8, .3 + i % 4 * .16, Math.sin(a) * radius * .8, .48 + i % 3 * .14, Math.min(maxLife, .95 + i % 4 * .08), DUST);
     }
   }
 

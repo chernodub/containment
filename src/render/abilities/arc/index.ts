@@ -233,7 +233,7 @@ class ArcPresentation implements AbilityPresentation {
           if (d.overload) {
             // Project this native hop onto the deck once, before its airborne bolts expire.
             const heading = Math.atan2(dz,dx);
-            k.scar('arc-track',(d.x+d.sx)*.5,(d.z+d.sz)*.5,length*.5,0xb78aff,1.12,heading,.50);
+            k.scar('arc-track',(d.x+d.sx)*.5,(d.z+d.sz)*.5,length*.5,0x54436a,.46,heading,.30);
             const bendX=(d.sx+d.x)*.5-dz/length*.24, bendZ=(d.sz+d.z)*.5+dx/length*.24;
             const crest=Math.max(d.sy,d.ty)+.92;
             k.heavyBeam(d.sx,d.sy,d.sz,bendX,crest,bendZ,VIOLET,.39,.25,true);
@@ -247,9 +247,10 @@ class ArcPresentation implements AbilityPresentation {
             k.beam(bx, d.sy + .13, bz, d.x, d.ty, d.z, VIOLET, d.overload ? .23 : .048, .18, true);
           }
         }
-        if (d.overload) k.scar('star', d.x, d.z, 1.12, 0xa46aff, 1.05, d.seed);
-        const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
-        node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = 1.2;
+        if (!d.overload) {
+          const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
+          node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = .56;
+        }
         k.flash(d.x, d.z, VIOLET, 5, 2.4, 3, .08);
         k.burst(d.x, .7, d.z, 'arc', 9, 1.8, .45);
       }
