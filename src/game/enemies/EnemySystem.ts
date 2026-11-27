@@ -199,7 +199,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';openingSpitSpread?:number;wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;arrivalLockLeadMs?:number;firstWardenCharge?:true;openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';openingSpitSpread?:number;wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -1231,6 +1231,7 @@ export class EnemySystem {
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=!trackUntilLock;
+    enemy.arrivalLockLeadMs=trackUntilLock?180:undefined;
     enemy.meleeRemainingMs=enemy.meleeDurationMs=this.#meleeWindup(enemy);
     this.#aimMelee(enemy,player,true);
     enemy.attackSlot=Object.freeze({angle:enemy.meleeAngle+Math.PI,radius:enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)});
@@ -1278,7 +1279,7 @@ export class EnemySystem {
     const profile=MELEE_ATTACKS[enemy.type];
     if(enemy.meleePhase==='windup'&&!enemy.meleeFacingLocked){
       this.#aimMelee(enemy,player);
-      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs&&(enemy.arrivalSwing||![...this.#enemies.values()].some(other=>
+      if(enemy.meleeRemainingMs-deltaMs<=(enemy.arrivalLockLeadMs??profile.lockLeadMs)&&(enemy.arrivalSwing||![...this.#enemies.values()].some(other=>
         other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs)))enemy.meleeFacingLocked=true;
     }
     let remaining=deltaMs;
@@ -1299,7 +1300,7 @@ export class EnemySystem {
         }
       }else if(enemy.meleePhase==='strike'){
         if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
-        enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;
+        enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;enemy.arrivalLockLeadMs=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         if(enemy.recoveryFloorMs){
