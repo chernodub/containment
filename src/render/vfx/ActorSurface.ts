@@ -70,6 +70,19 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
       }
       if(material.defines?.BRUTE_PLANES){
         shader.vertexShader='uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
+// The peak of the displacement sits at the olecranon. It fades to
+// zero at the planted heel and at the shoulder socket.
+float support=position.y<0.?heavyGrip.x:heavyGrip.y;
+float elbowZ=mix(3.35,2.42,actorWarden);
+float heelZ=mix(2.65,1.52,actorWarden);
+float elbow=smoothstep(heelZ,elbowZ,position.z)*(1.-smoothstep(elbowZ,elbowZ+.75,position.z));
+float arm=smoothstep(1.95,2.65,abs(position.y))*smoothstep(-1.25,-.55,position.x);
+transformed.x-=1.10*elbow*arm*support;
+transformed.z-=.31*elbow*arm*support;
+float breast=(1.-smoothstep(1.5,2.55,abs(position.y)))*smoothstep(-2.,.1,position.x);
+float bearing=max(heavyGrip.x,heavyGrip.y)*breast;
+transformed.x+=.32*bearing;
+transformed.z-=.29*bearing;
 if(actorWarden<.5){
  float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
  transformed.z-=.32*actorAttackLoad*jaw;
