@@ -39,7 +39,10 @@ export function broodPodModel(): ActorModel {
    cup.position.x=name.includes('hatching') ? -.34 : .34;
   }
  }
- const cores=source.materials.filter(material=>material.name==='pod-core');
+ for(const material of source.materials){
+  material.emissiveIntensity=0;
+  material.color.setHex(material.name==='pod-core'?0x524a57:0x463e49);
+ }
  for(const shell of source.materials.filter(m=>m.name==='brood-pod-shell')){
   shell.transparent=true; shell.opacity=.89; shell.roughness=.48;
   // Only the shell takes the Matron's key. The separate core owns the hatch pulse.
@@ -60,8 +63,7 @@ export function broodPodModel(): ActorModel {
   if(hatching)hatching.visible=stage==='opening';
   if(stage==='opening')source.root.scale.set(1.62,1.05,1.32);
   else source.root.scale.setScalar(stage==='swelling'?1.17+.12*motion*Math.sin(ms/100):1);
-  const glow=stage==='opening'?.36:stage==='swelling'?.76+.27*motion*Math.sin(ms/100):.24;
-  for(const material of cores)material.emissiveIntensity=glow;
+
  };
  const reset=()=>{root.rotation.set(0,0,0);root.scale.setScalar(1);update(0,'sealed');};
  reset();

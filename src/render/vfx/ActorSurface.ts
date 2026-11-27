@@ -160,8 +160,8 @@ if(crawlerSkin){
  broodMark=broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
  broodBody=broodBody || broodBand==3 || crawlerHook;
 }
-vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(2.9,2.45,.76):
-              spitterSkin?vec3(.145,.50,.008):vec3(.008,1.90,5.0);
+vec3 broodPaint=carrierSkin?vec3(.090,.073,.098):crawlerSkin?vec3(.114,.105,.087):
+                spitterSkin?vec3(.082,.096,.075):vec3(.071,.087,.098);
 // Trace a narrow line across organ patches, widening only during native brood priming.
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
@@ -316,21 +316,11 @@ if(broodFinish && (broodBody || sacPatch) && !broodMark){
  outgoingLight=mix(flatInk,vec3(.012,.010,.020),line)*actorStageLight*actorCamouflage;
  outgoingLight+=vec3(.085,.11,.15)*keyRim;
 }
-// Give the modeled shoulder bevels a quiet bone value even when their
-// outside faces turn away from the room key at the end of a stride.
-bool crawlerShoulder=crawlerSkin && (broodBand==2 || broodBand==5) &&
-                     actorPosition.x>.16 && actorPosition.x<.64 && abs(actorPosition.y)>.10;
-if(broodFinish && crawlerShoulder && !broodMark)
- outgoingLight=vec3(.46,.395,.28)*mix(.76,1.,actorStageLight);
-if((broodFinish || spitterSkin) && broodMark){
- float frost=actorContact.x<1.5 ? actorContact.y : 0.;
- outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
-}
-// Wrap the last section of the outside cutting edge. Its back face can
-// turn toward the camera between the last strike and first recoil tick.
-if(crawlerSkin && broodFinish && actorPosition.x>.80 && actorPosition.y<-.34 &&
-   actorPosition.z<.80 && actorAttackLoad>0.)
- outgoingLight=mix(outgoingLight,vec3(1.45,1.20,.72),actorAttackLoad);
+if(crawlerSkin && broodBody && !broodMark)
+ outgoingLight=mix(vec3(.036,.033,.030),vec3(.068,.060,.054),float(broodTop))*actorStageLight;
+if(broodMark || ridgeGlow>0.)outgoingLight=broodPaint*actorStageLight*actorCamouflage;
+float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
+outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
@@ -410,13 +400,8 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
-if((broodFinish || spitterSkin) && (broodMark || ridgeGlow>0.)){
-  // Keep the identification mark visible through the resting Stalker's camouflage.
-  float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
-  if(crawlerSkin)markVisibility*=1.-.52*actorBroodPrime;
-  lanternEmission=broodInk*(broodMark?1.:ridgeGlow)*mix(.92,1.,actorStageLight)*markVisibility;
-  totalEmissiveRadiance=lanternEmission;
-}
+lanternEmission=vec3(0.);
+totalEmissiveRadiance=vec3(0.);
 #endif
 #ifdef BRUTE_PLANES
 if(wardenMaw){
