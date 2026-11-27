@@ -1170,3 +1170,26 @@ Each cell reports closures, escorts cancelled, and gross suit lost. These are th
 | Manual Control | Arc | 0, 0, 27.72 | 0, 0, 27.72 | 0, 0, 27.72 |
 
 The native replays reinforce the opt-in decision. Awareness made three Atrium closures possible while all arms spent zero suit. All twelve Manual Control replays released their escorts. [Atrium replay example](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/report.json) · [Manual Control replay example](../../artifacts/nextgen/playtest/play41-replay-manual-pyro-on/report.json)
+
+### Native seed-1729 campaigns
+
+| Rig and profile | Outcome | Clears | Gross suit lost | Runner errors | Loading holds over 5 s |
+|---|---|---:|---:|---:|---:|
+| Standard competent Breacher | Died in Safety Interlock | 11/20 | 432.27 | 0 | 4 |
+| Standard competent Arc | Complete after earned checkpoint continuation | 20/20 | 662.64 | 0 | 3 |
+| Story novice Cryo | Complete | 20/20 | 1,023.70 | 0 | 5 |
+
+The ordinary competent policy closed 0/2 Atrium and 0/1 Manual Control candidate grilles. Breacher reached Atrium and died before Manual Control. Arc reached both. The initial Breacher launch hit a loopback permission error and the approved retry reached the recorded death. Arc reached the one-hour runner limit during sector 20 and completed after resuming the earned sector-19 clear. The runner flagged the loading holds listed above. [Breacher](../../artifacts/nextgen/playtest/play41-breacher-final/report.json) · [Arc first segment](../../artifacts/nextgen/playtest/play41-arc-final/report.json) · [Arc finale](../../artifacts/nextgen/playtest/play41-arc-finale/report.json) · [Story Cryo](../../artifacts/nextgen/playtest/play41-story-cryo-final/report.json)
+
+The first candidate placed the grille before the Brute entered. A native dash moved the marine across that placement before recovery, so the prototype was replaced with a lane drawn at the live spawn. The earlier reserve and grille silhouettes also read as props in downsampled frames. The final captures use bodies with legs and claws. Crowding can still obscure them during the Atrium dodge.
+
+### Final integration
+
+Merged local nextgen through `a65d7fb5` into `t3/play41`. The production build and conflict-marker scan passed. The final Standard rerun repeated 39/48 with zero stalls and the same per-rig split. [Final integrated Standard cohort](../../artifacts/nextgen/playtest/play41-post-title35-standard/summary.json)
+
+| Disk check | Size | Used | Available | Capacity |
+|---|---:|---:|---:|---:|
+| Start | 926 GiB | 824 GiB | 74 GiB | 92% |
+| End | 926 GiB | 843 GiB | 56 GiB | 94% |
+
+The assigned worktree's `artifacts/nextgen` occupied 2.4 GiB at handoff.
