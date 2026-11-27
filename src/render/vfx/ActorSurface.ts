@@ -32,6 +32,7 @@ float hideFinish(vec3 position, bool limb, bool sac) {
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false, hideFrequency = 18) {
   const contact={value:new T.Vector3()};
+  const strikeLight={value:new T.Vector4()};
   const coldState={value:0};
   const form={value:new T.Vector4()};
   const grip={value:new T.Vector4()};
@@ -60,7 +61,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -107,7 +108,7 @@ if(actorWarden<.5){
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -159,39 +160,44 @@ bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
 bool broodMark=broodBand==3 || broodBand==4 ||
   ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
 // The longitudinal ridge widens toward the tail; the hooks form a separate pair.
-float ridgeWidth=crawlerSkin?mix(.145,.095,smoothstep(-.8,.65,actorPosition.x)):.50;
+float ridgeWidth=crawlerSkin?mix(.145,.095,smoothstep(-.8,.65,actorPosition.x)):.66;
 float ridgeDistance=abs(actorPosition.y)/ridgeWidth;
 bool ridgeSkin=(crawlerSkin || spitterSkin) && broodBody && broodRestUp>.12;
 bool dorsal=ridgeSkin && ridgeDistance<1.;
 bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
                  actorPosition.x>.52 && abs(actorPosition.y)>.09;
-bool cuttingEdge=crawlerHook && actorPosition.x>.94 && actorPosition.y<0. && broodRestUp>.15;
 broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
-  (stalkerSkin && ((vActorRegion==2. && broodRestUp>.68) ||
-                   (vActorRegion==1. && abs(actorPosition.y)<.27 && broodRestUp>.25) ||
-                   (vActorRegion>=3. && vActorRegion<=4. && broodRestUp>.55))) ||
-  (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.78) ||
+  (stalkerSkin && ((vActorRegion==2. && broodRestUp>.18) ||
+                   (vActorRegion==1. && abs(actorPosition.y)<.72 && broodRestUp>.05) ||
+                   (vActorRegion>=3. && vActorRegion<=4. && broodRestUp>.18))) ||
+  (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.35) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
+// The Stalker's fork and shingled abdomen read together at quarter size.
+if(stalkerSkin){
+ bool blade=vActorRegion>=3. && vActorRegion<=4. && abs(actorPosition.y)>.58;
+ bool abdomen=vActorRegion==7. && abs(actorPosition.y)<.38;
+ broodMark=broodMark || ((blade || abdomen) && broodRestUp>-.12);
+}
 // The pressure vessel carries the spine light along its centre; its swollen
 // sides share the brood shell value so the firing lip remains directional.
 bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
 if(spitterSac){
  broodBody=true;
- broodMark=abs(actorPosition.y)<.35;
+ broodMark=abs(actorPosition.y)<.70;
 }
 if(crawlerSkin){
  bool eyes=actorPosition.x>.41 && actorPosition.x<.53 && abs(actorPosition.y)>.12 && abs(actorPosition.y)<.22 && broodRestUp>.1;
- broodMark=broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
+ broodMark=dorsal || broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
  broodBody=broodBody || broodBand==3 || crawlerHook;
 }
-vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(2.9,2.45,.76):
-              spitterSkin?vec3(.145,.50,.008):vec3(.008,1.90,5.0);
+vec3 broodPaint=carrierSkin?vec3(.288,.173,.352):crawlerSkin?vec3(.336,.247,.149):
+                spitterSkin?vec3(.254,.334,.147):vec3(.186,.316,.424);
 // Trace a narrow line across organ patches, widening only during native brood priming.
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
-if(sacPatch)broodMark=seam<mix(.14,.86,actorBroodPrime);
+if(sacPatch)broodMark=seam<mix(.46,.86,actorBroodPrime);
 float ridgeGlow=ridgeSkin && !crawlerSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
@@ -360,21 +366,14 @@ if(broodFinish && (broodBody || sacPatch) && !broodMark){
  outgoingLight=mix(flatInk,vec3(.012,.010,.020),line)*actorStageLight*actorCamouflage;
  outgoingLight+=vec3(.085,.11,.15)*keyRim;
 }
-// Give the modeled shoulder bevels a quiet bone value even when their
-// outside faces turn away from the room key at the end of a stride.
-bool crawlerShoulder=crawlerSkin && (broodBand==2 || broodBand==5) &&
-                     actorPosition.x>.16 && actorPosition.x<.64 && abs(actorPosition.y)>.10;
-if(broodFinish && crawlerShoulder && !broodMark)
- outgoingLight=vec3(.46,.395,.28)*mix(.76,1.,actorStageLight);
-if((broodFinish || spitterSkin) && broodMark){
- float frost=actorContact.x<1.5 ? actorContact.y : 0.;
- outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
+if(crawlerSkin && broodBody && !broodMark)
+ outgoingLight=mix(vec3(.036,.033,.030),vec3(.068,.060,.054),float(broodTop))*actorStageLight;
+float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
+outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
+if(broodMark || ridgeGlow>0.){
+ float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
+ outgoingLight=broodPaint*actorStageLight*exposure;
 }
-// Wrap the last section of the outside cutting edge. Its back face can
-// turn toward the camera between the last strike and first recoil tick.
-if(crawlerSkin && broodFinish && actorPosition.x>.80 && actorPosition.y<-.34 &&
-   actorPosition.z<.80 && actorAttackLoad>0.)
- outgoingLight=mix(outgoingLight,vec3(1.45,1.20,.72),actorAttackLoad);
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
@@ -429,7 +428,18 @@ if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  }else if(identityMark){
   outgoingLight*=mix(vec3(1.),.68+.24*accent,actorContact.y);
  }
-}`}
+}
+#if defined(BROOD_PLANES) || defined(STRIKE_SOCKET_LIGHT)
+if(actorStrikeLight.w>0.){
+ vec3 tip=(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz;
+ float tipMask=1.-smoothstep(.09,.27,length(vViewPosition+tip));
+ vec3 strikePaint=vec3(.84,.39,.18);
+#ifdef BROOD_PLANES
+ if(crawlerSkin && broodRestUp<.15)strikePaint=vec3(.96,.65,.42);
+#endif
+ outgoingLight=mix(outgoingLight,strikePaint,actorStrikeLight.w*tipMask);
+}
+#endif`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
@@ -454,13 +464,8 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
-if((broodFinish || spitterSkin) && (broodMark || ridgeGlow>0.)){
-  // Keep the identification mark visible through the resting Stalker's camouflage.
-  float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
-  if(crawlerSkin)markVisibility*=1.-.52*actorBroodPrime;
-  lanternEmission=broodInk*(broodMark?1.:ridgeGlow)*mix(.92,1.,actorStageLight)*markVisibility;
-  totalEmissiveRadiance=lanternEmission;
-}
+lanternEmission=vec3(0.);
+totalEmissiveRadiance=vec3(0.);
 #endif
 #ifdef BRUTE_PLANES
 if(wardenMaw || bruteBody || (bruteFace && actorWarden>.5)){
@@ -480,6 +485,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     patchActorRegions(material,friendly);
   }
   return {
+    strike(point:T.Vector3|undefined,strength:number){strikeLight.value.set(point?.x??0,point?.y??0,point?.z??0,point?strength:0);},
     cold(frozen:boolean,chilled:boolean){coldState.value=frozen?2:chilled?1:0;},
     contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
@@ -505,6 +511,6 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
     death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
-    reset() { coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
+    reset() { strikeLight.value.w=0;coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };
 }

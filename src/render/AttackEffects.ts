@@ -54,8 +54,12 @@ else if(style>5.5 && vFrame>.5){
  float organ=1.-smoothstep(.55,1.,length(vec2((vUv.x-.10)*9.,p.y)));
  float pulse=.72+.28*sin(vShape.x*7.85);
  color=vec3(1.65,.018,.044);
- if(vFrame>1.5)color=mix(vColor,vec3(1.9),.52*organ);
- alpha*=max(shaft*.78,organ*pulse);
+ if(vFrame>1.5){
+  float crossLine=abs(p.y)/mix(1.,.46,vUv.x);
+  float core=1.-smoothstep(.32,.55,crossLine);
+  color=mix(vec3(.012,.009,.011),mix(vec3(1.85,.20,.09),vec3(1.65,.018,.044),vUv.x),core);
+  alpha*=(1.-smoothstep(.73,1.,crossLine))*(1.-smoothstep(.84,1.,vUv.x));
+ }else alpha*=max(shaft*.78,organ*pulse);
 }
 else if(style>5.5){
  // Merge the capsule footprints before inking their perimeter. A group
@@ -235,7 +239,6 @@ export class AttackEffects {
  private readonly strikeAlong=new T.Vector3();
  private readonly strikeNormal=new T.Vector3();
  private readonly strikeBasis=new T.Matrix4();
- private readonly strikeColor=new T.Color();
  private readonly warningOwners=new Int32Array(57);
  private readonly warningFamilies:string[]=Array(57).fill('');
  private readonly warningParents=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
@@ -963,12 +966,18 @@ export class AttackEffects {
   }
   return count;
  }
+ private releaseStrength=0;
+ get strikeOwner(){return this.primaryWarning.value>=0?this.warningOwners[this.primaryWarning.value]:this.lastStrikeOwner;}
+ get strikeStrength(){return this.primaryWarning.value>=0?.32+.68*this.warningTimes[this.primaryWarning.value].x:this.releaseStrength;}
  private drawFirstLimb(count:number,targets:readonly EnemySnapshot[]|undefined,socket?: (id:number)=>T.Vector3|undefined):number {
   const primary=this.primaryWarning.value;
   const id=primary>=0?this.warningOwners[primary]:this.lastStrikeOwner;
   const first=targets?.find(e=>e.id===id);
-  if(!first || (primary<0 && first.meleePhase!=='strike')){this.lastStrikeOwner=-1;return count;}
+  const recoil=first?.type==='crawler' && first.meleePhase==='recovery'?Math.max(0,1-first.meleeProgress*first.meleeDurationMs/120):0;
+  this.releaseStrength=recoil||1;
+  if(!first || (primary<0 && first.meleePhase!=='strike' && !recoil)){this.lastStrikeOwner=-1;return count;}
   this.lastStrikeOwner=id;
+  if(primary<0 && recoil)return count;
   const point=socket?.(id);
   if(!point||count>=this.hostileWarningMesh.instanceMatrix.count)return count;
   const mesh=this.hostileWarningMesh;
@@ -993,12 +1002,11 @@ export class AttackEffects {
   const normal=this.strikeNormal.crossVectors(along,right).normalize();
   right.crossVectors(normal,along);
   this.dummy.quaternion.setFromRotationMatrix(this.strikeBasis.makeBasis(along,right,normal));
-  this.dummy.position.copy(point).addScaledVector(along,length*.4);
+  this.dummy.position.copy(point).addScaledVector(along,length*.5);
   this.dummy.position.y+=.04;
-  this.dummy.scale.set(length*.5,.095,1);
+  this.dummy.scale.set(length*.5,.12,1);
   this.dummy.updateMatrix();
   mesh.setMatrixAt(count,this.dummy.matrix);
-  mesh.setColorAt(count,this.strikeColor.setHex(first.type==='crawler'?0xffefa2:first.type==='spitter'?0xc6ff80:first.type==='carrier'?0xd1acff:first.type==='stalker'?0xadebff:0xb4e3cb));
   (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(count,2);
   (mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setX(count,1);
   (mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(count,1);
