@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off','exchange-marks','room-order']);
+const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off','exchange-marks','grille-rule','room-order']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
@@ -19,6 +19,7 @@ if (args['room-order'] && !['direct','salvage','policy'].includes(args['room-ord
 if (args.profile && !['novice','competent','expert'].includes(args.profile)) throw Error('profile must be novice, competent or expert');
 if (args.label && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(args.label)))
     throw Error('Unsafe label');
+if (args['grille-rule'] !== undefined && args['grille-rule'] !== 'staged-arc') throw Error('Unknown grille rule');
 const out = resolve('artifacts/nextgen/playtest', args.label ?? 'sim');
 await mkdir(dirname(out), { recursive: true });
 try { await mkdir(out); }
@@ -93,7 +94,7 @@ const queue = rigs.flatMap(rig => seeds.map(seed => ({ rig, seed })));
 async function worker() {
     while (queue.length) {
         const { rig, seed } = queue.shift();
-        const options = { rig, seed, roomOrder:args['room-order'], readExchange:args['exchange-marks']==='on'||args['exchange-marks']===undefined&&(args.difficulty??'standard')==='standard', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['exchange-marks']===undefined?undefined:true, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
+        const options = { rig, seed, roomOrder:args['room-order'], readExchange:args['exchange-marks']==='on'||args['exchange-marks']===undefined&&(args.difficulty??'standard')==='standard', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['grille-rule']??(args['exchange-marks']===undefined?undefined:true), difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
         const report = workers === 1 ? runSimulation(options) : await new Promise((ok, fail) => {
             const child = spawn(process.execPath, [resolve(source,'sim-worker.mjs'), resolve(source, 'sim-core.mjs'), JSON.stringify(options)], { stdio: ['ignore', 'pipe', 'inherit'] });
             const parts = [];

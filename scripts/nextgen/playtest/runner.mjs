@@ -26,9 +26,10 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['startup-timeout-ms','screenshot-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','actor-zones','weapon-jobs','exchange-marks'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','screenshot-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','room-pressure','actor-zones','weapon-jobs','exchange-marks','grille-rule'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
+assert(options['grille-rule']===undefined||options['grille-rule']==='staged-arc','Unknown grille rule');
 const screenshotTimeout=Number(options['screenshot-timeout-ms']??20000);
 assert(Number.isFinite(screenshotTimeout)&&screenshotTimeout>0,'screenshot-timeout-ms must be positive');
 const distRoot=resolve(String(options['dist-dir']??'dist'));
@@ -269,7 +270,7 @@ try {
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
   page=await context.newPage();listen(page);
-  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}${options['exchange-marks']==='absent'?'&recovery-grilles=release-only':options['exchange-marks']!==undefined?'&recovery-grilles=1':''}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}${options['exchange-marks']==='absent'?'&recovery-grilles=release-only':options['grille-rule']?'&recovery-grilles='+options['grille-rule']:options['exchange-marks']!==undefined?'&recovery-grilles=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug,undefined,{timeout:Number(options['startup-timeout-ms']??20000)});
   await enableNative();
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});

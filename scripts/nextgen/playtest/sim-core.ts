@@ -138,7 +138,7 @@ export type SimOptions = {
     maxRoomSeconds?: number;
     trace?: boolean;
     readExchange?: boolean;
-    recoveryGrilles?: boolean | 'release-only';
+    recoveryGrilles?: ConstructorParameters<typeof DepthGame>[2];
     metrics?: Record<string, {
         height: number;
     }>;

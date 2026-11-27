@@ -109,7 +109,7 @@ export class DepthGame {
    (grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
    return {...visible,
-    returnArcCosine:this.grilleOverride===undefined?Math.cos(Math.PI/6):undefined,
+    returnArcCosine:this.grilleOverride===undefined||this.grilleOverride==='staged-arc'?Math.cos(Math.PI/6):undefined,
     returnRange:this.grilleOverride===true?176:undefined,returnHalfWidth:64};
   }
  }
@@ -168,7 +168,7 @@ export class DepthGame {
  private breakAnnounced=false;
  private broodPodsDestroyed=0;
  private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
- constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'){
+ constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'|'staged-arc'){
   if(!storage)this.checkpointState='unavailable';
   this.expedition=createExpedition(1729,this.combat.getRunResources());this.node=this.findNode();this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.director=this.makeDirector();this.mutations=this.makeMutations();this.abilities=this.makeAbilities();this.abilities.setRig('breacher');Object.assign(this.player,this.geometry.playerSpawn);
  }
