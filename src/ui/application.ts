@@ -138,7 +138,7 @@ export async function bootstrap() {
     };
     const query = new URLSearchParams(location.search);
     const grilleRule = query.get('debug') === '1' ? query.get('recovery-grilles') : null;
-    const game = new DepthGame(effect, storage, grilleRule === 'release-only' || grilleRule === 'staged-arc'
+    const game = new DepthGame(effect, storage, grilleRule === 'release-only' || grilleRule === 'staged-arc' || grilleRule === 'staged-side'
         ? grilleRule : grilleRule === null ? undefined : grilleRule === '1');
     beats = new PresentationBeats(game, app, cue => playPresentationCue(audio, cue));
     beats.setEnabled(presentationEnabled);

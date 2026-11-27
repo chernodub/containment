@@ -19,7 +19,7 @@ if (args['room-order'] && !['direct','salvage','policy'].includes(args['room-ord
 if (args.profile && !['novice','competent','expert'].includes(args.profile)) throw Error('profile must be novice, competent or expert');
 if (args.label && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(args.label)))
     throw Error('Unsafe label');
-if (args['grille-rule'] !== undefined && args['grille-rule'] !== 'staged-arc') throw Error('Unknown grille rule');
+if (args['grille-rule'] !== undefined && !['staged-arc','staged-side'].includes(args['grille-rule'])) throw Error('Unknown grille rule');
 const out = resolve('artifacts/nextgen/playtest', args.label ?? 'sim');
 await mkdir(dirname(out), { recursive: true });
 try { await mkdir(out); }
