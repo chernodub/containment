@@ -76,6 +76,7 @@ def build(sk, a):
                      keel=.18, rake=.64, taper=.60, zone=CREST, bone="head", plate=450, hard=1.0))
     lobe((4.55, 0, 5.37), (1.50, 1.09, .36), "jaw", -.10, plate=UNDER)
     lobe((5.70, 0, 5.44), (.40, 1.01, .20), "jaw", .05, plate=450)
+    lobe((4.96,0,5.65),(.89,.82,.16),"jaw",-.08,zone=ORGAN,plate=453,name="inner-lip")
     for side in (-1, 1):
         lobe((3.15, 1.04 * side, 5.99), (.52, .31, .49), "head", plate=450)
     lobe((4.90, 0, 6.14), (.58, 1.00, .36), "head", -.13, k=.0,

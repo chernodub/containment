@@ -1,3 +1,4 @@
+import {shapeWardenMouth} from './WardenMouth';
 import * as T from 'three';
 import {mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -83,6 +84,7 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
     geometry.setAttribute('actorRegion', new T.BufferAttribute(regions, 1));
     // Reindex equal vertices including region: only seam vertices stay split.
     object.geometry = source.index ? mergeVertices(geometry,1e-6) : geometry;
+    if (name === 'k11-brute-boss' && object instanceof T.SkinnedMesh) shapeWardenMouth(object);
     if(object.geometry!==geometry)geometry.dispose();
   });
 }

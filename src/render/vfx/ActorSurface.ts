@@ -7,6 +7,7 @@ const creatureHide = `
 #ifdef BRUTE_PLANES
 varying vec3 vPlateEdge;
 varying float vHeavyZone;
+varying float vHeavyPart;
 float heavyInk(){
   vec3 dx=dFdx(vPlateEdge), dy=dFdy(vPlateEdge);
   vec3 distancePx=vPlateEdge/max(sqrt(dx*dx+dy*dy),vec3(.00001));
@@ -33,7 +34,8 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const contact={value:new T.Vector3()};
   const coldState={value:0};
   const form={value:new T.Vector4()};
-  const warden={value:0};
+  const grip={value:new T.Vector2()};
+  const warden={value:0},wallRecoil={value:0};
   const broodPrime={value:0},castShade={value:0},shedShoulder={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
@@ -57,7 +59,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -67,11 +69,19 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='attribute float _heavyzone; varying float vHeavyZone; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);');
+        shader.vertexShader='uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
+if(actorWarden<.5){
+ float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
+ transformed.z-=.32*actorAttackLoad*jaw;
+ float digits=smoothstep(2.5,3.65,position.x)*smoothstep(1.9,2.35,abs(position.y))*(1.-smoothstep(2.65,3.,position.z));
+ float load=position.y<0.?heavyGrip.x:heavyGrip.y;
+ transformed.y+=(position.y-sign(position.y)*3.)*digits*.31*load;
+ transformed.z-=digits*.18*load;
+}`);
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform vec3 actorContact;uniform float actorColdState;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -170,9 +180,15 @@ ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
 float heavyPaint=floor(vHeavyZone+.5);
-bool wardenMaw=actorWarden>.5 && heavyPaint==9.;
+// The geometry buffer uses wardenMaw to exempt the lit organ from the
+// final creature value ceiling. Keep the exemption inside the dark lining.
+vec2 throatTongue=vec2((actorPosition.y-.08)/.61,(actorPosition.z-3.45)/.089);
+throatTongue.x=(throatTongue.x-.19*throatTongue.y)*(1.+.31*throatTongue.y);
+float tongueBorder=dot(throatTongue,throatTongue);
+bool wardenMaw=actorWarden>.5 && (heavyPaint==9. ||
+  (actorWallRecoil>.5 && (heavyPaint==12. || (heavyPaint==13. && tongueBorder<1.))));
 if(wardenMaw)diffuseColor.rgb=vec3(.025,.012,.005);
-bool bruteFace=heavyPaint==7. || heavyPaint==8.;
+bool bruteFace=heavyPaint==7. || heavyPaint==8. || (actorWarden>.5 && heavyPaint==14.);
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
@@ -238,15 +254,46 @@ outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+
 #ifdef BRUTE_PLANES
 if(actorBroodForm.x>=-1.){
   vec3 middle=mix(vec3(.023,.036,.024),vec3(.044,.025,.016),actorWarden);
-  vec3 crown=mix(vec3(.061,.096,.065),vec3(.116,.060,.034),actorWarden);
+  vec3 crown=mix(vec3(.044,.070,.047),vec3(.116,.060,.034),actorWarden);
   vec3 paint=vec3(.008,.011,.008);
-  if(heavyPaint==1.)paint=crown;
+  float rankBone=actorEliteBody*(1.-actorWarden);
+  if(heavyPaint==1.)paint=mix(crown,vec3(.032,.040,.028),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
-  if(heavyPaint==7.)paint=vec3(.49,.435,.337);
+  if(heavyPaint==7.)paint=vec3(.49,.435,.337)*(1.-.34*actorWallRecoil);
   if(heavyPaint==8.)paint=vec3(.275,.236,.172);
-  if(heavyPaint==9.)paint=vec3(5.9,3.85,1.50);
+  if(rankBone>.5){
+    float part=floor(vHeavyPart+.5);
+    vec3 antler=vec3(.115,.096,.066);
+    bool dorsal=part>=6. && part<=12.;
+    bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9;
+    bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
+    if(edge || crest || part==1. || part==3. || part==5.)paint=antler;
+    if(part==16. || part==17.)paint=vec3(.37,.324,.252);
+  }
+  if(heavyPaint==11.){
+    // The tongue sits inside a dark lower lip. Both boundaries move with the jaw.
+    bool tongue=abs(actorPosition.y)<.52 && actorPosition.x>4.55;
+    paint=tongue?vec3(.53,.27,.12):vec3(.013,.008,.009);
+  }
+  if(heavyPaint==10.)paint=vec3(.068,.033,.062);
+  if(heavyPaint==9.){
+    vec3 core=mix(vec3(.75,.40,.18),vec3(1.65,.88,.36),actorWallRecoil);
+    paint=abs(actorPosition.y)<.70?core:vec3(.013,.008,.009);
+  }
+  if(heavyPaint==12.)paint=mix(vec3(.28,.12,.052),vec3(.51,.24,.095),actorWallRecoil);
+  if(heavyPaint==13.){
+    // Paint the tongue on the deforming lining. Its margin stays dark at
+    // full gape and the warm end remains behind the lower tooth row.
+    // A short median fold divides the root, leaving the tip continuous.
+    float fold=(1.-smoothstep(.025,.115,abs(throatTongue.x)))*smoothstep(-.28,.35,throatTongue.y);
+    float rolledSide=smoothstep(.15,.20,throatTongue.x+.46*throatTongue.y);
+    paint=mix(vec3(.009,.003,.008),mix(mix(vec3(4.4,1.95,.56),vec3(1.36,.46,.10),rolledSide),vec3(.62,.19,.047),fold),
+      (1.-smoothstep(.96,1.04,tongueBorder))*actorWallRecoil);
+  }
+  if(heavyPaint==14.)paint=vec3(.56,.47,.33);
+  if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
   float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));
@@ -395,6 +442,8 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
+    grip(left:number,right:number) { grip.value.set(left,right); },
+    wallRecoil(active:boolean) { wallRecoil.value=active?1:0; },
     warden(active:boolean) { warden.value=active?1:0; },
     prime(value:number){broodPrime.value=value;},
     castShade(value:number) { castShade.value=value; },
