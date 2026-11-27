@@ -1422,13 +1422,14 @@ export class EnemySystem {
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
     enemy.commitmentDeniedAt=undefined;
     this.#meleeStartGapMs=250;
-    enemy.windupMs=this.#spitWindupMs;
+    const durationMs=enemy.openingSpitSpread?850:this.#spitWindupMs;
+    enemy.windupMs=durationMs;
     enemy.pendingAttack='spit';
     enemy.lockX=target.x;enemy.lockY=target.y;
-    enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;
+    enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+durationMs;
     enemy.velocityX=enemy.velocityY=0;
     events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,
-      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs:this.#spitWindupMs,spread:enemy.openingSpitSpread}));
+      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs,spread:enemy.openingSpitSpread}));
   }
 
   #applyKnockback(

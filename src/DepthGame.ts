@@ -228,7 +228,7 @@ export class DepthGame {
  }
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
- private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number};
+ private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number;hatch?:string};
  private stageEarlyPressure(firstLane?:{x:number;y:number}){
   this.earlyPressureAt=Infinity;
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
@@ -241,9 +241,10 @@ export class DepthGame {
   for(let turn=0;turn<16;turn++){
    const offset=turn%2?-(turn+1)/2:turn/2;
    const angle=travel+offset*Math.PI/8;
-   const shooter={x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
+   const shooter=!firstLane&&this.node.depth<=3&&lane&&turn===0?lane.shooter:
+    {x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
    if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius(family,false))||
-    !canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
+    (!lane||shooter!==lane.shooter)&&!canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
    const sidesteps=[1,-1].map(side=>({x:origin.x-side*Math.sin(angle)*146,y:origin.y+side*Math.cos(angle)*146}));
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
@@ -410,6 +411,9 @@ export class DepthGame {
  }
  get delayedPincerHatch(){
   const arrivals=this.pending.filter(spawn=>spawn.delayedHatch!==undefined);
+  const opening=this.earlyPressureFollow;
+  const openingBreach=opening&&this.geometry.breaches.find(point=>point.id===opening.hatch);
+  if(opening&&openingBreach)return {breach:openingBreach,arrivals:[Math.max(0,(opening.at-this.elapsed)*1000)]};
   const breach=this.geometry.breaches.find(point=>point.id===arrivals[0]?.delayedHatch);
   return breach?{breach,arrivals:arrivals.map(spawn=>spawn.delay)}:undefined;
  }
@@ -1279,7 +1283,10 @@ export class DepthGame {
   if(e.enemyType==='carrier'){this.broodPodsDestroyed=0;this.broodStarted.add(e.enemyId);}
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
-   this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.30};
+   const away={x:2*this.player.x-e.x,y:2*this.player.y-e.y};
+   const hatch=[...this.openBreaches].sort((a,b)=>
+    Math.hypot(a.x-away.x,a.y-away.y)-Math.hypot(b.x-away.x,b.y-away.y))[0];
+   this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.64,hatch:hatch?.id};
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
    const range=Math.hypot(e.targetX-e.x,e.targetY-e.y);
    this.presentation.push({type:'enemy-warning',x:e.targetX,y:e.targetY,durationMs:e.durationMs,radius:EARLY_SPIT_IMPACT_RADIUS});
@@ -1662,7 +1669,7 @@ export class DepthGame {
   if(this.rigDrill&&this.elapsed>=this.rigDrill.until)this.finishRigDrill();
   if(this.earlyPressureAt!==undefined&&this.elapsed>=this.earlyPressureAt)this.stageEarlyPressure();
   const follow=this.earlyPressureFollow;
-  if(follow&&this.elapsed>=follow.at){
+  if(follow&&(this.elapsed>=follow.at||this.enemies.getSnapshot(follow.shooter)?.pendingAttack!=='spit')){
    this.earlyPressureFollow=undefined;
    if(this.enemies.getSnapshot(follow.shooter)?.pendingAttack==='spit')this.stageEarlyPressure(follow);
   }
