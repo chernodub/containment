@@ -160,6 +160,16 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
         c.translate(1,1);c.lineWidth=1.5;c.strokeStyle='#82908a';c.stroke();c.translate(-1,-1);
       }
     }
+    if(centreMarks[room.id]){
+      c.save();clipFightingDeck(c,room);
+      for(const lamp of fixtures){
+        if(!lamp)continue;
+        const unlit=new Path2D();unlit.rect(0,0,room.width,room.height);
+        unlit.ellipse(lamp.x,lamp.z,48,76,-lamp.angle,0,2*Math.PI);
+        c.clip(unlit,'evenodd');
+      }
+      c.fillStyle='rgba(7,12,14,.10)';c.fillRect(0,0,room.width,room.height);c.restore();
+    }
     paintLights(c);
     c.save();
     const scars:Record<string,number[][]>={
