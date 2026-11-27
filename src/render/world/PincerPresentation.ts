@@ -214,6 +214,7 @@ export class PincerPresentation {
     const age=Math.max(0,elapsed-grille.changedAt);
     while(gate.silhouettes.length<grille.escorts){
       const root=this.makeWaitingCreature();
+      root.scale.set(1.75,2.25,1.7);
       gate.root.add(root);
       gate.silhouettes.push({root,arrival:0});
     }
@@ -222,7 +223,7 @@ export class PincerPresentation {
       const recoil=grille.state==='closed'?Math.min(.2,age*2)*Math.exp(-age*5):0;
       const leave=grille.state==='closed'?Math.max(0,age-1.5)*2.5:0;
       const push=.10*Math.sin(age*12+index*1.8);
-      root.position.set(-.50-recoil-leave+push,0,(index-(grille.escorts-1)/2)*.62);
+      root.position.set(-.83-recoil-leave+push,0,(index-(grille.escorts-1)/2)*1.55);
     });
   }
 

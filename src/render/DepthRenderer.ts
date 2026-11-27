@@ -584,6 +584,9 @@ export class DepthRenderer {
  private arrivalWoundTimes=new Map<number,number>();
  private arrivalReleases=new Map<number,{effect:GameEffect;at:number}>();
  effect(effect:GameEffect){
+  if(effect.type==='recovery-grille-closed'){
+   this.cameraRig?.punch(.012,100);
+  }
   if(effect.reserveCut){
    this.floorChoiceMarkers.closeReserve(effect.x,effect.y,effect.reserveCut.closedEntry);
    return;
