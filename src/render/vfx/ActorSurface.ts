@@ -262,6 +262,7 @@ if(actorBroodForm.x>=-1.){
   }
   if(heavyPaint==12.)paint=vec3(.28,.12,.052);
   if(heavyPaint==13.)paint=vec3(.008,.003,.006);
+  if(heavyPaint==14.)paint=vec3(.43,.36,.25);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
   float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));

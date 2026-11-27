@@ -21,7 +21,12 @@ export function wardenRecoil(root: T.Object3D) {
   const hinge = new T.Matrix4().makeTranslation(3.90, 0, 3.50);
   const fromHinge = hinge.clone().invert();
   const matrix = new T.Matrix4(), opening = new T.Matrix4(), savedJaw = new T.Matrix4();
-  const jawParent = jaw.parent;
+  const jawParent = jaw.parent, headParent = head.parent!;
+  const headFromBind = headToBind.clone().invert(), savedHead = new T.Matrix4();
+  const forward = new T.Vector3(), lateral = new T.Vector3(), up = new T.Vector3();
+  const extent = new T.Vector3(), position = new T.Vector3(), scale = new T.Vector3();
+  const turn = new T.Quaternion();
+  let headActive = false;
   let jawActive = false, active = false;
   return {
     release() {
@@ -29,6 +34,11 @@ export function wardenRecoil(root: T.Object3D) {
         savedJaw.decompose(jaw.position,jaw.quaternion,jaw.scale);
         jaw.updateMatrix();
         jawActive = false;
+      }
+      if (headActive) {
+        savedHead.decompose(head.position,head.quaternion,head.scale);
+        head.updateMatrix();
+        headActive = false;
       }
       if (!active) return;
       neck.position.copy(original);
@@ -58,6 +68,27 @@ export function wardenRecoil(root: T.Object3D) {
       jaw.updateMatrix();
       savedJaw.copy(jaw.matrix);
       head.updateWorldMatrix(true,false);
+      if (amount > 0) {
+        // Keep the cheek hinge stationary and present the near tooth row in three-quarter view.
+        savedHead.copy(head.matrix);
+        matrix.multiplyMatrices(head.matrixWorld,headToBind);
+        world.set(3.90,0,3.50).applyMatrix4(matrix);
+        extent.setFromMatrixScale(matrix);
+        forward.setFromMatrixColumn(matrix,0);
+        const side = forward.x<0?-1:1;
+        forward.set(.643*side,-.12,.766).normalize();
+        lateral.set(0,1,0).cross(forward).normalize();
+        up.crossVectors(forward,lateral);
+        if(matrix.determinant()<0)lateral.negate();
+        matrix.makeBasis(forward.multiplyScalar(extent.x),lateral.multiplyScalar(extent.y),up.multiplyScalar(extent.z));
+        position.set(3.90,0,3.50).applyMatrix4(matrix);
+        matrix.setPosition(world.sub(position)).multiply(headFromBind);
+        opening.copy(headParent.matrixWorld).invert().multiply(matrix).decompose(position,turn,scale);
+        head.position.lerp(position,amount);
+        head.quaternion.slerp(turn,amount);
+        head.updateWorldMatrix(false,false);
+        headActive=true;
+      }
       jawParent.updateWorldMatrix(true,false);
       opening.makeRotationY(T.MathUtils.degToRad(6 + 30 * T.MathUtils.clamp(amount,0,1)));
       matrix.copy(jawParent.matrixWorld).invert().multiply(head.matrixWorld).multiply(headToBind)

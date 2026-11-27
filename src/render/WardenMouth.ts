@@ -23,12 +23,12 @@ export function shapeWardenMouth(mesh: T.SkinnedMesh) {
     {x:4.56,y:0,z:3.33,length:.66,width:.89,height:.18,paint:0,attachment:1},
     {x:4.63,y:0,z:3.42,length:.52,width:.78,height:.12,paint:12,attachment:1},
     {x:4.55,y:0,z:3.52,length:.49,width:.78,height:.13,paint:13,attachment:.5},
-    {x:4.86,y:0,z:3.51,length:.25,width:.38,height:.065,paint:9,attachment:1}
+    {x:5.00,y:0,z:3.54,length:.24,width:.34,height:.09,paint:9,attachment:1}
   ];
   for (const side of [-1,1]) for (let i=0;i<3;i++) {
-    const x=4.27+.32*i, y=side*(.78-.06*i);
+    const x=4.29+.38*i, y=side*(.88-.115*i);
     for (const lower of [false,true]) surfaces.push({x:x+(lower?.09:0),y,z:lower?3.43:3.65,
-      length:.105,width:.085,height:lower?.20:.25,paint:8,attachment:lower?1:0,tooth:lower?1:-1});
+      length:.135,width:.105,height:lower?.23:.31,paint:14,attachment:lower?1:0,tooth:lower?1:-1});
   }
   // Spend the available rings on the broad lips and throat. Short tapered teeth need fewer facets.
   const rings=Math.min(6,Math.floor((slots.length-2*surfaces.length)/(4*12+12*6)));
@@ -59,6 +59,8 @@ export function shapeWardenMouth(mesh: T.SkinnedMesh) {
       joints.setXYZW(i,head,jaw,0,0);weights.setXYZW(i,1-w,w,0,0);
       zone.setX(i,16*(80+part)+s.paint);g.getAttribute('actorRegion').setX(i,2);
       g.getAttribute('plateEdge').setXYZ(i,1,1,1);
+      g.getAttribute('_k11region')?.setXY(i,s.paint===9?1:0,0);
+      g.getAttribute('uv').setXY(i,.125,.125);
       return i;
     }
     let last=[point(0,0)];
