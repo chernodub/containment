@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number}|'marine';healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number}|'lead-marine';healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -198,7 +198,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number}|'marine';wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number}|'lead-marine';wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -1328,7 +1328,13 @@ export class EnemySystem {
     if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#meleeStartGapMs>0)return;
     if(enemy.openingVolley){
       if(!this.#permitsAttack(enemy,player,'ranged'))return;
-      const target=enemy.openingVolley==='marine'?player:enemy.openingVolley;
+      let target=enemy.openingVolley==='lead-marine'?player:enemy.openingVolley;
+      if(enemy.openingVolley==='lead-marine'){
+        const horizon=Math.min(.8,this.#spitWindupMs/1000+distance/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed);
+        const vx=player.vx??0,vy=player.vy??0,pace=Math.min(1,220/(Math.hypot(vx,vy)||1));
+        const lead={x:player.x+vx*horizon*pace,y:player.y+vy*horizon*pace};
+        if(this.#canAttack?.(enemy,lead)!==false)target=lead;
+      }
       enemy.openingVolley=undefined;
       this.#windUpSpit(enemy,target,events);
       return;
