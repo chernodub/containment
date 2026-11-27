@@ -283,7 +283,11 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
     if(s.shutterBait&&c.waypoint)score-=distance(next,c.waypoint)*11;
     if(s.gate&&c.waypoint){score-=distance(next,c.waypoint)*4;score-=Math.max(0,distance(next,s.gate)-8)*4;}
-    if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
+    if(s.siege?.remainingMs>0&&c.waypoint){
+      score-=distance(next,c.waypoint)*1.2;
+      if(!s.pursuitRecovery)score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;
+    }
+    if(s.pursuitRecovery&&!target&&c.clear)score+=120;
     // Keep firing lanes only while a perceived target can be engaged.
     if (target && c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
@@ -457,7 +461,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       }
       if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
         const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});
-        movement = fixation && visible.length && !escape ? {dx:0,dy:0} : next;
+        movement = fixation && visible.length && !escape && !s.pursuitRecovery ? {dx:0,dy:0} : next;
         lastMove = now;
         nextMove = now + config.movementMs * (.8 + random() * .4);
       }
