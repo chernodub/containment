@@ -84,9 +84,16 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         source=paint.convert('RGBA')
         source.putalpha(alpha)
     if name=='crawler':
-        # Only the fine outer rim breaks the dark mass of the upper jamb.
+        # Straw scutes catch the overhead light. The lower jaw picks up the
+        # cold reflection from the broken metal directly beneath it.
         alpha=source.getchannel('A')
-        source=ImageOps.colorize(source.convert('L'),'#090c11','#a79980')
+        value=source.convert('L')
+        source=ImageOps.colorize(value,'#12171f','#b3a586','#56575a',midpoint=82)
+        w,h=source.size
+        jaw=Image.new('L',source.size)
+        ImageDraw.Draw(jaw).polygon([(.49*w,.48*h),(.88*w,.39*h),(w,.91*h),(.66*w,h)],fill=255)
+        reflection=ImageChops.multiply(jaw,value.point(lambda v:min(210,max(0,(v-65)*3))))
+        source.paste('#a8b6b6',(0,0,w,h),reflection)
         source.putalpha(alpha)
     # A narrow hard highlight on the inner edge matches the side facing the
     # aperture. Retain a separate outer ink stroke after the highlight.
@@ -123,9 +130,12 @@ hero=Image.new('RGBA',size)
 place(hero,'breacher',1525,358,1330,vertical=True)
 hero.save(raw/'hero.png')
 layer=light_deck(structure())
+# The top flange catches a sliver of the same opening behind the forelimb.
+edge=ImageDraw.Draw(layer)
+edge.line([(1156,597),(1220,609),(1304,601),(1376,573),(1460,565)],fill='#728891',width=6)
 cast_shadow(layer,hero)
 layer.alpha_composite(contacts())
-place(layer,'crawler',1142,465,222,bank=-22)
+place(layer,'crawler',1090,397,314,bank=-12)
 place(layer,'stalker',824,650,205,bank=17)
 layer.alpha_composite(left_return())
 place(layer,'warden',895,814,720)
