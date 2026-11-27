@@ -181,6 +181,11 @@ export function runSimulation(options: SimOptions) {
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
         }
+        if(room&&room.depth>=2&&room.depth<=3&&e.type==='enemy-warning'){
+            const opening=room.openingPressure??={fanWarnings:0,followUpWarnings:0};
+            if(e.family===undefined&&e.radius===128)opening.fanWarnings++;
+            if(e.family===undefined&&e.durationMs===80&&e.radius===32)opening.followUpWarnings++;
+        }
         if(e.type==='hit'&&e.source==='weapon'&&(e.damage??0)>0){
             weaponHits.total++;
             if(e.exposedHit)weaponHits.exposed++;
