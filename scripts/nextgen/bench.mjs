@@ -326,7 +326,7 @@ try{
    // not shadow/post multiplication. Hidden rank variants are excluded.
    const geometryInventory=()=>{const rows=[];const scan=(root,owner)=>{root?.traverseVisible(object=>{if(!object.isMesh)return;const triangles=Math.min(object.geometry.index?.count??object.geometry.attributes.position?.count??0,object.geometry.drawRange.count)/3*(object.isInstancedMesh?object.count:1);let path=object.name||object.type;for(let parent=object.parent;parent&&parent!==root;parent=parent.parent)path=(parent.name||parent.type)+'/'+path;rows.push({owner,path,triangles,bones:object.skeleton?.bones.length??0,low:object.geometry.userData.perf13LOD==='low'});});};scan(r.world,'static world');scan(r.player?.root,'marine');for(const [id,actor]of r.actors)scan(actor.root,'enemy '+id);return rows.sort((a,b)=>b.triangles-a.triangles);};
    const initialGeometryInventory=geometryInventory();
-   const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[]};
+   const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[],adaptiveGpu:[]};
    const ragdollKeys=['physicsMs','stepMs','active','bodies','joints','contacts','steps','starts'];
    if(profile)for(const key of ragdollKeys)samples['ragdoll_'+key]=[];
    let previousRagdoll=r.ragdolls.snapshot();
@@ -377,6 +377,7 @@ try{
     values.sceneInstances[count]=sceneInstances;values.sceneLights[count]=sceneLights;
     const postDiagnostics=r.post.diagnostics??r.post.performanceDiagnostics;
     values.adaptiveScale[count]=postDiagnostics?.adaptiveScale??r.post.adaptiveScale??1;
+    values.adaptiveGpu[count]=postDiagnostics?.gpu?.latestMs??0;
     if(costAudit)costAudit.sample(values,count);
     count++;
    });
