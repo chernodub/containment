@@ -151,7 +151,7 @@ if(crawlerSkin){
  broodBody=broodBody || broodBand==3 || crawlerHook;
 }
 vec3 broodInk=carrierSkin?vec3(.80,.06,2.10):crawlerSkin?vec3(2.9,2.45,.76):
-              spitterSkin?vec3(.14,4.2,.001):vec3(.008,1.90,5.0);
+              spitterSkin?vec3(.145,.50,.008):vec3(.008,1.90,5.0);
 // Trace a narrow line across organ patches, widening only during native brood priming.
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
