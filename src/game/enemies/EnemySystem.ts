@@ -1232,6 +1232,7 @@ export class EnemySystem {
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=!trackUntilLock;
     enemy.arrivalLockLeadMs=trackUntilLock?180:undefined;
+    if(trackUntilLock)enemy.meleeShape={...enemy.meleeShape,range:110};
     enemy.meleeRemainingMs=enemy.meleeDurationMs=this.#meleeWindup(enemy);
     this.#aimMelee(enemy,player,true);
     enemy.attackSlot=Object.freeze({angle:enemy.meleeAngle+Math.PI,radius:enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)});
@@ -1300,7 +1301,7 @@ export class EnemySystem {
         }
       }else if(enemy.meleePhase==='strike'){
         if(enemy.arrivalSwing)events.push(freezeEvent({type:'arrival-recovery',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,damage:enemy.arrivalDamage??0}));
-        enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;enemy.arrivalLockLeadMs=undefined;
+        enemy.arrivalSwing=undefined;enemy.arrivalDamage=undefined;
         enemy.meleePhase='recovery';enemy.meleeProgress=0;
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.recoveryMs*(enemy.elite?ELITE_MELEE_RECOVERY_SCALE:1)*this.#rest*(this.#canCommit&&!enemy.champion?.8:1);
         if(enemy.recoveryFloorMs){
@@ -1313,6 +1314,8 @@ export class EnemySystem {
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }
       }else{
+        if(enemy.arrivalLockLeadMs!==undefined)enemy.meleeShape=profile.shape;
+        enemy.arrivalLockLeadMs=undefined;
         enemy.recoveryFloorMs=undefined;
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest*(enemy.champion?1:this.#ordinaryIdleScale);
         this.#yieldMeleeBerth(enemy);
