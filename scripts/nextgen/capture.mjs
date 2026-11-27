@@ -10,6 +10,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync,spawn} from 'node:child_process';
 import {chromium} from 'playwright';
 import {SCENARIOS,DEFAULT_ROOMS,stageCombat,stageKiting,advanceKiting,inspectFrame} from './scenarios.mjs';
+import {restingBodyRegions} from './brood43-mask.mjs';
 import {samplePng} from './png.mjs';
 import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {assertCaptureCanvas} from './capture-canvas.mjs';
@@ -22,7 +23,7 @@ import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
-const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold','failure-evidence','canvas-only']);
+const args=process.argv.slice(2),flags=new Set(['build','actor-zones','headed','keep-going','help','scaffold','failure-evidence','canvas-only']);
 const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets','kiting-retries']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
@@ -315,6 +316,10 @@ try{
     const file=name+(scenario.burst?`-${String(frame+1).padStart(2,'0')}`:'')+'.png';
     // Art-only world view: leave native DOM/input/framing inspection intact,
     // but export the actual rendered canvas so HUD cannot identify the rig.
+    if(args.includes('--actor-zones')){
+     const regions=await page.evaluate(restingBodyRegions);
+     await writeFile(resolve(out,file.replace(/\.png$/,'.zones.json')),JSON.stringify(regions));
+    }
     const bytes=canvasOnly?Buffer.from(await page.evaluate(()=>{const d=window.__containmentDebug;d.refresh();return d.renderer.renderer.domElement.toDataURL('image/png').split(',')[1];}),'base64'):await page.screenshot({path:resolve(out,file),animations:scenario.titleArtTimeline?'allow':'disabled'});
     if(canvasOnly)await writeFile(resolve(out,file),bytes);
     const pixels=samplePng(bytes);

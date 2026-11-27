@@ -118,8 +118,13 @@ float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
  if(lanternPeak>.04)geometryRegion=30.;
 #endif
 #ifdef BROOD_PLANES
- // Reserve the brood organ region for its chroma and interior-ink treatment.
- if(broodFinish && broodMark)geometryRegion=28.;
+ // Regions 9–27 belong to the separate actor identity meshes.
+ geometryRegion=(broodMark || ridgeGlow>0.)?28.:31.;
+ if(actorContact.y>.13 || actorStrikeLight.w>0. &&
+    distance(-vViewPosition,(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz)<.27)geometryRegion=30.;
+#endif
+#ifdef BROOD_POD_SURFACE
+ geometryRegion=podMark?28.:31.;
 #endif
 #ifdef BRUTE_PLANES
  if(bruteFace)geometryRegion=29.;
