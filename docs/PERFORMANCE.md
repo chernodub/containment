@@ -364,3 +364,26 @@ The quiet lead A–B–A regressed with PERF47 in all four High cases and recove
 High uses raw native frame intervals and counts misses above 20 ms in a 60-frame ring. Two misses trigger a 0.05 scale reduction down to 0.75. A quarter-second hold separates changes, and each adjustment starts a fresh sample window. Recovery adds 0.025 after six seconds with at most one miss in the current window. Room changes clear the history and keep the ending scale. GPU queries remain diagnostic. Paused, loading and fixed-step frames do not feed the controller. The scale slider pins the requested value, and re-enabling adaptive restores the full-scale starting target.
 
 The normal adaptive resolve runs High FXAA from the linear-filtered internal presentation texture directly to the native-size canvas. A debug capture pinned just the internal multiplier, which exercises that resolve at 1.00, 0.90, 0.82 and 0.75 without altering the display buffer. The first visible differences at native size are slight softening in the smallest sign strokes and thin ink at 0.90. The warning ring and creature contours remain easy to read at 0.75, though softer. The differences are hard to see in the 480×270 comparison. This fixture shows raised sign text and deck markings, rather than floor decal text. No sharpening pass or additional texture taps were added. The pairs are `artifacts/nextgen/perf48/native.png` and `artifacts/nextgen/perf48/review.png`.
+
+### Quiet matrix
+
+Each cell lists three 15-second trials in order. Every accepted load reading was at most 3. Sets crossing the load limit were repeated. Time below 0.85 is weighted by recorded frame intervals.
+
+| Case | Share over 20 ms % | Frame p95 ms | Median scale | Min scale | Time below 0.85 % | Load start→end |
+| --- | --- | --- | --- | --- | --- | --- |
+| safety-interlock-station-arc-high before | 9.6 / 8.3 / 7.4 | 25.0 / 25.0 / 25.0 | 0.900 / 0.900 / 0.900 | 0.900 / 0.900 / 0.900 | 0.0 / 0.0 / 0.0 | 2.45→2.71 / 2.71→2.42 / 2.42→2.00 |
+| safety-interlock-station-arc-high after | 1.7 / 1.0 / 1.8 | 18.0 / 17.7 / 18.0 | 0.800 / 0.825 / 0.775 | 0.750 / 0.800 / 0.750 | 74.5 / 80.0 / 75.1 | 2.08→1.64 / 1.64→2.01 / 2.01→2.73 |
+| safety-interlock-station-pyro-high before | 17.0 / 9.7 / 19.7 | 25.3 / 25.0 / 25.8 | 0.900 / 0.900 / 0.900 | 0.900 / 0.900 / 0.900 | 0.0 / 0.0 / 0.0 | 2.34→2.05 / 2.05→2.45 / 2.45→2.87 |
+| safety-interlock-station-pyro-high after | 1.7 / 2.2 / 2.3 | 17.9 / 18.1 / 18.0 | 0.775 / 0.775 / 0.750 | 0.750 / 0.750 / 0.750 | 78.8 / 78.8 / 78.9 | 2.48→2.82 / 2.82→2.65 / 2.65→2.49 |
+| safety-interlock-station-pyro-low before | 0.2 / 0.4 / 0.6 | 17.7 / 17.6 / 17.9 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 | 0.0 / 0.0 / 0.0 | 2.21→2.30 / 2.30→2.24 / 2.24→2.16 |
+| safety-interlock-station-pyro-low after | 0.4 / 0.5 / 0.6 | 17.9 / 17.6 / 17.6 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 | 0.0 / 0.0 / 0.0 | 2.30→2.44 / 2.44→2.74 / 2.74→2.48 |
+| transmission-chamber-arc-high before | 1.2 / 0.7 / 3.7 | 18.0 / 17.6 / 18.0 | 0.900 / 0.900 / 0.900 | 0.900 / 0.900 / 0.900 | 0.0 / 0.0 / 0.0 | 2.48→2.41 / 2.41→2.72 / 2.72→2.70 |
+| transmission-chamber-arc-high after | 1.3 / 1.4 / 1.2 | 17.8 / 18.1 / 18.1 | 0.900 / 0.900 / 0.900 | 0.825 / 0.775 / 0.825 | 29.3 / 34.7 / 22.9 | 2.64→2.48 / 2.48→2.74 / 2.74→2.32 |
+| transmission-chamber-pyro-high before | 9.9 / 7.7 / 4.9 | 25.1 / 25.0 / 18.4 | 0.900 / 0.900 / 0.900 | 0.900 / 0.900 / 0.900 | 0.0 / 0.0 / 0.0 | 2.59→2.38 / 2.38→2.12 / 2.12→1.76 |
+| transmission-chamber-pyro-high after | 1.2 / 1.6 / 1.5 | 17.7 / 18.1 / 17.9 | 0.825 / 0.850 / 0.850 | 0.800 / 0.750 / 0.800 | 67.0 / 23.0 / 33.4 | 2.88→2.66 / 2.66→2.55 / 2.55→2.52 |
+
+All 12 High trials met the 5% limit and finished with a frame p95 between 17.7 and 18.1 ms. Low stayed at full scale in all trials. Combat shader compiles and WebGL errors were zero. The benchmark's existing 0.90 scale diagnostic still warns when the new controller goes below it. In Safety Interlock Pyro, the median internal extent was 1440×810 to 1488×837, while output stayed at 1920×1080. In Arc it was 1488×837 to 1584×891.
+
+The Safety Interlock Pyro before and after CSVs retain frame interval, chosen scale and the most recent GPU sample when available. Before, trial 1 reached 0.90 at frame 98 on a 26.2 ms interval with a 31.58 ms latest GPU estimate. It recorded 111 misses at that scale, including the transition frame.
+
+The final production build passed. The native Pyro campaign cleared 13 rooms with zero errors and exit status 0. Safety Interlock loaded in 1.065 s. The two capture manifests are under `artifacts/nextgen/perf48-internal/` and `artifacts/nextgen/perf48-low/`, with zero errors and failures. The matrix and trace receipts are under `artifacts/nextgen/perf48/`. Superseded frozen distributions and duplicate embedded PNG copies were pruned to keep the worktree's evidence under 6 GB.
