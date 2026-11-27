@@ -34,7 +34,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const contact={value:new T.Vector3()};
   const coldState={value:0};
   const form={value:new T.Vector4()};
-  const grip={value:new T.Vector2()};
+  const grip={value:new T.Vector4()};
   const bossPalm={value:[new T.Vector3(),new T.Vector3()]};
   const warden={value:0},wallRecoil={value:0};
   const broodPrime={value:0},castShade={value:0},shedShoulder={value:0};
@@ -70,7 +70,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='uniform vec3 bossPalm[2];uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
+        shader.vertexShader='uniform vec3 bossPalm[2];uniform vec4 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
 // The peak of the displacement sits at the olecranon. It fades to
 // zero at the planted heel and at the shoulder socket.
 float support=position.y<0.?heavyGrip.x:heavyGrip.y;
@@ -88,6 +88,13 @@ float breast=(1.-smoothstep(1.5,2.55,abs(position.y)))*smoothstep(-2.,.1,positio
 float bearing=max(heavyGrip.x,heavyGrip.y)*breast;
 transformed.x+=.32*bearing;
 transformed.z-=.29*bearing;
+// Roll off the distal knuckles. The padded heel rises first, then the
+// middle phalanges, leaving the claw tips down for the last part of support.
+float peel=position.y<0.?heavyGrip.z:heavyGrip.w;
+float handX=position.x-mix(0.,.68,actorWarden);
+float heel=arm*smoothstep(1.45,1.98,handX)*(1.-smoothstep(2.18,3.70,handX));
+heel*=1.-smoothstep(heelZ,heelZ+.42,position.z);
+transformed.z+=.43*heel*peel;
 if(actorWarden<.5){
  float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
  transformed.z+=(.29-.63*actorAttackLoad)*jaw;
@@ -461,7 +468,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
-    grip(left:number,right:number,offsets:T.Vector3[]) { grip.value.set(left,right);bossPalm.value=offsets; },
+    grip(left:number,right:number,leftPeel:number,rightPeel:number,offsets:T.Vector3[]) { grip.value.set(left,right,leftPeel,rightPeel);bossPalm.value=offsets; },
     wallRecoil(active:boolean) { wallRecoil.value=active?1:0; },
     warden(active:boolean) { warden.value=active?1:0; },
     prime(value:number){broodPrime.value=value;},

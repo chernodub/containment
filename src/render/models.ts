@@ -357,7 +357,8 @@ export function alien(kind:string,elite=false):ActorModel{
    const phase=walk?walk.time/walk.getClip().duration:atRest?turning:-1;
    contacts.apply(phase,champion==='warden');
    const grip=(u:number)=>walk?T.MathUtils.smoothstep(u%1,0,.28)*(1-T.MathUtils.smoothstep(u%1,.42,.72)):0;
-   surface.grip(grip(phase),grip(phase+.5),contacts.bossOffsets);
+   const peel=(u:number)=>walk?T.MathUtils.smoothstep(u%1,.58,.67)*(1-T.MathUtils.smoothstep(u%1,.73,.88)):0;
+   surface.grip(grip(phase),grip(phase+.5),peel(phase),peel(phase+.5),contacts.bossOffsets);
   }
   if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=attachmentHeight();effects?.animate(time);const hex=status.frozen?0x79ddff:0xffdfb0,intensity=flash*.1+(status.frozen?.018:0);
   const boost=1+flash*.65+(elite?.28:0)+(champion==='matron'?1.45:champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0);
