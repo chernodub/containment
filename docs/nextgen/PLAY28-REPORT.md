@@ -1213,3 +1213,54 @@ Both candidates use PLAY41's live-spawn grille alignment and 1.5-second hold. S 
 | Manual Control | Arc | 3/10, 9, 35.67 | 5/9, 15, 20.68 | 0/10, 0, 36.10 |
 
 S closed 4/48 Atrium grilles and 10/39 Manual Control grilles with the unaware policy. No rig beat the release-only control in both rooms with the aware policy. [Unaware](../../artifacts/nextgen/playtest/play41b-s-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41b-s-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41b-s-absent/summary.json)
+
+### Arm S2
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 10/12, 20, 9.14 | 11/12, 22, 11.91 | 0/12, 0, 16.94 |
+| Atrium | Cryo | 11/12, 22, 30.75 | 11/12, 22, 23.05 | 0/12, 0, 37.49 |
+| Atrium | Pyro | 11/12, 22, 7.49 | 11/12, 22, 9.95 | 0/12, 0, 6.14 |
+| Atrium | Arc | 11/12, 22, 16.92 | 12/12, 24, 7.92 | 0/12, 0, 15.63 |
+| Manual Control | Breacher | 7/11, 21, 41.87 | 11/11, 33, 33.08 | 0/10, 0, 44.71 |
+| Manual Control | Cryo | 9/10, 27, 68.79 | 10/10, 30, 54.92 | 0/7, 0, 93.43 |
+| Manual Control | Pyro | 7/11, 21, 42.09 | 8/11, 24, 38.63 | 0/12, 0, 38.25 |
+| Manual Control | Arc | 7/9, 21, 38.82 | 9/11, 27, 32.55 | 0/10, 0, 36.10 |
+
+S2 closed 43/48 Atrium grilles and 30/41 Manual Control grilles with the unaware policy. Breacher, Cryo, and Arc lost less suit with awareness in both rooms. Restricting the comparison to seeds that reached the room in both arms gives the same decision. S2 is the Standard default under the stated three-rig release gate. Its aware trial cleared 43/48, above the Standard balance target. [Unaware](../../artifacts/nextgen/playtest/play41b-s2-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41b-s2-on/summary.json)
+
+### Native Atrium checkpoints
+
+One earned sector-3 clear per rig from Final25, replayed through the Atrium on the default path. Each run finished the room with zero runner errors, zero defects and zero suit lost.
+
+| Rig | Closures | Escorts cancelled | Suit lost |
+|---|---:|---:|---:|
+| Breacher | 1 | 2 | 0.00 |
+| Cryo | 1 | 2 | 0.00 |
+| Pyro | 1 | 2 | 0.00 |
+| Arc | 1 | 2 | 0.00 |
+
+Pyro's recovery frame shows both escorts clear of the Brute and live enemies, with the grille, Brute and marine in the same shot. This uses the measured candidate placement. [Native frame](../../artifacts/nextgen/playtest/play41b-native-default-pyro/r4-communal-atrium-grille-waiting.png) · [480×270 frame](../../artifacts/nextgen/playtest/play41b-native-default-pyro/review480/r4-communal-atrium-grille-waiting.png)
+
+[Breacher replay](../../artifacts/nextgen/playtest/play41b-native-default-breacher/report.json) · [Cryo replay](../../artifacts/nextgen/playtest/play41b-native-default-cryo/report.json) · [Pyro replay](../../artifacts/nextgen/playtest/play41b-native-default-pyro/report.json) · [Arc replay](../../artifacts/nextgen/playtest/play41b-native-default-arc/report.json)
+
+### Default-rule cohort and build
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard | 11/12 | 10/12 | 11/12 | 11/12 | 43/48 | 0 |
+| Story | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+Standard exceeds the 34–40 target by three clears. Each rig finishes within the per-rig band, and Story meets its target. The production build passed.
+
+| Standard sectors | PLAY41 mean suit | PLAY41b mean suit | PLAY41b completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 23.22 | 16.24 | 48 |
+| 5–8 | 125.95 | 140.96 | 48 |
+| 9–12 | 191.26 | 184.91 | 46 |
+| 13–16 | 186.26 | 189.28 | 46 |
+| 17–20 | 176.43 | 181.79 | 43 |
+
+[Default Standard](../../artifacts/nextgen/playtest/play41b-default-standard/summary.json) · [Default Story](../../artifacts/nextgen/playtest/play41b-default-story/summary.json)
+
+`df -h /Users/chernodub` reported 926 GiB total, 844 GiB used, 56 GiB available and 94% capacity at the start. At the end it reported 843 GiB used, 56 GiB available and 94% capacity. The worktree's `artifacts/nextgen` occupied 2.6 GiB.
