@@ -48,14 +48,17 @@ export function addFightLaneDamage(root:Group,id:string){
       const lip=new IncidentPieces();
       // A battered steel sill straddles the feed. The sloping end and
       // recessed panel breaks expose the stopping face from the approach.
-      lip.box(-49,17,-8,98,34,16,0x485352);
-      lip.face([[-98,35,-18],[0,35,-18],[0,35,0],[-98,35,0]],0x48504b);
-      lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
-      lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x171d20);
+      for(let panel=0;panel<4;panel++){
+        const x=-98+panel*24.5,end=x+24.5,mid=(x+end)/2;
+        const top=-x/7,endTop=-end/7,foot=-x*.22,endFoot=-end*.22;
+        lip.box(mid,17,-8,24.5,34,16,0x485352);
+        lip.face([[x,35,-18],[x,35,0],[end,35,0],[end,35,-18]],0x9b9e8b);
+        lip.face([[x,32,top],[end,32,endTop],[end,35,0],[x,35,0]],0x777c6b);
+        lip.face([[x,2,foot],[end,2,endFoot],[end,32,endTop],[x,32,top]],0x556264);
+        lip.rod([x,32,top],[end,32,endTop],1.8,0xd7ac69);
+      }
       lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
-      lip.box(-49,20,5,98,21,5,0x424c50);
       lip.box(-2,18,-7,5,35,24,0x796446);
-      lip.box(-49,29,7,95,2.6,3,0xbd7838);
       for(const x of [-90,-64,-38]){
         const front=-x*.092;
         lip.face([[x,22,front+.6],[x+19,22,front-1.2],[x+19,29,front-1.2],[x,29,front+.6]],0x353b3d);
@@ -66,11 +69,14 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.rod([-95,9,-18],[-160,5,-34],3,0x805f4c);
       // Painted steel values stay readable on the dark feeder bank. The
       // short orange return around the corner follows the reactor casing.
-      lip.box(-9,34.8,-1,18,1.6,2.3,0xa45e32);
-      lip.box(-1,34.8,-8,2,1.6,15,0x96542f);
+      lip.rod([0,32,0],[0,35,0],1.8,0xd7ac69);
+      lip.rod([0,35,0],[0,35,-18],2.2,0xd7ac69);
+      lip.rod([0,35,-18],[0,1,-19],2.2,0xd7ac69);
+      lip.rod([0,1,-19],[0,1,-64],2.2,0xbfa278);
+      lip.rod([0,1,-64],[-58,1,-64],2.2,0xbfa278);
       for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
       const steel=new MeshBasicMaterial({vertexColors:true});
-      const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
+      const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel,true);
       sill.scale.y=1.48;
       sill.castShadow=true;sill.receiveShadow=true;
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
@@ -156,8 +162,19 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       for(const [x,z] of [[257,542],[393,560],[531,628],[657,683],[756,683],[896,668],[994,590],[919,444]]){
         c.fillStyle='#43494a';c.fillRect(x-7,z-17,14,34);c.fillStyle='#b57c48';c.fillRect(x-4,z-12,5,24);
       }
+      // The feeder tees at the bend below the shooter bank. A copper spine
+      // and twin clamp bolts carry it past the last machine into open deck.
+      const spur='M994 519H1118L1190 469H1255';
+      line(spur,34,'#262c30');line(spur,22,'#9b7554');line(spur,6,'#594839');
+      for(const x of [1020,1082,1228]){
+        const z=x>1200?469:519;
+        c.fillStyle='#364147';c.fillRect(x-8,z-23,16,46);
+        c.fillStyle='#b6a58b';c.fillRect(x-6,z-22,8,44);
+        c.fillStyle='#313a3b';c.fillRect(x-5,z-20,5,5);c.fillRect(x-5,z+14,5,5);
+      }
       c.save();c.translate(833.71249,349.81813);
       c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
+      line('M1 3V-65H-61',5,'#b6976e');
       const shade=c.createLinearGradient(0,-14,0,-56);
       shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
       c.fillStyle=shade;c.fill(new Path2D('M-101 2H0L-25 -54 -123 -49Z'));c.restore();
@@ -168,6 +185,52 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
           c.fill(new Path2D('M-49 -6Q-12 -9 48 '+s+'L16 '+(s+2)+' -45 3Z'));
         }c.restore();
       }break;
+  }
+  // The return legs cross the approach and retreat banks. Paint the hardware
+  // into the clipped deck atlas so a broken track never bridges a void.
+  const banks:Record<string,readonly [number,number,number][]>={
+    'passenger-vault':[[270,450,-.36],[806,447,.29]],
+    'crew-checkpoint':[[358,405,.24],[874,441,-.34]],
+    'transmission-chamber':[[423,494,-.37],[851,484,.43]],
+    'overload-floor':[[356,554,.42],[764,683,-.24],[1118,519,-.32]],
+  };
+  for(const [x,y,turn] of banks[id]??[]){
+    c.save();c.translate(x,y);c.rotate(turn);
+    if(id==='passenger-vault'){
+      for(const rail of [-23,23]){
+        c.save();c.translate(rail,0);
+        line('M0 -288V-80L7 -15V280',17,'#29363a');
+        line('M-4 -288V-80L3 -15V280',5,'#97a59e');
+        for(let y=-267;y<279;y+=53){
+          c.fillStyle='#687a79';c.fillRect(-10,y,26,8);
+          c.fillStyle='#263336';c.fillRect(-6,y+2,6,4);
+        }
+        c.restore();
+      }
+    }else if(id==='crew-checkpoint'){
+      for(const [offset,angle] of [[-193,-.19],[-63,.05],[70,.36],[198,-.12]]){
+        c.save();c.translate(0,offset);c.rotate(angle);
+        const shoe='M-17 -60Q23 0 2 58';
+        line(shoe,31,'#333839');line(shoe,22,'#8a8473');line(shoe,9,'#383e40');
+        for(const y of [-51,48]){c.fillStyle='#363938';c.fillRect(-14,y,21,5);}
+        c.restore();
+      }
+    }else if(id==='transmission-chamber'){
+      line('M0 -295V275',19,'#253239');line('M0 -295V275',7,'#bd8060');
+      for(let y=-260;y<275;y+=67){
+        c.fillStyle='#394d51';c.fillRect(-14,y-11,28,22);
+        c.fillStyle='#9eafa8';
+        for(const dy of [-9,-1,7])c.fillRect(-13,y+dy,26,3);
+      }
+    }else{
+      line('M0 -270V266',29,'#353b39');line('M-3 -270V266',16,'#8a6a50');
+      for(let y=-247;y<260;y+=77){
+        c.fillStyle='#343b3e';c.fillRect(-24,y-12,48,24);
+        c.fillStyle='#a49b88';c.fillRect(-23,y-8,46,9);
+        c.fillStyle='#353a38';for(const x of [-20,15])c.fillRect(x,y-6,5,5);
+      }
+    }
+    c.restore();
   }
   c.restore();
 }

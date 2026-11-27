@@ -84,6 +84,47 @@ function serviceJoints(c: CanvasRenderingContext2D, room: string): void {
   }
 }
 
+// Two remnants of the local accident, centred on the authored fight position.
+// Offsets and angles follow the traffic direction of each deck.
+const centreMarks:Record<string,readonly [string,string,number,number,number]>={
+  'passenger-vault':['drag','B-06',-65,84,-.12],
+  'crew-checkpoint':['drag','P-04',74,-67,.48],
+  'transmission-chamber':['burn','TX-3',-50,-61,-.39],
+  'overload-floor':['burn','BUS 9',-86,67,.64],
+  'awakening-bay':['spill','THAW',-76,59,.26],
+  'residential-gallery':['drag','C-12',53,-73,-.47],
+  'armory':['chevron','AM-2',-53,76,.08],
+  'freight-hold':['drag','LOAD',-86,-42,.56],
+  'breached-loading-bay':['drag','L-03',72,63,1.1],
+  'relay-racks':['burn','R-14',47,-64,.15],
+  'diagnostic-gallery':['spill','DX 4',-82,-58,-.78],
+  'safety-interlock-station':['chevron','LOCK',85,56,-.46],
+  'coolant-plant':['spill','CL-8',-63,72,-.55],
+  'service-shaft-landing':['drag','LIFT',44,68,1.24],
+  'infested-workshop':['spill','OIL',65,-88,.82],
+  'swarm-junction':['spill','J-07',-52,83,.42],
+  'shielding-gate':['chevron','G-12',65,-73,.72],
+  'containment-annulus':['burn','HV-8',-78,51,-.84],
+};
+function paintCentreMarks(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Point){
+  const mark=centreMarks[room.id];if(!mark)return;
+  const [kind,label,x,y,angle]=mark;
+  const paths:Record<string,string>={
+    drag:'M-90 -18L82 -9 64 -3 -77 -11Z M-78 6L60 11 77 17 -88 14Z',
+    burn:'M-94 -5L-19 -12 -47 -26 6 -16 20 -30 34 -11 76 -16 49 -4 91 8 21 11 -6 24 -22 12 -78 17 -43 4Z',
+    spill:'M-84 0Q-69 -22 -34 -15L-10 -25Q9 -28 24 -13L69 -9 83 2 47 9Q37 25 4 17L-30 21 -40 11 -68 13Z',
+    chevron:'M-65 -21L-39 -21 -18 0 -42 23 -69 23 -44 0Z M-13 -21H13L35 0 10 23H-17L8 0Z',
+  };
+  c.save();c.translate(arena.x+x,arena.y+y);c.rotate(angle);
+  c.fillStyle=kind==='chevron'?'#84785b':'rgba(26,31,30,.79)';
+  c.fill(new Path2D(paths[kind]));
+  c.translate(-x*1.65,-y*1.65);c.rotate(-.19);
+  c.fillStyle='#555e5f';c.fill(new Path2D('M-51 -19L39 -19 54 -8 47 18 -49 18Z'));
+  c.fillStyle='#273134';c.fillRect(-47,9,92,3);c.fillRect(27,-17,3,25);
+  c.font='bold 14px monospace';c.fillStyle='#a9aa98';c.fillText(label,-41,3);
+  c.restore();
+}
+
 /** Bake contact shadows, service joints and traffic wear into one lit relief sheet. */
 export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): void {
   const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
@@ -118,6 +159,16 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
         c.lineWidth=5;c.strokeStyle='#3d4744';c.stroke();
         c.translate(1,1);c.lineWidth=1.5;c.strokeStyle='#82908a';c.stroke();c.translate(-1,-1);
       }
+    }
+    if(centreMarks[room.id]){
+      c.save();clipFightingDeck(c,room);
+      for(const lamp of fixtures){
+        if(!lamp)continue;
+        const unlit=new Path2D();unlit.rect(0,0,room.width,room.height);
+        unlit.ellipse(lamp.x,lamp.z,48,76,-lamp.angle,0,2*Math.PI);
+        c.clip(unlit,'evenodd');
+      }
+      c.fillStyle='rgba(7,12,14,.10)';c.fillRect(0,0,room.width,room.height);c.restore();
     }
     paintLights(c);
     c.save();
@@ -181,7 +232,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     serviceJoints(c, room.id);
     c.restore();
 
-    c.save();clipFightingDeck(c,room);paintIncidentClusters(c,room.id);paintFightLaneDamage(c,room.id);paintLaneAftermath(c,room.id,arena);c.restore();
+    c.save();clipFightingDeck(c,room);paintIncidentClusters(c,room.id);paintFightLaneDamage(c,room.id);paintLaneAftermath(c,room.id,arena);paintCentreMarks(c,room,arena);c.restore();
 
     const dx = arena.x - room.spawn.x, dy = arena.y - room.spawn.y;
     c.translate(room.spawn.x, room.spawn.y);
