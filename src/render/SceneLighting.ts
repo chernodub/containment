@@ -284,6 +284,7 @@ export class ContactShadows {
       alpha=total;
     }
   }
+  if(ink>3.5){color=vec3(.012,.009,.015);alpha=.65*(1.-smoothstep(.35,1.,radius));}
   gl_FragColor`);
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
