@@ -1264,3 +1264,70 @@ Standard exceeds the 34–40 target by three clears. Each rig finishes within th
 [Default Standard](../../artifacts/nextgen/playtest/play41b-default-standard/summary.json) · [Default Story](../../artifacts/nextgen/playtest/play41b-default-story/summary.json)
 
 `df -h /Users/chernodub` reported 926 GiB total, 844 GiB used, 56 GiB available and 94% capacity at the start. At the end it reported 843 GiB used, 56 GiB available and 94% capacity. The worktree's `artifacts/nextgen` occupied 2.6 GiB.
+
+## PLAY41c
+
+The S2 shot still checks the aisle side during Brute recovery. The physical grille and waiting silhouettes use the same placement. The tuning starts with the closure reward, then moves pressure later in the campaign to protect sectors 9–12.
+
+### Standard tuning attempts
+
+| Setting | Breacher | Cryo | Pyro | Arc | Clears | Sectors 9–12 mean suit |
+|---|---:|---:|---:|---:|---:|---:|
+| S2 baseline | 11 | 10 | 11 | 11 | 43/48 | 184.91 |
+| Delayed one escort in each room | 11 | 9 | 11 | 10 | 41/48 | 194.44 |
+| Delayed two escorts in Manual Control only | 10 | 10 | 11 | 11 | 42/48 | 184.91 |
+| Manual Control only, support arrived 2.2 s earlier on closure | 11 | 10 | 11 | 11 | 43/48 | 184.91 |
+| Manual Control delay and later pair +32.5% health | 11 | 10 | 11 | 9 | 41/48 | 184.91 |
+| Manual Control delay and later pair +45% health | 11 | 10 | 11 | 7 | 39/48 | 184.91 |
+| Manual Control delay and both pairs +27.5% health | 11 | 10 | 10 | 10 | 41/48 | 185.56 |
+| Manual Control delay and later pair +70% health | 11 | 10 | 10 | 7 | 38/48 | 184.91 |
+| **Manual Control delay and later pair +37.5% health** | **9** | **10** | **11** | **10** | **40/48** | **184.91** |
+| Manual Control delay and both pairs +30% health | 11 | 11 | 11 | 10 | 43/48 | 181.31 |
+
+All trials had zero stalls. The health percentages are bonuses over authored escort health. The prior Standard value is +25% in the second room of each pair.
+
+### Final rules and balance
+
+When the Manual Control grille drops, it cancels one escort and defers the other escorts by at least three seconds. Atrium still cancels both escorts. Standard escorts in the second room of the Workshop and Swarm pair receive +37.5% health. The earlier pair keeps +25%.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 9/12 | 10/12 | 11/12 | 10/12 | 40/48 | 0 |
+| Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+| Standard sectors | PLAY41b mean suit | PLAY41c mean suit | PLAY41c completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 140.96 | 48 |
+| 9–12 | 184.91 | 184.91 | 46 |
+| 13–16 | 189.28 | 197.40 | 45 |
+| 17–20 | 181.79 | 188.59 | 40 |
+
+[Standard cohort](../../artifacts/nextgen/playtest/play41c-late-pair-375/summary.json) · [Story cohort](../../artifacts/nextgen/playtest/play41c-final-story/summary.json)
+
+The production build passed. Each rig resumed its earned Final25 checkpoint and cleared the Atrium with zero runner errors and zero defects. [Breacher](../../artifacts/nextgen/playtest/play41c-final-native-breacher/report.json) · [Cryo](../../artifacts/nextgen/playtest/play41c-final-native-cryo/report.json) · [Pyro](../../artifacts/nextgen/playtest/play41c-final-native-pyro/report.json) · [Arc](../../artifacts/nextgen/playtest/play41c-final-native-arc/report.json)
+
+### Awareness on the final setting
+
+Gross suit lost. Each all-visit cell gives mean suit and visits. The paired column gives aware and unaware mean suit over the seeds that reached that room in both arms.
+
+| Room | Rig | Aware suit (visits) | Unaware suit (visits) | Paired aware / unaware suit (seeds) |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 11.91 (12) | 9.14 (12) | 11.91 / 9.14 (12) |
+| Atrium | Cryo | 23.05 (12) | 30.75 (12) | 23.05 / 30.75 (12) |
+| Atrium | Pyro | 9.95 (12) | 7.49 (12) | 9.95 / 7.49 (12) |
+| Atrium | Arc | 7.92 (12) | 16.92 (12) | 7.92 / 16.92 (12) |
+| Manual Control | Breacher | 35.90 (12) | 49.72 (11) | 38.02 / 49.72 (11) |
+| Manual Control | Cryo | 96.01 (10) | 111.03 (10) | 96.01 / 111.03 (10) |
+| Manual Control | Pyro | 36.03 (12) | 32.50 (11) | 35.82 / 32.50 (11) |
+| Manual Control | Arc | 34.30 (10) | 11.94 (9) | 33.85 / 11.94 (9) |
+
+Atrium closures were 45/48 aware and 43/48 unaware.
+
+Manual Control closures were 39/44 aware and 30/41 unaware.
+
+[Unaware cohort](../../artifacts/nextgen/playtest/play41c-late-pair-375-unaware/summary.json)
+
+Cryo was the only rig to spend less suit with awareness in both rooms. Arc saved suit in Atrium and spent more in Manual Control even on paired seeds.
+
+Disk had 56 GiB available at the start and 55 GiB at handoff, with 94% capacity reported at both checks. The worktree's `artifacts/nextgen` used 2.9 GiB.
