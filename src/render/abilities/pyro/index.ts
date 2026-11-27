@@ -74,6 +74,8 @@ class PyroPresentation implements AbilityPresentation {
   private printClock = 0;
   private disposed = false;
   private suitAngle = 0;
+  private heatVictim = -1;
+  private heatUntil = -1;
   private muzzle?: Object3D;
   private readonly source = new Vector3();
   private suit?: Object3D;
@@ -179,8 +181,11 @@ class PyroPresentation implements AbilityPresentation {
       if (event.phase === 'tick') {
         kit.sustain();
         const ids = event.targetIds;
-        const actor = ids?.length ? kit.statusActor(ids[ids.length - 1]) : undefined;
-        if (actor) {
+        const lastId = ids?.[ids.length - 1];
+        const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
+        if (actor && lastId !== undefined) {
+          this.heatVictim = lastId;
+          this.heatUntil = kit.time + .32;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
           actor.hit?.(.68, angle);
@@ -574,7 +579,9 @@ class PyroPresentation implements AbilityPresentation {
       const foot = enemy.radius / UNIT * .66;
       if (dist < nearest) { nearest=dist; lx=ex+foot; lz=ez+.22; }
     }
-    kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
+    const contact = meltdown && kit.time < this.heatUntil ? kit.statusActor(this.heatVictim) : undefined;
+    if (contact) { lx = contact.root.position.x; lz = contact.root.position.z; }
+    kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(contact ? 9 : meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade * flameGain, frame, emit);
       if (shimmer) {
@@ -633,8 +640,11 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('solid', bx, base+.06, bz, .32, .20, .35, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
       kit.sustain(age);
-      this.surface(zone.id, side < 0 ? 0 : 1, bx, bz, side < 0 ? .95 : .72,
-        exhaustAngle + side * .32, 1.1, base, base + 1.1, .95 * fade);
+      // Both curls share the flame batch with the victim wick.
+      const exhaust = exhaustAngle + side * .32;
+      const reach = side < 0 ? .70 : .45;
+      kit.flowFlame(bx, base, bz, bx + Math.cos(exhaust) * reach, base + .74,
+        bz + Math.sin(exhaust) * reach, .30, zone.id + side, .78 * fade);
       if (!kit.low) {
         // Replace the long parallel backpack tongue with a small moving ember.
         const turn = kit.reducedMotion ? side : kit.time * 4 + side * 1.7;
@@ -675,6 +685,7 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    this.heatVictim = this.heatUntil = -1;
     for (const pool of this.burnYield) { pool.zone = -1; pool.seen = false; }
     for (const surface of this.surfaces) { if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
     for (const p of this.effects) p.live = false;
