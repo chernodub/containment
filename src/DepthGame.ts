@@ -105,9 +105,32 @@ export class DepthGame {
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4)){
+  if(grille&&(this.grilleOverride===undefined||grille.attackerId!==undefined)&&
+   (grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
-   return {...visible,returnArcCosine:this.recoveryGrilles===true?Math.cos(30*Math.PI/180):undefined};
+   return {...visible,
+    returnArcCosine:this.grilleOverride===undefined?Math.cos(Math.PI/6):undefined,
+    returnRange:this.grilleOverride===true?176:undefined,returnHalfWidth:64};
+  }
+ }
+ private findRecoveryAisle(lead:{x:number;y:number},approach:{x:number;y:number}){
+  if(!hasClearExpeditionShot(this.geometry,approach,lead))return;
+  const bearing=Math.atan2(lead.y-approach.y,lead.x-approach.x);
+  for(const distance of [96,80,64]){
+   for(const offset of [0,.2,-.2,.4,-.4]){
+    const heading=bearing+offset;
+    const point={x:lead.x+Math.cos(heading)*distance,y:lead.y+Math.sin(heading)*distance};
+    if(canOccupyExpedition(this.geometry,point,32)&&hasClearExpeditionShot(this.geometry,approach,point))
+     return {...point,angle:Math.atan2(lead.y-point.y,lead.x-point.x)};
+   }
+  }
+ }
+ private findLegacyGrille(lead:{x:number;y:number},reference:{x:number;y:number}){
+  const bearing=Math.atan2(reference.y-lead.y,reference.x-lead.x);
+  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI]){
+   const angle=bearing+offset,point={x:lead.x+Math.cos(angle)*99,y:lead.y+Math.sin(angle)*99};
+   if(canOccupyExpedition(this.geometry,point,25)&&hasClearExpeditionShot(this.geometry,reference,point))
+    return {...point,angle:Math.atan2(lead.y-point.y,lead.x-point.x)};
   }
  }
  private resolveRecoveryGrille(closed:boolean){
@@ -228,26 +251,30 @@ export class DepthGame {
  }
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
- private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number};
- private stageEarlyPressure(firstLane?:{x:number;y:number}){
+ private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number;hatch?:string};
+ private stageEarlyPressure(firstLane?:{x:number;y:number;hatch?:string}){
   this.earlyPressureAt=Infinity;
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const lane=stageCoverLesson(this.geometry,covers,this.player);
   const origin={x:this.player.x,y:this.player.y};
   const family=firstLane?'brute':'spitter';
+  const breach=this.geometry.breaches.find(point=>point.id===firstLane?.hatch);
+  const ingressPoint=breach&&{x:breach.x+(breach.facing==='east'?56:-56),y:breach.y};
   const ingress=firstLane?64:128;
   const travel=firstLane?Math.atan2(origin.y-firstLane.y,origin.x-firstLane.x):
    Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
   for(let turn=0;turn<16;turn++){
    const offset=turn%2?-(turn+1)/2:turn/2;
    const angle=travel+offset*Math.PI/8;
-   const shooter={x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
+   const stagedPoint=ingressPoint??(!firstLane&&this.node.depth<=3?lane?.shooter:undefined);
+   const shooter=(turn===0?stagedPoint:undefined)??
+    {x:origin.x+Math.cos(angle)*ingress,y:origin.y+Math.sin(angle)*ingress};
    if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius(family,false))||
-    !canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
+    shooter!==ingressPoint&&shooter!==lane?.shooter&&!canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
    const sidesteps=[1,-1].map(side=>({x:origin.x-side*Math.sin(angle)*146,y:origin.y+side*Math.cos(angle)*146}));
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
-   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?80:350,
+   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?80:350,delayedHatch:shooter===ingressPoint?breach?.id:undefined,
     options:{closeIngress:true,interceptOpening:!!firstLane,
      openingVolley:firstLane?undefined:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
    this.presentation.push({type:'enemy-warning',...shooter,durationMs:firstLane?80:350,radius:32});
@@ -255,7 +282,7 @@ export class DepthGame {
    break;
   }
  }
- private makeEnemies(){return new EnemySystem({crawlerBiteCap:this.crawlerPressureRoom?2:undefined,readySeed:this.expedition.run.seed,spitWindupMs:this.condition?.id==='dark'?650:500,slick:p=>this.roomCondition?.slick(p)??false,difficulty:()=>{
+ private makeEnemies(){return new EnemySystem({crawlerWallQueue:this.difficulty!=='story'||this.node.depth>=4,crawlerBiteCap:this.crawlerPressureRoom?2:undefined,readySeed:this.expedition.run.seed,spitWindupMs:this.condition?.id==='dark'?650:500,slick:p=>this.roomCondition?.slick(p)??false,difficulty:()=>{
   const mode=this.difficulty,d=DIFFICULTIES[mode];
   const lateWindups=Math.round(d.windups*(1+(d.lateWindups-1)*latePressureProgress(this.node.depth,mode,this.expedition.run.version===3)))/d.windups;
   return {...d,lateWindups};
@@ -410,6 +437,9 @@ export class DepthGame {
  }
  get delayedPincerHatch(){
   const arrivals=this.pending.filter(spawn=>spawn.delayedHatch!==undefined);
+  const opening=this.earlyPressureFollow;
+  const openingBreach=opening&&this.geometry.breaches.find(point=>point.id===opening.hatch);
+  if(opening&&openingBreach)return {breach:openingBreach,arrivals:[Math.max(0,(opening.at-this.elapsed)*1000)]};
   const breach=this.geometry.breaches.find(point=>point.id===arrivals[0]?.delayedHatch);
   return breach?{breach,arrivals:arrivals.map(spawn=>spawn.delay)}:undefined;
  }
@@ -879,7 +909,20 @@ export class DepthGame {
     // request rotates to another open breach when no connected candidate fits.
     if(checkIngress&&!ingress?.reachable(p,radius+2))continue;
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
-     if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined)this.recoveryGrilleState.attackerId=result.enemy.id;
+     if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined){
+      const grille=this.recoveryGrilleState;
+      if(this.grilleOverride!==undefined){
+       const aisle=this.findRecoveryAisle(p,this.player);
+       if(aisle)Object.assign(grille,aisle);
+       for(const escort of this.pending){
+        if(!escort.grilleEscort)continue;
+        escort.x=grille.x+Math.cos(grille.angle)*24;
+        escort.y=grille.y+Math.sin(grille.angle)*24;
+       }
+       grille.changedAt=this.elapsed;
+      }
+      grille.attackerId=result.enemy.id;
+     }
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
      if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
       const aim=options.baitAim?{...this.player,...options.baitAim}:this.player;
@@ -925,17 +968,23 @@ export class DepthGame {
  private get authoredViewTarget(){
   return {x:this.player.x+64*Math.cos(this.player.angle),y:this.player.y+64*Math.sin(this.player.angle)};
  }
- get coolantQueuedBend(){
-  if(this.node.templateId!=='coolant-plant'||!this.encounter.reserve)return;
-  const leader=this.enemies.snapshot.enemies.find(enemy=>enemy.priority);
+ private reserveBendRecoil?:{x:number;y:number;angle:number;at:number;room:number};
+ get queuedReserveBend(){return this.reserveBend();}
+ private reserveBend(defeated?:{x:number;y:number}){
+  const recoil=this.reserveBendRecoil;
+  if(recoil?.room===this.roomRevision&&this.elapsed-recoil.at<1.1)
+   return {...recoil,recoilAge:this.elapsed-recoil.at};
+  const reserve=this.encounter.reserve;
+  if(!reserve||!['coolant-plant','infested-workshop'].includes(this.node.templateId))return;
+  const leader=defeated??this.enemies.snapshot.enemies.find(enemy=>enemy.priority);
   if(!leader)return;
   const view=this.authoredViewTarget;
-  const entry=this.director.coolantReserveEntry(leader,view);
+  const entry=this.director.coolantReserveEntry(leader,view)??this.geometry.breaches.find(breach=>breach.id===reserve.breachId);
   if(!entry)return;
   for(const fraction of [.15,.3,.5,.7]){
    const bend={x:entry.x+(view.x-entry.x)*fraction,y:entry.y+(view.y-entry.y)*fraction};
    if(Math.abs(bend.x-view.x)<=144&&Math.abs(bend.y-view.y)<=80&&canOccupyExpedition(this.geometry,bend,15))
-    return {...bend,angle:Math.atan2(view.y-bend.y,view.x-bend.x)};
+    return {...bend,angle:Math.atan2(view.y-bend.y,view.x-bend.x),recoilAge:undefined};
   }
  }
  private reserveBearing?:{from:{x:number;y:number};to:{x:number;y:number};until:number;room:number};
@@ -1149,14 +1198,11 @@ export class DepthGame {
   }
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
-  const bearing=Math.atan2(reference.y-y,reference.x-x);
-  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI]){
-   const angle=bearing+offset,point={x:x+Math.cos(angle)*99,y:y+Math.sin(angle)*99};
-   if(!canOccupyExpedition(this.geometry,point,25)||!hasClearExpeditionShot(this.geometry,reference,point))continue;
-   this.recoveryGrilleState={...point,angle:Math.atan2(y-point.y,x-point.x),escorts:e.grilleLead,
-    state:'waiting',changedAt:this.elapsed,expiresAt:this.elapsed+7};
-   break;
-  }
+  const lead={x,y};
+  const aisle=this.grilleOverride!==undefined?this.findRecoveryAisle(lead,reference):undefined;
+  const grille=aisle??this.findLegacyGrille(lead,reference);
+  if(grille)this.recoveryGrilleState={...grille,escorts:e.grilleLead,state:'waiting',
+   changedAt:this.elapsed,expiresAt:this.elapsed+7};
  }
  if(e.grilleEscort&&this.recoveryGrilleState?.state==='closed')continue;
  if(e.grilleEscort&&this.recoveryGrilleState){
@@ -1266,8 +1312,12 @@ export class DepthGame {
  for(const hit of damage)this.damage(e.enemyId,hit.amount,undefined,hit.source,false);
  const target=this.targets().find(t=>t.id===e.enemyId);
  if(target)for(const status of statuses)this.applyRigStatus(target,status.kind,status.amount);
- }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const cut=this.director.reportPriorityDefeated(e.beat,e,this.authoredViewTarget);
- if(cut)this.encounterEvents([cut]);}const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion,e.enemyId); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',arrivalSwing:e.arrivalSwing?'strike':undefined,id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request'){
+ }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const bend=this.reserveBend(e);
+ const cut=this.director.reportPriorityDefeated(e.beat,e,this.authoredViewTarget);
+ if(cut){
+  if(bend)this.reserveBendRecoil={...bend,at:this.elapsed,room:this.roomRevision};
+  this.encounterEvents([cut]);
+ }}const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion,e.enemyId); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',arrivalSwing:e.arrivalSwing?'strike':undefined,id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request'){
  const broodChoice=e.pod&&this.node.templateId==='swarm-junction'&&!this.broodChoiceUsed;
  const point=broodChoice?this.stageBroodChoice(e.requestIndex,e):e;
  this.pending.push({type:e.enemyType,x:point.x,y:point.y,elite:e.elite,delay:450,options:{
@@ -1279,7 +1329,11 @@ export class DepthGame {
   if(e.enemyType==='carrier'){this.broodPodsDestroyed=0;this.broodStarted.add(e.enemyId);}
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
-   this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.30};
+   const away={x:2*this.player.x-e.x,y:2*this.player.y-e.y};
+   const hatch=this.openBreaches.filter(breach=>canOccupyExpedition(this.geometry,
+    {x:breach.x+(breach.facing==='east'?56:-56),y:breach.y},enemyBodyRadius('brute',false))).sort((a,b)=>
+    Math.hypot(a.x-away.x,a.y-away.y)-Math.hypot(b.x-away.x,b.y-away.y))[0];
+   this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.64,hatch:hatch?.id};
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
    const range=Math.hypot(e.targetX-e.x,e.targetY-e.y);
    this.presentation.push({type:'enemy-warning',x:e.targetX,y:e.targetY,durationMs:e.durationMs,radius:EARLY_SPIT_IMPACT_RADIUS});
@@ -1310,11 +1364,17 @@ export class DepthGame {
   if(id>0){const before=this.enemies.getSnapshot(id);const condition=this.roomCondition;
    if(weapon&&before?.exposedMs){amount*=!before.champion&&(before.type==='brute'||before.type==='carrier')?1.4:1.15;exposedHit=true;}
    const grille=this.recoveryGrille;
-   if(weapon&&grille?.returnArcCosine!==undefined&&grille.state==='waiting'&&grille.attackerId===id&&
+   if(weapon&&grille&&grille.state==='waiting'&&grille.attackerId===id&&
     before?.meleePhase==='recovery'&&shot?.sourceX!==undefined&&shot.sourceY!==undefined){
     const dx=shot.sourceX-before.x,dy=shot.sourceY-before.y;
+    const forwardX=Math.cos(grille.angle),forwardY=Math.sin(grille.angle);
+    const distance=Math.hypot(dx,dy);
     const gx=grille.x-before.x,gy=grille.y-before.y;
-    if(dx*gx+dy*gy>=grille.returnArcCosine*Math.hypot(dx,dy)*Math.hypot(gx,gy))
+    const legacyAngle=grille.returnArcCosine!==undefined&&
+     dx*gx+dy*gy>=grille.returnArcCosine*distance*Math.hypot(gx,gy);
+    const aisleShot=grille.returnRange!==undefined&&distance<=grille.returnRange&&
+     dx*forwardX+dy*forwardY>0&&Math.abs(dx*forwardY-dy*forwardX)<=grille.returnHalfWidth;
+    if(legacyAngle||aisleShot)
      this.resolveRecoveryGrille(true);
    }
    let ambush=false;
@@ -1661,7 +1721,7 @@ export class DepthGame {
   if(this.rigDrill&&this.elapsed>=this.rigDrill.until)this.finishRigDrill();
   if(this.earlyPressureAt!==undefined&&this.elapsed>=this.earlyPressureAt)this.stageEarlyPressure();
   const follow=this.earlyPressureFollow;
-  if(follow&&this.elapsed>=follow.at){
+  if(follow&&(this.elapsed>=follow.at||this.enemies.getSnapshot(follow.shooter)?.pendingAttack!=='spit')){
    this.earlyPressureFollow=undefined;
    if(this.enemies.getSnapshot(follow.shooter)?.pendingAttack==='spit')this.stageEarlyPressure(follow);
   }

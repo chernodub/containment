@@ -64,6 +64,7 @@ export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:numbe
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   wardenOpeningAim?: (enemy:EnemyPlayerState,player:EnemyPlayerState)=>{x:number;y:number}|undefined;
   crawlerBiteCap?:number;
+  crawlerWallQueue?:boolean;
   canCommit?: (enemy: EnemyCommitment, player: EnemyPlayerState, others: Iterable<EnemyCommitment>, attack: 'melee'|'ranged'|'charge', attempting?:boolean)=>boolean;
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
@@ -281,6 +282,7 @@ export class EnemySystem {
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #wardenOpeningAim?: EnemySystemOptions['wardenOpeningAim'];
   readonly #crawlerBiteCap:number;
+  readonly #crawlerWallQueue:boolean;
   readonly #canCommit?: EnemySystemOptions['canCommit'];
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
@@ -320,6 +322,7 @@ export class EnemySystem {
     this.#lateDifficulty=options.lateDifficulty??false;
     this.#canCommit=options.canCommit;
     this.#crawlerBiteCap=options.crawlerBiteCap??Infinity;
+    this.#crawlerWallQueue=options.crawlerWallQueue??true;
     this.#ordinaryIdleScale=options.ordinaryIdleScale??1;
     this.#readySeed=options.readySeed??0;
     this.#wardenOpeningAim=options.wardenOpeningAim;
@@ -577,13 +580,20 @@ export class EnemySystem {
         const offset=Math.atan2(Math.sin(bearing-strikeSide),Math.cos(bearing-strikeSide));
         if(Math.abs(offset)*radius>=28.8)continue;
         const side=Math.abs(offset)<.05?(enemy.id%2?1:-1):Math.sign(offset);
-        for(const turn of [side,-side]){
-          const vx=-dy/radius*enemy.speed*this.#movement*turn;
-          const vy=dx/radius*enemy.speed*this.#movement*turn;
-          if(!this.#movementAllowed(enemy,enemy.x+vx*movementDelta/1000,enemy.y+vy*movementDelta/1000))continue;
-          enemy.velocityX=vx;
-          enemy.velocityY=vy;
-          break;
+        const speed=enemy.speed*this.#movement;
+        const bootWidth=10;
+        const probe=this.#crawlerWallQueue?bootWidth:speed*movementDelta/1000;
+        const clearSide=[side,-side].find(turn=>
+          this.#movementAllowed(enemy,enemy.x-dy/radius*probe*turn,enemy.y+dx/radius*probe*turn));
+        if(clearSide!==undefined){
+          enemy.velocityX=-dy/radius*speed*clearSide;
+          enemy.velocityY=dx/radius*speed*clearSide;
+        }else if(this.#crawlerWallQueue){
+          // A queue jammed against solid geometry gives ground while the striker owns the lane.
+          const step=Math.min(bootWidth,speed*movementDelta/1000);
+          const retreat=this.#movementAllowed(enemy,enemy.x+dx/radius*step,enemy.y+dy/radius*step);
+          enemy.velocityX=retreat?dx/radius*speed:0;
+          enemy.velocityY=retreat?dy/radius*speed:0;
         }
       }
     }
@@ -1422,13 +1432,14 @@ export class EnemySystem {
   #windUpSpit(enemy:EnemyState,target:{x:number;y:number},events:EnemyEvent[]):void {
     enemy.commitmentDeniedAt=undefined;
     this.#meleeStartGapMs=250;
-    enemy.windupMs=this.#spitWindupMs;
+    const durationMs=enemy.openingSpitSpread?850:this.#spitWindupMs;
+    enemy.windupMs=durationMs;
     enemy.pendingAttack='spit';
     enemy.lockX=target.x;enemy.lockY=target.y;
-    enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;
+    enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+durationMs;
     enemy.velocityX=enemy.velocityY=0;
     events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,
-      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs:this.#spitWindupMs,spread:enemy.openingSpitSpread}));
+      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs,spread:enemy.openingSpitSpread}));
   }
 
   #applyKnockback(

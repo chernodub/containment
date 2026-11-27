@@ -181,6 +181,11 @@ export function runSimulation(options: SimOptions) {
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
         }
+        if(room&&room.depth>=2&&room.depth<=3&&e.type==='enemy-warning'){
+            const opening=room.openingPressure??={fanWarnings:0,followUpWarnings:0};
+            if(e.family===undefined&&e.radius===128)opening.fanWarnings++;
+            if(e.family===undefined&&e.durationMs===80&&e.radius===32)opening.followUpWarnings++;
+        }
         if(e.type==='hit'&&e.source==='weapon'&&(e.damage??0)>0){
             weaponHits.total++;
             if(e.exposedHit)weaponHits.exposed++;
@@ -302,7 +307,8 @@ export function runSimulation(options: SimOptions) {
         const drawnExchange = exchange && {bait:mark(exchange.bait),landing,lane:landing&&endpoint?{from:landing,to:endpoint}:undefined};
         const telegraph = game.boss.snapshot.pendingTelegraph;
         const grille = game.recoveryGrille;
-        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&grille.returnArcCosine!==undefined?(botWaypoint(game,grille)??grille):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        const returnPoint=grille?.returnRange===undefined?grille:{x:grille.x+Math.cos(grille.angle)*195,y:grille.y+Math.sin(grille.angle)*195};
+        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&returnPoint&&(grille.returnRange!==undefined||grille.returnArcCosine!==undefined)?(botWaypoint(game,returnPoint)??returnPoint):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});

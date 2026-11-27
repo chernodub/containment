@@ -1062,3 +1062,134 @@ Story finished 23/24 on the usual seeds and 25/26 with the extra cases. Cryo 172
 Story novice Cryo 1729 cleared all 20 rooms with zero native errors. Safety Interlock cost 72.29 gross suit and fired grace. Every final Interlock trace, including all five checkpoint replays, sampled at most one committed heavy at a time. These runs did not isolate the emergency dash refill from natural recharge. Veteran was not replayed. Production build passed.
 
 [Campaign report](../../artifacts/nextgen/playtest/play40-final-full/report.json) · [Teaching strike](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-teaching.png) · [Off the pad](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-off-pad.png) · [Return](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-return.png)
+
+## PLAY41
+
+- The opt-in grille candidate stages the escorts beyond the Brute along the approach sightline in Communal Atrium and Manual Control. A recovery hit qualifies within 5.5 m of the Brute and up to 2 m to either side of the return lane's centerline. The shot must originate on the marine's side of the Brute. Escorts push against the dropped grille for 1.5 seconds before withdrawing. The default game keeps the PLAY39 closure rule pending the three-arm gate.
+- The Standard opening uses a hard-cover staging point where available and places the armour on its sheltered side. The first fan winds up for 850 ms. The opposite hatch starts opening with the warning. Interrupting within 640 ms cancels the arrival.
+- Coolant Plant and Infested Workshop show a queued body probing the bend ahead of a live reserve leader. A cut reuses the bend pose for the recoil and keeps the reserve count.
+- A queued Crawler probes 10 simulation units (about 0.31 m) of lateral clearance before it moves around the striker. When both sides are blocked, it backs out as space allows.
+
+### Opening comparison
+
+Matched Standard competent simulation on seed 1729. Each cell shows fan warnings, follow-up warnings, and suit lost, respectively.
+
+| Rig | Sector 3 before | Sector 3 after | Sector 4 before | Sector 4 after |
+|---|---:|---:|---:|---:|
+| Breacher | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 0.0 | 1 / 0 / 0.0 |
+| Cryo | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 57.5 | 1 / 0 / 0.0 |
+| Pyro | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 0.0 | 1 / 0 / 0.0 |
+| Arc | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 0 / 15.3 | 1 / 0 / 0.0 |
+
+[Baseline simulation](../../artifacts/nextgen/playtest/play41-opening-before/summary.json) · [PLAY41 simulation](../../artifacts/nextgen/playtest/play41-opening-after/summary.json)
+
+### Standard cohort
+
+Twelve seeds per rig, with the default PLAY39 grille rule and all other PLAY41 changes. Completed blocks include only runs that cleared all four sectors in the block.
+
+| Standard competent | R30 baseline | PLAY41 |
+|---|---:|---:|
+| Breacher | 8/12 | 9/12 |
+| Cryo | 10/12 | 9/12 |
+| Pyro | 10/12 | 10/12 |
+| Arc | 11/12 | 11/12 |
+| Total | 39/48 | 39/48 |
+| Stalls | 0 | 0 |
+
+| Sectors | R30 mean suit | PLAY41 mean suit | PLAY41 completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 23.4 | 23.22 | 48 |
+| 5–8 | 132.6 | 125.95 | 48 |
+| 9–12 | 199.9 | 191.26 | 41 |
+| 13–16 | 188.2 | 186.26 | 41 |
+| 17–20 | 164.1 | 176.43 | 39 |
+
+Sectors 9–12 moved toward the 175–190 target and finished 1.26 suit above it. The cohort used the opening and Crawler queue changes. [Standard cohort](../../artifacts/nextgen/playtest/play41-standard-final/summary.json)
+
+### Crawler suit loss
+
+The native reference is Final25. The two simulation columns use matched seed 1729 and default play policies before and after PLAY41. Each column counts all combat incurred through that run's endpoint, so deaths can change the rooms contributing to the total.
+
+| Rig | Final25 native share | Baseline sim Crawler suit / share | PLAY41 sim Crawler suit / share |
+|---|---:|---:|---:|
+| Breacher | 46.7% | 330.0 / 42.7% | 253.2 / 39.1% |
+| Cryo | 30.2% | 194.6 / 39.1% | 254.4 / 60.0% |
+| Pyro | 43.2% | 147.4 / 23.6% | 125.3 / 27.3% |
+| Arc | 43.7% | 374.7 / 43.2% | 231.8 / 40.4% |
+| Story novice Cryo | 54.1% | 420.3 / 45.9% | 422.9 / 46.9% |
+
+Both Story Cryo simulations cleared. Each of their first four sectors cost zero suit. The Standard Cryo simulations both ended in death. Arc finished only in the revised simulation. [Baseline Standard](../../artifacts/nextgen/playtest/play41-crawler-before/summary.json) · [PLAY41 Standard](../../artifacts/nextgen/playtest/play41-crawler-after/summary.json) · [Baseline Story](../../artifacts/nextgen/playtest/play41-crawler-story-before/summary.json) · [PLAY41 Story](../../artifacts/nextgen/playtest/play41-crawler-story-after/summary.json)
+
+### Story novice cohort
+
+| Rig | PLAY41 clears |
+|---|---:|
+| Breacher | 12/12 |
+| Cryo | 10/12 |
+| Total | 22/24 |
+
+Both losses were deaths. Sector-by-sector suit loss matched the baseline in sectors 1–4 for all 24 rig and seed pairs, with a mean of 12.15 suit per block. [Story cohort](../../artifacts/nextgen/playtest/play41-story-final/summary.json) · [Opening baseline](../../artifacts/nextgen/playtest/play41-story-opening-baseline/summary.json)
+
+### Camera evidence
+
+- Breacher's earned Atrium checkpoint produced a dodge, a waiting grille, a closure hit and a recoil frame. The event log records two escorts cancelled. A live enemy and the garden wreckage obscure the escorts in this angle, especially at 480×270. [Dodge](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-dodge.png) · [Waiting](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-waiting.png) · [Hit](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-closed.png) · [Bars down](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-recoil.png)
+- The Freight wall sequence uses a controlled setup in the production game camera. Cryo starts at (278, 101) and the two Crawlers start at (336, 101) and (373, 101) along the upper wall. The existing simulation advances from the first warning in 50 ms steps. The queued Crawler yields toward the floor while the first contacts the marine. The Story Cryo campaign replay separately captured a queue around the cargo bank. [Windup](../../artifacts/nextgen/play41-wall-capture/play41-wall-queue-freight-hold-06.png) · [Strike](../../artifacts/nextgen/play41-wall-capture/play41-wall-queue-freight-hold-08.png) · [Recovery](../../artifacts/nextgen/play41-wall-capture/play41-wall-queue-freight-hold-11.png) · [Capture manifest](../../artifacts/nextgen/play41-wall-capture/manifest.json)
+
+### Three-arm simulation
+
+Each cell reports closures / visits, escorts cancelled, and mean suit loss on the twelve-seed cohort. Each arm uses the candidate geometry. The absent arm always releases the escorts. Visits include any run that reached the room.
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Communal Atrium | Breacher | 3/12, 6, 16.94 | 8/12, 16, 20.68 | 0/12, 0, 16.94 |
+| Communal Atrium | Cryo | 3/12, 6, 38.41 | 6/12, 12, 27.29 | 0/12, 0, 37.49 |
+| Communal Atrium | Pyro | 1/12, 2, 5.89 | 7/12, 14, 13.52 | 0/12, 0, 6.14 |
+| Communal Atrium | Arc | 1/12, 2, 15.63 | 8/12, 16, 11.78 | 0/12, 0, 15.63 |
+| Manual Control Chamber | Breacher | 0/10, 0, 44.41 | 7/11, 21, 39.58 | 0/10, 0, 44.71 |
+| Manual Control Chamber | Cryo | 0/8, 0, 84.01 | 6/9, 18, 58.58 | 0/7, 0, 93.43 |
+| Manual Control Chamber | Pyro | 0/12, 0, 40.00 | 2/12, 6, 39.94 | 0/12, 0, 38.25 |
+| Manual Control Chamber | Arc | 1/10, 3, 36.57 | 4/8, 12, 37.56 | 0/10, 0, 36.10 |
+
+Cryo alone lost less suit in both rooms with awareness. The aware arm closed 29/48 in Atrium and 19/40 in Manual Control. The unaware arm closed 8/48 and 1/40, below the PLAY39 reference rates of 42% and 27%. The candidate stays opt-in. Restricting Manual Control to seeds that reached it in all three arms yields the same gate decision. [Unaware](../../artifacts/nextgen/playtest/play41-aisle-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41-aisle-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41-aisle-absent/summary.json)
+
+The Standard balance rerun after merging local nextgen at `ca7c4738` repeated the 39/48 result with nine deaths and zero stalls. The production build passed and the source scan found no merge markers. [Post-merge Standard cohort](../../artifacts/nextgen/playtest/play41-integrated-standard/summary.json)
+
+### Native checkpoint replay
+
+Each cell reports closures, escorts cancelled, and gross suit lost. These are the same earned boundary for each rig's three arms. The Cryo Manual Control boundary comes from Final24 because Final25 Standard Cryo died before that room. Every replay cleared its target room with zero runner errors.
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Cryo | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Pyro | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Arc | 0, 0, 0.00 | 0, 0, 0.00 | 0, 0, 0.00 |
+| Manual Control | Breacher | 0, 0, 22.23 | 0, 0, 40.90 | 0, 0, 22.23 |
+| Manual Control | Cryo | 0, 0, 43.28 | 0, 0, 43.28 | 0, 0, 43.28 |
+| Manual Control | Pyro | 0, 0, 55.44 | 0, 0, 81.51 | 0, 0, 55.44 |
+| Manual Control | Arc | 0, 0, 27.72 | 0, 0, 27.72 | 0, 0, 27.72 |
+
+The native replays reinforce the opt-in decision. Awareness made three Atrium closures possible while all arms spent zero suit. All twelve Manual Control replays released their escorts. [Atrium replay example](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/report.json) · [Manual Control replay example](../../artifacts/nextgen/playtest/play41-replay-manual-pyro-on/report.json)
+
+### Native seed-1729 campaigns
+
+| Rig and profile | Outcome | Clears | Gross suit lost | Runner errors | Loading holds over 5 s |
+|---|---|---:|---:|---:|---:|
+| Standard competent Breacher | Died in Safety Interlock | 11/20 | 432.27 | 0 | 4 |
+| Standard competent Arc | Complete after earned checkpoint continuation | 20/20 | 662.64 | 0 | 3 |
+| Story novice Cryo | Complete | 20/20 | 1,023.70 | 0 | 5 |
+
+The ordinary competent policy closed 0/2 Atrium and 0/1 Manual Control candidate grilles. Breacher reached Atrium and died before Manual Control. Arc reached both. The initial Breacher launch hit a loopback permission error and the approved retry reached the recorded death. Arc reached the one-hour runner limit during sector 20 and completed after resuming the earned sector-19 clear. The runner flagged the loading holds listed above. [Breacher](../../artifacts/nextgen/playtest/play41-breacher-final/report.json) · [Arc first segment](../../artifacts/nextgen/playtest/play41-arc-final/report.json) · [Arc finale](../../artifacts/nextgen/playtest/play41-arc-finale/report.json) · [Story Cryo](../../artifacts/nextgen/playtest/play41-story-cryo-final/report.json)
+
+The first candidate placed the grille before the Brute entered. A native dash moved the marine across that placement before recovery, so the prototype was replaced with a lane drawn at the live spawn. The earlier reserve and grille silhouettes also read as props in downsampled frames. The final captures use bodies with legs and claws. Crowding can still obscure them during the Atrium dodge.
+
+### Final integration
+
+Merged local nextgen through `a65d7fb5` into `t3/play41`. The production build and conflict-marker scan passed. The final Standard rerun repeated 39/48 with zero stalls and the same per-rig split. [Final integrated Standard cohort](../../artifacts/nextgen/playtest/play41-post-title35-standard/summary.json)
+
+| Disk check | Size | Used | Available | Capacity |
+|---|---:|---:|---:|---:|
+| Start | 926 GiB | 824 GiB | 74 GiB | 92% |
+| End | 926 GiB | 843 GiB | 56 GiB | 94% |
+
+The assigned worktree's `artifacts/nextgen` occupied 2.4 GiB at handoff.
