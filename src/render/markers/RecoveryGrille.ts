@@ -2,7 +2,7 @@ import {BoxGeometry,Float32BufferAttribute,Mesh,MeshBasicMaterial} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {Color} from 'three';
 
-export interface GrillePose {x:number;y:number;angle:number;state:string;changedAt:number}
+export interface GrillePose {x:number;y:number;angle:number;escorts?:number;state:string;changedAt:number}
 export class RecoveryGrille {
   private readonly material=new MeshBasicMaterial({vertexColors:true});
   readonly bars:Mesh;
@@ -32,6 +32,7 @@ export class RecoveryGrille {
   }
   update(pose:GrillePose|undefined,time:number){
     this.frame.visible=!!pose&&pose.state!=='entered';if(!pose)return;
+    this.frame.scale.z=Math.max(1,(pose.escorts??2)/2);
     this.frame.position.set(pose.x/32,0,pose.y/32);this.frame.rotation.y=-pose.angle;
     this.bars.position.y=pose.state==='closed'?.64*Math.max(0,1-100*(time-pose.changedAt)**2):.64;
   }
