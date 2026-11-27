@@ -58,7 +58,8 @@ export function heavyContacts(root: T.Object3D) {
       for (const offset of bossOffsets) offset.set(0,0,0);
       if (warden && chestIndex >= 0) {
         const chest = skin.skeleton.bones[chestIndex];
-        chest.updateWorldMatrix(true,false,true);
+        chest.matrixWorldNeedsUpdate = true;
+        chest.updateWorldMatrix(true,false);
         chestFrame.multiplyMatrices(chest.matrixWorld,skin.skeleton.boneInverses[chestIndex]).multiply(skin.bindMatrix);
         inverseChest.copy(chestFrame).invert();
       }
