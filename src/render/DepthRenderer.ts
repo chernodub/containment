@@ -884,7 +884,7 @@ export class DepthRenderer {
   this.post.beginCombatOutlines();
   if(!menu&&this.graphicsAblation!=='silhouette')for(const enemy of enemies){
    // Small bodies inherit the same exclusive owner as the contact stroke.
-   if(enemy.type!=='brute' && enemy.type!=='queen' && enemy.id!==this.effects.strikeOwner)continue;
+   if(enemy.type!=='brute' && enemy.id!==this.effects.strikeOwner)continue;
    if(enemy.champion==='warden'||enemy.health<=0||!(enemy.windupMs>0||enemy.chargeMs>0||enemy.meleeOrder===1||enemy.meleePhase==='strike'))continue;
    const actor=this.actors.get(enemy.id);if(actor)this.post.markCombatOutline(actor.root);
   }
