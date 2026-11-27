@@ -170,7 +170,7 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     if (zoneAge !== undefined) slot.age = zoneAge;
-    const contactGain = this.kit.time < this.contactUntil ? .30 : this.rig === 'arc' ? .55 : this.rig === 'cryo' ? .28 : 1;
+    const contactGain = this.kit.time < Math.max(this.contactUntil, this.kit.arcContactUntil) ? .30 : this.rig === 'arc' ? .55 : this.rig === 'cryo' ? .28 : 1;
     slot.param = this.level * contactGain; slot.intensity = this.kit.low ? .75 : 1;
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);
