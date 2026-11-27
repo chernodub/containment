@@ -229,7 +229,7 @@ export class DepthGame {
  }
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
- private earlyPressureFollowed=false;
+ private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number};
  private stageEarlyPressure(firstLane?:{x:number;y:number}){
   this.earlyPressureAt=Infinity;
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
@@ -248,11 +248,11 @@ export class DepthGame {
    const sidesteps=[1,-1].map(side=>({x:origin.x-side*Math.sin(angle)*146,y:origin.y+side*Math.cos(angle)*146}));
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
-   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?220:350,
+   this.pending.push({type:family,...shooter,elite:false,delay:firstLane?80:350,
     options:{closeIngress:true,interceptOpening:!!firstLane,
      openingVolley:firstLane?undefined:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
-   this.presentation.push({type:'enemy-warning',...shooter,durationMs:firstLane?220:350,radius:32});
-   this.pickups.spawn('armor',this.node.depth<=3?40:24,reward.x,reward.y);
+   this.presentation.push({type:'enemy-warning',...shooter,durationMs:firstLane?80:350,radius:32});
+   this.pickups.spawn('armor',firstLane?40:24,reward.x,reward.y);
    break;
   }
  }
@@ -571,7 +571,7 @@ export class DepthGame {
   this.newRun(undefined,{rig:build.rig,difficulty:this.difficulty,version:run.version,startingBoon:run.version===3?build.mutations[0]:undefined});
   return true;
  }
- private enterRoom(start=true){this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollowed=false;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
+ private enterRoom(start=true){this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollow=undefined;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
  this.gateStaged=false;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
@@ -1241,6 +1241,7 @@ export class DepthGame {
   if(e.enemyType==='carrier'){this.broodPodsDestroyed=0;this.broodStarted.add(e.enemyId);}
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
+   this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.30};
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
    const range=Math.hypot(e.targetX-e.x,e.targetY-e.y);
    const impactMs=e.durationMs+range/EARLY_SPIT_IMPACT_SPEED*1000;
@@ -1252,10 +1253,6 @@ export class DepthGame {
  }else if(e.type==='hazard-attack'){
   const angle=Math.atan2(e.targetY-e.sourceY,e.targetX-e.sourceX);
   this.presentation.push({type:'enemy-attack',id:e.enemyId,family:'spitter',x:e.sourceX,y:e.sourceY,angle});
-  if(e.spread&&!this.earlyPressureFollowed){
-   this.earlyPressureFollowed=true;
-   this.stageEarlyPressure({x:e.sourceX,y:e.sourceY});
-  }
   if(e.spread&&canTraverseExpedition(this.geometry,{x:e.sourceX,y:e.sourceY},{x:e.targetX,y:e.targetY},
    SPITTER_PROJECTILE_RADIUS)){
    const warning=Math.hypot(e.targetX-e.sourceX,e.targetY-e.sourceY)/EARLY_SPIT_IMPACT_SPEED;
@@ -1627,6 +1624,11 @@ export class DepthGame {
   }
   if(this.rigDrill&&this.elapsed>=this.rigDrill.until)this.finishRigDrill();
   if(this.earlyPressureAt!==undefined&&this.elapsed>=this.earlyPressureAt)this.stageEarlyPressure();
+  const follow=this.earlyPressureFollow;
+  if(follow&&this.elapsed>=follow.at){
+   this.earlyPressureFollow=undefined;
+   if(this.enemies.getSnapshot(follow.shooter)?.pendingAttack==='spit')this.stageEarlyPressure(follow);
+  }
   this.updateCleanup(ms);this.navigation.prepare(this.player,1);this.enemyEvents(this.enemies.update(hostileMs,this.player));if(this.broodSupply){
    const pod=this.enemies.getSnapshot(this.broodSupply.pod);
    if(!pod||!pod.pod){
