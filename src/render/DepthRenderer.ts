@@ -823,6 +823,12 @@ export class DepthRenderer {
     if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*contactScale,contactInk,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
+   // Append small palm shadows after all body and threat indicators.
+   for(const e of enemies)if(e.type==='brute' && !blackout){
+    const palms=this.actors.get(e.id)?.root.userData.heavyPalmContacts;
+    if(palms)for(const palm of palms)if(palm.held && palm.active)
+     this.contacts.add(palm.anchor.x,palm.anchor.z,e.radius/UNIT*.24,4);
+   }
   }
   this.contacts.end();
   this.contacts.mesh.visible=this.graphicsAblation!=='contacts';

@@ -81,7 +81,7 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
       }
       regions.fill(region, triangle, Math.min(triangle + 3, count));
     }
-    if (name === 'k11-brute-body' || name === 'k11-brute-regalia') shapeBrute(geometry, name.endsWith('regalia'));
+    if (name.startsWith('k11-brute-base') || name === 'k11-brute-elite') shapeBrute(geometry, name.endsWith('elite'));
     if(/^k11-brute-/.test(object.name))authorPlateEdges(geometry);
     geometry.setAttribute('actorRegion', new T.BufferAttribute(regions, 1));
     // Reindex equal vertices including region: only seam vertices stay split.

@@ -22,6 +22,8 @@ export function heavyContacts(root: T.Object3D) {
     return [{bone: skin.skeleton.bones[index], side, hand, pad, pivot, active: false, held: false,
       anchor: new T.Vector3(), offset: new T.Vector3(), original: new T.Quaternion()}];
   }));
+  const palms = pads.filter(p => p.hand);
+  root.userData.heavyPalmContacts = palms;
   let lastYaw: number | undefined, turnPhase = 0;
   return {
     turn(yaw: number) {
