@@ -429,6 +429,7 @@ try {
           enemy.visible&&distance(enemy,s.player)<96),
       'grille-recoil':s.recoveryGrille?.state==='closed'&&s.elapsed-s.recoveryGrille.changedAt>=.18,
       'grille-closed':freshEvents.some(event=>event.type==='recovery-grille-closed'),
+      'story-hold-grace':(s.storyHoldGrace?.remainingMs??0)>0,
       'exchange-bait':decision.exchangeStep==='bait',
       'exchange-landing':decision.exchangeStep==='landing',
       'console-return':room.id==='manual-control-chamber'&&s.encounter.beat===1&&freshEvents.some(event=>event.exposedHit),
