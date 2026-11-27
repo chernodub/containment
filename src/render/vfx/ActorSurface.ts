@@ -274,8 +274,8 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
-  if(heavyPaint==7.)paint=vec3(.49,.435,.337)*(1.-.34*actorWallRecoil);
-  if(heavyPaint==8.)paint=vec3(.275,.236,.172);
+  if(heavyPaint==7.)paint=vec3(.30,.272,.224)*(1.-.34*actorWallRecoil);
+  if(heavyPaint==8.)paint=vec3(.175,.155,.124);
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);
     vec3 antler=vec3(.115,.096,.066);
@@ -301,7 +301,7 @@ if(actorBroodForm.x>=-1.){
   }
   if(heavyPaint==12.)paint=vec3(.072,.027,.043);
   if(heavyPaint==13.)paint=vec3(.009,.004,.008);
-  if(heavyPaint==14.)paint=vec3(.56,.47,.33);
+  if(heavyPaint==14.)paint=vec3(.32,.284,.228);
   if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
