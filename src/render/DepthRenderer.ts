@@ -826,7 +826,7 @@ export class DepthRenderer {
    // Append small palm shadows after all body and threat indicators.
    for(const e of enemies)if(e.type==='brute' && !blackout){
     const palms=this.actors.get(e.id)?.root.userData.heavyPalmContacts;
-    if(palms)for(const palm of palms)if(palm.held && palm.active)
+    if(palms)for(const palm of palms)if(palm.held)
      this.contacts.add(palm.anchor.x,palm.anchor.z,e.radius/UNIT*.24,4);
    }
   }

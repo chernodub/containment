@@ -35,6 +35,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const coldState={value:0};
   const form={value:new T.Vector4()};
   const grip={value:new T.Vector2()};
+  const bossPalm={value:[new T.Vector3(),new T.Vector3()]};
   const warden={value:0},wallRecoil={value:0};
   const broodPrime={value:0},castShade={value:0},shedShoulder={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
@@ -59,7 +60,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -69,7 +70,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
+        shader.vertexShader='uniform vec3 bossPalm[2];uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
 // The peak of the displacement sits at the olecranon. It fades to
 // zero at the planted heel and at the shoulder socket.
 float support=position.y<0.?heavyGrip.x:heavyGrip.y;
@@ -77,6 +78,10 @@ float elbowZ=mix(3.35,2.42,actorWarden);
 float heelZ=mix(2.65,1.52,actorWarden);
 float elbow=smoothstep(heelZ,elbowZ,position.z)*(1.-smoothstep(elbowZ,elbowZ+.75,position.z));
 float arm=smoothstep(1.95,2.65,abs(position.y))*smoothstep(-1.25,-.55,position.x);
+if(actorWarden>.5){
+ float pad=arm*(1.-smoothstep(1.55,3.4,position.z));
+ transformed+=pad*(position.y<0.?bossPalm[0]:bossPalm[1]);
+}
 transformed.x-=1.10*elbow*arm*support;
 transformed.z-=.31*elbow*arm*support;
 float breast=(1.-smoothstep(1.5,2.55,abs(position.y)))*smoothstep(-2.,.1,position.x);
@@ -300,7 +305,15 @@ if(actorBroodForm.x>=-1.){
     paint=mix(vec3(.12,.042,.067),vec3(.27,.12,.155),facet);
   }
   if(heavyPaint==12.)paint=vec3(.072,.027,.043);
-  if(heavyPaint==13.)paint=vec3(.009,.004,.008);
+  if(heavyPaint==13.){
+    // The lining stays exposed between the jaws even at a frontal wall hit.
+    // A tapered root and a diagonal side facet carry the tongue into this view.
+    vec2 fold=vec2(throatTongue.x+.28*throatTongue.y,throatTongue.y+.20);
+    float tip=abs(fold.x)*(1.05+.28*fold.y)+abs(fold.y)*.65;
+    float side=smoothstep(.06,.14,fold.x+.32*fold.y);
+    vec3 tongue=mix(vec3(.15,.050,.079),vec3(.28,.115,.145),side);
+    paint=mix(vec3(.009,.004,.008),tongue,(1.-smoothstep(.85,.95,tip))*actorWallRecoil);
+  }
   if(heavyPaint==14.)paint=vec3(.32,.284,.228);
   if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
@@ -446,7 +459,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
-    grip(left:number,right:number) { grip.value.set(left,right); },
+    grip(left:number,right:number,offsets:T.Vector3[]) { grip.value.set(left,right);bossPalm.value=offsets; },
     wallRecoil(active:boolean) { wallRecoil.value=active?1:0; },
     warden(active:boolean) { warden.value=active?1:0; },
     prime(value:number){broodPrime.value=value;},
