@@ -2669,16 +2669,38 @@
   },
   "route-freight-hold": {
     "file": "route-freight-hold.webp",
-    "bytes": 11052,
+    "bytes": 15892,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3,
+      "span": 3.25,
       "subjects": [
         {
           "kind": "enemy",
           "family": "crawler",
-          "aim": 2.3
+          "x": -2.1,
+          "z": -0.3,
+          "aim": 0.52,
+          "pose": "attack",
+          "frame": 0.38
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "x": 0,
+          "z": -1.35,
+          "aim": 1.22,
+          "pose": "attack",
+          "frame": 0.54
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "x": 2.05,
+          "z": 0.16,
+          "aim": 2.28,
+          "pose": "attack",
+          "frame": 0.69
         }
       ],
       "room": "freight-hold",
@@ -2686,7 +2708,12 @@
         9.9375,
         18.25
       ],
-      "frameSubject": true,
+      "focus": [
+        0,
+        0.45,
+        0
+      ],
+      "roomLighting": true,
       "card": true,
       "view": "gameplay",
       "webpQuality": 0.79
@@ -2694,16 +2721,55 @@
   },
   "route-breached-loading-bay": {
     "file": "route-breached-loading-bay.webp",
-    "bytes": 25614,
+    "bytes": 28132,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3,
+      "span": 3.95,
       "subjects": [
         {
           "kind": "enemy",
-          "family": "brute",
-          "aim": 2.3
+          "family": "spitter",
+          "x": -2.45,
+          "z": -0.72,
+          "aim": 0.53,
+          "pose": "attack",
+          "frame": 0.45
+        },
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "x": 2.45,
+          "z": -0.72,
+          "aim": 2.61,
+          "pose": "attack",
+          "frame": 0.53
+        },
+        {
+          "kind": "ordnance",
+          "weapon": "acid",
+          "from": [
+            -1.73,
+            0.37,
+            -0.3
+          ],
+          "x": 1.18,
+          "y": 0.22,
+          "z": 1.41,
+          "shadow": 0
+        },
+        {
+          "kind": "ordnance",
+          "weapon": "acid",
+          "from": [
+            1.73,
+            0.37,
+            -0.3
+          ],
+          "x": -1.18,
+          "y": 0.22,
+          "z": 1.41,
+          "shadow": 0
         }
       ],
       "room": "breached-loading-bay",
@@ -2711,7 +2777,12 @@
         18.75,
         21.25
       ],
-      "frameSubject": true,
+      "focus": [
+        0,
+        0.45,
+        0
+      ],
+      "roomLighting": true,
       "card": true,
       "view": "gameplay",
       "webpQuality": 0.79
@@ -2870,16 +2941,38 @@
   },
   "route-infested-workshop": {
     "file": "route-infested-workshop.webp",
-    "bytes": 10170,
+    "bytes": 17930,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3,
+      "span": 3.25,
       "subjects": [
         {
           "kind": "enemy",
           "family": "crawler",
-          "aim": 2.3
+          "x": -2.1,
+          "z": -0.3,
+          "aim": 0.52,
+          "pose": "attack",
+          "frame": 0.38
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "x": 0,
+          "z": -1.35,
+          "aim": 1.22,
+          "pose": "attack",
+          "frame": 0.54
+        },
+        {
+          "kind": "enemy",
+          "family": "crawler",
+          "x": 2.05,
+          "z": 0.16,
+          "aim": 2.28,
+          "pose": "attack",
+          "frame": 0.69
         }
       ],
       "room": "infested-workshop",
@@ -2887,7 +2980,12 @@
         13,
         7.1875
       ],
-      "frameSubject": true,
+      "focus": [
+        0,
+        0.45,
+        0
+      ],
+      "roomLighting": true,
       "card": true,
       "view": "gameplay",
       "webpQuality": 0.79
@@ -2895,16 +2993,29 @@
   },
   "route-swarm-junction": {
     "file": "route-swarm-junction.webp",
-    "bytes": 30226,
+    "bytes": 35312,
     "shot": {
       "width": 1120,
       "height": 476,
-      "span": 3,
+      "span": 3.95,
       "subjects": [
         {
           "kind": "enemy",
-          "family": "carrier",
-          "aim": 2.3
+          "family": "brute",
+          "x": 1.12,
+          "z": 0.18,
+          "aim": 2.03,
+          "pose": "attack",
+          "frame": 0.32
+        },
+        {
+          "kind": "enemy",
+          "family": "spitter",
+          "x": -2.32,
+          "z": -0.67,
+          "aim": 0.92,
+          "pose": "attack",
+          "frame": 0.58
         }
       ],
       "room": "swarm-junction",
@@ -2912,7 +3023,12 @@
         18.75,
         16.25
       ],
-      "frameSubject": true,
+      "focus": [
+        0,
+        0.45,
+        0
+      ],
+      "roomLighting": true,
       "card": true,
       "view": "gameplay",
       "webpQuality": 0.79
