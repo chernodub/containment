@@ -23,19 +23,25 @@ export function shapeWardenMouth(mesh: T.SkinnedMesh) {
     {x:4.56,y:0,z:3.33,length:.66,width:.89,height:.18,paint:0,attachment:1},
     {x:4.63,y:0,z:3.42,length:.52,width:.78,height:.12,paint:12,attachment:1},
     {x:4.55,y:0,z:3.52,length:.49,width:.78,height:.13,paint:13,attachment:.5},
-    {x:5.00,y:0,z:3.54,length:.24,width:.34,height:.09,paint:9,attachment:1}
+    {x:5.00,y:0,z:3.54,length:.24,width:.34,height:.09,paint:9,attachment:1},
+    {x:4.55,y:0,z:3.62,length:.68,width:.93,height:.13,paint:0,attachment:0}
   ];
   for (const side of [-1,1]) for (let i=0;i<3;i++) {
-    const x=4.29+.38*i, y=side*(.88-.115*i);
-    for (const lower of [false,true]) surfaces.push({x:x+(lower?.09:0),y,z:lower?3.43:3.65,
-      length:.135,width:.105,height:lower?.23:.31,paint:14,attachment:lower?1:0,tooth:lower?1:-1});
+    for (const lower of [false,true]) {
+      const x=4.21+.385*i+(lower?.08:0);
+      const u=(x-(lower?4.56:4.55))/(lower?.66:.68);
+      const width=Math.sqrt(1-u*u)*(lower?.78*(1-.24*u):.83);
+      surfaces.push({x,y:side*width,z:lower?3.37:3.59,length:.13,width:.105,
+        height:lower?.26:.28,paint:14,attachment:lower?1:0,tooth:lower?1:-1});
+    }
   }
   // Spend the available rings on the broad lips and throat. Short tapered teeth need fewer facets.
-  const rings=Math.min(6,Math.floor((slots.length-2*surfaces.length)/(4*12+12*6)));
-  if (rings < 1) return;
   const sectors=surfaces.map(s=>s.tooth?6:12);
-  let extra=slots.length-surfaces.length*2-rings*sectors.reduce((a,b)=>a+b,0);
-  while(extra>=rings){for(let j=0;j<4 && extra>=rings;j++){sectors[j]++;extra-=rings;}}
+  const ringCost=sectors.reduce((a,b)=>a+b,0);
+  const rings=Math.min(6,Math.floor((slots.length-2*surfaces.length)/ringCost));
+  if (rings < 1) return;
+  let extra=slots.length-surfaces.length*2-rings*ringCost;
+  while(extra>=rings){for(let j=0;j<5 && extra>=rings;j++){sectors[j]++;extra-=rings;}}
   let cursor=0;
   const v=new T.Vector3(), a=new T.Vector3(), b=new T.Vector3(), c=new T.Vector3(), normal=new T.Vector3();
   function face(i:number,j:number,k:number) {

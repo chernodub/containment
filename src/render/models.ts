@@ -296,7 +296,7 @@ export function alien(kind:string,elite=false):ActorModel{
     if(bossCharge>0)authored.player.sample('m10-ram-charge',(visualTime/.5)%1,dt);
     else authored.player.sample('m10-ram-load',1-Math.min(1,windup/windupDuration),dt);
    }}}
-  if(champion==='warden'&&!dead)recoilJaw?.apply(bossStun>0?T.MathUtils.smoothstep(wallStunStartMs-bossStun,0,100):wardenTurnRemaining/.24);
+  if(champion==='warden'&&!dead)recoilJaw?.apply(bossStun>0?1:wardenTurnRemaining/.24);
   if(contacts){
    const walk=!champion&&!dead&&!status.frozen&&moving>.3&&authored.player.isCurrent('m10-run')?r.action('m10-run'):undefined;
    const turning=contacts.turn(r.root.rotation.y);

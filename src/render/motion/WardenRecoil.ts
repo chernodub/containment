@@ -86,6 +86,7 @@ export function wardenRecoil(root: T.Object3D) {
         opening.copy(headParent.matrixWorld).invert().multiply(matrix).decompose(position,turn,scale);
         head.position.lerp(position,amount);
         head.quaternion.slerp(turn,amount);
+        head.updateMatrix();
         head.updateWorldMatrix(false,false);
         headActive=true;
       }
