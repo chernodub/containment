@@ -21,6 +21,8 @@ export function orderRoom(order: RoomOrder | undefined, position: number) {
  return { depth: junction.depth + 1 + room, opening: junction.openings[room], second };
 }
 
-export function orderRepair(difficulty:DifficultyId):number {
- return difficulty==='standard'?10:20;
+const standardOrderRecovery=Object.freeze({hp:0,armor:10});
+const storyOrderRecovery=Object.freeze({hp:20,armor:0});
+export function orderRecovery(difficulty:DifficultyId){
+ return difficulty==='standard'?standardOrderRecovery:storyOrderRecovery;
 }
