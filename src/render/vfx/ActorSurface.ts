@@ -174,6 +174,12 @@ broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.35) ||
   (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
    abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
+// The Stalker's fork and shingled abdomen read together at quarter size.
+if(stalkerSkin){
+ bool blade=vActorRegion>=3. && vActorRegion<=4. && abs(actorPosition.y)>.58;
+ bool abdomen=vActorRegion==7. && abs(actorPosition.y)<.38;
+ broodMark=broodMark || ((blade || abdomen) && broodRestUp>-.12);
+}
 // The pressure vessel carries the spine light along its centre; its swollen
 // sides share the brood shell value so the firing lip remains directional.
 bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
@@ -187,7 +193,7 @@ if(crawlerSkin){
  broodBody=broodBody || broodBand==3 || crawlerHook;
 }
 vec3 broodPaint=carrierSkin?vec3(.288,.173,.352):crawlerSkin?vec3(.336,.247,.149):
-                spitterSkin?vec3(.254,.334,.147):vec3(.165,.278,.372);
+                spitterSkin?vec3(.254,.334,.147):vec3(.186,.316,.424);
 // Trace a narrow line across organ patches, widening only during native brood priming.
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
@@ -365,7 +371,7 @@ if(crawlerSkin && broodBody && !broodMark)
 float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
 outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
 if(broodMark || ridgeGlow>0.){
- float exposure=stalkerSkin?mix(.76,1.,actorCamouflage):actorCamouflage;
+ float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
 }
 #endif
