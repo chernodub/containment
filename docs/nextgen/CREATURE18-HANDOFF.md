@@ -1818,3 +1818,53 @@ The native pairs show HEAVY42 on the left and HEAVY43 on the right. The 480×270
 The weakest three live reads are the Warden pose-fixture recovery, where the marine occludes the mouth, the rear Brute in the teal Relay Racks crowd, where its support blends into the rack bars, and the Brute windup, where the outline carries more information than the shadowed fist. The red warnings, skull plates, health bars and status colours remain readable in the paired shots.
 
 The production build passed. The seed-1729 native Breacher campaign cleared all nine rooms, including Relay Racks, with zero errors and zero recorded defects. Residential Gallery had the only loading hold above five seconds, at 5,770 ms. Its report and shutter impact are under `artifacts/nextgen/playtest/heavy43-breacher/`. The full title and card run refreshed the Warden title cast and twelve heavy route and lesson cards. The committed title composite uses the existing background, fog and foreground layers.
+
+## BROOD42
+
+The Crawler's three straw marks sit on raised scutes. The rear scute narrows over the tail cap. A smaller head plate leaves daylight between the head and both hooks, and bone bevels run down the front shoulders. In the bite, the shell withdraws along the approach while the outside hook retains its extension for the first 120 ms of recovery.
+
+The warning renderer looks up the actor ID that owns the primary footprint. A short stroke starts on the posed strike joint and joins the original warning centre line on the deck. The Spitter's sightline starts at the lip of the mortar. The Crawler uses its outside hook, the Stalker its scythe, the Carrier its claw, the Matron its brood opening during priming, and the Warden its jaw during the ram. The Brute uses the fingertip of its striking arm. The warning perimeter still comes from the simulation snapshot.
+
+The Stalker's folded scythes reach beyond the flanks and its planted foreleg reaches farther forward. The Spitter has a broader pressure sac and a longer, flared muzzle. The Carrier carries its pod above wider feet and a longer prow. On the Matron the crown of the face uses the pale leading-plane material above a dark neck. Chilled skin retains its ordinary top value with a cool rim. Frozen skin holds its pose and takes a 40% ice tint across the authored top zones with a wider rim.
+
+In the Interlock edge fixture, the raised mortar socket measured 0.390 m above deck. The nearest visible lip vertex measured 0.384 m. The release strips sample native simulation ticks at 60 Hz. In the solo strip the outer hook stays on the boot side of the withdrawing shell through the +117 ms frame. It draws away noticeably in the +133 ms frame. In the group strip a second Crawler is winding up at order 1 while a third is approaching. These are the actual states of the nearby creatures, so the strip demonstrates the handoff between attackers rather than two stationary wait poses.
+
+The heading sheets cover eight directions in each of Swarm Junction, Transmission Chamber, Crew Checkpoint and Coolant Plant. Each miniature shows the entire 1920 × 1080 frame reduced to 480 × 270. The staged reference used the final24 game revision `d34a6a86` with matching cameras and fixture settings. The cold-state comparison hides the health/status overlay and the ambient status particles for both versions.
+
+| Family | Final24 vertices | BROOD42 vertices | Body draws, final24 → BROOD42 |
+|---|---:|---:|---:|
+| Crawler | 4,331 | 4,225 | 1 → 1 |
+| Spitter | 6,133 | 6,110 | 1 → 1 |
+| Stalker | 4,864 | 4,828 | 1 → 1 |
+| Carrier | 6,376 | 6,372 | 1 → 1 |
+| Matron | 11,387 | 11,419 | 1 → 1 |
+| Brute | 8,577 | 8,577 | 1 → 1 |
+| Warden | 14,293 | 14,293 | 1 → 1 |
+
+Counts are shipped full-detail POSITION accessor entries and visible body primitives, excluding separate HUD, floor and warning batches. The accent uses the existing warning instance batch.
+
+The most consequential heading fix was in the approach pose. The shell axis ran roughly 58° downhill from tail to prow in the native crowd fixture. The camera saw the belly or the deck where the raised scutes should have been. The presentation now measures the posed chest-to-tail axis, levels a nose-down approach and fades that correction over the first quarter of the load. The simulation radius, aim, queue and damage timing stay authoritative.
+
+| Three-second visual count at 480 × 270 | Final24 | BROOD42 | Fixture |
+|---|---:|---:|---:|
+| Swarm Junction | 5 | 9 | 10 |
+| Crew Checkpoint | 5 | 10 | 10 |
+
+These are single-reviewer first-glance counts. In Swarm Junction the elevated pipework covers the tenth Crawler northwest of the marine. On the pale spill the fork and three scutes now locate even the rear row. On the most oblique approach poses the feet are still less legible than the head and back.
+
+A separate deck-clearance check sampled the posed outer hook in both recoil strips. Its cutting tip sits 0.12 m above the deck at release and through +100 ms, then 0.095 m at the next sample. The claw gives up only 0.05 m along the approach during its hold. Its exposed cutting section takes a bone-coloured highlight through the early recoil. At quarter size the dark outline still consumes much of the blade when it turns edge-on.
+
+The paired sheets and their full-resolution inputs are in `artifacts/nextgen/brood42/`. Open `index.html` for the turntables, crowd counts, warning owners, silhouette line-up, shape crops and body-only cold states. The narrowest reads are the Crawler behind the Swarm Junction pipe, the Interlock Spitter cut by the bottom of the viewport and the Matron face with her near legs overlapping the open pod in the mixed pack.
+
+**Spitter organ at native peak pressure.** The organ uses linear RGB `(.145, .50, .008)`. The red component keeps the dimmer displayed colour yellow-green. The same ceiling applies to the hit finish. The separate muzzle stroke follows the filled warning's owner during loading and release. The floor pool keeps its existing presentation.
+
+| Native Breacher frame | Organ, prior → capped | Visor, prior → capped | Leg, prior → capped |
+|---|---:|---:|---:|
+| Relay Racks, 207.550 s | 198.9 → 132.2 | 149.8 → 149.8 | 199.5 → 199.5 |
+| Transmission Chamber, 253.200 s | 172.1 → 113.4 | 176.3 → 176.3 | 184.7 → 184.7 |
+
+Values are mean Rec. 709 display luma on a 0–255 scale for contiguous 3×3 patches in the presented 480×270 raster. The Breacher resumed the heavies delegate's earned room-eight clear. The previous emission and shipping emission were rendered at the same native tick and camera. Relay Racks uses the room's absolute pressure peak. Transmission Chamber uses the highest retained pressure frame with a visible, measurable Spitter. Its later absolute peak at 303.917 s contained only Brutes and Crawlers. A visibility-difference mask isolated each Spitter and the brightest complete patch on its lime organ. The visor and leg coordinates were checked against the marine crop. Neither Spitter owned a filled warning. The HEAVY44 run's original 228.7 and 200.2 readings came from different native frames. The matching pairs, coordinates and per-actor measurements are in `sheets/spitter-native-peaks-480.png` and `organ-final/values.json`.
+
+The production build passed. The fresh seed-1729 Cryo campaign cleared all ten requested rooms with zero errors. The runner exited 1 for two loading diagnostics, Passenger Vault (5.920 s) and Residential Gallery (5.025 s). Its complete report is `artifacts/nextgen/playtest/brood42/report.json`. The resumed Breacher pressure study cleared both remaining rooms with zero new errors.
+
+The gallery has 31 sheets. The selected capture receipts have empty error lists. During development a room-kit loading timeout was retried, and the ignored gallery was regenerated after a scratch cleanup removed its first copy. Disk readings for `/Users/chernodub` were 926 GiB total, 824 GiB used, 74 GiB available (92%) at the start and 926 GiB total, 809 GiB used, 89 GiB available (91%) at the end. This worktree's `artifacts/nextgen/` finished at 1.6 GB.
