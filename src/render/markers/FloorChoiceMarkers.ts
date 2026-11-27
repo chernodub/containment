@@ -1,3 +1,4 @@
+import {RecoveryGrille} from './RecoveryGrille';
 import * as T from 'three';
 import type {DepthGame} from '../../DepthGame';
 
@@ -30,6 +31,7 @@ export type StoryHoldGrace = {id:string;x:number;y:number;ms:number;remainingMs:
 
 export class FloorChoiceMarkers {
  readonly root=new T.Group();
+ readonly recovery=new RecoveryGrille();
  private readonly geometry=dashedRing(.98,1,64);
  private readonly materials=[
   new T.MeshBasicMaterial({color:0xffbf62,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide}),
@@ -87,7 +89,7 @@ export class FloorChoiceMarkers {
   });
  }
  constructor(){
-  this.root.add(...this.grilles);
+  this.root.add(this.recovery.frame,...this.grilles);
   for(const mesh of [this.graceRing,this.graceNotch]){
    mesh.rotation.x=-Math.PI/2;
    mesh.visible=false;
@@ -111,7 +113,8 @@ export class FloorChoiceMarkers {
    if(!shutter)return;
    if(shutter.broken){
     panel.position.set((shutter.x+shutter.width/2)/unit,.06,(shutter.y+shutter.height*(index===0?.12:.88))/unit);
-    panel.scale.set(.65,.12,.35);
+    panel.scale.set(.65,index===0?1.55:.12,.35);
+    if(index===0)panel.position.y=.775;
     return;
    }
    panel.position.set((shutter.x+shutter.width/2)/unit,index===0?.28:1.04,(shutter.y+shutter.height/2)/unit);
@@ -138,5 +141,5 @@ export class FloorChoiceMarkers {
    mesh.scale.setScalar(choice.radius/unit);
   });
  }
- dispose(){this.root.removeFromParent();this.geometry.dispose();this.graceRing.geometry.dispose();this.graceNotch.geometry.dispose();this.graceMaterial.dispose();this.notchMaterial.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
+ dispose(){this.recovery.dispose();this.root.removeFromParent();this.geometry.dispose();this.graceRing.geometry.dispose();this.graceNotch.geometry.dispose();this.graceMaterial.dispose();this.notchMaterial.dispose();this.shutterGeometry.dispose();this.shutterMaterial.dispose();this.coverGlyphGeometry.dispose();this.bankMaterial.dispose();this.failedGeometry.dispose();this.arrowGeometry.dispose();this.failed.dispose();this.materials.forEach(m=>m.dispose());}
 }

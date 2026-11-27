@@ -89,6 +89,18 @@ export class TargetMarkers {
                 ctx.lineTo(stop.x+dx,stop.y-dy);
                 ctx.stroke();
                 if((preview.impactUntil??0)>game.elapsed){
+                    const remaining=preview.impactUntil!-game.elapsed;
+                    const corner=projectWorld(renderer,preview.x,preview.y,{x:0,y:0,visible:false},1.62);
+                    if(remaining>1.02&&corner.visible){
+                        const travel=(1.3-remaining)*52;
+                        ctx.strokeStyle='#ffc580';ctx.lineWidth=2;ctx.beginPath();
+                        for(const offset of [-.92,-.48,.12,.66]){
+                            const a=angle+Math.PI+offset;
+                            ctx.moveTo(corner.x+travel*Math.cos(a),corner.y+travel*Math.sin(a));
+                            ctx.lineTo(corner.x+(travel+9)*Math.cos(a),corner.y+(travel+9)*Math.sin(a));
+                        }
+                        ctx.stroke();
+                    }
                     ctx.strokeStyle='#fff0ce';
                     ctx.lineWidth=3;
                     ctx.beginPath();

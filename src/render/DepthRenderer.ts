@@ -672,6 +672,10 @@ export class DepthRenderer {
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
+  const grilleGame=game as typeof game & {recoveryGrille?:import('./markers/RecoveryGrille').GrillePose};
+  const sampleGrille=!Reflect.has(game,'recoveryGrille')&&game.node.templateId==='manual-control-chamber'
+    ?{x:614,y:390,angle:0,state:'waiting',changedAt:0}:undefined;
+  this.floorChoiceMarkers.recovery.update(menu?undefined:grilleGame.recoveryGrille??sampleGrille,game.elapsed);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
   const holdGrace=menu?undefined:(game as DepthGame & {storyHoldGrace?:StoryHoldGrace}).storyHoldGrace;
   this.floorChoiceMarkers.updateStoryHold(holdGrace,game.floorControls,UNIT,realDt,game.roomRevision);

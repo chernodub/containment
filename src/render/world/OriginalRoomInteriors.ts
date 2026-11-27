@@ -189,7 +189,11 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                     (placement:{asset:string})=>placement.asset===object.userData.cutawayAsset);
                 const bounds=owner ? new T.Box3(new T.Vector3().fromArray(owner.bounds[0]),new T.Vector3().fromArray(owner.bounds[1]))
                     : new T.Box3().setFromObject(object);
-                return bounds.max.y>.8?[{object,bounds,floorCover:t.id==='swarm-junction',parts:[],hidden:false}]:[];
+                // A preview volley strikes this face. Cutting it for the warning
+                // at the point of impact would make the stopped round float.
+                const shelter=object.name==='inc13-reactor-feeder-refuge';
+                return bounds.max.y>.8?[{object,bounds,floorCover:shelter||t.id==='swarm-junction',
+                    actorsOnly:shelter,parts:[],hidden:false}]:[];
             }));
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
