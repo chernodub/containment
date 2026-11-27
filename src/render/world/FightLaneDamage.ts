@@ -73,7 +73,7 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.rod([0,1,-64],[-58,1,-64],2.2,0xbfa278);
       for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
       const steel=new MeshBasicMaterial({vertexColors:true});
-      const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
+      const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel,true);
       sill.scale.y=1.48;
       sill.castShadow=true;sill.receiveShadow=true;
       for(const [x,z] of [[185,648],[382,660],[575,700],[816,704],[1014,649]]){
@@ -161,6 +161,7 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       }
       c.save();c.translate(833.71249,349.81813);
       c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
+      line('M1 3V-65H-61',5,'#b6976e');
       const shade=c.createLinearGradient(0,-14,0,-56);
       shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
       c.fillStyle=shade;c.fill(new Path2D('M-101 2H0L-25 -54 -123 -49Z'));c.restore();
