@@ -33,7 +33,7 @@ export function wardenRecoil(root: T.Object3D) {
       joints.forEach((b,i) => { saved[i].decompose(b.position,b.quaternion,b.scale); b.updateMatrix(); });
       active = false;
     },
-    apply(amount: number) {
+    apply(amount: number, marineBearing: number) {
       joints.forEach((b,i) => { b.updateMatrix(); saved[i].copy(b.matrix); });
       active = true;
       head.updateWorldMatrix(true,false);
@@ -43,7 +43,7 @@ export function wardenRecoil(root: T.Object3D) {
         // carried by the shoulder girdle while the skull turns at its far end.
         applyWorld(neck,pose.multiplyMatrices(chestFrame,fromNeck),amount);
         inverse.copy(chestFrame).invert();
-        forward.set(.06,.98,.12).transformDirection(inverse);
+        forward.set(-.134*Math.cos(marineBearing),.98,-.134*Math.sin(marineBearing)).transformDirection(inverse);
         side.set(1,0,0).transformDirection(inverse);
         side.addScaledVector(forward,-side.dot(forward)).normalize();
         if (chestFrame.determinant()<0) side.negate();
