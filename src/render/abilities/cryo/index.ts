@@ -279,10 +279,10 @@ class CryoPresentation implements AbilityPresentation {
       const rise = Math.min(1, Math.max(0, (age - distance / radius * 150) / 320));
       for (let i = 0; i < 3; i++) {
         const angle = enemy.id + i * TAU / 3;
-        const height = (.48 + i * .24) * actor.height * rise;
-        k.draw('shard', body.x + Math.cos(angle) * width * .52, body.y + height * .50,
-          body.z + Math.sin(angle) * width * .52, width * .36, height, width * .24,
-          i === 2 ? CORE : ICE, fade * (.85 - .55 * Math.min(1, age / 450)), angle, .14);
+        const height = (.68 + i * .34) * actor.height * rise;
+        k.draw('shard', body.x + Math.cos(angle) * width * .82, body.y + height * .50,
+          body.z + Math.sin(angle) * width * .82, width * .36, height, width * .24,
+          i === 2 ? CORE : ICE, fade * (.48 + .45 * Math.max(0, 1 - (age % 2000) / 450)), angle, .14);
       }
       if (++plumes >= (k.low ? 5 : 10)) break;
     }

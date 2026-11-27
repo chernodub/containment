@@ -402,12 +402,12 @@ export class ElementKit {
         this.flowCard('flame', x, y, z, tx, ty, tz, width, core ? 0xffedb5 : 0xff7a2e, opacity, 100 + Math.abs(seed) % 64);
     }
     /** Place the ember on the camera-facing skin of its posed joint. */
-    jointEmber(x: number, y: number, z: number, radius: number, height: number, seed: number): void {
+    jointEmber(x: number, y: number, z: number, radius: number, height: number, seed: number, opacity = 1): void {
         const lift = this.flowView.set(this.viewPosition.x - x, this.viewPosition.y - y, this.viewPosition.z - z)
             .normalize().multiplyScalar(radius * .54);
         x += lift.x; y += lift.y; z += lift.z;
         this.flowCard('flame', x, y, z, x + radius * .20, y + height, z + radius * .13,
-            Math.max(.14, radius * .34), 0xfff5c9, 1, -1 - Math.abs(seed % 63));
+            Math.max(.14, radius * .34), 0xfff5c9, opacity, -1 - Math.abs(seed % 63));
     }
     /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
     boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {
