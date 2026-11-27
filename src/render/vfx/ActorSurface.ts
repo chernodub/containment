@@ -376,11 +376,14 @@ if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
   outgoingLight*=mix(vec3(1.),.68+.24*accent,actorContact.y);
  }
 }
-#ifdef BROOD_PLANES
+#if defined(BROOD_PLANES) || defined(STRIKE_SOCKET_LIGHT)
 if(actorStrikeLight.w>0.){
  vec3 tip=(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz;
  float tipMask=1.-smoothstep(.09,.27,length(vViewPosition+tip));
- vec3 strikePaint=crawlerSkin && broodRestUp<.15?vec3(.96,.65,.42):vec3(.84,.39,.18);
+ vec3 strikePaint=vec3(.84,.39,.18);
+#ifdef BROOD_PLANES
+ if(crawlerSkin && broodRestUp<.15)strikePaint=vec3(.96,.65,.42);
+#endif
  outgoingLight=mix(outgoingLight,strikePaint,actorStrikeLight.w*tipMask);
 }
 #endif`}
