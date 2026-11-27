@@ -42,37 +42,37 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         blue=ImageChops.subtract(source.getchannel('B'),source.getchannel('R'))
         mark=blue.point(lambda a:min(255,max(0,(a-20)*10)))
         ice=ImageOps.colorize(source.convert('L'),'#141c26','#849cae').convert('RGBA')
-        ice.paste('#9de6f2',(0,0,*source.size),mark)
+        ice.paste('#98afbd',(0,0,*source.size),mark)
         ice.putalpha(source.getchannel('A'))
         source=ice
     if name=='warden':
         # The distant light unifies the dorsal shell, sail and limbs in shadow.
         # Reserve the bone value for the head only. The plate boundaries retain
-        # their source ink on the two warm body values.
+        # their source ink on the two slate body values.
         w,h=source.size
         value=source.convert('L')
         alpha=source.getchannel('A')
-        paint=Image.new('RGB',source.size,'#302626')
+        paint=Image.new('RGB',source.size,'#282934')
         all_pixels=(0,0,w,h)
-        paint.paste('#734939',all_pixels,value.point(lambda v:255 if v>72 else 0))
+        paint.paste('#555462',all_pixels,value.point(lambda v:255 if v>72 else 0))
         paint.paste('#18171c',all_pixels,value.point(lambda v:255 if v<35 else 0))
         # Keep a fine ink break at the root of each sail plate even though
-        # the sail and the lit shell now share the same warm pigment.
+        # the sail and the lit shell now share the same slate pigment.
         sail=Image.new('L',source.size)
         ImageDraw.Draw(sail).rectangle((0,0,.59*w,.44*h),fill=255)
         sail=ImageChops.multiply(sail,value.point(lambda v:255 if v>148 else 0))
         offset=max(1,round(w*.0045))
         root=ImageChops.subtract(sail,sail.crop((0,offset,w,h+offset)))
-        paint.paste('#211a1c',all_pixels,root)
+        paint.paste('#211e2b',all_pixels,root)
         head=Image.new('L',source.size)
         ImageDraw.Draw(head).rectangle((.59*w,.20*h,w,.81*h),fill=255)
         bone=ImageChops.multiply(head,value.point(lambda v:255 if v>153 else 0))
-        paint.paste('#cbbb9e',all_pixels,bone)
-        # A little reflected brass along the loaded arm, inside the warm step.
+        paint.paste('#afa79b',all_pixels,bone)
+        # A little reflected brass along the loaded arm, inside the lit plane.
         near=Image.new('L',source.size)
         ImageDraw.Draw(near).polygon([(.44*w,.64*h),(.50*w,.72*h),(.66*w,.86*h),
                                      (.61*w,.86*h),(.47*w,.75*h)],fill=84)
-        paint.paste('#b27f49',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
+        paint.paste('#837785',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
         oral=ImageChops.subtract(oral_source.getchannel('B'),oral_source.getchannel('G')).point(lambda v:min(255,max(0,(v-12)*32)))
         paint.paste(oral_source.convert('RGB'),(0,0,w,h),ImageChops.multiply(head,oral))
         # The tiny teeth and tongue must survive the large-shell majority filter.
@@ -80,13 +80,13 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         tooth=ImageChops.subtract(green,red).point(lambda v:min(255,max(0,(v-18)*10)))
         tongue=ImageChops.subtract(red,green).point(lambda v:min(255,max(0,(v-80)*20)))
         paint.paste('#d2bea0',all_pixels,ImageChops.multiply(head,tooth))
-        paint.paste('#bd6a54',all_pixels,ImageChops.multiply(head,tongue))
+        paint.paste('#96627f',all_pixels,ImageChops.multiply(head,tongue))
         source=paint.convert('RGBA')
         source.putalpha(alpha)
     if name=='crawler':
         # Only the fine outer rim breaks the dark mass of the upper jamb.
         alpha=source.getchannel('A')
-        source=ImageOps.colorize(source.convert('L'),'#090c11','#805836')
+        source=ImageOps.colorize(source.convert('L'),'#090c11','#a79980')
         source.putalpha(alpha)
     # A narrow hard highlight on the inner edge matches the side facing the
     # aperture. Retain a separate outer ink stroke after the highlight.
