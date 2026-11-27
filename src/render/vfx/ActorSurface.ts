@@ -7,6 +7,7 @@ const creatureHide = `
 #ifdef BRUTE_PLANES
 varying vec3 vPlateEdge;
 varying float vHeavyZone;
+varying float vHeavyPart;
 float heavyInk(){
   vec3 dx=dFdx(vPlateEdge), dy=dFdy(vPlateEdge);
   vec3 distancePx=vPlateEdge/max(sqrt(dx*dx+dy*dy),vec3(.00001));
@@ -67,7 +68,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);'+`
+        shader.vertexShader='uniform vec2 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
 if(actorWarden<.5){
  float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
  transformed.z-=.32*actorAttackLoad*jaw;
@@ -244,12 +245,21 @@ if(actorBroodForm.x>=-1.){
   vec3 crown=mix(vec3(.044,.070,.047),vec3(.116,.060,.034),actorWarden);
   vec3 paint=vec3(.008,.011,.008);
   float rankBone=actorEliteBody*(1.-actorWarden);
-  if(heavyPaint==1.)paint=mix(crown,vec3(.31,.29,.23),rankBone);
+  if(heavyPaint==1.)paint=mix(crown,vec3(.032,.040,.028),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
   if(heavyPaint==7.)paint=vec3(.49,.435,.337)*(1.-.34*actorWallRecoil);
   if(heavyPaint==8.)paint=vec3(.275,.236,.172);
+  if(rankBone>.5){
+    float part=floor(vHeavyPart+.5);
+    vec3 antler=vec3(.156,.133,.094);
+    bool dorsal=part>=6. && part<=12.;
+    bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9;
+    bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
+    if(edge || crest || part==1. || part==3. || part==5.)paint=antler;
+    if(part==16. || part==17.)paint=vec3(.37,.324,.252);
+  }
   if(heavyPaint==11.){
     // The tongue sits inside a dark lower lip. Both boundaries move with the jaw.
     bool tongue=abs(actorPosition.y)<.52 && actorPosition.x>4.55;
