@@ -1,3 +1,4 @@
+import {orderJunction} from '../../game/roguelike/orderJunctions';
 import {studioImage} from '../studioArt';
 import {WEAPONS, WEAPON_JOBS} from '../../game/combat/catalog';
 import type {WeaponId} from '../../game/combat/types';
@@ -294,7 +295,7 @@ export function shopScreen(game: DepthGame): string {
 
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */
 export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
-  const run = game.expedition.run, graph = generateRun(run.seed,run.version), count=total(game);
+  const run = game.expedition.run, graph = generateRun(run.seed,run.version,run.roomOrder), count=total(game);
   const positions = new Map<string,{x:number;y:number}>();
   const layers = Array.from({length:count},(_,depth)=>graph.nodes.filter(node=>node.depth===depth));
   layers.forEach((layer,depth)=>layer.forEach((node,index)=>positions.set(node.id,count===20?{x:365+(depth%2)*112,y:30+Math.floor(depth/2)*36}:{x:420+(index-(layer.length-1)/2)*88,y:24+depth*31})));
@@ -311,7 +312,7 @@ export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
 
 export function routeScreen(game: DepthGame, selected = game.node.next[0]): string {
   const run=game.expedition.run;
-  const graph=generateRun(run.seed,run.version);
+  const graph=generateRun(run.seed,run.version,run.roomOrder);
   const destinations=game.node.next.map(id=>graph.nodes.find(node=>node.id===id)!);
   const booked = run.guardianRoute && game.node.depth < GUARDIAN_ROUTE_DEPTH
     ? run.guardianRoute === 'brood' ? 'Matron' : 'Warden' : undefined;
@@ -320,6 +321,25 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const contract=game.contractOffer;
   const next=destinations[0];
   const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
+  const junction=orderJunction(run);
+  if(junction){
+    return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
+      <h2 id="route-title">Choose which sector to face first</h2>
+      <div class="route-briefing-grid">${offers.map((offer,index)=>{
+        const room=offer.id==='direct'?0:1;
+        const destination=graph.nodes[junction.depth+1+room];
+        return `<div class="route-choice"><button id="route-option-${index}" class="route-option"
+          data-route="${next.id}" data-detour="${offer.id}" data-inspected="${index===0}">
+          <span class="route-option-visual">${routeVignette(destination.templateId,undefined,undefined)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-copy">
+            <strong class="route-option-title">${escapeHtml(offer.name)}</strong>
+            <span class="route-option-terms" data-route-term="risk">${escapeHtml(offer.risk)}</span>
+            <span class="route-option-subtitle">${escapeHtml(offer.reward)}</span>
+          </span>
+        </button></div>`;
+      }).join('')}</div>
+    </section>`;
+  }
   if (!offers.length && destinations.length===1 && !getShipCondition(game,next.depth)) {
     return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p>${guardian}<button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }

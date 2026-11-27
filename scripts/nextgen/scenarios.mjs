@@ -297,6 +297,20 @@ export const SCENARIOS=[
    abilityUses:{dash:46,tactical:37,power:21,overdrive:9},overdrivesUsed:9,highestMultiKill:6,creditsEarned:2260}});
   d.refresh();
  }},
+ {id:'run20-cargo',state:'route',required:['[data-route]'],setup:async()=>{
+  await window.__containmentDebug.gotoRoom('armory',{phase:'route',orderJunction:true});
+ }},
+ {id:'run20-infestation',state:'route',required:['[data-route]'],setup:async()=>{
+  await window.__containmentDebug.gotoRoom('service-shaft-landing',{phase:'route',orderJunction:true});
+ }},
+ {id:'run20-swapped-arrival',state:'playing',room:'breached-loading-bay',diagnosticOnly:true,setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('armory',{phase:'route',orderJunction:true,rig:'arc'});
+  d.presentation(true);
+  d.game.route(d.game.node.next[0],'salvage');
+  await d.prepare();
+  d.refresh();
+ }},
  {id:'run19-brood-arrival',state:'playing',room:'coolant-plant',diagnosticOnly:true,setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('coolant-plant',{rig:'arc',runStructure:true});

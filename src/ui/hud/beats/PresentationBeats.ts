@@ -1,3 +1,4 @@
+import {orderRoom} from '../../../game/roguelike/orderJunctions';
 import type {DepthGame, GameEffect} from '../../../DepthGame';
 import type {UiCue} from '../../../game/audio/contract';
 import {ROOM_TEMPLATES} from '../../../game/roguelike/roomTemplates';
@@ -61,7 +62,8 @@ export class PresentationBeats {
     this.kind = kind; this.remaining = durations[kind];
     this.hold = ['room-clear', 'death', 'victory', 'boss-defeated'].includes(kind) ? this.media.matches ? .15 : .55 : 0;
     const room = ROOM_TEMPLATES[game.node.templateId];
-    const consequence=game.node.depth===GUARDIAN_ROUTE_DEPTH&&game.expedition.run.guardianRoute?getRoomOpening(game):undefined;
+    const ordered=orderRoom(game.expedition.run.roomOrder,game.node.depth);
+    const consequence=ordered.second?'After repair · tougher escorts':ordered.opening!==undefined?getRoomOpening(game):game.node.depth===GUARDIAN_ROUTE_DEPTH&&game.expedition.run.guardianRoute?getRoomOpening(game):undefined;
     const data: Record<BeatKind, [string, string, string, string]> = {
       'room-enter': [game.node.kind, `SECTOR ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)} · ${game.storyRoom?.environment.toUpperCase() ?? 'COLONY VESSEL'}`, room.name.toUpperCase(), consequence ?? game.storyRoom?.objective ?? 'Clear the sector. Reach the next deck.'],
       'room-clear': ['check', 'THREAT SIGNAL / ZERO', 'SECTOR CLEAR', `${Math.max(0, game.stats.kills.total - this.roomKills)} HOSTILES ELIMINATED · ${((game.stats.roomTimeMs[game.node.id] ?? 0) / 1000).toFixed(1)} s`],

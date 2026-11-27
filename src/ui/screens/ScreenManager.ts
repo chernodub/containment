@@ -261,7 +261,7 @@ export function createScreens(context: ScreenContext) {
     if(routeNode!==game.node.id) {routeNode=game.node.id;selectedRoute=game.node.next[0]??'';}
     if(status!=='rig-select')deliberateRig=false;
     const saved=status==='menu'&&game.canContinue?loadCheckpoint(storage):null;
-    const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
+    const savedNode=saved?generateRun(saved.run.seed,saved.run.version,saved.run.roomOrder).nodes.find(node=>node.id===saved.run.currentNodeId):null;
     const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
     const key=JSON.stringify([status,phase,game.node.id,difficultyOpen,pendingDifficulty,selectedDifficulty,game.difficulty,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,deliberateRig,selectedRoute,continuation,

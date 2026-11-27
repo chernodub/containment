@@ -23,7 +23,7 @@ import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
-import { BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
+import { BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, chooseRoomOrder, createHumanPolicy, distance } from './policy.mjs';
 import {botPursuitLookAhead,botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
@@ -131,6 +131,7 @@ export type SimOptions = {
     seed: number;
     difficulty?: "story" | "standard" | "veteran";
     profile?: string;
+    roomOrder?: 'direct'|'salvage'|'policy';
     rooms?: number;
     assisted?: boolean;
     legacy?: boolean;
@@ -378,7 +379,7 @@ export function runSimulation(options: SimOptions) {
                     if (!choice)
                         throw Error('No earned route');
                     const augment=augmentUpgrades?.(game.expedition.build).at(-1);
-                    const detour=detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile,game.expedition.run.runStructure?options.seed:undefined):undefined;
+                    const detour=game.expedition.run.roomOrder&&[5,13].includes(game.node.depth)?chooseRoomOrder(game.expedition.run,game.node.depth,options.rig,options.roomOrder):detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot,game.node.depth,['direct','salvage'].map(detour=>({detour,condition:game.conditionFor?.(choice.depth,detour==='salvage'),variant:game.openingName?.(choice.depth,detour==='salvage'),disabled:detour==='salvage'&&(game.node.depth===6&&game.combat.snapshot.credits<70||game.node.depth===10&&(!augment||game.combat.snapshot.credits<180))})),options.profile,game.expedition.run.runStructure?options.seed:undefined):undefined;
                     game.route(choice.id,augmentUpgrades&&game.node.depth===10&&(!augment||game.combat.snapshot.credits<180)?'direct':detour,augment);
                 }
                 feel.reset();

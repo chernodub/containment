@@ -25,7 +25,7 @@ function snapshot(run:RunState,build:BuildState,resources:RunResources,runtime:E
 const copyStats=(stats:NonNullable<RunCheckpoint['stats']>):NonNullable<RunCheckpoint['stats']>=>Object.freeze({...stats,kills:Object.freeze({...stats.kills,byFamily:Object.freeze({...stats.kills.byFamily})}),damageDealt:Object.freeze({...stats.damageDealt}),abilityUses:Object.freeze({...stats.abilityUses}),roomTimeMs:Object.freeze({...stats.roomTimeMs}),...(Object.hasOwn(stats,'lastDamage')?{lastDamage:stats.lastDamage?Object.freeze({...stats.lastDamage}):null,recentDamage:Object.freeze((stats.recentDamage??[]).map(receipt=>Object.freeze({...receipt})))}:{})});
 function currentNode(expedition:Expedition){
   assertExpedition(expedition);
-  return generateRun(expedition.run.seed,expedition.run.version).nodes.find(node=>node.id===expedition.run.currentNodeId)!;
+  return generateRun(expedition.run.seed,expedition.run.version,expedition.run.roomOrder).nodes.find(node=>node.id===expedition.run.currentNodeId)!;
 }
 const offerSeed=(expedition:Expedition):number=>{
   let hash=expedition.run.seed;
@@ -37,7 +37,7 @@ export function createExpedition(seed:number,resources:RunResources,options:Expe
   const version=options.version??3,rig=options.rig??'breacher';
   if(version!==1&&version!==2&&version!==3)throw new Error('Unsupported run version');
   if(!Object.hasOwn(RIG_CATALOG,rig))throw new Error('Unknown starting rig');
-  const run:RunState=version===3?{...createRun(seed),phase:options.rigSelect?'rig-select':options.startingBoon?'combat':'starting-boon'}:{version,seed,currentNodeId:generateRun(seed,version).startId,completedNodeIds:[],phase:'combat',...(version===2?{draftRoll:0}:{})};
+  const run:RunState=version===3?{...createRun(seed),roomOrder:{},phase:options.rigSelect?'rig-select':options.startingBoon?'combat':'starting-boon'}:{version,seed,currentNodeId:generateRun(seed,version).startId,completedNodeIds:[],phase:'combat',...(version===2?{draftRoll:0}:{})};
   const build=createBuild(rig);
   return snapshot(run,options.startingBoon&&!options.rigSelect?addMutation(build,options.startingBoon):build,resources);
 }

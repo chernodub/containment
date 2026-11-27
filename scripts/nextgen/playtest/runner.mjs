@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {loadavg,cpus} from 'node:os';
 import {chromium} from 'playwright';
-import {BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, RIGS, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
+import {BOT_POLICY_VERSION, COVERED_RELAY_HEALTH_FRACTION, RIGS, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, chooseRoomOrder, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
@@ -345,14 +345,14 @@ try {
           const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
           if(s.actions.some(a=>a.detour)){
-            if(s.run.runStructure&&[2,6,10].includes(s.node.depth)){
+            if(s.run.runStructure&&[2,5,6,10,13].includes(s.node.depth)){
               const skip=page.locator('#skip-clear-record');
               if(await skip.isVisible())await skip.press('Space');
               await page.locator('.route-briefing').waitFor({state:'visible'});
               await page.locator('.route-briefing img').evaluateAll(async images=>{await Promise.allSettled(images.map(image=>image.decode()));});
               await shot(`junction-r${s.node.depth+2}`,await snapshot(),{animations:'disabled'});
             }
-            const preferred=chooseDetour(s.combat,s.node.depth,s.actions,report.profile,s.run.runStructure?seed:undefined);
+            const preferred=s.run.roomOrder&&[5,13].includes(s.node.depth)?chooseRoomOrder(s.run,s.node.depth,rig):chooseDetour(s.combat,s.node.depth,s.actions,report.profile,s.run.runStructure?seed:undefined);
             const choice=s.actions.some(a=>a.detour===preferred&&!a.disabled)?preferred:'direct';
             await page.locator(`[data-detour="${choice}"]:not(:disabled):not([aria-disabled="true"])`).last().press('Space');
           }
