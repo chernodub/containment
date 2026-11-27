@@ -844,9 +844,8 @@ export class DepthGame {
      if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined)this.recoveryGrilleState.attackerId=result.enemy.id;
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
      if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
-      const lead=options.interceptOpening?.26:0;
-      const aim=options.baitAim??{x:this.player.x+this.player.vx*lead,y:this.player.y+this.player.vy*lead};
-      this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,{...this.player,...aim}));
+      const aim=options.baitAim?{...this.player,...options.baitAim}:this.player;
+      this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,aim,options.interceptOpening));
      }
      if(guardian)this.enemies.promote(result.enemy.id,guardian);
      if(this.rackShutter&&guardian==='warden')this.rackShutter.wardenId=result.enemy.id;

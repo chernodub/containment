@@ -1225,12 +1225,12 @@ export class EnemySystem {
   }
 
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
-  beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
+  beginArrivalSwing(id:number,player:EnemyPlayerState,trackUntilLock=false):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
     if(!enemy||(enemy.type!=='brute'&&enemy.type!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
-    enemy.meleeFacingLocked=true;
+    enemy.meleeFacingLocked=!trackUntilLock;
     enemy.meleeRemainingMs=enemy.meleeDurationMs=this.#meleeWindup(enemy);
     this.#aimMelee(enemy,player,true);
     enemy.attackSlot=Object.freeze({angle:enemy.meleeAngle+Math.PI,radius:enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)});
@@ -1278,8 +1278,8 @@ export class EnemySystem {
     const profile=MELEE_ATTACKS[enemy.type];
     if(enemy.meleePhase==='windup'&&!enemy.meleeFacingLocked){
       this.#aimMelee(enemy,player);
-      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs&&![...this.#enemies.values()].some(other=>
-        other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs))enemy.meleeFacingLocked=true;
+      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs&&(enemy.arrivalSwing||![...this.#enemies.values()].some(other=>
+        other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs)))enemy.meleeFacingLocked=true;
     }
     let remaining=deltaMs;
     while(enemy.meleePhase!=='approach'){
