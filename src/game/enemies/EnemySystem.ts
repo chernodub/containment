@@ -720,6 +720,7 @@ export class EnemySystem {
     if(enemy.champion!=='warden')enemy.wallStunAngle=undefined;
     enemy.windupMs=enemy.chargeMs=enemy.broodRemainingMs=0;
     enemy.pendingAttack=null;
+    enemy.openingSpitSpread=undefined;
   }
 
   releaseChildReservation(id: number): void {

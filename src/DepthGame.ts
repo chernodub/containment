@@ -227,14 +227,16 @@ export class DepthGame {
  }
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
- private stageEarlyPressure(){
+ private stageEarlyPressure(firstLane?:{x:number;y:number}){
   this.earlyPressureAt=Infinity;
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const lane=stageCoverLesson(this.geometry,covers,this.player);
   const origin={x:this.player.x,y:this.player.y};
+  const travel=firstLane?Math.atan2(origin.y-firstLane.y,origin.x-firstLane.x):
+   Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
   for(let turn=0;turn<16;turn++){
-   const travel=Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
-   const angle=travel+turn*Math.PI/8;
+   const offset=turn%2?-(turn+1)/2:turn/2;
+   const angle=travel+offset*Math.PI/8;
    const shooter={x:origin.x+Math.cos(angle)*128,y:origin.y+Math.sin(angle)*128};
    if(!canOccupyExpedition(this.geometry,shooter,enemyBodyRadius('spitter',false))||
     !canTraverseExpedition(this.geometry,shooter,origin,SPITTER_PROJECTILE_RADIUS))continue;
@@ -242,9 +244,9 @@ export class DepthGame {
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
    this.pending.push({type:'spitter',...shooter,elite:false,delay:350,
-    options:{closeIngress:true,openingVolley:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
+    options:{closeIngress:true,openingVolley:!firstLane&&this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
    this.presentation.push({type:'enemy-warning',...shooter,durationMs:350,radius:32});
-   this.pickups.spawn('armor',this.node.depth<=3?32:24,reward.x,reward.y);
+   this.pickups.spawn('armor',!firstLane&&this.node.depth<=3?32:24,reward.x,reward.y);
    break;
   }
  }
@@ -1239,6 +1241,7 @@ export class DepthGame {
  }else if(e.type==='hazard-attack'){
   const angle=Math.atan2(e.targetY-e.sourceY,e.targetX-e.sourceX);
   this.presentation.push({type:'enemy-attack',id:e.enemyId,family:'spitter',x:e.sourceX,y:e.sourceY,angle});
+  if(e.spread)this.stageEarlyPressure({x:e.sourceX,y:e.sourceY});
   const rays=e.spread?[-e.spread,-e.spread/2,0,e.spread/2,e.spread]:[0];
   for(const ray of rays)this.bullets.push({hostileOwner:e.enemyId,sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,
    life:ENEMY_ATTACK_SHAPES.spitterProjectileLife,kind:'hazard',
