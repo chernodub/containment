@@ -80,10 +80,12 @@ function candidateVelocity(s,candidate) {
   return {x:x/length*speed,y:y/length*speed};
 }
 
-/** The recovery shot counts from the half of the fight facing the waiting escorts. */
-function inReturnArc(grille, target, player) {
-  const x=player.x-target.x,y=player.y-target.y,gx=grille.x-target.x,gy=grille.y-target.y;
-  return x*gx+y*gy >= grille.returnArcCosine*Math.hypot(x,y)*Math.hypot(gx,gy);
+function inReturnLane(grille, target, player) {
+  const dx=player.x-target.x,dy=player.y-target.y;
+  const forwardX=Math.cos(grille.angle),forwardY=Math.sin(grille.angle);
+  return dx*forwardX+dy*forwardY>0 &&
+    Math.abs(dx*forwardY-dy*forwardX)<=grille.returnHalfWidth &&
+    Math.hypot(dx,dy)<=grille.returnRange;
 }
 
 function grilleApproach(s, grille) {
@@ -452,7 +454,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
       const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
       const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);
-      const onReturnSide = attacker && (grille.returnArcCosine===undefined||inReturnArc(grille,attacker,s.player));
+      const onReturnSide = attacker && (grille.returnRange===undefined||inReturnLane(grille,attacker,s.player));
       const returnTarget = onReturnSide && attacker.clear && attacker.meleePhase === 'recovery' && attacker;
       if (returnTarget && !escape) {
         const plasma = s.resources?.ammo.plasma;
@@ -460,7 +462,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
           plasma && plasma.magazine + plasma.reserve > 0 ? 'plasma' : s.combat.weapon;
         return {target:returnTarget,movement:{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS};
       }
-      if(grille?.state==='waiting'&&grille.returnArcCosine!==undefined&&!escape&&(!onReturnSide||!attacker?.clear)){
+      if(grille?.state==='waiting'&&grille.returnRange!==undefined&&!escape&&(!onReturnSide||!attacker?.clear)){
         const approach=grilleApproach(perceived,grille);
         if(approach)return {target:chooseTarget(perceived.enemies,s.player,s.weaponRange),
           movement:approach,actions:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};

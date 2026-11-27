@@ -105,9 +105,9 @@ export class DepthGame {
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<1.4)){
+  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
-   return {...visible,returnArcCosine:this.recoveryGrilles===true?Math.cos(30*Math.PI/180):undefined};
+   return {...visible,returnRange:this.recoveryGrilles===true?176:undefined,returnHalfWidth:64};
   }
  }
  private resolveRecoveryGrille(closed:boolean){
@@ -1149,8 +1149,8 @@ export class DepthGame {
   }
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
-  const bearing=Math.atan2(reference.y-y,reference.x-x);
-  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI]){
+  const bearing=Math.atan2(y-reference.y,x-reference.x);
+  for(const offset of [0,.25,-.25,.5,-.5]){
    const angle=bearing+offset,point={x:x+Math.cos(angle)*99,y:y+Math.sin(angle)*99};
    if(!canOccupyExpedition(this.geometry,point,25)||!hasClearExpeditionShot(this.geometry,reference,point))continue;
    this.recoveryGrilleState={...point,angle:Math.atan2(y-point.y,x-point.x),escorts:e.grilleLead,
@@ -1310,11 +1310,12 @@ export class DepthGame {
   if(id>0){const before=this.enemies.getSnapshot(id);const condition=this.roomCondition;
    if(weapon&&before?.exposedMs){amount*=!before.champion&&(before.type==='brute'||before.type==='carrier')?1.4:1.15;exposedHit=true;}
    const grille=this.recoveryGrille;
-   if(weapon&&grille?.returnArcCosine!==undefined&&grille.state==='waiting'&&grille.attackerId===id&&
+   if(weapon&&grille?.returnRange!==undefined&&grille.state==='waiting'&&grille.attackerId===id&&
     before?.meleePhase==='recovery'&&shot?.sourceX!==undefined&&shot.sourceY!==undefined){
     const dx=shot.sourceX-before.x,dy=shot.sourceY-before.y;
-    const gx=grille.x-before.x,gy=grille.y-before.y;
-    if(dx*gx+dy*gy>=grille.returnArcCosine*Math.hypot(dx,dy)*Math.hypot(gx,gy))
+    const forwardX=Math.cos(grille.angle),forwardY=Math.sin(grille.angle);
+    if(dx*forwardX+dy*forwardY>0&&Math.abs(dx*forwardY-dy*forwardX)<=grille.returnHalfWidth&&
+     Math.hypot(dx,dy)<=grille.returnRange)
      this.resolveRecoveryGrille(true);
    }
    let ambush=false;

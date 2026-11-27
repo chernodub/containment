@@ -217,9 +217,10 @@ export class PincerPresentation {
     }
     gate.silhouettes.forEach(({root},index)=>{
       root.visible=index<grille.escorts&&grille.state!=='entered';
-      const recoil=grille.state==='closed'?Math.min(.55,age*3)*Math.exp(-age*2):0;
-      const leave=grille.state==='closed'?Math.max(0,age-.18)*1.7:0;
-      root.position.set(-.57-recoil-leave,0,(index-(grille.escorts-1)/2)*.48);
+      const recoil=grille.state==='closed'?Math.min(.2,age*2)*Math.exp(-age*5):0;
+      const leave=grille.state==='closed'?Math.max(0,age-1.5)*2.5:0;
+      const push=.10*Math.sin(age*12+index*1.8);
+      root.position.set(-.50-recoil-leave+push,0,(index-(grille.escorts-1)/2)*.62);
     });
   }
 
