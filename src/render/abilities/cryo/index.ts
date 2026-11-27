@@ -261,13 +261,30 @@ class CryoPresentation implements AbilityPresentation {
     k.sustain(age / 1000);
     const growth = Math.min(1, age / 150);
     const front = radius * growth;
-    const count = k.low ? 8 : 15;
+    const count = k.low ? 4 : 7;
     for (let i = 0; i < count; i++) {
       const angle = i * 2.39996 + zone.id;
       const h = .48 + .58 * authoredVariation(i + zone.id);
       const px = x + Math.cos(angle) * (front - .28), pz = z + Math.sin(angle) * (front - .28);
       k.draw('shard', px, h * .45, pz, .19, h, .12, ICE, fade, angle, .38);
       k.draw('shard', px + .16, h * .33, pz, .105, h * .70, .09, CORE, fade, angle, -.16);
+    }
+    let plumes = 0;
+    for (const enemy of frame.game?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
+      const distance = Math.hypot(enemy.x - zone.x, enemy.y - zone.y) / UNIT;
+      if (enemy.health <= 0 || distance > front) continue;
+      const actor = k.statusActor(enemy.id);
+      if (!actor) continue;
+      const body = actor.root.position, width = enemy.radius / UNIT;
+      const rise = Math.min(1, Math.max(0, (age - distance / radius * 150) / 320));
+      for (let i = 0; i < 3; i++) {
+        const angle = enemy.id + i * TAU / 3;
+        const height = (.48 + i * .24) * actor.height * rise;
+        k.draw('shard', body.x + Math.cos(angle) * width * .52, body.y + height * .50,
+          body.z + Math.sin(angle) * width * .52, width * .36, height, width * .24,
+          i === 2 ? CORE : ICE, fade * (.85 - .55 * Math.min(1, age / 450)), angle, .14);
+      }
+      if (++plumes >= (k.low ? 5 : 10)) break;
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
     this.obstacleCrystals(x, z, front, fade);
