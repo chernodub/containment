@@ -8,6 +8,17 @@ export function shapeWardenMouth(mesh: T.SkinnedMesh) {
   const joints = g.getAttribute('skinIndex'), weights = g.getAttribute('skinWeight');
   const head = mesh.skeleton.bones.findIndex(b => b.name === 'head');
   const jaw = mesh.skeleton.bones.findIndex(b => b.name === 'jaw');
+  // The cervical sleeve is a single modeled cone. Rigidly carry its blended
+  // chest/head vertices on the neck so opening the mouth cannot pinch the collar.
+  const neck = mesh.skeleton.bones.findIndex(b => b.name === 'neck');
+  const chest = mesh.skeleton.bones.findIndex(b => b.name === 'chest');
+  for (let i = 0; i < p.count; i++) {
+    const a = joints.getX(i), b = joints.getY(i);
+    if ((a === chest && b === head || a === head && b === chest) && weights.getY(i) > 0) {
+      joints.setXYZW(i,neck,0,0,0);
+      weights.setXYZW(i,1,0,0,0);
+    }
+  }
   const used = new Uint8Array(p.count), triangles: number[] = [];
   for (let i = 0; i < index.count; i += 3) {
     const a = index.getX(i), b = index.getX(i+1), c = index.getX(i+2);
