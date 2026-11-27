@@ -180,9 +180,15 @@ ivec2 cell=ivec2(floor(vMapUv*4.0));
 int band=cell.x+4*(3-cell.y);
 bool eliteTrim=band==7 || (band==8 && (vActorRegion==2.0 || vActorRegion==4.0));
 float heavyPaint=floor(vHeavyZone+.5);
-bool wardenMaw=actorWarden>.5 && heavyPaint==9.;
+// The geometry buffer uses wardenMaw to exempt the lit organ from the
+// final creature value ceiling. Keep the exemption inside the dark lining.
+vec2 throatTongue=vec2((actorPosition.y-.08)/.61,(actorPosition.z-3.45)/.089);
+throatTongue.x=(throatTongue.x-.19*throatTongue.y)*(1.+.31*throatTongue.y);
+float tongueBorder=dot(throatTongue,throatTongue);
+bool wardenMaw=actorWarden>.5 && (heavyPaint==9. ||
+  (actorWallRecoil>.5 && (heavyPaint==12. || (heavyPaint==13. && tongueBorder<1.))));
 if(wardenMaw)diffuseColor.rgb=vec3(.025,.012,.005);
-bool bruteFace=heavyPaint==7. || heavyPaint==8.;
+bool bruteFace=heavyPaint==7. || heavyPaint==8. || (actorWarden>.5 && heavyPaint==14.);
 if(bruteFace)diffuseColor.rgb=vec3(.68,.605,.48);
 bool bruteBody=actorWarden>.5 ? !bruteFace && !wardenMaw : band!=2 && band!=5 && !eliteTrim;
 if(bruteBody) {
@@ -276,9 +282,18 @@ if(actorBroodForm.x>=-1.){
     vec3 core=mix(vec3(.75,.40,.18),vec3(1.65,.88,.36),actorWallRecoil);
     paint=abs(actorPosition.y)<.70?core:vec3(.013,.008,.009);
   }
-  if(heavyPaint==12.)paint=mix(vec3(.28,.12,.052),vec3(.41,.20,.10),actorWallRecoil);
-  if(heavyPaint==13.)paint=vec3(.008,.003,.006);
-  if(heavyPaint==14.)paint=vec3(.43,.36,.25);
+  if(heavyPaint==12.)paint=mix(vec3(.28,.12,.052),vec3(.51,.24,.095),actorWallRecoil);
+  if(heavyPaint==13.){
+    // Paint the tongue on the deforming lining. Its margin stays dark at
+    // full gape and the warm end remains behind the lower tooth row.
+    // A short median fold divides the root, leaving the tip continuous.
+    float fold=(1.-smoothstep(.025,.115,abs(throatTongue.x)))*smoothstep(-.28,.35,throatTongue.y);
+    float rolledSide=smoothstep(.15,.20,throatTongue.x+.46*throatTongue.y);
+    paint=mix(vec3(.009,.003,.008),mix(mix(vec3(4.4,1.95,.56),vec3(1.36,.46,.10),rolledSide),vec3(.62,.19,.047),fold),
+      (1.-smoothstep(.96,1.04,tongueBorder))*actorWallRecoil);
+  }
+  if(heavyPaint==14.)paint=vec3(.56,.47,.33);
+  if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
   float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));

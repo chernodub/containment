@@ -24,8 +24,16 @@ export function wardenRecoil(root: T.Object3D) {
   const jawParent = jaw.parent, headParent = head.parent!;
   const headFromBind = headToBind.clone().invert(), savedHead = new T.Matrix4();
   const forward = new T.Vector3(), lateral = new T.Vector3(), up = new T.Vector3();
-  const extent = new T.Vector3(), position = new T.Vector3(), scale = new T.Vector3();
+  const position = new T.Vector3(), scale = new T.Vector3();
   const turn = new T.Quaternion();
+  const {skeleton,bindMatrix}=skin;
+  const supports = ['shoulderr','shoulderl'].flatMap((name,i) => {
+    const bone=skeleton.bones.find(b=>b.name.toLowerCase().replace(/[._]/g,'')===name);
+    if (!bone?.parent) return [];
+    const direction=new T.Vector3(0,i===0?-.26:.26,-.12).applyMatrix3(new T.Matrix3().setFromMatrix4(
+      skeleton.boneInverses[skeleton.bones.indexOf(bone)].clone().multiply(bindMatrix)));
+    return [{bone,direction,rest:new T.Vector3()}];
+  });
   let headActive = false;
   let jawActive = false, active = false;
   return {
@@ -36,6 +44,7 @@ export function wardenRecoil(root: T.Object3D) {
         jawActive = false;
       }
       if (headActive) {
+        for(const {bone,rest} of supports){bone.position.copy(rest);bone.updateMatrix();}
         savedHead.decompose(head.position,head.quaternion,head.scale);
         head.updateMatrix();
         headActive = false;
@@ -47,7 +56,8 @@ export function wardenRecoil(root: T.Object3D) {
       active = false;
     },
     apply(amount: number) {
-      const exposure = amount * T.MathUtils.smoothstep(Math.cos(root.rotation.y), -.10, .65);
+      const rear = T.MathUtils.smoothstep(Math.cos(root.rotation.y), -.10, .65);
+      const exposure = amount;
       if (exposure > 0) {
         const side = Math.sin(root.rotation.y) >= 0 ? 1 : -1;
         head.updateWorldMatrix(true, false);
@@ -55,13 +65,13 @@ export function wardenRecoil(root: T.Object3D) {
         neck.worldToLocal(local.copy(world));
         // The backward-slumped neck lies behind the near pauldron on this
         // approach. Carry the cheek around its outside edge with the recoil.
-        target.set(.735 * side, .455, .308).multiplyScalar(exposure).add(world);
+        target.set((.48+.50*rear) * side, .68, .34).multiplyScalar(exposure).add(world);
         parent.worldToLocal(target);
         parent.getWorldQuaternion(rotation).invert();
         axis.set(0, 1, 0).applyQuaternion(rotation).normalize();
         original.copy(neck.position);
         originalRotation.copy(neck.quaternion);
-        neck.quaternion.premultiply(rotation.setFromAxisAngle(axis, -.82 * side * exposure));
+        neck.quaternion.premultiply(rotation.setFromAxisAngle(axis, -.70 * side * rear * exposure));
         neck.updateMatrix();
         neck.position.add(target.sub(local.applyMatrix4(neck.matrix)));
         neck.updateMatrix();
@@ -78,29 +88,44 @@ export function wardenRecoil(root: T.Object3D) {
         savedHead.copy(head.matrix);
         matrix.multiplyMatrices(head.matrixWorld,headToBind);
         world.set(3.90,0,3.50).applyMatrix4(matrix);
-        extent.setFromMatrixScale(matrix);
+
         forward.setFromMatrixColumn(matrix,0);
         const side = forward.x<0?-1:1;
-        forward.set(.643*side,-.12,.766).normalize();
-        lateral.set(0,1,0).cross(forward).normalize();
+        // The camera sits above and south of the deck. Lift the snout past
+        // its sight line; the open bite bisects the skull and mandible axes.
+        forward.set(.14*side,.98,.10).normalize();
+        lateral.set(1,0,0).addScaledVector(forward,-forward.x).normalize();
         up.crossVectors(forward,lateral);
         if(matrix.determinant()<0)lateral.negate();
-        matrix.makeBasis(forward.multiplyScalar(extent.x),lateral.multiplyScalar(extent.y),up.multiplyScalar(extent.z));
+        matrix.makeBasis(forward.multiplyScalar(.53),lateral.multiplyScalar(.51),up.multiplyScalar(.56));
         position.set(3.90,0,3.50).applyMatrix4(matrix);
         matrix.setPosition(world.sub(position)).multiply(headFromBind);
-        opening.copy(headParent.matrixWorld).invert().multiply(matrix).decompose(position,turn,scale);
+        opening.copy(headParent.matrixWorld).invert().multiply(matrix);
+        opening.decompose(position,turn,scale);
+        matrix.compose(position,turn,scale);
         head.position.lerp(position,amount);
         head.quaternion.slerp(turn,amount);
+        head.scale.lerp(scale,amount);
         head.updateMatrix();
-        head.updateWorldMatrix(false,false);
+        // Inverse of the non-uniform display fit introduces shear. Preserve
+        // that affine remainder or a lifted head narrows to a vertical strip.
+        for(let i=0;i<12;i++)head.matrix.elements[i]+=amount*(opening.elements[i]-matrix.elements[i]);
+        head.updateMatrixWorld(true);
+        for(const {bone,direction,rest} of supports){
+          rest.copy(bone.position);
+          position.copy(direction).applyQuaternion(bone.quaternion);
+          bone.position.addScaledVector(position,amount);
+          bone.updateMatrix();
+        }
         headActive=true;
       }
       jawParent.updateWorldMatrix(true,false);
-      opening.makeRotationY(T.MathUtils.degToRad(6 + 30 * T.MathUtils.clamp(amount,0,1)));
+      opening.makeRotationY(T.MathUtils.degToRad(6 + 70 * T.MathUtils.clamp(amount,0,1)));
       matrix.copy(jawParent.matrixWorld).invert().multiply(head.matrixWorld).multiply(headToBind)
-        .multiply(hinge).multiply(opening).multiply(fromHinge).multiply(jawFromBind)
-        .decompose(jaw.position,jaw.quaternion,jaw.scale);
-      jaw.updateMatrix();
+        .multiply(hinge).multiply(opening).multiply(fromHinge).multiply(jawFromBind);
+      matrix.decompose(jaw.position,jaw.quaternion,jaw.scale);
+      jaw.matrix.copy(matrix);
+      jaw.matrixWorldNeedsUpdate=true;
       jawActive = true;
     }
   };
