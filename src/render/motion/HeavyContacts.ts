@@ -26,8 +26,8 @@ export function heavyContacts(root: T.Object3D) {
   root.userData.heavyPalmContacts = palms;
   const chestIndex = skin.skeleton.bones.findIndex(b => b.name === 'chest');
   const chestFrame = new T.Matrix4(), inverseChest = new T.Matrix4();
-  const bossPads = palms.map(p => new T.Vector3(3.12, 3.12*p.side, .98));
-  const bossOffsets = palms.map(() => new T.Vector3());
+  const bossPads = [-1, 1].map(side => new T.Vector3(3.12, 3.12*side, .98));
+  const bossOffsets = bossPads.map(() => new T.Vector3());
   let lastYaw: number | undefined, turnPhase = 0;
   return {
     turn(yaw: number) {
@@ -56,7 +56,7 @@ export function heavyContacts(root: T.Object3D) {
     bossOffsets,
     apply(phase: number, warden: boolean) {
       for (const offset of bossOffsets) offset.set(0,0,0);
-      if (warden && chestIndex >= 0) {
+      if (phase >= 0 && warden && chestIndex >= 0) {
         const chest = skin.skeleton.bones[chestIndex];
         chest.matrixWorldNeedsUpdate = true;
         chest.updateWorldMatrix(true,false);

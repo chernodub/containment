@@ -90,7 +90,8 @@ transformed.x+=.32*bearing;
 transformed.z-=.29*bearing;
 if(actorWarden<.5){
  float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
- transformed.z+=(.14-.46*actorAttackLoad)*jaw;
+ transformed.z+=(.29-.63*actorAttackLoad)*jaw;
+ transformed.x-=.17*(1.-actorAttackLoad)*jaw;
  float digits=smoothstep(2.5,3.65,position.x)*smoothstep(1.9,2.35,abs(position.y))*(1.-smoothstep(2.65,3.,position.z));
  float load=position.y<0.?heavyGrip.x:heavyGrip.y;
  transformed.y+=(position.y-sign(position.y)*3.)*digits*.31*load;
@@ -288,18 +289,19 @@ if(actorBroodForm.x>=-1.){
     bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9 && abs(actorPosition.y)<.74;
     bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
     if(edge || crest)paint=antler;
-    if(part==1. || (part==16. && heavyPaint==2.))paint=vec3(.14,.128,.109);
+    float ridge=abs(actorPosition.x-(1.83-.68*actorPosition.y));
+    if(part==1. || (actorPosition.y>.25 && actorPosition.y<2.65 &&
+       actorPosition.z>4.02 && ridge<.18))paint=vec3(.14,.128,.109);
     // At broadside the swept horns cross the shoulder. Reserve bone for
     // their outer tips so the dark shaft stays distinct from the crown rims.
     if(part==3. || part==5.)paint=abs(actorPosition.y)>2.85 ? antler : vec3(.038,.042,.033);
-    
   }
   if(heavyPaint==11.){
     // The tongue sits inside a dark lower lip. Both boundaries move with the jaw.
     bool tongue=abs(actorPosition.y)<.52 && actorPosition.x>4.55;
     paint=tongue?vec3(.53,.27,.12):vec3(.013,.008,.009);
   }
-  if(heavyPaint==10.)paint=vec3(.068,.033,.062);
+  if(heavyPaint==10.)paint=mix(vec3(.014,.011,.017),vec3(.068,.033,.062),actorAttackLoad);
   if(heavyPaint==9.){
     float facet=smoothstep(.07,.12,actorPosition.y+.32*(actorPosition.x-5.));
     paint=mix(vec3(.12,.042,.067),vec3(.27,.12,.155),facet);
