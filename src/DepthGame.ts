@@ -929,17 +929,23 @@ export class DepthGame {
  private get authoredViewTarget(){
   return {x:this.player.x+64*Math.cos(this.player.angle),y:this.player.y+64*Math.sin(this.player.angle)};
  }
- get coolantQueuedBend(){
-  if(this.node.templateId!=='coolant-plant'||!this.encounter.reserve)return;
-  const leader=this.enemies.snapshot.enemies.find(enemy=>enemy.priority);
+ private reserveBendRecoil?:{x:number;y:number;angle:number;at:number;room:number};
+ get queuedReserveBend(){return this.reserveBend();}
+ private reserveBend(defeated?:{x:number;y:number}){
+  const recoil=this.reserveBendRecoil;
+  if(recoil?.room===this.roomRevision&&this.elapsed-recoil.at<1.1)
+   return {...recoil,recoilAge:this.elapsed-recoil.at};
+  const reserve=this.encounter.reserve;
+  if(!reserve||!['coolant-plant','infested-workshop'].includes(this.node.templateId))return;
+  const leader=defeated??this.enemies.snapshot.enemies.find(enemy=>enemy.priority);
   if(!leader)return;
   const view=this.authoredViewTarget;
-  const entry=this.director.coolantReserveEntry(leader,view);
+  const entry=this.director.coolantReserveEntry(leader,view)??this.geometry.breaches.find(breach=>breach.id===reserve.breachId);
   if(!entry)return;
   for(const fraction of [.15,.3,.5,.7]){
    const bend={x:entry.x+(view.x-entry.x)*fraction,y:entry.y+(view.y-entry.y)*fraction};
    if(Math.abs(bend.x-view.x)<=144&&Math.abs(bend.y-view.y)<=80&&canOccupyExpedition(this.geometry,bend,15))
-    return {...bend,angle:Math.atan2(view.y-bend.y,view.x-bend.x)};
+    return {...bend,angle:Math.atan2(view.y-bend.y,view.x-bend.x),recoilAge:undefined};
   }
  }
  private reserveBearing?:{from:{x:number;y:number};to:{x:number;y:number};until:number;room:number};
@@ -1270,8 +1276,12 @@ export class DepthGame {
  for(const hit of damage)this.damage(e.enemyId,hit.amount,undefined,hit.source,false);
  const target=this.targets().find(t=>t.id===e.enemyId);
  if(target)for(const status of statuses)this.applyRigStatus(target,status.kind,status.amount);
- }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const cut=this.director.reportPriorityDefeated(e.beat,e,this.authoredViewTarget);
- if(cut)this.encounterEvents([cut]);}const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion,e.enemyId); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',arrivalSwing:e.arrivalSwing?'strike':undefined,id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request'){
+ }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const bend=this.reserveBend(e);
+ const cut=this.director.reportPriorityDefeated(e.beat,e,this.authoredViewTarget);
+ if(cut){
+  if(bend)this.reserveBendRecoil={...bend,at:this.elapsed,room:this.roomRevision};
+  this.encounterEvents([cut]);
+ }}const training=this.rigDrill?.ids.includes(e.enemyId);if(!training){this.kills++;this.runStats.recordKill(e.enemyType);}const reward=training?0:Math.max(1,Math.round(e.reward*.15));const retreating=this.departures.get(e.enemyId)?.escort;const credits=retreating?Math.floor(reward/2):reward;this.runStats.recordCredits(credits);this.combat.setCredits(this.combat.snapshot.credits+credits);if(!retreating&&!training)this.pickups.rollEnemyDrop(e.enemyType,e.x,e.y);this.presentation.push({type:'corpse',encounterCue:e.priority?'priority':undefined,id:e.enemyId,x:e.x,y:e.y,vx:e.impulse?.x??0,vy:e.impulse?.y??0,family:e.enemyType,elite:e.elite});}else if(e.type==='contact-attack'&&this.dodgeDrill?.id===e.enemyId){const drill=this.dodgeDrill;drill.caught=(drill.caught??0)+1;if(drill.caught>=3&&!drill.confirmation)this.clearRoom();}else if(e.type==='contact-attack'){const attacker=this.enemies.getSnapshot(e.enemyId);this.hurt(e.damage,attacker??undefined,{source:e.attack==='charge'?'enemy-charge':'enemy-contact',enemyFamily:e.enemyType},attacker?.champion,e.enemyId); }else if(e.type==='melee-warning'){this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low',durationMs:e.durationMs});}else if(e.type==='melee-strike'){const drill=this.dodgeDrill;if(drill?.id===e.enemyId)drill.evaded=drill.entered&&!meleeStrikeContains(e.shape,e.x,e.y,e.angle,this.player.x,this.player.y,this.player.radius);this.presentation.push({type:'enemy-attack',arrivalSwing:e.arrivalSwing?'strike':undefined,id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,angle:e.angle,meleeShape:e.shape,dangerWeight:'low'});}else if(e.type==='spawn-request'){
  const broodChoice=e.pod&&this.node.templateId==='swarm-junction'&&!this.broodChoiceUsed;
  const point=broodChoice?this.stageBroodChoice(e.requestIndex,e):e;
  this.pending.push({type:e.enemyType,x:point.x,y:point.y,elite:e.elite,delay:450,options:{

@@ -164,11 +164,13 @@ export class PincerPresentation {
     const closed=bearing&&game.geometry.breaches.find(breach=>breach.x===bearing.to.x&&breach.y===bearing.to.y);
     const cutAge=bearing?Math.max(0,2-bearing.until+game.elapsed):0;
     this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
-    const bend=menu?undefined:game.coolantQueuedBend;
+    const bend=menu?undefined:game.queuedReserveBend;
     if(bend){
       if(!this.queuedBend){this.queuedBend=this.makeSilhouette();this.root.add(this.queuedBend);}
       this.queuedBend.visible=true;
-      this.queuedBend.position.set(bend.x/unit,0,bend.y/unit);
+      const offset=bend.recoilAge===undefined?.16*Math.sin(game.elapsed*10):
+        -Math.min(.65,bend.recoilAge*2.4);
+      this.queuedBend.position.set(bend.x/unit+Math.cos(bend.angle)*offset,0,bend.y/unit+Math.sin(bend.angle)*offset);
       this.queuedBend.rotation.y=-bend.angle;
     }else if(this.queuedBend)this.queuedBend.visible=false;
     this.updateRecoveryGrille(menu?undefined:game.recoveryGrille,unit,game.elapsed);
