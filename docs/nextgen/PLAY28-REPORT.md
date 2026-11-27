@@ -1153,3 +1153,20 @@ Each cell reports closures / visits, escorts cancelled, and mean suit loss on th
 Cryo alone lost less suit in both rooms with awareness. The aware arm closed 29/48 in Atrium and 19/40 in Manual Control. The unaware arm closed 8/48 and 1/40, below the PLAY39 reference rates of 42% and 27%. The candidate stays opt-in. Restricting Manual Control to seeds that reached it in all three arms yields the same gate decision. [Unaware](../../artifacts/nextgen/playtest/play41-aisle-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41-aisle-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41-aisle-absent/summary.json)
 
 The Standard balance rerun after merging local nextgen at `ca7c4738` repeated the 39/48 result with nine deaths and zero stalls. The production build passed and the source scan found no merge markers. [Post-merge Standard cohort](../../artifacts/nextgen/playtest/play41-integrated-standard/summary.json)
+
+### Native checkpoint replay
+
+Each cell reports closures, escorts cancelled, and gross suit lost. These are the same earned boundary for each rig's three arms. The Cryo Manual Control boundary comes from Final24 because Final25 Standard Cryo died before that room. Every replay cleared its target room with zero runner errors.
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Cryo | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Pyro | 0, 0, 0.00 | 1, 2, 0.00 | 0, 0, 0.00 |
+| Atrium | Arc | 0, 0, 0.00 | 0, 0, 0.00 | 0, 0, 0.00 |
+| Manual Control | Breacher | 0, 0, 22.23 | 0, 0, 40.90 | 0, 0, 22.23 |
+| Manual Control | Cryo | 0, 0, 43.28 | 0, 0, 43.28 | 0, 0, 43.28 |
+| Manual Control | Pyro | 0, 0, 55.44 | 0, 0, 81.51 | 0, 0, 55.44 |
+| Manual Control | Arc | 0, 0, 27.72 | 0, 0, 27.72 | 0, 0, 27.72 |
+
+The native replays reinforce the opt-in decision. Awareness made three Atrium closures possible while all arms spent zero suit. All twelve Manual Control replays released their escorts. [Atrium replay example](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/report.json) · [Manual Control replay example](../../artifacts/nextgen/playtest/play41-replay-manual-pyro-on/report.json)
