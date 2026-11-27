@@ -1997,3 +1997,26 @@ Evidence in this worktree:
 - `artifacts/nextgen/heavy44c/final-build.log`, `artifacts/nextgen/playtest/heavy44c/report.json` — production build and six-room Breacher campaign.
 
 Both production builds passed. The final integration gallery and all three native impact manifests have empty error lists. The seed-1729 Breacher campaign on gameplay/render head `3b736172` cleared six rooms through Armory, reached the requested room limit, and exited successfully with zero errors and zero defects. The longest loading hold was Passenger Vault at 2.333 seconds. The simulation diff against `342a9fc0` is empty.
+
+### HEAVY44d — Warden wall recoil and elite trim
+
+In final25 (1517274e), `src/render/motion/WardenRecoil.ts` line 68 added a world-space offset to the already animated cheek. Line 76 translated the entire neck to that point. Lines 100–112 then fitted the skull to fixed world-axis scales around the displaced hinge. The thin connecting strip was the original chest/head blend stretching between those frames.
+
+The new pivot is the end of the modeled cervical cone in the posed shoulder frame. Chest-relative bind transforms carry the neck and orient the skull about that pivot. The lower jaw opens around its own hinge. The blended cervical sleeve follows the neck rigidly. Local joint scales come from the rig. The regular attack, the wall angle and the stun clock stay in the simulation.
+
+| Wall | Skull travel (m) | Travel / rest head length | Minimum neck width / rest |
+|---|---:|---:|---:|
+| Armory curved rim | .612 | .545 | 100% |
+| Crew Checkpoint | .609 | .542 | 100% |
+| Relay Racks | .613 | .545 | 100% |
+| Coolant Plant | .591 | .541 | 100% |
+| Freight Hold corner | .609 | .542 | 100% |
+| Communal Atrium south wall | .620 | .552 | 100% |
+
+Measurements use the skull lobe centre in the fitted, posed chest frame and a rest head length of 2.66 model units along its forward axis. Width is the smallest deformed-to-rest ratio between opposing skinned vertices across 13 lateral sections along the sleeve. The largest local scale on chest, neck, head or jaw rounded to 1.000001 or less.
+
+Native and 480×270 pairs live in `artifacts/nextgen/heavy44d/sheets/` as `<room>-native.png` and `<room>-480.png`. Armory, Crew and Relay use the published final25 gallery frames. The remaining before panels use the final25 build with matched staging. Freight Hold approaches the corner diagonally. The Communal Atrium Warden hits due south after the marine dodges east. The stationary-marine comparison is also retained. At 480 the mouth stays against the shoulder in Armory and Crew, tucked inside the near arm in Relay, close to the shutter outline in Coolant and the corner fixture in Freight, and between the forelimbs in Communal. Coolant has the most competing outlines. A stationary marine can obscure the tongue at the south wall.
+
+The long pale diagonals on the Safety-interlock elites follow the swept skull horns. Bone now stops at the horn tips and the raised central portion of the crown rims. The two Safety-interlock comparison panels stage the recorded death-snapshot positions and velocity headings. They omit the death HUD. The existing silhouettes are preserved.
+
+The production build passed. The delivered capture manifests have empty error arrays. Removal-from-scene draw-call deltas for regular, elite and Warden were 1/2/2 on both builds. Corresponding skin vertex counts were 12,452/13,909/20,070 on both. Simulation diff against 1517274e is empty. Raw measurements and the current six-frame overview are in `artifacts/nextgen/heavy44d/metrics.json` and `reads.png`.
