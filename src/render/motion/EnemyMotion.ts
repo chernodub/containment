@@ -89,6 +89,24 @@ export class EnemyMotion {
     this.biteContact={point,anchor:new T.Vector3(),tip:new T.Vector3(),target:new T.Vector3(),loaded:false};
   }
 
+  private readonly bitePitch=new T.Quaternion();
+  private readonly lateralAxis=new T.Vector3(1,0,0);
+
+  get biteEdgeLight() {
+    if(this.nativePhase==='strike')return 1;
+    return this.nativePhase==='recovery'?1-T.MathUtils.smoothstep(this.recoveryAge,.12,.16):0;
+  }
+
+  private clearBiteEdge(weight:number) {
+    const contact=this.biteContact;
+    if(!contact || weight<=0)return;
+    const tip=this.root.worldToLocal(contact.point(contact.tip)).sub(this.body.position);
+    const radius=Math.hypot(tip.y,tip.z),clearance=.12-this.body.position.y;
+    if(tip.y>=clearance || radius<.001 || tip.z<=0)return;
+    const pitch=Math.atan2(tip.y,tip.z)-Math.asin(T.MathUtils.clamp(clearance/radius,-1,1));
+    this.body.quaternion.premultiply(this.bitePitch.setFromAxisAngle(this.lateralAxis,pitch*weight));
+  }
+
   private followBiteContact(striking:boolean) {
     const contact=this.biteContact;
     if(!contact)return;
@@ -99,7 +117,7 @@ export class EnemyMotion {
       return;
     }
     if(!contact.loaded || this.recoveryAge>=.25)return;
-    const retreat=.13*T.MathUtils.smoothstep(this.recoveryAge,0,.12);
+    const retreat=.05*T.MathUtils.smoothstep(this.recoveryAge,0,.12);
     contact.target.copy(contact.anchor);
     contact.target.x-=Math.cos(this.nativeAngle)*retreat;
     contact.target.z-=Math.sin(this.nativeAngle)*retreat;
@@ -325,7 +343,11 @@ export class EnemyMotion {
       this.body.position.y-=recovery*.025*motion;
       if(this.shellAxis && (this.nativePhase==='approach' || this.nativePhase==='windup'))
         this.levelShell(this.nativePhase==='windup'?T.MathUtils.smoothstep(this.nativeProgress,0,.25):0);
-      if(this.biteContact && (strike || recovery))this.followBiteContact(strike>0);
+      if(this.biteContact){
+        const loaded=this.nativePhase==='windup'?T.MathUtils.smoothstep(this.nativeProgress,0,.25):0;
+        this.clearBiteEdge(strike?1:recovery?1-T.MathUtils.smoothstep(this.recoveryAge,.12,.23):loaded);
+        if(strike || recovery)this.followBiteContact(strike>0);
+      }
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
     }
 

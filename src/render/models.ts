@@ -320,6 +320,7 @@ export function alien(kind:string,elite=false):ActorModel{
    if(liveCrack)frost?.use();else frost?.reset();
   }
   if(!dead&&bossStun===0){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);
+   if(kind==='crawler')surface.load(status.frozen?0:motion.biteEdgeLight);
    if(kind==='spitter' && !status.frozen && (threatKind==='spit' || spitFollowThrough>0))motion.aimMuzzle(aim);
    if(champion==='matron' && (brood>0 || broodRelease>0)){
    authored.player.snapNext();

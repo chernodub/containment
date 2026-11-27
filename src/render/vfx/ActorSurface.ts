@@ -276,6 +276,11 @@ if(broodFinish && broodMark){
  float frost=actorContact.x<1.5 ? actorContact.y : 0.;
  outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
 }
+// Wrap the last section of the outside cutting edge. Its back face can
+// turn toward the camera between the last strike and first recoil tick.
+if(crawlerSkin && broodFinish && actorPosition.x>.80 && actorPosition.y<-.34 &&
+   actorPosition.z<.80 && actorAttackLoad>0.)
+ outgoingLight=mix(outgoingLight,vec3(1.45,1.20,.72),actorAttackLoad);
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
