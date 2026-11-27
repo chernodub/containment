@@ -166,7 +166,7 @@ export class PincerPresentation {
     this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
     const bend=menu?undefined:game.queuedReserveBend;
     if(bend){
-      if(!this.queuedBend){this.queuedBend=this.makeSilhouette();this.root.add(this.queuedBend);}
+      if(!this.queuedBend){this.queuedBend=this.makeWaitingCreature();this.root.add(this.queuedBend);}
       this.queuedBend.visible=true;
       const offset=bend.recoilAge===undefined?.16*Math.sin(game.elapsed*10):
         -Math.min(.65,bend.recoilAge*2.4);
@@ -213,7 +213,7 @@ export class PincerPresentation {
     gate.countdown.visible=false;
     const age=Math.max(0,elapsed-grille.changedAt);
     while(gate.silhouettes.length<grille.escorts){
-      const root=this.makeSilhouette();
+      const root=this.makeWaitingCreature();
       gate.root.add(root);
       gate.silhouettes.push({root,arrival:0});
     }
@@ -300,6 +300,36 @@ export class PincerPresentation {
       pod.scale.set((1.28+.58*fold)*wither,(1.65-1.36*fold)*wither,1.1*wither);
       pod.material=this.metal;
     });
+  }
+
+  private makeWaitingCreature() {
+    const root=new T.Group();
+    const abdomen=new T.Mesh(this.sac,this.shadow);
+    abdomen.position.set(-.16,.29,0);
+    abdomen.scale.set(.58,.36,.34);
+    const head=new T.Mesh(this.sac,this.shadow);
+    head.position.set(.19,.22,0);
+    head.scale.set(.32,.27,.30);
+    root.add(abdomen,head);
+    for(const side of [-1,1]){
+      for(const x of [-.29,-.09,.10]){
+        const leg=new T.Mesh(this.block,this.shadow);
+        leg.position.set(x,.13,side*.22);
+        leg.scale.set(.06,.08,.31);
+        leg.rotation.y=side*(.7-x);
+        leg.rotation.x=side*.45;
+        root.add(leg);
+      }
+      const claw=new T.Mesh(this.block,this.shadow);
+      claw.position.set(.35,.17,side*.16);
+      claw.scale.set(.30,.085,.08);
+      claw.rotation.y=side*.44;
+      const eye=new T.Mesh(this.block,this.warning);
+      eye.position.set(.30,.26,side*.08);
+      eye.scale.set(.044,.036,.036);
+      root.add(claw,eye);
+    }
+    return root;
   }
 
   private makeSilhouette() {
