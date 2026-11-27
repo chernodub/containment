@@ -295,19 +295,11 @@ if(actorBroodForm.x>=-1.){
   }
   if(heavyPaint==10.)paint=vec3(.068,.033,.062);
   if(heavyPaint==9.){
-    vec3 core=mix(vec3(.75,.40,.18),vec3(1.65,.88,.36),actorWallRecoil);
-    paint=abs(actorPosition.y)<.70?core:vec3(.013,.008,.009);
+    float facet=smoothstep(.07,.12,actorPosition.y+.32*(actorPosition.x-5.));
+    paint=mix(vec3(.12,.042,.067),vec3(.27,.12,.155),facet);
   }
-  if(heavyPaint==12.)paint=mix(vec3(.28,.12,.052),vec3(.51,.24,.095),actorWallRecoil);
-  if(heavyPaint==13.){
-    // Paint the tongue on the deforming lining. Its margin stays dark at
-    // full gape and the warm end remains behind the lower tooth row.
-    // A short median fold divides the root, leaving the tip continuous.
-    float fold=(1.-smoothstep(.025,.115,abs(throatTongue.x)))*smoothstep(-.28,.35,throatTongue.y);
-    float rolledSide=smoothstep(.15,.20,throatTongue.x+.46*throatTongue.y);
-    paint=mix(vec3(.009,.003,.008),mix(mix(vec3(4.4,1.95,.56),vec3(1.36,.46,.10),rolledSide),vec3(.62,.19,.047),fold),
-      (1.-smoothstep(.96,1.04,tongueBorder))*actorWallRecoil);
-  }
+  if(heavyPaint==12.)paint=vec3(.072,.027,.043);
+  if(heavyPaint==13.)paint=vec3(.009,.004,.008);
   if(heavyPaint==14.)paint=vec3(.56,.47,.33);
   if(actorWarden>.5 && heavyPaint==7.)paint*=mix(1.,.46,actorWallRecoil);
   vec3 n=normalize(vNormal);
@@ -432,12 +424,7 @@ if((broodFinish || spitterSkin) && (broodMark || ridgeGlow>0.)){
 }
 #endif
 #ifdef BRUTE_PLANES
-if(wardenMaw){
-  float core=smoothstep(.72,.94,max(dot(normalize(normal),normalize(vViewPosition)),0.));
-  lanternEmission=mix(vec3(2.7,1.40,.21),vec3(8.1,6.5,3.9),core)*(1.+.18*actorAttackLoad)*mix(.88,1.,actorStageLight)*actorCamouflage*(1.-actorDissolve);
-  totalEmissiveRadiance=lanternEmission;
-}
-if(bruteBody || (bruteFace && actorWarden>.5)){
+if(wardenMaw || bruteBody || (bruteFace && actorWarden>.5)){
   lanternEmission=vec3(0.);
   totalEmissiveRadiance=lanternEmission;
   keyRim*=actorReveal;
