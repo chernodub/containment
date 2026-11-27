@@ -169,5 +169,51 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
         }c.restore();
       }break;
   }
+  // The return legs cross the approach and retreat banks. Paint the hardware
+  // into the clipped deck atlas so a broken track never bridges a void.
+  const banks:Record<string,readonly [number,number,number][]>={
+    'passenger-vault':[[270,450,-.36],[806,447,.29]],
+    'crew-checkpoint':[[358,405,.24],[874,441,-.34]],
+    'transmission-chamber':[[423,494,-.37],[851,484,.43]],
+    'overload-floor':[[356,554,.42],[764,683,-.24]],
+  };
+  for(const [x,y,turn] of banks[id]??[]){
+    c.save();c.translate(x,y);c.rotate(turn);
+    if(id==='passenger-vault'){
+      for(const rail of [-23,23]){
+        c.save();c.translate(rail,0);
+        line('M0 -288V-80L7 -15V280',17,'#29363a');
+        line('M-4 -288V-80L3 -15V280',5,'#97a59e');
+        for(let y=-267;y<279;y+=53){
+          c.fillStyle='#687a79';c.fillRect(-10,y,26,8);
+          c.fillStyle='#263336';c.fillRect(-6,y+2,6,4);
+        }
+        c.restore();
+      }
+    }else if(id==='crew-checkpoint'){
+      for(const [offset,angle] of [[-193,-.19],[-63,.05],[70,.36],[198,-.12]]){
+        c.save();c.translate(0,offset);c.rotate(angle);
+        const shoe='M-17 -60Q23 0 2 58';
+        line(shoe,31,'#333839');line(shoe,22,'#8a8473');line(shoe,9,'#383e40');
+        for(const y of [-51,48]){c.fillStyle='#363938';c.fillRect(-14,y,21,5);}
+        c.restore();
+      }
+    }else if(id==='transmission-chamber'){
+      line('M0 -295V275',19,'#253239');line('M0 -295V275',7,'#bd8060');
+      for(let y=-260;y<275;y+=67){
+        c.fillStyle='#394d51';c.fillRect(-14,y-11,28,22);
+        c.fillStyle='#9eafa8';
+        for(const dy of [-9,-1,7])c.fillRect(-13,y+dy,26,3);
+      }
+    }else{
+      line('M0 -270V266',29,'#353b39');line('M-3 -270V266',16,'#8a6a50');
+      for(let y=-247;y<260;y+=77){
+        c.fillStyle='#343b3e';c.fillRect(-24,y-12,48,24);
+        c.fillStyle='#a49b88';c.fillRect(-23,y-8,46,9);
+        c.fillStyle='#353a38';for(const x of [-20,15])c.fillRect(x,y-6,5,5);
+      }
+    }
+    c.restore();
+  }
   c.restore();
 }
