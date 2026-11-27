@@ -21,6 +21,7 @@ export class RecoveryGrille {
     // The two open bays frame the waiting heads. The shutter drops between
     // the fixed jambs, in front of the lit aisle lining and the creatures.
     this.bars=batch([[0,1.07,0,.15,.16,3.28,0xaab3aa],
+      ...[-1.58,0,1.58].map(z=>[-.34,.64,z,.72,.12,.11,0x929c94]),
       ...[-1.5,-.5,.5,1.5].map(z=>[0,.55,z,.12,1.1,.11,0x586464])]);
     this.frame=batch([
       ...[-1.72,0,1.72].map(z=>[.04,.83,z,.15,1.66,.12,0x303b40]),
