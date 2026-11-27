@@ -1970,3 +1970,30 @@ The three-column sheets run **final24 | HEAVY44 first pass | revision**. The his
 The shoulder correction uses the sampled neck transform and updates its child matrices before solving the skull and mandible. Five offsets on the same Relay Racks impact were compared; the smallest kept the bite visible with the shortest exposed neck. The final remaining weaknesses are the overlapping Warden shoulders at Relay Racks, the hazard line over the Coolant Plant face, and the fine elite crest on the rearward stride frame. The Spitter's organ in the native peaks belongs to the brood pass.
 
 The shipping production build passed. The three wall receipts have empty page, console and request errors. Both solo-pose galleries, the revised eight-frame pack and the renderer counts also have empty errors. The ten-room Breacher campaign above is first-pass evidence. Revision evidence is from the native impact, pack and gallery captures requested in review. At handback, this worktree's nextgen artifacts occupy 2.9 GB and the data volume reports 88 GiB available.
+
+### HEAVY44 second review — integrated crowd and upward recoil
+
+Merged local `nextgen` at `342a9fc0` into `t3/heavy44` in `739d2cae`. The material receives both the BROOD42 cold-state uniform and the heavy grip and wall-recoil uniforms. FX35's marine crowd rim, BROOD42's warning ownership and all small-family sockets remain as on nextgen. The regular and elite Brute now supply the centre claw's bind-space tip on the posed right shoulder to that shared warning. Both rebuilt clubs are rigidly skinned to the shoulder. The old fingertip joint put the accent near the cheek in wind-up. The warning still ends on the native deck centre line.
+
+The Warden rolls its head up on impact, opens the hinge from 6° to 76°, and spreads both support joints. The skull's lateral axis stays across the screen. The bone matrices preserve the affine correction for the nonuniform model fit, which otherwise turns the opening into a narrow vertical strip. Four teeth on each edge surround a dark, flexible lining. The two warm tongue planes and lit lower lip use the Warden's existing organ classification in the geometry buffer. That keeps the final creature highlight ceiling off the tongue and on the surrounding hide. The sail and mask dim during recoil. The stun indicator moves 0.30 m farther above the body and drops to 34% opacity.
+
+| Native wall impact | Opening / visible head | Warm interior / opening | First point at 480×270 |
+|---|---:|---:|---:|
+| Crew Checkpoint | 69.3% | 35.7% | 151, 152 |
+| Relay Racks | 57.1% | 35.4% | 229, 123 |
+| Coolant Plant | 70.4% | 30.8% | 191, 160 |
+
+The coverage pass colours the visible head, teeth and jaw exterior separately from the lining and warm interior, after normal skinning and depth rejection. The opening numerator includes the dark lining, warm tongue and inner lip. I reviewed the full reduced frames in shuffled order before opening the final jaw crops. All three first points landed on the warm interior. The image-to-response round trips were 4.66, 4.63 and 5.18 seconds for the table rows respectively. They include model and tool latency; human eye-fixation time was not measured.
+
+Crew Checkpoint shows the mouth beside a live Brute and red warnings. Relay Racks shows the right cheek clear of the planted forelimb despite the other Warden behind it. Coolant Plant remains the weakest angle: the red warning crosses the lower lip and the marine outline grazes the upper-left teeth. The mouth's exposed tongue is also rounder than I would like when seen square-on.
+
+Evidence in this worktree:
+
+- `artifacts/nextgen/heavy44c/sheets/index.html` — final24 and revised wall pairs, native jaw crops, mixed pack, solo and crowd statuses, and the Brute fist detail.
+- `artifacts/nextgen/heavy44c-integration/manifest.json` — seven living family/rank representatives, the shared first-attacker accent in wind-up and the three crowd status frames.
+- `artifacts/nextgen/heavy44c-status/manifest.json` — the same solo Brute pose with burn, chill and freeze applied separately. Chilled keeps dark side planes; frozen adds pale caps and broader ice edges.
+- `artifacts/nextgen/heavy44c/verified/` — the three final native wall frames, same-pose semantic masks and per-room manifests.
+- `artifacts/nextgen/heavy44c/first-read.json`, `areas.txt` — first-point receipts and area measurements under `heavy44c/`.
+- `artifacts/nextgen/heavy44c/final-build.log`, `artifacts/nextgen/playtest/heavy44c/report.json` — production build and six-room Breacher campaign.
+
+Both production builds passed. The final integration gallery and all three native impact manifests have empty error lists. The seed-1729 Breacher campaign on gameplay/render head `3b736172` cleared six rooms through Armory, reached the requested room limit, and exited successfully with zero errors and zero defects. The longest loading hold was Passenger Vault at 2.333 seconds. The simulation diff against `342a9fc0` is empty.
