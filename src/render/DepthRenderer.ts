@@ -66,7 +66,7 @@ import {authoredRoom} from './AuthoredRooms';
 import {ActorPool} from './ActorPool';
 import {PickupInstances} from './PickupInstances';
 import {batch} from './meshParts';
-import type {GraphicsTier} from './FrameBudget';
+import {RENDER_BUDGET,type GraphicsTier} from './FrameBudget';
 import {GRAPHICS_PRESETS,resolveGraphicsAblation,resolveGraphicsOptions,type GraphicsAblation,type GraphicsOptions} from './graphicsOptions';
 import {EnvironmentMaterials} from './EnvironmentMaterials';
 import {setFloorLeaks} from './lighting/FloorVariation';
@@ -207,7 +207,7 @@ export class DepthRenderer {
   this.post.diagnosticInkWear=ablation!=="inkWear";
   this.post.diagnosticFinalAA=ablation!=="finalAA";
   this.post.diagnosticSoftDepth=ablation!=="softDepth";
-  this.post.adaptive.minimumScale=ablation==="adaptive80"?.8:.9;
+  this.post.adaptive.minimumScale=ablation==="adaptive80"?.8:RENDER_BUDGET.adaptiveMinScale;
   this.applyQuality();
   this.queueRoomWarmup();
  }
@@ -445,7 +445,7 @@ export class DepthRenderer {
   this.sealedBank?.dispose();this.sealedBank=undefined;
   this.recoveryKit?.dispose();this.recoveryKit=undefined;
   this.releasedBerth?.dispose();this.releasedBerth=undefined;
-  this.reflection?.invalidate();this.roomEnvironment=environment??'cryogenics';this.roomKey=node.id;this.shadowsDirty=true;disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.temporaryMaterials=[];this.world=new T.Group();this.scene.add(this.world);this.effects.setWorld(this.world);
+  this.reflection?.invalidate();this.roomEnvironment=environment??'cryogenics';this.roomKey=node.id;this.post?.adaptive.clearHistory();this.shadowsDirty=true;disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.temporaryMaterials=[];this.world=new T.Group();this.scene.add(this.world);this.effects.setWorld(this.world);
   for(const m of this.actors.values()){this.pincerPresentation.releaseActor(m);this.actorPool.release(m);}this.actors.clear();for(const n of this.nests.values())disposeModel(n);this.nests.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;
   this.ragdolls?.dispose();this.marineDeathStarted=false;this.presentationHold?.reset();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
   const t=ROOM_TEMPLATES[node.templateId],w=t.width/UNIT,h=t.height/UNIT;this.roomWidth=w;this.roomHeight=h;
@@ -641,7 +641,7 @@ export class DepthRenderer {
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
- render(game:DepthGame,delta:number,menu=false){
+ render(game:DepthGame,delta:number,menu=false,frameMs?:number){
   if(this.roomKey!==game.node.id){this.arrivalWoundTimes.clear();this.arrivalReleases.clear();this.loadRoom(game.node);}
   for(const [id,release] of this.arrivalReleases){
    if(this.time<release.at)continue;
@@ -887,7 +887,7 @@ export class DepthRenderer {
   }
   this.post.finishCombatOutlines();
   try{
-   this.post.render(dt);
+   this.post.render(dt,frameMs);
    const hidden=menu||combat.dead;
    const reveal=this.graphicsAblation!=='silhouette';
    this.playerBeacon.update(this.player.root,p.angle,hidden,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout,reveal);

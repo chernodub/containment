@@ -149,9 +149,9 @@ export class PostPipeline {
     if(this.tier!==tier)this.releaseResources();
     this.options = { ...options };
     this.tier = tier;
-    this.adaptive.setEnabled(tier==='high'&&options.adaptiveResolution);
+    this.adaptive.setEnabled(tier==='high'&&options.adaptiveResolution&&options.resolutionScale===1);
     resized ||= previousScale!==this.adaptive.scale;
-    this.gpuTimer?.setEnabled(tier==='high'&&options.adaptiveResolution);
+    this.gpuTimer?.setEnabled(tier==='high'&&options.adaptiveResolution&&options.resolutionScale===1);
     setGraphicShadingEnabled(options.stylizedShading);
     setSurfacePaintDetail(tier==='high');
     this.distortion.setEnabled(tier === 'high' && options.distortion);
@@ -194,12 +194,12 @@ export class PostPipeline {
   }
 
   /** Renders with renderer state restored even if the GPU raises an error. */
-  render(dt: number): void {
+  render(dt: number, frameMs?: number): void {
     if (this.disposed) return;
     const target = this.renderer.getRenderTarget();
     this.ensureGpuTimer();
     this.gpuTimer?.poll();
-    if(dt>0) { const previous=this.adaptive.scale;this.adaptive.update(dt*1000,this.gpuTimer?.latestMs);if(previous!==this.adaptive.scale)this.resizeResources(); }
+    if(frameMs!==undefined) { const previous=this.adaptive.scale;this.adaptive.update(frameMs);if(previous!==this.adaptive.scale)this.resizeResources(); }
     this.gpuTimer?.beginFrame();
     try { this.renderTo(dt, target, false); } finally { this.gpuTimer?.endFrame(); }
   }
@@ -255,7 +255,7 @@ export class PostPipeline {
     if(this.gpuTimer||!this.renderer.getContext)return;
     const gl=this.renderer.getContext() as WebGL2RenderingContext;
     if(gl.isContextLost())return;
-    this.gpuTimer=new GpuFrameTimer(gl);this.gpuTimer.setEnabled(this.tier==='high'&&this.options.adaptiveResolution);
+    this.gpuTimer=new GpuFrameTimer(gl);this.gpuTimer.setEnabled(this.adaptive.enabled);
   }
 
   private renderTo(dt: number, output: WebGLRenderTarget | null, warm: boolean): void {

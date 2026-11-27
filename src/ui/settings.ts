@@ -152,7 +152,10 @@ export function createSettings({renderer, audio, storage}: {renderer: DepthRende
           const value = typeof previous === 'boolean' ? (input as HTMLInputElement).checked : typeof previous === 'number' ? Number(input.value) / 100 : input.value;
           if (typeof previous === 'number' && (typeof value !== 'number' || !Number.isFinite(value) || value < (option === 'resolutionScale' ? .5 : 0) || value > 1)) return;
           if (typeof previous === 'string' && !graphicsChoices(option).includes(String(value))) return;
-          state = {...state, graphics: {...state.graphics, [option]: value}};
+          const graphics = {...state.graphics, [option]: value};
+          if (option === 'resolutionScale') graphics.adaptiveResolution = false;
+          if (option === 'adaptiveResolution' && value === true) graphics.resolutionScale = 1;
+          state = {...state, graphics};
           applyGraphics(); persist();
         }
         sync();

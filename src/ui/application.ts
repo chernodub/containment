@@ -295,7 +295,8 @@ export async function bootstrap() {
         if (!blocked) {
             // Offline title plates need no world draw; recovery still settles normally.
             if (game.status !== 'menu') {
-                renderer.render(game, recovering ? 0 : dt * feel.renderScale, false);
+                renderer.render(game, recovering ? 0 : dt * feel.renderScale, false,
+                    !recovering && !graphicsHeld && game.status === 'playing' ? elapsed * 1000 : undefined);
                 if(!optionalPresentationStarted) {optionalPresentationStarted=true;setTimeout(()=>{void warmDeathPhysics();},0);}
                 if (game.status === 'playing')
                     positionHud();
