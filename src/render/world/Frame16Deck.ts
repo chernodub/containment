@@ -93,6 +93,8 @@ const centreMarks:Record<string,readonly [string,string,number,number,number]>={
   'overload-floor':['burn','BUS 9',-86,67,.64],
   'awakening-bay':['spill','THAW',-76,59,.26],
   'residential-gallery':['drag','C-12',53,-73,-.47],
+  'communal-atrium':['drag','MESS 4',64,82,.26],
+  'manual-control-chamber':['chevron','CTRL',-80,63,-.23],
   'armory':['chevron','AM-2',-53,76,.08],
   'freight-hold':['drag','LOAD',-86,-42,.56],
   'breached-loading-bay':['drag','L-03',72,63,1.1],
