@@ -348,3 +348,50 @@ Each cell lists the three trials in order. The gap column uses the difference be
 | atmosphere | 14.7 / 11.6 / 14.8 | 25.2 / 25.1 / 25.3 | 9.2 / 9.5 / 9.3 | 30.6 / 32.1 / 46.3 | 2.14→1.97 / 1.97→1.78 / 1.78→1.71 | -15% |
 
 The accepted 60 trials peaked at 218 draws and had zero combat shader compiles or WebGL errors. The first Low control, one distortion set, two gas sets and two shadow sets crossed load 3 and were replaced. The reverse post stack nearly doubled the query median relative to Low while leaving frame misses below 1%. The result suggests substantial Low-tier GPU headroom and a cost that depends on which scene and post features run together. No separate room-instance budget arm was available without changing scene LOD policy, so only the particle component of that arm was measured.
+
+## PERF47 — pooled light rejection
+
+The production shader rejects a point against its squared cutoff and each applicable shading normal before computing direction and attenuation. The first practical or directional contribution that needs key occlusion samples it once. The pool retains its prepared Three.js point-light count and packs active slots before the idle tail for traversal only. Admission, light identities, fade curves and active-light accumulation order are unchanged.
+
+The baseline is `019f4e51`. GPU queries include driver scheduling under shared load. The benchmark holds internal scale at 1.0 and uses the Safety Interlock Pyro fixture with seed 1729. With gallery contention, both arms have a 15-second wall minimum and a six-second simulation minimum to retain comparable combat exposure. The native population and shader guards remain active. An earlier attempt at 15 seconds wall time alone reached 3.3 simulated seconds and tripped the population guard. Raw trials are under `artifacts/nextgen/perf47/`.
+
+| Completed fixed-scale observation | GPU total p50 (ms) | Frames over 20 ms | One-minute load start → end |
+| --- | ---: | ---: | --- |
+| Baseline | 277.54 | 99.17% | 34.96 → 82.97 |
+| Range and idle rejection | 305.41 | 97.56% | 228.28 → 238.01 |
+
+Both completed trials reached a median of 25 enemies and had zero combat compiles or GL errors. Their load ranges do not overlap. The later retries failed to reach combat on both builds, including an original ship kit preparation timeout from `src/render/world/OriginalRoomInteriors.ts:318`. The finished candidate trial above was read before a stopped retry wrote its failure into the same output directory. This partial comparison gives no estimate of how much pooled-light cost remains, so it cannot support choosing a screen-space method or proposing a scale reduction.
+
+Both matched capture batches reached the Safety Interlock pincer setup and timed out in Chromium before writing a PNG. The baseline and candidate manifests each list five scenario failures. That leaves the native pixel comparison, four-live-light checks in the captured frames, and moving-light strip unverified. The requested production build passed.
+
+### Interleaved retry
+
+After the campaign timed out and load fell, all three A/B pairs completed. The table uses the same fixed scale, room, rig, seed, and wall/simulation minima. Every measured trial had zero combat shader compiles and WebGL errors.
+
+| Pair | GPU total p50 A → B (ms) | Frames over 20 ms A → B | A load start → end | B load start → end |
+| --- | ---: | ---: | --- | --- |
+| 1 | 192.69 → 300.33 | 99.17% → 100.00% | 25.41 → 22.64 | 22.46 → 24.00 |
+| 2 | 280.71 → 345.80 | 96.77% → 100.00% | 23.95 → 22.83 | 23.93 → 21.62 |
+| 3 | 314.64 → 281.30 | 100.00% → 98.37% | 22.09 → 19.82 | 19.92 → 19.87 |
+| Low control | 78.52 → 82.33 | 92.75% → 90.78% | 20.75 → 20.37 | 21.12 → 19.87 |
+
+The one baseline pool-off reference after the three pairs measured 273.88 ms GPU p50 and 93.02% of frames above 20 ms at load 20.05 → 21.08. The High baseline GPUs varied by 121.95 ms across three trials. The pool-off result is within that range, so the denominator for the one-third remaining-cost decision is unresolved. Low's single control pair likewise does not establish unchanged GPU time. The raw interleaved receipts are the `late-a*` and `late-b*` runs under `artifacts/nextgen/perf47/`.
+
+### Matched images
+
+The retry produced all nine 1920×1080 frames per build at fixed scale 1.0. Both manifests have empty error and failure lists. The staged High pincer, live Napalm pool and live Arc chain each had four live pooled lights in both builds. The fixture filled unused slots with matched light requests. Full-frame RGB differences include the animated effects.
+
+| Scene | Pixels differing at any RGB value | Pixels differing by more than 3 levels in any channel |
+| --- | ---: | ---: |
+| Safety Interlock pincer | 0.00747% | 0.00178% |
+| Pyro pool | 0.00776% | 0.00048% |
+| Arc chain | 0.00637% | 0.00043% |
+| Low pincer | 0.00733% | 0.00130% |
+
+Native and 480×270 inspection showed matching light footprints and scattered edge pixels on the marine, creatures, and nearby trim. The five-frame strip moved one 1.7 m-radius light four metres while preserving four live lights. Full-frame differences ranged from 0.00622% to 0.01292%, with no visible light pop. The native manifests are under `artifacts/nextgen/perf47-late-visual-{baseline,range}/`. The 480×270 pairs, per-frame differences and native moving strip are under `artifacts/nextgen/perf47/visual/`. Frozen build copies were removed after capture to keep the worktree's artifacts below 6 GB.
+
+### Campaign and disposition
+
+The first native Pyro attempt cleared Awakening Bay, then hit the runner's 20 s screenshot timeout. With a local-only screenshot timeout of 180 s, the same command cleared ten rooms with zero runner errors before the one-hour wall limit in Diagnostic Gallery. The runner validated the earned Transmission Chamber reward save and continued it through Safety Interlock and Coolant Plant. The continued report has 13 clears and zero runner errors. It exited 1 with seven loading-hold defect records, including those carried forward from the parent. Safety Interlock's hold was 2.07 s. The build and both native capture manifests passed. Runner and capture fixture edits were restored. The campaign proof is `artifacts/nextgen/playtest/perf47-pyro-continued/report.json`.
+
+The image results support keeping the patch available for a quiet A/B comparison. The loaded data do not show a repeatable throughput gain or establish that High meets the frame budget. There is no screen-space pass or resolution-policy change in this branch.
