@@ -97,14 +97,32 @@ for(const name of ['crawler','stalker','spitter','brute','carrier','warden','mat
   const family=name==='warden'?'brute':name==='matron'?'carrier':name;
   add('route-threat-'+name,[opener(family,name===family?undefined:name)],{frameSubject:true});
 }
+// RUN20's fixed opening beats replace the ordinary seeded room opener on these cards.
+const strike=(family,x,z,aim,frame)=>({kind:'enemy',family,x,z,aim,pose:'attack',frame});
+const rush=[
+  strike('crawler',-2.1,-.3,.52,.38),
+  strike('crawler',0,-1.35,1.22,.54),
+  strike('crawler',2.05,.16,2.28,.69),
+];
+const orderThreats={
+  'freight-hold':rush,
+  'infested-workshop':rush,
+  'breached-loading-bay':[
+    strike('spitter',-2.45,-.72,.53,.45),strike('spitter',2.45,-.72,2.61,.53),
+    {kind:'ordnance',weapon:'acid',from:[-1.73,.37,-.3],x:1.18,y:.22,z:1.41,shadow:0},
+    {kind:'ordnance',weapon:'acid',from:[1.73,.37,-.3],x:-1.18,y:.22,z:1.41,shadow:0},
+  ],
+  'swarm-junction':[strike('brute',1.12,.18,2.03,.32),strike('spitter',-2.32,-.67,.92,.58)],
+};
 const nodes=L8_CAPTURE_API.generateRun(1729,3).nodes;
 for(const {id,arena} of L8_CAPTURE_ROOMS){
   const node=nodes.find(node=>node.templateId===id);
   const {enemyId,guardian}=L8_CAPTURE_API.createEncounterPlan({seed:1729,node,breachIds:['studio']}).schedule[0];
   const space=L8_CAPTURE_API.plans[id].spaces.find(space=>space.name===landmarks[id]);
   const mark=space?.anchor??arena;
-  add('route-'+id,[opener(enemyId,guardian)],{
-    room:id,origin:[mark.x/32,mark.y/32],frameSubject:true,
+  add('route-'+id,orderThreats[id]??[opener(enemyId,guardian)],{
+    room:id,origin:[mark.x/32,mark.y/32],
+    ...(orderThreats[id]?{span:orderThreats[id]===rush?3.25:3.95,focus:[0,.45,0],roomLighting:true}:{frameSubject:true}),
   });
 }
 const lane={view:'gameplay',span:4.7};

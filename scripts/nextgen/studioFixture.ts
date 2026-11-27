@@ -20,7 +20,7 @@ type Subject = Mark & (
   {kind:'marine'; rig:RigId; weapon:WeaponId; pose?:string; frame?:number; reload?:number; ghost?:boolean}
   | {kind:'enemy'; family:StandardEnemyId|'queen'; champion?:'warden'|'matron'; pose?:'attack'|'hit'|'frozen'; frame?:number}
   | {kind:'pod'; swollen?:boolean}
-  | {kind:'ordnance'; weapon:'plasma'|'rocket'; from:[number,number,number]}
+  | {kind:'ordnance'; weapon:'plasma'|'rocket'|'acid'; from:[number,number,number]}
   | {kind:'supply'; id:string}
   | {kind:'pickup'; id:'health'|'armor'|'ammo'|'grenade'|'credits'}
   | {kind:'weapon'; id:WeaponId}
@@ -33,7 +33,7 @@ export type StudioShot = {
   exportCarry?:boolean; width:number; height:number; subjects:Subject[]; view?:'product'|'gameplay'; span:number;
   focus?:[number,number,number]; key?:[number,number,number]; rim?:[number,number,number];
   cameraDirection?:[number,number,number]; breachLight?:boolean;
-  card?:boolean; subjectHeight?:number; frameSubject?:boolean; webpQuality?:number;
+  roomLighting?:boolean; card?:boolean; subjectHeight?:number; frameSubject?:boolean; webpQuality?:number;
   framePortrait?:boolean; rimColor?:number; transparent?:boolean; room?:string; origin?:[number,number]; lesson?:boolean|'blocked-shot'; effect?:AbilityEvent; effectFrames?:number;
   deployables?:AbilitiesSnapshot['deployables']; zones?:AbilitiesSnapshot['zones']; links?:AbilitiesSnapshot['links'];
   extraEffects?:{x:number;z:number;event:AbilityEvent}[];
@@ -89,7 +89,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
   const key=new T.DirectionalLight(shot.framePortrait?0xffead4:0xd9e8ff,shot.framePortrait?3.0:2.3),rim=new T.DirectionalLight(shot.rimColor??0xa5e6ec,shot.framePortrait?1.4:1.9);
   key.position.set(...(shot.key??[-3,7,4]));
   rim.position.set(...(shot.rim??[4,2,-5]));
-  if(shot.card){
+  if(shot.card && !shot.roomLighting){
     stage.add(key,key.target,rim,rim.target,new T.HemisphereLight(0x788d9c,0x29303a,1.55));
     key.position.add(stage.position);key.target.position.copy(stage.position);
     rim.position.add(stage.position);rim.target.position.copy(stage.position);
@@ -198,7 +198,10 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
             group.add(mesh);
             disposable.push(()=>mesh.geometry.dispose());
           };
-          if(plasma){
+          if(subject.weapon==='acid'){
+            flash.color.setHex(0xc3eb57);
+            streak(new T.Vector3(),tail,.044,.018,flash);
+          }else if(plasma){
             streak(new T.Vector3(),tail,.15,.035,wake);
             // Offset the hot channel to the camera side so the blue wake cannot bury it.
             const core=new T.Vector3(0,.048,.09);
@@ -325,7 +328,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
     }
     for(const child of original.keys()){
       if(shot.room){
-        if(shot.card&&(child===owner['atmosphere'].root||child instanceof T.Light))child.visible=false;
+        if(shot.card&&!shot.roomLighting&&(child===owner['atmosphere'].root||child instanceof T.Light))child.visible=false;
         if(child===owner['player'].root||[...owner['actors'].values()].some(actor=>actor.root===child))child.visible=false;}
       else child.visible=false;
     }
