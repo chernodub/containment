@@ -843,3 +843,38 @@ Each simulator campaign uses the twelve usual seeds for each rig with two worker
 Clears and stalls: A 39/48 (0 stalls), B 36/48 (0 stalls), C 42/48 (0 stalls)
 
 [Arm A](../../artifacts/nextgen/playtest/play39-three-v0-absent/summary.json) · [Arm B](../../artifacts/nextgen/playtest/play39-three-v0-off/summary.json) · [Arm C](../../artifacts/nextgen/playtest/play39-three-v0-on/summary.json)
+
+The first revision requires the shot to originate within 55° of the line from the recovering Brute to the grille. The aware policy approaches the visible gate around active melee warnings and shoots from the eligible side. Arm A is reused because timing, staging, and mandatory escort entry are unchanged. B closed 30/48 (62.5%) in Atrium and 26/44 (59.1%) in Manual Control. C closed 47/48 (97.9%) and 40/44 (90.9%) respectively. C suit improved for three rigs per room, including Breacher and Pyro in both rooms. B still closed too often for the intended decision.
+
+### v1
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 30.48 | 51.76 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 13.30 | 23.10 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 86.73 | 67.13 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.05 | 21.02 | 0 |
+| A | Pyro | manual-control-chamber | 11 | 0 | 0 | 57.85 | 48.27 | 1 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 23.02 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 32.62 | 47.94 | 0 |
+| B | Breacher | communal-atrium | 12 | 8 | 8 | 3.90 | 22.83 | 0 |
+| B | Breacher | manual-control-chamber | 11 | 7 | 21 | 32.51 | 48.86 | 0 |
+| B | Cryo | communal-atrium | 12 | 7 | 7 | 10.62 | 23.42 | 0 |
+| B | Cryo | manual-control-chamber | 10 | 6 | 18 | 74.49 | 65.54 | 0 |
+| B | Pyro | communal-atrium | 12 | 6 | 6 | 4.75 | 20.67 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 7 | 21 | 35.70 | 43.21 | 0 |
+| B | Arc | communal-atrium | 12 | 9 | 9 | 0.60 | 21.62 | 0 |
+| B | Arc | manual-control-chamber | 11 | 6 | 18 | 25.43 | 43.74 | 1 |
+| C | Breacher | communal-atrium | 12 | 11 | 11 | 4.25 | 21.46 | 0 |
+| C | Breacher | manual-control-chamber | 12 | 11 | 33 | 29.95 | 52.51 | 0 |
+| C | Cryo | communal-atrium | 12 | 12 | 12 | 8.77 | 24.93 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 10 | 30 | 87.33 | 69.05 | 0 |
+| C | Pyro | communal-atrium | 12 | 12 | 12 | 2.40 | 21.13 | 0 |
+| C | Pyro | manual-control-chamber | 11 | 10 | 30 | 22.11 | 43.25 | 0 |
+| C | Arc | communal-atrium | 12 | 12 | 12 | 7.37 | 22.72 | 0 |
+| C | Arc | manual-control-chamber | 10 | 9 | 27 | 21.80 | 45.77 | 0 |
+
+Clears and stalls: A 39/48 (0 stalls), B 41/48 (0 stalls), C 44/48 (0 stalls)
+
+[Revision 1 arm B](../../artifacts/nextgen/playtest/play39-three-v1-off/summary.json) · [Revision 1 arm C](../../artifacts/nextgen/playtest/play39-three-v1-on/summary.json)
