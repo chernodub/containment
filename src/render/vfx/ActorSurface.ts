@@ -267,9 +267,12 @@ if(actorBroodForm.x>=-1.){
     float part=floor(vHeavyPart+.5);
     vec3 antler=vec3(.115,.096,.066);
     bool dorsal=part>=6. && part<=12.;
-    bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9;
+    bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9 && abs(actorPosition.y)<.74;
     bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
-    if(edge || crest || part==1. || part==3. || part==5.)paint=antler;
+    if(edge || crest || part==1.)paint=antler;
+    // At broadside the swept horns cross the shoulder. Reserve bone for
+    // their outer tips so the dark shaft stays distinct from the crown rims.
+    if(part==3. || part==5.)paint=abs(actorPosition.y)>2.85 ? antler : vec3(.038,.042,.033);
     if(part==16. || part==17.)paint=vec3(.37,.324,.252);
   }
   if(heavyPaint==11.){
