@@ -7,6 +7,8 @@ visible interiors. For new images, capture --actor-zones writes eroded actor-ID
 masks; supply that sidecar to replace the manual creature samples. Effects
 composited over bodies can still appear in these screen-space measurements.
 """
+import colorsys
+import math
 import json
 import sys
 from pathlib import Path
@@ -22,7 +24,16 @@ for label, rectangles in regions.items():
               for y in range(top, bottom + 1) for x in range(left, right + 1)]
     luma = max((.2126*r + .7152*g + .0722*b)/255 for r,g,b in pixels)
     saturation = max((max(p)-min(p))/max(1,max(p)) for p in pixels)
-    results[label] = (luma, saturation)
-for label, (luma, saturation) in results.items():
+    # Weight by chroma so neutral ink does not steer the circular hue mean.
+    sine = cosine = 0.0
+    for r, g, b in pixels:
+        angle = colorsys.rgb_to_hsv(r, g, b)[0] * math.tau
+        chroma = max(r, g, b) - min(r, g, b)
+        sine += chroma * math.sin(angle)
+        cosine += chroma * math.cos(angle)
+    hue = math.degrees(math.atan2(sine, cosine)) % 360 if sine or cosine else None
+    results[label] = (luma, saturation, hue)
+for label, (luma, saturation, hue) in results.items():
+    hue_text = f"{hue:.0f}°" if hue is not None else "—"
     print(f"{label:10} Y′ {luma:.3f}  S {saturation:.3f}  "
-          f"Δlegs {luma-results['legs'][0]:+.3f}  Δvisor {saturation-results['visor'][1]:+.3f}")
+          f"Δlegs {luma-results['legs'][0]:+.3f}  Δvisor {saturation-results['visor'][1]:+.3f}  mean hue {hue_text}")
