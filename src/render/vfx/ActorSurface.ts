@@ -289,6 +289,22 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
   if(heavyPaint==7.)paint=vec3(.132,.124,.111)*(1.-.34*actorWallRecoil);
   if(heavyPaint==8.)paint=vec3(.079,.073,.065);
+  if(actorWarden<.5){
+    // Keep the olecranon continuous with the upper arm. Only its underside
+    // falls into the deep joint colour; the exposed ridge is a broad plane.
+    vec3 e=actorPosition-vec3(-.21,sign(actorPosition.y)*3.28,3.34);
+    float elbowHull=abs(e.x)*.91+abs(e.y)*.70+abs(e.z)*1.32;
+    if(heavyPaint==0. && elbowHull<1.12){
+      float facet=step(-.12,e.z+.30*e.x-.15*abs(e.y));
+      paint=mix(middle*.57,mix(middle,crown,.72),facet);
+    }
+    float handPart=floor(vHeavyPart+.5);
+    if(handPart==29. || handPart==45.){
+      float knuckles=step(2.40,actorPosition.x+.17*(abs(actorPosition.y)-3.));
+      float dorsal=step(2.43,actorPosition.z);
+      paint=mix(middle*.62,mix(middle,crown,knuckles),dorsal);
+    }
+  }
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);
     vec3 antler=vec3(.115,.096,.066);
