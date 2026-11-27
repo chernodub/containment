@@ -48,16 +48,16 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
     if name=='warden':
         # The distant light unifies the dorsal shell, sail and limbs in shadow.
         # Reserve the bone value for the head only. The plate boundaries retain
-        # their source ink on the two slate body values.
+        # their source ink on the two rust-shell values.
         w,h=source.size
         value=source.convert('L')
         alpha=source.getchannel('A')
-        paint=Image.new('RGB',source.size,'#282934')
+        paint=Image.new('RGB',source.size,'#2e272a')
         all_pixels=(0,0,w,h)
-        paint.paste('#555462',all_pixels,value.point(lambda v:255 if v>72 else 0))
+        paint.paste('#694d40',all_pixels,value.point(lambda v:255 if v>72 else 0))
         paint.paste('#18171c',all_pixels,value.point(lambda v:255 if v<35 else 0))
         # Keep a fine ink break at the root of each sail plate even though
-        # the sail and the lit shell now share the same slate pigment.
+        # the sail and the lit shell now share the same rust pigment.
         sail=Image.new('L',source.size)
         ImageDraw.Draw(sail).rectangle((0,0,.59*w,.44*h),fill=255)
         sail=ImageChops.multiply(sail,value.point(lambda v:255 if v>148 else 0))
@@ -72,7 +72,7 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         near=Image.new('L',source.size)
         ImageDraw.Draw(near).polygon([(.44*w,.64*h),(.50*w,.72*h),(.66*w,.86*h),
                                      (.61*w,.86*h),(.47*w,.75*h)],fill=84)
-        paint.paste('#837785',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
+        paint.paste('#947760',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
         oral=ImageChops.subtract(oral_source.getchannel('B'),oral_source.getchannel('G')).point(lambda v:min(255,max(0,(v-12)*32)))
         paint.paste(oral_source.convert('RGB'),(0,0,w,h),ImageChops.multiply(head,oral))
         # The tiny teeth and tongue must survive the large-shell majority filter.
