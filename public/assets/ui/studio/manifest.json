@@ -23,7 +23,7 @@
   },
   "portrait-pyro": {
     "file": "portrait-pyro.png",
-    "bytes": 188551,
+    "bytes": 209990,
     "shot": {
       "source": "selection24",
       "rig": "pyro",
@@ -34,7 +34,7 @@
   },
   "portrait-arc": {
     "file": "portrait-arc.png",
-    "bytes": 180407,
+    "bytes": 180012,
     "shot": {
       "source": "selection24",
       "rig": "arc",
