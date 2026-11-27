@@ -15,7 +15,7 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; napalm: boolean; ignition: number; sourceX: number; sourceZ: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
@@ -23,7 +23,7 @@ type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: b
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, napalm: false, ignition: 0, sourceX: 0, sourceZ: 0, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
   private readonly contactJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
@@ -73,9 +73,11 @@ class SystemPresentation implements AbilityPresentation {
       k.statusActor(id)?.elementContact?.(event.element);
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
-      const newIgnition = event.element === 'pyro' && receipt?.element !== 'pyro';
+      const napalm = event.ability === 'napalm-charge';
+      const newIgnition = event.element === 'pyro' && (!receipt || receipt.element !== 'pyro' || napalm && !receipt.napalm);
       receipt ??= this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
       if (newIgnition) { receipt.ignition = k.time; receipt.sourceX = x / UNIT; receipt.sourceZ = y / UNIT; }
+      receipt.napalm = napalm;
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
         const position = k.statusActor(id)?.root.position;
@@ -184,6 +186,10 @@ class SystemPresentation implements AbilityPresentation {
     if (status?.burning || receipt?.element === 'pyro') this.burning(actor?.root, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {
+      if (receipt.napalm && k.time - receipt.ignition < .05) {
+        k.sprite('glow', x, height * .61, z, radius * 1.45, height * .74,
+          WHITE, k.flashIntensity, enemy.id, 'light');
+      }
       if (!receipt.emitted && dt > 0) {
         receipt.emitted = true;
         k.burst(x, height * .45, z, receipt.element, k.low ? 3 : 7, receipt.element === 'kinetic' ? 2.1 : 1.2, .3);
