@@ -105,11 +105,32 @@ export class DepthGame {
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
+  if(grille&&(this.grilleOverride===undefined||grille.attackerId!==undefined)&&
+   (grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
    return {...visible,
     returnArcCosine:this.grilleOverride===undefined?Math.cos(Math.PI/6):undefined,
     returnRange:this.grilleOverride===true?176:undefined,returnHalfWidth:64};
+  }
+ }
+ private findRecoveryAisle(lead:{x:number;y:number},approach:{x:number;y:number}){
+  if(!hasClearExpeditionShot(this.geometry,approach,lead))return;
+  const bearing=Math.atan2(lead.y-approach.y,lead.x-approach.x);
+  for(const distance of [96,80,64]){
+   for(const offset of [0,.2,-.2,.4,-.4]){
+    const heading=bearing+offset;
+    const point={x:lead.x+Math.cos(heading)*distance,y:lead.y+Math.sin(heading)*distance};
+    if(canOccupyExpedition(this.geometry,point,32)&&hasClearExpeditionShot(this.geometry,approach,point))
+     return {...point,angle:Math.atan2(lead.y-point.y,lead.x-point.x)};
+   }
+  }
+ }
+ private findLegacyGrille(lead:{x:number;y:number},reference:{x:number;y:number}){
+  const bearing=Math.atan2(reference.y-lead.y,reference.x-lead.x);
+  for(const offset of [Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI]){
+   const angle=bearing+offset,point={x:lead.x+Math.cos(angle)*99,y:lead.y+Math.sin(angle)*99};
+   if(canOccupyExpedition(this.geometry,point,25)&&hasClearExpeditionShot(this.geometry,reference,point))
+    return {...point,angle:Math.atan2(lead.y-point.y,lead.x-point.x)};
   }
  }
  private resolveRecoveryGrille(closed:boolean){
@@ -888,7 +909,20 @@ export class DepthGame {
     // request rotates to another open breach when no connected candidate fits.
     if(checkIngress&&!ingress?.reachable(p,radius+2))continue;
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
-     if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined)this.recoveryGrilleState.attackerId=result.enemy.id;
+     if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined){
+      const grille=this.recoveryGrilleState;
+      if(this.grilleOverride!==undefined){
+       const aisle=this.findRecoveryAisle(p,this.player);
+       if(aisle)Object.assign(grille,aisle);
+       for(const escort of this.pending){
+        if(!escort.grilleEscort)continue;
+        escort.x=grille.x+Math.cos(grille.angle)*24;
+        escort.y=grille.y+Math.sin(grille.angle)*24;
+       }
+       grille.changedAt=this.elapsed;
+      }
+      grille.attackerId=result.enemy.id;
+     }
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
      if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
       const aim=options.baitAim?{...this.player,...options.baitAim}:this.player;
@@ -1164,16 +1198,11 @@ export class DepthGame {
   }
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
-  const aisle=this.grilleOverride!==undefined;
-  const bearing=aisle?Math.atan2(y-reference.y,x-reference.x):Math.atan2(reference.y-y,reference.x-x);
-  const offsets=aisle?[0,.25,-.25,.5,-.5]:[Math.PI/2,-Math.PI/2,1,-1,.45,-.45,0,2,-2,Math.PI];
-  for(const offset of offsets){
-   const angle=bearing+offset,point={x:x+Math.cos(angle)*99,y:y+Math.sin(angle)*99};
-   if(!canOccupyExpedition(this.geometry,point,25)||!hasClearExpeditionShot(this.geometry,reference,point))continue;
-   this.recoveryGrilleState={...point,angle:Math.atan2(y-point.y,x-point.x),escorts:e.grilleLead,
-    state:'waiting',changedAt:this.elapsed,expiresAt:this.elapsed+7};
-   break;
-  }
+  const lead={x,y};
+  const aisle=this.grilleOverride!==undefined?this.findRecoveryAisle(lead,reference):undefined;
+  const grille=aisle??this.findLegacyGrille(lead,reference);
+  if(grille)this.recoveryGrilleState={...grille,escorts:e.grilleLead,state:'waiting',
+   changedAt:this.elapsed,expiresAt:this.elapsed+7};
  }
  if(e.grilleEscort&&this.recoveryGrilleState?.state==='closed')continue;
  if(e.grilleEscort&&this.recoveryGrilleState){
