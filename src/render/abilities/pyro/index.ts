@@ -178,13 +178,18 @@ class PyroPresentation implements AbilityPresentation {
     if (event.ability === 'meltdown') {
       if (event.phase === 'tick') {
         kit.sustain();
-        for (const id of event.targetIds ?? []) {
-          const actor = kit.statusActor(id);
-          if (actor) {
-            const dx = actor.root.position.x - x, dz = actor.root.position.z - z;
-            const d = Math.max(.01, Math.hypot(dx, dz));
-            kit.mote('spark', actor.root.position.x, actor.height * .58, actor.root.position.z,
-              dx / d * 2, .6, dz / d * 2, .28, .27, CORE);
+        const ids = event.targetIds;
+        const actor = ids?.length ? kit.statusActor(ids[ids.length - 1]) : undefined;
+        if (actor) {
+          const body = actor.root.position;
+          const angle = Math.atan2(body.z - z, body.x - x);
+          actor.hit?.(.68, angle);
+          kit.impact();
+          for (let i = -1; i <= 1; i++) {
+            const a = angle + i * .38;
+            kit.mote('spark', body.x, body.y + actor.height * .58, body.z,
+              Math.cos(a) * 2.8, 1.3 + i * .3, Math.sin(a) * 2.8,
+              i === 0 ? .46 : .24, .32, i === 0 ? CORE : HOT);
           }
         }
         return;

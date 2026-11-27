@@ -31,10 +31,13 @@ export class OverdrivePayoff {
   private z = 0;
   private radius = ARC_FIELD;
   private age = 0;
+  private contactUntil = -1;
   private arcClock = 0;
   constructor(private readonly kit: ElementKit) {}
 
   event(event: AbilityEvent, x: number, y: number): void {
+    if (event.ability === 'meltdown' && event.phase === 'tick' && event.targetIds?.length)
+      this.contactUntil = this.kit.time + .32;
     if (event.slot !== 'overdrive') return;
     const px = x / UNIT, pz = y / UNIT, k = this.kit;
     if (event.ability === 'railbreaker') { if (event.phase === 'cast') this.rail(px, pz, (event.durationMs ?? 300) / 1000); return; }
@@ -166,7 +169,8 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     if (zoneAge !== undefined) slot.age = zoneAge;
-    slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
+    const contactGain = this.kit.time < this.contactUntil ? .30 : 1;
+    slot.param = this.level * contactGain; slot.intensity = this.kit.low ? .75 : 1;
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);
       this.crawl(game, dt);
@@ -199,6 +203,7 @@ export class OverdrivePayoff {
 
   clear(): void {
     if (this.climax && this.climax.seed === this.climaxSeed) this.climax.live = false;
+    this.contactUntil = -1;
     this.climax = undefined; this.level = 0; this.wasActive = false; this.age = 0;
   }
 }

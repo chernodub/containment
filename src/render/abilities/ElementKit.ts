@@ -63,6 +63,7 @@ type Decal = {
 export interface StatusActor {
     readonly root: T.Object3D;
     readonly height: number;
+    hit?(strength: number, direction: number): void;
     elementContact?(element: AbilityElement): void;
 }
 export interface AbilityServices {
