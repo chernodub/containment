@@ -48,14 +48,17 @@ export function addFightLaneDamage(root:Group,id:string){
       const lip=new IncidentPieces();
       // A battered steel sill straddles the feed. The sloping end and
       // recessed panel breaks expose the stopping face from the approach.
-      lip.box(-49,17,-8,98,34,16,0x485352);
-      lip.face([[-98,35,-18],[-98,35,0],[0,35,0],[0,35,-18]],0x9b9e8b);
-      lip.face([[-98,32,14],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
-      lip.face([[-98,2,22],[0,2,0],[0,32,0],[-98,32,14]],0x556264);
+      for(let panel=0;panel<4;panel++){
+        const x=-98+panel*24.5,end=x+24.5,mid=(x+end)/2;
+        const top=-x/7,endTop=-end/7,foot=-x*.22,endFoot=-end*.22;
+        lip.box(mid,17,-8,24.5,34,16,0x485352);
+        lip.face([[x,35,-18],[x,35,0],[end,35,0],[end,35,-18]],0x9b9e8b);
+        lip.face([[x,32,top],[end,32,endTop],[end,35,0],[x,35,0]],0x777c6b);
+        lip.face([[x,2,foot],[end,2,endFoot],[end,32,endTop],[x,32,top]],0x556264);
+        lip.rod([x,32,top],[end,32,endTop],1.8,0xd7ac69);
+      }
       lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
-      lip.box(-49,20,5,98,21,5,0x424c50);
       lip.box(-2,18,-7,5,35,24,0x796446);
-      lip.box(-49,29,7,95,2.6,3,0xbd7838);
       for(const x of [-90,-64,-38]){
         const front=-x*.092;
         lip.face([[x,22,front+.6],[x+19,22,front-1.2],[x+19,29,front-1.2],[x,29,front+.6]],0x353b3d);
@@ -66,7 +69,7 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.rod([-95,9,-18],[-160,5,-34],3,0x805f4c);
       // Painted steel values stay readable on the dark feeder bank. The
       // short orange return around the corner follows the reactor casing.
-      lip.rod([-96,35,12],[0,35,0],2.2,0xd7ac69);
+      lip.rod([0,32,0],[0,35,0],1.8,0xd7ac69);
       lip.rod([0,35,0],[0,35,-18],2.2,0xd7ac69);
       lip.rod([0,35,-18],[0,1,-19],2.2,0xd7ac69);
       lip.rod([0,1,-19],[0,1,-64],2.2,0xbfa278);
