@@ -1227,7 +1227,7 @@ export class EnemySystem {
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
   beginArrivalSwing(id:number,player:EnemyPlayerState,trackUntilLock=false):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
-    if(!enemy||(enemy.type!=='brute'&&enemy.type!=='stalker'))return [];
+    if(!enemy||(enemy.type!=='brute'&&enemy.lesson!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
     enemy.meleeFacingLocked=!trackUntilLock;

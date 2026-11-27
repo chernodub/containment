@@ -1647,7 +1647,6 @@ export class DepthGame {
   this.updateRoomCondition(ms);if(this.node.templateId==='overload-floor'){const live=this.enemies.snapshot.enemies;this.hiddenEnemiesMs=live.length&&!live.some(enemy=>hasClearExpeditionShot(this.geometry,this.player,enemy))?this.hiddenEnemiesMs+ms:0;}if(this.status!=='playing')return;this.updateAwakeningDrill(ms);if(this.status!=='playing')return;this.queenEvents(this.boss.update(hostileMs*this.bossSlow,this.player,this.enemies.activeCount+this.pending.length));this.updateBullets(dt,previousTargets,hostileScale);if(this.status!=='playing')return;
   for(const pool of this.pools){
    pool.life-=hostileMs/1000;
-   pool.warning=Math.max(0,pool.warning-hostileMs/1000);
    pool.tick-=hostileMs/1000;
    if(pool.tick>0)continue;
    pool.tick=.5;
