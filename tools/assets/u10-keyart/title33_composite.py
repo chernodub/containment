@@ -32,10 +32,7 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         source=source.rotate(bank,Image.Resampling.BICUBIC,expand=True)
     source=source.crop(source.getchannel('A').getbbox())
     if name=='warden':
-        hot=source.getchannel('R').point(lambda x:255 if x>242 else 0)
-        hot=ImageChops.multiply(hot,source.getchannel('B').point(lambda x:255 if x<140 else 0))
-        organ=ImageChops.multiply(hot,source.getchannel('A')).filter(
-            ImageFilter.GaussianBlur(source.width*.009)).point(lambda v:max(0,min(255,(v-108)*12)))
+        oral_source=source.copy()
     if name=='breacher':
         source=source.filter(ImageFilter.MedianFilter(3))
     else:
@@ -76,13 +73,16 @@ def place(layer,name,x,y,extent,vertical=False,bank=0):
         ImageDraw.Draw(near).polygon([(.44*w,.64*h),(.50*w,.72*h),(.66*w,.86*h),
                                      (.61*w,.86*h),(.47*w,.75*h)],fill=84)
         paint.paste('#b27f49',all_pixels,ImageChops.multiply(near,value.point(lambda v:255 if v>60 else 0)))
+        oral=ImageChops.subtract(oral_source.getchannel('B'),oral_source.getchannel('G')).point(lambda v:min(255,max(0,(v-12)*32)))
+        paint.paste(oral_source.convert('RGB'),(0,0,w,h),ImageChops.multiply(head,oral))
+        # The tiny teeth and tongue must survive the large-shell majority filter.
+        red,green,blue,_=oral_source.split()
+        tooth=ImageChops.subtract(green,red).point(lambda v:min(255,max(0,(v-18)*10)))
+        tongue=ImageChops.subtract(red,green).point(lambda v:min(255,max(0,(v-80)*20)))
+        paint.paste('#d2bea0',all_pixels,ImageChops.multiply(head,tooth))
+        paint.paste('#bd6a54',all_pixels,ImageChops.multiply(head,tongue))
         source=paint.convert('RGBA')
         source.putalpha(alpha)
-        # Set the luminous organ behind the prow and above the lower jaw.
-        throat=ImageChops.offset(organ,-round(source.width*.049),round(source.width*.027))
-        source.paste('#a65833',(0,0,*source.size),throat)
-        inset=ImageChops.multiply(throat,ImageChops.offset(throat,-round(source.width*.011),round(source.width*.006)))
-        source.paste('#efa155',(0,0,*source.size),inset)
     if name=='crawler':
         # Only the fine outer rim breaks the dark mass of the upper jamb.
         alpha=source.getchannel('A')
