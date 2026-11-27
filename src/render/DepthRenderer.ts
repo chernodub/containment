@@ -112,7 +112,7 @@ export class DepthRenderer {
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;this.effects.prepareWallSurfaces();const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  // M10: conservative pose-only culling; roots, warnings and actor visibility stay native.
  private actorPoseFrustum=new T.Frustum();private actorPoseMatrix=new T.Matrix4();private actorPoseBounds=new T.Sphere();
- private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
+ private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private readonly corpseBounds=new T.Box3();private effects:AttackEffects;
  private initializedTextures=new WeakMap<T.Texture,number>();private introspectedPrograms=new WeakSet<object>();
  private preparationHistory:RoomPreparationTiming[]=[];private preparationTiming:RoomPreparationTiming|null=null;
  /** Bounded room-load evidence; read only by capture/benchmark tooling. */
@@ -606,7 +606,7 @@ export class DepthRenderer {
   if(effect.type==='corpse'){
    if(effect.id===undefined)return;
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
-   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){this.pincerPresentation.releaseActor(existing);motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({pendingEffect:effect,model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
+   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){this.pincerPresentation.releaseActor(existing);motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);if(!existing.groundedDeath)this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({pendingEffect:effect,model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
   }
   // FEEL12: presentation family survives native lethal-event actor retirement.
   let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
@@ -804,8 +804,29 @@ export class DepthRenderer {
     c.age+=dt;
     continue;
    }
-   setActorLOD(c.model.root,true);c.model.setDeathAge?.(c.age+dt);if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
-   c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
+   setActorLOD(c.model.root,true);c.model.setDeathAge?.(c.age+dt);if(this.ragdolls.has(c.id))c.age+=dt;
+   // Clear the Warden's combat silhouette after its collapse so the lane stays readable.
+   const dissolveStart=c.model.groundedDeath?2.5:18;
+   c.model.dissolve?.(Math.max(0,(c.age-dissolveStart)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
+   if(c.model.groundedDeath){
+    // The Warden's deep authored collapse intersects the deck. A quarter-turn
+    // from the last living pose keeps its own silhouette without solver lift.
+    const roll=T.MathUtils.smoothstep(c.age,0,.48)*Math.PI/2;
+    const body=c.model.body,root=c.model.root;
+    root.position.x=c.x;root.position.z=c.y;
+    if(body.rotation.z!==roll){
+     body.rotation.z=roll;
+     root.position.y=0;
+     root.updateMatrixWorld(true);
+     this.corpseBounds.makeEmpty();
+     for(const child of root.children)child.traverseVisible(node=>{
+      if(node instanceof T.SkinnedMesh)this.corpseBounds.expandByObject(node,true);
+     });
+     if(!this.corpseBounds.isEmpty())root.position.y=-this.corpseBounds.min.y;
+    }
+   }else{
+    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
+   }
   }
 
   updateRoomPracticals(this.world,this.time,!!this.motionQuery?.matches,this.options.flashIntensity);updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');

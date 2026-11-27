@@ -14,6 +14,9 @@ export const RAGDOLL_BUDGET={high:6,low:3} as const;
 const BODY_BUDGET={high:100,low:50} as const;
 /** Presentation bounds include solver-generated energy as well as the initial shot impulse. */
 export const RAGDOLL_MAX_SPEED=8,RAGDOLL_MAX_SPIN=12;
+// Keep the lightest family's initial lift, but stop deck contacts and joints
+// from adding a stronger vertical launch during the collapse.
+const MAX_UPWARD_SPEED=1.2;
 /** Read only by presentation; supplied from the last living status snapshot. */
 export type DeathCue='none'|'frost'|'burn'|'arc'|'acid';
 const DEATH_POSTURE:Record<string,{lift:number;torque:number}>={
@@ -270,8 +273,12 @@ export class DeathRagdolls {
    // Narrow fitted limbs can amplify joint-limit impulses into extreme energy.
    // Bound velocity only; retain every solved contact position and joint anchor.
    for(const r of this.records.values())for(const p of r.parts){
-    const linear=p.body.linvel(this.physicsVelocity),speed=Math.hypot(linear.x,linear.y,linear.z);
-    if(speed>RAGDOLL_MAX_SPEED){const scale=RAGDOLL_MAX_SPEED/speed;linear.x*=scale;linear.y*=scale;linear.z*=scale;p.body.setLinvel(linear,false);}
+    const linear=p.body.linvel(this.physicsVelocity);
+    const limitedLift=linear.y>MAX_UPWARD_SPEED;
+    linear.y=Math.min(linear.y,MAX_UPWARD_SPEED);
+    const speed=Math.hypot(linear.x,linear.y,linear.z);
+    if(speed>RAGDOLL_MAX_SPEED){const scale=RAGDOLL_MAX_SPEED/speed;linear.x*=scale;linear.y*=scale;linear.z*=scale;}
+    if(limitedLift||speed>RAGDOLL_MAX_SPEED)p.body.setLinvel(linear,false);
     const angular=p.body.angvel(this.physicsVelocity),spin=Math.hypot(angular.x,angular.y,angular.z);
     if(spin>RAGDOLL_MAX_SPIN){const scale=RAGDOLL_MAX_SPIN/spin;angular.x*=scale;angular.y*=scale;angular.z*=scale;p.body.setAngvel(angular,false);}
    }
