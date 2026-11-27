@@ -161,13 +161,14 @@ async function snapshot(stagnantSince=Infinity) {
       candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.botShotClear(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.botShotClear(nearest.x,nearest.y,{x,y}):false});
     }
     const grille=g.recoveryGrille;
+    const returnPoint=grille?.returnRange===undefined?grille:{x:grille.x+Math.cos(grille.angle)*195,y:grille.y+Math.sin(grille.angle)*195};
     const marks=d.drawnExchange();
     const hatch=g.delayedPincerHatch;
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
     return {
       variant:g.openingName?.(),condition:g.condition?.name,conditionObservation:g.conditionObservation??null,drill:g.awakeningDrill,encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
-      pursuitRecovery,storyHoldPrompt:g.storyHoldPrompt,storyHoldGrace:g.storyHoldGrace,recoveryGrille:grille&&r.visible(grille.x,grille.y)?{...grille,waypoint:readGrille&&grille.returnArcCosine!==undefined?d.botWaypoint(grille)??grille:undefined}:undefined,drawnExchange:marks,manualExchange:g.manualExchange,markedClosedEntry:g.markedClosedEntry?.id,delayedPincerHatch:hatch&&{...hatch,visible:r.visible(hatch.breach.x,hatch.breach.y)},relayShelter:g.relayShelter,relayCoverPreview:g.relayCoverPreview,plateLessonTarget:g.weaponLessonPrompt?.target?.id,edgeTells:[...document.querySelectorAll('[data-ranged-shot="true"]:not([hidden])')].map(el=>Number(el.dataset.enemyId)),gate,shutterBait,siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
+      pursuitRecovery,storyHoldPrompt:g.storyHoldPrompt,storyHoldGrace:g.storyHoldGrace,recoveryGrille:grille&&r.visible(grille.x,grille.y)?{...grille,waypoint:readGrille&&(grille.returnRange!==undefined||grille.returnArcCosine!==undefined)?d.botWaypoint(returnPoint)??returnPoint:undefined}:undefined,drawnExchange:marks,manualExchange:g.manualExchange,markedClosedEntry:g.markedClosedEntry?.id,delayedPincerHatch:hatch&&{...hatch,visible:r.visible(hatch.breach.x,hatch.breach.y)},relayShelter:g.relayShelter,relayCoverPreview:g.relayCoverPreview,plateLessonTarget:g.weaponLessonPrompt?.target?.id,edgeTells:[...document.querySelectorAll('[data-ranged-shot="true"]:not([hidden])')].map(el=>Number(el.dataset.enemyId)),gate,shutterBait,siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
       weaponRange:d.botWeaponRange(),combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),reloadingWeapons:Object.keys(g.combat.getRunResources().ammo).filter(id=>g.combat.isWeaponReloading(id)),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard'&&!b.preview).map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
       feintsStarted:g.enemies.feintsStarted,boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,topDamageSources:g.roomDamage,deathExchange:g.deathExchange,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
@@ -268,7 +269,7 @@ try {
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
   page=await context.newPage();listen(page);
-  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}${options['exchange-marks']!==undefined?'&recovery-grilles=1':''}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}${options['exchange-marks']==='absent'?'&recovery-grilles=release-only':options['exchange-marks']!==undefined?'&recovery-grilles=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug,undefined,{timeout:Number(options['startup-timeout-ms']??20000)});
   await enableNative();
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
@@ -413,6 +414,16 @@ try {
     }
     if(target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
     const freshEvents=newEventReceipts(previousEvents,s.events);previousEvents=s.events;
+    for(const event of freshEvents){
+      if(event.type==='recovery-grille-closed'){
+        room.grilleClosures=(room.grilleClosures??0)+1;
+        room.grilleEscortsCancelled=(room.grilleEscortsCancelled??0)+(event.grilleEscorts??0);
+      }
+    }
+    const grilleAttacker=s.enemies.find(enemy=>enemy.id===s.recoveryGrille?.attackerId);
+    const crawlerStrike=freshEvents.some(event=>event.type==='enemy-attack'&&event.family==='crawler');
+    const queuedCrawler=s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
+      enemy.visible&&distance(enemy,s.player)<96);
     const evidence={
       'banked-wound':freshEvents.some(event=>event.type==='arrival-wound'),
       'side-on-lock':room.id==='residential-gallery'&&freshEvents.some(event=>event.family==='stalker'&&event.type==='enemy-warning'),
@@ -424,10 +435,14 @@ try {
       'saved-stake':room.id==='swarm-junction'&&freshEvents.some(event=>event.type==='boon'&&event.boon==='shield'&&event.radius===96),
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
-      'grille-waiting':s.recoveryGrille?.state==='waiting'&&!s.enemies.some(e=>e.id===s.recoveryGrille.attackerId&&e.meleePhase==='recovery'),
-      'crawler-queue':freshEvents.some(event=>event.type==='enemy-attack'&&event.family==='crawler')&&
-        s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
-          enemy.visible&&distance(enemy,s.player)<96),
+      'grille-dodge':s.recoveryGrille?.state==='waiting'&&freshEvents.some(event=>
+        event.type==='enemy-attack'&&event.id===grilleAttacker?.id),
+      'grille-waiting':s.recoveryGrille?.state==='waiting'&&grilleAttacker?.meleePhase==='recovery',
+      'crawler-queue':crawlerStrike&&queuedCrawler,
+      'crawler-queue-windup':queuedCrawler&&s.enemies.some(enemy=>enemy.type==='crawler'&&
+        enemy.visible&&enemy.meleePhase==='windup'),
+      'crawler-queue-recovery':queuedCrawler&&s.enemies.some(enemy=>enemy.type==='crawler'&&
+        enemy.visible&&enemy.meleePhase==='recovery'),
       'grille-recoil':s.recoveryGrille?.state==='closed'&&s.elapsed-s.recoveryGrille.changedAt>=.18,
       'grille-closed':freshEvents.some(event=>event.type==='recovery-grille-closed'),
       'story-hold-teaching':s.storyHoldPrompt,

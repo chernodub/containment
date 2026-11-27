@@ -58,7 +58,8 @@ export async function loadEarnedBoundary(path) {
     readFile(source, 'utf8').then(JSON.parse),
     readFile(resolve(dirname(source), 'report.json'), 'utf8').then(JSON.parse),
   ]);
-  const screenshot = basename(source).replace(/\.json$/, '.png');
-  assert(Array.isArray(parent.screenshots) && parent.screenshots.includes(screenshot), 'Boundary state dump must have a screenshot registered in its parent report');
+  const stem = basename(source, '.json');
+  assert(Array.isArray(parent.screenshots) && ['png', 'webp'].some(ext => parent.screenshots.includes(`${stem}.${ext}`)),
+    'Boundary state dump must have a screenshot registered in its parent report');
   return {checkpoint: checkpointFromEarnedBoundary(state, parent), parent, source};
 }
