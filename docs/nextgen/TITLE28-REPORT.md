@@ -105,3 +105,25 @@ At desktop size the near claws turn over the lit flange, and the cast shadow lin
 The torn header now casts the Crawler's perch and the surrounding chamber into near-black. A single blue-white opening sits behind the Warden's sail and skull. Its light continues over the flange as an angular pool, with the Breacher's shadow cast forward onto it. The lit edge of the shield faces the same source as the Warden's back and reaching arm. The current Warden uses two warm shell values, ink at the roots of the plates and pale bone confined to the head.
 
 The revision comparison in `artifacts/nextgen/title34-revision/` runs from final24 to the TITLE34 first pass to the revision. At 460×215, in colour and greyscale, I can follow the revised sail, skull and open jaw toward the shield faster than in either earlier capsule. Final24 retains more detail in the little Crawler. In the revision its legs and the Warden's individual gripping digits are clearest at desktop size. The production build passed. The native title capture and both source title manifests recorded empty error lists.
+
+### TITLE34B shipped cast
+
+The Warden uses the game's `shapeWardenMouth` on the shipped tyrant skin, including the separate tooth rows, lining and tongue. The title opens the jaw at its hinge and brings the tongue forward over the lower lip before subdivision. The cast also imports the rebuilt dretch and basilisk. The Breacher, breach lighting, deck, flange, contact shadows and UI layout carry over from the merged title.
+
+Run `sh tools/assets/u10-keyart/title34b.sh` with Blender, Node and a Pillow-enabled Python on PATH. Build the game after regenerating to copy the new studio plates into the distribution.
+
+The regenerated title files under `public/assets/ui/u10/` are `midground-1280.png`, `midground-1280.webp`, `midground-2560.webp`, `title-1280.jpg`, `title-1280.webp`, `title-1920.webp` and `title-2560.webp`.
+
+The following table inventories the studio WebPs. Prepend the row's prefix and append `.webp` to each listed name. The studio also updated `manifest.json`. The legacy Queen shares this renderer and was included in the batch.
+
+| File prefix | Regenerated assets |
+| --- | --- |
+| `lesson-` | crawler, stalker, spitter, brute, carrier, warden, matron |
+| `reward-` | reserve-thruster, slide-loader, tactical-salvage, drive-dynamo, afterquake, reinforced-bulwark, spreading-nova, twin-glacier, scorched-fan, napalm-triplet, forked-overload, twin-pylon, siege-plow, fault-line, shard-harvest, ice-road, ember-relay, meltdown-core, pilgrim-pylon, live-wire, kinetic, cryo, pyro, arc, acid, universal, recovery, demolition, executioner, wildfire, cycling |
+| `route-` | legacy-queen, threat-crawler, threat-stalker, threat-spitter, threat-brute, threat-carrier, threat-warden, threat-matron, awakening-bay, passenger-vault, residential-gallery, communal-atrium, crew-checkpoint, armory, freight-hold, breached-loading-bay, relay-racks, transmission-chamber, diagnostic-gallery, safety-interlock-station, coolant-plant, service-shaft-landing, infested-workshop, swarm-junction, shielding-gate, containment-annulus, manual-control-chamber, overload-floor, plate-breaker, brood, warden-cache, protected-passage, workshop-siege-plow, workshop-fault-line, workshop-shard-harvest, workshop-ice-road, workshop-ember-relay, workshop-meltdown-core, workshop-pilgrim-pylon, workshop-live-wire |
+
+The RUN20 choices use the room vignettes. The supply strip reuses `route-threat-warden.webp` at 100×44. The death recap's six attacker glyphs (Crawler, Stalker, Spitter, Brute, Carrier and Queen) are hand-authored SVG paths in `exchangeGlyphs.ts`. Its separate lesson studies were regenerated at source. The ending shows the marine, cryodeck and uplink with no creature. The ending files (`ending-1280.jpg`, `ending-1280.webp` and `ending-1920.webp`), the SVG glyphs, the four selector portraits, weapon and service studies, and prop-only route images retain their existing artwork.
+
+Evidence lives in `artifacts/nextgen/title34b/`. Each of the 78 studio WebPs has a matching previous/current image in `card-pairs/`. The standalone comparisons use a 549×227 route slot, a 355×237 reward slot, or the 320×180 lesson study size. The full-screen comparisons preserve the live layout and compositing.
+
+At 460×215 the bright opening still separates the sail, head and loaded forearm faster than final24. The dark mouth reads as a bite toward the shield. The tongue and individual teeth are clearer at desktop size. The Crawler's rear plates on the upper return remain hard to count at capsule size. The production build passed and the final title, both RUN20 choices, Warden supply and death recap captures recorded empty error lists.
