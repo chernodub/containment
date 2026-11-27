@@ -235,7 +235,7 @@ export class DepthGame {
   const covers=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[];
   const lane=stageCoverLesson(this.geometry,covers,this.player);
   const origin={x:this.player.x,y:this.player.y};
-  const family=firstLane?'stalker':'spitter';
+  const family=firstLane?'brute':'spitter';
   const ingress=firstLane?64:128;
   const travel=firstLane?Math.atan2(origin.y-firstLane.y,origin.x-firstLane.x):
    Math.hypot(this.player.vx,this.player.vy)>30?Math.atan2(this.player.vy,this.player.vx):this.player.angle;
