@@ -27,13 +27,15 @@ export function incidentTransmission(profile:Aperture,along:number,across:number
   case 'under-glow':distance=Math.hypot(u*1.28,(v+.16)*.85);break;
   case 'spill':distance=Math.hypot(u*.92,v+.18*Math.sin(3*u));break;
  }
- const edge=Math.max(0,1-Math.max(Math.abs(u),Math.abs(v))**3);
- const distanceFalloff=Math.exp(-1.85*distance*distance)*edge;
- const slit=.075+.065*Math.max(0,u);
- const penumbra=Math.min(1,Math.abs(v-.18*u)/slit);
- const shadow=u>-.12?.40+.60*penumbra:1;
- const breakInRing=shape==='broken ring'&&v<-.15&&u>.06?.25:1;
- return distanceFalloff*shadow*breakInRing;
+ // The head has three guard blades. As the throw moves away from the
+ // shoe their projected shadows widen, while the reflector cuts the rim.
+ const rim=Math.min(1,Math.max(0,(1-distance)*19));
+ const blade=Math.abs(v/(1.2+.32*u)-.05*u);
+ const blocked=shape==='broken ring'?u>.08&&v<-.16:
+   shape==='split fan'?blade<.095:Math.abs(blade-.34)<.08;
+ const transmission=.09+.74*Math.max(0,1-distance)**1.75;
+ return rim*(blocked?.065:1)*transmission;
+
 }
 
 export function paintIncidentAperture(c:CanvasRenderingContext2D,id:string,color:number){

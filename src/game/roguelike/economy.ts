@@ -1,5 +1,6 @@
 import type {BuildState,RunState} from './types';
 import {AUGMENT_IDS,AUGMENT_UPGRADE_RULES} from '../abilities/augmentCatalog';
+import {orderJunction,ORDER_REPAIR} from './orderJunctions';
 export const SUPPLY_DEPTHS = [3,7,11,14,18] as const;
 export const DETOUR_DEPTHS = [2,6,10,14,17] as const;
 export type DetourChoice = 'direct'|'salvage';
@@ -25,7 +26,16 @@ const DETOURS = {
 } as const;
 export const fieldWorkshopDepth = 10;
 export function detourOffers(run:RunState){
+ const junction=orderJunction(run);
+ if(junction){
+  const offers=(['direct','salvage'] as const).map((id,index)=>({
+   id,name:junction.rooms[index],risk:`Before repair · ${junction.threats[index]}`,
+   reward:`After +${ORDER_REPAIR} HP · ${junction.rooms[1-index]} with tougher escorts`,
+  }));
+  return run.seed%2?offers:offers.reverse();
+ }
  const depth=run.completedNodeIds.length-1;
+ if(run.roomOrder&&depth===6)return [];
  if(run.version!==3||!Object.hasOwn(DETOURS,depth))return [];
  if(depth===2&&run.runStructure)return [
   {id:'direct' as const,name:GUARDIAN_ROUTES['plate-breaker'].name,risk:'Coolant Plant · Break the armoured Warden escort with plasma.',reward:'+24 plasma rounds'},

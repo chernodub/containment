@@ -153,7 +153,7 @@ export function chooseRoute(routes, health = 100) {
 }
 /** Shop only from currently offered/affordable buttons; no future-room knowledge. */
 export function chooseServicePurchase(available,combat,build={},run={}) {
-  const priorities=['revive'];
+  const priorities=['rig-return','revive'];
   if(combat.health<70)priorities.push('heal');
   if(combat.armor<20)priorities.push('armor');
   if(combat.medkits<2)priorities.push('medkit');
@@ -164,6 +164,13 @@ export function chooseServicePurchase(available,combat,build={},run={}) {
   return priorities.find(id=>available.includes(id))??null;
 }
 // RUN15 run structure. Only score terms published on the route cards.
+// Arc takes the cargo rush first when carrying rockets and the crossfire with plasma.
+ // Other rigs take the rush first except Breacher, whose shield handles ranged fire.
+export function chooseRoomOrder(run, depth, rig, forced) {
+  if (forced === 'direct' || forced === 'salvage') return forced;
+  if (depth === 5 && rig === 'arc') return run.guardianRoute === 'plate-breaker' ? 'salvage' : 'direct';
+  return rig === 'breacher' ? 'salvage' : 'direct';
+}
 export function chooseDetour(combat,depth,offers=[],profile='competent',seed) {
   if(depth===2&&Number.isInteger(seed))return seed%2?'salvage':'direct';
   const salvage=offers.find(offer=>offer.detour==='salvage'&&!offer.disabled);

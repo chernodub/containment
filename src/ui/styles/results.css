@@ -186,3 +186,6 @@
 #overlay .fatal-details .result-actions .primary { flex-basis: 100%; }
 .exchange-held { fill: none; stroke: #e2e9ec; stroke-width: 2.5; stroke-dasharray: 4 4; }
 #overlay .exchange-reach-label { color: #ffbea8; white-space: nowrap; font-size: 13px; }
+.exchange-marine.exchange-ghost { fill: none; stroke: #9eb4ba; stroke-width: 1.6; }
+.exchange-ghost .exchange-visor { opacity: .55; stroke-width: 2; }
+.exchange-trail { opacity: .58; stroke-width: 1.7; }

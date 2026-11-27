@@ -35,8 +35,8 @@ for name,model,mesh,view,res in [
              'bone':'bone','gilt':'bone','edge':'bone','eye':'mark','accent':'mark',
              'organ':'mark','mouth':'mark','sail':'bone','underbody':'shell'}
     roles=[anatomy.get(cell,'armour') for cell in cells]
-    ink.PAINT.update(shell=('191e27','37323a','60504b'),armour=('3b2c30','764833','a36645'),
-                     bone=('625752','b3a799','dfd9c4'))
+    ink.PAINT.update(shell=('192029','35404a','535962'),armour=('34292d','683e38','965841'),
+                     bone=('635b58','b5aa9c','d2c8b5'))
     ink.LIGHT['mark']='ffad55' if name!='stalker' else '91e7ff'
     if name!='warden': ink.PAINT['armour']=('232833','37404a','586572')
     obj.data.materials.clear()
@@ -75,7 +75,7 @@ for name,model,mesh,view,res in [
     scene.render.film_transparent=True;scene.render.resolution_percentage=100
     scene.render.resolution_x=scene.render.resolution_y=res
     ink.draw(scene,[obj],up+forward*.55+right*.25,res,breach=[
-        (right+forward*.25-up*.35,.81,'cc8053',.54),
-        (-right+up*.74-forward*.35,.67,'9abdd7',.72)])
+        (right+forward*.42-up*.52,.9,'c39857',.39),
+        (right+up*.85-forward*.40,.73,'b6dbe6',.65)])
     scene.render.filepath=str(out/f'{name}.png')
     bpy.ops.render.render(write_still=True)

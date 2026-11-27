@@ -77,7 +77,7 @@ export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value i
       }
     }
     if (run) {
-      const graph = generateRun(run.seed, run.version);
+      const graph = generateRun(run.seed, run.version, run.roomOrder);
       if (!graph.nodes.some(node => node.id === run.currentNodeId) || !rooms.every(id => graph.nodes.some(node => node.id === id))) return false;
       // Continue always enters the current node; a full map must already contain its timer.
       if (!Object.hasOwn(value.roomTimeMs, run.currentNodeId) && rooms.length === RUN_STATS_LIMITS.rooms) return false;

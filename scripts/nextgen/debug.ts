@@ -89,7 +89,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(game.status!=='reward'||run.version!==3||run.phase!=='starting-boon'||run.seed!==value||run.completedNodeIds.length||build.mutations.length||build.rig!==rig||game.abilities.snapshot.rig!==rig)throw Error('Legacy start requires an untouched native rig choice for the same seed');
    seed=value;setUiFixture(game,null);nativeRealtimeUiDt=null;presentation?.reset();game.newRun(seed,{version:2,rig});events.length=0;await ready();
   },
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number;runStructure?:true}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number;runStructure?:true;orderJunction?:true}={}){
    if(options.seed!==undefined)seed=options.seed;
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
@@ -105,7 +105,13 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(game.node.templateId!==templateId)throw Error(`Route did not reach ${templateId}`);
    game.skipStory();await ready();
    if(options.phase&&options.phase!=='combat'){
-    game.expedition=completeExpeditionRoom(game.expedition,game.combat.getRunResources());game.enemies.reset();game.bullets=[];game.pools=[];game.status='reward';
+    game.expedition=completeExpeditionRoom(game.expedition,game.combat.getRunResources());
+    if(options.orderJunction){
+     const roomOrder=game.node.depth===5?{}:game.node.depth===13?{5:'direct' as const}:null;
+     if(!roomOrder)throw Error('Expected a room-order junction');
+     game.expedition={...game.expedition,run:{...game.expedition.run,runStructure:1,roomOrder}};
+    }
+    game.enemies.reset();game.bullets=[];game.pools=[];game.status='reward';
     if(options.phase==='route'){const offers=expeditionRewardOffers(game.expedition);if(offers.length)game.chooseMutation(offers[0].id);else game.claimResources();}
     refresh();
    }
