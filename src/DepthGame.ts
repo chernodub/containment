@@ -370,6 +370,7 @@ export class DepthGame {
  private gateHold:{id:string;ms:number;x:number;y:number}|undefined;
  private gateGraceUntil=0;
  private holdTeachingUntil=0;
+ private holdTeachingGraceUntil=0;
  private holdCornerDashUsed=false;
  private heldSiegeBeat=-1;
  private get storyFirstHold(){return this.difficulty==='story'&&this.node.templateId==='safety-interlock-station';}
@@ -379,7 +380,7 @@ export class DepthGame {
  get storyHoldGrace(){
   const hold=this.gateHold;
   const remainingMs=Math.max(0,(this.gateGraceUntil-this.elapsed)*1000);
-  if(this.difficulty==='story'&&hold&&remainingMs>0)return {...hold,remainingMs,durationMs:2500,...(hold.id==='siege'?{radius:220,chargeDurationMs:12000}:{})};
+  if(this.difficulty==='story'&&hold&&remainingMs>0)return {...hold,remainingMs,durationMs:2500,...(hold.id==='siege'?{radius:220,chargeDurationMs:12000,teaching:this.elapsed<this.holdTeachingGraceUntil}:{})};
  }
  private gateStaged=false;
  private gatePads:{x:number;y:number}[]=[];
@@ -576,6 +577,7 @@ export class DepthGame {
     const teaching=this.holdTeachingUntil===0&&striker.meleePhase==='windup';
     if(teaching){this.enemies.extendWindup(striker.id,650);this.holdTeachingUntil=this.elapsed+2.5;}
     this.gateGraceUntil=Math.max(this.gateGraceUntil,this.elapsed+2.5+(striker.meleePhase==='windup'?striker.meleeRemainingMs/1000:0)+(teaching?.65:0));
+    if(teaching)this.holdTeachingGraceUntil=this.gateGraceUntil;
     this.presentation.push({type:'story-hold-grace',x:siege.x,y:siege.y,id:striker.id,durationMs:2500});
    }
   }
@@ -602,7 +604,7 @@ export class DepthGame {
   return true;
  }
  private enterRoom(start=true){this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollow=undefined;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
- this.gateStaged=false;this.holdTeachingUntil=0;this.holdCornerDashUsed=false;this.heldSiegeBeat=-1;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
+ this.gateStaged=false;this.holdTeachingUntil=0;this.holdTeachingGraceUntil=0;this.holdCornerDashUsed=false;this.heldSiegeBeat=-1;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
  if(this.node.templateId==='overload-floor'){

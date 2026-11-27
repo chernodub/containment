@@ -5,6 +5,7 @@ import {hudObstructs} from './layout';
 
 export class SiegeLabel {
     private readonly node = document.createElement('div');
+    private leftDuringTeaching = false;
     private readonly point = {x: 0, y: 0, visible: false};
 
     constructor(host: HTMLElement) {
@@ -13,21 +14,30 @@ export class SiegeLabel {
         host.append(this.node);
     }
 
-    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, cover?: DepthGame['relayCoverPreview']) {
+    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}, grace?: DepthGame['storyHoldGrace'], cover?: DepthGame['relayCoverPreview']) {
         this.node.hidden = true;
+        const inside = siege && Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
+        const teaching = siege && siege.remainingMs > 0 && grace?.id === 'siege' && grace.teaching;
+        if (!teaching) this.leftDuringTeaching = false;
+        const cue = teaching && !(inside && this.leftDuringTeaching);
+        if (teaching && !inside) this.leftDuringTeaching = true;
         if (!cover && (!siege || siege.choosing)) return;
         const anchor = cover ?? siege!;
         const {x, y: anchorY, visible} = projectWorld(renderer, anchor.x, anchor.y, this.point, .48);
-        const overlapsMarine = x + 100 > marine.left && x - 100 < marine.right &&
-            anchorY + 16 > marine.top && anchorY - 16 < marine.bottom;
-        const y = overlapsMarine ? marine.bottom + 22 : anchorY;
-        if (!visible || hudObstructs(x - 100, y - 15, x + 100, y + 15)) return;
-        const inside = siege && Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
-        this.node.hidden = false;
-        this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
-        this.node.style.fontSize = cover ? 'clamp(16px, 2.8vw, 48px)' : '18px';
-        const label = cover ? '⬢ Cover' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
+        const label = cover ? '⬢ Cover' : cue ? 'Step off · charge holds' : siege!.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege!.remainingMs / 1000)}s`;
         if (label !== this.node.textContent) this.node.textContent = label;
+        if (!visible) return;
+        this.node.style.fontSize = cover ? 'clamp(16px, 2.8vw, 48px)' : cue ? 'clamp(24px, 1.875vw, 36px)' : '18px';
+        this.node.style.color = cue ? '#9ee8da' : '#acf1dc';
+        this.node.style.borderColor = cue ? '#9ee8da' : '#689e91';
+        this.node.hidden = false;
+        const halfWidth = cue ? this.node.offsetWidth / 2 : 100;
+        const halfHeight = cue ? this.node.offsetHeight / 2 : 16;
+        const overlapsMarine = x + halfWidth > marine.left && x - halfWidth < marine.right &&
+            anchorY + halfHeight > marine.top && anchorY - halfHeight < marine.bottom;
+        const y = overlapsMarine ? marine.bottom + halfHeight + 6 : anchorY;
+        this.node.hidden = hudObstructs(x - halfWidth, y - halfHeight, x + halfWidth, y + halfHeight);
+        this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
     }
 
     dispose() { this.node.remove(); }
