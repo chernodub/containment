@@ -1,8 +1,11 @@
 """Measure hand-labelled visible interiors on a capture at 480x270.
 
-Usage: python brood43-values.py frame.png samples.json
+Usage: python brood43-values.py frame.png samples.json [frame.zones.json]
 Each label maps to inclusive [left, top, right, bottom] pixel rectangles.
-Use legs and visor for the two references. Exclude occluders and active actors.
+Use legs and visor for the two references. For archive images hand-label the
+visible interiors. For new images, capture --actor-zones writes eroded actor-ID
+masks; supply that sidecar to replace the manual creature samples. Effects
+composited over bodies can still appear in these screen-space measurements.
 """
 import json
 import sys
@@ -11,6 +14,9 @@ from PIL import Image
 
 image = Image.open(sys.argv[1]).convert("RGB").resize((480, 270), Image.Resampling.LANCZOS)
 regions = json.loads(Path(sys.argv[2]).read_text())
+if len(sys.argv) > 3:
+    regions = {name: regions[name] for name in ("legs", "visor")}
+    regions.update(json.loads(Path(sys.argv[3]).read_text()))
 results = {}
 for label, rectangles in regions.items():
     pixels = [image.getpixel((x, y)) for left, top, right, bottom in rectangles
