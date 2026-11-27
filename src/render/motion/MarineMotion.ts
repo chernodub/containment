@@ -449,7 +449,7 @@ export class MarineMotion {
       if(this.shotgunShoulder>0)this.carryTorso(.31*this.shotgunShoulder,-.16*this.shotgunShoulder,this.rightHand);
       if(this.rig==='pyro'){
         // Pivot the chest over the load, leaving the receiver on its firing line.
-        if(!this.action && !reload){
+        if(!reload){
           this.carryTorso(-.52,-.29,this.rightHand);
           this.stanceFeet(.22,.32);
         }else{
@@ -469,11 +469,6 @@ export class MarineMotion {
       if(this.rig==='arc'){
         // A bent arm outside the chest leaves daylight under the plasma fork.
         this.castArm(this.leftArm,this.leftForearm,this.leftHand,.18,-.77,.08,1);
-        if(this.leftArm && this.leftHand){
-          this.leftArm.getWorldPosition(this.hip);
-          this.leftHand.getWorldPosition(this.axis).sub(this.hip).normalize();
-          this.rotate(this.leftArm,this.axis,.85,this.yawQ);
-        }
         for(const finger of this.openFingers)finger.bone.quaternion.slerp(finger.bind,.88);
       }
       if(this.rig==='pyro') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.48,-.24,-.36,.96);
@@ -483,6 +478,16 @@ export class MarineMotion {
         this.solveChain(this.leftArm,this.leftForearm,this.leftHand);
       }
     }else if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+    if(this.rig==='arc' && !this.dead && !reload && this.leftArm && this.leftHand){
+      // Open the elbow around the existing cast or carry target. Preserve the
+      // hand's orientation so each action keeps its authored palm direction.
+      this.leftArm.getWorldPosition(this.hip);
+      this.leftHand.getWorldPosition(this.axis).sub(this.hip).normalize();
+      this.leftHand.getWorldQuaternion(this.footQ);
+      this.rotate(this.leftArm,this.axis,.85,this.yawQ);
+      this.leftHand.parent!.getWorldQuaternion(this.parentQ);
+      this.leftHand.quaternion.copy(this.parentQ).invert().multiply(this.footQ);
+    }
   }
 
   private readonly socketAnchor = new T.Vector3();
