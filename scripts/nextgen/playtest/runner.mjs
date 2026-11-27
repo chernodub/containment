@@ -437,8 +437,6 @@ try {
       'grille-dodge':s.recoveryGrille?.state==='waiting'&&freshEvents.some(event=>
         event.type==='enemy-attack'&&event.id===grilleAttacker?.id),
       'grille-waiting':s.recoveryGrille?.state==='waiting'&&grilleAttacker?.meleePhase==='recovery',
-      'grille-hit':s.recoveryGrille?.state==='closed'&&freshEvents.some(event=>
-        event.type==='hit'&&event.id===grilleAttacker?.id),
       'crawler-queue':crawlerStrike&&queuedCrawler,
       'crawler-queue-windup':queuedCrawler&&s.enemies.some(enemy=>enemy.type==='crawler'&&
         enemy.visible&&enemy.meleePhase==='windup'),

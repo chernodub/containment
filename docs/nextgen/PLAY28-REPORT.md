@@ -1082,3 +1082,40 @@ Matched Standard competent simulation on seed 1729. Each cell shows fan warnings
 | Arc | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 0 / 15.3 | 1 / 0 / 0.0 |
 
 [Baseline simulation](../../artifacts/nextgen/playtest/play41-opening-before/summary.json) · [PLAY41 simulation](../../artifacts/nextgen/playtest/play41-opening-after/summary.json)
+
+### Standard cohort
+
+Twelve seeds per rig, with the default PLAY39 grille rule and all other PLAY41 changes. Completed blocks include only runs that cleared all four sectors in the block.
+
+| Standard competent | R30 baseline | PLAY41 |
+|---|---:|---:|
+| Breacher | 8/12 | 9/12 |
+| Cryo | 10/12 | 9/12 |
+| Pyro | 10/12 | 10/12 |
+| Arc | 11/12 | 11/12 |
+| Total | 39/48 | 39/48 |
+| Stalls | 0 | 0 |
+
+| Sectors | R30 mean suit | PLAY41 mean suit | PLAY41 completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 23.4 | 23.22 | 48 |
+| 5–8 | 132.6 | 125.95 | 48 |
+| 9–12 | 199.9 | 191.26 | 41 |
+| 13–16 | 188.2 | 186.26 | 41 |
+| 17–20 | 164.1 | 176.43 | 39 |
+
+Sectors 9–12 moved toward the 175–190 target and finished 1.26 suit above it. Repair, global damage and global health tuning were not changed. [Standard cohort](../../artifacts/nextgen/playtest/play41-standard-final/summary.json)
+
+### Crawler suit loss
+
+The native reference is Final25. The two simulation columns use matched seed 1729 and default play policies before and after PLAY41. Each column counts all combat incurred through that run's endpoint, so deaths can change the rooms contributing to the total.
+
+| Rig | Final25 native share | Baseline sim Crawler suit / share | PLAY41 sim Crawler suit / share |
+|---|---:|---:|---:|
+| Breacher | 46.7% | 330.0 / 42.7% | 253.2 / 39.1% |
+| Cryo | 30.2% | 194.6 / 39.1% | 254.4 / 60.0% |
+| Pyro | 43.2% | 147.4 / 23.6% | 125.3 / 27.3% |
+| Arc | 43.7% | 374.7 / 43.2% | 231.8 / 40.4% |
+| Story novice Cryo | 54.1% | 420.3 / 45.9% | 422.9 / 46.9% |
+
+Both Story Cryo simulations cleared. Each of their first four sectors cost zero suit. The Standard Cryo simulations both ended in death. Arc finished only in the revised simulation. [Baseline Standard](../../artifacts/nextgen/playtest/play41-crawler-before/summary.json) · [PLAY41 Standard](../../artifacts/nextgen/playtest/play41-crawler-after/summary.json) · [Baseline Story](../../artifacts/nextgen/playtest/play41-crawler-story-before/summary.json) · [PLAY41 Story](../../artifacts/nextgen/playtest/play41-crawler-story-after/summary.json)
