@@ -348,3 +348,13 @@ Each cell lists the three trials in order. The gap column uses the difference be
 | atmosphere | 14.7 / 11.6 / 14.8 | 25.2 / 25.1 / 25.3 | 9.2 / 9.5 / 9.3 | 30.6 / 32.1 / 46.3 | 2.14→1.97 / 1.97→1.78 / 1.78→1.71 | -15% |
 
 The accepted 60 trials peaked at 218 draws and had zero combat shader compiles or WebGL errors. The first Low control, one distortion set, two gas sets and two shadow sets crossed load 3 and were replaced. The reverse post stack nearly doubled the query median relative to Low while leaving frame misses below 1%. The result suggests substantial Low-tier GPU headroom and a cost that depends on which scene and post features run together. No separate room-instance budget arm was available without changing scene LOD policy, so only the particle component of that arm was measured.
+
+## PERF48
+
+### PERF47 follow-up
+
+The quiet lead A–B–A regressed with PERF47 in all four High cases and recovered on revert. A fixed-1.0 Safety Interlock Pyro spot check measured GPU p50 58.22 → 57.53 ms and frames over 20 ms 30.56% → 49.85%, at load 1.83–2.08 → 2.27–2.70. That run did not isolate the regression in GPU timer p50. PERF47 expanded range/facing and packed-slot predicates into the unrolled loop and placed the shared PCF lookup behind per-fragment branches. Extra control flow or poorer compiler scheduling is plausible. Derivative failure and any specific compiler mechanism are unverified.
+
+### Old controller
+
+`AdaptiveResolution.ts` used a 0.7 s EMA of the sparse GPU estimate or presentation delta. `PostPipeline.ts` updated it each eligible render. GPU down/up thresholds were 16.0/13.5 ms, with 18.0/17.1 ms fallback thresholds. It stepped by 0.025 after 0.25 s of overload or 5 s of headroom and held for 0.5/2 s respectively. The lead's three reverted Safety Interlock Pyro traces ended with GPU EMAs of 42.55, 34.04 and 37.74 ms. Every trial had a 0.90 minimum and median. The controller was responding and had exhausted its scale range.
