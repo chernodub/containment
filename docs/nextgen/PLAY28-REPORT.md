@@ -952,7 +952,7 @@ Both requested cases completed on their first attempt with zero errors, includin
 | Checkpoint | Result | Suit lost | Seconds | Retries |
 |---|---:|---:|---:|---:|
 | Manual Control Breacher 1729, C | Cleared, shut the grille on three escorts | 0.00 | 49.62 | 0 |
-| Safety Interlock Story Cryo 1729 | Cleared; Final24 died with 110.81 suit lost | 45.67 | 47.05 | 0 |
+| Safety Interlock Story Cryo 1729 | Cleared. Final24 died with 110.81 suit lost | 45.67 | 47.05 | 0 |
 
 The native Story policy did not trigger hold grace in that clear. The 65.14 suit difference cannot be attributed to grace. A separate staged capture used the actual Story pad, charged it, and stepped out during a committed Brute wind-up. It captured UI34's hold ring driven by the resulting game snapshot. The Manual Control replay captured ROOM34's grille moving in response to closure while the retained escort silhouettes recoiled.
 
@@ -969,8 +969,48 @@ The first version fired down the entry position after the bot had already moved.
 | Timed Stalker follow-up, sectors 1–8 only | 48 | 14.03 | 127.99 | — |
 | Early overlap before splash timing change, sectors 1–8 only | 48 | 15.18 | 130.78 | — |
 
-The selected encounter fires a leading fan in sectors 3 and 4 with a separately warned, cover-blocked impact at discharge. If the Spitter is still winding up after 300 ms, a Brute enters from the opposite side and tracks until its visible lock. The Spitter lane pays a 24-armour patch and the conditional Brute pays a 40-armour patch in the same room. Sectors 5–8 retain the delayed leading single shot and its 24-armour patch. Story receives none of these attacks.
+The selected encounter fires a leading fan in sectors 3 and 4 with a separately warned, cover-blocked impact at discharge. If the Spitter is still winding up after 300 ms, a Brute enters from the opposite side and tracks until its 180 ms lock. The displayed opening sweep reaches 110 units and ordinary sweeps retain their usual reach. The Spitter lane pays a 24-armour patch and the conditional Brute pays a 40-armour patch in the same room. Sectors 5–8 retain the delayed leading single shot and its 24-armour patch. Story receives none of these attacks.
 
 The first Standard balance step reduced RUN20's between-room repair from 20 to 10 HP. An intercept cohort at that setting produced a 12/12 Cryo result. The next step removes the Standard HP repair and puts a 10-armour pickup at the second room entrance. The route text describes the actual reward. Story retains its 20-HP repair. RUN20's order decisions and bot policy remain intact.
 
 A separate Pyro 99 replay reproduced the final-crossing stall in the 10-HP intercept trial. A low-health Stalker was visible but screened by the lip. The policy stayed put despite a legal step that opened a shot because it penalized moving farther from the relay in straight-line distance. The shared policy now favors the legal firing angle when the existing 30-second recovery observer fires. The same game revision and seed cleared after that policy change. [Reproduced stall](../../artifacts/nextgen/playtest/play39-standard-repair10/pyro-99.json) · [Fixed replay](../../artifacts/nextgen/playtest/play39-pyro99-crossing-fix/pyro-99.json)
+
+### Selected production balance and full cohorts
+
+Standard ships with the 10-armour pickup at the second paired-room entrance and no HP refill at the preceding exit. Scheduled non-guardian enemies in those second rooms receive 25% more health. The two earlier comparisons below used earlier pressure versions. The three paired-health trials all used the same final pressure sequence and junction reward. Story keeps the existing 20-HP refill and 10% paired-second-room health bonus.
+
+| Standard trial | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| RUN20 as reported by lead | 12/12 | 12/12 | 9/12 | 11/12 | 44/48 | — |
+| 10 HP, intercept pressure | 11/12 | 12/12 | 9/12 | 8/12 | 40/48 | 1 |
+| 0 HP plus 10 armour, earlier sweep timing | 12/12 | 11/12 | 9/12 | 9/12 | 41/48 | 0 |
+| Final pressure, paired second rooms +20% | 11/12 | 11/12 | 11/12 | 11/12 | 44/48 | 0 |
+| Final pressure, paired second rooms +22.5% | 10/12 | 11/12 | 11/12 | 10/12 | 42/48 | 0 |
+| **Selected, paired second rooms +25%** | **8/12** | **8/12** | **9/12** | **11/12** | **36/48** | **0** |
+
+| Story novice | Merged RUN20 baseline | Selected PLAY39 | PLAY39 stalls |
+|---|---:|---:|---:|
+| Cryo | 9/12 | 10/12 | 0 |
+| Breacher | 12/12 | 12/12 | 0 |
+| **Total** | **21/24** | **22/24** | **0** |
+
+The final Standard releases closed 47/48 Atrium grilles and 37/39 Manual Control grilles. Story sectors 1–4 averaged 15.10 suit in both matched full cohorts on the merged base. The eight-seed Cryo comparison that previously read 17.99 reads 21.87 in both merged builds. The difference from the previous number was already present in RUN20's merged base.
+
+| Standard sectors | Matched completed blocks | Mean suit, Wave 33 → PLAY39 |
+|---|---:|---:|
+| 1–4 | 48 | 7.21 → 23.40 |
+| 5–8 | 48 | 97.55 → 132.58 |
+| 9–12 | 42 | 175.22 → 199.86 |
+| 13–16 | 41 | 196.66 → 188.20 |
+| 17–20 | 33 | 185.63 → 164.12 |
+
+| Standard Crawler suit share | Wave 33 | PLAY39 |
+|---|---:|---:|
+| Breacher | 39.32% | 34.57% |
+| Cryo | 39.63% | 39.21% |
+| Pyro | 41.25% | 36.01% |
+| Arc | 37.55% | 36.82% |
+
+Crawler share uses the damage ledger across all twelve matching runs per rig, including deaths. The comparison spans all branch changes and does not isolate the queue adjustment's individual contribution.
+
+Production build passed. The selected cohort sources match the final gameplay and playtest files. Full native campaigns remain with the lead. [Standard final](../../artifacts/nextgen/playtest/play39-release-paired25-standard/summary.json) · [Story final](../../artifacts/nextgen/playtest/play39-release-paired25-story/summary.json) · [Merged Story baseline](../../artifacts/nextgen/playtest/play39-run20-story-baseline/summary.json) · [+20%](../../artifacts/nextgen/playtest/play39-release-paired20-standard/summary.json) · [+22.5%](../../artifacts/nextgen/playtest/play39-release-paired225-standard/summary.json) · [Revision 3 A](../../artifacts/nextgen/playtest/play39-three-v3-absent/summary.json) · [Revision 3 B](../../artifacts/nextgen/playtest/play39-three-v3-off/summary.json) · [Revision 3 C](../../artifacts/nextgen/playtest/play39-three-v3-on/summary.json)
