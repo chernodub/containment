@@ -22,6 +22,12 @@ export function heavyContacts(root: T.Object3D) {
     return [{bone: skin.skeleton.bones[index], side, hand, pad, pivot, active: false, held: false,
       anchor: new T.Vector3(), offset: new T.Vector3(), original: new T.Quaternion()}];
   }));
+  const palms = pads.filter(p => p.hand);
+  root.userData.heavyPalmContacts = palms;
+  const chestIndex = skin.skeleton.bones.findIndex(b => b.name === 'chest');
+  const chestFrame = new T.Matrix4(), inverseChest = new T.Matrix4();
+  const bossPads = [-1, 1].map(side => new T.Vector3(3.12, 3.12*side, .98));
+  const bossOffsets = bossPads.map(() => new T.Vector3());
   let lastYaw: number | undefined, turnPhase = 0;
   return {
     turn(yaw: number) {
@@ -47,13 +53,25 @@ export function heavyContacts(root: T.Object3D) {
       turnPhase = 0;
       for (const p of pads) p.held = false;
     },
-    apply(phase: number) {
+    bossOffsets,
+    apply(phase: number, warden: boolean) {
+      for (const offset of bossOffsets) offset.set(0,0,0);
+      if (phase >= 0 && warden && chestIndex >= 0) {
+        const chest = skin.skeleton.bones[chestIndex];
+        chest.matrixWorldNeedsUpdate = true;
+        chest.updateWorldMatrix(true,false);
+        chestFrame.multiplyMatrices(chest.matrixWorld,skin.skeleton.boneInverses[chestIndex]).multiply(skin.bindMatrix);
+        inverseChest.copy(chestFrame).invert();
+      }
       for (const p of pads) {
         const u = (phase + (p.side > 0 ? .5 : 0) + (p.hand ? 0 : .36)) % 1;
         if (phase < 0 || (u >= .76 && u < .85)) { p.held = false; continue; }
         const parent = p.bone.parent!;
         p.bone.updateWorldMatrix(true, false);
-        point.copy(p.pad).applyMatrix4(p.bone.matrixWorld);
+        const bossHand = warden && p.hand && chestIndex >= 0;
+        const handIndex = p.side < 0 ? 0 : 1;
+        if (bossHand) point.copy(bossPads[handIndex]).applyMatrix4(chestFrame);
+        else point.copy(p.pad).applyMatrix4(p.bone.matrixWorld);
         if (u >= .85) {
           // Lower the incoming pad toward the deck before its anchor is taken.
           p.held = false;
@@ -72,6 +90,10 @@ export function heavyContacts(root: T.Object3D) {
           }
           // Roll off the same planted point before returning to the swing arc.
           target.copy(p.anchor).lerp(point, T.MathUtils.smoothstep(u, .58, .76));
+        }
+        if (bossHand) {
+          bossOffsets[handIndex].copy(target).applyMatrix4(inverseChest).sub(bossPads[handIndex]);
+          continue;
         }
         parent.worldToLocal(target);
         parent.worldToLocal(point);
