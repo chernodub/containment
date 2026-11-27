@@ -957,3 +957,20 @@ Both requested cases completed on their first attempt with zero errors, includin
 The native Story policy did not trigger hold grace in that clear. The 65.14 suit difference cannot be attributed to grace. A separate staged capture used the actual Story pad, charged it, and stepped out during a committed Brute wind-up. It captured UI34's hold ring driven by the resulting game snapshot. The Manual Control replay captured ROOM34's grille moving in response to closure while the retained escort silhouettes recoiled.
 
 [Waiting escorts at 800.82 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-waiting.png) · [Hit and closure at 802.52 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-closed.png) · [Closed ROOM34 grille at 802.72 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-recoil.png) · [Safety Interlock replay](../../artifacts/nextgen/playtest/play39-merged-native-hold-1/report.json) · [Staged UI34 ring](../../artifacts/nextgen/play39-merged-hold-ring/play39-live-hold-ring-safety-interlock-station.png)
+
+### Early pressure trials on merged RUN20
+
+The first version fired down the entry position after the bot had already moved. The native Pyro start moved from (436, 440) to about (261, 214) before the projectile left, Cryo stepped diagonally off the line, and Breacher and Arc had a warning without a recorded shot. Delaying the shot into an active fight, leading the marine, and widening the fire improved the timing but still left the competent cohort below the early target.
+
+| Trial | Standard campaigns measured | Mean sectors 1–4 suit | Mean sectors 5–8 suit | Full clears |
+|---|---:|---:|---:|---:|
+| Delayed leading shot | 48 | 9.33 | 131.38 | 41 |
+| Warned first fan | 48 | 10.76 | 134.05 | 44 |
+| Timed Stalker follow-up, sectors 1–8 only | 48 | 14.03 | 127.99 | — |
+| Early overlap before splash timing change, sectors 1–8 only | 48 | 15.18 | 130.78 | — |
+
+The selected encounter fires a leading fan in sectors 3 and 4 with a separately warned, cover-blocked impact at discharge. If the Spitter is still winding up after 300 ms, a Brute enters from the opposite side and tracks until its visible lock. The Spitter lane pays a 24-armour patch and the conditional Brute pays a 40-armour patch in the same room. Sectors 5–8 retain the delayed leading single shot and its 24-armour patch. Story receives none of these attacks.
+
+The first Standard balance step reduced RUN20's between-room repair from 20 to 10 HP. An intercept cohort at that setting produced a 12/12 Cryo result. The next step removes the Standard HP repair and puts a 10-armour pickup at the second room entrance. The route text describes the actual reward. Story retains its 20-HP repair. RUN20's order decisions and bot policy remain intact.
+
+A separate Pyro 99 replay reproduced the final-crossing stall in the 10-HP intercept trial. A low-health Stalker was visible but screened by the lip. The policy stayed put despite a legal step that opened a shot because it penalized moving farther from the relay in straight-line distance. The shared policy now favors the legal firing angle when the existing 30-second recovery observer fires. The same game revision and seed cleared after that policy change. [Reproduced stall](../../artifacts/nextgen/playtest/play39-standard-repair10/pyro-99.json) · [Fixed replay](../../artifacts/nextgen/playtest/play39-pyro99-crossing-fix/pyro-99.json)
