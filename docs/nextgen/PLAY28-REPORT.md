@@ -1014,3 +1014,51 @@ The final Standard releases closed 47/48 Atrium grilles and 37/39 Manual Control
 Crawler share uses the damage ledger across all twelve matching runs per rig, including deaths. The comparison spans all branch changes and does not isolate the queue adjustment's individual contribution.
 
 Production build passed. The selected cohort sources match the final gameplay and playtest files. Full native campaigns remain with the lead. [Standard final](../../artifacts/nextgen/playtest/play39-release-paired25-standard/summary.json) · [Story final](../../artifacts/nextgen/playtest/play39-release-paired25-story/summary.json) · [Merged Story baseline](../../artifacts/nextgen/playtest/play39-run20-story-baseline/summary.json) · [+20%](../../artifacts/nextgen/playtest/play39-release-paired20-standard/summary.json) · [+22.5%](../../artifacts/nextgen/playtest/play39-release-paired225-standard/summary.json) · [Revision 3 A](../../artifacts/nextgen/playtest/play39-three-v3-absent/summary.json) · [Revision 3 B](../../artifacts/nextgen/playtest/play39-three-v3-off/summary.json) · [Revision 3 C](../../artifacts/nextgen/playtest/play39-three-v3-on/summary.json)
+
+## PLAY40
+
+### Final25 diagnosis
+
+1. Story Cryo 1729 entered Safety Interlock with 91.18 HP and zero armour.
+2. It died after 48.60 seconds with 118.18 gross suit loss. Gross loss includes damage absorbed by recovery picked up in the room.
+3. A Spitter projectile took 6.14 at 6.8 s.
+4. Crawlers accounted for 81.17. Recorded contacts were at 7.9, 14.1, 15.1, 25.2, 29.3, 41.4, 43.7, 44.8 and 45.4 s.
+5. A Brute took 30.87 at 16.6 s. The death frame's Stalker warning does not identify the largest damage source.
+6. The opening was a 12-second siege charge. The marine was inside its footprint in 136 of 204 siege samples, with charge complete near 20 s.
+7. The old grace watched the later pincer pads. It had no eligible charge during the opening siege.
+8. The marine left the later pads at 23.8 and 27.8 s. Neither observed departure had a wind-up or strike. No grace event fired.
+9. The trace sampled up to three living heavies and two simultaneous melee wind-ups. It ended near (524, 142), against the upper-left terrain.
+10. The last recorded dash inputs were around 41.9 and 42.3 s. Both charges had recovered by 45 s and there was no later dash input. The terminal HUD marks abilities unavailable after death, so the corner was not caused by a long recharge.
+
+### Story lesson
+
+Safety Interlock now limits Story admission to six occupied slots, suppresses elites until the opening charge has advanced by four seconds, and admits one committed heavy at a time. The first pad-threatening wind-up is extended by 650 ms and shows “Step off — the charge holds” in the existing objective prompt. Siege progress was already retained off-pad. The grace snapshot now covers that actual objective from the warning through the return window, and its renderer uses the siege footprint and charge duration. The novice follows visible escape and return cues. A cornered marine can recover one spent dash charge once in this room if both charges are on cooldown. Enemy damage, Standard, and Veteran tuning are unchanged.
+
+### Final native checkpoint replays
+
+| Story Cryo 1729, room 12 | Suit lost | Result | Native errors | Grace fired |
+|---|---:|---|---:|---|
+| [Run 1](../../artifacts/nextgen/playtest/play40-final-hold-1/report.json) | 29.92 | Clear | 0 | Yes |
+| [Run 2](../../artifacts/nextgen/playtest/play40-final-hold-2/report.json) | 71.08 | Clear | 0 | Yes |
+| [Run 3](../../artifacts/nextgen/playtest/play40-final-hold-3/report.json) | 71.08 | Clear | 0 | Yes |
+| [Run 4](../../artifacts/nextgen/playtest/play40-final-hold-4/report.json) | 71.08 | Clear | 0 | Yes |
+| [Run 5](../../artifacts/nextgen/playtest/play40-final-hold-5/report.json) | 47.56 | Clear | 0 | Yes |
+
+The same checkpoint averaged 58.15 gross suit loss across the five runs. The full Final25 campaign died with 118.18. The three frames below show the same 7.90 seconds of retained charge off the pad and on return in replay 2. [Teaching prompt and ring](../../artifacts/nextgen/playtest/play40-final-hold-2/r12-safety-interlock-station-story-hold-teaching.png) · [Off the pad](../../artifacts/nextgen/playtest/play40-final-hold-2/r12-safety-interlock-station-story-hold-off-pad.png) · [Return](../../artifacts/nextgen/playtest/play40-final-hold-2/r12-safety-interlock-station-story-hold-return.png)
+
+### Simulator cohorts
+
+| Profile | Rig | Usual seed clears | Seed 1729 | Stalls |
+|---|---|---:|---|---:|
+| Story novice | Cryo | 11/12 | Clear | 0 |
+| Story novice | Breacher | 12/12 | Clear | 0 |
+| Standard competent | Arc | 11/12 | Outside cohort | 0 |
+| Standard competent | Cryo | 10/12 | Outside cohort | 0 |
+
+Story finished 23/24 on the usual seeds and 25/26 with the extra cases. Cryo 1729 lost 75.76 in room 12. Breacher 1729 lost 30.71. All 24 paired Standard cases matched the merged head exactly in outcome, death room, and the serialized room results. [Story](../../artifacts/nextgen/playtest/play40-final-story/summary.json) · [Standard](../../artifacts/nextgen/playtest/play40-final-standard/summary.json) · [Merged Standard baseline](../../artifacts/nextgen/playtest/play40-standard-base/summary.json)
+
+### Full native campaign
+
+Story novice Cryo 1729 cleared all 20 rooms with zero native errors. Safety Interlock cost 72.29 gross suit and fired grace. Every final Interlock trace, including all five checkpoint replays, sampled at most one committed heavy at a time. These runs did not isolate the emergency dash refill from natural recharge. Veteran was not replayed. Production build passed.
+
+[Campaign report](../../artifacts/nextgen/playtest/play40-final-full/report.json) · [Teaching strike](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-teaching.png) · [Off the pad](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-off-pad.png) · [Return](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-return.png)

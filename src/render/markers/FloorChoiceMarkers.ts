@@ -27,7 +27,7 @@ function coveredBankHead(){
  return head;
 }
 
-export type StoryHoldGrace = {id:string;x:number;y:number;ms:number;remainingMs:number;durationMs:number};
+export type StoryHoldGrace = {id:string;x:number;y:number;ms:number;remainingMs:number;durationMs:number;radius?:number;chargeDurationMs?:number};
 
 export class FloorChoiceMarkers {
  readonly root=new T.Group();
@@ -52,10 +52,10 @@ export class FloorChoiceMarkers {
 
  updateStoryHold(grace:StoryHoldGrace|undefined, choices:DepthGame['floorControls'], unit:number, dt:number, room:number){
   if(room!==this.graceRoom){this.graceRoom=room;this.graceCharge=0;}
-  const pad=grace&&choices.find(choice=>choice.kind==='gate'&&choice.id===grace.id);
+  const pad=grace&&(grace.radius!==undefined?{...grace,radius:grace.radius}:choices.find(choice=>choice.kind==='gate'&&choice.id===grace.id));
   this.graceNotch.visible=!!pad&&!!grace;
   if(grace&&pad){
-   this.graceCharge=Math.min(1,grace.ms/950);
+   this.graceCharge=Math.min(1,grace.ms/(grace.chargeDurationMs??950));
    for(const mesh of [this.graceRing,this.graceNotch]){
     mesh.position.set(pad.x/unit,.061,pad.y/unit);
     mesh.scale.setScalar(pad.radius/unit);

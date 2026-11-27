@@ -543,6 +543,14 @@ export class AbilitySystem {
   private linkActive(d: Deployable, p: AbilityPoint): boolean {
     return d.kind === 'pylon' && d.health > 0 && Math.hypot(p.x - d.x, p.y - d.y) <= 280 && this.host.visible(p, d);
   }
+  recoverDashCharge(){
+    const cooldowns=this.states.dash.cooldowns;
+    if(cooldowns.length<this.maxCharges('dash'))return false;
+    cooldowns.splice(cooldowns.indexOf(Math.min(...cooldowns)),1);
+    this.event(this.definition('dash').id,'ready',this.host.player());
+    return true;
+  }
+
   /** Reuse bounded motion records; no target object or internal cooldown map escapes in snapshots. */
   private rememberLinkMotion(): void {
     if (!this.hasPylon()) {
