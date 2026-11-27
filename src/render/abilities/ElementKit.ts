@@ -103,6 +103,8 @@ export class ElementKit {
     statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
     arcContactUntil = -1;
+    heatVictim = -1;
+    heatUntil = -1;
     low = false;
     reducedMotion = false;
     flashIntensity = 1;
@@ -661,7 +663,7 @@ export class ElementKit {
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
     clear(): void {
-        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); this.arcContactUntil = -1; for (const p of this.particles)
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); this.arcContactUntil = this.heatUntil = this.heatVictim = -1; for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)

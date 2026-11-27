@@ -74,8 +74,6 @@ class PyroPresentation implements AbilityPresentation {
   private printClock = 0;
   private disposed = false;
   private suitAngle = 0;
-  private heatVictim = -1;
-  private heatUntil = -1;
   private muzzle?: Object3D;
   private readonly source = new Vector3();
   private suit?: Object3D;
@@ -183,9 +181,9 @@ class PyroPresentation implements AbilityPresentation {
         const ids = event.targetIds;
         const lastId = ids?.[ids.length - 1];
         const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
-        if (actor && lastId !== undefined) {
-          this.heatVictim = lastId;
-          this.heatUntil = kit.time + .32;
+        if (actor && lastId !== undefined && (kit.heatVictim !== lastId || kit.time >= kit.heatUntil + .25)) {
+          kit.heatVictim = lastId;
+          kit.heatUntil = kit.time + .32;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
           actor.hit?.(.68, angle);
@@ -579,7 +577,7 @@ class PyroPresentation implements AbilityPresentation {
       const foot = enemy.radius / UNIT * .66;
       if (dist < nearest) { nearest=dist; lx=ex+foot; lz=ez+.22; }
     }
-    const contact = meltdown && kit.time < this.heatUntil ? kit.statusActor(this.heatVictim) : undefined;
+    const contact = meltdown && kit.time < kit.heatUntil ? kit.statusActor(kit.heatVictim) : undefined;
     if (contact) { lx = contact.root.position.x; lz = contact.root.position.z; }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(contact ? 9 : meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
@@ -685,7 +683,6 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   clear(): void {
-    this.heatVictim = this.heatUntil = -1;
     for (const pool of this.burnYield) { pool.zone = -1; pool.seen = false; }
     for (const surface of this.surfaces) { if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
     for (const p of this.effects) p.live = false;

@@ -31,14 +31,11 @@ export class OverdrivePayoff {
   private z = 0;
   private radius = ARC_FIELD;
   private age = 0;
-  private contactUntil = -1;
   private arcClock = 0;
   constructor(private readonly kit: ElementKit) {}
 
   event(event: AbilityEvent, x: number, y: number): void {
-    if (event.ability === 'meltdown' && event.phase === 'tick' && event.targetIds?.length)
-      this.contactUntil = this.kit.time + .32;
-    if (event.element === 'arc' && event.phase === 'link') this.contactUntil = this.kit.time + .42;
+    if (event.element === 'arc' && event.phase === 'link') this.kit.arcContactUntil = this.kit.time + .42;
     if (event.slot !== 'overdrive') return;
     const px = x / UNIT, pz = y / UNIT, k = this.kit;
     if (event.ability === 'railbreaker') { if (event.phase === 'cast') this.rail(px, pz, (event.durationMs ?? 300) / 1000); return; }
@@ -170,11 +167,10 @@ export class OverdrivePayoff {
     slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
     slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
     if (zoneAge !== undefined) slot.age = zoneAge;
-    const contact = this.kit.time < Math.max(this.contactUntil, this.kit.arcContactUntil);
     let contactGain = 1;
-    if (this.rig === 'arc') contactGain = contact ? .085 : .38;
+    if (this.rig === 'arc') contactGain = this.kit.time < this.kit.arcContactUntil ? .085 : .38;
     if (this.rig === 'cryo') contactGain = .28;
-    if (this.rig === 'pyro' && contact) contactGain = .30;
+    if (this.rig === 'pyro' && this.kit.time < this.kit.heatUntil) contactGain = .30;
     slot.param = this.level * contactGain; slot.intensity = this.kit.low ? .75 : 1;
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);
@@ -208,7 +204,6 @@ export class OverdrivePayoff {
 
   clear(): void {
     if (this.climax && this.climax.seed === this.climaxSeed) this.climax.live = false;
-    this.contactUntil = -1;
     this.climax = undefined; this.level = 0; this.wasActive = false; this.age = 0;
   }
 }
