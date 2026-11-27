@@ -75,9 +75,17 @@ export class TargetMarkers {
         const preview=game.relayCoverPreview;
         if(preview){
             const start=projectWorld(renderer,preview.from.x,preview.from.y,{x:0,y:0,visible:false},.15);
-            const stop=projectWorld(renderer,preview.x,preview.y,this.point,.15);
+            // The stopped warning ray meets the sill cap. Follow its physical
+            // return down the end plate to show the protected standing space.
+            const stop=projectWorld(renderer,preview.x,preview.y,this.point,1.62);
             if(stop.visible&&Number.isFinite(start.x)&&Number.isFinite(start.y)){
                 this.painted=true;
+                ctx.beginPath();ctx.moveTo(stop.x,stop.y);
+                for(const [dx,dz,height] of [[0,-18,1.62],[0,-19,.05],[0,-64,.05],[-58,-64,.05]]){
+                    const edge=projectWorld(renderer,preview.x+dx,preview.y+dz,{x:0,y:0,visible:false},height);
+                    ctx.lineTo(edge.x,edge.y);
+                }
+                ctx.strokeStyle='#cbae79';ctx.lineWidth=2.5;ctx.stroke();
                 ctx.strokeStyle='#ff9c77';
                 ctx.lineWidth=2;
                 ctx.beginPath();

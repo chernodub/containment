@@ -599,3 +599,52 @@ Both quality tiers cover 20 rooms in three views on each build, for 240 selected
 The default production build passed. The unmodified native Arc campaign on seed 2718 reached room 17, Shielding Gate, after clearing 16 rooms. The marine died there after 39 minutes of wall time. The final report has zero runtime errors and two loading defects, Passenger Vault and Residential Gallery. Total entry holds over five seconds were Passenger 12.28 s, Residential 11.37 s and Checkpoint 6.44 s. The runner returned exit 1, and the final three rooms have staged capture coverage only. [Build log](../../artifacts/nextgen/room34/build-final.log) · [Native campaign report](../../artifacts/nextgen/playtest/room34/report.json) · [Terminal frame](../../artifacts/nextgen/playtest/room34/terminal-dead.png)
 
 At the start, `df -h /Users/chernodub` reported 926 GiB total, 870 GiB used, 26 GiB available and 98% capacity. At the end it reported 926 GiB total, 809 GiB used, 89 GiB available and 91% capacity. This worktree’s `artifacts/nextgen/` occupied 2.8 GiB at handoff.
+
+## ROOM35 — bank tracks, reactor shelter and fight-centre wear
+
+Passenger's paired berth runners cross the near and far banks at the gauge of the displaced beds. Checkpoint's pivot track breaks into curved shoes with an open centre groove. Transmission's bare conductor crosses ribbed insulators. Overload's wide bus passes under transverse steel clamps. These details share the existing clipped deck texture.
+
+The reactor sill has a wedge-shaped stopping face, an upward-facing steel cap and a continuous ochre edge down the end plate to the sheltered standing space. The fork preview projects that return and the tracer endpoint at the cap. The native blocked-shot event supplies the impact timing and position. The geometry, preview and paint changes use the existing collision surface.
+
+Eighteen arena centres carry a local drag mark, scorch, spill or chevron and a broken identification plate with a folded seam. The sheet sits at 0.0214 m and clips against the hull, voids and solids. Existing layered contact grime darkens the walls and hardware feet. The unlit deck received a 10% dark paint wash outside the two fixture masks. Communal Atrium and Manual Control Chamber retain their existing dressing pending PLAY41. Coolant's reflected throw is narrower and shorter, with a dark gap at the footing. Shielding's bar terminates at a hard transverse edge. Both retain the source lens.
+
+The first native impact comparison exposed a cutaway defect. A creature crossing the extended foot rail could remove the whole shelter. The revised sill uses four contiguous panels with separate actor-only cutaway ranges in its existing draw. The native fork fixture reports the first safe standing point at (778.35, 319.06) and the shot stop at (833.71, 349.82), both in ship units. These positions bracket the return edge. The impact flash projects at the cap, 1.62 m above the shot stop.
+
+Across the eighteen dressed rooms, the matched High calm and kiting frames contributed 15,471 visible deck samples outside practical pools. Their mean linear Rec. 709 luma fell from 0.05659 to 0.05179 (8.5%). Inside the practicals, 1,670 samples averaged 0.10210 before and 0.09528 after. The photographed deck includes the marine's own light, deck coatings and effects over opaque geometry. These are image measurements on the capture positions. White shin panels and black boot outlines remain distinguishable in the High review strip. The pale sole still meets pale equipment in Coolant and the shaft landing. The dark register of the right reactor bank also hides clamp detail between highlights.
+
+The comparison projects the capture renderer's visible-floor samples onto the ground plane using its camera matrices. Each point is classified against the tapered practical footprint using the visible fixtures' recorded angles, widths and depths (four High, two Low). This approximates the practical pool mask. Per-room values combine the calm and kiting samples by pixel count; draw counts take the maximum across calm, incident-facing and kiting. The High reference is final25. Its Low gallery covers a subset of rooms, so the previous Low peaks below come from the twenty-room ROOM34 sweep.
+
+The integrated build with HEAVY45 also ran one ten-second Arc benchmark per tier at Safety Interlock. The 25-enemy scenario peaked at 179 draws on High and 165 on Low, with zero combat shader compiles, runtime errors or budget failures. This separate workload differs from the three screenshot fixtures. [Benchmark receipt](../../artifacts/nextgen/room35-safety/benchmark.json)
+
+The original native Arc command on seed 2718 hit its one-hour wall limit in Service Shaft Landing. It cleared 13 rooms and recorded zero runtime errors. The continuation starts at the earned Coolant Plant reward checkpoint with the recorded health, resources and build. A separate final25 room-19 continuation on the completed shooter-bank build reached the ending, recorded the native choice and three impacts, and logged zero runtime errors. It returned exit 1 for a loading defect. The successful final-room retry loaded Overload in 20.20 seconds. Earlier attempts on the segmented sill and shooter-bank versions timed out at the 120-second room-loading limit while GPU shader preparation was pending. [Original command](../../artifacts/nextgen/playtest/room35/report.json) · [Continuation](../../artifacts/nextgen/playtest/room35-continued/report.json) · [Final-room replay](../../artifacts/nextgen/final25/.work/playtest/room35-bank-final-retry/report.json)
+
+All twenty rooms have a selected calm, incident-facing and kiting frame on both quality tiers. All 120 selected frames have clean capture manifests. The 60 High frames individually match or improve on their final25 draw count. Peak staged draws were 257 High and 246 Low at Shielding Gate, within the 330-draw budget. Safety Interlock reached 162 High and 149 Low. Smaller capture batches replaced startup or room-loading timeouts on both tiers. [Paired native and 480×270 gallery](../../artifacts/nextgen/room35/index.html) · [Per-frame measurements and source manifests](../../artifacts/nextgen/room35/measurements.json) · [High boot review](../../artifacts/nextgen/room35/boot-review-high.png) · [Low boot review](../../artifacts/nextgen/room35/boot-review-low.png)
+
+| Room | In pool, final25 → ROOM35 | Outside pool, final25 → ROOM35 | Low luma, in / out | High draws, final25 → ROOM35 | Low draws, ROOM34 → ROOM35 |
+|---|---:|---:|---:|---:|---:|
+| awakening-bay | 0.058 → 0.054 | 0.050 → 0.046 | 0.050 / 0.042 | 137 → 137 | 124 → 125 |
+| passenger-vault | 0.079 → 0.078 | 0.061 → 0.059 | 0.074 / 0.055 | 120 → 119 | 107 → 108 |
+| residential-gallery | 0.112 → 0.108 | 0.058 → 0.053 | 0.109 / 0.043 | 113 → 113 | 102 → 103 |
+| communal-atrium | 0.065 → 0.066 | 0.060 → 0.059 | 0.065 / 0.057 | 132 → 132 | 121 → 122 |
+| crew-checkpoint | 0.103 → 0.094 | 0.044 → 0.041 | 0.099 / 0.038 | 109 → 108 | 98 → 98 |
+| armory | 0.095 → 0.103 | 0.058 → 0.056 | 0.108 / 0.054 | 166 → 166 | 156 → 157 |
+| freight-hold | 0.160 → 0.170 | 0.067 → 0.059 | 0.205 / 0.055 | 118 → 118 | 106 → 107 |
+| breached-loading-bay | 0.106 → 0.098 | 0.065 → 0.060 | 0.100 / 0.053 | 124 → 124 | 112 → 113 |
+| relay-racks | 0.080 → 0.078 | 0.040 → 0.035 | 0.086 / 0.035 | 137 → 136 | 125 → 125 |
+| transmission-chamber | 0.077 → 0.073 | 0.034 → 0.032 | 0.083 / 0.032 | 122 → 121 | 111 → 111 |
+| diagnostic-gallery | 0.099 → 0.093 | 0.070 → 0.063 | 0.112 / 0.061 | 117 → 116 | 103 → 104 |
+| safety-interlock-station | 0.095 → 0.089 | 0.077 → 0.071 | 0.086 / 0.070 | 163 → 162 | 149 → 149 |
+| coolant-plant | 0.122 → 0.087 | 0.074 → 0.065 | 0.097 / 0.061 | 119 → 118 | 106 → 106 |
+| service-shaft-landing | 0.161 → 0.152 | 0.065 → 0.060 | 0.139 / 0.047 | 112 → 112 | 100 → 101 |
+| infested-workshop | 0.036 → 0.032 | 0.031 → 0.026 | 0.032 / 0.027 | 155 → 155 | 144 → 145 |
+| swarm-junction | 0.112 → 0.110 | 0.032 → 0.026 | 0.138 / 0.026 | 101 → 101 | 89 → 89 |
+| shielding-gate | 0.130 → 0.118 | 0.049 → 0.045 | 0.137 / 0.042 | 257 → 257 | 245 → 246 |
+| containment-annulus | 0.098 → 0.087 | 0.095 → 0.089 | 0.084 / 0.087 | 130 → 129 | 118 → 119 |
+| manual-control-chamber | 0.056 → 0.056 | 0.038 → 0.038 | 0.049 / 0.037 | 147 → 147 | 135 → 134 |
+| overload-floor | 0.137 → 0.133 | 0.070 → 0.067 | 0.146 / 0.073 | 136 → 135 | 122 → 123 |
+
+Four 480×270 crop pairs per lane show the decks with the main landmark outside the crop. They include native combat, entry and clear frames at fighting positions. Camera and actor positions vary between runs. Passenger and Transmission carry the clearest shapes. On the darkest Overload bank, the clamps are easier to follow near a highlight. The cap and near return remain visible at the native impact, although intervening actors cut away middle panels. On approach the HUD and crowd can still conceal part of the shelter. [Passenger](../../artifacts/nextgen/room35/native/passenger-vault-banks.png) · [Checkpoint](../../artifacts/nextgen/room35/native/crew-checkpoint-banks.png) · [Transmission](../../artifacts/nextgen/room35/native/transmission-chamber-banks.png) · [Overload](../../artifacts/nextgen/room35/native/overload-floor-banks.png) · [Approach](../../artifacts/nextgen/room35/approach-480.png) · [Choice](../../artifacts/nextgen/room35/bank-choice-480.png) · [Impact](../../artifacts/nextgen/room35/cover-lip-impact-1-480.png)
+
+The earned-checkpoint continuation finished the campaign with all twenty rooms cleared, zero runtime errors and seven recorded room-loading holds over five seconds in the cumulative report. The runner returned exit 1. Elapsed wall time across both invocations was 5,064 seconds, including 1,463 seconds on the continuation. HEAVY45 was present in the continuation build. BROOD43 landed during that run. After merging it locally, the conflict-marker scan was clear, the default production build passed and the re-captured reactor fork had empty errors and failures. [Final production build](../../artifacts/nextgen/room35/build-delivery.log) · [Integrated fork capture](../../artifacts/nextgen/room35-delivery-brood/manifest.json)
+
+At the start the data volume had 926 GiB total, 826 GiB used, 74 GiB available and 92% capacity. At handoff it had 926 GiB total, 835 GiB used, 61 GiB available and 94% capacity. This worktree's artifacts/nextgen occupied 1.6 GiB.
