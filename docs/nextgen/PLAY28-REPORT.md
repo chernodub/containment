@@ -806,3 +806,40 @@ The Freight Hold native frame shows the striking Crawler and two nearby Crawlers
 The near-side experiment revision also passed the production build, using a separate output directory so ongoing native campaigns could continue serving their original bundles.
 
 In the revised Breacher ON sample, waiting escorts were visible at 800.82 seconds. The return shot at 802.32 seconds closed the grille on all three. The sampled actor position came from the close-ingress fallback, so this demonstrates a working Manual Control return shot without establishing the short-side console placement. The run logged an interior-preparation error, and it does not supply a clean paired result. [Waiting](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-waiting.png) · [Hit and three-escort closure](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-closed.png)
+
+### Continued measurement
+
+Each simulator campaign uses the twelve usual seeds for each rig with two workers per arm. Arm A uses the same staging and mandatory escort entry when the Brute's recovery ends. Arm B allows closure on a qualifying hit. Arm C also gives the competent bot the grille policy. Room means include every visitor, including deaths. Clear denominators count the full campaigns.
+
+### v0
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 30.48 | 51.76 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 13.30 | 23.10 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 86.73 | 67.13 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.05 | 21.02 | 0 |
+| A | Pyro | manual-control-chamber | 11 | 0 | 0 | 57.85 | 48.27 | 1 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 23.02 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 32.62 | 47.94 | 0 |
+| B | Breacher | communal-atrium | 12 | 12 | 12 | 5.20 | 23.31 | 0 |
+| B | Breacher | manual-control-chamber | 8 | 8 | 24 | 37.89 | 49.98 | 0 |
+| B | Cryo | communal-atrium | 12 | 11 | 11 | 14.32 | 23.65 | 0 |
+| B | Cryo | manual-control-chamber | 10 | 9 | 27 | 85.32 | 65.33 | 0 |
+| B | Pyro | communal-atrium | 12 | 9 | 9 | 2.15 | 20.51 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 9 | 27 | 32.56 | 42.32 | 0 |
+| B | Arc | communal-atrium | 12 | 11 | 11 | 0.60 | 21.55 | 0 |
+| B | Arc | manual-control-chamber | 12 | 8 | 24 | 23.92 | 41.30 | 2 |
+| C | Breacher | communal-atrium | 12 | 12 | 12 | 4.40 | 23.18 | 0 |
+| C | Breacher | manual-control-chamber | 12 | 12 | 36 | 31.14 | 50.76 | 0 |
+| C | Cryo | communal-atrium | 12 | 11 | 11 | 9.77 | 23.02 | 0 |
+| C | Cryo | manual-control-chamber | 10 | 9 | 27 | 70.31 | 61.39 | 0 |
+| C | Pyro | communal-atrium | 12 | 9 | 9 | 2.15 | 20.74 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 12 | 36 | 16.32 | 41.15 | 0 |
+| C | Arc | communal-atrium | 12 | 11 | 11 | 0.35 | 22.57 | 0 |
+| C | Arc | manual-control-chamber | 12 | 10 | 30 | 19.80 | 42.75 | 1 |
+
+Clears and stalls: A 39/48 (0 stalls), B 36/48 (0 stalls), C 42/48 (0 stalls)
+
+[Arm A](../../artifacts/nextgen/playtest/play39-three-v0-absent/summary.json) · [Arm B](../../artifacts/nextgen/playtest/play39-three-v0-off/summary.json) · [Arm C](../../artifacts/nextgen/playtest/play39-three-v0-on/summary.json)
