@@ -1132,5 +1132,22 @@ Both losses were deaths. Sector-by-sector suit loss matched the baseline in sect
 
 ### Camera evidence
 
-- Breacher's earned Atrium checkpoint produced a dodge, a waiting grille, a closure hit and a recoil frame. The event log records two escorts cancelled. A live enemy and the garden wreckage obscure the escorts in this angle, especially at 480×270. [Dodge](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-dodge.png) · [Waiting](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-waiting.png) · [Hit](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-closed.png) · [Bars down](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-recoil.png)
+- Breacher's earned Atrium checkpoint produced a dodge, a waiting grille, a closure hit and a recoil frame. The event log records two escorts cancelled. A live enemy and the garden wreckage obscure the escorts in this angle, especially at 480×270. [Dodge](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-dodge.png) · [Waiting](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-waiting.png) · [Hit](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-closed.png) · [Bars down](../../artifacts/nextgen/playtest/play41-atrium-final-frames/r4-communal-atrium-grille-recoil.png)
 - Story Cryo's earned Freight checkpoint yielded three consecutive phases from the same Crawler, from 149.817 to 150.017 seconds. This is the floor queue by the cargo bank. A wall-pinned sequence remains unverified. [Windup](../../artifacts/nextgen/playtest/play41-wall-story-cryo/play-r7-freight-hold-032.png) · [Strike](../../artifacts/nextgen/playtest/play41-wall-story-cryo/r7-freight-hold-crawler-queue.png) · [Recovery](../../artifacts/nextgen/playtest/play41-wall-story-cryo/r7-freight-hold-crawler-queue-recovery.png)
+
+### Three-arm simulation
+
+Each cell reports closures / visits, escorts cancelled, and mean suit loss on the twelve-seed cohort. Each arm uses the candidate geometry. The absent arm always releases the escorts. Visits include any run that reached the room.
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Communal Atrium | Breacher | 3/12, 6, 16.94 | 8/12, 16, 20.68 | 0/12, 0, 16.94 |
+| Communal Atrium | Cryo | 3/12, 6, 38.41 | 6/12, 12, 27.29 | 0/12, 0, 37.49 |
+| Communal Atrium | Pyro | 1/12, 2, 5.89 | 7/12, 14, 13.52 | 0/12, 0, 6.14 |
+| Communal Atrium | Arc | 1/12, 2, 15.63 | 8/12, 16, 11.78 | 0/12, 0, 15.63 |
+| Manual Control Chamber | Breacher | 0/10, 0, 44.41 | 7/11, 21, 39.58 | 0/10, 0, 44.71 |
+| Manual Control Chamber | Cryo | 0/8, 0, 84.01 | 6/9, 18, 58.58 | 0/7, 0, 93.43 |
+| Manual Control Chamber | Pyro | 0/12, 0, 40.00 | 2/12, 6, 39.94 | 0/12, 0, 38.25 |
+| Manual Control Chamber | Arc | 1/10, 3, 36.57 | 4/8, 12, 37.56 | 0/10, 0, 36.10 |
+
+Cryo alone lost less suit in both rooms with awareness. The aware arm closed 29/48 in Atrium and 19/40 in Manual Control. The unaware arm closed 8/48 and 1/40, below the PLAY39 reference rates of 42% and 27%. The candidate stays opt-in. [Unaware](../../artifacts/nextgen/playtest/play41-aisle-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41-aisle-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41-aisle-absent/summary.json)
