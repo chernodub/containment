@@ -51,7 +51,7 @@ import type {WeaponId} from './game/combat/types';
 export type GameEffect={grilleEscorts?:number;arrivalSwing?:'strike'|'recovery';reserveCut?:{count:number;family:StandardEnemyId;closedEntry?:string};shutterBroken?:true;plateBroken?:true;exposedHit?:true;floorChoice?:string;planReaction?:true;selfBlast?:{distance:number;radius:number};incomingSource?:IncomingDamageOrigin['source'];encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'story-hold-grace'|'recovery-grille-closed'|'recovery-escort-entered'|'ability'|'melee-miss'|'recovery-stagger'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'ambush'|'enemy-attack'|'enemy-warning'|'arrival-recovery'|'arrival-wound'|'reserve-cut'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
 export type GameInput={x:number;y:number;fire:boolean;angle:number|null;autoAim:boolean;aimPoint?:{x:number;y:number}|null};
 export type Bullet={hostileOwner?:number;preview?:true;previewAt?:number;sourceX?:number;sourceY?:number;visualMuzzle?:{x:number;y:number;z:number;distance:number};x:number;y:number;life:number;kind:'player'|'grenade'|'hazard';request:ProjectileRequest;tracker:ProjectileHitTracker;hitReceipt?:{hit:boolean}};
-export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number};
+export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number;spitterOpening?:true};
 const IDLE:GameInput={x:0,y:0,fire:false,angle:null,autoAim:false};
 const SPITTER_PROJECTILE_RADIUS=ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
 const RELAY_RACKS_SHUTTER_SPITTER={x:670,y:142};
@@ -245,10 +245,9 @@ export class DepthGame {
    const reward=lane?.pickup??sidesteps.find(step=>canTraverseExpedition(this.geometry,origin,step,this.player.radius));
    if(!reward)continue;
    this.pending.push({type:'spitter',...shooter,elite:false,delay:350,
-    options:{closeIngress:true,healthScale:this.node.depth<=3?1.55:undefined,
-     openingVolley:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
+    options:{closeIngress:true,openingVolley:this.node.depth<=3?'lead-marine-wide':'lead-marine'}});
    this.presentation.push({type:'enemy-warning',...shooter,durationMs:350,radius:32});
-   this.pickups.spawn('armor',this.node.depth<=3?32:24,reward.x,reward.y);
+   this.pickups.spawn('armor',this.node.depth<=3?40:24,reward.x,reward.y);
    break;
   }
  }
@@ -1235,7 +1234,9 @@ export class DepthGame {
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
-   const range=Math.max(96,Math.hypot(e.targetX-e.x,e.targetY-e.y));
+   const range=Math.hypot(e.targetX-e.x,e.targetY-e.y);
+   const impactMs=e.durationMs+range/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*1000;
+   this.presentation.push({type:'enemy-warning',x:e.targetX,y:e.targetY,durationMs:impactMs,radius:92});
    for(const edge of [-e.spread,e.spread])this.presentation.push({type:'enemy-warning',x:e.x,y:e.y,
     targetX:e.x+Math.cos(angle+edge)*range,targetY:e.y+Math.sin(angle+edge)*range,
     durationMs:e.durationMs,radius:12});
@@ -1246,6 +1247,12 @@ export class DepthGame {
   if(e.spread&&!this.earlyPressureFollowed){
    this.earlyPressureFollowed=true;
    this.stageEarlyPressure({x:e.sourceX,y:e.sourceY});
+  }
+  if(e.spread&&canTraverseExpedition(this.geometry,{x:e.sourceX,y:e.sourceY},{x:e.targetX,y:e.targetY},
+   SPITTER_PROJECTILE_RADIUS)){
+   const warning=Math.hypot(e.targetX-e.sourceX,e.targetY-e.sourceY)/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed;
+   this.pools.push({id:++this.poolId,x:e.targetX,y:e.targetY,radius:92,warning,life:warning+.36,
+    damage:24,tick:warning,spitterOpening:true});
   }
   const rays=e.spread?[-e.spread,-e.spread/2,0,e.spread/2,e.spread]:[0];
   for(const ray of rays)this.bullets.push({hostileOwner:e.enemyId,sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,
@@ -1626,7 +1633,18 @@ export class DepthGame {
    this.relayHeavyRecovering=recovering;
   }
   this.updateRoomCondition(ms);if(this.node.templateId==='overload-floor'){const live=this.enemies.snapshot.enemies;this.hiddenEnemiesMs=live.length&&!live.some(enemy=>hasClearExpeditionShot(this.geometry,this.player,enemy))?this.hiddenEnemiesMs+ms:0;}if(this.status!=='playing')return;this.updateAwakeningDrill(ms);if(this.status!=='playing')return;this.queenEvents(this.boss.update(hostileMs*this.bossSlow,this.player,this.enemies.activeCount+this.pending.length));this.updateBullets(dt,previousTargets,hostileScale);if(this.status!=='playing')return;
-  for(const pool of this.pools){pool.life-=hostileMs/1000;pool.tick-=hostileMs/1000;if(pool.tick<=0){pool.tick=.5;if(Math.hypot(pool.x-this.player.x,pool.y-this.player.y)<pool.radius+16)this.hurt(pool.damage,pool,{source:'acid-pool',enemyFamily:'queen'});}}this.pools=this.pools.filter(p=>p.life>0);if(this.status!=='playing')return;
+  for(const pool of this.pools){
+   pool.life-=hostileMs/1000;
+   pool.warning=Math.max(0,pool.warning-hostileMs/1000);
+   pool.tick-=hostileMs/1000;
+   if(pool.tick>0)continue;
+   pool.tick=.5;
+   if(pool.spitterOpening)this.presentation.push({type:'acid',x:pool.x,y:pool.y,radius:pool.radius});
+   if(Math.hypot(pool.x-this.player.x,pool.y-this.player.y)<pool.radius+16&&
+    (!pool.spitterOpening||hasClearExpeditionShot(this.geometry,pool,this.player)))
+    this.hurt(pool.damage,pool,{source:'acid-pool',enemyFamily:pool.spitterOpening?'spitter':'queen'});
+  }
+  this.pools=this.pools.filter(p=>p.life>0);if(this.status!=='playing')return;
   this.pickups.update(ms,this.player,{magnetEnabled:true,magnetRange:familyBonuses(this.combat.build).recovery?144:120});this.collectLoot();
   this.tickRecoveryGrille();
   for(let i=this.pending.length-1;i>=0;i--){const p=this.pending[i];p.delay-=hostileMs;if(p.delay>0||p.grilleEscort&&this.recoveryGrilleState?.state==='waiting'||p.consoleHold&&this.elapsed<this.consoleRelease||(p.clutchHoldUntil??0)>this.elapsed&&this.elapsed<(this.broodMarksShownAt??Infinity)+.4)continue;if(this.spawn(p.type,p.x,p.y,p.elite,p.guardian,p.options,p.shutterSpitter,p.approachLeadMs))this.pending.splice(i,1);else if((p.attempts=(p.attempts??0)+1)>40){/* I13: exhausted annulus requests retire so a blocked brood cannot jam room clear. */if(p.options?.podOrigin){this.pending.splice(i,1);continue;}const open=this.openBreaches;const point=open[p.attempts%open.length];p.x=point.x+(point.facing==='east'?56:-56);p.y=point.y;}}
