@@ -648,3 +648,18 @@ Four 480×270 crop pairs per lane show the decks with the main landmark outside 
 The earned-checkpoint continuation finished the campaign with all twenty rooms cleared, zero runtime errors and seven recorded room-loading holds over five seconds in the cumulative report. The runner returned exit 1. Elapsed wall time across both invocations was 5,064 seconds, including 1,463 seconds on the continuation. HEAVY45 was present in the continuation build. BROOD43 landed during that run. After merging it locally, the conflict-marker scan was clear, the default production build passed and the re-captured reactor fork had empty errors and failures. [Final production build](../../artifacts/nextgen/room35/build-delivery.log) · [Integrated fork capture](../../artifacts/nextgen/room35-delivery-brood/manifest.json)
 
 At the start the data volume had 926 GiB total, 826 GiB used, 74 GiB available and 92% capacity. At handoff it had 926 GiB total, 835 GiB used, 61 GiB available and 94% capacity. This worktree's artifacts/nextgen occupied 1.6 GiB.
+
+## ROOM35b — the two recovery grilles
+
+In Communal Atrium the two waiting escorts now occupy separate bays against a warm, self-lit aisle lining. Manual Control scales the same lining to the held group. The bright strip sits behind the bodies. The shutter has short returns that show its travel from the nearly edge-on game camera. The existing recovery-grille-closed event supplies a short camera impulse. Encounter staging, collision and withdrawal timing stay with PLAY41.
+
+Atrium has paired drag marks and a seamed MESS 4 plate. Manual has worn control chevrons and a CTRL plate. Both use the ROOM35 clipped deck layer and its outside-pool darkening. The grille parts remain in the two existing mesh batches.
+
+| Room | High draws, before → now | Low draws, before → now |
+|---|---:|---:|
+| Communal Atrium | 133 → 133 | 123 → 123 |
+| Manual Control Chamber | 182 → 182 | 169 → 169 |
+
+All three phases recorded the same count within each room and tier, below the 330-draw budget. The default production build passed. The four selected manifests cover 24 captures with empty errors and failures. The comparisons restage recorded Pyro positions with the production game camera. Atrium uses the PLAY41b waiting receipt. Manual uses a prior Pyro waiting receipt and the PLAY41b aisle-placement function. The hit frame exercises the native grille closure at 50 ms and the down frame shows it at 360 ms. These are matched presentation captures. The Atrium pair separates at 480×270. The near-edge-on shutter still looks thin there, especially in a still frame. In Manual the right edge crops the backlight at the sampled player position.
+
+[Native and 480×270 pairs](../../artifacts/nextgen/room35b/index.html) · [Per-frame draw calls](../../artifacts/nextgen/room35b/draws.json) · [Final High manifest](../../artifacts/nextgen/room35b-final-high/manifest.json) · [Final Low manifest](../../artifacts/nextgen/room35b-final-low/manifest.json) · [Production build](../../artifacts/nextgen/room35b/build.log)
