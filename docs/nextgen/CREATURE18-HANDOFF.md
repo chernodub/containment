@@ -2033,11 +2033,11 @@ The matched crowd fixtures returned the following maxima across Swarm Junction, 
 
 | Resting family | Final25 maximum luma | BROOD43 maximum luma | Final25 maximum saturation | BROOD43 maximum saturation |
 |---|---:|---:|---:|---:|
-| Crawler | .989 | .476 | .365 | .031 |
+| Crawler | .989 | .476 | .365 | .035 |
 | Spitter | .595 | .412 | .989 | .086 |
 | Stalker | .877 | .446 | 1.000 | .148 |
-| Carrier | .696 | .456 | .712 | .120 |
-| Matron | — | .461 | — | .143 |
+| Carrier | .696 | .456 | .712 | .125 |
+| Matron | — | .465 | — | .143 |
 | Pod | — | .249 | — | .263 |
 
 The four ordinary crowds had leg references of .746–.800 and visor references of .307–.355. All 24 family-by-floor comparisons met both limits. Matron and pod used a sparse arrangement with their own references. The matched before/after crowd draws were 88 in Swarm Junction, 117 in Transmission Chamber, 100 in Crew Checkpoint and 101 in Coolant Plant. Settled burning, chilled, frozen and shocked crowds reached maximum small-family lumas of .460, .463, .510 and .460 against a leg reference of .796. At 480 × 270 the camouflaged Stalker is the hardest resting body to find on the dark Swarm floor.
