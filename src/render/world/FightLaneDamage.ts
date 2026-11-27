@@ -49,9 +49,9 @@ export function addFightLaneDamage(root:Group,id:string){
       // A battered steel sill straddles the feed. The sloping end and
       // recessed panel breaks expose the stopping face from the approach.
       lip.box(-49,17,-8,98,34,16,0x485352);
-      lip.face([[-98,35,-18],[0,35,-18],[0,35,0],[-98,35,0]],0x48504b);
-      lip.face([[-98,32,9],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
-      lip.face([[-98,2,9],[0,2,0],[0,32,0],[-98,32,9]],0x171d20);
+      lip.face([[-98,35,-18],[-98,35,0],[0,35,0],[0,35,-18]],0x9b9e8b);
+      lip.face([[-98,32,14],[-98,35,0],[0,35,0],[0,32,0]],0x5a6157);
+      lip.face([[-98,2,22],[0,2,0],[0,32,0],[-98,32,14]],0x556264);
       lip.face([[0,2,0],[0,2,-18],[0,35,-18],[0,35,0]],0x364043);
       lip.box(-49,20,5,98,21,5,0x424c50);
       lip.box(-2,18,-7,5,35,24,0x796446);
@@ -66,8 +66,11 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.rod([-95,9,-18],[-160,5,-34],3,0x805f4c);
       // Painted steel values stay readable on the dark feeder bank. The
       // short orange return around the corner follows the reactor casing.
-      lip.box(-9,34.8,-1,18,1.6,2.3,0xa45e32);
-      lip.box(-1,34.8,-8,2,1.6,15,0x96542f);
+      lip.rod([-96,35,12],[0,35,0],2.2,0xd7ac69);
+      lip.rod([0,35,0],[0,35,-18],2.2,0xd7ac69);
+      lip.rod([0,35,-18],[0,1,-19],2.2,0xd7ac69);
+      lip.rod([0,1,-19],[0,1,-64],2.2,0xbfa278);
+      lip.rod([0,1,-64],[-58,1,-64],2.2,0xbfa278);
       for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
       const steel=new MeshBasicMaterial({vertexColors:true});
       const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel);
