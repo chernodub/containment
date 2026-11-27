@@ -1193,3 +1193,23 @@ Merged local nextgen through `a65d7fb5` into `t3/play41`. The production build a
 | End | 926 GiB | 843 GiB | 56 GiB | 94% |
 
 The assigned worktree's `artifacts/nextgen` occupied 2.4 GiB at handoff.
+
+
+## PLAY41b
+
+Both candidates use PLAY41's live-spawn grille alignment and 1.5-second hold. S tests the original ±30° shot-origin condition. S2 tests which side of the Brute the shot originated on. The release-only runs use that same staging for both comparisons. Each cell gives closures per visit, escorts cancelled, and mean gross suit lost. Visits include all runs that reached the room.
+
+### Arm S
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 2/12, 4, 16.94 | 7/12, 14, 20.88 | 0/12, 0, 16.94 |
+| Atrium | Cryo | 1/12, 2, 37.49 | 7/12, 14, 19.77 | 0/12, 0, 37.49 |
+| Atrium | Pyro | 1/12, 2, 6.94 | 7/12, 14, 15.65 | 0/12, 0, 6.14 |
+| Atrium | Arc | 0/12, 0, 15.63 | 8/12, 16, 17.62 | 0/12, 0, 15.63 |
+| Manual Control | Breacher | 3/10, 9, 31.42 | 5/9, 15, 45.09 | 0/10, 0, 44.71 |
+| Manual Control | Cryo | 3/7, 9, 76.56 | 6/10, 18, 137.72 | 0/7, 0, 93.43 |
+| Manual Control | Pyro | 1/12, 3, 38.07 | 6/10, 18, 34.32 | 0/12, 0, 38.25 |
+| Manual Control | Arc | 3/10, 9, 35.67 | 5/9, 15, 20.68 | 0/10, 0, 36.10 |
+
+S closed 4/48 Atrium grilles and 10/39 Manual Control grilles with the unaware policy. No rig beat the release-only control in both rooms with the aware policy. [Unaware](../../artifacts/nextgen/playtest/play41b-s-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41b-s-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41b-s-absent/summary.json)
