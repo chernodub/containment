@@ -2119,3 +2119,20 @@ Of eight native room-pressure frames, all eight exceeded at least one figure ref
 These numbers describe the composed screenshot. In Pyro R4 the Crawler mask contains a red overlay pixel, and the Stalker had taken a hit about 150 ms earlier. The archived native PNGs use hand-labelled visible patches. Current native frames have geometry masks, which cover more pixels. The Cryo R4 and R7 peaks also move the marine and use fresh reference coordinates. The local comparison gallery is `artifacts/nextgen/brood43-review/index.html`. It includes the Freight Hold contact reconstructed from final25's recorded positions and warning, and a separate native Pyro queue from this run.
 
 Both release-build campaigns cleared ten rooms with zero errors. The runners returned exit 1 for room loads over five seconds (three Cryo, four Pyro). The campaigns used the pre-integration BROOD43 distribution. After merging HEAVY45 (`ca7c4738`), the production build passed and the fresh Swarm Junction crowd capture reported 88 draws and no errors. The merged shot kept all four visible small families below their references. Its Brute exceeded the visor's .348 saturation, reaching 1.000 on two near-black pixels, RGB (0, 5, 18) and (0, 0, 14). The HEAVY45 owner should have these pixel values when assessing the shared rule.
+
+### BROOD43 colour revision
+
+Keep the shell dark and use the painted fork and dorsal scutes for Crawler amber, the muzzle and pressure vessel for Spitter lime, the blade bevels and abdomen for Stalker ice blue, and sac seams and shell facets for Carrier, Matron and pod violet. Reserve red for the hostile warning. Only the striking socket earns attack emission. The resting shapes use the existing materials and draw batches. The Stalker retains a visible blue keel through camouflage on the dark Swarm Junction floor.
+
+Each cell below gives maximum display luma / maximum HSV saturation / circular mean hue in degrees at 480 × 270. The hue mean weights each pixel by its RGB chroma so neutral ink contributes little. Rooms use the existing reduced-frame body masks and the original marine reference patches. Pods use the labelled shell interiors. The four distinct hues occupy at least 44° of separation on every floor. Carrier, Matron and pod share their brood's violet.
+
+| Family | Swarm Junction | Transmission Chamber | Crew Checkpoint | Coolant Plant |
+|---|---:|---:|---:|---:|
+| Crawler | 0.606 / 0.248 / 33° | 0.639 / 0.239 / 33° | 0.616 / 0.230 / 33° | 0.619 / 0.236 / 34° |
+| Spitter | 0.630 / 0.242 / 77° | 0.609 / 0.227 / 78° | 0.599 / 0.231 / 82° | 0.632 / 0.239 / 80° |
+| Stalker | 0.604 / 0.252 / 204° | 0.630 / 0.245 / 202° | 0.607 / 0.247 / 204° | 0.622 / 0.252 / 202° |
+| Carrier | 0.569 / 0.220 / 275° | 0.562 / 0.218 / 273° | 0.572 / 0.223 / 274° | 0.573 / 0.214 / 275° |
+| Matron | 0.586 / 0.241 / 274° | 0.587 / 0.242 / 273° | 0.593 / 0.239 / 273° | 0.585 / 0.224 / 274° |
+| Pod | 0.432 / 0.220 / 278° | 0.444 / 0.243 / 266° | 0.443 / 0.213 / 276° | 0.442 / 0.215 / 277° |
+
+My three-second family count on the mixed Swarm Junction rest frame was 5/5 in final25, 3/5 in the first pass and 5/5 in the revision, including Brute. I could name Crawler, Carrier and Brute immediately in the first pass. The blue Stalker and lime Spitter were the two that returned in the revision. The Spitter at the lower-left edge is still the slowest read in the wind-up frame. These are one reviewer's impressions of a known fixture. The comparison gallery at `artifacts/nextgen/brood43-colour-review/index.html` includes the full-size sources, the colour and greyscale triptychs and the luma, saturation, hue and marine references per floor. The final25 rest pose is reconstructed on the reviewed build. Its wind-up is the archived final25 capture.
