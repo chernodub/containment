@@ -272,7 +272,7 @@ bool crawlerShoulder=crawlerSkin && (broodBand==2 || broodBand==5) &&
                      actorPosition.x>.16 && actorPosition.x<.64 && abs(actorPosition.y)>.10;
 if(broodFinish && crawlerShoulder && !broodMark)
  outgoingLight=vec3(.46,.395,.28)*mix(.76,1.,actorStageLight);
-if(broodFinish && broodMark){
+if((broodFinish || spitterSkin) && broodMark){
  float frost=actorContact.x<1.5 ? actorContact.y : 0.;
  outgoingLight=cuttingEdge?vec3(.86,.76,.57):mix(lanternEmission,.72*lanternEmission+.06*vec3(.24,.54,.68),frost);
 }
@@ -359,7 +359,7 @@ totalEmissiveRadiance=lanternEmission;
 float wetPick=pow(max(dot(normalize(vNormal),normalize(creatureKey+normalize(vViewPosition))),0.0),48.0);
 totalEmissiveRadiance+=vec3(.62,.66,.62)*actorWet*zoneFlesh*(1.0-zoneBone)*smoothstep(.35,.75,wetPick)*actorStageLight*actorCamouflage;`}
 #ifdef BROOD_PLANES
-if(broodFinish && (broodMark || ridgeGlow>0.)){
+if((broodFinish || spitterSkin) && (broodMark || ridgeGlow>0.)){
   // Keep the identification mark visible through the resting Stalker's camouflage.
   float markVisibility=stalkerSkin ? mix(.83,1.,actorCamouflage) : actorCamouflage;
   if(crawlerSkin)markVisibility*=1.-.52*actorBroodPrime;
