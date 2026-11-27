@@ -53,7 +53,9 @@ export function wardenRecoil(root: T.Object3D) {
         head.updateWorldMatrix(true, false);
         world.copy(cheek).applyMatrix4(head.matrixWorld);
         neck.worldToLocal(local.copy(world));
-        target.set(.48 * side, .61, .38).multiplyScalar(exposure).add(world);
+        // The backward-slumped neck lies behind the near pauldron on this
+        // approach. Carry the cheek around its outside edge with the recoil.
+        target.set(.735 * side, .455, .308).multiplyScalar(exposure).add(world);
         parent.worldToLocal(target);
         parent.getWorldQuaternion(rotation).invert();
         axis.set(0, 1, 0).applyQuaternion(rotation).normalize();
@@ -63,6 +65,9 @@ export function wardenRecoil(root: T.Object3D) {
         neck.updateMatrix();
         neck.position.add(target.sub(local.applyMatrix4(neck.matrix)));
         neck.updateMatrix();
+        // Sampling owns bone matrices. Propagate the moved neck before using
+        // the skull world matrix to solve the independent jaw joint.
+        neck.updateMatrixWorld(true);
         active = true;
       }
       jaw.updateMatrix();

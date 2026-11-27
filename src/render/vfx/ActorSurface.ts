@@ -267,10 +267,10 @@ if(actorBroodForm.x>=-1.){
   }
   if(heavyPaint==10.)paint=vec3(.068,.033,.062);
   if(heavyPaint==9.){
-    vec3 core=mix(vec3(.75,.40,.18),vec3(1.35,.71,.28),actorWallRecoil);
+    vec3 core=mix(vec3(.75,.40,.18),vec3(1.65,.88,.36),actorWallRecoil);
     paint=abs(actorPosition.y)<.70?core:vec3(.013,.008,.009);
   }
-  if(heavyPaint==12.)paint=vec3(.28,.12,.052);
+  if(heavyPaint==12.)paint=mix(vec3(.28,.12,.052),vec3(.41,.20,.10),actorWallRecoil);
   if(heavyPaint==13.)paint=vec3(.008,.003,.006);
   if(heavyPaint==14.)paint=vec3(.43,.36,.25);
   vec3 n=normalize(vNormal);
