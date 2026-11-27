@@ -3,13 +3,15 @@
 export function restingBodyRegions() {
   const d = window.__containmentDebug;
   const r = d.renderer;
-  const target = r.post.resources.scene;
+  const target = r.post.resources?.scene;
+  if (!target || d.game.status !== 'playing') return {};
   const {width, height} = target;
   const geometry = new Uint8Array(width * height * 4);
   r.renderer.readRenderTargetPixels(target, 0, 0, width, height, geometry, undefined, 1);
   const families = new Map();
   for (const enemy of d.game.enemies.snapshot.enemies) {
-    if (enemy.windupMs || enemy.chargeMs || enemy.meleePhase !== 'approach') continue;
+    if (enemy.health <= 0 || enemy.windupMs || enemy.chargeMs || enemy.broodRemainingMs ||
+        enemy.meleePhase !== 'approach') continue;
     const model = r.actors.get(enemy.id);
     if (model) families.set(model.root.userData.containmentGeometryId,
       enemy.pod ? 'pod' : enemy.champion ?? enemy.type);
