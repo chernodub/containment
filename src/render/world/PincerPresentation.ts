@@ -24,6 +24,8 @@ export class PincerPresentation {
     silhouettes: {root:T.Group; arrival:number}[];
     countdown: T.Mesh;
   }>();
+  private queuedBend?:T.Group;
+  private recoveryGate?:ReturnType<PincerPresentation['createGate']>;
   private delayedGate?:ReturnType<PincerPresentation['createGate']>;
   private readonly seams: T.Mesh[] = [];
   private readonly pinned = new WeakMap<ActorModel, number>();
@@ -162,6 +164,14 @@ export class PincerPresentation {
     const closed=bearing&&game.geometry.breaches.find(breach=>breach.x===bearing.to.x&&breach.y===bearing.to.y);
     const cutAge=bearing?Math.max(0,2-bearing.until+game.elapsed):0;
     this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
+    const bend=menu?undefined:game.coolantQueuedBend;
+    if(bend){
+      if(!this.queuedBend){this.queuedBend=this.makeSilhouette();this.root.add(this.queuedBend);}
+      this.queuedBend.visible=true;
+      this.queuedBend.position.set(bend.x/unit,0,bend.y/unit);
+      this.queuedBend.rotation.y=-bend.angle;
+    }else if(this.queuedBend)this.queuedBend.visible=false;
+    this.updateRecoveryGrille(menu?undefined:game.recoveryGrille,unit,game.elapsed);
     this.exit.visible = pincer?.state === 'sealed';
     if (!pincer) return;
     if (this.exit.visible) {
@@ -185,6 +195,32 @@ export class PincerPresentation {
           (i - (gate.silhouettes.length - 1) / 2) * .51);
       });
     }
+  }
+
+  private updateRecoveryGrille(grille:DepthGame['recoveryGrille'],unit:number,elapsed:number){
+    if(!grille){
+      if(this.recoveryGate)this.recoveryGate.root.visible=false;
+      return;
+    }
+    const gate=this.recoveryGate??=this.createGate();
+    // ROOM34 owns the physical grille. Keep the waiting and recoiling bodies here.
+    gate.shutter.visible=false;
+    gate.root.visible=true;
+    gate.root.position.set(grille.x/unit,0,grille.y/unit);
+    gate.root.rotation.y=-grille.angle;
+    gate.countdown.visible=false;
+    const age=Math.max(0,elapsed-grille.changedAt);
+    while(gate.silhouettes.length<grille.escorts){
+      const root=this.makeSilhouette();
+      gate.root.add(root);
+      gate.silhouettes.push({root,arrival:0});
+    }
+    gate.silhouettes.forEach(({root},index)=>{
+      root.visible=index<grille.escorts&&grille.state!=='entered';
+      const recoil=grille.state==='closed'?Math.min(.55,age*3)*Math.exp(-age*2):0;
+      const leave=grille.state==='closed'?Math.max(0,age-.18)*1.7:0;
+      root.position.set(-.57-recoil-leave,0,(index-(grille.escorts-1)/2)*.48);
+    });
   }
 
   private updateDelayedGate(hatch:DepthGame['delayedPincerHatch'],unit:number,cutAge?:number){
@@ -306,6 +342,7 @@ export class PincerPresentation {
     this.root.removeFromParent();
     for (const gate of this.gates.values()) gate.countdown.geometry.dispose();
     this.delayedGate?.countdown.geometry.dispose();
+    this.recoveryGate?.countdown.geometry.dispose();
     for (const resource of [this.block, this.body, this.sac, this.ring, this.metal, this.warning, this.shadow, this.signal, this.track]) resource.dispose();
   }
 }

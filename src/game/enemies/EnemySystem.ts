@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number};healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{closeIngress?:boolean;interceptOpening?:boolean;lessonDamageScale?:number;baitAim?:{x:number;y:number};recoveryFloorMs?:number;broodSupply?:boolean;broodDestination?:'relay'|'supply';openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';healthScale?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{readySeed?:number;spitWindupMs?:number;slick?:(point:{x:number;y:number})=>boolean;openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   ordinaryIdleScale?:number;
@@ -89,6 +89,7 @@ export type HazardAttackEvent = Readonly<{
   sourceY: number;
   targetX: number;
   targetY: number;
+  spread?:number;
 }>;
 
 export type EnemyDeathEvent = Readonly<{priority?:boolean;beat?:number;
@@ -126,7 +127,7 @@ export type EnemyEvent =
   | HazardAttackEvent
   | EnemyDeathEvent
   | EnemySpawnRequestEvent
-  | Readonly<{type:'attack-warning';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;targetX:number;targetY:number;durationMs:number}>;
+  | Readonly<{type:'attack-warning';enemyId:number;enemyType:StandardEnemyId;x:number;y:number;targetX:number;targetY:number;durationMs:number;spread?:number}>;
 
 export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 
@@ -198,7 +199,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;firstWardenCharge?:true;openingVolley?:{x:number;y:number};wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {lessonDamageScale?:number;recoveryFloorMs?:number;broodDestination?:'relay'|'supply';arrivalDamage?:number;arrivalSwing?:true;arrivalLockLeadMs?:number;firstWardenCharge?:true;openingVolley?:{x:number;y:number}|'lead-marine'|'lead-marine-wide';openingSpitSpread?:number;wallStunAngle?:number;rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   readyBehaviour?: ReadyBehaviour;
   commitmentDeniedAt?: number;
   feintMs?: number;
@@ -519,7 +520,7 @@ export class EnemySystem {
       );
       if(enemy.champion!=='matron')enemy.specialCooldownMs=Math.max(0,enemy.specialCooldownMs-timerDelta/this.#rest);enemy.chargeMs=Math.max(0,enemy.chargeMs-timerDelta);
       if(enemy.windupMs>0){enemy.windupMs=Math.max(0,enemy.windupMs-timerDelta);if(enemy.windupMs===0){
-       if(enemy.pendingAttack==='spit'){events.push(freezeEvent({type:'hazard-attack',enemyId:enemy.id,enemyType:'spitter',damage:enemy.contactDamage,sourceX:enemy.x,sourceY:enemy.y,targetX:enemy.lockX,targetY:enemy.lockY}));this.#beginReposition(enemy,player);}
+       if(enemy.pendingAttack==='spit'){events.push(freezeEvent({type:'hazard-attack',enemyId:enemy.id,enemyType:'spitter',damage:enemy.contactDamage,sourceX:enemy.x,sourceY:enemy.y,targetX:enemy.lockX,targetY:enemy.lockY,spread:enemy.openingSpitSpread}));enemy.openingSpitSpread=undefined;this.#beginReposition(enemy,player);}
        if(enemy.pendingAttack==='charge')enemy.chargeMs=ENEMY_ATTACK_SHAPES.chargeDurationMs;enemy.pendingAttack=null;enemy.decisionCooldownRemainingMs=0;
       }}
       this.#advanceCamouflage(enemy, timerDelta);
@@ -559,6 +560,31 @@ export class EnemySystem {
         const shove=normalized(player.x-enemy.x,player.y-enemy.y);
         const distanceToMove=player.radius??DEFAULT_PLAYER_RADIUS;
         events.push(freezeEvent({type:'ready-shove',x:shove.x*distanceToMove,y:shove.y*distanceToMove}));
+      }
+    }
+
+    const striker=[...this.#enemies.values()].find(enemy=>enemy.type==='crawler'&&
+      (enemy.meleePhase==='windup'||enemy.meleePhase==='strike'));
+    if(striker){
+      const strikeSide=striker.meleeAngle+Math.PI;
+      for(const enemy of this.#enemies.values()){
+        if(enemy.type!=='crawler'||enemy.meleePhase!=='approach'||enemy.pod||
+          enemy.stunRemainingMs>0||enemy.speed===0||this.#launched?.(enemy.id))continue;
+        const dx=enemy.x-player.x,dy=enemy.y-player.y;
+        const radius=Math.hypot(dx,dy);
+        if(radius<1||radius>96)continue;
+        const bearing=Math.atan2(dy,dx);
+        const offset=Math.atan2(Math.sin(bearing-strikeSide),Math.cos(bearing-strikeSide));
+        if(Math.abs(offset)*radius>=28.8)continue;
+        const side=Math.abs(offset)<.05?(enemy.id%2?1:-1):Math.sign(offset);
+        for(const turn of [side,-side]){
+          const vx=-dy/radius*enemy.speed*this.#movement*turn;
+          const vy=dx/radius*enemy.speed*this.#movement*turn;
+          if(!this.#movementAllowed(enemy,enemy.x+vx*movementDelta/1000,enemy.y+vy*movementDelta/1000))continue;
+          enemy.velocityX=vx;
+          enemy.velocityY=vy;
+          break;
+        }
       }
     }
 
@@ -694,6 +720,7 @@ export class EnemySystem {
     if(enemy.champion!=='warden')enemy.wallStunAngle=undefined;
     enemy.windupMs=enemy.chargeMs=enemy.broodRemainingMs=0;
     enemy.pendingAttack=null;
+    enemy.openingSpitSpread=undefined;
   }
 
   releaseChildReservation(id: number): void {
@@ -1198,12 +1225,14 @@ export class EnemySystem {
   }
 
   /** Control breaks an anticipated hit; thawing must earn a fresh warning. */
-  beginArrivalSwing(id:number,player:EnemyPlayerState):readonly EnemyEvent[]{
+  beginArrivalSwing(id:number,player:EnemyPlayerState,trackUntilLock=false):readonly EnemyEvent[]{
     const enemy=this.#enemies.get(id);
     if(!enemy||(enemy.type!=='brute'&&enemy.lesson!=='stalker'))return [];
     enemy.arrivalSwing=true;
     enemy.meleePhase='windup';
-    enemy.meleeFacingLocked=true;
+    enemy.meleeFacingLocked=!trackUntilLock;
+    enemy.arrivalLockLeadMs=trackUntilLock?180:undefined;
+    if(trackUntilLock)enemy.meleeShape={...enemy.meleeShape,range:110};
     enemy.meleeRemainingMs=enemy.meleeDurationMs=this.#meleeWindup(enemy);
     this.#aimMelee(enemy,player,true);
     enemy.attackSlot=Object.freeze({angle:enemy.meleeAngle+Math.PI,radius:enemy.radius+(player.radius??DEFAULT_PLAYER_RADIUS)});
@@ -1251,8 +1280,8 @@ export class EnemySystem {
     const profile=MELEE_ATTACKS[enemy.type];
     if(enemy.meleePhase==='windup'&&!enemy.meleeFacingLocked){
       this.#aimMelee(enemy,player);
-      if(enemy.meleeRemainingMs-deltaMs<=profile.lockLeadMs&&![...this.#enemies.values()].some(other=>
-        other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs))enemy.meleeFacingLocked=true;
+      if(enemy.meleeRemainingMs-deltaMs<=(enemy.arrivalLockLeadMs??profile.lockLeadMs)&&(enemy.arrivalSwing||![...this.#enemies.values()].some(other=>
+        other.meleePhase==='windup'&&other.meleeRemainingMs<enemy.meleeRemainingMs)))enemy.meleeFacingLocked=true;
     }
     let remaining=deltaMs;
     while(enemy.meleePhase!=='approach'){
@@ -1285,6 +1314,8 @@ export class EnemySystem {
           enemy.meleeDurationMs=enemy.meleeRemainingMs=Math.max(minimum,enemy.meleeRemainingMs);
         }
       }else{
+        if(enemy.arrivalLockLeadMs!==undefined)enemy.meleeShape=profile.shape;
+        enemy.arrivalLockLeadMs=undefined;
         enemy.recoveryFloorMs=undefined;
         enemy.meleePhase='approach';enemy.meleeProgress=0;enemy.meleeDurationMs=enemy.meleeRemainingMs=0;enemy.meleeFacingLocked=false;enemy.decisionCooldownRemainingMs=0;enemy.contactCooldownRemainingMs=profile.cooldownMs*this.#rest*(enemy.champion?1:this.#ordinaryIdleScale);
         this.#yieldMeleeBerth(enemy);
@@ -1301,7 +1332,22 @@ export class EnemySystem {
     const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     const playerRadius = player.radius ?? DEFAULT_PLAYER_RADIUS;
     if(enemy.windupMs>0||enemy.meleePhase!=='approach'||this.#meleeStartGapMs>0)return;
-    if(enemy.openingVolley){if(!this.#permitsAttack(enemy,player,'ranged'))return;const target=enemy.openingVolley;enemy.openingVolley=undefined;this.#windUpSpit(enemy,target,events);return;}
+    if(enemy.openingVolley){
+      if(!this.#permitsAttack(enemy,player,'ranged'))return;
+      const leading=typeof enemy.openingVolley==='string';
+      let target=typeof enemy.openingVolley==='string'?player:enemy.openingVolley;
+      enemy.openingSpitSpread=enemy.openingVolley==='lead-marine-wide'?.44:undefined;
+      if(leading){
+        const horizon=Math.min(enemy.openingSpitSpread?1.15:.8,
+          this.#spitWindupMs/1000+distance/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed);
+        const vx=player.vx??0,vy=player.vy??0,pace=Math.min(1,220/(Math.hypot(vx,vy)||1));
+        const lead={x:player.x+vx*horizon*pace,y:player.y+vy*horizon*pace};
+        if(this.#canAttack?.(enemy,lead)!==false)target=lead;
+      }
+      enemy.openingVolley=undefined;
+      this.#windUpSpit(enemy,target,events);
+      return;
+    }
     if(this.#balance.specials&&(enemy.champion==='warden'||enemy.role===undefined&&enemy.type==='brute'&&enemy.elite)&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
      if(!this.#permitsAttack(enemy,player,'charge'))return;
      if(enemy.firstWardenCharge&&distance>240)return;
@@ -1374,7 +1420,7 @@ export class EnemySystem {
     enemy.rangedCooldownRemainingMs=ENEMIES.spitter.attackCooldownMs+this.#spitWindupMs;
     enemy.velocityX=enemy.velocityY=0;
     events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,
-      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs:this.#spitWindupMs}));
+      x:enemy.x,y:enemy.y,targetX:target.x,targetY:target.y,durationMs:this.#spitWindupMs,spread:enemy.openingSpitSpread}));
   }
 
   #applyKnockback(

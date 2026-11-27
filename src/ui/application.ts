@@ -136,7 +136,8 @@ export async function bootstrap() {
                 flash.animate([{opacity: .35 * settings.effectiveGraphicsOptions.flashIntensity}, {opacity: 0}], {duration: 220});
         }
     };
-    const game = new DepthGame(effect, storage);
+    const query = new URLSearchParams(location.search);
+    const game = new DepthGame(effect, storage, query.get('debug') === '1' && query.has('recovery-grilles') ? query.get('recovery-grilles') === '1' : undefined);
     beats = new PresentationBeats(game, app, cue => playPresentationCue(audio, cue));
     beats.setEnabled(presentationEnabled);
     const pause = () => {

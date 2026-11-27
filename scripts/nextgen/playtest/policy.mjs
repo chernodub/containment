@@ -80,6 +80,29 @@ function candidateVelocity(s,candidate) {
   return {x:x/length*speed,y:y/length*speed};
 }
 
+/** The recovery shot counts from the half of the fight facing the waiting escorts. */
+function inReturnArc(grille, target, player) {
+  const x=player.x-target.x,y=player.y-target.y,gx=grille.x-target.x,gy=grille.y-target.y;
+  return x*gx+y*gy >= grille.returnArcCosine*Math.hypot(x,y)*Math.hypot(gx,gy);
+}
+
+function grilleApproach(s, grille) {
+  const waypoint=grille.waypoint??grille;
+  const warnings=visibleEnemies(s).filter(enemy=>enemy.meleeShape);
+  let result, remaining=distance(s.player,waypoint);
+  for(const candidate of s.candidates){
+    if(!candidate.legal||!(candidate.dx||candidate.dy))continue;
+    const velocity=candidateVelocity(s,candidate);
+    const at=f=>({x:s.player.x+velocity.x*HUMAN_OBSERVATION_MS/1000*f,
+      y:s.player.y+velocity.y*HUMAN_OBSERVATION_MS/1000*f,radius:s.player.radius});
+    const next=distance(at(1),waypoint);
+    if(next>=remaining-.5||[.33,.66,1].some(f=>warnings.some(enemy=>insideMeleeWarning(enemy,at(f)))))continue;
+    result=candidate;
+    remaining=next;
+  }
+  return result;
+}
+
 /** Escape the visible shape itself, before ordinary fire-lane/spacing preferences. */
 function meleeEscapePlan(s) {
   const warnings=visibleEnemies(s).filter(enemy=>enemy.meleePhase==='windup'&&enemy.meleeShape);
@@ -260,7 +283,11 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
     if(s.shutterBait&&c.waypoint)score-=distance(next,c.waypoint)*11;
     if(s.gate&&c.waypoint){score-=distance(next,c.waypoint)*4;score-=Math.max(0,distance(next,s.gate)-8)*4;}
-    if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
+    if(s.siege?.remainingMs>0&&c.waypoint){
+      score-=distance(next,c.waypoint)*1.2;
+      if(!s.pursuitRecovery)score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;
+    }
+    if(s.pursuitRecovery&&!target&&c.clear)score+=120;
     // Keep firing lanes only while a perceived target can be engaged.
     if (target && c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
@@ -362,8 +389,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
   let consumableState=(seed^0xba113)>>>0;
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
-  let lastMove = -Infinity;
-  let exchangeCommitted = false, exchangeSeen = false, exchangeFired = false;
+  let lastMove = -Infinity, exclusiveTried = false;
   let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
@@ -372,8 +398,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
       if (key !== roomKey) {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
-        plasmaAttempts.clear(); plasmaOpeningUntil = 0;
-        exchangeCommitted = exchangeSeen = exchangeFired = false;
+        plasmaAttempts.clear(); plasmaOpeningUntil = 0;exclusiveTried=false;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -418,41 +443,25 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       }
       perceived.human = {spacing,exactSpacing:false};
       const escape = meleeEscapePlan(perceived);
-      // PLAY38 measured the marked exchange as an inconsistent payoff and the HUD no longer draws it;
-      // --exchange-marks=on remains only as a research arm for re-measuring the encounter.
-      const marks = readExchange && profile === 'competent' ? s.drawnExchange : undefined;
-      if (!marks?.bait && !marks?.landing && !marks?.lane) exchangeCommitted = exchangeSeen = false;
-      else if (marks && !exchangeFired) {
-        const heavy = marks.lane && visible.find(enemy => enemy.meleePhase && distance(enemy, marks.lane.to) < 55);
-        if (heavy?.meleePhase === 'windup' && marks.bait && distance(s.player, marks.bait) <= 22) exchangeSeen = true;
-        if (heavy?.meleePhase === 'strike' || heavy?.meleePhase === 'recovery' ||
-            exchangeSeen && heavy?.meleePhase === 'windup') exchangeCommitted = true;
-        const mark = exchangeCommitted ? marks.landing : marks.bait;
-        if (mark && mark.waypoint) {
-          const atMark = distance(s.player, mark) <= 22;
-          const safe = point => !active.some(enemy => insideMeleeWarning(enemy, point)) &&
-            !visibleHazards.some(hazard => hazard.kind !== 'projectile' && distance(hazard, point) <= hazard.radius + (s.player.radius ?? 16));
-          const choices = s.candidates.filter(candidate => {
-            if (!candidate.legal || !Math.hypot(candidate.dx,candidate.dy)) return false;
-            const velocity = candidateVelocity(s,candidate);
-            return [0.04,0.08,0.12].every(t => safe({...s.player,x:s.player.x+velocity.x*t,y:s.player.y+velocity.y*t}));
-          }).sort((a,b)=>distance(a,mark.waypoint)-distance(b,mark.waypoint));
-          if ((!atMark && choices.length) || atMark && safe(s.player)) {
-            const target = exchangeCommitted && atMark && heavy?.meleePhase === 'recovery' && heavy.clear ? heavy : null;
-            const preferred = s.resources?.ammo.plasma;
-            const weapon = preferred && preferred.magazine + preferred.reserve > 0 && (!target || target.armor > 0) &&
-              (!target || target.plasmaClear) ? 'plasma' : s.combat.weapon;
-            if (target && weapon === s.combat.weapon && s.combat.magazine > 0 &&
-                !s.reloadingWeapons?.includes(weapon)) exchangeFired = true;
-            return {target, movement:atMark ? {dx:0,dy:0} : choices[0], actions:[],weapon,
-              exchangeStep:atMark ? (exchangeCommitted ? 'landing' : 'bait') : undefined,stepMs:HUMAN_OBSERVATION_MS};
-          }
-        }
+      // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
+      const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
+      const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);
+      const onReturnSide = attacker && (grille.returnArcCosine===undefined||inReturnArc(grille,attacker,s.player));
+      const returnTarget = onReturnSide && attacker.clear && attacker.meleePhase === 'recovery' && attacker;
+      if (returnTarget && !escape) {
+        const plasma = s.resources?.ammo.plasma;
+        const weapon = returnTarget.armor > 0 && returnTarget.plasmaClear &&
+          plasma && plasma.magazine + plasma.reserve > 0 ? 'plasma' : s.combat.weapon;
+        return {target:returnTarget,movement:{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS};
       }
-
+      if(grille?.state==='waiting'&&grille.returnArcCosine!==undefined&&!escape&&(!onReturnSide||!attacker?.clear)){
+        const approach=grilleApproach(perceived,grille);
+        if(approach)return {target:chooseTarget(perceived.enemies,s.player,s.weaponRange),
+          movement:approach,actions:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};
+      }
       if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
         const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});
-        movement = fixation && visible.length && !escape ? {dx:0,dy:0} : next;
+        movement = fixation && visible.length && !escape && !s.pursuitRecovery ? {dx:0,dy:0} : next;
         lastMove = now;
         nextMove = now + config.movementMs * (.8 + random() * .4);
       }
@@ -460,6 +469,15 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       const keys = chooseActions(perceived);
+      if(profile==='competent'&&!exclusiveTried&&s.node?.templateId==='transmission-chamber'&&visible.length){
+        const equipped=s.build?.mutations.find(id=>['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id));
+        const button={'siege-plow':'f','fault-line':'q','shard-harvest':'q','ice-road':'f','ember-relay':'f','meltdown-core':'v','pilgrim-pylon':'f','live-wire':'q'}[equipped];
+        const slot={q:'tactical',f:'power',v:'overdrive'}[button];
+        if(slot&&s.abilities.slots?.[slot]?.ready&&s.abilityAims?.[slot]&&now>=nextInput){
+          keys.unshift(button);exclusiveTried=true;
+        }
+      }
+
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player,s.weaponRange),keys);
       movement=conditionMovement;
       if(s.shutterBait&&target?.id===s.shutterBait.wardenId&&target.health>target.maxHealth*.35&&!escape)target=undefined;

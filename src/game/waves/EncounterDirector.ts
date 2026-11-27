@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -26,7 +26,7 @@ export type EncounterEvent = EncounterSpawn | ReserveCut
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;salvage?:boolean;runStructure?:1;roomOrder?:RoomOrder;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;recoveryGrilles?:boolean;salvage?:boolean;runStructure?:1;roomOrder?:RoomOrder;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
@@ -52,6 +52,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
  const node={...options.node,depth:ordered.depth},mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(position,mode,true);
+ const secondRoomHealth=mode==='standard'?1.25:1.10;
  const source=[...storyBeats(node.depth,mode==='story')];
  const fixedOpening=ordered.opening;
  const opening=fixedOpening!==undefined?{index:fixedOpening,name:source[fixedOpening].label}:options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
@@ -144,6 +145,24 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const exchangeFamily=mode==='standard'?exchangeFamilies[node.depth-2]:undefined;
  const exchangeBeat=exchangeFamily?source.findIndex(beat=>beat.groups.some(group=>
   group.family===exchangeFamily&&!group.guardian&&!group.reinforcement)):-1;
+ const grilleLessonBeat=options.recoveryGrilles&&node.templateId==='communal-atrium'?source.findIndex(beat=>
+  beat.groups.some(group=>group.family==='brute'&&!group.guardian&&!group.reinforcement)):-1;
+ if(grilleLessonBeat>=0){
+  const lesson=source[grilleLessonBeat];
+  const alreadyWaiting=lesson.groups.filter(group=>!group.guardian&&!group.priority&&
+   !group.reinforcement&&group.family!=='brute').reduce((count,group)=>count+group.count,0);
+  if(alreadyWaiting<2){
+   // Pull one existing flanker into the grille group instead of adding a body to the room.
+   const donorIndex=source.findIndex((beat,index)=>index!==grilleLessonBeat&&beat.groups.some(group=>
+    group.family==='stalker'&&!group.reinforcement&&group.count>1));
+   if(donorIndex>=0){
+    const donor=source[donorIndex];
+    const flanker=donor.groups.find(group=>group.family==='stalker'&&!group.reinforcement&&group.count>1)!;
+    source[donorIndex]={...donor,groups:donor.groups.map(group=>group===flanker?{...group,count:group.count-1}:group)};
+    source[grilleLessonBeat]={...lesson,groups:[...lesson.groups,{...flanker,count:1}]};
+   }
+  }
+ }
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
@@ -172,7 +191,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const shaftOpening=shaftLanding&&beatIndex===0;
     const rehearsalFlank=beat.rehearseHeavy&&group.role==='flanker'&&index===0;
     const reserveHeavy=beat.rehearseHeavy&&group.role==='anchor'&&index>0;
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(reserveHeavy?2500:0)+(shaftOpening&&ordinal>0?2800:0)+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:position+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale:ordered.second&&!group.guardian?healthScale*1.10:healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&(group.role==='flanker'||reserveHeavy)?{afterHeavyRecovery:true as const}:{}),...(rehearsalFlank?{rehearsalFlank:true as const}:{}),reinforcement:!!reinforcement}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:reinforcement?(beat.consequence==='brood'?11000:beat.consequence==='pincer'?PINCER_WINDOW_MS:group===broodReserve?10500:4500)+index*650:650+ordinal*450*arrivalSpacing+(reserveHeavy?2500:0)+(shaftOpening&&ordinal>0?2800:0)+(coverOpening&&beatIndex===0&&ordinal>0?4000:0),wave:position+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,healthScale:ordered.second&&!group.guardian?healthScale*secondRoomHealth:healthScale,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),...(beat.rehearseHeavy&&(group.role==='flanker'||reserveHeavy)?{afterHeavyRecovery:true as const}:{}),...(rehearsalFlank?{rehearsalFlank:true as const}:{}),reinforcement:!!reinforcement}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
@@ -197,17 +216,23 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    if(shooter>=0)arrivals[shooter]=Object.freeze({...arrivals[shooter],augmentPosition:'shooter'});
    if(approach>=0)arrivals[approach]=Object.freeze({...arrivals[approach],augmentPosition:'approach'});
   }
-  if(node.templateId==='manual-control-chamber'&&beatIndex===1){
+  const consoleExchange=node.templateId==='manual-control-chamber'&&beatIndex===1;
+  const earlyExchange=beatIndex===grilleLessonBeat;
+  if(consoleExchange||earlyExchange){
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
-    const waiting=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
+    const escorts=options.recoveryGrilles
+     ?others.filter(request=>!request.guardian&&(consoleExchange||!request.priority)).slice(0,consoleExchange?3:2):[];
     let previous=4900;
-    for(const request of waiting){
-     const atMs=Math.max(previous+380,request.atMs+4500);
-     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:true});
-     previous=atMs;
+    for(const request of others){
+     if(!consoleExchange&&!escorts.includes(request))continue;
+     const atMs=escorts.includes(request)?750:Math.max(previous+380,request.atMs+4500);
+     arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
+      grilleEscort:escorts.includes(request)?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
+     if(!escorts.includes(request))previous=atMs;
     }
-    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:true});
+    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length});
    }
   }
   const relief=(node.depth===4&&beat.grammar==='crossfire')||
@@ -538,9 +563,9 @@ export class EncounterDirector {
     if(!pending&&this.dispatched===beat.end&&live.length<=3&&!live.some(enemy=>enemy.priority)
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
-  private consolePunishedBeat = -1;
-  reportConsolePunished() {
-    this.consolePunishedBeat = this.beatIndex;
+  private closedRecoveryGrilleBeat = -1;
+  reportRecoveryGrilleClosed() {
+    this.closedRecoveryGrilleBeat = this.beatIndex;
   }
   private breakBeat(end:number){
     this.broken=true;
@@ -548,27 +573,31 @@ export class EncounterDirector {
     this.dispatched=end;
   }
   /** A killed priority body prevents its still-unannounced escort reinforcement. */
-  reportPriorityDefeated(beat:number,origin?:{x:number;y:number}){
+  reportPriorityDefeated(beat:number,origin?:{x:number;y:number},view?:{x:number;y:number}){
     if(beat!==this.beatIndex||this.defusedBeats.has(beat))return;
     const plan=this.plan.beats?.[beat];
-    const cut=this.reserveCut(beat,origin);
+    const cut=this.reserveCut(beat,origin,view);
     this.defusedBeats.add(beat);
     if(plan?.consequence==='leader')this.breakBeat(plan.end);
     return cut;
   }
-  private reserveCut(beat:number,origin?:{x:number;y:number}):ReserveCut|undefined {
+  private reserveCut(beat:number,origin?:{x:number;y:number},view?:{x:number;y:number}):ReserveCut|undefined {
     const end=this.plan.beats?.[beat]?.end??this.dispatched;
     const reserve=this.plan.schedule.slice(this.dispatched,end).filter(request=>request.reserve);
     if(!reserve.length)return;
-    if(reserve[0].enemyId==='crawler'){
-      const pincer=this.plan.beats?.slice(beat+1).find(next=>next.grammar==='pincer');
-      if(pincer){
-        const entries=this.breaches.filter(entry=>this.plan.schedule.slice(pincer.start,pincer.end).some(spawn=>spawn.breachId===entry.id));
-        this.coolantEntry=origin?entries.sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]?.id:
-          this.plan.schedule[pincer.start].breachId;
-      }
-    }
+    if(reserve[0].enemyId==='crawler')this.coolantEntry=this.coolantReserveEntry(origin,view)?.id;
     return {type:'reserve-cut',breachId:reserve[0].breachId,count:reserve.length,family:reserve[0].enemyId,closedEntry:this.coolantEntry};
+  }
+  coolantReserveEntry(origin?:{x:number;y:number},view?:{x:number;y:number}) {
+    if(!this.coolantPlant)return;
+    const pincer=this.plan.beats?.slice(this.beatIndex+1).find(next=>next.grammar==='pincer');
+    if(!pincer)return;
+    const entries=this.breaches.filter(entry=>this.plan.schedule.slice(pincer.start,pincer.end)
+      .some(spawn=>spawn.breachId===entry.id));
+    const visible=view?entries.filter(entry=>Math.abs(entry.x-view.x)<=144&&Math.abs(entry.y-view.y)<=80):[];
+    return origin?(visible.length?visible:entries).sort((a,b)=>
+      Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]:
+      entries.find(entry=>entry.id===this.plan.schedule[pincer.start].breachId);
   }
   cancelNextReinforcements():void { this.skipReinforcements=true; }
   private workshopRelief?:{beat:number;breachId:string};
@@ -602,7 +631,7 @@ export class EncounterDirector {
         if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
-      if(request.consoleHold&&this.consolePunishedBeat===this.beatIndex&&this.dispatched>=beat.end-3){
+      if(request.grilleEscort&&this.closedRecoveryGrilleBeat===this.beatIndex){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){

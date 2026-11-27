@@ -64,7 +64,8 @@ for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','s
 const distributionAssets={};
 for(const file of (await readdir(resolve(distRoot,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort())distributionAssets[file]=createHash('sha256').update(await readFile(resolve(distRoot,'assets',file))).digest('hex');
 const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8').then(value=>value.trim()).catch(()=>null);
-const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',options['exchange-marks']==='on');
+const readExchange=options['exchange-marks']==='on'||options['exchange-marks']===undefined&&difficulty==='standard';
+const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',readExchange);
 const report = {
   profile:human.profile, humanParameters:human.config,
   label, rig, seed, difficulty, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
@@ -125,7 +126,7 @@ async function advance(milliseconds) {
 
 let committedToCover=false;
 async function snapshot(stagnantSince=Infinity) {
-  const state=await page.evaluate(({coveredRelayHealthFraction,committedToCover,stagnantSince}) => {
+  const state=await page.evaluate(({coveredRelayHealthFraction,committedToCover,stagnantSince,readGrille}) => {
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     const project=(x,y,height=.65)=>{
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
@@ -158,13 +159,14 @@ async function snapshot(stagnantSince=Infinity) {
       if(g.abilities.blocksMovement(g.player,{x,y},g.player.radius))legal=false;
       candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.botShotClear(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.botShotClear(nearest.x,nearest.y,{x,y}):false});
     }
+    const grille=g.recoveryGrille;
     const marks=d.drawnExchange();
     const hatch=g.delayedPincerHatch;
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
     return {
       variant:g.openingName?.(),condition:g.condition?.name,conditionObservation:g.conditionObservation??null,drill:g.awakeningDrill,encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
-      drawnExchange:marks,manualExchange:g.manualExchange,markedClosedEntry:g.markedClosedEntry?.id,delayedPincerHatch:hatch&&{...hatch,visible:r.visible(hatch.breach.x,hatch.breach.y)},relayShelter:g.relayShelter,relayCoverPreview:g.relayCoverPreview,plateLessonTarget:g.weaponLessonPrompt?.target?.id,edgeTells:[...document.querySelectorAll('[data-ranged-shot="true"]:not([hidden])')].map(el=>Number(el.dataset.enemyId)),gate,shutterBait,siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
+      pursuitRecovery,storyHoldGrace:g.storyHoldGrace,recoveryGrille:grille&&r.visible(grille.x,grille.y)?{...grille,waypoint:readGrille&&grille.returnArcCosine!==undefined?d.botWaypoint(grille)??grille:undefined}:undefined,drawnExchange:marks,manualExchange:g.manualExchange,markedClosedEntry:g.markedClosedEntry?.id,delayedPincerHatch:hatch&&{...hatch,visible:r.visible(hatch.breach.x,hatch.breach.y)},relayShelter:g.relayShelter,relayCoverPreview:g.relayCoverPreview,plateLessonTarget:g.weaponLessonPrompt?.target?.id,edgeTells:[...document.querySelectorAll('[data-ranged-shot="true"]:not([hidden])')].map(el=>Number(el.dataset.enemyId)),gate,shutterBait,siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
       weaponRange:d.botWeaponRange(),combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),reloadingWeapons:Object.keys(g.combat.getRunResources().ammo).filter(id=>g.combat.isWeaponReloading(id)),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard'&&!b.preview).map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
       feintsStarted:g.enemies.feintsStarted,boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,topDamageSources:g.roomDamage,deathExchange:g.deathExchange,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
@@ -176,7 +178,7 @@ async function snapshot(stagnantSince=Infinity) {
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
-  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover,stagnantSince});
+  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover,stagnantSince,readGrille:readExchange});
   committedToCover=state.siege?.choosing===true&&state.siege.coveredIntent===true;
   return state;
 }
@@ -265,7 +267,7 @@ try {
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
   page=await context.newPage();listen(page);
-  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}${options['exchange-marks']!==undefined?'&recovery-grilles=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug,undefined,{timeout:Number(options['startup-timeout-ms']??20000)});
   await enableNative();
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
@@ -421,6 +423,13 @@ try {
       'saved-stake':room.id==='swarm-junction'&&freshEvents.some(event=>event.type==='boon'&&event.boon==='shield'&&event.radius===96),
       'pod-destinations':s.enemies.some(enemy=>enemy.broodDestination),
       'shelter-preview':!!s.relayCoverPreview&&!!s.relayShelter,
+      'grille-waiting':s.recoveryGrille?.state==='waiting'&&!s.enemies.some(e=>e.id===s.recoveryGrille.attackerId&&e.meleePhase==='recovery'),
+      'crawler-queue':freshEvents.some(event=>event.type==='enemy-attack'&&event.family==='crawler')&&
+        s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
+          enemy.visible&&distance(enemy,s.player)<96),
+      'grille-recoil':s.recoveryGrille?.state==='closed'&&s.elapsed-s.recoveryGrille.changedAt>=.18,
+      'grille-closed':freshEvents.some(event=>event.type==='recovery-grille-closed'),
+      'story-hold-grace':(s.storyHoldGrace?.remainingMs??0)>0,
       'exchange-bait':decision.exchangeStep==='bait',
       'exchange-landing':decision.exchangeStep==='landing',
       'console-return':room.id==='manual-control-chamber'&&s.encounter.beat===1&&freshEvents.some(event=>event.exposedHit),
@@ -445,7 +454,7 @@ try {
     for(const e of freshEvents){if(e.type!=='ability'||!e.ability)continue;const a=e.ability,bucket=room.abilityReceipts[a.ability]??={phases:{},reportedDamage:0};bucket.phases[a.phase]=(bucket.phases[a.phase]??0)+1;bucket.reportedDamage+=a.totalDamage??0;if(a.phase==='denied')room.denials[a.denial]=(room.denials[a.denial]??0)+1;}
     const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:decision.stepMs,keys:actions,abilityAims:s.abilityAims,weapon:desired};
     report.inputs.push(input);
-    await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{exchangeStep:decision.exchangeStep,drawnExchange:s.drawnExchange,room:s.node.templateId,encounter:s.encounter,status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,markedClosedEntry:s.markedClosedEntry,delayedPincerHatch:s.delayedPincerHatch,relayShelter:s.relayShelter,relayCoverPreview:s.relayCoverPreview,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,armor:e.armor,broodDestination:e.broodDestination,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
+    await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{storyHoldGrace:s.storyHoldGrace,recoveryGrille:s.recoveryGrille,exchangeStep:decision.exchangeStep,drawnExchange:s.drawnExchange,room:s.node.templateId,encounter:s.encounter,status:s.status,phase:s.phase,elapsed:s.elapsed,feintsStarted:s.feintsStarted,player:s.player,combat:s.combat,remaining:s.remaining,edgeTells:s.edgeTells,gate:s.gate,siege:s.siege,markedClosedEntry:s.markedClosedEntry,delayedPincerHatch:s.delayedPincerHatch,relayShelter:s.relayShelter,relayCoverPreview:s.relayCoverPreview,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,armor:e.armor,broodDestination:e.broodDestination,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible,windupMs:e.windupMs,pendingAttack:e.pendingAttack,chargeMs:e.chargeMs,meleePhase:e.meleePhase})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
     if(room.id==='relay-racks'&&!room.shutterBreak&&after.status==='playing'){

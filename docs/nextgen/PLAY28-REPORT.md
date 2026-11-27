@@ -662,3 +662,355 @@ The suit ledger matches each rig and seed pair and includes only pairs that clea
 | 17–20 | 38 | 7,301.3 | 7,908.6 |
 
 [Final Standard](../../artifacts/nextgen/playtest/play38-ship-repair-three-off/summary.json) · [Final Story](../../artifacts/nextgen/playtest/play38-ship-story/summary.json) · [21/16 trial](../../artifacts/nextgen/playtest/play38-ship-repair-one-off/summary.json) · [20/15 trial](../../artifacts/nextgen/playtest/play38-ship-repair-two-off/summary.json)
+
+## PLAY39
+
+### Encounter implementation
+
+- Communal Atrium and Manual Control stage a visible escort group at a common recovery grille. A weapon hit during the featured Brute's recovery closes it and cancels the held group. When recovery ends without the shot, the group enters. Both arms use the same mechanics. The ON policy prioritizes the visible recovering attacker when the adjacent group is also visible. An initial Atrium attempt hardcoded the wrong beat and never staged a grille on Breacher 1729. The revision locates the room's first unguarded Brute. A later framing pass requested focus on the grille and made the late escort selection include the available waiting priority arrivals.
+- Standard stages an additional telegraphed Spitter lane in sectors 3–8 with a 13-armour recovery opportunity. Residential's plated lane moves the optional armour behind nearby cover when there is a legal authored shoulder. Story does not receive this Standard opening lane.
+- Story's Interlock pad holds its partial charge for 2.5 seconds when the marine leaves during a strike aimed at the pad. The same uninterrupted strike cannot grant the respite again. The normal pad reset resumes after the grace expires.
+- A Crawler preparing or committing a bite designates a contact line. Nearby Crawlers still in approach step tangentially until they clear 28.8 simulation units of arc where movement allows it.
+- Coolant estimates an in-view set of entries around the simulated camera target and prefers the closest entry to the defeated leader from that set. A preview silhouette moves to a legal interior bend before the cut. Transmission's competent policy prioritizes a valid cast of its equipped exclusive at the existing two-sided opening. Relay Racks gives the released Spitter an opening volley through the center of the broken shutter.
+
+### Presentation interfaces
+
+- `DepthGame.recoveryGrille` exposes `x`, `y`, `angle`, `escorts`, `attackerId`, `state`, `changedAt`, and `expiresAt`. Its states are `waiting`, `closed`, and `entered`.
+- `GameEffect` emits `recovery-grille-closed` and `recovery-escort-entered` with `x`, `y`, `angle`, and `grilleEscorts`.
+- `DepthGame.storyHoldGrace` exposes pad `id`, `x`, `y`, retained charge `ms`, `remainingMs`, and `durationMs`. `GameEffect` emits `story-hold-grace` with pad coordinates, the striker's `id`, and `durationMs: 2500`.
+- `DepthGame.coolantQueuedBend` exposes `x`, `y`, and `angle` for the waiting silhouette.
+
+### Native ON/OFF evidence
+
+These checkpoint samples held the earned room boundary constant. OFF can still close a grille through ordinary fire. A closure in both arms therefore verifies the gameplay consequence while providing no estimate of the benefit of forcing the return-shot policy.
+
+| Native case | Recovery hits OFF → ON | Grilles closed OFF → ON | Escorts canceled OFF → ON | Room suit OFF → ON | Room seconds OFF → ON |
+|---|---:|---:|---:|---:|---:|
+| Breacher 1729, Atrium | 4 → 4 | 1 → 1 | 1 → 1 | 13.2 → 13.2 | 22.48 → 22.48 |
+| Cryo 1729, Atrium | 0 → 0 | 0 → 0 | 0 → 0 | 13.2 → 13.2 | 17.05 → 17.05 |
+
+Breacher's native Atrium closure was visible in both arms. Cryo's initial OFF sample had one interior preparation timeout and was restarted on the same seed. The Manual Control Breacher pair also hit interior preparation and screenshot timeouts on both attempts. Later replays allow up to 90 seconds for an evidence screenshot when the caller explicitly extends the startup budget. [Atrium waiting](../../artifacts/nextgen/playtest/play39-tip-on-breacher-4/r4-communal-atrium-grille-waiting.png) · [Atrium hit and close](../../artifacts/nextgen/playtest/play39-tip-on-breacher-4/r4-communal-atrium-grille-closed.png)
+
+### Story hold probe
+
+A controlled deterministic probe from the earned Story Cryo 1729 checkpoint charged 336 ms on the Interlock pad before stepping out of a staged Brute swing. Charge stayed at 336 ms while the grace interval counted down from 2,404 to 804 ms and expired after 2.5 seconds. The probe emitted one `story-hold-grace` effect. The original Final24 native loss was 110.8 suit. The first PLAY39 native replay hit its wall budget with an interior preparation timeout. Its same-seed retry hit a screenshot timeout. Neither produced a final room-loss total. [Probe receipt](../../artifacts/nextgen/play39-analysis/hold.json) · [First replay](../../artifacts/nextgen/playtest/play39-hold-story/report.json) · [Retry](../../artifacts/nextgen/playtest/play39-hold-story-retry/report.json)
+
+### Candidate revisions and release decision
+
+The second grille revision distinguished a Brute's initial approach from its return to approach after a committed strike. Until then an approaching Brute could release the escorts immediately after spawning. The hard seven-second timeout remains. The early pressure follow-up moved the additional Spitter's target lock to the start of its warning so the shot tests the marine's current approach. The tables below come from before those two revisions.
+
+The three-rig benefit in both rooms has not been demonstrated. The grille therefore requires an explicit `--exchange-marks=off` or `--exchange-marks=on` in the playtest runners. Both flags stage the same grille and escorts. Only ON prioritizes the visible return shot. Regular campaigns use the prior console exchange and Atrium setup, with the other PLAY39 changes active.
+
+| Additional native case | Recovery hits OFF → ON | Grilles closed OFF → ON | Escorts canceled OFF → ON | Room suit OFF → ON | Room seconds OFF → ON |
+|---|---:|---:|---:|---:|---:|
+| Pyro 1729, Atrium | 2 → 2 | 1 → 1 | 1 → 1 | 0 → 0 | 18.40 → 18.40 |
+| Arc 1729, Atrium | 14 → — | 1 → — | 1 → — | 0 → — | 17.27 → — |
+| Breacher 1729, Manual Control | — | — | — | — | — |
+| Cryo 1729, Manual Control | — | — | — | — | — |
+| Pyro 1729, Manual Control | — | — | — | — | — |
+| Arc 2718, Manual Control | — | — | — | — | — |
+
+Arc uses 2718 for the late checkpoint because the earned Final24 Arc 1729 campaign ended in Diagnostic Gallery. [Waiting bodies](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-waiting.png) · [Recovery hit](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-closed.png) · [Grille closing](../../artifacts/nextgen/playtest/play39-tip-on-pyro-4/r4-communal-atrium-grille-recoil.png)
+
+### Simulator snapshot
+
+Denominators below count finished simulator reports available at this snapshot. Empty cells indicate zero finished reports. Candidate results are provisional and do not establish the shipped balance or absence of stalls across the requested seeds.
+
+| Profile / rig | Wave 33 | Candidate OFF | Candidate ON |
+|---|---:|---:|---:|
+| Standard Breacher | 11/12 | 8/11 | 10/11 |
+| Standard Cryo | 10/12 | — | — |
+| Standard Pyro | 10/12 | — | — |
+| Standard Arc | 12/12 | — | — |
+| **Standard all** | **43/48** | **8/11** | **10/11** |
+| Story Cryo | 10/12 | 11/12 | — |
+| Story Breacher | 12/12 | — | — |
+| **Story all** | **22/24** | **11/12** | — |
+
+Standard damage is mean suit per completed block. Each candidate is compared with the same rigs and seeds from Wave 33 that finished the block in both builds. The full Wave 33 block mean is also shown for reference.
+
+| Sectors | Wave 33 all | OFF pairs | Wave 33 → OFF | ON pairs | Wave 33 → ON |
+|---|---:|---:|---:|---:|---:|
+| 1–4 | 7.21 | 11 | 5.51 → 8.08 | 11 | 5.51 → 8.63 |
+| 5–8 | 97.55 | 11 | 72.72 → 101.22 | 11 | 72.72 → 118.19 |
+| 9–12 | 176.12 | 10 | 151.80 → 192.63 | 11 | 151.05 → 147.26 |
+| 13–16 | 198.38 | 10 | 171.56 → 146.60 | 11 | 172.07 → 177.29 |
+| 17–20 | 195.72 | 8 | 165.36 → 186.60 | 9 | 174.13 → 182.62 |
+
+| Standard Crawler share | Wave 33 all | Candidate OFF | Candidate ON |
+|---|---:|---:|---:|
+| Breacher | 39.32% | 35.93% (11) | 35.58% (11) |
+| Cryo | 39.63% | — | — |
+| Pyro | 41.25% | — | — |
+| Arc | 37.55% | — | — |
+
+[Candidate OFF summary](../../artifacts/nextgen/playtest/play39-tip-off/summary.json) · [Candidate ON summary](../../artifacts/nextgen/playtest/play39-tip-on/summary.json) · [Candidate Story summary](../../artifacts/nextgen/playtest/play39-tip-story/summary.json)
+
+The three superseded candidate simulations were stopped after recording these samples to free capacity for final-build measurements. The pre-revision Breacher sample supports a direct ON/OFF comparison. Mean suit and time include only seeds that entered the room in both arms. Final-room deaths in this sample remain in those means.
+
+| Encounter | Same-seed campaigns | Visitors OFF / ON | Paired visitors | Suit OFF → ON | Seconds OFF → ON | Deaths OFF → ON |
+|---|---:|---:|---:|---:|---:|---:|
+| Communal Atrium | 11 | 11 / 11 | 11 | 5.36 → 5.90 | 23.81 → 22.68 | 0 → 0 |
+| Manual Control | 11 | 9 / 11 | 9 | 32.28 → 31.07 | 48.34 → 50.66 | 1 → 0 |
+
+The production build passed on the opt-in revision. Standard and Story simulator cohorts for that build are separate from the experiments. The full native Breacher replay was restarted on the same seed after a screenshot timeout on its first attempt. The corrected Manual Control pair initially failed to bind its localhost port under the sandbox and was restarted using approved local access. The native 20-room runs, final simulator cohorts, and three adjacent Crawler queue frames had not graduated to verified evidence at this snapshot.
+
+### Production-build opening sample
+
+A separate eight-room Standard run used seed 1729 in all four rigs after the revised Spitter timing and with the grille experiment disabled. It is a diagnostic seed outside the twelve-seed cohort. Sectors 1–4 still averaged only 5.0 suit across these four runs, below the 20–40 target. Sectors 5–8 averaged 157.1. This sample does not establish either cohort target.
+
+| Seed 1729 rig | Sectors 1–4 suit | Sectors 5–8 suit |
+|---|---:|---:|
+| Breacher | 0.0 | 179.1 |
+| Cryo | 10.0 | 226.7 |
+| Pyro | 0.0 | 142.2 |
+| Arc | 10.0 | 80.4 |
+
+[Production opening sample](../../artifacts/nextgen/playtest/play39-ship-early-sample/summary.json)
+
+### Crawler contact-line probe
+
+A deterministic open-floor probe started two Crawlers on the same line to the marine. The queued Crawler moved sideways and cleared 29.94 units of arc 167 ms into the first wind-up. At the strike it was 32.48 units away around the arc, past the 28.8-unit target. This staged receipt establishes movement in open space. [Probe receipt](../../artifacts/nextgen/play39-analysis/crawler.json)
+
+### Manual Control sightline follow-up
+
+The corrected-lifecycle Breacher ON trace put the grille and Brute in the viewport from 806.62 to 807.02 seconds. The weapon line to the Brute was blocked throughout those samples. At 807.08 seconds the grille opened to three escorts. Cryo's retry of the earlier candidate showed the same obstruction during its 753.27–753.57 second recovery samples. The console therefore blocked the exchange before the policy had a clear shot. A further experiment-only revision places the Brute on the marine's side of the console's short end, validates sightlines before staging, and limits the staging delay to 400 ms there. This preserves the default encounter.
+
+A pre-revision Pyro OFF run cleared Manual Control in 39.62 seconds with 46.92 suit lost and no recovery closure. It logged one interior-preparation error and its same-seed retry timed out loading, so this solitary row is not a clean paired result. [Breacher trace](../../artifacts/nextgen/playtest/play39-revision-native-on-breacher-19/trace.ndjson) · [Cryo trace](../../artifacts/nextgen/playtest/play39-tip-on-cryo-19-retry/trace.ndjson) · [Pyro report](../../artifacts/nextgen/playtest/play39-tip-off-pyro-19/report.json)
+
+### Production cohort snapshot
+
+| Profile / rig | Wave 33 clears | Production clears in finished usual seeds |
+|---|---:|---:|
+| Standard Breacher | 11/12 | 7/8 |
+| Standard Cryo | 10/12 | — |
+| Standard Pyro | 10/12 | — |
+| Standard Arc | 12/12 | — |
+| **Standard all** | **43/48** | **7/8** |
+| Story Cryo | 10/12 | 7/8 |
+| Story Breacher | 12/12 | — |
+| **Story all** | **22/24** | **7/8** |
+
+No stall appeared in the finished production subset. The sample is too small to establish the balance, per-rig, or zero-stall targets. Story Cryo's sectors 1–4 averaged exactly 17.99 suit in both builds over the eight matched seeds. On the same 8 Standard Breacher seeds, Crawler share changed from 37.91% in Wave 33 to 35.28% in production.
+
+| Standard sectors | Same-seed completed pairs | Mean suit Wave 33 → production |
+|---|---:|---:|
+| 1–4 | 8 | 4.07 → 7.00 |
+| 5–8 | 8 | 70.66 → 90.64 |
+| 9–12 | 7 | 159.67 → 154.17 |
+| 13–16 | 7 | 165.07 → 170.26 |
+| 17–20 | 6 | 189.22 → 184.63 |
+
+The Freight Hold native frame shows the striking Crawler and two nearby Crawlers still in approach at 151.83 seconds. [Freight Hold queue](../../artifacts/nextgen/playtest/play39-campaign-breacher-retry/r7-freight-hold-crawler-queue.png) · [Standard simulator](../../artifacts/nextgen/playtest/play39-ship-standard/summary.json) · [Standard additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-standard-usual-tail/summary.json) · [Story simulator](../../artifacts/nextgen/playtest/play39-ship-story/summary.json) · [Story additional usual seeds](../../artifacts/nextgen/playtest/play39-ship-story-usual-tail/summary.json)
+
+The near-side experiment revision also passed the production build, using a separate output directory so ongoing native campaigns could continue serving their original bundles.
+
+In the revised Breacher ON sample, waiting escorts were visible at 800.82 seconds. The return shot at 802.32 seconds closed the grille on all three. The sampled actor position came from the close-ingress fallback, so this demonstrates a working Manual Control return shot without establishing the short-side console placement. The run logged an interior-preparation error, and it does not supply a clean paired result. [Waiting](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-waiting.png) · [Hit and three-escort closure](../../artifacts/nextgen/playtest/play39-near-on-breacher-19/r19-manual-control-chamber-grille-closed.png)
+
+### Continued measurement
+
+Each simulator campaign uses the twelve usual seeds for each rig with two workers per arm. Arm A uses the same staging and mandatory escort entry when the Brute's recovery ends. Arm B allows closure on a qualifying hit. Arm C also gives the competent bot the grille policy. Room means include every visitor, including deaths. Clear denominators count the full campaigns.
+
+### v0
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 30.48 | 51.76 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 13.30 | 23.10 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 86.73 | 67.13 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.05 | 21.02 | 0 |
+| A | Pyro | manual-control-chamber | 11 | 0 | 0 | 57.85 | 48.27 | 1 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 23.02 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 32.62 | 47.94 | 0 |
+| B | Breacher | communal-atrium | 12 | 12 | 12 | 5.20 | 23.31 | 0 |
+| B | Breacher | manual-control-chamber | 8 | 8 | 24 | 37.89 | 49.98 | 0 |
+| B | Cryo | communal-atrium | 12 | 11 | 11 | 14.32 | 23.65 | 0 |
+| B | Cryo | manual-control-chamber | 10 | 9 | 27 | 85.32 | 65.33 | 0 |
+| B | Pyro | communal-atrium | 12 | 9 | 9 | 2.15 | 20.51 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 9 | 27 | 32.56 | 42.32 | 0 |
+| B | Arc | communal-atrium | 12 | 11 | 11 | 0.60 | 21.55 | 0 |
+| B | Arc | manual-control-chamber | 12 | 8 | 24 | 23.92 | 41.30 | 2 |
+| C | Breacher | communal-atrium | 12 | 12 | 12 | 4.40 | 23.18 | 0 |
+| C | Breacher | manual-control-chamber | 12 | 12 | 36 | 31.14 | 50.76 | 0 |
+| C | Cryo | communal-atrium | 12 | 11 | 11 | 9.77 | 23.02 | 0 |
+| C | Cryo | manual-control-chamber | 10 | 9 | 27 | 70.31 | 61.39 | 0 |
+| C | Pyro | communal-atrium | 12 | 9 | 9 | 2.15 | 20.74 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 12 | 36 | 16.32 | 41.15 | 0 |
+| C | Arc | communal-atrium | 12 | 11 | 11 | 0.35 | 22.57 | 0 |
+| C | Arc | manual-control-chamber | 12 | 10 | 30 | 19.80 | 42.75 | 1 |
+
+Clears and stalls: A 39/48 (0 stalls), B 36/48 (0 stalls), C 42/48 (0 stalls)
+
+[Arm A](../../artifacts/nextgen/playtest/play39-three-v0-absent/summary.json) · [Arm B](../../artifacts/nextgen/playtest/play39-three-v0-off/summary.json) · [Arm C](../../artifacts/nextgen/playtest/play39-three-v0-on/summary.json)
+
+The first revision requires the shot to originate within 55° of the line from the recovering Brute to the grille. The aware policy approaches the visible gate around active melee warnings and shoots from the eligible side. Arm A is reused because timing, staging, and mandatory escort entry are unchanged. B closed 30/48 (62.5%) in Atrium and 26/44 (59.1%) in Manual Control. C closed 47/48 (97.9%) and 40/44 (90.9%) respectively. C suit improved for three rigs per room, including Breacher and Pyro in both rooms. B still closed too often for the intended decision.
+
+### v1
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 30.48 | 51.76 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 13.30 | 23.10 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 86.73 | 67.13 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.05 | 21.02 | 0 |
+| A | Pyro | manual-control-chamber | 11 | 0 | 0 | 57.85 | 48.27 | 1 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 23.02 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 32.62 | 47.94 | 0 |
+| B | Breacher | communal-atrium | 12 | 8 | 8 | 3.90 | 22.83 | 0 |
+| B | Breacher | manual-control-chamber | 11 | 7 | 21 | 32.51 | 48.86 | 0 |
+| B | Cryo | communal-atrium | 12 | 7 | 7 | 10.62 | 23.42 | 0 |
+| B | Cryo | manual-control-chamber | 10 | 6 | 18 | 74.49 | 65.54 | 0 |
+| B | Pyro | communal-atrium | 12 | 6 | 6 | 4.75 | 20.67 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 7 | 21 | 35.70 | 43.21 | 0 |
+| B | Arc | communal-atrium | 12 | 9 | 9 | 0.60 | 21.62 | 0 |
+| B | Arc | manual-control-chamber | 11 | 6 | 18 | 25.43 | 43.74 | 1 |
+| C | Breacher | communal-atrium | 12 | 11 | 11 | 4.25 | 21.46 | 0 |
+| C | Breacher | manual-control-chamber | 12 | 11 | 33 | 29.95 | 52.51 | 0 |
+| C | Cryo | communal-atrium | 12 | 12 | 12 | 8.77 | 24.93 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 10 | 30 | 87.33 | 69.05 | 0 |
+| C | Pyro | communal-atrium | 12 | 12 | 12 | 2.40 | 21.13 | 0 |
+| C | Pyro | manual-control-chamber | 11 | 10 | 30 | 22.11 | 43.25 | 0 |
+| C | Arc | communal-atrium | 12 | 12 | 12 | 7.37 | 22.72 | 0 |
+| C | Arc | manual-control-chamber | 10 | 9 | 27 | 21.80 | 45.77 | 0 |
+
+Clears and stalls: A 39/48 (0 stalls), B 41/48 (0 stalls), C 44/48 (0 stalls)
+
+[Revision 1 arm B](../../artifacts/nextgen/playtest/play39-three-v1-off/summary.json) · [Revision 1 arm C](../../artifacts/nextgen/playtest/play39-three-v1-on/summary.json)
+
+The second revision narrowed the firing arc to ±40°. Its pre-merge campaign totals were A 39/48, B 42/48, and C 45/48, each with zero stalls. The table below repeats all three arms after merging RUN20 and using its route policy. The unaware arm still closed 28/48 Atrium grilles.
+
+### v2-merged
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 52.00 | 57.33 | 1 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 10.27 | 23.66 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 107.00 | 76.83 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 5.24 | 20.62 | 0 |
+| A | Pyro | manual-control-chamber | 12 | 0 | 0 | 37.08 | 50.32 | 0 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 22.93 | 0 |
+| A | Arc | manual-control-chamber | 10 | 0 | 0 | 30.25 | 53.43 | 0 |
+| B | Breacher | communal-atrium | 12 | 7 | 7 | 3.90 | 22.64 | 0 |
+| B | Breacher | manual-control-chamber | 12 | 8 | 24 | 40.66 | 54.28 | 0 |
+| B | Cryo | communal-atrium | 12 | 6 | 6 | 11.46 | 23.57 | 0 |
+| B | Cryo | manual-control-chamber | 11 | 2 | 6 | 97.39 | 72.31 | 0 |
+| B | Pyro | communal-atrium | 12 | 5 | 5 | 3.94 | 20.37 | 0 |
+| B | Pyro | manual-control-chamber | 11 | 9 | 27 | 23.32 | 45.56 | 0 |
+| B | Arc | communal-atrium | 12 | 10 | 10 | 0.60 | 21.33 | 0 |
+| B | Arc | manual-control-chamber | 8 | 2 | 6 | 24.29 | 54.96 | 0 |
+| C | Breacher | communal-atrium | 12 | 11 | 11 | 4.86 | 22.83 | 0 |
+| C | Breacher | manual-control-chamber | 11 | 9 | 27 | 38.31 | 50.13 | 0 |
+| C | Cryo | communal-atrium | 12 | 12 | 12 | 8.02 | 23.81 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 11 | 33 | 72.98 | 64.73 | 0 |
+| C | Pyro | communal-atrium | 12 | 12 | 12 | 2.40 | 22.08 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 11 | 33 | 31.22 | 39.98 | 0 |
+| C | Arc | communal-atrium | 12 | 12 | 12 | 7.35 | 22.09 | 0 |
+| C | Arc | manual-control-chamber | 12 | 10 | 30 | 30.00 | 44.00 | 0 |
+
+Clears and stalls: A 42/48 (0 stalls), B 41/48 (0 stalls), C 45/48 (0 stalls)
+
+The third revision narrowed the arc to ±30° and moved one existing Atrium flanker from another beat so two escorts wait. B closed 20/48 (41.7%) in Atrium and 11/41 (26.8%) in Manual Control. C closed 44/48 (91.7%) and 35/41 (85.4%). Each of the four rigs lost less suit in both rooms with C than with A. This qualifies the grille to be on by default on Standard. Story retains its previous encounter staging.
+
+### v3
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.10 | 23.00 | 0 |
+| A | Breacher | manual-control-chamber | 9 | 0 | 0 | 53.84 | 53.93 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 10.42 | 22.41 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 92.19 | 74.38 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.34 | 20.29 | 0 |
+| A | Pyro | manual-control-chamber | 12 | 0 | 0 | 39.29 | 44.86 | 0 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 9.77 | 20.96 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 36.49 | 54.93 | 0 |
+| B | Breacher | communal-atrium | 12 | 7 | 14 | 3.64 | 23.27 | 0 |
+| B | Breacher | manual-control-chamber | 10 | 4 | 12 | 25.05 | 48.55 | 0 |
+| B | Cryo | communal-atrium | 12 | 5 | 10 | 9.91 | 21.80 | 0 |
+| B | Cryo | manual-control-chamber | 9 | 4 | 12 | 94.11 | 71.21 | 0 |
+| B | Pyro | communal-atrium | 12 | 2 | 4 | 5.84 | 20.28 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 1 | 3 | 35.75 | 45.02 | 0 |
+| B | Arc | communal-atrium | 12 | 6 | 12 | 3.86 | 20.22 | 0 |
+| B | Arc | manual-control-chamber | 10 | 2 | 6 | 28.67 | 52.29 | 0 |
+| C | Breacher | communal-atrium | 12 | 12 | 24 | 0.50 | 20.56 | 0 |
+| C | Breacher | manual-control-chamber | 10 | 9 | 27 | 33.84 | 50.21 | 0 |
+| C | Cryo | communal-atrium | 12 | 11 | 22 | 8.11 | 22.88 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 9 | 27 | 70.92 | 64.84 | 0 |
+| C | Pyro | communal-atrium | 12 | 11 | 22 | 2.40 | 19.50 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 10 | 30 | 30.32 | 48.38 | 0 |
+| C | Arc | communal-atrium | 12 | 10 | 20 | 6.60 | 20.35 | 0 |
+| C | Arc | manual-control-chamber | 8 | 7 | 21 | 21.36 | 47.96 | 0 |
+
+Clears and stalls: A 40/48 (0 stalls), B 41/48 (0 stalls), C 41/48 (0 stalls)
+
+### Merged native checkpoint replays
+
+Both requested cases completed on their first attempt with zero errors, including no interior-preparation errors. The replays used the same earned Final24 boundaries and a 7,200-second wall limit.
+
+| Checkpoint | Result | Suit lost | Seconds | Retries |
+|---|---:|---:|---:|---:|
+| Manual Control Breacher 1729, C | Cleared, shut the grille on three escorts | 0.00 | 49.62 | 0 |
+| Safety Interlock Story Cryo 1729 | Cleared. Final24 died with 110.81 suit lost | 45.67 | 47.05 | 0 |
+
+The native Story policy did not trigger hold grace in that clear. The 65.14 suit difference cannot be attributed to grace. A separate staged capture used the actual Story pad, charged it, and stepped out during a committed Brute wind-up. It captured UI34's hold ring driven by the resulting game snapshot. The Manual Control replay captured ROOM34's grille moving in response to closure while the retained escort silhouettes recoiled.
+
+[Waiting escorts at 800.82 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-waiting.png) · [Hit and closure at 802.52 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-closed.png) · [Closed ROOM34 grille at 802.72 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-recoil.png) · [Safety Interlock replay](../../artifacts/nextgen/playtest/play39-merged-native-hold-1/report.json) · [Staged UI34 ring](../../artifacts/nextgen/play39-merged-hold-ring/play39-live-hold-ring-safety-interlock-station.png)
+
+### Early pressure trials on merged RUN20
+
+The first version fired down the entry position after the bot had already moved. The native Pyro start moved from (436, 440) to about (261, 214) before the projectile left, Cryo stepped diagonally off the line, and Breacher and Arc had a warning without a recorded shot. Delaying the shot into an active fight, leading the marine, and widening the fire improved the timing but still left the competent cohort below the early target.
+
+| Trial | Standard campaigns measured | Mean sectors 1–4 suit | Mean sectors 5–8 suit | Full clears |
+|---|---:|---:|---:|---:|
+| Delayed leading shot | 48 | 9.33 | 131.38 | 41 |
+| Warned first fan | 48 | 10.76 | 134.05 | 44 |
+| Timed Stalker follow-up, sectors 1–8 only | 48 | 14.03 | 127.99 | — |
+| Early overlap before splash timing change, sectors 1–8 only | 48 | 15.18 | 130.78 | — |
+
+The selected encounter fires a leading fan in sectors 3 and 4 with a separately warned, cover-blocked impact at discharge. If the Spitter is still winding up after 300 ms, a Brute enters from the opposite side and tracks until its 180 ms lock. The displayed opening sweep reaches 110 units and ordinary sweeps retain their usual reach. The Spitter lane pays a 24-armour patch and the conditional Brute pays a 40-armour patch in the same room. Sectors 5–8 retain the delayed leading single shot and its 24-armour patch. Story receives none of these attacks.
+
+The first Standard balance step reduced RUN20's between-room repair from 20 to 10 HP. An intercept cohort at that setting produced a 12/12 Cryo result. The next step removes the Standard HP repair and puts a 10-armour pickup at the second room entrance. The route text describes the actual reward. Story retains its 20-HP repair. RUN20's order decisions and bot policy remain intact.
+
+A separate Pyro 99 replay reproduced the final-crossing stall in the 10-HP intercept trial. A low-health Stalker was visible but screened by the lip. The policy stayed put despite a legal step that opened a shot because it penalized moving farther from the relay in straight-line distance. The shared policy now favors the legal firing angle when the existing 30-second recovery observer fires. The same game revision and seed cleared after that policy change. [Reproduced stall](../../artifacts/nextgen/playtest/play39-standard-repair10/pyro-99.json) · [Fixed replay](../../artifacts/nextgen/playtest/play39-pyro99-crossing-fix/pyro-99.json)
+
+### Selected production balance and full cohorts
+
+Standard ships with the 10-armour pickup at the second paired-room entrance and no HP refill at the preceding exit. Scheduled non-guardian enemies in those second rooms receive 25% more health. The two earlier comparisons below used earlier pressure versions. The three paired-health trials all used the same final pressure sequence and junction reward. Story keeps the existing 20-HP refill and 10% paired-second-room health bonus.
+
+| Standard trial | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| RUN20 as reported by lead | 12/12 | 12/12 | 9/12 | 11/12 | 44/48 | — |
+| 10 HP, intercept pressure | 11/12 | 12/12 | 9/12 | 8/12 | 40/48 | 1 |
+| 0 HP plus 10 armour, earlier sweep timing | 12/12 | 11/12 | 9/12 | 9/12 | 41/48 | 0 |
+| Final pressure, paired second rooms +20% | 11/12 | 11/12 | 11/12 | 11/12 | 44/48 | 0 |
+| Final pressure, paired second rooms +22.5% | 10/12 | 11/12 | 11/12 | 10/12 | 42/48 | 0 |
+| **Selected, paired second rooms +25%** | **8/12** | **8/12** | **9/12** | **11/12** | **36/48** | **0** |
+
+| Story novice | Merged RUN20 baseline | Selected PLAY39 | PLAY39 stalls |
+|---|---:|---:|---:|
+| Cryo | 9/12 | 10/12 | 0 |
+| Breacher | 12/12 | 12/12 | 0 |
+| **Total** | **21/24** | **22/24** | **0** |
+
+The final Standard releases closed 47/48 Atrium grilles and 37/39 Manual Control grilles. Story sectors 1–4 averaged 15.10 suit in both matched full cohorts on the merged base. The eight-seed Cryo comparison that previously read 17.99 reads 21.87 in both merged builds. The difference from the previous number was already present in RUN20's merged base.
+
+| Standard sectors | Matched completed blocks | Mean suit, Wave 33 → PLAY39 |
+|---|---:|---:|
+| 1–4 | 48 | 7.21 → 23.40 |
+| 5–8 | 48 | 97.55 → 132.58 |
+| 9–12 | 42 | 175.22 → 199.86 |
+| 13–16 | 41 | 196.66 → 188.20 |
+| 17–20 | 33 | 185.63 → 164.12 |
+
+| Standard Crawler suit share | Wave 33 | PLAY39 |
+|---|---:|---:|
+| Breacher | 39.32% | 34.57% |
+| Cryo | 39.63% | 39.21% |
+| Pyro | 41.25% | 36.01% |
+| Arc | 37.55% | 36.82% |
+
+Crawler share uses the damage ledger across all twelve matching runs per rig, including deaths. The comparison spans all branch changes and does not isolate the queue adjustment's individual contribution.
+
+Production build passed. The selected cohort sources match the final gameplay and playtest files. Full native campaigns remain with the lead. [Standard final](../../artifacts/nextgen/playtest/play39-release-paired25-standard/summary.json) · [Story final](../../artifacts/nextgen/playtest/play39-release-paired25-story/summary.json) · [Merged Story baseline](../../artifacts/nextgen/playtest/play39-run20-story-baseline/summary.json) · [+20%](../../artifacts/nextgen/playtest/play39-release-paired20-standard/summary.json) · [+22.5%](../../artifacts/nextgen/playtest/play39-release-paired225-standard/summary.json) · [Revision 3 A](../../artifacts/nextgen/playtest/play39-three-v3-absent/summary.json) · [Revision 3 B](../../artifacts/nextgen/playtest/play39-three-v3-off/summary.json) · [Revision 3 C](../../artifacts/nextgen/playtest/play39-three-v3-on/summary.json)

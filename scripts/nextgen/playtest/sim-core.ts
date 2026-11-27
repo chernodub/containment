@@ -70,7 +70,7 @@ export class CameraObserver {
         const rawDelta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
         const delta = this.presentationHold.advance(rawDelta,1,false);
         if(!this.hud.hasEngagement||bossActive)this.desired.set(f.x,0,f.z);
-        const bait = game.manualExchange?.bait;
+        const bait = game.recoveryGrille ?? game.manualExchange?.bait;
         if (bait) {
             const dx = bait.x/32-this.desired.x, dz = bait.y/32-this.desired.z;
             const weight = Math.min(.55,4/Math.max(1,Math.hypot(dx,dz)));
@@ -138,6 +138,7 @@ export type SimOptions = {
     maxRoomSeconds?: number;
     trace?: boolean;
     readExchange?: boolean;
+    recoveryGrilles?: boolean | 'release-only';
     metrics?: Record<string, {
         height: number;
     }>;
@@ -176,6 +177,10 @@ export function runSimulation(options: SimOptions) {
     const weaponHits = {total:0, exposed:0};
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if(room&&e.type==='recovery-grille-closed'){
+            room.grilleClosures++;
+            room.grilleEscortsCancelled+=e.grilleEscorts??0;
+        }
         if(e.type==='hit'&&e.source==='weapon'&&(e.damage??0)>0){
             weaponHits.total++;
             if(e.exposedHit)weaponHits.exposed++;
@@ -215,7 +220,7 @@ export function runSimulation(options: SimOptions) {
         if (e.type === 'shot')
             camera.rig.kick(e.angle ?? 0, e.weapon === 'shotgun' ? .08 : e.weapon === 'rocket' ? .12 : .025);
     };
-    game = new DepthGame(onEffect);
+    game = new DepthGame(onEffect, null, options.recoveryGrilles);
     game.observeWeaponDamage = (weapon, family, damage, lethal) => {
         const usage = weaponUsage[weapon];
         const target = usage.families[family] ??= {damage: 0, kills: 0};
@@ -296,7 +301,8 @@ export function runSimulation(options: SimOptions) {
         const landing = exchange && mark(exchange.landing), endpoint = exchange && mark(exchange.target);
         const drawnExchange = exchange && {bait:mark(exchange.bait),landing,lane:landing&&endpoint?{from:landing,to:endpoint}:undefined};
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { drawnExchange, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        const grille = game.recoveryGrille;
+        return { pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&grille.returnArcCosine!==undefined?(botWaypoint(game,grille)??grille):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
@@ -399,7 +405,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:game.encounterGuardian, variant:game.openingName?.(), condition:game.condition?.name, result: 'playing', grilleClosures:0, grilleEscortsCancelled:0, startedElapsed: game.elapsed, startStats: game.stats,
                 startCredits: game.combat.snapshot.credits, startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
