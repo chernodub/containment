@@ -1,3 +1,4 @@
+import type { DifficultyId } from '../difficulty';
 import type { RunState } from './types';
 import type { DetourChoice } from './economy';
 
@@ -20,4 +21,6 @@ export function orderRoom(order: RoomOrder | undefined, position: number) {
  return { depth: junction.depth + 1 + room, opening: junction.openings[room], second };
 }
 
-export const ORDER_REPAIR = 20;
+export function orderRepair(difficulty:DifficultyId):number {
+ return difficulty==='standard'?10:20;
+}

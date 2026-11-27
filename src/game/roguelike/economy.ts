@@ -1,6 +1,7 @@
 import type {BuildState,RunState} from './types';
 import {AUGMENT_IDS,AUGMENT_UPGRADE_RULES} from '../abilities/augmentCatalog';
-import {orderJunction,ORDER_REPAIR} from './orderJunctions';
+import type {DifficultyId} from '../difficulty';
+import {orderJunction,orderRepair} from './orderJunctions';
 export const SUPPLY_DEPTHS = [3,7,11,14,18] as const;
 export const DETOUR_DEPTHS = [2,6,10,14,17] as const;
 export type DetourChoice = 'direct'|'salvage';
@@ -25,12 +26,12 @@ const DETOURS = {
  17: {name:'Secure the capacitor',risk:'Charge an extra relay under fire',reward:'Leave with a full Overdrive charge'},
 } as const;
 export const fieldWorkshopDepth = 10;
-export function detourOffers(run:RunState){
+export function detourOffers(run:RunState,difficulty:DifficultyId='standard'){
  const junction=orderJunction(run);
  if(junction){
   const offers=(['direct','salvage'] as const).map((id,index)=>({
    id,name:junction.rooms[index],risk:`Before repair · ${junction.threats[index]}`,
-   reward:`After +${ORDER_REPAIR} HP · ${junction.rooms[1-index]} with tougher escorts`,
+   reward:`After +${orderRepair(difficulty)} HP · ${junction.rooms[1-index]} with tougher escorts`,
   }));
   return run.seed%2?offers:offers.reverse();
  }

@@ -317,7 +317,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const booked = run.guardianRoute && game.node.depth < GUARDIAN_ROUTE_DEPTH
     ? run.guardianRoute === 'brood' ? 'Matron' : 'Warden' : undefined;
   const guardian = booked ? `<span class="route-booked-guardian">${studioImage(`route-threat-${booked.toLowerCase()}`,'',64,36)}<span>${booked} · Sector ${GUARDIAN_ROUTE_DEPTH+1}</span></span>` : '';
-  const offers=detourOffers(run);
+  const offers=detourOffers(run,game.difficulty);
   const contract=game.contractOffer;
   const next=destinations[0];
   const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
