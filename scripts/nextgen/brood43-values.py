@@ -15,7 +15,6 @@ from PIL import Image
 image = Image.open(sys.argv[1]).convert("RGB").resize((480, 270), Image.Resampling.LANCZOS)
 regions = json.loads(Path(sys.argv[2]).read_text())
 if len(sys.argv) > 3:
-    regions = {name: regions[name] for name in ("legs", "visor")}
     regions.update(json.loads(Path(sys.argv[3]).read_text()))
 results = {}
 for label, rectangles in regions.items():

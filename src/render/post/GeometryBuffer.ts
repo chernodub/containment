@@ -125,6 +125,9 @@ float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
  if(actorContact.y>.13 || actorStrikeLight.w>0. &&
     distance(-vViewPosition,(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz)<.27)geometryRegion=30.;
 #endif
+#ifdef BROOD_POD_SURFACE
+ geometryRegion=26.;
+#endif
 #ifdef BRUTE_PLANES
  if(bruteFace)geometryRegion=29.;
  if(wardenMaw)geometryRegion=30.;
