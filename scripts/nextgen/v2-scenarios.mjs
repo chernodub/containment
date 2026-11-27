@@ -4,7 +4,7 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false,castStudy=false,conditionSeed}) {
+export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false,castStudy=false,victimStudy=false,conditionSeed}) {
  const d=window.__containmentDebug,g=d.game;
  const clearStagingActors=()=>{
   if(conditionSeed===undefined||g.conditionState?.condition.id!=='brood'){g.enemies.reset();return;}
@@ -24,15 +24,19 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
  // Wall studies prefer a legal lane that presents the field face to the production camera.
  const wallStudy=id==='bulwark'||id==='glacier';
  candidates.sort((a,b)=>(b.score+(wallStudy?Math.abs(Math.sin(b.angle))*20:0))-(a.score+(wallStudy?Math.abs(Math.sin(a.angle))*20:0)));if(!candidates.length)throw Error('No V2 legal lane');
+ // Reuse the reviewed spill and warning-panel camera lanes for the paired frames.
+ if(victimStudy && room==='crew-checkpoint')candidates.unshift({x:270,y:470,angle:0});
+ if(victimStudy && room==='safety-interlock-station')candidates.unshift({x:350,y:480,angle:-Math.PI/2});
  let p;for(const candidate of candidates){Object.assign(g.player,{x:candidate.x,y:candidate.y,angle:candidate.angle,vx:0,vy:0});g.setAimPoint({x:candidate.x+Math.cos(candidate.angle)*150,y:candidate.y+Math.sin(candidate.angle)*150});if(g.abilities.snapshot.slots.power.ready){p=candidate;break;}}
- if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);clearStagingActors();d.refresh();
- const population=heavy?(showcase&&room!=='armory'?12:25):5;
+ if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(victimStudy?650:3800);
+ clearStagingActors();d.refresh();
+ const population=victimStudy?(victimStudy==='crowd'?12:3):heavy?(showcase&&room!=='armory'?12:25):5;
  const placed=g.enemies.snapshot.enemies.map(({x,y,id})=>({x,y,id}));
- for(const r of (heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
+ for(const r of (victimStudy?[75,115,165,215,280]:heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
   if(placed.length>=population)break;
   const a=p.angle+k*.22,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(!d.canStand(x,y,26)||!d.clearShot(x,y)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
-  const eid=d.spawn(heavy?['brute','spitter','crawler','stalker','carrier'][placed.length%5]:slot==='power'?'spitter':'brute',x,y,heavy&&placed.length%6===0);
+  const eid=d.spawn(victimStudy?(placed.length%3===0?'crawler':'brute'):heavy?['brute','spitter','crawler','stalker','carrier'][placed.length%5]:slot==='power'?'spitter':'brute',x,y,heavy&&placed.length%6===0);
   if(eid)placed.push({x,y,id:eid});
  }
  // Larger rooms can place remaining stress actors around the rear half of the lane.
@@ -96,6 +100,23 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
   d.spawn('brute',p.x+Math.cos(a)*70,p.y+Math.sin(a)*70);
   g.setAimPoint({x:p.x+Math.cos(a)*85,y:p.y+Math.sin(a)*85});
   d.step(16);
+ }
+ if(victimStudy){
+  g.setAimPoint({x:p.x+Math.cos(p.angle)*90,y:p.y+Math.sin(p.angle)*90});
+  d.refresh();
+  if(slot==='overdrive')d.fillOverdrive();
+  if(!g.useAbility(slot))throw Error('Cast denied '+id);
+  d.step(g.abilities.snapshot.slots[slot].castRemainingMs);
+  if(id==='overclock'){
+   if(!g.useAbility('tactical'))throw Error('Overclock chain denied');
+   d.step(g.abilities.snapshot.slots.tactical.castRemainingMs);
+  }
+  const peak={meltdown:280,whiteout:2020,'napalm-charge':265,'seismic-slam':90,railbreaker:75,overload:95,overclock:95}[id];
+  d.step(peak);d.refresh();
+  d.v2Proof.peakAfterCastMs=peak;
+  d.v2Proof.combatLightPool=d.renderer.lighting.pool.capacity;
+  gl.createProgram=create;
+  return;
  }
  if(slot==='overdrive')d.fillOverdrive();
  if(!g.useAbility(slot))throw Error('V2 ability denied '+id);
@@ -263,3 +284,11 @@ V2_SCENARIOS.push({
  })();`),
  advanceFrame:frame=>window.__containmentDebug.step(frame===1?230:1400),
 });
+
+for(const [rig,ids] of Object.entries(rigs))for(const [i,id] of ids.entries()){
+ if(!['meltdown','whiteout','overload','overclock','railbreaker','seismic-slam','napalm-charge'].includes(id))continue;
+ for(const room of ['crew-checkpoint','swarm-junction','transmission-chamber','coolant-plant','safety-interlock-station'])
+ for(const tier of ['high','low'])for(const density of ['sparse','crowd'])
+  V2_SCENARIOS.push({id:`fx36-${id}-${room}-${tier}-${density}`,diagnosticOnly:true,room,state:'playing',burst:true,frameCount:2,stepMs:250,
+   setup:stageV2,setupArgument:{rig,id,slot:slots[i],room,tier,victimStudy:density}});
+}

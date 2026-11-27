@@ -91,8 +91,8 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.phase !== 'impact' && event.phase !== 'burst') return;
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
-      this.impact('slam', x, z, angle, radius, 1.05);
-      const shock = this.kit.fx.spawn(FxMode.Shock, x, z, 2.2);
+      this.impact('slam', x, z, angle, radius, .48);
+      const shock = this.kit.fx.spawn(FxMode.Shock, x, z, .48);
       shock.param = 2; shock.range = radius; shock.color = AMBER; shock.h0 = .065;
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
@@ -101,7 +101,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.anticipate(34, .045);
 
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
-      this.dust(x, z, radius, this.kit.low ? 5 : 14);
+      this.dust(x, z, radius, this.kit.low ? 5 : 14, .48);
       // drawSlam owns the clipped deck fragments and their radial momentum.
     } else if (event.ability === 'railbreaker') {
       const shape = ABILITY_CATALOG.railbreaker.shape;
@@ -173,11 +173,11 @@ export class BreacherPresentation implements AbilityPresentation {
     p.live = true; p.kind = kind; p.x = x; p.z = z; p.angle = angle; p.size = size; p.life = life; p.age = 0; p.wallDone = false;
   }
 
-  private dust(x: number, z: number, radius: number, count: number): void {
+  private dust(x: number, z: number, radius: number, count: number, maxLife = 1.2): void {
     for (let i = 0; i < count; i++) {
       const a = TAU * i / count, r = radius * .12;
       this.kit.mote('smoke', x + Math.cos(a) * r, .15, z + Math.sin(a) * r,
-        Math.cos(a) * radius * .8, .3 + i % 4 * .16, Math.sin(a) * radius * .8, .48 + i % 3 * .14, .95 + i % 4 * .08, DUST);
+        Math.cos(a) * radius * .8, .3 + i % 4 * .16, Math.sin(a) * radius * .8, .48 + i % 3 * .14, Math.min(maxLife, .95 + i % 4 * .08), DUST);
     }
   }
 
@@ -344,7 +344,7 @@ export class BreacherPresentation implements AbilityPresentation {
     if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
     // Six hinged deck sectors lift from a common impact and settle quickly.
     // Dark bent seams and their cool cut edges remain beneath the debris.
-    const buckle = Math.max(0, 1 - p.age / .58), sectors = k.low ? 3 : 6;
+    const buckle = Math.max(0, 1 - p.age / .46), sectors = k.low ? 3 : 6;
     for (let i = 0; i < sectors && buckle > 0; i++) {
       const a = p.angle + i * TAU / sectors, c = Math.cos(a), s = Math.sin(a);
       const inner = p.size * .09, outer = p.size * (.24 + .34 * (Math.sin(i * 3.76 + .2) ** 2));

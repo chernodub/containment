@@ -357,6 +357,8 @@ void main(){
    frostBed(fxWorld.xz,r,front,age,false,base,emit,alpha);
    emit+=vec3(.12,1.5,2.)*(1.-smoothstep(.22,.95,r))*(1.-smoothstep(.05,.18,age));
   }else{
+   if(r>fxRange)discard;
+   front=fxRange*smoothstep(0.,.16,age);
    vec2 p=fxWorld.xz-fxOrigin.xz;
    float grit=fxFbm(p*1.3+fxSeed);
    vec3 tile=fxCells(vec2(p.x*.45+p.y*.28,p.y*.87)+vec2(grit,fxNoise(p*.63))*.89);
@@ -369,11 +371,13 @@ void main(){
    base+=vec3(.013)*dust;
    float seam=(1.-smoothstep(.01,.034,tile.y-tile.x))*smoothstep(.42,.62,grit)*material;
    emit=vec3(.27,.12,.018)*seam*(1.-smoothstep(.28,1.,age));
-   alpha=mix(material*(.08+.23*dust),seam*.22,smoothstep(.20,.95,age));
+   float rim=(1.-smoothstep(.03,.13,abs(r-front)))*(1.-smoothstep(.12,.20,age));
+   emit+=vec3(2.0,1.1,.38)*rim;
+   alpha=material*(.08+.23*dust)+rim*.72;
   }
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
   float settle=fxParam<1.5?1.-smoothstep(.30,.62,age)
-    :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.60,2.2,age));
+    :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.23,.48,age));
   alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
@@ -536,6 +540,10 @@ void main(){
   if(el<1.5){
    float front=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
    frostBed(fxWorld.xz,r,front,age,true,base,emit,alpha);
+   // The passing front deposits sparse frost near its lip; bodies own the sustained storm.
+   float drift=1.-smoothstep(.12,1.30,abs(front-r));
+   alpha*=.055+.30*drift;
+   emit*=.085+.40*drift;
    emit+=vec3(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
    line=0.;
   }else if(el<2.5){

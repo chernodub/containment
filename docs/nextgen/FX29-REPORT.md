@@ -264,3 +264,29 @@ The one- and five-second native Slam pairs use the same seed, original room spaw
 The seed-1729 Pyro campaign cleared all ten rooms with zero errors across the final run and its earned-checkpoint continuation. The first screenshot attempt timed out and was retried. On the final build the one-hour runner limit expired after eight clears. The continuation used the recorded Breached Loading Bay reward boundary and cleared Relay Racks and Transmission Chamber. Its outcome is `room-limit` with five room-loading diagnostics, exit status 1. [First eight rooms](../../artifacts/nextgen/playtest/fx35/report.json) · [Ten-room result](../../artifacts/nextgen/playtest/fx35-continuation/report.json)
 
 At the start, `df -h /Users/chernodub` reported 926 GiB total, 859 GiB used and 41 GiB available (96%). At completion it reported 926 GiB total, 805 GiB used and 90 GiB available (90%). This worktree's nextgen artifacts measured 17 GB before cleanup and 1.8 GB after verification.
+
+## FX36
+
+Meltdown selects the final target ID from its native damage ticks for the heat accent and outward recoil. A repeat hit on the same target allows a 250 ms rest after its accent. The flame follows the visible body for up to 320 ms while the single disc dims. Overload tracks the last link confirmed by its impact receipt. Its fork rises over the recipient, the deck track fades sooner, and the chain no longer stamps a shock circle at every hop. Overclock weapon contacts use the same visual language on the struck actor, including a just-retired corpse.
+
+Whiteout grows three unequal rime shards up each of a bounded number of living enemies inside the advancing front. The outer wall has fewer spikes and the deck deposit is dimmer. The plumes brighten briefly on the storm's freeze pulse. Napalm's first native burn receipt lights a white-core wick on each newly ignited body for 50 ms. Repeated pool ticks leave the ordinary burn wick. Seismic Slam uses a single moving rim, clips fractured plates to the ability radius and retires its shock, thrown debris and dust within 480 ms.
+
+The capture selectors take the form `fx36-{power}-{room}-{tier}-{density}`. Each uses one native cast, except the Overclock chain study, which resolves Overload while Overclock is active. The first frame samples the power's impact or status tick and the second advances 250 ms. The staged encounters and fixed-step draw counts describe these frames. The historical final25 residual was sampled at +300 ms.
+
+High draw calls in the 12-enemy encounters. Each cell gives peak / +250 ms. The original base is `ca7c4738`, the integrated baseline is `a65d7fb5` (BROOD43, ROOM35 and TITLE35), and FX36 is `463c6c67`. Each of these 84 frames had four visible pooled lights.
+
+| Power | Safety original | Safety integrated baseline | Safety FX36 | Transmission original | Transmission integrated baseline | Transmission FX36 |
+|---|---:|---:|---:|---:|---:|---:|
+| meltdown | 158 / 160 | 159 / 160 | 157 / 158 | 115 / 118 | 116 / 118 | 114 / 116 |
+| overload | 166 / 156 | 166 / 156 | 160 / 153 | 123 / 111 | 123 / 111 | 117 / 108 |
+| overclock | 168 / 167 | 169 / 167 | 165 / 161 | 120 / 122 | 120 / 122 | 116 / 116 |
+| whiteout | 155 / 155 | 155 / 155 | 155 / 155 | 110 / 110 | 111 / 110 | 111 / 110 |
+| napalm-charge | 154 / 158 | 154 / 158 | 154 / 158 | 111 / 114 | 111 / 114 | 111 / 114 |
+| seismic-slam | 165 / 160 | 165 / 160 | 164 / 159 | 119 / 117 | 119 / 117 | 118 / 116 |
+| railbreaker | 158 / 154 | 158 / 154 | 158 / 154 | 117 / 114 | 118 / 114 | 118 / 114 |
+
+The Arc seed 1729 desktop campaign cleared ten rooms through Transmission Chamber on `463c6c67`, with zero errors and zero recorded defects. After merging PLAY41 at `bf3bc21a`, the production build passed and High Meltdown and Low Whiteout produced four new frames with empty errors. High Meltdown measured 157 / 158 draws in that retake. [Native campaign](../../artifacts/nextgen/playtest/fx36/index.html) · [FX36 frame comparisons](../../artifacts/nextgen/fx36-review/index.html).
+
+The gallery contains 238 matched frames per build on the original base and the FX36/BROOD43 study build, 84 integrated comparison frames and four post-PLAY41 frames. All 38 capture manifests have empty errors and failures. The 480-pixel previews link to the native 1920×1080 PNGs. The sampled Cryo Crawler is frozen and rimed at native size. Its pose and rime are still harder to separate beside a Brute at 480. In a packed Arc chain the near limbs can also cover a section of the fork.
+
+In the 20-second realtime High Pyro Safety Interlock benchmark, nextgen at `5ef05e91` measured 32.10 / 50.20 ms frame p50 / p95, 207 draws and zero combat compiles. FX36 at `bf3bc21a` measured 31.90 / 50.10 ms, 204 draws and zero compiles. One-minute load was 17.30 and 19.22 at the start of the respective runs on ten cores. Both exceeded 20 ms. This single shared-host pair leaves hardware headroom unverified. [Baseline benchmark](../../artifacts/nextgen/fx36-bench-before/benchmark.json) · [FX36 benchmark](../../artifacts/nextgen/fx36-bench/benchmark.json).

@@ -63,6 +63,7 @@ type Decal = {
 export interface StatusActor {
     readonly root: T.Object3D;
     readonly height: number;
+    hit?(strength: number, direction: number): void;
     elementContact?(element: AbilityElement): void;
 }
 export interface AbilityServices {
@@ -101,6 +102,9 @@ export class ElementKit {
     readonly statusOwners = new StatusOwnership();
     statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
+    arcContactUntil = -1;
+    heatVictim = -1;
+    heatUntil = -1;
     low = false;
     reducedMotion = false;
     flashIntensity = 1;
@@ -191,6 +195,8 @@ export class ElementKit {
 
     /** Rig owners supply the native footprint. A contact only marks its point of impact. */
     contact(event: AbilityEvent, x: number, y: number): void {
+        // Slam owns its clipped cracks and dust for the entire 480 ms impact.
+        if (event.ability === 'seismic-slam') return;
         const launch = event.phase === 'dash-start';
         if (!launch && event.phase !== 'impact' && event.phase !== 'dash-end') return;
         const placed = !launch && (event.phase === 'dash-end' || event.slot === 'power' ||
@@ -401,12 +407,24 @@ export class ElementKit {
         this.flowCard('flame', x, y, z, tx, ty, tz, width, core ? 0xffedb5 : 0xff7a2e, opacity, 100 + Math.abs(seed) % 64);
     }
     /** Place the ember on the camera-facing skin of its posed joint. */
-    jointEmber(x: number, y: number, z: number, radius: number, height: number, seed: number): void {
+    jointEmber(x: number, y: number, z: number, radius: number, height: number, seed: number, opacity = 1): void {
         const lift = this.flowView.set(this.viewPosition.x - x, this.viewPosition.y - y, this.viewPosition.z - z)
             .normalize().multiplyScalar(radius * .54);
         x += lift.x; y += lift.y; z += lift.z;
         this.flowCard('flame', x, y, z, x + radius * .20, y + height, z + radius * .13,
-            Math.max(.14, radius * .34), 0xfff5c9, 1, -1 - Math.abs(seed % 63));
+            Math.max(.14, radius * .34), 0xfff5c9, opacity, -1 - Math.abs(seed % 63));
+    }
+    overclockContact(x: number, y: number, z: number, height: number, angle: number): void {
+        this.arcContactUntil = this.time + .36;
+        const dx = Math.cos(angle), dz = Math.sin(angle);
+        const joint = y + height * .62, crest = y + height * .99;
+        this.heavyBeam(x - dx * 1.25, joint + .14, z - dz * 1.25, x, joint, z, 0xa693ff, .13, .16, true);
+        for (let side = -1; side <= 1; side += 2) {
+            const bx = x + dx * .18 - side * dz * .40, bz = z + dz * .18 + side * dx * .40;
+            this.beam(x, joint, z, bx, crest, bz, 0xe0c8ff, .14, .32, true);
+            this.beam(bx, crest, bz, bx + dx * .54, crest + .21, bz + dz * .54, 0xfff8ff, .08, .26, true);
+        }
+        this.mote('spark', x, crest, z, 0, .25, 0, .32, .11, 0xfff8ff);
     }
     /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
     boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {
@@ -647,7 +665,7 @@ export class ElementKit {
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
     clear(): void {
-        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); for (const p of this.particles)
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); this.arcContactUntil = this.heatUntil = this.heatVictim = -1; for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)
