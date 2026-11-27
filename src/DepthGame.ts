@@ -54,6 +54,8 @@ export type Bullet={hostileOwner?:number;preview?:true;previewAt?:number;sourceX
 export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number;spitterOpening?:true};
 const IDLE:GameInput={x:0,y:0,fire:false,angle:null,autoAim:false};
 const SPITTER_PROJECTILE_RADIUS=ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
+const EARLY_SPIT_IMPACT_RADIUS=128;
+const EARLY_SPIT_IMPACT_SPEED=420;
 const RELAY_RACKS_SHUTTER_SPITTER={x:670,y:142};
 
 export class DepthGame {
@@ -1242,8 +1244,8 @@ export class DepthGame {
   if(e.spread){
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
    const range=Math.hypot(e.targetX-e.x,e.targetY-e.y);
-   const impactMs=e.durationMs+range/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*1000;
-   this.presentation.push({type:'enemy-warning',x:e.targetX,y:e.targetY,durationMs:impactMs,radius:92});
+   const impactMs=e.durationMs+range/EARLY_SPIT_IMPACT_SPEED*1000;
+   this.presentation.push({type:'enemy-warning',x:e.targetX,y:e.targetY,durationMs:impactMs,radius:EARLY_SPIT_IMPACT_RADIUS});
    for(const edge of [-e.spread,e.spread])this.presentation.push({type:'enemy-warning',x:e.x,y:e.y,
     targetX:e.x+Math.cos(angle+edge)*range,targetY:e.y+Math.sin(angle+edge)*range,
     durationMs:e.durationMs,radius:12});
@@ -1257,9 +1259,9 @@ export class DepthGame {
   }
   if(e.spread&&canTraverseExpedition(this.geometry,{x:e.sourceX,y:e.sourceY},{x:e.targetX,y:e.targetY},
    SPITTER_PROJECTILE_RADIUS)){
-   const warning=Math.hypot(e.targetX-e.sourceX,e.targetY-e.sourceY)/ENEMY_ATTACK_SHAPES.spitterProjectileSpeed;
-   this.pools.push({id:++this.poolId,x:e.targetX,y:e.targetY,radius:92,warning,life:warning+.36,
-    damage:24,tick:warning,spitterOpening:true});
+   const warning=Math.hypot(e.targetX-e.sourceX,e.targetY-e.sourceY)/EARLY_SPIT_IMPACT_SPEED;
+   this.pools.push({id:++this.poolId,x:e.targetX,y:e.targetY,radius:EARLY_SPIT_IMPACT_RADIUS,warning,life:warning+.36,
+    damage:12,tick:warning,spitterOpening:true});
   }
   const rays=e.spread?[-e.spread,-e.spread/2,0,e.spread/2,e.spread]:[0];
   for(const ray of rays)this.bullets.push({hostileOwner:e.enemyId,sourceX:e.sourceX,sourceY:e.sourceY,x:e.sourceX,y:e.sourceY,
