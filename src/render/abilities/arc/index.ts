@@ -99,7 +99,7 @@ class ArcPresentation implements AbilityPresentation {
         const last = this.discharges[(this.nextDischarge + this.discharges.length - 1) % this.discharges.length];
         if (last.live && last.age === 0 && last.victimId === event.targetIds?.[event.targetIds.length - 1]) {
           last.terminal = true;
-          last.life = .57;
+          last.life = .42;
         }
         k.flash(px, pz, VIOLET, 5, 4, 4, .12);
         k.camera(.24);
@@ -166,7 +166,7 @@ class ArcPresentation implements AbilityPresentation {
     // The source and destination are immutable native link receipts.
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
-    d.terminal = false;
+    d.terminal = event.ability !== 'overload';
     d.overload = event.ability === 'overload';
     d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = d.overload ? .38 : 2.1; d.contactFrames = 0; d.fired = false; d.seed = this.nextDischarge;
     d.ty = .75; d.victimId = event.targetIds?.[0] ?? -1;
@@ -267,7 +267,7 @@ class ArcPresentation implements AbilityPresentation {
         if (dt > 0) d.contactFrames++;
       }
       k.sprite('scorch', d.x, .048, d.z, .44, .36, VIOLET, fade * .72, d.seed, 'ground');
-      if (d.victimId >= 0 && d.age - d.delay < (d.terminal ? d.life : .34)) {
+      if (d.victimId >= 0 && d.age - d.delay < (d.terminal ? .42 : .34)) {
         const actor = k.statusActor(d.victimId);
         const joint = actor && this.contactBones.get(actor.root);
         if (actor && (d.terminal || d.overload && contact)) {
@@ -281,12 +281,17 @@ class ArcPresentation implements AbilityPresentation {
           const x = root.x + jx / jointLength * radius * .24;
           const z = root.z + jz / jointLength * radius * .24;
           const y = root.y + Math.min(actor.height * .6, radius * 1.35);
-          const crest = y + radius * .68;
-          const power = Math.min(1, (d.life - (d.age - d.delay)) / .08);
+          const spread = d.terminal ? 1.9 : 1;
+          const crest = y + radius * .68 * spread;
+          const power = Math.min(1, (Math.min(.42, d.life) - (d.age - d.delay)) / .08);
           k.impact();
           for (let side = -1; side <= 1; side += 2) {
-            const bx = x + (-dx * .12 - side * dz * .32) / length * radius;
-            const bz = z + (-dz * .12 + side * dx * .32) / length * radius;
+            const bx = x + (-dx * .12 - side * dz * .32 * spread) / length * radius;
+            const bz = z + (-dz * .12 + side * dx * .32 * spread) / length * radius;
+            if (d.terminal) {
+              k.boltCard(bx, crest, bz, bx - dx / length * radius * .68,
+                crest + radius * .24, bz - dz / length * radius * .68, .12, d.seed + side + 2, power, WHITE);
+            }
             k.ribbon(bx, crest, bz, x, y + .08, z, VIOLET, .14, power, false);
             k.boltCard(bx, crest, bz, x, y + .08, z, .092, d.seed + side, power, WHITE);
           }
