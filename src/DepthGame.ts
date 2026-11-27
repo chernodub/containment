@@ -265,6 +265,9 @@ export class DepthGame {
   if(!shutter)return wardenOpeningAim(this.geometry,enemy,player);
   if(enemy.x>shutter.x+shutter.width&&player.x<shutter.x&&segmentIntersectsRect(enemy,player,shutter))return player;
  }:undefined,canCommit:(enemy,player,others,attack,attempting)=>{
+  if(this.storyFirstHold&&(enemy.type==='brute'||enemy.type==='carrier')&&
+   [...others].some(other=>other.id!==enemy.id&&(other.type==='brute'||other.type==='carrier')&&
+    (other.meleePhase==='windup'||other.meleePhase==='strike'||other.pendingAttack||other.chargeMs)))return false;
   if(this.shaftApproach?.id===enemy.id&&this.elapsed<this.shaftApproach.readyAt)return false;
   if(!this.relayHeavyRecovered&&enemy.beat===this.director.returnShotBeat&&
     (enemy.type==='crawler'||enemy.type==='stalker'||enemy.type==='spitter')){
@@ -366,11 +369,17 @@ export class DepthGame {
  private prepareSiegePoint(){this.navigation.prepare(this.geometry.playerSpawn,1);const exit=this.geometry.exitPoint;for(let ring=0;ring<=320;ring+=16){for(let i=0;i<(ring?24:1);i++){const angle=i*Math.PI/12,p={x:exit.x+Math.cos(angle)*ring,y:exit.y+Math.sin(angle)*ring};if(canOccupyExpedition(this.geometry,p,this.player.radius)&&this.navigation.reachable(p)){this.siegePoint=p;return;}}}this.siegePoint={...this.geometry.playerSpawn};}
  private gateHold:{id:string;ms:number;x:number;y:number}|undefined;
  private gateGraceUntil=0;
+ private holdTeachingUntil=0;
+ private holdCornerDashUsed=false;
+ private heldSiegeBeat=-1;
+ private get storyFirstHold(){return this.difficulty==='story'&&this.node.templateId==='safety-interlock-station';}
+ get storyHoldPrompt(){return this.elapsed<this.holdTeachingUntil;}
+
  private gatePreviousStrikes=new Set<number>();
  get storyHoldGrace(){
   const hold=this.gateHold;
   const remainingMs=Math.max(0,(this.gateGraceUntil-this.elapsed)*1000);
-  if(this.difficulty==='story'&&hold&&remainingMs>0)return {...hold,remainingMs,durationMs:2500};
+  if(this.difficulty==='story'&&hold&&remainingMs>0)return {...hold,remainingMs,durationMs:2500,...(hold.id==='siege'?{radius:220,chargeDurationMs:12000}:{})};
  }
  private gateStaged=false;
  private gatePads:{x:number;y:number}[]=[];
@@ -510,9 +519,10 @@ export class DepthGame {
    if(pads.length===2)this.gatePads=pads;
   }
   if(this.crossingRequired&&!this.relayCrossfire)this.stageRelayCrossfire();
+  if(this.heldSiegeBeat>=0&&(!this.siege||this.siegeRemainingMs<=0)){this.heldSiegeBeat=-1;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();}
   const pad=this.floorControls.find(control=>Math.hypot(control.x-this.player.x,control.y-this.player.y)<=control.radius
    &&(control.kind==='gate'||control.kind==='bank'&&this.crossingRequired));
-  if(this.difficulty==='story'&&this.gateHold){
+  if(this.difficulty==='story'&&this.gateHold&&this.heldSiegeBeat<0){
    const hold=this.gateHold;
    const strikes=this.enemies.snapshot.enemies.filter(enemy=>(enemy.meleePhase==='windup'||enemy.meleePhase==='strike')&&
     meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,hold.x,hold.y,this.player.radius));
@@ -534,12 +544,17 @@ export class DepthGame {
    if(this.gateHold.ms>=950&&this.director.closeFlank(pad.id))
     this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y,encounterCue:'pincer-broken',floorChoice:'gate:'+pad.id});
   }else{
-   if(!this.storyHoldGrace||!this.floorControls.some(control=>control.id===this.gateHold?.id))this.gateHold=undefined;
+   if(this.heldSiegeBeat<0&&(!this.storyHoldGrace||!this.floorControls.some(control=>control.id===this.gateHold?.id)))this.gateHold=undefined;
    if(pad?.kind==='bank'&&!this.relayBank){
     this.relayBank=pad;
     this.presentation.push({type:'boon',boon:'shield',x:pad.x,y:pad.y,floorChoice:pad.id==='0'?'near bank':'far bank'});
    }
   }
+  if(this.storyFirstHold&&!this.holdCornerDashUsed&&this.abilities.snapshot.slots?.dash?.charges===0&&
+   this.enemies.snapshot.enemies.some(enemy=>Math.hypot(enemy.x-this.player.x,enemy.y-this.player.y)<95)&&
+   [[1,0],[-1,0],[0,1],[0,-1]].filter(([x,y])=>!canTraverseExpedition(this.geometry,this.player,
+    {x:this.player.x+x*48,y:this.player.y+y*48},this.player.radius)).length>=2)
+   this.holdCornerDashUsed=this.abilities.recoverDashCharge();
   const siege=this.siege;
   if(!siege)return;
   if(this.siegeBeat!==siege.beat){
@@ -548,6 +563,22 @@ export class DepthGame {
   }
   if(this.node.templateId==='overload-floor'&&!this.coverPreview&&!siege.crossing&&
    Math.hypot(this.player.x-this.siegePoint.x,this.player.y-this.siegePoint.y)<=320)this.previewRelayCover();
+  if(this.storyFirstHold&&this.siegeRemainingMs>0){
+   if(this.heldSiegeBeat!==siege.beat){this.gatePreviousStrikes.clear();this.gateGraceUntil=0;this.heldSiegeBeat=siege.beat;}
+   this.gateHold={id:'siege',x:siege.x,y:siege.y,ms:12000-this.siegeRemainingMs};
+   const strikes=this.enemies.snapshot.enemies.filter(enemy=>(enemy.type==='brute'||enemy.type==='carrier')&&
+    (enemy.meleePhase==='windup'||enemy.meleePhase==='strike')&&
+    meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,siege.x,siege.y,siege.radius));
+   for(const id of this.gatePreviousStrikes)if(!strikes.some(enemy=>enemy.id===id))this.gatePreviousStrikes.delete(id);
+   const striker=strikes.find(enemy=>!this.gatePreviousStrikes.has(enemy.id));
+   if(striker){
+    this.gatePreviousStrikes.add(striker.id);
+    const teaching=this.holdTeachingUntil===0&&striker.meleePhase==='windup';
+    if(teaching){this.enemies.extendWindup(striker.id,650);this.holdTeachingUntil=this.elapsed+2.5;}
+    this.gateGraceUntil=Math.max(this.gateGraceUntil,this.elapsed+2.5+(striker.meleePhase==='windup'?striker.meleeRemainingMs/1000:0)+(teaching?.65:0));
+    this.presentation.push({type:'story-hold-grace',x:siege.x,y:siege.y,id:striker.id,durationMs:2500});
+   }
+  }
   if(!siege.choosing&&Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius){
    const floor=this.node.templateId==='overload-floor'&&this.relayBanks.length&&!this.relayBank?4000:0;
    this.siegeRemainingMs=Math.max(floor,this.siegeRemainingMs-ms);
@@ -571,7 +602,7 @@ export class DepthGame {
   return true;
  }
  private enterRoom(start=true){this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollow=undefined;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
- this.gateStaged=false;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
+ this.gateStaged=false;this.holdTeachingUntil=0;this.holdCornerDashUsed=false;this.heldSiegeBeat=-1;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
  if(this.node.templateId==='overload-floor'){
@@ -822,6 +853,7 @@ export class DepthGame {
  private targetCache:MutationTarget[]|null=null;private targetSnapshot:unknown;
  targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
  private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={},shutterSpitter?:true,approachLeadMs?:number){
+  if(this.storyFirstHold&&this.siegeRemainingMs>8000)elite=false;
   const radius=guardianRadius(guardian,enemyBodyRadius(type,elite)),origin=options.podOrigin;
   const checkIngress=this.expedition.run.version===3&&type==='brute'&&!guardian;
   let ingress=this.bruteIngress.get(radius);

@@ -527,7 +527,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             ||enemy.chargeMs>0||enemy.pod);
         const shutterCallout = shutterImpact?.revision === game.roomRevision && game.elapsed < shutterImpact.until
             ? shutterImpact : undefined;
-        const prompts = [encounterCues.reserveResult && 'objective', shutterCallout && 'shutter', lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
+        const prompts = [game.storyHoldPrompt && 'story-hold',encounterCues.reserveResult && 'objective', shutterCallout && 'shutter', lesson && 'lesson', matron && 'brood', (encounter.pincer || game.siege || game.escortExitOpen || cue === 'ESCORT BROKEN') && 'objective', denialLife > 0 && 'denial',
             weaponLesson && !lessonDanger && 'weapon-lesson', suggest && 'weapon', 'mastery', 'onboarding', 'objective'];
         let prompt = '';
         for (const candidate of prompts) {
@@ -580,7 +580,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const coaching = prompt === 'lesson' || prompt === 'weapon-lesson' || prompt === 'weapon';
         const plate = weaponLesson?.target;
         objectiveNode.classList.toggle('plate-key-pulse', prompt==='weapon-lesson' && !!plate && plate.armor>0 && plate.armor<plate.maxArmor*.9);
-        text('room-objective', prompt === 'shutter' ? 'Shutter broken · lane open' : prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
+        text('room-objective', prompt === 'story-hold' ? 'Step off — the charge holds' : prompt === 'shutter' ? 'Shutter broken · lane open' : prompt === 'weapon-lesson' ? weaponLesson?.text ?? '' : prompt === 'weapon' ? situation?.text ?? '' : prompt==='lesson' && game.coverLessonActive && !game.siege ? 'Break the Spitter’s line of sight' : ['lesson','brood','objective'].includes(prompt) ? objective : '');
         objectiveNode.classList.toggle('anchored-objective', !!anchored || coaching);
         objectiveNode.classList.toggle('coaching-objective', coaching);
         if (coaching) {

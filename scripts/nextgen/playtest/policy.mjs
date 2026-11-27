@@ -443,6 +443,12 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       }
       perceived.human = {spacing,exactSpacing:false};
       const escape = meleeEscapePlan(perceived);
+      if(profile==='novice'&&s.difficulty==='story'&&s.siege?.remainingMs>0&&s.storyHoldGrace?.id==='siege'){
+        if(escape)return {target:null,movement:escape.candidate,
+          actions:escape.needsDash?['Shift']:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};
+        if(!visible.some(enemy=>enemy.meleePhase==='windup'||enemy.meleePhase==='strike')&&distance(s.player,s.siege)>s.siege.radius)
+          return {target:null,movement:chooseMovement({...perceived,enemies:[]}),actions:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};
+      }
       // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
       const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
       const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);

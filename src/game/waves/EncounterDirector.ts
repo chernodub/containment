@@ -314,7 +314,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
  const concurrentBonus=veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
- const concurrentCap=Math.min(12+concurrentBonus,6+Math.floor(position/3)+concurrentBonus);
+ const concurrentCap=mode==='story'&&node.templateId==='safety-interlock-station'?6:Math.min(12+concurrentBonus,6+Math.floor(position/3)+concurrentBonus);
  return Object.freeze({nodeId:node.id,kind:node.kind,wave:position+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:shutterOpening?'Bait the ram into the rack shutter':coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
 
