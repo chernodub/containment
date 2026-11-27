@@ -85,7 +85,7 @@ transformed.x+=.32*bearing;
 transformed.z-=.29*bearing;
 if(actorWarden<.5){
  float jaw=smoothstep(2.4,3.6,position.x)*(1.-smoothstep(.76,1.0,abs(position.y)))*(1.-smoothstep(3.9,4.25,position.z));
- transformed.z-=.32*actorAttackLoad*jaw;
+ transformed.z+=(.14-.46*actorAttackLoad)*jaw;
  float digits=smoothstep(2.5,3.65,position.x)*smoothstep(1.9,2.35,abs(position.y))*(1.-smoothstep(2.65,3.,position.z));
  float load=position.y<0.?heavyGrip.x:heavyGrip.y;
  transformed.y+=(position.y-sign(position.y)*3.)*digits*.31*load;
@@ -266,11 +266,11 @@ float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 #ifdef BRUTE_PLANES
 if(actorBroodForm.x>=-1.){
-  vec3 middle=mix(vec3(.023,.036,.024),vec3(.044,.025,.016),actorWarden);
-  vec3 crown=mix(vec3(.044,.070,.047),vec3(.116,.060,.034),actorWarden);
+  vec3 middle=mix(vec3(.034,.034,.047),vec3(.044,.025,.016),actorWarden);
+  vec3 crown=mix(vec3(.063,.066,.087),vec3(.116,.060,.034),actorWarden);
   vec3 paint=vec3(.008,.011,.008);
   float rankBone=actorEliteBody*(1.-actorWarden);
-  if(heavyPaint==1.)paint=mix(crown,vec3(.032,.040,.028),rankBone);
+  if(heavyPaint==1.)paint=mix(crown,vec3(.046,.046,.063),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
