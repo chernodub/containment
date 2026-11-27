@@ -739,7 +739,7 @@ export class DepthRenderer {
     if(distance<nearest){nearest=distance;queuedBite=e.id;}
    }
   }
-  for(const e of enemies){active.add(e.id);let model=this.actors.get(e.id);/* I13: native pod hatch swaps static art to the living caste. */if(model&&!!model.root.userData.broodPod!==!!e.pod){this.actorPool.release(model);this.actors.delete(e.id);model=undefined;}if(!model){model=this.actorPool.take(e.pod?'brood-pod':e.type,e.elite);useActorContactShadows(model.root,true);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.actors.set(e.id,model);registerGeometry(model.root,e.champion?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);model.setStageLight?.(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS?.12:1);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setExposed?.(e.maxArmor>0&&e.armor===0);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);/* I13: presentation follows authoritative guardian clocks. */model.setBossState?.(e.champion||(e.type==='brute'&&e.maxArmor>0&&e.armor<=0)?e.stunRemainingMs??0:0,e.broodRemainingMs??0,e.chargeMs,e.specialCooldownMs);if(e.pod)model.setPodCountdown?.(e.podRemainingMs??0,e.podStage);const ordinary=!e.champion&&!e.pod;
+  for(const e of enemies){active.add(e.id);let model=this.actors.get(e.id);/* I13: native pod hatch swaps static art to the living caste. */if(model&&!!model.root.userData.broodPod!==!!e.pod){this.actorPool.release(model);this.actors.delete(e.id);model=undefined;}if(!model){model=this.actorPool.take(e.pod?'brood-pod':e.type,e.elite);useActorContactShadows(model.root,true);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.actors.set(e.id,model);registerGeometry(model.root,e.champion?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);model.setStageLight?.(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS?.12:1);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setExposed?.(e.maxArmor>0&&e.armor===0);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);/* I13: presentation follows authoritative guardian clocks. */model.setBossState?.(e.champion||(e.type==='brute'&&e.maxArmor>0&&e.armor<=0)?e.stunRemainingMs??0:0,e.broodRemainingMs??0,e.chargeMs,e.specialCooldownMs,e.champion==='warden'?Math.atan2(p.y-e.y,p.x-e.x):0);if(e.pod)model.setPodCountdown?.(e.podRemainingMs??0,e.podStage);const ordinary=!e.champion&&!e.pod;
    const ranged=e.engagement==='ranged';
    const waiting=!!e.readyBehaviour||ordinary&&!e.attackSlot&&!e.pendingAttack&&e.meleePhase==='approach'&&
      (e.engagement==='waiting'||ranged)&&Math.hypot(e.x-p.x,e.y-p.y)<(ranged?440:e.meleeShape.range+110);
@@ -823,6 +823,12 @@ export class DepthRenderer {
     if(!blackout||contact)this.contacts.add(e.x/UNIT,e.y/UNIT,e.radius/UNIT*contactScale,contactInk,contact?enemyMotionAim(e,p):0);
    }
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
+   // Append small palm shadows after all body and threat indicators.
+   for(const e of enemies)if(e.type==='brute' && !blackout){
+    const palms=this.actors.get(e.id)?.root.userData.heavyPalmContacts;
+    if(palms)for(const palm of palms)if(palm.held)
+     this.contacts.add(palm.anchor.x,palm.anchor.z,e.radius/UNIT*.24,4);
+   }
   }
   this.contacts.end();
   this.contacts.mesh.visible=this.graphicsAblation!=='contacts';

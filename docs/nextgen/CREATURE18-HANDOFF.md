@@ -2020,3 +2020,64 @@ Native and 480×270 pairs live in `artifacts/nextgen/heavy44d/sheets/` as `<room
 The long pale diagonals on the Safety-interlock elites follow the swept skull horns. Bone now stops at the horn tips and the raised central portion of the crown rims. The two Safety-interlock comparison panels stage the recorded death-snapshot positions and velocity headings. They omit the death HUD. The existing silhouettes are preserved.
 
 The production build passed. The delivered capture manifests have empty error arrays. Removal-from-scene draw-call deltas for regular, elite and Warden were 1/2/2 on both builds. Corresponding skin vertex counts were 12,452/13,909/20,070 on both. Simulation diff against 1517274e is empty. Raw measurements and the current six-frame overview are in `artifacts/nextgen/heavy44d/metrics.json` and `reads.png`.
+
+## HEAVY45 — loaded forelimbs, slate Brutes and the Warden's mouth
+
+The Brute and elite shift the breast forward and down after the heel lands. The elbow moves back and down while the planted heel stays at the deck anchor. Finger spread follows the rising and falling support load. The Warden's front feet are skinned to its chest, so its solver converts the held world point to a correction in the posed chest frame. It releases that correction for charge and wall recoil. All three reuse the instanced deck contact pass for a small shadow at the heel.
+
+The final three-rank measurement reconstructs each world-space shoulder, elbow and heel from the fitted rig, including the shader's breast motion, arm deformation and Warden pad correction. An earlier regular-only estimate used a rigid shoulder landmark. The fixed-camera study advances each actor 0.022 m per presentation tick. Through the planted interval all three heels stayed within 2.2 cm of their anchors, with less than 0.001 cm of movement between the held samples. Roll-off begins after mid-stance; the heel rises ahead of the distal knuckles.
+
+| Fitted elbow angle | Contact | Deepest yield | Late support | Contact-to-yield change |
+|---|---:|---:|---:|---:|
+| Brute | 85.4° | 54.5° | 72.6° | 30.9° |
+| Elite Brute | 79.9° | 53.9° | 70.2° | 26.0° |
+| Warden | 145.5° | 103.3° | 134.5° | 42.3° |
+
+The base and elite use the same bind-space shoulder, tapered wrist, narrowed palm heel and knuckle ridge. A cut across the exposed elbow continues the upper arm colour over the joint. A second oblique cut separates the heel and knuckle planes. Dark eye sockets bracket a narrower wedge mask. At rest the lower lip withdraws under the mask; attack load lowers the jaw. The three slate crowns use the existing painted boundaries. The elite's off-centre prong rises above the shoulder and a bone edge continues diagonally onto the near shoulder. These changes are made during asset preparation on the shared geometry buffers.
+
+At wall contact the Warden captures the bearing to the marine. Its head tilts away about the existing cervical pivot. The neck and skull retain the HEAVY44d rotation construction and the jaw's 6°–76° range. Eight teeth frame the near-black lining. The plum tongue has a tapered root, a darker side and an off-centre highlight. The floor spill only appears during wind-up. The overhead stun ring is 63% of its previous diameter.
+
+| Render cost | final25 calls | HEAVY45 calls | final25 skin vertices | HEAVY45 skin vertices |
+|---|---:|---:|---:|---:|
+| Brute | 1 | 1 | 12,452 | 12,452 |
+| Elite Brute | 2 | 2 | 13,909 | 13,909 |
+| Warden | 2 | 1 | 20,070 | 20,070 |
+
+Calls are the difference between complete scene renders with the actor attached and detached. The Warden's calm call reduction comes from turning off its floor spill between attacks. The on-demand spill can still add one draw. The skin counts are the visible skinned geometry's position counts.
+
+At 480×270 the following display-luma measurements use the final composited RGB and the actor ID and region at each pixel centre from the resolved geometry attachment. Luma is 0.2126R + 0.7152G + 0.0722B on the 0–255 display scale. The heavy column is the highest region mean among visible Brutes with at least five sampled pixels. The marine column includes all visible suit regions. The head and arm labels refer to broader geometry regions and include adjacent armour.
+
+| Crowd | Marine mean, both builds | Brightest heavy, final25 → HEAVY45 | HEAVY45 head / arm / leg means |
+|---|---:|---:|---:|
+| Crew Checkpoint | 102.1 | 114.6 → 82.3 | 141.9 / 109.7 / 97.9 |
+| Swarm Junction | 92.3 | 111.2 → 76.8 | 137.7 / 99.5 / 88.3 |
+| Relay Racks | 96.0 | 113.9 → 80.8 | 133.4 / 104.2 / 92.7 |
+| Transmission Chamber | 94.3 | 112.7 → 78.8 | 132.5 / 102.2 / 94.7 |
+| Coolant Plant | 92.6 | 114.9 → 79.1 | 127.7 / 99.9 / 89.6 |
+
+| Wall impact | Brightest tongue-region pixel, final25 → HEAVY45 | Brightest marine leg pixel | HEAVY45 tongue / leg means |
+|---|---:|---:|---:|
+| Crew Checkpoint | 228.3 → 119.4 | 193.9 | 67.5 / 88.6 |
+| Armory | 229.3 → 119.4 | 179.6 | 68.5 / 61.2 |
+| Coolant Plant | 229.3 → 119.4 | 199.2 | 68.5 / 78.3 |
+
+The Crew wall frame includes another Brute and active warnings. In Armory the boss occludes most of the marine. The brighter tongue facet still exceeds the average of the visible leg there. At native size the frontal plum fold is pointed and the lower teeth partly disappear behind the lip. The resting Brute's outer hand still has a squared edge. The three animals' varied support timing is easier to read in the colour pack than where the near elbow crosses the dark flank in greyscale. The elite reaches 4.55 m in the matched lineup versus 3.46 m in final25. The silhouette and the colour and ring-hidden pairs are visual evidence. No timed first-time viewer study was run.
+
+The final Crew, Armory and Coolant impacts moved the fitted skull-lobe centre 0.609, 0.597 and 0.577 m from its chest-relative rest position. These are 54.2%, 53.2% and 51.3% of the fitted 2.66-unit rest head length, respectively.
+
+The review index is `artifacts/nextgen/heavy45/index.html` in this worktree. Its walking strips place final25 above HEAVY45. The pose and room pairs place final25 on the left; opening a reduced image shows the native pair. The fixed-seam native crops and both pack strips are under `heavy45/sheets/`. The standalone source frames are under `heavy45/animals/` and `heavy45/animals-final25/`. The three native wall scenes and five crowd fixtures have their pixel-region receipts in `heavy45/results/manifest.json` and `heavy45/final25/manifest.json`. Their comparison runtime is local final25 gameplay commit `6a902cea`. The original gallery and its matching crews and poses remain read-only.
+
+Four native Safety Interlock pressure samples resume the reviewed Breacher's organically earned Diagnostic Gallery reward. The bot keeps its ordinary seed-1729 inputs and the same pressure ranking on each build. Frames are selected at matching policy steps, with a living and visible Brute. Display-luma values are presented as marine mean / brightest heavy region mean.
+
+| Native step | final25 | HEAVY45 | HEAVY45 head / arm / leg |
+|---:|---:|---:|---:|
+| 64 | 120.4 / 133.5 | 120.4 / 92.6 | 144.3 / 106.6 / 104.5 |
+| 72 | 108.8 / 129.6 | 109.0 / 90.3 | 149.2 / 104.7 / 97.0 |
+| 112 | 110.5 / 138.4 | 110.3 / 92.1 | 133.6 / 97.0 / 94.4 |
+| 120 | 110.2 / 136.1 | 110.4 / 95.0 | 119.8 / 106.6 / 98.5 |
+
+Native pressure scores were 45, 45, 40 and 45. Four lighter Passenger Vault samples and the underlying means and maxima are in `heavy45/values.json`. The ordinary campaign requested for HEAVY45, seed 1729 with the Breacher, cleared ten rooms through Transmission Chamber. It exited successfully with zero errors and zero defects on the first implementation pass. The separate pressure readbacks and the final heel-release strip cover later revisions.
+
+The second ten-room campaign on `924a0480` also cleared through Transmission Chamber with zero runtime errors. Its extra native pressure sampling run exited 1 because the runner flagged Passenger Vault (18.83 s) and Residential Gallery (9.27 s) loading holds. The baseline and current Safety Interlock continuations also finished with zero runtime errors and a loading-hold diagnostic. No run stopped on a startup or loading timeout. The final heel release and two-plane elbow and hand are covered by the `animals` capture and the final production rebuild on `408a1aa2`. Local `nextgen` was already an ancestor. The conflict-marker scan and simulation diff were empty.
+
+The final colour, greyscale, ring and sparse-room comparisons are in the review index. The rank angles and planted heel locations are in `heavy45/ranks/ranks.json`. The small palm shadow joins the existing contact instance draw. All delivered capture receipts have empty error lists. The worktree occupied about 1.0 GB under `artifacts/nextgen` at handback. The data volume reported 74 GiB free at checkout and 65 GiB free at the final build.

@@ -255,7 +255,7 @@ export function originalCreatureIdentity(root: T.Group, kind: string, elite: boo
       if(champion==='warden' && !dead && !spill && skin.variants.boss) {
         spill=wardenMawSpill(root,skin.mesh,skin.variants.boss);
       }
-      spill?.(champion==='warden' && !dead);
+      spill?.(champion==='warden' && windup>0 && !dead);
       uniforms.identityTime.value = time;
       uniforms.identityWindup.value = windup;
       uniforms.identityChampion.value = champion === 'warden' ? 1 : champion === 'matron' ? 2 : 0;
