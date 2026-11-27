@@ -52,7 +52,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
  const node={...options.node,depth:ordered.depth},mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(position,mode,true);
- const secondRoomHealth=mode==='standard'?1.25:1.10;
+ const secondRoomHealth=mode==='standard'?1.225:1.10;
  const source=[...storyBeats(node.depth,mode==='story')];
  const fixedOpening=ordered.opening;
  const opening=fixedOpening!==undefined?{index:fixedOpening,name:source[fixedOpening].label}:options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
