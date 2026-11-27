@@ -963,6 +963,8 @@ export class AttackEffects {
   }
   return count;
  }
+ get strikeOwner(){return this.primaryWarning.value>=0?this.warningOwners[this.primaryWarning.value]:this.lastStrikeOwner;}
+ get strikeStrength(){return this.primaryWarning.value>=0?.32+.68*this.warningTimes[this.primaryWarning.value].x:1;}
  private drawFirstLimb(count:number,targets:readonly EnemySnapshot[]|undefined,socket?: (id:number)=>T.Vector3|undefined):number {
   const primary=this.primaryWarning.value;
   const id=primary>=0?this.warningOwners[primary]:this.lastStrikeOwner;

@@ -860,6 +860,10 @@ export class DepthRenderer {
   });
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
   this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition,this.strikePosition);
+  for(const [id,actor] of this.actors){
+   const point=id===this.effects.strikeOwner?this.strikePosition(id):undefined;
+   actor.strikeLight?.(point,this.effects.strikeStrength);
+  }
   if(this.graphicsAblation==='floorResidues'){
    this.effects.showFloorDecals(false);
    this.interimAbilities.kit?.hideFloorResidues();

@@ -44,7 +44,7 @@ const CREATURE_ZONE_LEVELS: Readonly<Partial<Record<string, readonly [number, nu
 };
 import {alienIdentity,marineIdentity,FAMILY_IDENTITY,FAMILY_LANTERNS, ENEMY_BODY_COLORS,CREATURE_BODY_HUES,CREATURE_DECK_TINTS,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
-export type ActorModel={strikeSocket?:(out:T.Vector3)=>T.Vector3|undefined;elementContact?:(element:AbilityElement)=>void;root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
+export type ActorModel={strikeLight?:(point:T.Vector3|undefined,strength:number)=>void;strikeSocket?:(out:T.Vector3)=>T.Vector3|undefined;elementContact?:(element:AbilityElement)=>void;root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
  /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
  syncWeaponPose?:()=>void;
@@ -278,7 +278,7 @@ export function alien(kind:string,elite=false):ActorModel{
   // This is its distal point from heavy_support.planted_hand in mesh space.
   attach('club','shoulder.r',new T.Vector3(2.15+1.63,-3,(4.57-.38)/1.8));
  }
- return{root:r.root,body:r.body,limbs:[],strikeSocket(out){
+ return{root:r.root,body:r.body,limbs:[],strikeLight:surface.strike,strikeSocket(out){
    const key=champion==='matron' && brood>0?'brood':champion==='warden' && threatKind==='charge'?'ram':kind==='brute' && !champion?'club':'attack';
    const socket=sockets.get(key);
    return socket?.(out);

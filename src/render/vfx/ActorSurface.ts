@@ -32,6 +32,7 @@ float hideFinish(vec3 position, bool limb, bool sac) {
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false, hideFrequency = 18) {
   const contact={value:new T.Vector3()};
+  const strikeLight={value:new T.Vector4()};
   const coldState={value:0};
   const form={value:new T.Vector4()};
   const grip={value:new T.Vector2()};
@@ -59,7 +60,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -81,7 +82,7 @@ if(actorWarden<.5){
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -375,7 +376,14 @@ if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  }else if(identityMark){
   outgoingLight*=mix(vec3(1.),.68+.24*accent,actorContact.y);
  }
-}`}
+}
+#ifdef BROOD_PLANES
+if(actorStrikeLight.w>0.){
+ vec3 tip=(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz;
+ float tipMask=1.-smoothstep(.09,.27,length(vViewPosition+tip));
+ outgoingLight=mix(outgoingLight,vec3(.84,.39,.18),actorStrikeLight.w*tipMask);
+}
+#endif`}
 #include <opaque_fragment>`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),${friendly?'4.2':'3.0'});
@@ -426,6 +434,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     patchActorRegions(material,friendly);
   }
   return {
+    strike(point:T.Vector3|undefined,strength:number){strikeLight.value.set(point?.x??0,point?.y??0,point?.z??0,point?strength:0);},
     cold(frozen:boolean,chilled:boolean){coldState.value=frozen?2:chilled?1:0;},
     contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
@@ -451,6 +460,6 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
     death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
-    reset() { coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
+    reset() { strikeLight.value.w=0;coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };
 }
