@@ -1104,7 +1104,7 @@ Twelve seeds per rig, with the default PLAY39 grille rule and all other PLAY41 c
 | 13–16 | 188.2 | 186.26 | 41 |
 | 17–20 | 164.1 | 176.43 | 39 |
 
-Sectors 9–12 moved toward the 175–190 target and finished 1.26 suit above it. Repair, global damage and global health tuning were not changed. [Standard cohort](../../artifacts/nextgen/playtest/play41-standard-final/summary.json)
+Sectors 9–12 moved toward the 175–190 target and finished 1.26 suit above it. The cohort used the opening and Crawler queue changes. [Standard cohort](../../artifacts/nextgen/playtest/play41-standard-final/summary.json)
 
 ### Crawler suit loss
 
@@ -1119,3 +1119,18 @@ The native reference is Final25. The two simulation columns use matched seed 172
 | Story novice Cryo | 54.1% | 420.3 / 45.9% | 422.9 / 46.9% |
 
 Both Story Cryo simulations cleared. Each of their first four sectors cost zero suit. The Standard Cryo simulations both ended in death. Arc finished only in the revised simulation. [Baseline Standard](../../artifacts/nextgen/playtest/play41-crawler-before/summary.json) · [PLAY41 Standard](../../artifacts/nextgen/playtest/play41-crawler-after/summary.json) · [Baseline Story](../../artifacts/nextgen/playtest/play41-crawler-story-before/summary.json) · [PLAY41 Story](../../artifacts/nextgen/playtest/play41-crawler-story-after/summary.json)
+
+### Story novice cohort
+
+| Rig | PLAY41 clears |
+|---|---:|
+| Breacher | 12/12 |
+| Cryo | 10/12 |
+| Total | 22/24 |
+
+Both losses were deaths. Sector-by-sector suit loss matched the baseline in sectors 1–4 for all 24 rig and seed pairs, with a mean of 12.15 suit per block. [Story cohort](../../artifacts/nextgen/playtest/play41-story-final/summary.json) · [Opening baseline](../../artifacts/nextgen/playtest/play41-story-opening-baseline/summary.json)
+
+### Camera evidence
+
+- Breacher's earned Atrium checkpoint produced a dodge, a waiting grille, a closure hit and a recoil frame. The event log records two escorts cancelled. A live enemy and the garden wreckage obscure the escorts in this angle, especially at 480×270. [Dodge](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-dodge.png) · [Waiting](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-waiting.png) · [Hit](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-closed.png) · [Bars down](../../artifacts/nextgen/playtest/play41-replay-atrium-breacher-on/r4-communal-atrium-grille-recoil.png)
+- Story Cryo's earned Freight checkpoint yielded three consecutive phases from the same Crawler, from 149.817 to 150.017 seconds. This is the floor queue by the cargo bank. A wall-pinned sequence remains unverified. [Windup](../../artifacts/nextgen/playtest/play41-wall-story-cryo/play-r7-freight-hold-032.png) · [Strike](../../artifacts/nextgen/playtest/play41-wall-story-cryo/r7-freight-hold-crawler-queue.png) · [Recovery](../../artifacts/nextgen/playtest/play41-wall-story-cryo/r7-freight-hold-crawler-queue-recovery.png)
