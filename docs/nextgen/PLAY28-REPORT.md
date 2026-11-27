@@ -944,3 +944,16 @@ The third revision narrowed the arc to ±30° and moved one existing Atrium flan
 | C | Arc | manual-control-chamber | 8 | 7 | 21 | 21.36 | 47.96 | 0 |
 
 Clears and stalls: A 40/48 (0 stalls), B 41/48 (0 stalls), C 41/48 (0 stalls)
+
+### Merged native checkpoint replays
+
+Both requested cases completed on their first attempt with zero errors, including no interior-preparation errors. The replays used the same earned Final24 boundaries and a 7,200-second wall limit.
+
+| Checkpoint | Result | Suit lost | Seconds | Retries |
+|---|---:|---:|---:|---:|
+| Manual Control Breacher 1729, C | Cleared, shut the grille on three escorts | 0.00 | 49.62 | 0 |
+| Safety Interlock Story Cryo 1729 | Cleared; Final24 died with 110.81 suit lost | 45.67 | 47.05 | 0 |
+
+The native Story policy did not trigger hold grace in that clear. The 65.14 suit difference cannot be attributed to grace. A separate staged capture used the actual Story pad, charged it, and stepped out during a committed Brute wind-up. It captured UI34's hold ring driven by the resulting game snapshot. The Manual Control replay captured ROOM34's grille moving in response to closure while the retained escort silhouettes recoiled.
+
+[Waiting escorts at 800.82 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-waiting.png) · [Hit and closure at 802.52 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-closed.png) · [Closed ROOM34 grille at 802.72 s](../../artifacts/nextgen/playtest/play39-merged-native-grille-1/r19-manual-control-chamber-grille-recoil.png) · [Safety Interlock replay](../../artifacts/nextgen/playtest/play39-merged-native-hold-1/report.json) · [Staged UI34 ring](../../artifacts/nextgen/play39-merged-hold-ring/play39-live-hold-ring-safety-interlock-station.png)
