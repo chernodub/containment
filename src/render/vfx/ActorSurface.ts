@@ -140,7 +140,6 @@ bool ridgeSkin=(crawlerSkin || spitterSkin) && broodBody && broodRestUp>.12;
 bool dorsal=ridgeSkin && ridgeDistance<1.;
 bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
                  actorPosition.x>.52 && abs(actorPosition.y)>.09;
-bool cuttingEdge=crawlerHook && actorPosition.x>.94 && actorPosition.y<0. && broodRestUp>.15;
 broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
   (spitterSkin && dorsal && vActorRegion<=2.) ||
   (stalkerSkin && ((vActorRegion==2. && broodRestUp>.68) ||
@@ -381,7 +380,8 @@ if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
 if(actorStrikeLight.w>0.){
  vec3 tip=(viewMatrix*vec4(actorStrikeLight.xyz,1.)).xyz;
  float tipMask=1.-smoothstep(.09,.27,length(vViewPosition+tip));
- outgoingLight=mix(outgoingLight,vec3(.84,.39,.18),actorStrikeLight.w*tipMask);
+ vec3 strikePaint=crawlerSkin && broodRestUp<.15?vec3(.96,.65,.42):vec3(.84,.39,.18);
+ outgoingLight=mix(outgoingLight,strikePaint,actorStrikeLight.w*tipMask);
 }
 #endif`}
 #include <opaque_fragment>`)

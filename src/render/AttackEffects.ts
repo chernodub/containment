@@ -966,14 +966,18 @@ export class AttackEffects {
   }
   return count;
  }
+ private releaseStrength=0;
  get strikeOwner(){return this.primaryWarning.value>=0?this.warningOwners[this.primaryWarning.value]:this.lastStrikeOwner;}
- get strikeStrength(){return this.primaryWarning.value>=0?.32+.68*this.warningTimes[this.primaryWarning.value].x:1;}
+ get strikeStrength(){return this.primaryWarning.value>=0?.32+.68*this.warningTimes[this.primaryWarning.value].x:this.releaseStrength;}
  private drawFirstLimb(count:number,targets:readonly EnemySnapshot[]|undefined,socket?: (id:number)=>T.Vector3|undefined):number {
   const primary=this.primaryWarning.value;
   const id=primary>=0?this.warningOwners[primary]:this.lastStrikeOwner;
   const first=targets?.find(e=>e.id===id);
-  if(!first || (primary<0 && first.meleePhase!=='strike')){this.lastStrikeOwner=-1;return count;}
+  const recoil=first?.type==='crawler' && first.meleePhase==='recovery'?Math.max(0,1-first.meleeProgress*first.meleeDurationMs/120):0;
+  this.releaseStrength=recoil||1;
+  if(!first || (primary<0 && first.meleePhase!=='strike' && !recoil)){this.lastStrikeOwner=-1;return count;}
   this.lastStrikeOwner=id;
+  if(primary<0 && recoil)return count;
   const point=socket?.(id);
   if(!point||count>=this.hostileWarningMesh.instanceMatrix.count)return count;
   const mesh=this.hostileWarningMesh;
