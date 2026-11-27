@@ -44,13 +44,9 @@ GLOW = {"organ": (1.0, 0.18, 0.29), "eye": (1.0, 0.45, 0.10)}
 def paint_marks(name, co, normals, plate, bands):
     if name != "crawler-body":
         return
-    # Continue the dorsal organ across the articulated thorax and nose shield.
-    # A wider tail and pointed nose give the stripe a direction at gameplay mips.
-    x, y, z = co.T
-    width = np.interp(x, [-1.02, -0.76, 0.20, 0.72], [0.035, 0.105, 0.075, 0.032])
-    dorsal = (x > -1.02) & (x < 0.72) & (np.abs(y) < width) & (z > 0.49 * ASPECT)
-    bands[plate == 504] = "accent"
-    bands[dorsal & (normals[:, 2] > 0.12)] = "accent"
+    # Light the exposed crown of each raised scute; its side stays in shell ink.
+    bands[np.isin(plate, [501, 502, 503]) & (normals[:, 2] > .52)] = "accent"
+    bands[plate == 504] = "bone"
 
 
 def build(sk):
@@ -79,12 +75,13 @@ def build(sk):
                            bone_fn=ab_bone, seed=10, plate0=1, angular=True))
     # tail cap plate
     p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, -0.88, 0.0)
-    body.add(Plate(p + n * 0.01, (0.17, 0.2, 0.09), frame(normalize(-ab_R[:, 0]), n), 0.045, rings=0.006,
+    body.add(Plate(p + n * 0.01, (0.28, 0.14, 0.09), frame(normalize(-ab_R[:, 0]), n), 0.045, rings=0.006,
                    lip=0.01, chip=0.012, zone=SHELL, bone=tail, plate=20, tint=0.95))
-    # lantern: ribbed ember organ in the dorsal split
-    a, _ = A.ellipsoid_surface(ab_c, ab_r, ab_R, 0.55, 0.0)
-    b, _ = A.ellipsoid_surface(ab_c, ab_r, ab_R, -0.62, 0.0)
-    body.extend(A.lantern(a + v3((0, 0, 0.03)), b + v3((0, 0, 0.05)), 0.13, ("blend", chest, tail, a, b), height=1.7, ribs=0.05))
+    for i, u in enumerate((.53, -.12, -.84)):
+        p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, u, 0.)
+        body.add(Plate(p + n * .073, (.15 + i * .025, .23 - i * .033, .072),
+                       frame(-ab_R[:, 0], n), .035, lip=.018, zone=SHELL,
+                       bone=ab_bone(u), plate=501 + i))
 
     # --- thorax mantle and prow head -----------------------------------------
     body.extend(A.shingles(thorax_c, thorax_r, frame((1, 0, -0.15)), chest, rows=2, phis=(0.0,), u0=0.15, u1=-0.45,
@@ -92,8 +89,12 @@ def build(sk):
     head_c = v3((0.40, 0.0, 0.46 * sk.aspect))
     body.add(A.mass(head_c, (0.13, 0.16, 0.09 * sk.aspect), frame((1, 0, -0.35)), bone=chest, k=0.05))
     prow_F = frame((1, 0, -0.42))
-    body.add(Plate(head_c + v3((0.07, 0, 0.11 * sk.aspect)), (0.32, 0.5, 0.085), frame((1, 0, -0.12)), 0.065, rings=0.005, ring_count=3,
+    body.add(Plate(head_c + v3((0.07, 0, 0.11 * sk.aspect)), (0.31, 0.21, 0.085), frame((1, 0, -0.12)), 0.065, rings=0.005, ring_count=3,
                    lip=0.015, chip=0.01, zone=BONE, bone=chest, plate=40, tint=1.0, k=0.0))
+    for side in (-1, 1):
+        outward = normalize(v3((.45, side * .76, .64)))
+        body.add(Plate(head_c + v3((.015, side * .21, .13)), (.23, .135, .062),
+                       frame((1, 0, -.24), outward), .036, zone=BONE, bone=chest, plate=42))
     # keel ridge on the prow
     body.add(RoundCone((0.30, 0, 0.62 * sk.aspect), (0.52, 0, 0.50 * sk.aspect), 0.022, 0.012, zone=SHELL, bone=chest,
                        k=0.02, tint=1.15))
@@ -101,8 +102,8 @@ def build(sk):
     # ATTACK16: two broad pale hooks sweep out from the wedge corners and curl inward: a "C" from above,
     # with a dark gap between the hooks and the head plate
     for s_, bn in ((-1, "antenna_right0"), (1, "antenna_left0")):
-        body.extend(A.hook([(0.47, 0.32 * s_, 0.48 * sk.aspect), (0.85, (0.83 if s_ < 0 else 0.62) * s_, 0.46 * sk.aspect),
-                            (1.15, (0.65 if s_ < 0 else 0.36) * s_, 0.42 * sk.aspect), (1.08, (0.39 if s_ < 0 else 0.06) * s_, 0.39 * sk.aspect)],
+        body.extend(A.hook([(0.47, 0.37 * s_, 0.48 * sk.aspect), (0.85, (0.83 if s_ < 0 else 0.62) * s_, 0.46 * sk.aspect),
+                            (1.15, (0.65 if s_ < 0 else 0.36) * s_, 0.42 * sk.aspect), (1.08, (0.51 if s_ < 0 else 0.28) * s_, 0.39 * sk.aspect)],
                            0.12, 0.02, bn, zone=BONE, tip_zone=BONE, k=0.025, n=10, tip=0.35))
     # wet flesh in the waist seam
     body.add(Ellipsoid((-0.04, 0, 0.52 * sk.aspect), (0.09, 0.2, 0.07 * sk.aspect), zone=FLESH,

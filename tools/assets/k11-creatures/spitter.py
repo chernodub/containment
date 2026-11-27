@@ -92,7 +92,7 @@ def build(sk):
                            size=(0.78, 0.6, 0.3), thickness=0.2, lift=0.35, rings=0.01, bone_fn=bf, seed=20, plate0=1, angular=True))
     # --- the acid vessel ------------------------------------------------------------
     sac_c = z(-0.15, 0, 4.3)
-    sac = Ellipsoid(sac_c, (1.55, 0.95, 0.66 * a), frame((1, 0, 0.12)), zone=ORGAN, bone=("blend", "bum", "spine1", z(-1.2, 0, 4), z(1.0, 0, 4)))
+    sac = Ellipsoid(sac_c, (1.65, 1.34, 0.80 * a), frame((1, 0, 0.12)), zone=ORGAN, bone=("blend", "bum", "spine1", z(-1.2, 0, 4), z(1.0, 0, 4)))
     body.add(S.Stretch(sac, (1, 0, 0.1), 0.32, 0.06, sharp=3, zone=ORGAN, bone=sac.bone))
     for s in (-1, 1):
         body.add(Ellipsoid(sac_c + v3((0, 0.72 * s, -0.25)), (1.5, 0.22, 0.32 * a), frame((1, 0, 0.12)), zone=SINEW, bone=sac.bone, k=0.15))
@@ -110,7 +110,7 @@ def build(sk):
     body.add(A.mass(head_c, (0.7, 0.62, 0.42 * a), frame((1, 0, -0.5)), zone=BONE, bone="head", k=0.2))
     body.add(Plate(head_c + z(-0.1, 0, 0.32), (0.8, 0.66, 0.26), frame((1, 0, -0.45)), 0.18, rings=0.008, ring_count=3,
                    lip=0.05, chip=0.03, zone=CREST, bone="head", plate=50))
-    mz0, mz1 = z(3.5, 0, 2.7), z(4.0, 0, 2.25)
+    mz0, mz1 = z(3.5, 0, 2.7), z(4.72, 0, 2.55)
     # glowing acid duct: sac -> along the neck crest -> into the mortar mouth (the shot's path is visible)
     path = [sac_c + v3((1.3, 0, 0.1 * a)), sk.h("spine2") + v3((0, 0, 0.62 * a)), sk.h("neck") + v3((0, 0, 0.55 * a)),
             sk.h("head") + v3((0.2, 0, 0.42 * a)), mz0 + v3((0.0, 0, 0.3 * a)), mz1 + v3((-0.15, 0, 0.12 * a))]
@@ -121,7 +121,7 @@ def build(sk):
         for t in (0.25, 0.75):   # sinew collars hold the duct to the neck plates
             body.add(S.Torus(path[i] + (path[i + 1] - path[i]) * t, path[i + 1] - path[i], 0.27 - 0.02 * i, 0.07, zone=SINEW,
                              bone=duct_bones[i], k=0.05))
-    body.add(RoundCone(mz0, mz1, 0.54, 0.76, zone=BONE, bone="jaw", plate=501, k=0.15))   # pale mortar mouth: the aiming face
+    body.add(RoundCone(mz0, mz1, 0.45, 0.72, zone=BONE, bone="jaw", plate=501, k=0.15))   # pale mortar mouth: the aiming face
     body.add(Ellipsoid(mz1, (0.30, 0.34, 0.28 * a), frame(normalize(mz1 - mz0)), op="sub", zone=CAVITY, k=0.06))
     body.add(Ellipsoid(mz1 - normalize(mz1 - mz0) * 0.22, (0.22, 0.27, 0.20 * a), frame(normalize(mz1 - mz0)), zone=ORGAN, bone="jaw"))
     for s in (-1, 1):

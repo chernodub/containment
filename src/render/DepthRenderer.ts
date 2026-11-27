@@ -123,11 +123,9 @@ export class DepthRenderer {
  private aheadKey='';private aheadRooms=new RoomPreparationCache(node=>this.buildAhead(node),root=>disposeModel(root),2);
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
- private readonly hostileSocket = new T.Vector3();
  private readonly recoveryPosition = new T.Vector3();
+ private readonly strikePosition = (id:number) => this.actors.get(id)?.strikeSocket?.(this.recoveryPosition);
  private readonly actorPosition = (id:number) => this.actors.get(id)?.body.getWorldPosition(this.recoveryPosition);
- private readonly shooterSocket = (id:number) =>
-  this.actors.get(id)?.root.getObjectByName('jaw')?.getWorldPosition(this.hostileSocket);
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
  private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.cancelRoomPrefetch?.();this.cancelRoomPrefetch=undefined;this.graphicsGeneration++;this.initializedTextures=new WeakMap();this.introspectedPrograms=new WeakSet();for(const target of this.preparationTargets)target.dispose();this.preparationTargets.clear();this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate(true);this.post.invalidate();this.lighting.invalidateShadows();};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;this.queueRoomWarmup();void this.roomWarmWork.finally(()=>{this.recoveringGraphics=false;}).catch(()=>{});};
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
@@ -832,7 +830,7 @@ export class DepthRenderer {
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}
-  this.effects.syncEnemyWarnings(enemies,game.geometry,game,this.shooterSocket);
+  this.effects.syncEnemyWarnings(enemies,game.geometry,game,this.strikePosition);
   if(blackout)this.effects.forEachShooterPriority((x,y,z,angle,id)=>{
    this.lighting.pool.attach(`hostile-windup-${id}`,{x:x+Math.cos(angle)*.2,y:y+.22,z:z+Math.sin(angle)*.2,color:0xff2340,intensity:2.4,distance:1.6,duration:.08,priority:4});
   });
@@ -863,7 +861,7 @@ export class DepthRenderer {
    if(sampling)sampling.value=false;
   });
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
-  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition);
+  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition,this.strikePosition);
   if(this.graphicsAblation==='floorResidues'){
    this.effects.showFloorDecals(false);
    this.interimAbilities.kit?.hideFloorResidues();

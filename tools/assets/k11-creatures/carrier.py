@@ -109,7 +109,7 @@ def build(sk):
     body.add(Ellipsoid(p - n * 0.85, (0.6, 0.6, 0.6), zone=ORGAN, bone="tip"))
     GLOW_PODS.append((p - n * 0.6, 0.9))
     # --- head ---------------------------------------------------------------------------
-    head_c = z(4.9, 0, 8.6)
+    head_c = z(5.75, 0, 8.85)
     body.add(Ellipsoid(z(3.2, 0, 8.9), (1.1, 1.3, 0.9 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.5, 0, 9), z(4.5, 0, 8.6)), k=0.4))   # CREATURE21: dark neck
     body.add(A.mass(head_c, (1.7, 1.5, 1.0 * a), frame((1, 0, -0.35)), bone="head", k=0.5))
     body.add(Plate(head_c + z(-0.2, 0, 0.75), (1.9, 1.6, 0.6), frame((1, 0, -0.4)), 0.45, rings=0.02, ring_count=3,
@@ -139,7 +139,7 @@ def build(sk):
         for leg in ("front", "middle", "back"):
             names = [f"leg_{leg}.{side}", f"leg_{leg}.001.{side}", f"leg_{leg}.002.{side}", f"leg_{leg}.003.{side}", f"leg_{leg}.004.{side}"]
             g = {"front": 1.0, "middle": 1.15, "back": 1.4}[leg]      # hind legs carry the brood
-            chain(body, sk, names, [1.1 * g, 0.95 * g, 0.85 * g, 0.72 * g, 0.55 * g, 0.14 * g], s, plates=(1, 2, 3), tint=0.55)
+            chain(body, sk, names, [1.1 * g, 0.95 * g, 0.85 * g, 0.72 * g, 0.55 * g, 0.14 * g], s, plates=(1, 2, 3), tint=0.55, spread=.86)
             if leg != "front":   # sinew slings from the upper leg into the sagging brood: the load is carried
                 knee = sk.h(f"leg_{leg}.001.{side}")
                 hip = sk.h(f"leg_{leg}.{side}")
@@ -200,12 +200,12 @@ def matron(sk, a, z, bf):
             m.add(AnglePlate(p + n * 0.2, frame(-fwd, n), 1.75, 1.7 if j == 0 else 1.45, 0.5, keel=0.4, rake=0.55, taper=0.7,
                              lift=0.25, zone=ARMOR, bone=bf(u), plate=401 + i * 3 + j))
     # --- a distinct head with a face end, forward of a narrow dark neck
-    head_c = z(7.2, 0, 10.6)   # CREATURE21: raised and pushed forward so it shows above the front legs from the camera
+    head_c = z(7.85, 0, 10.8)   # CREATURE21: raised and pushed forward so it shows above the front legs from the camera
     m.add(Ellipsoid(z(5.2, 0, 9.6), (2.2, 1.0, 0.6 * a), zone=ARMOR, bone=("blend", "body", "head", z(2.4, 0, 8.3), z(4.3, 0, 7.7)), k=0.3))
     m.add(A.mass(head_c, (1.75, 1.45, 0.82 * a), frame((1, 0, -0.35)), bone="head", k=0.3))
     m.add(AnglePlate(head_c + z(-0.2, 0, 0.62), frame((1, 0, -0.4)), 1.8, 1.4, 0.4, keel=0.4, rake=0.45, taper=0.6, lift=0.2,
-                     zone=ARMOR, bone="head", plate=420))   # dark crested carapace
-    m.add(AnglePlate(head_c + z(1.35, 0, -0.05), frame((0, 0, 1), (1, 0, -0.2)), 1.3, 1.2, 0.32, keel=0.3, rake=0.4, taper=0.55,
+                     zone=ARMOR, bone="head", plate=50))   # dark crested carapace
+    m.add(AnglePlate(head_c + z(1.35, 0, -0.05), frame((0, 0, 1), (1, 0, -0.2)), 1.66, 1.42, 0.36, keel=0.3, rake=0.4, taper=0.55,
                      zone=CREST, bone="head", plate=400))   # pale face plate on the front
     for s_ in (-1, 1):
         m.add(Ellipsoid(head_c + z(1.4, 0.8 * s_, 0.25), (0.46, 0.46, 0.46 * a), zone=EYE, bone="head"))
@@ -220,7 +220,7 @@ def matron(sk, a, z, bf):
         for leg in ("front", "middle", "back"):
             g = girth[(leg, side)]
             names = [f"leg_{leg}.{side}", f"leg_{leg}.001.{side}", f"leg_{leg}.002.{side}", f"leg_{leg}.003.{side}", f"leg_{leg}.004.{side}"]
-            chain(m, sk, names, [1.15 * g, 1.0 * g, 0.9 * g, 0.75 * g, 0.6 * g, 0.16 * g], s_, plates=(1, 2, 3), tint=0.55)
+            chain(m, sk, names, [1.15 * g, 1.0 * g, 0.9 * g, 0.75 * g, 0.6 * g, 0.16 * g], s_, plates=(1, 2, 3), tint=0.55, spread=.86)
             knee = sk.h(f"leg_{leg}.002.{side}")
             m.add(Plate(knee + v3((0, 0.45 * s_ * g, 0.6 * g)), (1.0 * g, 0.75 * g, 0.4 * g), frame(v3((0, 0, 1)), v3((0.2, s_, 0.6))), 0.3 * g,
                         rings=0.015, lip=0.08, chip=0.06, zone=ARMOR, bone=f"leg_{leg}.002.{side}", plate=80 + len(leg) + (s_ > 0)))
