@@ -81,7 +81,7 @@ Both bot profiles use the same order rule. Arc takes the Freight Hold rush first
 
 ### Arc route comparison
 
-Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. The native desktop retries confirmed both orders through sector 8. Seed 1729 faced the Crawler rush at sector 7 and seed 2718 faced Spitter crossfire there. Sectors 9–11 below are projected from the selected graph. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json) · [1729 native arrival](../../artifacts/nextgen/playtest/run20-arc-1729-retry/r7-freight-hold-start.json) · [2718 native arrival](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/r7-breached-loading-bay-start.json)
+Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. The native desktop retries confirmed the entire eleven-sector sequence below. Seed 1729 faced the Crawler rush at sector 7 and seed 2718 faced Spitter crossfire there. Both runs entered their second cargo room at sector 8 and rejoined the main sequence at Relay Racks. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json) · [1729 native arrival](../../artifacts/nextgen/playtest/run20-arc-1729-retry/r7-freight-hold-start.json) · [2718 native arrival](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/r7-breached-loading-bay-start.json)
 
 | Sector | Arc 1729 · rocket booking | Arc 2718 · plasma booking |
 | ---: | --- | --- |
@@ -112,15 +112,15 @@ The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire or
 
 The desktop Continue flow reached and cleared Breached Loading Bay at sector 8 with zero runtime errors. The runner recorded a loading hold just over five seconds. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
 
-The 1729 retry reached the wall-clock limit in sector 8 with seven clears and zero runtime errors. Its continuation starts from the earned Freight Hold clear. The 2718 retry logged a ship kit preparation timeout and still entered Freight Hold second. A fresh 2718 attempt uses the same seed. [1729 continuation](../../artifacts/nextgen/playtest/run20-arc-1729-continued/report.json) · [Fresh 2718 replay](../../artifacts/nextgen/playtest/run20-arc-2718-retry/report.json)
+The 1729 retry reached the wall-clock limit in sector 8 with seven clears and zero runtime errors. Its continuation resumed from the earned Freight Hold clear and died in Diagnostic Gallery after ten clears with zero runtime errors. The 2718 retry logged a ship kit preparation timeout and still entered Freight Hold second. A fresh 2718 attempt uses the same seed. [1729 continuation](../../artifacts/nextgen/playtest/run20-arc-1729-continued/report.json) · [Fresh 2718 replay](../../artifacts/nextgen/playtest/run20-arc-2718-retry/report.json)
 
-The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. The complete Breacher sample with Freight Hold and Infested Workshop forced first yielded nine completions and three deaths, in sectors 10, 17 and 20. Other cells reflect the completed samples at the time of this report. Full totals require all twelve trials per rig per mode.
+The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. All 144 trials finished. The three batches report matching gameplay and policy hashes. The forced Freight Hold / Workshop order finished 41/48, the forced Loading Bay / Swarm order finished 43/48, and the bot policy finished 44/48. The starting reference totals 43/48.
 
 | Rig | Starting reference | Freight / Workshop first | Loading / Swarm first | Policy |
 | --- | ---: | ---: | ---: | ---: |
 | Breacher | 11/12 | 9/12 | 12/12 | 12/12 |
-| Cryo | 10/12 | 4/4 so far | Pending | Pending |
-| Pyro | 10/12 | Pending | Pending | Pending |
-| Arc | 12/12 | Pending | Pending | Pending |
+| Cryo | 10/12 | 12/12 | 10/12 | 12/12 |
+| Pyro | 10/12 | 9/12 | 11/12 | 9/12 |
+| Arc | 12/12 | 11/12 | 10/12 | 11/12 |
 
-[Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/)
+[Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/summary.json) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/summary.json) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/summary.json)
