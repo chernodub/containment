@@ -137,7 +137,9 @@ export async function bootstrap() {
         }
     };
     const query = new URLSearchParams(location.search);
-    const game = new DepthGame(effect, storage, query.get('debug') === '1' && query.has('recovery-grilles') ? query.get('recovery-grilles') === 'release-only' ? 'release-only' : query.get('recovery-grilles') === '1' : undefined);
+    const grilleRule = query.get('debug') === '1' ? query.get('recovery-grilles') : null;
+    const game = new DepthGame(effect, storage, grilleRule === 'release-only' || grilleRule === 'staged-arc' || grilleRule === 'staged-side'
+        ? grilleRule : grilleRule === null ? undefined : grilleRule === '1');
     beats = new PresentationBeats(game, app, cue => playPresentationCue(audio, cue));
     beats.setEnabled(presentationEnabled);
     const pause = () => {

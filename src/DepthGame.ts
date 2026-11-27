@@ -100,17 +100,18 @@ export class DepthGame {
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private consoleRelease=0;
- private get recoveryGrilles(){return this.grilleOverride??(this.difficulty==='standard');}
+ private get recoveryGrilles(){return this.grilleOverride??(this.difficulty==='standard'?'staged-side':false);}
  private recoveryGrilleState?:{x:number;y:number;angle:number;escorts:number;attackerId?:number;
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
   const grille=this.recoveryGrilleState;
-  if(grille&&(this.grilleOverride===undefined||grille.attackerId!==undefined)&&
+  if(grille&&grille.attackerId!==undefined&&
    (grille.state==='waiting'||this.elapsed-grille.changedAt<2)){
    const {attackStarted:_,...visible}=grille;
    return {...visible,
-    returnArcCosine:this.grilleOverride===undefined?Math.cos(Math.PI/6):undefined,
-    returnRange:this.grilleOverride===true?176:undefined,returnHalfWidth:64};
+    returnArcCosine:this.recoveryGrilles==='staged-arc'?Math.cos(Math.PI/6):undefined,
+    returnRange:this.recoveryGrilles===true?176:undefined,returnHalfWidth:64,
+    returnAisleSide:this.recoveryGrilles==='staged-side'};
   }
  }
  private findRecoveryAisle(lead:{x:number;y:number},approach:{x:number;y:number}){
@@ -133,16 +134,22 @@ export class DepthGame {
     return {...point,angle:Math.atan2(lead.y-point.y,lead.x-point.x)};
   }
  }
+ private get delayRecoveryEscort(){
+  return this.recoveryGrilles==='staged-side'&&this.node.templateId==='manual-control-chamber';
+ }
  private resolveRecoveryGrille(closed:boolean){
   const grille=this.recoveryGrilleState;
   if(!grille||grille.state!=='waiting')return;
   grille.state=closed?'closed':'entered';grille.changedAt=this.elapsed;
   if(closed){
-   this.director.reportRecoveryGrilleClosed();
-   this.pending=this.pending.filter(spawn=>!spawn.grilleEscort);
+   this.director.reportRecoveryGrilleClosed(this.delayRecoveryEscort);
+   this.pending=this.pending.filter(spawn=>!spawn.grilleEscort||this.delayRecoveryEscort&&spawn.grilleDelayedEscort);
+   for(const escort of this.pending){
+    if(escort.grilleDelayedEscort)escort.delay=Math.max(escort.delay,3000);
+   }
   }
   this.presentation.push({type:closed?'recovery-grille-closed':'recovery-escort-entered',
-   x:grille.x,y:grille.y,angle:grille.angle,grilleEscorts:grille.escorts});
+   x:grille.x,y:grille.y,angle:grille.angle,grilleEscorts:closed&&this.delayRecoveryEscort?1:grille.escorts});
  }
  private tickRecoveryGrille(){
   const grille=this.recoveryGrilleState;
@@ -167,8 +174,8 @@ export class DepthGame {
  private cleanupElapsed=0;
  private breakAnnounced=false;
  private broodPodsDestroyed=0;
- private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
- constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'){
+ private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;grilleDelayedEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
+ constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'|'staged-arc'|'staged-side'){
   if(!storage)this.checkpointState='unavailable';
   this.expedition=createExpedition(1729,this.combat.getRunResources());this.node=this.findNode();this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.director=this.makeDirector();this.mutations=this.makeMutations();this.abilities=this.makeAbilities();this.abilities.setRig('breacher');Object.assign(this.player,this.geometry.playerSpawn);
  }
@@ -911,16 +918,14 @@ export class DepthGame {
     const result=this.enemies.spawn(type,p.x,p.y,elite,options);if(result.spawned){
      if(options.recoveryFloorMs&&this.recoveryGrilleState?.state==='waiting'&&this.recoveryGrilleState.attackerId===undefined){
       const grille=this.recoveryGrilleState;
-      if(this.grilleOverride!==undefined){
-       const aisle=this.findRecoveryAisle(p,this.player);
-       if(aisle)Object.assign(grille,aisle);
-       for(const escort of this.pending){
-        if(!escort.grilleEscort)continue;
-        escort.x=grille.x+Math.cos(grille.angle)*24;
-        escort.y=grille.y+Math.sin(grille.angle)*24;
-       }
-       grille.changedAt=this.elapsed;
+      const aisle=this.findRecoveryAisle(p,this.player);
+      if(aisle)Object.assign(grille,aisle);
+      for(const escort of this.pending){
+       if(!escort.grilleEscort)continue;
+       escort.x=grille.x+Math.cos(grille.angle)*24;
+       escort.y=grille.y+Math.sin(grille.angle)*24;
       }
+      grille.changedAt=this.elapsed;
       grille.attackerId=result.enemy.id;
      }
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
@@ -1199,17 +1204,19 @@ export class DepthGame {
  if(e.grilleLead){
   const reference=this.consoleExchange?.landing??this.player;
   const lead={x,y};
-  const aisle=this.grilleOverride!==undefined?this.findRecoveryAisle(lead,reference):undefined;
+  const aisle=this.findRecoveryAisle(lead,reference);
   const grille=aisle??this.findLegacyGrille(lead,reference);
   if(grille)this.recoveryGrilleState={...grille,escorts:e.grilleLead,state:'waiting',
    changedAt:this.elapsed,expiresAt:this.elapsed+7};
  }
- if(e.grilleEscort&&this.recoveryGrilleState?.state==='closed')continue;
+ const grilleClosed=this.recoveryGrilleState?.state==='closed';
+ const delayedEscort=this.delayRecoveryEscort&&e.grilleDelayedEscort;
+ if(e.grilleEscort&&grilleClosed&&!delayedEscort)continue;
  if(e.grilleEscort&&this.recoveryGrilleState){
   const grille=this.recoveryGrilleState;
   ({x,y}={x:grille.x+Math.cos(grille.angle)*24,y:grille.y+Math.sin(grille.angle)*24});
  }
- this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650+consoleApproachMs+(e.hatchDelayMs??0),consoleHold:e.grilleEscort&&!this.recoveryGrilleState?e.consoleHold:e.grilleEscort?undefined:e.consoleHold,grilleEscort:e.grilleEscort,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{closeIngress:firstHeavy||!!e.grilleLead||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:e.lesson==='brute'&&this.node.templateId==='passenger-vault'?.3:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.grilleLead?1900:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+consoleApproachMs+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
+ this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:delayedEscort&&grilleClosed?3000:650+consoleApproachMs+(e.hatchDelayMs??0),consoleHold:e.grilleEscort&&!this.recoveryGrilleState?e.consoleHold:e.grilleEscort?undefined:e.consoleHold,grilleEscort:e.grilleEscort,grilleDelayedEscort:delayedEscort?true:undefined,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,options:{closeIngress:firstHeavy||!!e.grilleLead||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:e.lesson==='brute'&&this.node.templateId==='passenger-vault'?.3:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.grilleLead?1900:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+consoleApproachMs+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:firstHeavy||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
  skipAwakeningDrill(){if(this.status!=='playing')return;if(this.rigDrill&&!this.rigDrill.won)this.finishRigDrill();else if(this.dodgeDrill&&!this.dodgeDrill.confirmation)this.clearRoom();}
@@ -1374,7 +1381,8 @@ export class DepthGame {
      dx*gx+dy*gy>=grille.returnArcCosine*distance*Math.hypot(gx,gy);
     const aisleShot=grille.returnRange!==undefined&&distance<=grille.returnRange&&
      dx*forwardX+dy*forwardY>0&&Math.abs(dx*forwardY-dy*forwardX)<=grille.returnHalfWidth;
-    if(legacyAngle||aisleShot)
+    const sideShot=grille.returnAisleSide&&dx*forwardX+dy*forwardY>0;
+    if(legacyAngle||aisleShot||sideShot)
      this.resolveRecoveryGrille(true);
    }
    let ambush=false;

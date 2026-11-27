@@ -87,6 +87,7 @@ function inReturnLane(grille, target, player) {
     return dx*gx+dy*gy>=grille.returnArcCosine*Math.hypot(dx,dy)*Math.hypot(gx,gy);
   }
   const forwardX=Math.cos(grille.angle),forwardY=Math.sin(grille.angle);
+  if(grille.returnAisleSide)return dx*forwardX+dy*forwardY>0;
   return dx*forwardX+dy*forwardY>0 &&
     Math.abs(dx*forwardY-dy*forwardX)<=grille.returnHalfWidth &&
     Math.hypot(dx,dy)<=grille.returnRange;
@@ -458,7 +459,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
       const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
       const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);
-      const hasReturnRule=grille?.returnRange!==undefined||grille?.returnArcCosine!==undefined;
+      const hasReturnRule=grille?.returnRange!==undefined||grille?.returnArcCosine!==undefined||grille?.returnAisleSide===true;
       const onReturnSide = attacker && (!hasReturnRule||inReturnLane(grille,attacker,s.player));
       const returnTarget = onReturnSide && attacker.clear && attacker.meleePhase === 'recovery' && attacker;
       if (returnTarget && !escape) {

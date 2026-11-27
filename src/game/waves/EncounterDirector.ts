@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -52,7 +52,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
  const node={...options.node,depth:ordered.depth},mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(position,mode,true);
- const secondRoomHealth=mode==='standard'?1.25:1.10;
+ const secondRoomHealth=mode==='standard'?(position===15?1.375:1.25):1.10;
  const source=[...storyBeats(node.depth,mode==='story')];
  const fixedOpening=ordered.opening;
  const opening=fixedOpening!==undefined?{index:fixedOpening,name:source[fixedOpening].label}:options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
@@ -229,7 +229,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      if(!consoleExchange&&!escorts.includes(request))continue;
      const atMs=escorts.includes(request)?750:Math.max(previous+380,request.atMs+4500);
      arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
-      grilleEscort:escorts.includes(request)?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
+      grilleEscort:escorts.includes(request)?true:undefined,grilleDelayedEscort:consoleExchange&&escorts.indexOf(request)>0?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
      if(!escorts.includes(request))previous=atMs;
     }
     arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length});
@@ -564,7 +564,9 @@ export class EncounterDirector {
       &&(beat.grammar!=='siege'||siegeReady))return beat.cleanup;
   }
   private closedRecoveryGrilleBeat = -1;
-  reportRecoveryGrilleClosed() {
+  private delayRecoveryEscort = false;
+  reportRecoveryGrilleClosed(delayEscort = false) {
+    this.delayRecoveryEscort = delayEscort;
     this.closedRecoveryGrilleBeat = this.beatIndex;
   }
   private breakBeat(end:number){
@@ -631,7 +633,8 @@ export class EncounterDirector {
         if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
-      if(request.grilleEscort&&this.closedRecoveryGrilleBeat===this.beatIndex){
+      if(request.grilleEscort&&this.closedRecoveryGrilleBeat===this.beatIndex&&
+        !(this.delayRecoveryEscort&&request.grilleDelayedEscort)){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){

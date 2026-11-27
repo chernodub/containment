@@ -1193,3 +1193,141 @@ Merged local nextgen through `a65d7fb5` into `t3/play41`. The production build a
 | End | 926 GiB | 843 GiB | 56 GiB | 94% |
 
 The assigned worktree's `artifacts/nextgen` occupied 2.4 GiB at handoff.
+
+
+## PLAY41b
+
+Both candidates use PLAY41's live-spawn grille alignment and 1.5-second hold. S tests the original ±30° shot-origin condition. S2 tests which side of the Brute the shot originated on. The release-only runs use that same staging for both comparisons. Each cell gives closures per visit, escorts cancelled, and mean gross suit lost. Visits include all runs that reached the room.
+
+### Arm S
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 2/12, 4, 16.94 | 7/12, 14, 20.88 | 0/12, 0, 16.94 |
+| Atrium | Cryo | 1/12, 2, 37.49 | 7/12, 14, 19.77 | 0/12, 0, 37.49 |
+| Atrium | Pyro | 1/12, 2, 6.94 | 7/12, 14, 15.65 | 0/12, 0, 6.14 |
+| Atrium | Arc | 0/12, 0, 15.63 | 8/12, 16, 17.62 | 0/12, 0, 15.63 |
+| Manual Control | Breacher | 3/10, 9, 31.42 | 5/9, 15, 45.09 | 0/10, 0, 44.71 |
+| Manual Control | Cryo | 3/7, 9, 76.56 | 6/10, 18, 137.72 | 0/7, 0, 93.43 |
+| Manual Control | Pyro | 1/12, 3, 38.07 | 6/10, 18, 34.32 | 0/12, 0, 38.25 |
+| Manual Control | Arc | 3/10, 9, 35.67 | 5/9, 15, 20.68 | 0/10, 0, 36.10 |
+
+S closed 4/48 Atrium grilles and 10/39 Manual Control grilles with the unaware policy. No rig beat the release-only control in both rooms with the aware policy. [Unaware](../../artifacts/nextgen/playtest/play41b-s-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41b-s-on/summary.json) · [Rule absent](../../artifacts/nextgen/playtest/play41b-s-absent/summary.json)
+
+### Arm S2
+
+| Room | Rig | Unaware | Aware | Rule absent |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 10/12, 20, 9.14 | 11/12, 22, 11.91 | 0/12, 0, 16.94 |
+| Atrium | Cryo | 11/12, 22, 30.75 | 11/12, 22, 23.05 | 0/12, 0, 37.49 |
+| Atrium | Pyro | 11/12, 22, 7.49 | 11/12, 22, 9.95 | 0/12, 0, 6.14 |
+| Atrium | Arc | 11/12, 22, 16.92 | 12/12, 24, 7.92 | 0/12, 0, 15.63 |
+| Manual Control | Breacher | 7/11, 21, 41.87 | 11/11, 33, 33.08 | 0/10, 0, 44.71 |
+| Manual Control | Cryo | 9/10, 27, 68.79 | 10/10, 30, 54.92 | 0/7, 0, 93.43 |
+| Manual Control | Pyro | 7/11, 21, 42.09 | 8/11, 24, 38.63 | 0/12, 0, 38.25 |
+| Manual Control | Arc | 7/9, 21, 38.82 | 9/11, 27, 32.55 | 0/10, 0, 36.10 |
+
+S2 closed 43/48 Atrium grilles and 30/41 Manual Control grilles with the unaware policy. Breacher, Cryo, and Arc lost less suit with awareness in both rooms. Restricting the comparison to seeds that reached the room in both arms gives the same decision. S2 is the Standard default under the stated three-rig release gate. Its aware trial cleared 43/48, above the Standard balance target. [Unaware](../../artifacts/nextgen/playtest/play41b-s2-off/summary.json) · [Aware](../../artifacts/nextgen/playtest/play41b-s2-on/summary.json)
+
+### Native Atrium checkpoints
+
+One earned sector-3 clear per rig from Final25, replayed through the Atrium on the default path. Each run finished the room with zero runner errors, zero defects and zero suit lost.
+
+| Rig | Closures | Escorts cancelled | Suit lost |
+|---|---:|---:|---:|
+| Breacher | 1 | 2 | 0.00 |
+| Cryo | 1 | 2 | 0.00 |
+| Pyro | 1 | 2 | 0.00 |
+| Arc | 1 | 2 | 0.00 |
+
+Pyro's recovery frame shows both escorts clear of the Brute and live enemies, with the grille, Brute and marine in the same shot. This uses the measured candidate placement. [Native frame](../../artifacts/nextgen/playtest/play41b-native-default-pyro/r4-communal-atrium-grille-waiting.png) · [480×270 frame](../../artifacts/nextgen/playtest/play41b-native-default-pyro/review480/r4-communal-atrium-grille-waiting.png)
+
+[Breacher replay](../../artifacts/nextgen/playtest/play41b-native-default-breacher/report.json) · [Cryo replay](../../artifacts/nextgen/playtest/play41b-native-default-cryo/report.json) · [Pyro replay](../../artifacts/nextgen/playtest/play41b-native-default-pyro/report.json) · [Arc replay](../../artifacts/nextgen/playtest/play41b-native-default-arc/report.json)
+
+### Default-rule cohort and build
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard | 11/12 | 10/12 | 11/12 | 11/12 | 43/48 | 0 |
+| Story | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+Standard exceeds the 34–40 target by three clears. Each rig finishes within the per-rig band, and Story meets its target. The production build passed.
+
+| Standard sectors | PLAY41 mean suit | PLAY41b mean suit | PLAY41b completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 23.22 | 16.24 | 48 |
+| 5–8 | 125.95 | 140.96 | 48 |
+| 9–12 | 191.26 | 184.91 | 46 |
+| 13–16 | 186.26 | 189.28 | 46 |
+| 17–20 | 176.43 | 181.79 | 43 |
+
+[Default Standard](../../artifacts/nextgen/playtest/play41b-default-standard/summary.json) · [Default Story](../../artifacts/nextgen/playtest/play41b-default-story/summary.json)
+
+`df -h /Users/chernodub` reported 926 GiB total, 844 GiB used, 56 GiB available and 94% capacity at the start. At the end it reported 843 GiB used, 56 GiB available and 94% capacity. The worktree's `artifacts/nextgen` occupied 2.6 GiB.
+
+## PLAY41c
+
+The S2 shot still checks the aisle side during Brute recovery. The physical grille and waiting silhouettes use the same placement. The tuning starts with the closure reward, then moves pressure later in the campaign to protect sectors 9–12.
+
+### Standard tuning attempts
+
+| Setting | Breacher | Cryo | Pyro | Arc | Clears | Sectors 9–12 mean suit |
+|---|---:|---:|---:|---:|---:|---:|
+| S2 baseline | 11 | 10 | 11 | 11 | 43/48 | 184.91 |
+| Delayed one escort in each room | 11 | 9 | 11 | 10 | 41/48 | 194.44 |
+| Delayed two escorts in Manual Control only | 10 | 10 | 11 | 11 | 42/48 | 184.91 |
+| Manual Control only, support arrived 2.2 s earlier on closure | 11 | 10 | 11 | 11 | 43/48 | 184.91 |
+| Manual Control delay and later pair +32.5% health | 11 | 10 | 11 | 9 | 41/48 | 184.91 |
+| Manual Control delay and later pair +45% health | 11 | 10 | 11 | 7 | 39/48 | 184.91 |
+| Manual Control delay and both pairs +27.5% health | 11 | 10 | 10 | 10 | 41/48 | 185.56 |
+| Manual Control delay and later pair +70% health | 11 | 10 | 10 | 7 | 38/48 | 184.91 |
+| **Manual Control delay and later pair +37.5% health** | **9** | **10** | **11** | **10** | **40/48** | **184.91** |
+| Manual Control delay and both pairs +30% health | 11 | 11 | 11 | 10 | 43/48 | 181.31 |
+
+All trials had zero stalls. The health percentages are bonuses over authored escort health. The prior Standard value is +25% in the second room of each pair.
+
+### Final rules and balance
+
+When the Manual Control grille drops, it cancels one escort and defers the other escorts by at least three seconds. Atrium still cancels both escorts. Standard escorts in the second room of the Workshop and Swarm pair receive +37.5% health. The earlier pair keeps +25%.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 9/12 | 10/12 | 11/12 | 10/12 | 40/48 | 0 |
+| Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+| Standard sectors | PLAY41b mean suit | PLAY41c mean suit | PLAY41c completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 140.96 | 48 |
+| 9–12 | 184.91 | 184.91 | 46 |
+| 13–16 | 189.28 | 197.40 | 45 |
+| 17–20 | 181.79 | 188.59 | 40 |
+
+[Standard cohort](../../artifacts/nextgen/playtest/play41c-late-pair-375/summary.json) · [Story cohort](../../artifacts/nextgen/playtest/play41c-final-story/summary.json)
+
+The production build passed. Each rig resumed its earned Final25 checkpoint and cleared the Atrium with zero runner errors and zero defects. [Breacher](../../artifacts/nextgen/playtest/play41c-final-native-breacher/report.json) · [Cryo](../../artifacts/nextgen/playtest/play41c-final-native-cryo/report.json) · [Pyro](../../artifacts/nextgen/playtest/play41c-final-native-pyro/report.json) · [Arc](../../artifacts/nextgen/playtest/play41c-final-native-arc/report.json)
+
+### Awareness on the final setting
+
+Gross suit lost. Each all-visit cell gives mean suit and visits. The paired column gives aware and unaware mean suit over the seeds that reached that room in both arms.
+
+| Room | Rig | Aware suit (visits) | Unaware suit (visits) | Paired aware / unaware suit (seeds) |
+|---|---|---:|---:|---:|
+| Atrium | Breacher | 11.91 (12) | 9.14 (12) | 11.91 / 9.14 (12) |
+| Atrium | Cryo | 23.05 (12) | 30.75 (12) | 23.05 / 30.75 (12) |
+| Atrium | Pyro | 9.95 (12) | 7.49 (12) | 9.95 / 7.49 (12) |
+| Atrium | Arc | 7.92 (12) | 16.92 (12) | 7.92 / 16.92 (12) |
+| Manual Control | Breacher | 35.90 (12) | 49.72 (11) | 38.02 / 49.72 (11) |
+| Manual Control | Cryo | 96.01 (10) | 111.03 (10) | 96.01 / 111.03 (10) |
+| Manual Control | Pyro | 36.03 (12) | 32.50 (11) | 35.82 / 32.50 (11) |
+| Manual Control | Arc | 34.30 (10) | 11.94 (9) | 33.85 / 11.94 (9) |
+
+Atrium closures were 45/48 aware and 43/48 unaware.
+
+Manual Control closures were 39/44 aware and 30/41 unaware.
+
+[Unaware cohort](../../artifacts/nextgen/playtest/play41c-late-pair-375-unaware/summary.json)
+
+Cryo was the only rig to spend less suit with awareness in both rooms. Arc saved suit in Atrium and spent more in Manual Control even on paired seeds.
+
+Disk had 56 GiB available at the start and 55 GiB at handoff, with 94% capacity reported at both checks. The worktree's `artifacts/nextgen` used 2.9 GiB.
