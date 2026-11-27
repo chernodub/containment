@@ -2028,3 +2028,16 @@ At rest, keep every creature zone below the marine's legs in display luma and be
 The small bodies use their shared actor surface and the existing warning-owner ID. Their painted marks and ordinary contact shadows replace the family lanterns and floor spills. The Crawler has a dark warm shell and lighter dorsal scutes. The final grade neutralizes room-induced chroma on the darkest brood ink. The sealed pod shows its dark core through the authored shell openings and retains its swelling and opening poses. The body and contact stroke share the posed world-space socket. A heavy material can define `STRIKE_SOCKET_LIGHT` to participate with its existing socket. The continuous red stroke has a dark margin and the dock-safe shooter chevron keeps its head at full charge.
 
 For a capture, add `--actor-zones` to record the resting families' opaque geometry IDs as reduced-frame scanline spans. The native runner accepts the same option alongside `--room-pressure`. Measure a PNG with `python3 scripts/nextgen/brood43-values.py frame.png reference-patches.json frame.zones.json` using Pillow. Label visible leg and visor interiors in the reference file. The report gives the maximum display-referred Rec. 709 luma and HSV saturation among eligible pixels. The geometry readback excludes a one-pixel margin around silhouettes. Foreground effects and HUD can still cover eligible geometry. Historical PNGs without ID buffers take hand-labelled patches.
+
+The matched crowd fixtures returned the following maxima across Swarm Junction, Transmission Chamber, Crew Checkpoint and Coolant Plant. Each family was compared against the marine in its own frame. The sealed pod uses labelled interior patches when its geometry mask is unavailable. The final25 reference uses the reviewed wave-34 revision at `68050af3`.
+
+| Resting family | Final25 maximum luma | BROOD43 maximum luma | Final25 maximum saturation | BROOD43 maximum saturation |
+|---|---:|---:|---:|---:|
+| Crawler | .989 | .476 | .365 | .031 |
+| Spitter | .595 | .412 | .989 | .086 |
+| Stalker | .877 | .446 | 1.000 | .148 |
+| Carrier | .696 | .456 | .712 | .120 |
+| Matron | — | .461 | — | .143 |
+| Pod | — | .249 | — | .263 |
+
+The four ordinary crowds had leg references of .746–.800 and visor references of .307–.355. All 24 family-by-floor comparisons met both limits. Matron and pod used a sparse arrangement with their own references. The matched before/after crowd draws were 88 in Swarm Junction, 117 in Transmission Chamber, 100 in Crew Checkpoint and 101 in Coolant Plant. Settled burning, chilled, frozen and shocked crowds reached maximum small-family lumas of .460, .463, .510 and .460 against a leg reference of .796. At 480 × 270 the camouflaged Stalker is the hardest resting body to find on the dark Swarm floor.
