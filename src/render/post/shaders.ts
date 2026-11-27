@@ -205,7 +205,7 @@ ${inkComposite}
     float value=dot(color,vec3(.2126,.7152,.0722));
     // Grade the final shadow as well as the paint. Room lift can push a
     // channel below zero on a nearly black shell, yielding saturated blue ink.
-    bool broodZone=(region>=16. && region<=23.) || region==26. || region==28.;
+    bool broodZone=region==28. || region==31.;
     if(broodZone && max(sharpColor.r,max(sharpColor.g,sharpColor.b))<.55){
       color=mix(vec3(max(.010,value)),max(vec3(.006),color),.20);
     }
