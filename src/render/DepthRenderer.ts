@@ -40,7 +40,7 @@ import {addRoomPracticals,updateRoomPracticals} from './lighting/RoomPracticals'
 import {addInteriorPracticals} from './lighting/InteriorPracticals';
 import {updateHotFixtureSurfaces} from './lighting/HotFixtureSurface';
 import {PracticalPools} from './lighting/PracticalPools';
-import {optimizeLocalLights,setIdlePoolRange} from './lighting/LocalLightShading';
+import {optimizeLocalLights} from './lighting/LocalLightShading';
 import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from './camera/CombatFraming';
 import {roomFocus} from './roomFraming';
 import {CameraRig} from './camera/CameraRig';
@@ -887,21 +887,14 @@ export class DepthRenderer {
   }
   this.post.finishCombatOutlines();
   try{
-   if (!menu && this.tier==='high' && this.lighting.pool.capacity>0) {
-    // Three keeps unshadowed point lights in traversal order. The fixed practicals
-    // and blast precede the pool in SceneLighting; the suit fill and muzzle follow it.
-    const first = this.lighting.fixtures.length + Number(this.lighting.blast.visible);
-    setIdlePoolRange(first + this.lighting.pool.packForShading(), first + this.lighting.pool.capacity);
-   }
    this.post.render(dt);
-   setIdlePoolRange();
    const hidden=menu||combat.dead;
    const reveal=this.graphicsAblation!=='silhouette';
    this.playerBeacon.update(this.player.root,p.angle,hidden,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt,blackout,reveal);
    if(!hidden&&reveal)this.playerBeacon.renderMask(this.renderer,this.camera,p,this.player.height,this.post.sceneDepthTexture,this.post.sceneGeometryTexture,RIG_ACCENTS[game.abilities.snapshot.rig??'breacher']);
    this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);
   }
-  finally{setIdlePoolRange();this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
+  finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
  private captureRoomReflections(){

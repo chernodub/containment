@@ -1,11 +1,11 @@
 import { castColor, castField } from './CastPulse';
-import { Color, MeshStandardMaterial, ShaderChunk, Vector2, Vector4 } from 'three';
+import { Color, MeshStandardMaterial, ShaderChunk, Vector4 } from 'three';
 import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE_FIELD, ROOM_LANDMARK, ROOM_LANDMARK_COLOR, ROOM_LANDMARK_GAINS, ROOM_LANDMARK_TRIM } from './RoomValueStandard';
 
 const blackout={value:0};
 export function setRoomBlackout(enabled:boolean){blackout.value=enabled?1:0;}
 
-export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v17-cast-pulse';
+export const LOCAL_LIGHT_CACHE_SUFFIX = ':local-light-rejection-v16-cast-pulse';
 /** SURFACE22: x = painted detail (panels, landmark trim) on High; Low keeps top planes and dark base. */
 const surfacePaint={value:new Vector4(1,0,0,0)};
 export function setSurfacePaintDiagnostic(enabled:boolean):void{surfacePaint.value.y=enabled?0:1;}
@@ -30,28 +30,24 @@ export function setRoomValue(material: MeshStandardMaterial, value=1, saturation
 const reflectionLighting = ShaderChunk.lights_fragment_maps
   .replace('iblIrradiance += getIBLIrradiance( geometryNormal );', 'iblIrradiance += roomDiffuseEnvironmentGain * getIBLIrradiance( geometryNormal );')
   .replace('radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );', 'radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness ) * mix(1.0,mix(1.0,.02,smoothstep(.15,.5,material.roughness)),1.0-roomDiffuseEnvironmentGain);');
-// During a gameplay render these are the first idle and first non-pool point indices.
-const idlePoolRange = {value:new Vector2()};
-export function setIdlePoolRange(first=0, end=0): void {
-  idlePoolRange.value.set(first,end);
-}
-
-const loadKeyOcclusion = /* glsl */ `
+const sharedKeyOcclusion = /* glsl */ `
+// Artistic shared-key occlusion for the four fixed practical slots. This is
+// deliberately not a per-fixture visibility test or another shadow atlas.
+float roomKeyOcclusion = 1.0;
 #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && defined( RE_Direct )
-  if ( !roomKeyOcclusionReady && receiveShadow ) {
+  if ( receiveShadow ) {
     DirectionalLightShadow roomKeyShadow = directionalLightShadows[ 0 ];
     roomKeyOcclusion = getShadow( directionalShadowMap[ 0 ], roomKeyShadow.shadowMapSize,
       roomKeyShadow.shadowIntensity, roomKeyShadow.shadowBias, roomKeyShadow.shadowRadius,
       vDirectionalShadowCoord[ 0 ] );
     if ( !( roomKeyOcclusion >= 0.0 && roomKeyOcclusion <= 1.0 ) ) roomKeyOcclusion = 1.0;
-    roomKeyOcclusionReady = true;
   }
 #endif
 `;
 const practicalOcclusion = /* glsl */ `
   // Practical fixtures represent broad diffusers, not mathematical pin lights.
   // Bound near-field irradiance so nearby machine roofs retain their finish.
-  directLight.color *= min( 1.0, roomPointDistanceSquared / roomPracticalNearField );
+  directLight.color *= min( 1.0, dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / roomPracticalNearField );
   #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
     directLight.color *= mix( roomPracticalShadowFill, 1.0, roomKeyOcclusion );
   #endif
@@ -60,43 +56,23 @@ const directionalShadowExpression = 'directLight.color *= ( directLight.visible 
 // Three computes the full specular BRDF even when range attenuation is exactly
 // zero. Coherent local-light rejection preserves its result outside each pool.
 const localLights = ShaderChunk.lights_fragment_begin
-  .replace('IncidentLight directLight;', `IncidentLight directLight;
-    float roomKeyOcclusion = 1.0;
-    bool roomKeyOcclusionReady = false;`)
-  .replace('getPointLightInfo( pointLight, geometryPosition, directLight );', `
-    directLight.color = vec3( 0.0 );
-    directLight.visible = false;
-    // The stock topology is fixed for shader warmup. Ignore its packed idle tail.
-    if ( ( float( UNROLLED_LOOP_INDEX ) < roomIdlePoolRange.x || float( UNROLLED_LOOP_INDEX ) >= roomIdlePoolRange.y )
-         && pointLight.color != vec3( 0.0 ) ) {
-      vec3 roomPointDelta = pointLight.position - geometryPosition;
-      float roomPointDistanceSquared = dot( roomPointDelta, roomPointDelta );
-      if ( pointLight.distance <= 0.0 || roomPointDistanceSquared < pointLight.distance * pointLight.distance ) {
-        bool roomPointFacing = dot( geometryNormal, roomPointDelta ) > 0.0;
-        #ifdef USE_CLEARCOAT
-          roomPointFacing = roomPointFacing || dot( geometryClearcoatNormal, roomPointDelta ) > 0.0;
-        #endif
-        if ( roomPointFacing ) {
-          getPointLightInfo( pointLight, geometryPosition, directLight );
-          #if UNROLLED_LOOP_INDEX < 4
-            if ( directLight.visible ) {
-              ${loadKeyOcclusion}
-              ${practicalOcclusion}
-            }
-          #endif
+  .replace('IncidentLight directLight;', `IncidentLight directLight;\n${sharedKeyOcclusion}`)
+  .replace('getPointLightInfo( pointLight, geometryPosition, directLight );',
+    `// Fixed pool slots with zero source energy need neither attenuation nor BRDF work.
+    if ( pointLight.color == vec3( 0.0 ) ) {
+      directLight.color = vec3( 0.0 );
+      directLight.visible = false;
+    } else {
+      getPointLightInfo( pointLight, geometryPosition, directLight );
+      #if UNROLLED_LOOP_INDEX < 4
+        // Outside the point's cutoff, the practical and floor aperture contribute exactly zero.
+        if ( directLight.visible ) {\n${practicalOcclusion}
         }
-      }
+      #endif
     }`)
   .replace(directionalShadowExpression, `
     #if UNROLLED_LOOP_INDEX == 0
-      bool roomKeyFacing = dot( geometryNormal, directLight.direction ) > 0.0;
-      #ifdef USE_CLEARCOAT
-        roomKeyFacing = roomKeyFacing || dot( geometryClearcoatNormal, directLight.direction ) > 0.0;
-      #endif
-      if ( directLight.visible && roomKeyFacing ) {
-        ${loadKeyOcclusion}
-        if ( receiveShadow ) directLight.color *= roomKeyOcclusion;
-      }
+      directLight.color *= ( directLight.visible && receiveShadow ) ? roomKeyOcclusion : 1.0;
     #else
       ${directionalShadowExpression}
     #endif`)
@@ -141,9 +117,9 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms??={};shader.uniforms.roomIdlePoolRange=idlePoolRange;const rv=valueUniforms(material);shader.uniforms.roomCastField=castField;shader.uniforms.roomCastColor=castColor;shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
+    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomCastField=castField;shader.uniforms.roomCastColor=castColor;shader.uniforms.roomBlackout=blackout;shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;ROOM_VALUE_FIELD.forEach((pool,index)=>{shader.uniforms[`roomValuePool${index}`]=pool;});shader.uniforms.roomLandmark=ROOM_LANDMARK;shader.uniforms.roomLandmarkColor=ROOM_LANDMARK_COLOR;shader.uniforms.roomLandmarkGains=ROOM_LANDMARK_GAINS;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;shader.uniforms.surfacePaint=surfacePaint;shader.uniforms.roomLandmarkTrim=ROOM_LANDMARK_TRIM;
     const actorSurface = shader.fragmentShader.includes('uniform float actorStageLight;');
-    shader.fragmentShader = (actorSurface ? '#define CAST_ACTOR_RIM\n' : '') + 'uniform vec2 roomIdlePoolRange;uniform vec4 roomCastField;uniform vec3 roomCastColor;uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.fragmentShader = (actorSurface ? '#define CAST_ACTOR_RIM\n' : '') + 'uniform vec4 roomCastField;uniform vec3 roomCastColor;uniform float roomBlackout;uniform vec4 roomLandmark;uniform vec3 roomLandmarkColor;uniform vec2 roomLandmarkGains;uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValuePool0;uniform vec4 roomValuePool1;uniform vec4 roomValuePool2;uniform vec4 roomValuePool3;uniform vec4 roomValueExit;uniform vec4 surfacePaint;uniform float roomLandmarkTrim;\n'+(floor?'#define ROOM_FLOOR_SURFACE\n':'')+'float roomPoolWeight(vec2 worldXZ, vec4 pool){return pool.w>0.0?1.0-smoothstep(pool.z,pool.w,distance(worldXZ,pool.xy)):0.0;}\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));
       vec3 roomWorld=transpose(mat3(viewMatrix))*geometryPosition+cameraPosition;

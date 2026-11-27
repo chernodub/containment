@@ -89,19 +89,6 @@ export class LightPool {
       slot.light.intensity = slot.energy * fade * fade * this.intensityScale;
     }
   }
-  /** Keep live lights in slot order. Only scene traversal order changes, never admission order. */
-  packForShading(): number {
-    const children = this.root.children;
-    let next = 0;
-    for (const {light} of this.slots) {
-      if (light.visible && light.intensity > 0) children[next++] = light;
-    }
-    const live = next;
-    for (const {light} of this.slots) {
-      if (!light.visible || light.intensity <= 0) children[next++] = light;
-    }
-    return live;
-  }
   reset() { for (const slot of this.slots) this.clear(slot); }
   dispose() {
     if (this.disposed) return;
