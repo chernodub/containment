@@ -540,6 +540,10 @@ void main(){
   if(el<1.5){
    float front=R*(1.-pow(1.-clamp(age/.15,0.,1.),2.));
    frostBed(fxWorld.xz,r,front,age,true,base,emit,alpha);
+   // The passing front deposits sparse frost near its lip; bodies own the sustained storm.
+   float drift=1.-smoothstep(.12,1.30,abs(front-r));
+   alpha*=.055+.30*drift;
+   emit*=.085+.40*drift;
    emit+=vec3(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
    line=0.;
   }else if(el<2.5){

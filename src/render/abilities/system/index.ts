@@ -190,11 +190,11 @@ class SystemPresentation implements AbilityPresentation {
       if (receipt.heatEdge && receipt.age < .32) {
         const fade = Math.min(1, (.32 - receipt.age) / .18);
         k.impact();
-        k.jointEmber(x, height * .66, z, radius * 1.65, height * .76, enemy.id, fade);
+        k.jointEmber(x, height * .51, z, radius * 1.45, height * .48, enemy.id, fade);
       }
       if (receipt.napalm && k.time - receipt.ignition < .05) {
         k.impact();
-        k.jointEmber(x, height * .52, z, radius * 1.85, height * .92, enemy.id, k.flashIntensity);
+        k.jointEmber(x, height * .42, z, radius * 1.50, height * .58, enemy.id, k.flashIntensity);
       }
       if (!receipt.emitted && dt > 0) {
         receipt.emitted = true;
