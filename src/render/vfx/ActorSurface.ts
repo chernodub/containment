@@ -257,9 +257,11 @@ if(actorBroodForm.x>=-1.){
   }
   if(heavyPaint==10.)paint=vec3(.068,.033,.062);
   if(heavyPaint==9.){
-    vec3 core=mix(vec3(.80,.55,.31),vec3(5.9,3.85,1.50),actorWallRecoil);
+    vec3 core=mix(vec3(.75,.40,.18),vec3(1.35,.71,.28),actorWallRecoil);
     paint=abs(actorPosition.y)<.70?core:vec3(.013,.008,.009);
   }
+  if(heavyPaint==12.)paint=vec3(.28,.12,.052);
+  if(heavyPaint==13.)paint=vec3(.008,.003,.006);
   vec3 n=normalize(vNormal);
   float facing=abs(dot(n,normalize(vViewPosition)));
   float rim=step(.17,dot(n,normalize(vec3(-.78,.40,.48))))*step(facing,min(.35,1.2*fwidth(facing)));
