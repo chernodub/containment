@@ -2041,3 +2041,18 @@ The matched crowd fixtures returned the following maxima across Swarm Junction, 
 | Pod | .238 | .249 | 1.000 | .263 |
 
 The four ordinary crowds had leg references of .746–.800 and visor references of .307–.355. All 24 family-by-floor comparisons met both limits. Matron and pod used a sparse arrangement with their own references. The matched before/after crowd draws were 88 in Swarm Junction, 117 in Transmission Chamber, 100 in Crew Checkpoint and 101 in Coolant Plant. Settled burning, chilled, frozen and shocked crowds reached maximum small-family lumas of .460, .463, .510 and .460 against a leg reference of .796. At 480 × 270 the camouflaged Stalker is the hardest resting body to find on the dark Swarm floor.
+
+Of eight native room-pressure frames, all eight exceeded at least one figure reference in final25 and three did in BROOD43. Peak frames came from seed 1729 in the first ten rooms of each rig.
+
+| Native peak | Exceedances in final25 | Exceedances in BROOD43 |
+|---|---|---|
+| Cryo R1 | Spitter saturation | None |
+| Cryo R3 | Spitter saturation | None |
+| Cryo R4 | Crawler luma, Stalker luma and saturation | Stalker saturation +.123 |
+| Cryo R7 | Crawler luma | None |
+| Pyro R1 | Spitter saturation | None |
+| Pyro R2 | Spitter saturation | Spitter saturation +.373 |
+| Pyro R3 | Crawler luma | None |
+| Pyro R4 | Crawler luma, Stalker luma and saturation | Crawler saturation +.507, Stalker luma +.005 and saturation +.331 |
+
+These numbers describe the composed screenshot. In Pyro R4 the Crawler mask contains a red overlay pixel, and the Stalker had taken a hit about 150 ms earlier. The archived native PNGs use hand-labelled visible patches. Current native frames have geometry masks, which cover more pixels. The Cryo R4 and R7 peaks also move the marine and use fresh reference coordinates. The local comparison gallery is `artifacts/nextgen/brood43-review/index.html`. It includes the Freight Hold contact reconstructed from final25's recorded positions and warning, and a separate native Pyro queue from this run.
