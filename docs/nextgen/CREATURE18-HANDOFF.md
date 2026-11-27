@@ -1882,3 +1882,41 @@ Relay Racks ship-kit preparation timed out during the staged crowd capture. A fr
 The weakest three frames are Relay Racks wall-stun (the second heavy competes with the crescent), the regular Brute from behind (the far shin merges into the belly), and the Transmission Chamber pressure peak (the edge-positioned marine competes with the elite's broad crown and Spitter organ). The marine is the brightest large figure in the regular-Brute crowds, but two native peaks retain brighter small-family marks.
 
 At the start, `df -h /Users/chernodub` reported a 926 Gi volume, 874 Gi used, 25 Gi available and 98% capacity. The final reading was 926 Gi, 809 Gi used, 89 Gi available and 91% capacity. Old scratch cleanup reduced this worktree's evidence directory from 18 GB to 29 MB before capture. Its final size is 1.7 GB, below the 5 GB limit.
+
+### HEAVY44 review revision
+
+The Warden's mandible is 1.32 bind-space units long under a 2.66-unit mask. The jaw rotates about its rear hinge from 6° shut to 36° at impact. The skull presents its near cheek at a nominal 40° to the camera. Two dark gum edges carry three tapered teeth per side on each jaw. The near-black throat lining spans the hinge. The small tongue and warm inner lip belong to the mandible, so the strike clip cannot pull a strip of light away from the skull. The mesh template reuses the existing oral vertex slots. The recoil layer restores the sampled bone transforms before the next animation update.
+
+The elite keeps the three dark crowns. Its muted bone pigment follows their rims, narrow crest and tusks. In frame zero of the mixed pack, a traced dorsal region contained 12,392 bone-coloured pixels among 21,540 sampled pixels in the first pass (57.5%). The revision has 2,477 in the same region (11.5%). This is projected coverage for that pose. The native samples below are the median displayed Rec. 709 luma in a 5×5 patch, on a 0–255 scale.
+
+| Surface in the mixed pack | Native sample centre | First pass | Revision |
+|---|---|---:|---:|
+| Elite mask | 1316, 368 | 176.3 | 163.6 |
+| Elite crown field | 1230, 356 | 158.2 | 65.6 |
+| Rank bone pigment, sampled on the broad tusk | 1252, 456 | 176.3 | 107.1 |
+| Marine leg plate | 498, 660 | 190.6 | 190.6 |
+
+The trim is 65% of mask luma. On the 480×270 raster, 3×3 means on the elite mask and marine leg are 156.0 and 186.2. The mixed-pack strip hides rank rings. The crest and swept horns identify the middle figure in greyscale; the marine's legs retain the brighter area on the left. The pack capture uses the final elite pigment. Subsequent mouth edits affect only the Warden, which is absent from that strip.
+
+| Heavy | Draws, first pass → revision | Visible skinned vertices, first pass → revision |
+|---|---:|---:|
+| Brute | 1 → 1 | 12,452 → 12,452 |
+| Elite Brute | 2 → 2 | 13,909 → 13,909 |
+| Warden | 2 → 2 | 20,070 → 20,070 |
+
+The count capture uses the renderer draw delta with each live actor hidden in turn. Vertex counts come from the visible skinned meshes. The revision diff to the first-pass head `d32997bc` is empty under `src/game/` and `src/DepthGame.ts`. The shipped rig, animation files and simulation clocks are identical.
+
+**Read at 480×270.** In Crew Checkpoint the open jaw sits below the crossing red arc. I can point into the dark opening; the far teeth merge at this size. In Relay Racks the cheek clears the near shoulder and the warm bite is visible on the right side of the stunned Warden. The second Warden behind it makes this the slowest target to identify. In Coolant Plant the opening clears the escort and the pale lower edge survives reduction, though the red warning crosses the upper edge of the face. In wind-up and charge the mask leads a nearly closed bite. The gold floor target and red charge sector stay separate from it. I judged the frames directly. Recognition time by a new player was not measured.
+
+The three-column sheets run **final24 | HEAVY44 first pass | revision**. The historic wall and pack columns use the preserved baseline build on the same staged approaches. The solo poses use final24 gallery originals. The wall sheets include the whole 1920×1080 frame, the whole frame at 480×270, a centred 320×320 native jaw crop, and the same crop at game scale. The pack strip has eight frames in colour and greyscale.
+
+- Comparison index: `artifacts/nextgen/heavy44/review/sheets/index.html`
+- Wall receipts and native PNGs: `artifacts/nextgen/heavy44/review/recoil/{crew-checkpoint,relay-racks,coolant-plant}/`
+- Closed jaw and solo elite: `artifacts/nextgen/heavy44-recoil-gallery/`
+- Mixed pack: `artifacts/nextgen/heavy44/review/shipped-pack/`
+- Render counts, capture summaries and luma samples: `artifacts/nextgen/heavy44/review/{receipts.json,native-luma.txt,game-luma.txt}`
+- Production build output: `artifacts/nextgen/heavy44/review/verified-build.log`
+
+The shoulder correction uses the sampled neck transform and updates its child matrices before solving the skull and mandible. Five offsets on the same Relay Racks impact were compared; the smallest kept the bite visible with the shortest exposed neck. The final remaining weaknesses are the overlapping Warden shoulders at Relay Racks, the hazard line over the Coolant Plant face, and the fine elite crest on the rearward stride frame. The Spitter's organ in the native peaks belongs to the brood pass.
+
+The shipping production build passed. The three wall receipts have empty page, console and request errors. Both solo-pose galleries, the revised eight-frame pack and the renderer counts also have empty errors. The ten-room Breacher campaign above is first-pass evidence. Revision evidence is from the native impact, pack and gallery captures requested in review. At handback, this worktree's nextgen artifacts occupy 2.9 GB and the data volume reports 88 GiB available.
