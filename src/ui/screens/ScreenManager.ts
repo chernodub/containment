@@ -179,7 +179,11 @@ export function createScreens(context: ScreenContext) {
     });
     listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {rememberRig(selectedRig);playUiCue(audio,'rig-equip'); syncScreen(true);} else playUiCue(audio,'denied');});
     root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
-      const purchased=game.purchaseService(button.dataset.purchase as import('../../game/roguelike/economy').ServiceId,button.dataset.augment);playUiCue(audio,purchased?'purchase':'denied'); syncScreen();
+      const service=button.dataset.purchase as import('../../game/roguelike/economy').ServiceId;
+      const purchased=game.purchaseService(service,button.dataset.augment);
+      playUiCue(audio,purchased?'purchase':'denied');
+      syncScreen();
+      if(purchased&&service==='rig-return')root.querySelector<HTMLElement>('#claim')?.focus({preventScroll:true});
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
       // Presentation completes independently of the immediate native choice transition.
@@ -257,7 +261,7 @@ export function createScreens(context: ScreenContext) {
     if(routeNode!==game.node.id) {routeNode=game.node.id;selectedRoute=game.node.next[0]??'';}
     if(status!=='rig-select')deliberateRig=false;
     const saved=status==='menu'&&game.canContinue?loadCheckpoint(storage):null;
-    const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
+    const savedNode=saved?generateRun(saved.run.seed,saved.run.version,saved.run.roomOrder).nodes.find(node=>node.id===saved.run.currentNodeId):null;
     const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
     const key=JSON.stringify([status,phase,game.node.id,difficultyOpen,pendingDifficulty,selectedDifficulty,game.difficulty,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,deliberateRig,selectedRoute,continuation,

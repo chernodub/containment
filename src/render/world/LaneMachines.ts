@@ -28,7 +28,7 @@ export function addLaneMachine(root:Group,id:string){
       p.box(9,4,-75,39,6,43,metal,.34);
       for(const z of [-7,0,7])run([[216,-56+z],[132,-56+z],[86,-12+z],[5,-12+z]],4,2.8,rubber);
       p.box(0,5,0,57,9,35,metal);p.box(0,10,-1,48,2,28,0x35474d);
-      for(const x of [-16,-5,6,17])p.box(x,13,-1,7,6,22,0x697e77);
+      for(const x of [-16,-5,6,17])p.box(x,16,-1,7,15,22,0x988d6c,.26);
       p.box(0,12,18,29,5,4,edge);break;
     case 'service-shaft-landing':
       // A taut standing part meets the sheave, then doubles back to the sling.
@@ -36,6 +36,8 @@ export function addLaneMachine(root:Group,id:string){
         const point=(t:number):[number,number,number]=>[126-120*t,4+17*(Math.cosh((t-.5)*2.4)-1),153-144*t];
         p.rod(point(i/16),point((i+1)/16),3.3,0xb1a18a);
       }
+      p.rod([98,19,146],[144,19,146],16,metal);
+      for(const x of [98,144])p.rod([x,19,146],[x+4,19,146],22,edge);
       const coil:Pin[]=[];
       for(let i=0;i<=48;i++){
         const a=i*Math.PI/12,r=19+i*.31;
@@ -69,7 +71,8 @@ export function addLaneMachine(root:Group,id:string){
         p.box((x+ex)/2,.38,(z+ez)/2,39,.55,length+2,rubber,yaw);
         for(let step=7;step<length;step+=15){
           const cx=x+dx*step/length,cz=z+dz*step/length;
-          cartridge(cx,6,cz,yaw);
+          cartridge(cx,6,cz,yaw+.28*Math.sin(step*.11));
+          p.box(cx,11,cz,8,4,12,rubber,yaw);
         }
       }
       p.box(7,4,11,54,7,43,metal,-.54);
@@ -111,6 +114,7 @@ export function addLaneMachine(root:Group,id:string){
       p.box(76,3,66,22,3,13,metal,-.27);
       for(const z of [-23,23])p.box(8,20,z,9,39,8,metal);
       p.box(8,41,0,12,7,55,edge);
+      p.box(36,25,-18,67,9,11,0xb79867,.19,-.42);
       p.box(34,4,-9,112,7,35,rubber,.20);
       for(let k=0;k<9;k++)p.box(-13+k*12,8,-k*2.4,4,3,33,metal,.20);
       p.box(0,12,0,43,7,29,edge,-.2);p.box(0,16,0,35,2,22,0x799ba4,-.2);
@@ -122,6 +126,8 @@ export function addLaneMachine(root:Group,id:string){
       p.box(92,4,-64,18,4,10,rubber,.18);
       p.face([[-133,4,-37],[-133,42,-37],[-100,42,-37],[-84,22,-37],[-84,4,-37]],metal);
       p.rod([-133,42,-37],[-100,42,-37],4,edge);
+      p.box(-122,36,-36,14,63,14,metal);
+      for(const y of [47,58])p.box(-122,y,-36,15,5,15,0xc3a461);
       for(const side of [-1,1]){
         p.box(-59,5,side*36,140,9,16,metal);
         for(let i=0;i<6;i++){
@@ -146,14 +152,14 @@ export function addLaneMachine(root:Group,id:string){
       for(const z of [-7,0,7])run([[-182,-4+z],[-145,24+z],[-64,26+z],[-29,10+z],[0,z]],4,3,z===0?0x928170:rubber);
       p.box(0,7,0,58,14,42,metal);
       p.box(0,15,0,50,2,35,rubber);
-      p.box(0,17,-23,53,5,25,0x536769,0,.18);
+      p.box(0,17,-23,53,5,25,0x344448,0,.18);
       for(const x of [-19,-8,7])p.rod([x,17,-12],[x+8,19,14],2.3,0xd69a69);
       for(let i=0;i<5;i++)p.box(-14+i*7,14,0,4,4,15,0x84ad9c);
       break;
     case 'coolant-plant':
       // The split return header fans rivulets and ice plates sideways.
       for(const [dx,dz] of [[-78,39],[-56,67],[-23,78],[18,66]]){
-        p.face([[-12,2,-15],[dx*.5-8,2,dz*.4],[dx,1,dz],[dx*.53+7,2,dz*.55],[5,3,-7]],0x95b7bb);
+        p.face([[-12,2,-15],[dx*.5-8,2,dz*.4],[dx,1,dz],[dx*.53+7,2,dz*.55],[5,3,-7]],0x628084);
       }
       for(const x of [-10,10])run([[-32+x,-144],[-32+x,-88],[x,-49],[x,0],[x+10,44]],2,2.6,metal);
       for(let i=0;i<10;i++){
@@ -162,9 +168,10 @@ export function addLaneMachine(root:Group,id:string){
       }
       p.rod([-26,11,4],[26,11,4],11,0x6e939a);
       for(const x of [-23,-14,-5,4,13,22])p.rod([x,11,4],[x+3,11,4],13,0x82999a);
+      for(const z of [-89,-78])p.box(-33,8,z,28,5,5,0xc7aa77);
       p.rod([-20,22,8],[21,22,8],2.8,0x8b9d9b);
   }
   brokenLaneEnd(p,id,0);
-  const articulated=['transmission-chamber','crew-checkpoint','shielding-gate'].includes(id);
+  const articulated=['transmission-chamber','crew-checkpoint','shielding-gate','service-shaft-landing'].includes(id);
   p.finish(root,'lane-machine-'+id,end[0],end[1],undefined,articulated);
 }

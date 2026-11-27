@@ -99,8 +99,12 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
       c.restore();
     }
     const broadFan=room.id==='armory'||room.id==='safety-interlock-station';
-    c.scale(profile[0]==='strip'?5.7:closeThrow?2.2:broadFan?4.3:3.3,closeThrow?1.45:1.95);
+    c.scale(profile[0]==='strip'?3.6:closeThrow?1.7:broadFan?3.1:2.45,closeThrow?1.3:1.65);
     c.globalAlpha=absorb?gain:closeThrow?.76:1;
+    if(room.id==='swarm-junction')c.scale(.48,.54);
+    if(room.id==='coolant-plant'){
+      c.beginPath();c.rect(-200,-160,400,142);c.rect(-200,16,400,144);c.clip();
+    }
     paintIncidentAperture(c,room.id,tint);
     c.restore();
   }

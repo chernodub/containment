@@ -62,6 +62,9 @@ export function addMachineEmitters(root:Group,id:string){
   pieces.box(x,y/2,z,4,y,4,0x414b4d);
   pieces.box(x,y-1,z,41,4,16,0x606563);
   for(const [x,z,y,w,d,yaw] of [...mount.parts,mount.lamp])pieces.box(x,y,z,w,.9,d,tone,yaw);
+  const core=new Color(mount.color).offsetHSL(0,.28,.09).getHex();
+  pieces.box(x,y+1,z,31,1.6,6,core);
+  for(const dx of [-10,0,10])pieces.box(x+dx,y+2,z,2.1,3,13,0x334043);
   if(mount.inspection){
     const [x,z,y,w,d,yaw]=mount.inspection;
     pieces.box(x,y-1,z,w+5,2,d+4,0x434d50,yaw);

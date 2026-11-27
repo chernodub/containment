@@ -94,10 +94,7 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     mesh.name = 'hull-cap-diffusers';
     root.add(mesh);
   }
-  // These approaches expose the torn hull, torn guide or split duct directly.
-  if (!['shielding-gate','breached-loading-bay','swarm-junction'].includes(id)) {
-    addArenaInsert(root,plan.arena,insert);
-  }
+  addArenaInsert(root,plan.arena,insert);
   if(id==='passenger-vault'||id==='freight-hold'){
     // The luggage and cargo spilled onto their transport bases. The broad
     // blocking footprint is visible even between individual loose pieces.
@@ -163,10 +160,16 @@ function addArenaInsert(root:T.Group,arena:{x:number;y:number},insert:Insert):vo
   for(const side of [-1,1])plate(0,side*width*.48,length,.048,.009,.021,0x666967);
   for(let i=0;i<bays;i++){
     const x=-length*.5+(i+.5)*pitch;
+    // Inset amber insulation shows between the fingers of the grate.
+    if(kind==='drain'||kind==='trench')
+      plate(x-pitch*.39,-width*.18,pitch*.11,width*.5,.009,.012,0x816b49);
+    if(kind==='hatch'){
+      for(const side of [-1,1])plate(x,side*width*.32,pitch*.46,.035,.019,.021,0x846e50);
+    }
     if(kind==='rails')plate(x,0,.10,width,.004,.013,0x40484a);
     else if(kind==='drain')plate(x,0,pitch*.37,width*.90,.009,.019,0x596265);
     else {
-      plate(x,0,pitch-.038,width-.095,.010,.019,kind==='hatch'?0x535959:0x464f51);
+      plate(x,0,pitch*(kind==='trench'?.58:.93),width-.095,.010,.019,kind==='hatch'?0x535959:0x464f51);
       plate(x,kind==='hatch'?width*.26:0,.15,.045,.019,.021,0x303637);
     }
   }

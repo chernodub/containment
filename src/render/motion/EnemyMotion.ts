@@ -66,6 +66,90 @@ export class EnemyMotion {
   private seed = 0;
   private nativePhase: EnemyAttackPhase | undefined;
   private nativeProgress = 0;
+  private recoveryAge = 0;
+  private biteContact?:{point:(out:T.Vector3)=>T.Vector3;anchor:T.Vector3;tip:T.Vector3;target:T.Vector3;loaded:boolean};
+
+  private shellAxis?:{prow:(out:T.Vector3)=>T.Vector3;tail:(out:T.Vector3)=>T.Vector3;front:T.Vector3;rear:T.Vector3};
+
+  bindShellAxis(prow:(out:T.Vector3)=>T.Vector3,tail:(out:T.Vector3)=>T.Vector3) {
+    this.shellAxis={prow,tail,front:new T.Vector3(),rear:new T.Vector3()};
+  }
+
+  private levelShell(load:number) {
+    const axis=this.shellAxis;
+    if(!axis)return;
+    const direction=axis.prow(axis.front).sub(axis.tail(axis.rear));
+    const pitch=Math.atan2(direction.y,Math.hypot(direction.x,direction.z));
+    // The running clip can tip the raised scutes toward the deck by 58°.
+    // Keep the prow slightly down, then give the bite clip back its pitch.
+    this.body.rotateX(T.MathUtils.clamp(pitch+.06,-1.10,0)*(1-load));
+  }
+
+  bindBiteContact(point:(out:T.Vector3)=>T.Vector3) {
+    this.biteContact={point,anchor:new T.Vector3(),tip:new T.Vector3(),target:new T.Vector3(),loaded:false};
+  }
+
+  private readonly bitePitch=new T.Quaternion();
+  private readonly lateralAxis=new T.Vector3(1,0,0);
+
+  get biteEdgeLight() {
+    if(this.nativePhase==='strike')return 1;
+    return this.nativePhase==='recovery'?1-T.MathUtils.smoothstep(this.recoveryAge,.12,.16):0;
+  }
+
+  private clearBiteEdge(weight:number) {
+    const contact=this.biteContact;
+    if(!contact || weight<=0)return;
+    const tip=this.root.worldToLocal(contact.point(contact.tip)).sub(this.body.position);
+    const radius=Math.hypot(tip.y,tip.z),clearance=.12-this.body.position.y;
+    if(tip.y>=clearance || radius<.001 || tip.z<=0)return;
+    const pitch=Math.atan2(tip.y,tip.z)-Math.asin(T.MathUtils.clamp(clearance/radius,-1,1));
+    this.body.quaternion.premultiply(this.bitePitch.setFromAxisAngle(this.lateralAxis,pitch*weight));
+  }
+
+  private followBiteContact(striking:boolean) {
+    const contact=this.biteContact;
+    if(!contact)return;
+    contact.point(contact.tip);
+    if(striking){
+      contact.anchor.copy(contact.tip);
+      contact.loaded=true;
+      return;
+    }
+    if(!contact.loaded || this.recoveryAge>=.25)return;
+    const retreat=.05*T.MathUtils.smoothstep(this.recoveryAge,0,.12);
+    contact.target.copy(contact.anchor);
+    contact.target.x-=Math.cos(this.nativeAngle)*retreat;
+    contact.target.z-=Math.sin(this.nativeAngle)*retreat;
+    this.root.worldToLocal(contact.target);
+    this.root.worldToLocal(contact.tip);
+    const blend=1-T.MathUtils.smoothstep(this.recoveryAge,.12,.25);
+    this.body.position.x+=(contact.target.x-contact.tip.x)*blend;
+    this.body.position.z+=(contact.target.z-contact.tip.z)*blend;
+  }
+  private muzzlePose?:{joint:T.Object3D;point:(out:T.Vector3)=>T.Vector3;rest:T.Quaternion;adjusted:boolean};
+
+  bindMuzzlePose(joint:T.Object3D,point:(out:T.Vector3)=>T.Vector3) {
+    this.muzzlePose={joint,point,rest:new T.Quaternion(),adjusted:false};
+  }
+
+  aimMuzzle(angle:number) {
+    const pose=this.muzzlePose,parent=pose?.joint.parent;
+    if(!pose || !parent)return;
+    const tip=pose.point(this.headPoint);
+    const clearance=this.root.position.y+.48;
+    if(tip.y>=clearance)return;
+    const reach=(this.root.userData.colliderRadius??.5)*1.10;
+    this.shoulderPoint.set(this.root.position.x+Math.cos(angle)*reach,clearance,
+                           this.root.position.z+Math.sin(angle)*reach);
+    parent.worldToLocal(tip).sub(pose.joint.position).normalize();
+    parent.worldToLocal(this.shoulderPoint).sub(pose.joint.position).normalize();
+    pose.rest.copy(pose.joint.quaternion);
+    pose.joint.quaternion.premultiply(this.delta.setFromUnitVectors(tip,this.shoulderPoint));
+    pose.joint.updateMatrix();
+    pose.adjusted=true;
+  }
+
   private biteHook?:T.Object3D;
   private readonly hookRest=new T.Quaternion();
   private hookOffset=false;
@@ -109,6 +193,8 @@ export class EnemyMotion {
   setAttackState(phase: EnemyAttackPhase, progress: number, angle: number, shape?: EnemyStrikeShape | null) {
     if (phase === 'strike' && this.nativePhase !== 'strike') this.attack();
     if (phase === 'approach' && this.nativePhase === 'windup') this.release = 0;
+    if (this.biteContact && (phase==='approach'||phase==='windup')) this.biteContact.loaded=false;
+    if (phase === 'recovery' && this.nativePhase !== phase) this.recoveryAge = 0;
     this.nativePhase = phase;
     this.nativeProgress = T.MathUtils.clamp(progress, 0, 1);
     this.nativeAngle = angle;
@@ -158,7 +244,12 @@ export class EnemyMotion {
 
   /** Remove last frame's offsets before the source mixer samples any tracks. */
   restore() {
-    if(this.hookOffset && this.biteHook){this.biteHook.quaternion.copy(this.hookRest);this.hookOffset=false;}
+    if(this.muzzlePose?.adjusted){
+      this.muzzlePose.joint.quaternion.copy(this.muzzlePose.rest);
+      this.muzzlePose.joint.updateMatrix();
+      this.muzzlePose.adjusted=false;
+    }
+    if(this.hookOffset && this.biteHook){this.biteHook.quaternion.copy(this.hookRest);this.biteHook.updateMatrix();this.hookOffset=false;}
     if (this.restored) return;
     for (const joint of this.joints) joint.bone.quaternion.copy(joint.rest);
     this.restored = true;
@@ -173,6 +264,7 @@ export class EnemyMotion {
     const stopped = frozen ? dt : Math.min(dt, this.hold);
     this.hold = Math.max(0, this.hold - dt);
     this.visualTime += dt - stopped;
+    if (this.nativePhase === 'recovery') this.recoveryAge += dt - stopped;
     this.impactAge += dt; this.beamAge += dt;
     this.release = Math.max(0, this.release - dt);
     this.emergence = Math.min(.34, this.emergence + dt);
@@ -212,8 +304,10 @@ export class EnemyMotion {
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
       if(this.biteHook && (brace || strike || recovery)){
         this.hookRest.copy(this.biteHook.quaternion);
-        this.biteHook.rotateZ(-.30*(brace+strike+recovery));
-        this.biteHook.rotateX(.26*brace);
+        const held = recovery ? 1 - T.MathUtils.smoothstep(this.recoveryAge, .12, .23) : 0;
+        this.biteHook.rotateZ(-.30*brace - .54*Math.max(strike,recovery,held));
+        this.biteHook.rotateX(.26*brace + .20*Math.max(strike,held));
+        this.biteHook.updateMatrix();
         this.hookOffset=true;
       }
       const mass=1/Math.sqrt(p.weight);
@@ -222,8 +316,8 @@ export class EnemyMotion {
       // The off-balance return follows the full native recovery, including elites.
       const extension=this.nativePhase==='strike'?(this.family==='stalker'
         ? .91+.09*Math.sin(Math.PI*this.nativeProgress)-.18*this.nativeProgress
-        : 1-.35*this.nativeProgress)
-        :this.nativePhase==='recovery'?(this.family==='stalker'?.73:.65)*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
+        : 1-.18*this.nativeProgress)
+        :this.nativePhase==='recovery'?(this.family==='stalker'?.73:.82*(1-.54*T.MathUtils.smoothstep(this.recoveryAge,0,.12)))*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
       const lunging=this.family==='stalker'||this.family==='crawler';
       const limit=lunging&&this.strikeRange>0?Math.max(0,this.strikeRange-(this.root.userData.colliderRadius??.5)):this.state.offsetLimit;
       const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
@@ -231,7 +325,7 @@ export class EnemyMotion {
       // The outer hook reaches around the boot at contact. Leave the shell
       // beside the ankle so its cutting edge stays clear of the suit.
       if(this.biteHook && extension>0){
-        const lateral=-limit*.32*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
+        const lateral=-limit*.46*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
         this.body.position.x+=Math.cos(strikeDirection)*lateral-Math.sin(strikeDirection)*limit*.18*extension;
         this.body.position.z-=Math.sin(strikeDirection)*lateral+Math.cos(strikeDirection)*limit*.18*extension;
       }
@@ -247,6 +341,13 @@ export class EnemyMotion {
         1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;
+      if(this.shellAxis && (this.nativePhase==='approach' || this.nativePhase==='windup'))
+        this.levelShell(this.nativePhase==='windup'?T.MathUtils.smoothstep(this.nativeProgress,0,.25):0);
+      if(this.biteContact){
+        const loaded=this.nativePhase==='windup'?T.MathUtils.smoothstep(this.nativeProgress,0,.25):0;
+        this.clearBiteEdge(strike?1:recovery?1-T.MathUtils.smoothstep(this.recoveryAge,.12,.23):loaded);
+        if(strike || recovery)this.followBiteContact(strike>0);
+      }
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
     }
 
@@ -380,6 +481,7 @@ export class EnemyMotion {
   }
 
   reset() {
+    if(this.biteContact)this.biteContact.loaded=false;
     this.restore(); this.freeze(); this.previous = undefined;
     this.visualTime = this.cooldown = this.impact = this.release = this.emergence = 0;
     this.beamAge = 1; this.beamAngle = undefined; this.fallStarted = false; this.impactAge = 1; this.nativePhase = undefined; this.nativeProgress = this.nativeAngle = this.strikeRange = 0;

@@ -59,3 +59,68 @@ The native receipts under `artifacts/nextgen/playtest/run19-release-native` incl
 A player who opens Passenger Vault with a shotgun can skip the plasma lesson. The native Arc trace recorded two rifle impacts on the first plate, then the bot finished the Brute without firing plasma. The rocket prompt depends on two enemies approaching through a clear lane at arming distance, so a fast kill or a close engagement can pass the opportunity. The simulations measure campaign completion under a bot policy. They leave open how often a new player acts on either prompt.
 
 The Standard total stayed within one clear of the reproduced baseline. Pyro moved from six clears to four, and Cryo moved from two to four. With the route selected by seed parity, the six-seed cohort gives a limited comparison of the two fights' difficulty.
+
+## RUN20 · Threat order
+
+- Awakening Bay / Passenger Vault stays fixed to preserve the wake-up and first heavy lesson.
+- Passenger Vault / Residential Gallery stays fixed to teach the heavy before the lunge.
+- Residential Gallery / Communal Atrium stays fixed to put isolated lessons before the first mixed fight.
+- Crew Checkpoint / Armory stays fixed to keep the crew's defensive line ahead of equipment and the first guardian booking.
+- Freight Hold / Breached Loading Bay is the first order choice. Both cargo rooms follow the armory and precede the communications deck.
+- Relay Racks / Transmission Chamber stays fixed to restore the local relay before the uplink hold.
+- Diagnostic Gallery / Safety-interlock Station stays fixed to reveal the cost of purge before the record that the AI knew.
+- Coolant Plant / Service Shaft Landing stays fixed to keep the booked guardian and the loss of AI contact in sequence.
+- Infested Workshop / Swarm Junction is the second order choice. Both rooms follow the descent and precede shielding. The optional guardian remains with Swarm Junction.
+- Containment Annulus / Manual Control / Overload Floor stays fixed to confirm passenger survival, require authorization, then defend the overload.
+
+The cargo decision moves the Field Requisition junction forward one stop, to the Armory exit. The second decision is at the Service Shaft Landing exit. A new run earns up to 20 HP when it clears the first room of either pair. Non-guardian enemies in the second room receive 10% more health. Swarm Junction's optional Matron stays with that room. The first card gets the initial highlight, and seed parity alternates which card is first. Number shortcuts and the existing route buttons select either order.
+
+The room position still controls encounter scaling and the supply schedule. The cargo pair still ends with the sector-eight supplies and exclusive rig augment. The workshop pair still has a supply stop after sector 15. Legacy saves keep their original junctions, room sequence and repair rules.
+
+Both bot profiles use the same order rule. Arc takes the Freight Hold rush first on the rocket booking and Loading Bay crossfire first on the plasma booking. Breacher takes the ranged threat first with its shield. Cryo and Pyro take each rush first. The cohort override forces Freight Hold and Infested Workshop first with `--room-order=direct`, or Breached Loading Bay and Swarm Junction first with `--room-order=salvage`.
+
+### Arc route comparison
+
+Both historical campaigns entered the same first eleven rooms. The staged RUN20 comparison applies the live policy and route method to the two earned Armory exits. The native desktop retries confirmed the entire eleven-sector sequence below. Seed 1729 faced the Crawler rush at sector 7 and seed 2718 faced Spitter crossfire there. Both runs entered their second cargo room at sector 8 and rejoined the main sequence at Relay Racks. [Staged receipt](../../artifacts/nextgen/run20-checkpoint/staged-itinerary.json) · [1729 native arrival](../../artifacts/nextgen/playtest/run20-arc-1729-retry/r7-freight-hold-start.json) · [2718 native arrival](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/r7-breached-loading-bay-start.json)
+
+| Sector | Arc 1729 · rocket booking | Arc 2718 · plasma booking |
+| ---: | --- | --- |
+| 1 | Awakening Bay | Awakening Bay |
+| 2 | Passenger Vault | Passenger Vault |
+| 3 | Residential Gallery | Residential Gallery |
+| 4 | Communal Atrium | Communal Atrium |
+| 5 | Crew Checkpoint | Crew Checkpoint |
+| 6 | Armory | Armory |
+| 7 | **Freight Hold** | **Breached Loading Bay** |
+| 8 | **Breached Loading Bay** | **Freight Hold** |
+| 9 | Relay Racks | Relay Racks |
+| 10 | Transmission Chamber | Transmission Chamber |
+| 11 | Diagnostic Gallery | Diagnostic Gallery |
+
+### Verification
+
+The baseline install and build passed. The production build passed again with the junctions and evidence fixtures. The old-format checkpoint reconstructed from the pre-change earned Freight Hold exit loads through the game's Continue method and enters Breached Loading Bay in slot 8 with the original junction system. [Continuation receipt](../../artifacts/nextgen/run20-checkpoint/continuation.json)
+
+| Route panel | 1920×1080 | 1280×720 |
+| --- | --- | --- |
+| Cargo | [Freight Hold first highlighted](../../artifacts/nextgen/run20-1080/run20-cargo.png) | [Loading Bay first highlighted](../../artifacts/nextgen/run20-720/run20-cargo.png) |
+| Infestation | [Workshop first highlighted](../../artifacts/nextgen/run20-1080/run20-infestation.png) | [Swarm Junction first highlighted](../../artifacts/nextgen/run20-720/run20-infestation.png) |
+
+I inspected all four route images at their native sizes and at 480×270. The names and the before/after terms fit on their own lines. At 480×270, the names remain easy to distinguish and the smaller terms are best read at the native sizes.
+
+The swapped arrival shows Breached Loading Bay at sector 7 with the crossfire order. Its first capture hit the original ship kit preparation timeout. The retry used seed 1729 again and completed with zero capture errors. I inspected both sizes. [Arrival](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay.png) · [480×270](../../artifacts/nextgen/run20-arrival-retry/run20-swapped-arrival-breached-loading-bay-480.png)
+
+The desktop Continue flow reached and cleared Breached Loading Bay at sector 8 with zero runtime errors. The runner recorded a loading hold just over five seconds. Native screenshots timed out at 20 seconds in the first full campaign attempts. The retries retain seeds 1729 and 2718, use the same production assets in a frozen distribution, and allow up to 120 seconds for evidence screenshots. [Native continuation](../../artifacts/nextgen/playtest/run20-old-save-frozen/report.json) · [1729 retry](../../artifacts/nextgen/playtest/run20-arc-1729-retry/report.json) · [2718 retry](../../artifacts/nextgen/playtest/run20-arc-2718-frozen/report.json)
+
+The 1729 retry reached the wall-clock limit in sector 8 with seven clears and zero runtime errors. Its continuation resumed from the earned Freight Hold clear and died in Diagnostic Gallery after ten clears with zero runtime errors. An earlier 2718 attempt logged a ship kit preparation timeout. The fresh replay used seed 2718 again, took Workshop before Swarm Junction at sectors 15 and 16, and reached the wall-clock limit with 18 clears and zero runtime errors. The continuation from the earned Containment Annulus clear died in Manual-control Chamber with zero runtime errors. [1729 continuation](../../artifacts/nextgen/playtest/run20-arc-1729-continued/report.json) · [2718 replay](../../artifacts/nextgen/playtest/run20-arc-2718-retry/report.json) · [2718 continuation](../../artifacts/nextgen/playtest/run20-arc-2718-continued/report.json)
+
+The simulation commands use the twelve prescribed seeds independently in each Standard competent mode. All 144 trials finished. The three batches report matching gameplay and policy hashes. The forced Freight Hold / Workshop order finished 41/48, the forced Loading Bay / Swarm order finished 43/48, and the bot policy finished 44/48. The starting reference totals 43/48.
+
+| Rig | Starting reference | Freight / Workshop first | Loading / Swarm first | Policy |
+| --- | ---: | ---: | ---: | ---: |
+| Breacher | 11/12 | 9/12 | 12/12 | 12/12 |
+| Cryo | 10/12 | 12/12 | 10/12 | 12/12 |
+| Pyro | 10/12 | 9/12 | 11/12 | 9/12 |
+| Arc | 12/12 | 11/12 | 10/12 | 11/12 |
+
+[Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/summary.json) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/summary.json) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/summary.json)

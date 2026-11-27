@@ -1,5 +1,5 @@
 import {RIG_ACCENTS} from './ActorIdentity';
-import {FloorChoiceMarkers} from './markers/FloorChoiceMarkers';
+import {FloorChoiceMarkers,type StoryHoldGrace} from './markers/FloorChoiceMarkers';
 import { PincerPresentation } from './world/PincerPresentation';
 import {setRoomBlackout,setSurfacePaintDiagnostic} from './lighting/LocalLightShading';
 import {ShipConditionVisuals} from './vfx/ShipConditionVisuals';
@@ -123,11 +123,9 @@ export class DepthRenderer {
  private aheadKey='';private aheadRooms=new RoomPreparationCache(node=>this.buildAhead(node),root=>disposeModel(root),2);
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
- private readonly hostileSocket = new T.Vector3();
  private readonly recoveryPosition = new T.Vector3();
+ private readonly strikePosition = (id:number) => this.actors.get(id)?.strikeSocket?.(this.recoveryPosition);
  private readonly actorPosition = (id:number) => this.actors.get(id)?.body.getWorldPosition(this.recoveryPosition);
- private readonly shooterSocket = (id:number) =>
-  this.actors.get(id)?.root.getObjectByName('jaw')?.getWorldPosition(this.hostileSocket);
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
  private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.cancelRoomPrefetch?.();this.cancelRoomPrefetch=undefined;this.graphicsGeneration++;this.initializedTextures=new WeakMap();this.introspectedPrograms=new WeakSet();for(const target of this.preparationTargets)target.dispose();this.preparationTargets.clear();this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate(true);this.post.invalidate();this.lighting.invalidateShadows();};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;this.queueRoomWarmup();void this.roomWarmWork.finally(()=>{this.recoveringGraphics=false;}).catch(()=>{});};
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
@@ -154,6 +152,7 @@ export class DepthRenderer {
  private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
  private motionChanged=()=>this.applyQuality();
  private motionQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
+ private crowdRim=0;
  private disposed=false;private time=0;private recoil=0;private roomKey='';private temporaryMaterials:T.Material[]=[];
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
  private pickupInstances=new PickupInstances();private exit:T.Group|null=null;
@@ -662,16 +661,22 @@ export class DepthRenderer {
   if(this.roomLoading)return;
   if(!menu&&game.status==='playing'&&this.prefetchKey!==game.node.id){
    this.prefetchKey=game.node.id;
-   const next=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes.find(node=>game.node.next.includes(node.id));
+   const next=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder).nodes.find(node=>game.node.next.includes(node.id));
    if(next&&INTERIOR_ROOMS.has(next.templateId))this.cancelRoomPrefetch=prefetchOriginalRoomInteriors(ROOM_TEMPLATES[next.templateId],this.renderer);
   }
-  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
+  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
   this.captureRoomReflections();
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   this.floorChoiceMarkers.updateReserve(game.geometry.breaches,UNIT,realDt);
+  const grilleGame=game as typeof game & {recoveryGrille?:import('./markers/RecoveryGrille').GrillePose};
+  const sampleGrille=!Reflect.has(game,'recoveryGrille')&&game.node.templateId==='manual-control-chamber'
+    ?{x:614,y:390,angle:0,state:'waiting',changedAt:0}:undefined;
+  this.floorChoiceMarkers.recovery.update(menu?undefined:grilleGame.recoveryGrille??sampleGrille,game.elapsed);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
+  const holdGrace=menu?undefined:(game as DepthGame & {storyHoldGrace?:StoryHoldGrace}).storyHoldGrace;
+  this.floorChoiceMarkers.updateStoryHold(holdGrace,game.floorControls,UNIT,realDt,game.roomRevision);
   this.siegeBoundary.update(menu?null:game.siege,p,enemies);
   this.pincerPresentation.update(game, UNIT, realDt, menu);
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
@@ -708,6 +713,12 @@ export class DepthRenderer {
   // M9: preferences scale secondary motion; authoritative roots remain snapshot-owned.
   this.player.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);this.player.setDead?.(combat.dead);
   if(!combat.dead){this.ragdolls.remove(-2147483648);this.marineDeathStarted=false;}
+  let closeEnemies=0;
+  if(!menu && !combat.dead) for(const enemy of enemies){
+   if(enemy.health>0 && (enemy.x-p.x)**2+(enemy.y-p.y)**2 <= (4*UNIT)**2 && ++closeEnemies===3)break;
+  }
+  this.crowdRim+=((closeEnemies>=3?1:0)-this.crowdRim)*(1-Math.exp(-dt*12));
+  this.player.setCrowdRim?.(this.crowdRim);
   this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;if(!this.ragdolls.has(-2147483648))this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
   // M10: one articulated marine death; native killing direction, retained physics owner.
   if(combat.dead&&!this.marineDeathStarted){this.marineDeathStarted=true;const direction=this.player.root.userData.motionHitDirection??p.angle;if(this.corpses.length&&this.ragdolls.snapshot().active>=this.ragdolls.snapshot().budget){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}this.ragdolls.add(-2147483648,this.player,'marine',{x:Math.cos(direction)*5,z:Math.sin(direction)*5},'none');}
@@ -819,7 +830,7 @@ export class DepthRenderer {
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}
-  this.effects.syncEnemyWarnings(enemies,game.geometry,game,this.shooterSocket);
+  this.effects.syncEnemyWarnings(enemies,game.geometry,game,this.strikePosition);
   if(blackout)this.effects.forEachShooterPriority((x,y,z,angle,id)=>{
    this.lighting.pool.attach(`hostile-windup-${id}`,{x:x+Math.cos(angle)*.2,y:y+.22,z:z+Math.sin(angle)*.2,color:0xff2340,intensity:2.4,distance:1.6,duration:.08,priority:4});
   });
@@ -850,7 +861,7 @@ export class DepthRenderer {
    if(sampling)sampling.value=false;
   });
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
-  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition);
+  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition,this.strikePosition);
   if(this.graphicsAblation==='floorResidues'){
    this.effects.showFloorDecals(false);
    this.interimAbilities.kit?.hideFloorResidues();

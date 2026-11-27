@@ -203,12 +203,13 @@ export class PincerPresentation {
       return;
     }
     const gate=this.recoveryGate??=this.createGate();
+    // ROOM34 owns the physical grille. Keep the waiting and recoiling bodies here.
+    gate.shutter.visible=false;
     gate.root.visible=true;
     gate.root.position.set(grille.x/unit,0,grille.y/unit);
     gate.root.rotation.y=-grille.angle;
     gate.countdown.visible=false;
     const age=Math.max(0,elapsed-grille.changedAt);
-    gate.shutter.position.y=grille.state==='closed'?1.35*Math.max(0,1-age*8):1.35;
     while(gate.silhouettes.length<grille.escorts){
       const root=this.makeSilhouette();
       gate.root.add(root);

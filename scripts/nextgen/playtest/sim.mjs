@@ -9,12 +9,13 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off','exchange-marks']);
+const allowed = new Set(['difficulty', 'profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning','conditions-off','exchange-marks','room-order']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
         throw Error(`Unknown option ${key}`);
 if (args.difficulty && !['story','standard','veteran'].includes(args.difficulty)) throw Error('difficulty must be story, standard or veteran');
+if (args['room-order'] && !['direct','salvage','policy'].includes(args['room-order'])) throw Error('room-order must be direct, salvage or policy');
 if (args.profile && !['novice','competent','expert'].includes(args.profile)) throw Error('profile must be novice, competent or expert');
 if (args.label && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(args.label)))
     throw Error('Unsafe label');
@@ -92,7 +93,7 @@ const queue = rigs.flatMap(rig => seeds.map(seed => ({ rig, seed })));
 async function worker() {
     while (queue.length) {
         const { rig, seed } = queue.shift();
-        const options = { rig, seed, readExchange:args['exchange-marks']==='on', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['exchange-marks']!==undefined, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
+        const options = { rig, seed, roomOrder:args['room-order'], readExchange:args['exchange-marks']==='on', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['exchange-marks']!==undefined, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
         const report = workers === 1 ? runSimulation(options) : await new Promise((ok, fail) => {
             const child = spawn(process.execPath, [resolve(source,'sim-worker.mjs'), resolve(source, 'sim-core.mjs'), JSON.stringify(options)], { stdio: ['ignore', 'pipe', 'inherit'] });
             const parts = [];
@@ -119,7 +120,7 @@ async function worker() {
         reports.push(report);
         await writeFile(resolve(out, `${rig}-${seed}.json`), JSON.stringify(report, null, 2));
         console.log(`${rig} ${seed}: ${report.outcome}, ${report.rooms.filter(r => ['clear', 'complete'].includes(r.result)).length} clears, ${report.stats.overdrivesUsed} OD, ${report.wallSeconds.toFixed(2)}s wall`);
-        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, difficulty:args.difficulty??'standard', profile:args.profile??'competent', backendProvenance, gameRef: gameRef ?? 'working-tree', tuningEnabled, bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
+        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, roomOrder:args['room-order']??'policy', difficulty:args.difficulty??'standard', profile:args.profile??'competent', backendProvenance, gameRef: gameRef ?? 'working-tree', tuningEnabled, bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
     }
 }
 await Promise.all(Array.from({ length: workers }, worker));
