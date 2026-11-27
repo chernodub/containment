@@ -1062,3 +1062,23 @@ Story finished 23/24 on the usual seeds and 25/26 with the extra cases. Cryo 172
 Story novice Cryo 1729 cleared all 20 rooms with zero native errors. Safety Interlock cost 72.29 gross suit and fired grace. Every final Interlock trace, including all five checkpoint replays, sampled at most one committed heavy at a time. These runs did not isolate the emergency dash refill from natural recharge. Veteran was not replayed. Production build passed.
 
 [Campaign report](../../artifacts/nextgen/playtest/play40-final-full/report.json) · [Teaching strike](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-teaching.png) · [Off the pad](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-off-pad.png) · [Return](../../artifacts/nextgen/playtest/play40-final-full/r12-safety-interlock-station-story-hold-return.png)
+
+## PLAY41
+
+- The opt-in grille candidate stages the escorts beyond the Brute along the approach sightline in Communal Atrium and Manual Control. A recovery hit qualifies within 5.5 m of the Brute and up to 2 m to either side of the return lane's centerline. The shot must originate on the marine's side of the Brute. Escorts push against the dropped grille for 1.5 seconds before withdrawing. The default game keeps the PLAY39 closure rule pending the three-arm gate.
+- The Standard opening uses a hard-cover staging point where available and places the armour on its sheltered side. The first fan winds up for 850 ms. The opposite hatch starts opening with the warning. Interrupting within 640 ms cancels the arrival.
+- Coolant Plant and Infested Workshop show a queued body probing the bend ahead of a live reserve leader. A cut reuses the bend pose for the recoil and keeps the reserve count.
+- A queued Crawler probes 10 simulation units (about 0.31 m) of lateral clearance before it moves around the striker. When both sides are blocked, it backs out as space allows.
+
+### Opening comparison
+
+Matched Standard competent simulation on seed 1729. Each cell shows fan warnings, follow-up warnings, and suit lost, respectively.
+
+| Rig | Sector 3 before | Sector 3 after | Sector 4 before | Sector 4 after |
+|---|---:|---:|---:|---:|
+| Breacher | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 0.0 | 1 / 0 / 0.0 |
+| Cryo | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 57.5 | 1 / 0 / 0.0 |
+| Pyro | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 1 / 0.0 | 1 / 0 / 0.0 |
+| Arc | 1 / 0 / 0.0 | 1 / 0 / 0.0 | 1 / 0 / 15.3 | 1 / 0 / 0.0 |
+
+[Baseline simulation](../../artifacts/nextgen/playtest/play41-opening-before/summary.json) · [PLAY41 simulation](../../artifacts/nextgen/playtest/play41-opening-after/summary.json)
