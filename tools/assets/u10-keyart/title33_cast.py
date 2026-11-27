@@ -3,9 +3,10 @@ import sys
 from pathlib import Path
 import bpy
 import bmesh
-from mathutils import Vector, Matrix
-import math
+from mathutils import Vector
 import importlib
+import json
+import subprocess
 
 root = Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(root/'tools/assets/k12-hero'))
@@ -23,11 +24,21 @@ for name,model,mesh,view,res in [
 ]:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene=bpy.context.scene
-    bpy.ops.import_scene.gltf(filepath=str(root/'public/assets/models'/f'{model}.glb'))
-    obj=next(o for o in scene.objects if o.type=='MESH' and o.data.name==mesh)
-    for other in scene.objects:
-        if other.type=='MESH': other.hide_render=other!=obj
-        if other.type=='ARMATURE': other.data.pose_position='REST'
+    if name=='warden':
+        baked=out/'warden-mouth.json'
+        subprocess.run(['node',str(root/'tools/assets/u10-keyart/title34_warden.mjs'),str(baked)],cwd=root,check=True)
+        geometry=json.loads(baked.read_text())
+        data=bpy.data.meshes.new(mesh)
+        indices=geometry['indices']
+        data.from_pydata(geometry['vertices'],[],list(zip(indices[::3],indices[1::3],indices[2::3])))
+        obj=bpy.data.objects.new(mesh,data)
+        scene.collection.objects.link(obj)
+    else:
+        bpy.ops.import_scene.gltf(filepath=str(root/'public/assets/models'/f'{model}.glb'))
+        obj=next(o for o in scene.objects if o.type=='MESH' and o.data.name==mesh)
+        for other in scene.objects:
+            if other.type=='MESH': other.hide_render=other!=obj
+            if other.type=='ARMATURE': other.data.pose_position='REST'
     # The game exports one UV cell per authored anatomical region.
     species=importlib.import_module('brute' if name=='warden' else name)
     cells=dict.fromkeys([*species.BANDS,'eye','gold'])
@@ -39,28 +50,25 @@ for name,model,mesh,view,res in [
                      bone=('635b58','b5aa9c','d2c8b5'))
     ink.LIGHT['mark']='ffad55' if name!='stalker' else '91e7ff'
     if name!='warden': ink.PAINT['armour']=('232833','37404a','586572')
+    if name=='warden':
+        roles=(roles+['shell']*10)[:10]+['tongue','gum','throat','tooth']
+        ink.LIGHT.update(tooth='82d29f',tongue='c46554',gum='682d42',throat='341d30',mark='463037')
     obj.data.materials.clear()
     for role in roles:
         mat=bpy.data.materials.new(role);mat.use_nodes=True;mat['k12Role']=role
         obj.data.materials.append(mat)
-    uv=obj.data.uv_layers.active.data
+    uv=obj.data.uv_layers.active.data if obj.data.uv_layers.active else None
     for face in obj.data.polygons:
-        u,v=uv[face.loop_start].uv
-        face.material_index=min(len(roles)-1,int(4*u)+4*int(4*v))
+        if name=='warden':
+            face.material_index=min(len(roles)-1,geometry['cells'][face.vertices[0]])
+        else:
+            u,v=uv[face.loop_start].uv
+            face.material_index=min(len(roles)-1,int(4*u)+4*int(4*v))
         face.use_smooth=True
     # Weld UV-cell splits before subdivision so bands share the curved skin.
     bm=bmesh.new();bm.from_mesh(obj.data)
     bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.00001)
     bm.to_mesh(obj.data);bm.free()
-    if name=='warden':
-        jaw=obj.vertex_groups.get('jaw')
-        if jaw:
-            verts=[v for v in obj.data.vertices if any(g.group==jaw.index and g.weight>.5 for g in v.groups)]
-            if verts:
-                world=obj.matrix_world
-                pivot=min((world@v.co for v in verts),key=lambda p:p.x)
-                for v in verts:
-                    v.co=world.inverted()@(pivot+Matrix.Rotation(math.radians(20),3,'Y')@(world@v.co-pivot))
     sub=obj.modifiers.new('Continuous key-art surface','SUBSURF');sub.levels=2;sub.render_levels=2
     points=[obj.matrix_world@v.co for v in obj.data.vertices]
     forward=Vector(view).normalized()
