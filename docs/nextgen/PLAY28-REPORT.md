@@ -878,3 +878,69 @@ The first revision requires the shot to originate within 55° of the line from t
 Clears and stalls: A 39/48 (0 stalls), B 41/48 (0 stalls), C 44/48 (0 stalls)
 
 [Revision 1 arm B](../../artifacts/nextgen/playtest/play39-three-v1-off/summary.json) · [Revision 1 arm C](../../artifacts/nextgen/playtest/play39-three-v1-on/summary.json)
+
+The second revision narrowed the firing arc to ±40°. Its pre-merge campaign totals were A 39/48, B 42/48, and C 45/48, each with zero stalls. The table below repeats all three arms after merging RUN20 and using its route policy. The unaware arm still closed 28/48 Atrium grilles.
+
+### v2-merged
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.50 | 22.49 | 0 |
+| A | Breacher | manual-control-chamber | 11 | 0 | 0 | 52.00 | 57.33 | 1 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 10.27 | 23.66 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 107.00 | 76.83 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 5.24 | 20.62 | 0 |
+| A | Pyro | manual-control-chamber | 12 | 0 | 0 | 37.08 | 50.32 | 0 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 3.10 | 22.93 | 0 |
+| A | Arc | manual-control-chamber | 10 | 0 | 0 | 30.25 | 53.43 | 0 |
+| B | Breacher | communal-atrium | 12 | 7 | 7 | 3.90 | 22.64 | 0 |
+| B | Breacher | manual-control-chamber | 12 | 8 | 24 | 40.66 | 54.28 | 0 |
+| B | Cryo | communal-atrium | 12 | 6 | 6 | 11.46 | 23.57 | 0 |
+| B | Cryo | manual-control-chamber | 11 | 2 | 6 | 97.39 | 72.31 | 0 |
+| B | Pyro | communal-atrium | 12 | 5 | 5 | 3.94 | 20.37 | 0 |
+| B | Pyro | manual-control-chamber | 11 | 9 | 27 | 23.32 | 45.56 | 0 |
+| B | Arc | communal-atrium | 12 | 10 | 10 | 0.60 | 21.33 | 0 |
+| B | Arc | manual-control-chamber | 8 | 2 | 6 | 24.29 | 54.96 | 0 |
+| C | Breacher | communal-atrium | 12 | 11 | 11 | 4.86 | 22.83 | 0 |
+| C | Breacher | manual-control-chamber | 11 | 9 | 27 | 38.31 | 50.13 | 0 |
+| C | Cryo | communal-atrium | 12 | 12 | 12 | 8.02 | 23.81 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 11 | 33 | 72.98 | 64.73 | 0 |
+| C | Pyro | communal-atrium | 12 | 12 | 12 | 2.40 | 22.08 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 11 | 33 | 31.22 | 39.98 | 0 |
+| C | Arc | communal-atrium | 12 | 12 | 12 | 7.35 | 22.09 | 0 |
+| C | Arc | manual-control-chamber | 12 | 10 | 30 | 30.00 | 44.00 | 0 |
+
+Clears and stalls: A 42/48 (0 stalls), B 41/48 (0 stalls), C 45/48 (0 stalls)
+
+The third revision narrowed the arc to ±30° and moved one existing Atrium flanker from another beat so two escorts wait. B closed 20/48 (41.7%) in Atrium and 11/41 (26.8%) in Manual Control. C closed 44/48 (91.7%) and 35/41 (85.4%). Each of the four rigs lost less suit in both rooms with C than with A. This qualifies the grille to be on by default on Standard. Story retains its previous encounter staging.
+
+### v3
+
+| Arm | Rig | Room | Visits | Closures | Escorts canceled | Mean suit | Mean seconds | Deaths |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| A | Breacher | communal-atrium | 12 | 0 | 0 | 4.10 | 23.00 | 0 |
+| A | Breacher | manual-control-chamber | 9 | 0 | 0 | 53.84 | 53.93 | 0 |
+| A | Cryo | communal-atrium | 12 | 0 | 0 | 10.42 | 22.41 | 0 |
+| A | Cryo | manual-control-chamber | 10 | 0 | 0 | 92.19 | 74.38 | 0 |
+| A | Pyro | communal-atrium | 12 | 0 | 0 | 6.34 | 20.29 | 0 |
+| A | Pyro | manual-control-chamber | 12 | 0 | 0 | 39.29 | 44.86 | 0 |
+| A | Arc | communal-atrium | 12 | 0 | 0 | 9.77 | 20.96 | 0 |
+| A | Arc | manual-control-chamber | 9 | 0 | 0 | 36.49 | 54.93 | 0 |
+| B | Breacher | communal-atrium | 12 | 7 | 14 | 3.64 | 23.27 | 0 |
+| B | Breacher | manual-control-chamber | 10 | 4 | 12 | 25.05 | 48.55 | 0 |
+| B | Cryo | communal-atrium | 12 | 5 | 10 | 9.91 | 21.80 | 0 |
+| B | Cryo | manual-control-chamber | 9 | 4 | 12 | 94.11 | 71.21 | 0 |
+| B | Pyro | communal-atrium | 12 | 2 | 4 | 5.84 | 20.28 | 0 |
+| B | Pyro | manual-control-chamber | 12 | 1 | 3 | 35.75 | 45.02 | 0 |
+| B | Arc | communal-atrium | 12 | 6 | 12 | 3.86 | 20.22 | 0 |
+| B | Arc | manual-control-chamber | 10 | 2 | 6 | 28.67 | 52.29 | 0 |
+| C | Breacher | communal-atrium | 12 | 12 | 24 | 0.50 | 20.56 | 0 |
+| C | Breacher | manual-control-chamber | 10 | 9 | 27 | 33.84 | 50.21 | 0 |
+| C | Cryo | communal-atrium | 12 | 11 | 22 | 8.11 | 22.88 | 0 |
+| C | Cryo | manual-control-chamber | 11 | 9 | 27 | 70.92 | 64.84 | 0 |
+| C | Pyro | communal-atrium | 12 | 11 | 22 | 2.40 | 19.50 | 0 |
+| C | Pyro | manual-control-chamber | 12 | 10 | 30 | 30.32 | 48.38 | 0 |
+| C | Arc | communal-atrium | 12 | 10 | 20 | 6.60 | 20.35 | 0 |
+| C | Arc | manual-control-chamber | 8 | 7 | 21 | 21.36 | 47.96 | 0 |
+
+Clears and stalls: A 40/48 (0 stalls), B 41/48 (0 stalls), C 41/48 (0 stalls)

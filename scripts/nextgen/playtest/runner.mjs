@@ -64,7 +64,8 @@ for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','s
 const distributionAssets={};
 for(const file of (await readdir(resolve(distRoot,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort())distributionAssets[file]=createHash('sha256').update(await readFile(resolve(distRoot,'assets',file))).digest('hex');
 const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8').then(value=>value.trim()).catch(()=>null);
-const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',options['exchange-marks']==='on');
+const readExchange=options['exchange-marks']==='on'||options['exchange-marks']===undefined&&difficulty==='standard';
+const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent',readExchange);
 const report = {
   profile:human.profile, humanParameters:human.config,
   label, rig, seed, difficulty, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
@@ -177,7 +178,7 @@ async function snapshot(stagnantSince=Infinity) {
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,disabled:b.getAttribute('aria-disabled')==='true',condition:b.dataset.detour&&g.conditionFor?.(g.node.depth+1,b.dataset.detour==='salvage'),variant:b.dataset.detour&&g.openingName?.(g.node.depth+1,b.dataset.detour==='salvage'),text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
-  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover,stagnantSince,readGrille:options['exchange-marks']==='on'});
+  }, {coveredRelayHealthFraction:COVERED_RELAY_HEALTH_FRACTION,committedToCover,stagnantSince,readGrille:readExchange});
   committedToCover=state.siege?.choosing===true&&state.siege.coveredIntent===true;
   return state;
 }

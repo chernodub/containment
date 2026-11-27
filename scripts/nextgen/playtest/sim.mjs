@@ -93,7 +93,7 @@ const queue = rigs.flatMap(rig => seeds.map(seed => ({ rig, seed })));
 async function worker() {
     while (queue.length) {
         const { rig, seed } = queue.shift();
-        const options = { rig, seed, roomOrder:args['room-order'], readExchange:args['exchange-marks']==='on', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['exchange-marks']!==undefined, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
+        const options = { rig, seed, roomOrder:args['room-order'], readExchange:args['exchange-marks']==='on'||args['exchange-marks']===undefined&&(args.difficulty??'standard')==='standard', recoveryGrilles:args['exchange-marks']==='absent'?'release-only':args['exchange-marks']===undefined?undefined:true, difficulty:args.difficulty??'standard', profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, conditionsOff:!!args['conditions-off'], maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
         const report = workers === 1 ? runSimulation(options) : await new Promise((ok, fail) => {
             const child = spawn(process.execPath, [resolve(source,'sim-worker.mjs'), resolve(source, 'sim-core.mjs'), JSON.stringify(options)], { stdio: ['ignore', 'pipe', 'inherit'] });
             const parts = [];

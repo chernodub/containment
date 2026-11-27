@@ -99,6 +99,7 @@ export class DepthGame {
  private relayCrossfire=false;
  private relayVolleyId?:number;
  private consoleRelease=0;
+ private get recoveryGrilles(){return this.grilleOverride??(this.difficulty==='standard');}
  private recoveryGrilleState?:{x:number;y:number;angle:number;escorts:number;attackerId?:number;
   state:'waiting'|'closed'|'entered';changedAt:number;expiresAt:number;attackStarted?:true};
  get recoveryGrille(){
@@ -143,7 +144,7 @@ export class DepthGame {
  private breakAnnounced=false;
  private broodPodsDestroyed=0;
  private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
- constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly recoveryGrilles:boolean|'release-only'=false){
+ constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'){
   if(!storage)this.checkpointState='unavailable';
   this.expedition=createExpedition(1729,this.combat.getRunResources());this.node=this.findNode();this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.director=this.makeDirector();this.mutations=this.makeMutations();this.abilities=this.makeAbilities();this.abilities.setRig('breacher');Object.assign(this.player,this.geometry.playerSpawn);
  }
