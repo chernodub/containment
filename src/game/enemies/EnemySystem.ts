@@ -577,13 +577,19 @@ export class EnemySystem {
         const offset=Math.atan2(Math.sin(bearing-strikeSide),Math.cos(bearing-strikeSide));
         if(Math.abs(offset)*radius>=28.8)continue;
         const side=Math.abs(offset)<.05?(enemy.id%2?1:-1):Math.sign(offset);
-        for(const turn of [side,-side]){
-          const vx=-dy/radius*enemy.speed*this.#movement*turn;
-          const vy=dx/radius*enemy.speed*this.#movement*turn;
-          if(!this.#movementAllowed(enemy,enemy.x+vx*movementDelta/1000,enemy.y+vy*movementDelta/1000))continue;
-          enemy.velocityX=vx;
-          enemy.velocityY=vy;
-          break;
+        const speed=enemy.speed*this.#movement;
+        const bootWidth=10;
+        const clearSide=[side,-side].find(turn=>
+          this.#movementAllowed(enemy,enemy.x-dy/radius*bootWidth*turn,enemy.y+dx/radius*bootWidth*turn));
+        if(clearSide!==undefined){
+          enemy.velocityX=-dy/radius*speed*clearSide;
+          enemy.velocityY=dx/radius*speed*clearSide;
+        }else{
+          // A queue jammed against solid geometry gives ground while the striker owns the lane.
+          const step=Math.min(bootWidth,speed*movementDelta/1000);
+          const retreat=this.#movementAllowed(enemy,enemy.x+dx/radius*step,enemy.y+dy/radius*step);
+          enemy.velocityX=retreat?dx/radius*speed:0;
+          enemy.velocityY=retreat?dy/radius*speed:0;
         }
       }
     }
