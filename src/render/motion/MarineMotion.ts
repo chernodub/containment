@@ -447,7 +447,16 @@ export class MarineMotion {
       // This shared rib turn belongs to the original ram socket trajectory.
       if(this.rig==='breacher' && this.action==='ram')this.rotate(this.ribs,this.up,.43*Math.sin(Math.PI*this.actionProgress),this.yawQ);
       if(this.shotgunShoulder>0)this.carryTorso(.31*this.shotgunShoulder,-.16*this.shotgunShoulder,this.rightHand);
-      if(this.rig==='pyro'){this.carryTorso(-.27,-.16);this.stanceFeet(.18,.12);}
+      if(this.rig==='pyro'){
+        // Pivot the chest over the load, leaving the receiver on its firing line.
+        if(!reload){
+          this.carryTorso(-.52,-.29,this.rightHand);
+          this.stanceFeet(.22,.32);
+        }else{
+          this.carryTorso(-.27,-.16);
+          this.stanceFeet(.18,.12);
+        }
+      }
       if(this.rig==='cryo'){this.carryTorso(.19,.07);this.stanceFeet(-.065,.03);}
       if(this.rig==='arc'){this.carryTorso(.06,-.24);this.stanceFeet(.04,-.14);}
       if(this.rig==='breacher')this.carryTorso(-.11,.19);
@@ -458,7 +467,8 @@ export class MarineMotion {
       this.stanceFeet(.10,.20);
     }else if(!this.dead && !this.action && !reload && (weapon!=='rifle'||this.rig==='arc')){
       if(this.rig==='arc'){
-        this.castArm(this.leftArm,this.leftForearm,this.leftHand,-.23,-.62,.34,1);
+        // A bent arm outside the chest leaves daylight under the plasma fork.
+        this.castArm(this.leftArm,this.leftForearm,this.leftHand,.18,-.77,.08,1);
         for(const finger of this.openFingers)finger.bone.quaternion.slerp(finger.bind,.88);
       }
       if(this.rig==='pyro') this.castArm(this.leftArm,this.leftForearm,this.leftHand,.48,-.24,-.36,.96);
@@ -468,6 +478,16 @@ export class MarineMotion {
         this.solveChain(this.leftArm,this.leftForearm,this.leftHand);
       }
     }else if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+    if(this.rig==='arc' && !this.dead && !reload && this.leftArm && this.leftHand){
+      // Open the elbow around the existing cast or carry target. Preserve the
+      // hand's orientation so each action keeps its authored palm direction.
+      this.leftArm.getWorldPosition(this.hip);
+      this.leftHand.getWorldPosition(this.axis).sub(this.hip).normalize();
+      this.leftHand.getWorldQuaternion(this.footQ);
+      this.rotate(this.leftArm,this.axis,.85,this.yawQ);
+      this.leftHand.parent!.getWorldQuaternion(this.parentQ);
+      this.leftHand.quaternion.copy(this.parentQ).invert().multiply(this.footQ);
+    }
   }
 
   private readonly socketAnchor = new T.Vector3();
