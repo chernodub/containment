@@ -122,7 +122,11 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   }
   if(room.id==='overload-floor'){
     c.save();c.translate(833.71249,349.81813);c.lineJoin='round';
-    c.strokeStyle='#a99a75';c.lineWidth=30;c.stroke(new Path2D(reactorReturn));
+    const path=new Path2D(reactorReturn);
+    c.strokeStyle='#bfab7e';c.lineWidth=32;c.stroke(path);
+    c.strokeStyle='#82928e';c.lineWidth=25;c.stroke(path);
+    c.strokeStyle='#4f6565';c.setLineDash([29,4]);c.lineWidth=19;c.stroke(path);
+    c.setLineDash([]);
     c.strokeStyle='#ffe0a1';c.lineWidth=5;
     c.stroke(new Path2D('M-32 -18H-75L-80 -23V-54H-32'));
     c.restore();

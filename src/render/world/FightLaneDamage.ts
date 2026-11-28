@@ -86,6 +86,14 @@ export function addFightLaneDamage(root:Group,id:string){
       lip.rod([0,1,-19],[0,1,-64],2.2,0xbfa278);
       lip.rod([0,1,-64],[-58,1,-64],2.2,0xbfa278);
       for(const dx of [-89,-69,-36,-16])lip.box(dx,35.3,-14,4,.8,2,0x59605a);
+      // Lower the two middle panels together with their trim. The intact
+      // end panel still meets the shot, while the recess exposes the bay.
+      for(const part of lip.parts){
+        part.computeBoundingBox();
+        const bounds=part.boundingBox!;
+        const center=(bounds.min.x+bounds.max.x)/2;
+        if(center>-74&&center<-24)part.scale(1,.32,1);
+      }
       const steel=new MeshBasicMaterial({vertexColors:true});
       const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel,true);
       sill.scale.y=1.48;
