@@ -138,7 +138,7 @@ Version 1 checkpoints may omit the new loss receipt. The default is no prior-roo
 
 The staged Interlock death enters at 52 suit, after 48 suit lost to Spitter projectiles in Diagnostic Gallery. A fatal Crawler swipe triggers the results card. [Death card](../../artifacts/nextgen/run21-final-1080/run21-depleted-death.png)
 
-The production build passed and conflict-marker search was clean after merging local `nextgen` at `0c9feb39`.
+The production build passed and conflict-marker search was clean after merging local `nextgen` at `ec21b3da` (CONTACT36). The frozen native runs and captures precede that presentation merge. The pre-merge and merged simulator receipts have matching game, policy and bundle hashes.
 
 | Evidence | Desktop capture |
 | --- | --- |
@@ -155,3 +155,29 @@ The first native launch required loopback permission. The first authorized retry
 The cohort uses seeds 7, 11, 23, 99, 256, 512, 1024, 2025, 4096, 6561, 9001 and 65537. Standard competent samples all four rigs. Story novice samples Breacher and Cryo. Room comparisons pair visits by rig and seed and include deaths in the measured room. Gross suit loss counts health and armor spent through any repairs taken during the fight.
 
 Story novice cleared **24/24** with zero stalls. Breacher cleared 12/12 on Loading Bay and Swarm first. Cryo cleared 12/12 on Freight Hold and Workshop first. [Story cohort](../../artifacts/nextgen/playtest/run21-cohort-story/summary.json)
+
+For forced Standard orders, Freight and Workshop first cleared **38/48**. Loading Bay and Swarm first cleared **34/48**. Both recorded zero stalls.
+
+| Rig | Freight + Workshop first | Loading Bay + Swarm first |
+| --- | ---: | ---: |
+| Breacher | 8/12 | 10/12 |
+| Cryo | 10/12 | 9/12 |
+| Pyro | 11/12 | 10/12 |
+| Arc | 9/12 | 5/12 |
+
+The bot policy always chooses Loading Bay and Swarm first on Breacher, and Freight and Workshop first on Cryo and Pyro. Those policy receipts supply the matching forced-order cells. Overlapping Breacher runs matched exactly. Arc's cargo choice depends on its guardian booking and its policy picks Workshop first. Both forced Arc arms ran separately. [Breacher and Cryo policy](../../artifacts/nextgen/playtest/run21-cohort-standard-merged/summary.json) · [Pyro and Arc policy](../../artifacts/nextgen/playtest/run21-cohort-standard-merged-tail/summary.json) · [Freight / Workshop Breacher](../../artifacts/nextgen/playtest/run21-cohort-direct/summary.json) · [Freight / Workshop Arc](../../artifacts/nextgen/playtest/run21-cohort-direct-arc/summary.json) · [Loading Bay / Swarm Cryo, Pyro and Arc](../../artifacts/nextgen/playtest/run21-cohort-salvage-alternates/summary.json)
+
+| Room | Rig | Matched visits | Freight / Workshop suit lost / seconds | Loading Bay / Swarm suit lost / seconds |
+| --- | --- | ---: | ---: | ---: |
+| Relay Racks | Breacher | 12 | 47.4 / 41.7 | 33.9 / 41.5 |
+| Relay Racks | Cryo | 12 | 45.2 / 55.9 | 68.1 / 48.7 |
+| Relay Racks | Pyro | 12 | 47.6 / 41.0 | 28.4 / 41.8 |
+| Relay Racks | Arc | 12 | 19.4 / 41.0 | 19.2 / 41.2 |
+| Shielding Gate | Breacher | 10 | 45.2 / 43.0 | 45.6 / 46.4 |
+| Shielding Gate | Cryo | 8 | 46.9 / 47.6 | 59.7 / 48.2 |
+| Shielding Gate | Pyro | 11 | 41.0 / 39.6 | 38.3 / 38.5 |
+| Shielding Gate | Arc | 7 | 32.3 / 51.0 | 34.4 / 48.9 |
+
+The Relay loader cost Breacher and Pyro more suit, reduced Cryo's suit loss at the expense of time, and had a small effect on Arc's means. At Shielding Gate the inspection approach favored Cryo on both measures, while sterilization was slightly cheaper and faster for Pyro. The comparison includes each order's prior itinerary and carry-in state.
+
+The merged Standard competent policy cohort cleared **39/48**, split Breacher 10/12, Cryo 10/12, Pyro 11/12 and Arc 8/12, with zero stalls. Each rig fell in the requested band. Loading Bay first cleared 12/16 and Freight Hold first cleared 27/32. Among runs that reached the second junction, Swarm first cleared 10/12 and Workshop first cleared 29/35. One run died before choosing the second order. [Merged policy cohorts](../../artifacts/nextgen/playtest/run21-cohort-standard-merged/summary.json) · [Pyro and Arc](../../artifacts/nextgen/playtest/run21-cohort-standard-merged-tail/summary.json)
