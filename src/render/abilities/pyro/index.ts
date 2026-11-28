@@ -181,7 +181,7 @@ class PyroPresentation implements AbilityPresentation {
         const ids = event.targetIds;
         const lastId = ids?.[ids.length - 1];
         const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
-        if (actor && lastId !== undefined && (kit.heatVictim !== lastId || kit.time >= kit.heatUntil + .25)) {
+        if (actor && lastId !== undefined && kit.time >= kit.heatUntil) {
           kit.heatVictim = lastId;
           kit.heatUntil = kit.time + .59;
           const body = actor.root.position;
@@ -585,7 +585,7 @@ class PyroPresentation implements AbilityPresentation {
     if (contact) { lx = contact.root.position.x; lz = contact.root.position.z; }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(contact ? 9 : meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
-      this.meltdown(zone, x, z, fade * flameGain, frame, emit);
+      this.meltdown(zone, x, z, fade * flameGain * (contact ? .16 : 1), frame, emit && !contact);
       if (shimmer) {
         const player = frame.game?.player;
         const angle = player && Math.hypot(player.vx, player.vy) > 18
