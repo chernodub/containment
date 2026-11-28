@@ -81,6 +81,21 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
       }
       regions.fill(region, triangle, Math.min(triangle + 3, count));
     }
+    // Open the front-leg stance in the bind pose. Use skin weights to
+    // feather the displacement into the shoulder, including the Low mesh.
+    if (/^k11-(crawler|spitter|carrier|stalker)-/.test(name) && skin && weights) {
+      const foreleg = bones.map(bone => /^(leg_front|leg[05]_|leg_m|arm_(up|mid)|upper_arm)/i.test(bone.name));
+      const position = geometry.getAttribute('position');
+      for (let v = 0; v < count; v++) {
+        let share = 0;
+        for (let joint = 0; joint < 4; joint++) {
+          if (foreleg[skin.getComponent(v, joint)]) share += weights.getComponent(v, joint);
+        }
+        position.setY(v, position.getY(v) * (1 + .24 * share));
+      }
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+    }
     if (name.startsWith('k11-brute-base') || name === 'k11-brute-elite') shapeBrute(geometry, name.endsWith('elite'));
     if(/^k11-brute-/.test(object.name))authorPlateEdges(geometry);
     geometry.setAttribute('actorRegion', new T.BufferAttribute(regions, 1));
