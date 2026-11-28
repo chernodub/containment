@@ -489,7 +489,10 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
         const equipped=s.build?.mutations.find(id=>['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id));
         const button={'siege-plow':'f','fault-line':'q','shard-harvest':'q','ice-road':'f','ember-relay':'f','meltdown-core':'v','pilgrim-pylon':'f','live-wire':'q'}[equipped];
         const slot={q:'tactical',f:'power',v:'overdrive'}[button];
-        if(slot&&s.abilities.slots?.[slot]?.ready&&s.abilityAims?.[slot]&&now>=nextInput){
+        const hasAim=equipped==='shard-harvest'
+          ?visible.some(enemy=>enemy.chilled&&distance(enemy,s.player)<=195)
+          :equipped==='meltdown-core'||s.abilityAims?.[slot];
+        if(slot&&s.abilities.slots?.[slot]?.ready&&hasAim&&now>=nextInput){
           keys.unshift(button);exclusiveButton=button;
         }
       }

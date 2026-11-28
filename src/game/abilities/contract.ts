@@ -195,6 +195,7 @@ export type AbilityEventPhase =
   | 'overdrive-ready';
 
 export type AbilityEvent = Readonly<{
+  transformation?:'siege-plow'|'shard-harvest'|'ember-relay'|'pilgrim-pylon';
   /** Authoritative chain hop distance and target cap, including augments. */
   /** Applied ability damage aggregated for this bounded targetIds receipt. */
   totalDamage?: number;

@@ -215,7 +215,7 @@ export class AbilitySystem {
     const struck=new Set<number>();let count=0;
     for(const id of occupants){const origin=this.host.targets().find(t=>t.id===id&&t.health>0);if(!origin)continue;
       const target=this.nearby(origin,this.upgraded('ember-relay')?180:120).find(t=>t.id!==id&&!struck.has(t.id)&&!this.host.statuses(t.id).burning);
-      if(!target)continue;struck.add(target.id);this.hit(target,12,'burn');this.event('flashfire','impact',target,{radius:24,length:undefined,arcRadians:undefined,targetIds:[target.id]});if(++count>=4)break;
+      if(!target)continue;struck.add(target.id);this.hit(target,12,'burn');this.event('flashfire','impact',target,{radius:24,length:undefined,arcRadians:undefined,targetIds:[target.id],transformation:'ember-relay'});if(++count>=4)break;
     }
   }
   private stepTethers(ms:number):void {
@@ -499,6 +499,7 @@ export class AbilitySystem {
     for (let entityIndex = this.deployables.length - 1; entityIndex >= 0; entityIndex--) {
       const d = this.deployables[entityIndex];
       if(d.kind==='barrier'&&this.host.has('siege-plow')) this.moveConstruct(d,{x:d.x+Math.cos(d.angle)*(this.upgraded('siege-plow')?120:90)*ms/1000,y:d.y+Math.sin(d.angle)*(this.upgraded('siege-plow')?120:90)*ms/1000});
+      const priorX=d.x,priorY=d.y;
       if(d.kind==='pylon'&&this.host.has('pilgrim-pylon')){
         const goal={x:p.x-Math.cos(p.angle)*100,y:p.y-Math.sin(p.angle)*100},distance=Math.hypot(goal.x-d.x,goal.y-d.y),f=Math.min(1,(this.upgraded('pilgrim-pylon')?260:180)*ms/1000/(distance||1));
         this.moveConstruct(d,{x:d.x+(goal.x-d.x)*f,y:d.y+(goal.y-d.y)*f});
@@ -509,7 +510,7 @@ export class AbilitySystem {
         d.assault += 250;
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (!this.host.statuses(t.id).frozen && !this.host.statuses(t.id).shocked && this.touches(d, t, t, t.radius + 20) && this.host.visible(d, t)) d.health -= 20;
       }
-      if(d.kind==='barrier'&&this.host.has('siege-plow')&&d.tick<=TIMER_EPSILON){d.tick+=500;for(const t of this.nearby(d,d.length/2+50))if(this.touches(d,t,t,t.radius+20)){this.host.launch(t,Math.cos(d.angle)*420,Math.sin(d.angle)*420);this.event('bulwark','impact',d,{entityId:d.id,targetIds:[t.id],angle:d.angle});}}
+      if(d.kind==='barrier'&&this.host.has('siege-plow')&&d.tick<=TIMER_EPSILON){d.tick+=500;for(const t of this.nearby(d,d.length/2+50))if(this.touches(d,t,t,t.radius+20)){this.host.launch(t,Math.cos(d.angle)*420,Math.sin(d.angle)*420);this.event('bulwark','impact',d,{entityId:d.id,targetIds:[t.id],angle:d.angle,transformation:'siege-plow'});}}
       if (d.kind === 'pylon' && d.health > 0) {
         const pulse = d.tick <= TIMER_EPSILON;
         if (pulse) {
@@ -532,7 +533,7 @@ export class AbilitySystem {
             if (!sweptLinkContact(previous, t, d, fromMarine, p, 14)) continue;
             d.linkCooldowns.set(t.id, 500); this.hit(t, 12, 'shock', 120); ids.push(t.id);
           }
-          if (ids.length || pulse) this.event(d.ability, 'link', d, { entityId: d.id, targetX: p.x, targetY: p.y, width: 28, targetIds: ids });
+          if (ids.length || pulse) this.event(d.ability, 'link', d, { entityId: d.id, targetX: p.x, targetY: p.y, width: 28, targetIds: ids, transformation: ids.length&&(d.x!==priorX||d.y!==priorY)?'pilgrim-pylon':undefined });
         }
         if (pulse) this.event(d.ability, 'tick', d, { entityId: d.id });
       }
@@ -601,7 +602,7 @@ export class AbilitySystem {
     }
     if(wasFrozen&&this.host.has('shard-harvest')&&!this.shardDepth){
       this.shardDepth++;
-      try{const ids:number[]=[];for(const victim of this.nearby(target,220).filter(t=>t.id!==target.id).slice(0,this.upgraded('shard-harvest')?5:3)){this.hit(victim,35,'chill');ids.push(victim.id);}this.event('cryo-nova','burst',target,{radius:220,targetIds:ids});}finally{this.shardDepth--;}
+      try{const ids:number[]=[];for(const victim of this.nearby(target,220).filter(t=>t.id!==target.id).slice(0,this.upgraded('shard-harvest')?5:3)){this.hit(victim,35,'chill');ids.push(victim.id);}this.event('cryo-nova','burst',target,{radius:220,targetIds:ids,transformation:ids.length?'shard-harvest':undefined});}finally{this.shardDepth--;}
     }
     if (this.killDepth >= 3) return;
     const p = this.host.player(), whiteout = this.active('whiteout') && wasFrozen && Math.hypot(target.x - p.x, target.y - p.y) <= 300 && this.host.visible(p, target);

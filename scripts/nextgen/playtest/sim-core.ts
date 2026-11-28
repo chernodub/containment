@@ -175,8 +175,15 @@ export function runSimulation(options: SimOptions) {
         shots: 0, equippedMs: 0, damage: 0, kills: 0, families: {} as Record<string, {damage: number; kills: number}>,
     }]));
     const weaponHits = {total:0, exposed:0};
+    const featuredGuardians = new Set<number>();
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if(room&&e.type==='corpse'&&e.id!==undefined&&featuredGuardians.has(e.id)){
+            room.featuredKill={elapsed:game.elapsed,suit:game.stats.damageTaken};
+        }
+        if(room?.id==='transmission-chamber'&&e.ability?.transformation){
+            room.transformedHits=(room.transformedHits??0)+1;
+        }
         if(room&&e.type==='recovery-grille-closed'){
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
@@ -342,6 +349,10 @@ export function runSimulation(options: SimOptions) {
                         }
                     }
                 }
+                if(room?.id==='coolant-plant'||room?.id==='swarm-junction'){
+                    for(const enemy of game.enemies.snapshot.enemies)
+                        if(enemy.champion)featuredGuardians.add(enemy.id);
+                }
                 game.update(step, input);
             });
             kit.time += camera.update(game, dt / 1000);
@@ -358,6 +369,11 @@ export function runSimulation(options: SimOptions) {
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
             overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endCredits: game.combat.snapshot.credits, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
+        if(room.featuredKill){
+            room.postGuardianSeconds=game.elapsed-room.featuredKill.elapsed;
+            room.postGuardianSuit=stats.damageTaken-room.featuredKill.suit;
+        }
+        featuredGuardians.clear();
         delete room.startStats;
         room = null;
     }

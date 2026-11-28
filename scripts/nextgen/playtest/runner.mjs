@@ -426,6 +426,7 @@ try {
     const queuedCrawler=s.enemies.some(enemy=>enemy.type==='crawler'&&enemy.meleePhase==='approach'&&
       enemy.visible&&distance(enemy,s.player)<96);
     const evidence={
+      'transmission-transformed-hit':room.id==='transmission-chamber'&&freshEvents.some(event=>event.ability?.transformation),
       'banked-wound':freshEvents.some(event=>event.type==='arrival-wound'),
       'side-on-lock':room.id==='residential-gallery'&&freshEvents.some(event=>event.family==='stalker'&&event.type==='enemy-warning'),
       'shaft-pincer':room.id==='service-shaft-landing'&&s.encounter.grammar==='pincer'&&

@@ -10,6 +10,7 @@ export type AimQueries = {
   visible: (from: Point, to: Point) => boolean;
   traverse: (from: Point, to: Point, radius: number) => boolean;
   has?: (augment: string) => boolean;
+  showcaseRelay?: boolean;
   /** Native pointer projection/picking; returns the actual aim seen by InputController. */
   isBurning?: (id: number) => boolean;
   resolveAim?: (cursor: Point) => Point | null;
@@ -72,6 +73,8 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
     for (let i = 0; i < enemies.length; i++) {
       const enemy = enemies[i], d = distance(player, enemy);
       candidates.push(pointAt(player, angleTo(player, enemy), Math.min(range, d)));
+      if(queries.showcaseRelay&&definition.id==='napalm-charge')
+        candidates.push(pointAt(player,angleTo(player,enemy),Math.max(0,d-60)));
       if (shape.kind === 'wall') {
         // Native walls lie perpendicular to the player-to-cursor direction.
         const a = angleTo(player, enemy);
@@ -163,7 +166,9 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       queries.isBurning?.(enemy.id) && distance(player, enemy) <= range &&
       shape.kind === 'cone' && Math.abs(delta(angleTo(player, enemy), angle)) <= shape.arcRadians / 2
     ).length : 0;
-    const score=hits.length+burning*4+(riding?2:0);
+    const relay=queries.showcaseRelay&&definition.id==='napalm-charge'&&
+      enemies.some(target=>!hits.includes(target)&&hits.some(origin=>distance(origin,target)<=120&&queries.visible(origin,target)));
+    const score=hits.length+burning*4+(riding?2:0)+(relay?3:0);
     if(score>bestScore){bestScore=score;best={...cursor,angle,targets:hits.map(e=>e.id)};}
   }
   return best;
@@ -178,6 +183,7 @@ export function observeAbilityAims(game: DepthGame, enemies: readonly AimEnemy[]
     visible: (from, to) => hasClearExpeditionShot(game.geometry, from, to),
     traverse: (from, to, radius) => canTraverseExpedition(game.geometry, from, to, radius),
     has: id => game.expedition.build.mutations.includes(id as never),
+    showcaseRelay:game.node.templateId==='transmission-chamber'&&game.expedition.build.mutations.includes('ember-relay'),
     resolveAim,
     isBurning: id => game.boonStatuses(id).burning,
   };
