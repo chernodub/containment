@@ -15,7 +15,7 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; lastNapalmTick: number; ignition: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { rail: boolean; railAngle: number; railX: number; railZ: number; landed: boolean; ignition: number; live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
@@ -23,10 +23,13 @@ type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: b
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, lastNapalmTick: -Infinity, ignition: -Infinity, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ rail: false, railAngle: 0, railX: 0, railZ: 0, landed: false, ignition: -Infinity, live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
   private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
   private readonly contactJoints = new WeakMap<T.Object3D, T.Object3D[]>();
   private ghostCursor = 0;
+  private readonly selected = new Set<AbilityEvent['ability']>();
+  private readonly previouslyFrozen = new Set<number>();
+  private readonly previouslyBurning = new Set<number>();
   private receiptCursor = 0;
   private ghostClock = 0;
   private dashTime = 0;
@@ -48,6 +51,7 @@ class SystemPresentation implements AbilityPresentation {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
     const k = this.kit, color = ELEMENT_COLORS[event.element];
     if (event.phase === 'denied' || event.phase === 'ready') return;
+    if (event.phase === 'cast') this.selected.delete(event.ability);
     this.payoff.event(event, x, y);
     if (event.phase === 'cast' || event.phase === 'dash-start') { this.castAge = 0; this.castColor = color; }
     if (event.phase === 'dash-start') {
@@ -75,12 +79,19 @@ class SystemPresentation implements AbilityPresentation {
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       if (!receipt) {
         receipt = this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
-        receipt.lastNapalmTick = receipt.ignition = -Infinity;
+        receipt.ignition = -Infinity;
       }
-      if (event.ability === 'napalm-charge') {
-        // Neighboring burn zones can report hits between the native 250 ms fuel ticks.
-        if (k.time - receipt.lastNapalmTick > .38) receipt.ignition = k.time;
-        receipt.lastNapalmTick = k.time;
+      const actor = k.statusActor(id);
+      const target = this.game?.enemies.getSnapshot(id);
+      const firstBurn = event.ability === 'napalm-charge' && !this.previouslyBurning.has(id) && this.statusFor?.(id).burning;
+      const firstFreeze = event.ability === 'whiteout' && target?.type === 'crawler' && !this.previouslyFrozen.has(id) && this.statusFor?.(id).frozen;
+      const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' || event.ability === 'cryo-nova');
+      if (actor && !this.selected.has(event.ability) && (firstBurn || firstFreeze || impact)) {
+        this.selected.add(event.ability);
+        const bearing = Math.atan2(actor.root.position.z - y / UNIT, actor.root.position.x - x / UNIT);
+        actor.powerAccent?.(event.element);
+        actor.reactToElement?.(event.element === 'pyro' ? 'fire' : event.element === 'cryo' ? 'ice' : 'kinetic', bearing);
+        if (firstBurn) receipt.ignition = k.time;
       }
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
@@ -140,6 +151,13 @@ class SystemPresentation implements AbilityPresentation {
       if (ghost.age >= ghost.life) { ghost.live = false; continue; }
       this.drawGhost(ghost, (1 - ghost.age / ghost.life) * (k.low ? .25 : .42));
     }
+    this.previouslyFrozen.clear();
+    this.previouslyBurning.clear();
+    for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
+      const status = this.statusFor?.(enemy.id);
+      if (status?.frozen) this.previouslyFrozen.add(enemy.id);
+      if (status?.burning) this.previouslyBurning.add(enemy.id);
+    }
     let drawn = 0;
     const queen = g?.boss?.snapshot;
     if (queen?.active && !queen.defeated && queen.health > 0 && (!p || Math.hypot(queen.x - p.x, queen.y - p.y) <= 720)) {
@@ -180,8 +198,8 @@ class SystemPresentation implements AbilityPresentation {
       for (let i = 0; i < (k.low ? 2 : 4); i++) {
         const t = k.reducedMotion ? .55 : (k.time * 1.6 + i * .31 + enemy.id * .13) % 1;
         const a = enemy.id + i * 2.4;
-        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * .42 * (1 - t * t),
-          z + Math.sin(a) * radius * .8, .037, .063, .035, WHITE, Math.sin(t * Math.PI) * .78, a);
+        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * (.50 + t * .88),
+          z + Math.sin(a) * radius * .8, .067, .15, .065, WHITE, Math.sin(t * Math.PI) * .78, a);
       }
       k.impact();
     }
@@ -195,9 +213,9 @@ class SystemPresentation implements AbilityPresentation {
         k.impact();
         k.jointEmber(x, height * .51, z, radius * 1.45, height * .48, enemy.id, fade);
       }
-      if (k.time - receipt.ignition < .05) {
+      if (k.time - receipt.ignition < .59) {
         k.impact();
-        k.jointEmber(x, height * .42, z, radius * 1.50, height * .58, enemy.id, k.flashIntensity);
+        k.jointEmber(x, height * .53, z, radius * 1.75, height * .71, enemy.id, k.flashIntensity * Math.min(1,(.59-k.time+receipt.ignition)/.16));
       }
       if (!receipt.emitted && dt > 0) {
         receipt.emitted = true;
@@ -370,6 +388,7 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    this.selected.clear(); this.previouslyFrozen.clear(); this.previouslyBurning.clear();
     this.payoff.clear();
     this.restorePose();
     for (const ghost of this.ghosts) ghost.live = false;

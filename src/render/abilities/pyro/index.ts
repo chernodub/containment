@@ -183,10 +183,11 @@ class PyroPresentation implements AbilityPresentation {
         const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
         if (actor && lastId !== undefined && (kit.heatVictim !== lastId || kit.time >= kit.heatUntil + .25)) {
           kit.heatVictim = lastId;
-          kit.heatUntil = kit.time + .32;
+          kit.heatUntil = kit.time + .59;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
-          actor.hit?.(.68, angle);
+          actor.hit?.(.82, angle);
+          actor.powerAccent?.('pyro');
           kit.impact();
           for (let i = -1; i <= 1; i++) {
             const a = angle + i * .38;

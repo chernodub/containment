@@ -356,7 +356,10 @@ contactSkin=contactSkin && !(broodFinish && broodMark);
 #ifdef BRUTE_PLANES
 if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
 #endif
-if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
+if(actorContact.z>0. && contactSkin){
+ vec3 edge=actorContact.x<1.5?vec3(.75,1.15,1.38):actorContact.x<2.5?vec3(1.65,.53,.09):vec3(1.26,.92,.47);
+ outgoingLight+=edge*actorContact.z*(.09+.86*smoothstep(.22,.77,actorRim));
+}else if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
  float vein=sin(dot(actorPosition,vec3(1.67,.86,1.22))+.65*sin(actorPosition.z*2.1));
  float energy=smoothstep(.025,.34,actorRim)*(.26+.74*smoothstep(-.45,.58,vein));
@@ -459,7 +462,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
   return {
     strike(point:T.Vector3|undefined,strength:number){strikeLight.value.set(point?.x??0,point?.y??0,point?.z??0,point?strength:0);},
     cold(frozen:boolean,chilled:boolean){coldState.value=frozen?2:chilled?1:0;},
-    contact(kind:number,strength:number,time:number){contact.value.set(kind,strength,time);},
+    contact(kind:number,strength:number,accent:number){contact.value.set(kind,strength,accent);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
     grip(left:number,right:number,leftPeel:number,rightPeel:number,offsets:T.Vector3[]) { grip.value.set(left,right,leftPeel,rightPeel);bossPalm.value=offsets; },
