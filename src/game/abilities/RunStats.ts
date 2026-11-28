@@ -8,6 +8,7 @@ export type IncomingDamageSource = 'enemy-contact' | 'enemy-charge' | 'enemy-pro
 export type IncomingDamageOrigin = Readonly<{source: IncomingDamageSource; enemyFamily?: EnemyId}>;
 /** Actual armor/health lost, with the authoritative simulation clock and run-node id. */
 export type IncomingDamageReceipt = IncomingDamageOrigin & Readonly<{amount: number; room: string; atMs: number}>;
+type RoomLoss = Readonly<{total: number; leadingHit: IncomingDamageReceipt}>;
 export type RunStatsSnapshot = Readonly<{
   kills: Readonly<{ total: number; byFamily: Readonly<Record<EnemyId, number>> }>;
   damageDealt: Readonly<Record<DamageSource, number>>;
@@ -23,6 +24,7 @@ export type RunStatsSnapshot = Readonly<{
   lastDamage?: IncomingDamageReceipt | null;
   recentDamage?: readonly IncomingDamageReceipt[];
   selfBlastDamage?: number;
+  costliestRoom?: RoomLoss;
 }>;
 
 /** Persistence limits bound counters, room maps, and the rolling kill queue. */
@@ -53,7 +55,7 @@ function validIncoming(value: unknown): value is IncomingDamageReceipt {
 export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value is RunStatsSnapshot {
   try {
     if(!plain(value))return false;
-    const keys=Object.hasOwn(value,'selfBlastDamage')?[...KEYS,'selfBlastDamage']:KEYS;
+    const keys=[...KEYS,...['selfBlastDamage','costliestRoom'].filter(key=>Object.hasOwn(value,key))];
     if (!(exact(value, keys) || exact(value, [...keys, 'lastDamage', 'recentDamage'])) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
     if (!['damageTaken', 'shotsFired', 'shotsHit', 'overdrivesUsed', 'creditsEarned'].every(key => bounded(value[key], RUN_STATS_LIMITS.counter, key !== 'damageTaken'))) return false;
     if (Object.hasOwn(value,'selfBlastDamage')&&!bounded(value.selfBlastDamage,Number(value.damageTaken)))return false;
@@ -62,6 +64,14 @@ export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value i
     if (!plain(value.roomTimeMs)) return false;
     const rooms = Reflect.ownKeys(value.roomTimeMs);
     if (rooms.length > RUN_STATS_LIMITS.rooms || !rooms.every(key => typeof key === 'string' && roomId(key) && bounded((value.roomTimeMs as Record<string, unknown>)[key], RUN_STATS_LIMITS.timeMs))) return false;
+    if (Object.hasOwn(value, 'costliestRoom')) {
+      const loss=value.costliestRoom;
+      if(!exact(loss,['total','leadingHit'])||!validIncoming(loss.leadingHit)||
+         !rooms.includes(loss.leadingHit.room)||!bounded(loss.total,Number(value.damageTaken))||
+         Number(loss.total)<loss.leadingHit.amount||
+         loss.leadingHit.atMs>Object.values(value.roomTimeMs as Record<string,number>).reduce((sum,n)=>sum+n,0)||
+         (run&&!run.completedNodeIds.includes(loss.leadingHit.room)))return false;
+    }
     if (Object.hasOwn(value, 'lastDamage')) {
       if (value.lastDamage !== null && !validIncoming(value.lastDamage)) return false;
       if (!Array.isArray(value.recentDamage) || value.recentDamage.length > INCOMING_DAMAGE_CAPACITY || !value.recentDamage.every(validIncoming)) return false;
@@ -99,11 +109,12 @@ type MutableStats = {
   roomTimeMs: Record<string, number>;
   creditsEarned: number;
   selfBlastDamage?: number;
+  costliestRoom?: RoomLoss;
   lastDamage: IncomingDamageReceipt | null;
   recentDamage: IncomingDamageReceipt[];
 };
 const empty = (): MutableStats => ({ kills: { total: 0, byFamily: zeroRecord(FAMILIES) }, damageDealt: zeroRecord(SOURCES), damageTaken: 0, shotsFired: 0, shotsHit: 0, abilityUses: zeroRecord(SLOTS), overdrivesUsed: 0, highestMultiKill: 0, roomTimeMs: {}, creditsEarned: 0, lastDamage: null, recentDamage: [] });
-const clone = (s: RunStatsSnapshot): RunStatsSnapshot => Object.freeze({ ...s, kills: Object.freeze({ ...s.kills, byFamily: Object.freeze({ ...s.kills.byFamily }) }), damageDealt: Object.freeze({ ...s.damageDealt }), abilityUses: Object.freeze({ ...s.abilityUses }), roomTimeMs: Object.freeze({ ...s.roomTimeMs }), lastDamage: s.lastDamage ? Object.freeze({...s.lastDamage}) : null, recentDamage: Object.freeze((s.recentDamage ?? []).map(receipt => Object.freeze({...receipt}))) });
+const clone = (s: RunStatsSnapshot): RunStatsSnapshot => Object.freeze({ ...s, ...(s.costliestRoom?{costliestRoom:Object.freeze({...s.costliestRoom,leadingHit:Object.freeze({...s.costliestRoom.leadingHit})})}:{}), kills: Object.freeze({ ...s.kills, byFamily: Object.freeze({ ...s.kills.byFamily }) }), damageDealt: Object.freeze({ ...s.damageDealt }), abilityUses: Object.freeze({ ...s.abilityUses }), roomTimeMs: Object.freeze({ ...s.roomTimeMs }), lastDamage: s.lastDamage ? Object.freeze({...s.lastDamage}) : null, recentDamage: Object.freeze((s.recentDamage ?? []).map(receipt => Object.freeze({...receipt}))) });
 const increment = (current: number, amount: number, limit: number = RUN_STATS_LIMITS.counter): number => Math.min(limit, current + amount);
 
 /** Authoritative receipts accumulate using simulation time only. Snapshots stay stable until a receipt changes state. */
@@ -223,6 +234,15 @@ export class RunStats {
     this.value.recentDamage.push(receipt);
     this.cached = null;
   }
+  recordRoomLoss(total:number, origin:IncomingDamageOrigin & {amount:number}):void {
+    const last=this.value.lastDamage;
+    if(!last||last.room!==this.room||total<=(this.value.costliestRoom?.total??0))return;
+    const leadingHit={source:origin.source,...(origin.enemyFamily?{enemyFamily:origin.enemyFamily}:{}),
+      amount:origin.amount,room:last.room,atMs:last.atMs};
+    this.value.costliestRoom={total:Math.min(total,this.value.damageTaken),leadingHit};
+    this.cached=null;
+  }
+
   /** Count a fired shot (not pellets); hit receipts may arrive later through recordShotHit. */
   recordShot(hit = false): void { this.add('shotsFired', 1); if (hit) this.recordShotHit(); }
   /** Host deduplicates pellet and piercing hits per fired shot. */

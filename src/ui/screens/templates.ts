@@ -5,7 +5,7 @@ import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {GUARDIAN_ROUTES,GUARDIAN_ROUTE_DEPTH,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,TRANSFORMATIVE_AUGMENT_PAIRS,type AugmentId} from '../../game/abilities/augmentCatalog';
-import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
+import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,fieldInfirmaryHealth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
 export type {ContinueSummary} from './initialTemplates';
@@ -293,6 +293,23 @@ export function shopScreen(game: DepthGame): string {
   </section>`;
 }
 
+function orderConsequenceSketch(scene:'loader'|'perch'|'inspection'|'sterilization') {
+  if(scene==='inspection'||scene==='sterilization'){
+    const lane=scene==='inspection'?'M174 15H137L117 41m-2-10 2 10 11-2':'M59 77H102L121 53m2 11-2-11-11 2';
+    return `<svg viewBox="0 0 240 92" aria-hidden="true" style="width:100%;height:100%;background:#10222c">
+      <path d="M16 35h208v23H16zM61 9h137v21H61zM38 63h128v21H38z" fill="#2d4e5b"/>
+      <path d="M16 46h208" stroke="#648692" stroke-dasharray="5 4"/>
+      <path d="${lane}" fill="none" stroke="#ffb06f" stroke-width="3"/>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 240 92" aria-hidden="true" style="width:100%;height:100%;background:#10222c">
+    <g fill="#2d4e5b"><path d="M28 10h62v24H28zm112 0h70v24h-70zM28 62h62v20H28zm112 0h70v20h-70z"/></g>
+    <path d="M12 48h216" stroke="#648692" stroke-dasharray="5 4"/>
+    <path d="M120 13v66" stroke="#91a8ad" stroke-width="5"/>
+    ${scene==='loader'?'<path d="M82 75V31m-7 8 7-8 7 8" stroke="#ffb06f" stroke-width="3" fill="none"/><rect x="73" y="48" width="18" height="16" rx="4" fill="#ffb06f"/>':'<path d="M163 47H43m9-5-9 5 9 5" fill="none" stroke="#ffb06f" stroke-width="2"/><circle cx="163" cy="47" r="7" fill="#ffb06f"/>'}
+  </svg>`;
+}
+
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */
 export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
   const run = game.expedition.run, graph = generateRun(run.seed,run.version,run.roomOrder), count=total(game);
@@ -327,14 +344,14 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
       <h2 id="route-title">Choose which sector to face first</h2>
       <div class="route-briefing-grid">${offers.map((offer,index)=>{
         const room=offer.id==='direct'?0:1;
-        const destination=graph.nodes[junction.depth+1+room];
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option"
           data-route="${next.id}" data-detour="${offer.id}" data-inspected="${index===0}">
-          <span class="route-option-visual">${routeVignette(destination.templateId,undefined,undefined)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-visual">${junction.depth===5?orderConsequenceSketch(room===0?'loader':'perch'):orderConsequenceSketch(room===0?'inspection':'sterilization')}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(offer.name)}</strong>
             <span class="route-option-terms" data-route-term="risk">${escapeHtml(offer.risk)}</span>
             <span class="route-option-subtitle">${escapeHtml(offer.reward)}</span>
+            <span class="route-option-subtitle">${junction.consequence[room]}</span>
           </span>
         </button></div>`;
       }).join('')}</div>
@@ -343,7 +360,22 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   if (!offers.length && destinations.length===1 && !getShipCondition(game,next.depth)) {
     return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p>${guardian}<button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }
-  const workshop=game.node.depth===fieldWorkshopDepth;
+  const workshop=run.version===3&&game.node.depth===fieldWorkshopDepth;
+  const health=Math.ceil(game.combat.snapshot.health);
+  const repaired=Math.ceil(Math.min(100,game.combat.snapshot.health+fieldInfirmaryHealth));
+  const repairForecast=workshop?`<section class="repair-forecast" aria-label="Safety Interlock entry forecast">
+    <div><h3>Next hold · Safety Interlock</h3>
+      <p><b>${health} HP</b> current entry · <b>${repaired} HP</b> after infirmary repair</p>
+      <p>Watch the recorder and battery approaches.</p>
+    </div>
+    <svg viewBox="0 0 230 76" role="img" aria-label="Recorder approach from above and battery approach from below converge on the interlock hold.">
+      <path d="M6 20h60V6h164v64H66V56H6Z" fill="#18303b" stroke="#54737c"/>
+      <path d="M68 16h64l40 19m-12-1 12 1-7-9M68 60h64l40-19m-7 9 7-9-12 1" fill="none" stroke="#ffb06f" stroke-width="2"/>
+      <circle cx="187" cy="38" r="11" fill="#21434b" stroke="#98e0d8" stroke-width="2"/>
+      <circle cx="187" cy="38" r="3" fill="#98e0d8"/>
+    </svg>
+  </section>`:'';
+
   const options=offers.length
     ? offers.flatMap<{destination:typeof next;detour?:(typeof offers)[number]['id'];title:string;risk?:string;reward?:string;vignette?:string;augment?:ReturnType<typeof availableAugmentUpgrades>[number];disabled:boolean;cost?:number}>(offer=>{
       const augments=offer.id==='salvage'&&workshop?availableAugmentUpgrades(game.expedition.build):[];
@@ -360,7 +392,8 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
     ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
     ${runHeader(run)?`<p>${escapeHtml(runHeader(run)!)}</p>`:''}
-    <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
+    <h2 id="route-title">${workshop?'Field infirmary':offers.length?nextName:'Choose your next sector'}</h2>
+    ${repairForecast}
     ${offers.length&&!run.runStructure?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
     ${run.runStructure&&next.depth===3?`<p>45 CR now · 35 CR after Breached Loading Bay · 35 HP and 25 armor after Coolant Plant</p>`:''}
     ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
@@ -381,7 +414,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const threat = showOpening && (run.runStructure || game.difficulty==='story' || run.version!==3)
           ? getRouteThreat(game,destination,salvage) : undefined;
         const depth = game.node.depth;
-        const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? 35 : 0));
+        const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? fieldInfirmaryHealth : 0));
         const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
         const grenades = Math.min(6, inventory.grenades + (direct && depth === 2 ? EARLY_LOCKER.grenades : salvage && depth === 6 ? 2 : 0));
         const credits = inventory.credits + (salvage && depth === 2 ? EARLY_LOCKER.salvageCredits : 0) - (cost ?? 0);

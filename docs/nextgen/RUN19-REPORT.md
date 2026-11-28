@@ -124,3 +124,75 @@ The simulation commands use the twelve prescribed seeds independently in each St
 | Arc | 12/12 | 11/12 | 10/12 | 11/12 |
 
 [Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/summary.json) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/summary.json) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/summary.json)
+
+## RUN21 · Consequences after the reunion
+
+- Freight Hold first sends a reduced-health Brute loader through the Relay Racks approach aisle in the opening Warden exchange. Loading Bay first fields the Spitter on the shutter perch. The loader crosses open floor, while the perched gunner can be exposed by baiting the ram. The cargo cards show both positions.
+- Workshop first sends Shielding Gate's opening flank through the inspection side. Swarm first sends it through the sterilization side. The encounter redirects an existing arrival and uses the room's native approach warning. The infestation cards show the two directions.
+- The Field infirmary compares current HP with entry HP after its existing 35 HP repair, capped at 100. The interlock sketch shows the recorder and battery approaches. The workshop still spends 180 credits on an eligible augment and commits the player to its alternate approach.
+- A depleted arrival is **65 or less combined HP and armor** when the fatal room begins. The line below the exchange diagram names the previously cleared room with the largest gross suit loss and its largest recorded source. This is a damage total across that room, so it can exceed the suit carried at entry.
+
+### Checkpoint and visual verification
+
+Version 1 checkpoints may omit the new loss receipt. The default is no prior-room attribution until a completed room supplies one. A save that predates order junctions retains the canonical itinerary and the original Relay and Shielding Gate encounters. An order-enabled pre-junction save retains its unchosen order and acquires the consequence when the player chooses. The desktop Continue action on a reconstructed pre-junction Armory checkpoint entered canonical Freight Hold. [Continue arrival](../../artifacts/nextgen/run21-final-1080/run21-old-checkpoint-freight-hold.png)
+
+The staged Interlock death enters at 52 suit, after 48 suit lost to Spitter projectiles in Diagnostic Gallery. A fatal Crawler swipe triggers the results card. [Death card](../../artifacts/nextgen/run21-final-1080/run21-depleted-death.png)
+
+Both native Arc runs cleared Interlock. Seed 2718 later entered Manual Control with 30 suit and died there. Its native debrief traces the largest earlier loss to Swarm Junction, which cost 173 suit led by Stalker lunges. [Native debrief](../../artifacts/nextgen/playtest/run21-arc-2718-continued/terminal-dead.png)
+
+The production build passed and conflict-marker search was clean after merging local `nextgen` at `ec21b3da` (CONTACT36) and again at `7cddc4d1` (FX37). The frozen native runs and captures precede those presentation merges. CONTACT36 preserved the simulator bundle hash. FX37 changed the bundle's presentation code, so the Standard cohort ran again on that merge.
+
+| Evidence | Desktop capture |
+| --- | --- |
+| Cargo cards | [Freight and Loading Bay](../../artifacts/nextgen/run21-final-1080/run20-cargo.png) |
+| Infestation cards | [Workshop and Swarm](../../artifacts/nextgen/run21-final-1080/run20-infestation.png) |
+| Relay Racks | [Freight loader](../../artifacts/nextgen/run21-evidence-1080/run21-relay-racks-direct-relay-racks.png) · [Loading Bay gunner](../../artifacts/nextgen/run21-evidence-1080/run21-relay-racks-salvage-relay-racks.png) |
+| Shielding Gate | [Inspection flank](../../artifacts/nextgen/run21-hatches/run21-shielding-gate-direct-shielding-gate.png) · [Sterilization flank](../../artifacts/nextgen/run21-hatches/run21-shielding-gate-salvage-shielding-gate.png) |
+| Infirmary with focus and an eligible upgrade | [1920×1080](../../artifacts/nextgen/run21-evidence-1080/run21-forecast.png) · [1366×768](../../artifacts/nextgen/run21-evidence-768/run21-forecast.png) |
+
+The first native launch required loopback permission. The first authorized retry collided with a production rebuild and the runner exited with `ERR_HTTP_HEADERS_SENT`. The subsequent runs use a frozen distribution. I retired an early simulator comparison that used the generic simulator seed list and restarted with the historical 12-seed cohort.
+
+### Campaign measurements
+
+The cohort uses seeds 7, 11, 23, 99, 256, 512, 1024, 2025, 4096, 6561, 9001 and 65537. Standard competent samples all four rigs. Story novice samples Breacher and Cryo. Room comparisons pair visits by rig and seed and include deaths in the measured room. Gross suit loss counts health and armor spent through any repairs taken during the fight.
+
+Story novice cleared **24/24** with zero stalls. Breacher cleared 12/12 on Loading Bay and Swarm first. Cryo cleared 12/12 on Freight Hold and Workshop first. [Story cohort](../../artifacts/nextgen/playtest/run21-cohort-story/summary.json)
+
+For forced Standard orders, Freight and Workshop first cleared **38/48**. Loading Bay and Swarm first cleared **34/48**. Both recorded zero stalls.
+
+| Rig | Freight + Workshop first | Loading Bay + Swarm first |
+| --- | ---: | ---: |
+| Breacher | 8/12 | 10/12 |
+| Cryo | 10/12 | 9/12 |
+| Pyro | 11/12 | 10/12 |
+| Arc | 9/12 | 5/12 |
+
+The bot policy always chooses Loading Bay and Swarm first on Breacher, and Freight and Workshop first on Cryo and Pyro. Those policy receipts supply the matching forced-order cells. Overlapping Breacher runs matched exactly. Arc's cargo choice depends on its guardian booking and its policy picks Workshop first. Both forced Arc arms ran separately. [Breacher and Cryo policy](../../artifacts/nextgen/playtest/run21-cohort-standard-merged/summary.json) · [Pyro and Arc policy](../../artifacts/nextgen/playtest/run21-cohort-standard-merged-tail/summary.json) · [Freight / Workshop Breacher](../../artifacts/nextgen/playtest/run21-cohort-direct/summary.json) · [Freight / Workshop Arc](../../artifacts/nextgen/playtest/run21-cohort-direct-arc/summary.json) · [Loading Bay / Swarm Cryo, Pyro and Arc](../../artifacts/nextgen/playtest/run21-cohort-salvage-alternates/summary.json)
+
+| Room | Rig | Matched visits | Freight / Workshop suit lost / seconds | Loading Bay / Swarm suit lost / seconds |
+| --- | --- | ---: | ---: | ---: |
+| Relay Racks | Breacher | 12 | 47.4 / 41.7 | 33.9 / 41.5 |
+| Relay Racks | Cryo | 12 | 45.2 / 55.9 | 68.1 / 48.7 |
+| Relay Racks | Pyro | 12 | 47.6 / 41.0 | 28.4 / 41.8 |
+| Relay Racks | Arc | 12 | 19.4 / 41.0 | 19.2 / 41.2 |
+| Shielding Gate | Breacher | 10 | 45.2 / 43.0 | 45.6 / 46.4 |
+| Shielding Gate | Cryo | 8 | 46.9 / 47.6 | 59.7 / 48.2 |
+| Shielding Gate | Pyro | 11 | 41.0 / 39.6 | 38.3 / 38.5 |
+| Shielding Gate | Arc | 7 | 32.3 / 51.0 | 34.4 / 48.9 |
+
+The Relay loader cost Breacher and Pyro more suit, reduced Cryo's suit loss at the expense of time, and had a small effect on Arc's means. At Shielding Gate the inspection approach favored Cryo on both measures, while sterilization was slightly cheaper and faster for Pyro. The comparison includes each order's prior itinerary and carry-in state.
+
+The merged Standard competent policy cohort cleared **39/48**, split Breacher 10/12, Cryo 10/12, Pyro 11/12 and Arc 8/12, with zero stalls. Each rig fell in the requested band. Loading Bay first cleared 12/16 and Freight Hold first cleared 27/32. Among runs that reached the second junction, Swarm first cleared 10/12 and Workshop first cleared 29/35. One run died before choosing the second order. [Merged policy cohorts](../../artifacts/nextgen/playtest/run21-cohort-standard-merged/summary.json) · [Pyro and Arc](../../artifacts/nextgen/playtest/run21-cohort-standard-merged-tail/summary.json)
+
+### Native Arc campaigns
+
+Both seeds cleared 20/20 sectors across earned checkpoint continuations, with zero runtime errors. The first frozen attempts hit the 30-minute wall-clock limit after the Transmission clear. The 1729 continuation then died in Swarm Junction and cleared it on a replay from its earned Workshop checkpoint. The 2718 continuation died in Manual Control. It cleared Manual Control on a replay from its earned Annulus checkpoint, then died on Overload Floor. The final 2718 replay used the existing expert policy from the earned Manual Control boundary. All other segments used competent policy. Both seeds chose Workshop first, so the alternate Shielding Gate arrival is shown in the staged native encounter.
+
+| Seed | Cargo first | Relay suit lost / seconds | Shielding suit lost / seconds | Completed receipt |
+| --- | --- | ---: | ---: | --- |
+| 1729 | Freight Hold | 12.6 / 55.9 | 47.5 / 53.5 | [20/20 competent](../../artifacts/nextgen/playtest/run21-arc-1729-swarm-retry/report.json) |
+| 2718 | Breached Loading Bay | 64.4 / 38.2 | 62.8 / 54.4 | [20/20, expert finale replay](../../artifacts/nextgen/playtest/run21-arc-2718-finale-retry/report.json) |
+
+The final local integration base is `dc2fc615` (HEAVY46). Its production build passed and the conflict-marker scan was clean. The 48-run Standard rerun after FX37 produced the same 39 clears and the same room receipts in all 48 cases. The HEAVY46 merge preserved that simulator bundle, game and policy hashes. [Breacher](../../artifacts/nextgen/playtest/run21-latest-standard-breacher/summary.json) · [Cryo](../../artifacts/nextgen/playtest/run21-latest-standard-cryo/summary.json) · [Pyro](../../artifacts/nextgen/playtest/run21-latest-standard-pyro/summary.json) · [Arc](../../artifacts/nextgen/playtest/run21-latest-standard-arc/summary.json) · [HEAVY46 bundle receipt](../../artifacts/nextgen/playtest/run21-heavy46-bundle-receipt/summary.json)
+
+`df -h /Users/chernodub` reported 40 GiB available at the start and 31 GiB at handoff on the shared 926 GiB data volume. The worktree's `artifacts/nextgen/` occupied 1.1 GiB at handoff.
