@@ -675,7 +675,7 @@ export class DepthRenderer {
   const grilleGame=game as typeof game & {recoveryGrille?:import('./markers/RecoveryGrille').GrillePose};
   const sampleGrille=!Reflect.has(game,'recoveryGrille')&&game.node.templateId==='manual-control-chamber'
     ?{x:614,y:390,angle:0,state:'waiting',changedAt:0}:undefined;
-  this.floorChoiceMarkers.recovery.update(menu?undefined:grilleGame.recoveryGrille??sampleGrille,game.elapsed);
+  this.floorChoiceMarkers.recovery.update(menu?undefined:grilleGame.recoveryGrille??game.encounterHatch??sampleGrille,game.elapsed);
   this.floorChoiceMarkers.update(menu?[]:game.floorControls,game.geometry.breaches,UNIT,menu?undefined:game.siege,menu?undefined:game.relayShutterFrame,menu?undefined:game.relayShelter);
   const holdGrace=menu?undefined:(game as DepthGame & {storyHoldGrace?:StoryHoldGrace}).storyHoldGrace;
   this.floorChoiceMarkers.updateStoryHold(holdGrace,game.floorControls,UNIT,realDt,game.roomRevision);
@@ -694,7 +694,7 @@ export class DepthRenderer {
   }
   // WARN16 look-ahead precedes the existing room AABB and marine-envelope fit.
   if(!menu&&!bossWeight)hud.biasBottomThreat(this.camera,p.x/UNIT,p.y/UNIT,enemies,this.effects,this.desiredFocus,this.screenPoint,this.hudCoachedTargetId);
-  const encounterFocus=menu?undefined:game.sealedEntryBearing?.to??game.shutterCameraPoint??game.recoveryGrille??game.manualExchange?.bait;
+  const encounterFocus=menu?undefined:game.sealedEntryBearing?.to??game.shutterCameraPoint??game.encounterHatch??game.recoveryGrille??game.manualExchange?.bait;
   if(encounterFocus){
    const dx=encounterFocus.x/UNIT-this.desiredFocus.x,dz=encounterFocus.y/UNIT-this.desiredFocus.z;
    const weight=Math.min(.55,4/Math.max(1,Math.hypot(dx,dz)));

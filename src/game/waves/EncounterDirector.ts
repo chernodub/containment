@@ -49,7 +49,6 @@ export type EncounterSnapshot = Readonly<{
 import type {AugmentId} from '../abilities/augmentCatalog';
 import {GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,type GuardianRoute} from "../roguelike/economy";
 
-export const FEATURED_GUARDIAN_WINDOW_MS=22000;
 
 function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
@@ -293,7 +292,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const request=arrivals[index];
     if(request.authoredGroup===queued.authoredGroup)
      arrivals[index]=Object.freeze({...request,guardianReserveAtMs:request.atMs,
-      atMs:Math.max(request.atMs,featured.atMs+FEATURED_GUARDIAN_WINDOW_MS+650)});
+      atMs:Math.max(request.atMs,featured.atMs+22650)});
    }
   }
   if(node.templateId==='swarm-junction'){
@@ -375,7 +374,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const ingress=ranged?.breachId??ids[(rotation+beatIndex)%ids.length];
    arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:intercept-escort`,
     atMs:1800,wave:position+1,enemyId:'spitter',elite:false,breachId:ingress,beat:beatIndex,
-    grammar:beat.grammar,role:'ranged',approachLeadMs:1300,hatchDelayMs:850,interceptionEscort:true}));
+    grammar:beat.grammar,role:'ranged',approachLeadMs:1800,hatchDelayMs:350,interceptionEscort:true}));
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
@@ -593,6 +592,8 @@ export class EncounterDirector {
     let slots = Math.max(0, this.plan.concurrentCap - occupiedCount);
     while (slots>0 && this.dispatched < this.plan.totalSpawns) {
       const request = this.plan.schedule[this.dispatched];
+      if(request.guardianReserveAtMs!==undefined&&this.guardianReserveBeat===this.beatIndex&&
+        this.defeatedGuardianBeat!==this.beatIndex)break;
       const cost=request.enemyId==='carrier'?4:1;
       if (request.atMs > this.elapsedMs||cost>slots) break;
       slots-=cost;batch.push(request);
@@ -668,7 +669,13 @@ export class EncounterDirector {
       Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]:
       entries.find(entry=>entry.id===this.plan.schedule[pincer.start].breachId);
   }
+  featuredGuardianReserve(beat:number|undefined){
+    if(beat===undefined||beat!==this.beatIndex)return [];
+    const end=this.plan.beats?.[beat]?.end??this.dispatched;
+    return this.plan.schedule.slice(this.dispatched,end).filter(request=>request.guardianReserveAtMs!==undefined);
+  }
   private guardianRetreat?:{beat:number;group:number};
+  guardianReserveBeat?:number;
   private defeatedGuardianBeat?:number;
   reportFeaturedGuardianDefeated(beat:number|undefined,earned:boolean){
     if(beat===undefined||beat!==this.beatIndex)return;
@@ -677,7 +684,7 @@ export class EncounterDirector {
     const current=this.plan.beats?.[beat];
     if(!current)return;
     const queued=this.plan.schedule.slice(this.dispatched,current.end);
-    const first=queued.find(request=>!request.guardian&&request.authoredGroup!==undefined);
+    const first=queued.find(request=>request.guardianReserveAtMs!==undefined);
     if(!first||first.authoredGroup===undefined)return;
     this.guardianRetreat={beat,group:first.authoredGroup};
     return queued.filter(request=>request.authoredGroup===first.authoredGroup)
@@ -726,6 +733,8 @@ export class EncounterDirector {
       if(beat.grammar==='pincer'&&request.breachId===this.coolantEntry){
         this.dispatched++;this.canceledReinforcements++;continue;
       }
+      if(request.guardianReserveAtMs!==undefined&&this.guardianReserveBeat===this.beatIndex&&
+        this.defeatedGuardianBeat!==this.beatIndex)break;
       const cost=request.enemyId==='carrier'?4:1;
       const due=this.defeatedGuardianBeat===this.beatIndex
         ?request.guardianReserveAtMs??request.atMs
@@ -777,6 +786,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.guardianRetreat=undefined;this.defeatedGuardianBeat=undefined;this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.workshopRelief=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.guardianRetreat=undefined;this.guardianReserveBeat=undefined;this.defeatedGuardianBeat=undefined;this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.workshopRelief=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }

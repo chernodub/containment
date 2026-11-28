@@ -246,7 +246,7 @@ export function chooseTarget(enemies, player, weaponRange = 0) {
     const punish = e => !e.champion && e.exposedMs >= 150 && distance(e, player) <= weaponRange &&
       (e.type === 'brute' || e.type === 'carrier' || e.type === 'stalker');
     const cancel = e => !!e.reserveLeader && distance(e, player) <= Math.min(weaponRange, 480);
-    return Number(punish(b)) - Number(punish(a)) || Number(cancel(b)) - Number(cancel(a)) || score(b) - score(a) || a.id - b.id;
+    return Number(!!b.interceptionEscort)-Number(!!a.interceptionEscort) || Number(punish(b)) - Number(punish(a)) || Number(cancel(b)) - Number(cancel(a)) || score(b) - score(a) || a.id - b.id;
   })[0];
 }
 /** Score legal movement endpoints for spacing, fire lanes and hazard avoidance. */

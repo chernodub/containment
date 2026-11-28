@@ -184,6 +184,11 @@ export function runSimulation(options: SimOptions) {
         if(room?.id==='transmission-chamber'&&e.ability?.transformation){
             room.transformedHits=(room.transformedHits??0)+1;
         }
+        if(room&&e.type==='spitter-escort-arrived')room.spitterEscort={id:e.id,fired:false,intercepted:false};
+        if(room?.spitterEscort&&e.id===room.spitterEscort.id){
+            if(e.type==='enemy-attack')room.spitterEscort.fired=true;
+            if(e.type==='corpse')room.spitterEscort.intercepted=!room.spitterEscort.fired;
+        }
         if(room&&e.type==='recovery-grille-closed'){
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
@@ -272,7 +277,7 @@ export function runSimulation(options: SimOptions) {
     let committedToCover=false;
     function snapshot() {
         const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => canTraverseExpedition(game.geometry, from, { x, y }, weaponCatalog[game.combat.snapshot.weaponId].projectileRadius);
-        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,vulnerable:!game.isShutterProtected(e.id), clear: clear(e.x, e.y), plasmaClear:canTraverseExpedition(game.geometry,game.player,e,weaponCatalog.plasma.projectileRadius), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
+        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,interceptionEscort:game.isCrossingEscort(e.id),vulnerable:!game.getEscortRetreat(e.id)&&!game.isShutterProtected(e.id), clear: clear(e.x, e.y), plasmaClear:canTraverseExpedition(game.geometry,game.player,e,weaponCatalog.plasma.projectileRadius), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];

@@ -163,7 +163,10 @@ export class PincerPresentation {
     const bearing=menu?undefined:game.sealedEntryBearing;
     const closed=bearing&&game.geometry.breaches.find(breach=>breach.x===bearing.to.x&&breach.y===bearing.to.y);
     const cutAge=bearing?Math.max(0,2-bearing.until+game.elapsed):0;
-    this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:game.delayedPincerHatch,unit,closed?cutAge:undefined);
+    const reversal=game.rehearsalHatchReversal;
+    this.updateDelayedGate(menu?undefined:closed?{breach:closed,arrivals:[4150]}:reversal?{
+      breach:reversal.breach,arrivals:[Math.min(650,reversal.remainingMs+reversal.age*2200)]
+    }:game.delayedPincerHatch,unit,closed?cutAge:undefined);
     const bend=menu?undefined:game.queuedReserveBend;
     if(bend){
       if(!this.queuedBend){this.queuedBend=this.makeWaitingCreature();this.root.add(this.queuedBend);}
@@ -222,7 +225,8 @@ export class PincerPresentation {
       root.visible=index<grille.escorts&&grille.state!=='entered';
       const recoil=grille.state==='closed'?Math.min(.2,age*2)*Math.exp(-age*5):0;
       const leave=grille.state==='closed'?Math.max(0,age-1.5)*2.5:0;
-      const push=.10*Math.sin(age*12+index*1.8);
+      const push=(grille.laneOccupied?.32:0)+.10*Math.sin(age*12+index*1.8);
+      root.rotation.z=grille.laneOccupied?-.18:0;
       root.position.set(-.83-recoil-leave+push,0,(index-(grille.escorts-1)/2)*1.55);
     });
   }

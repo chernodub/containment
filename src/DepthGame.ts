@@ -31,7 +31,7 @@ import {QueenBossSystem,type QueenBossEvent} from './game/enemies/QueenBossSyste
 import {ENEMIES,enemyBodyRadius} from './game/enemies/catalog';
 import type {StandardEnemyId} from './game/enemies/types';
 import {PickupSystem} from './game/pickups/PickupSystem';
-import {EncounterDirector,FEATURED_GUARDIAN_WINDOW_MS,type EncounterEvent} from './game/waves/EncounterDirector';
+import {EncounterDirector,type EncounterEvent} from './game/waves/EncounterDirector';
 import {FacilityNavigation} from './game/world/FacilityNavigation';
 import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot,clipExpeditionLane} from './game/world/expeditionGeometry';
 import {rerollExpedition,createExpedition,completeExpeditionRoom,claimExpeditionMutation,claimExpeditionResources,chooseExpeditionRoute,defeatExpedition,restoreExpedition,type Expedition,type ExpeditionStartOptions} from './game/roguelike/expedition';
@@ -48,7 +48,7 @@ import {RoomConditionRuntime,onConditionZone} from './game/roguelike/RoomConditi
 import {shipCondition,isJunction,BROOD_HATCH_MS,CONDITION_LIGHT_RADIUS} from './game/roguelike/shipConditions';
 import {storyOpening} from './game/waves/authoredEncounters';
 import type {WeaponId} from './game/combat/types';
-export type GameEffect={grilleEscorts?:number;arrivalSwing?:'strike'|'recovery';reserveCut?:{count:number;family:StandardEnemyId;closedEntry?:string};shutterBroken?:true;plateBroken?:true;exposedHit?:true;floorChoice?:string;planReaction?:true;selfBlast?:{distance:number;radius:number};incomingSource?:IncomingDamageOrigin['source'];encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'story-hold-grace'|'recovery-grille-closed'|'recovery-escort-entered'|'ability'|'melee-miss'|'recovery-stagger'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'ambush'|'enemy-attack'|'enemy-warning'|'arrival-recovery'|'arrival-wound'|'reserve-cut'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
+export type GameEffect={grilleEscorts?:number;arrivalSwing?:'strike'|'recovery';reserveCut?:{count:number;family:StandardEnemyId;closedEntry?:string};shutterBroken?:true;plateBroken?:true;exposedHit?:true;floorChoice?:string;planReaction?:true;selfBlast?:{distance:number;radius:number};incomingSource?:IncomingDamageOrigin['source'];encounterCue?:'flank'|'crossfire'|'priority'|'escort-broken'|'pincer-broken';cueX?:number;cueY?:number;meleeShape?:MeleeStrikeShape;dangerWeight?:'low';sourceX?:number;sourceY?:number;ability?:AbilityEvent;damage?:number;lethal?:boolean;source?:DamageSource;impulse?:number;contact?:'damage'|'armor'|'blocked';rocketUnarmed?:true;wall?:{x:number;y:number};shotId?:string;type:'spitter-escort-arrived'|'guardian-reserve-committing'|'guardian-reserve-held'|'story-hold-grace'|'recovery-grille-closed'|'recovery-escort-entered'|'ability'|'melee-miss'|'recovery-stagger'|'wall-slam'|'shot'|'hit'|'corpse'|'explosion'|'acid'|'hurt'|'pickup'|'sync-corpse'|'ambush'|'enemy-attack'|'enemy-warning'|'arrival-recovery'|'arrival-wound'|'reserve-cut'|'boon';boon?:BoonEffect;elements?:readonly ('ice'|'poison'|'fire')[];x:number;y:number;id?:number;vx?:number;vy?:number;radius?:number;weapon?:WeaponId;family?:StandardEnemyId;elite?:boolean;angle?:number;targetId?:number;targetX?:number;targetY?:number;durationMs?:number};
 export type GameInput={x:number;y:number;fire:boolean;angle:number|null;autoAim:boolean;aimPoint?:{x:number;y:number}|null};
 export type Bullet={hostileOwner?:number;preview?:true;previewAt?:number;sourceX?:number;sourceY?:number;visualMuzzle?:{x:number;y:number;z:number;distance:number};x:number;y:number;life:number;kind:'player'|'grenade'|'hazard';request:ProjectileRequest;tracker:ProjectileHitTracker;hitReceipt?:{hit:boolean}};
 export type Pool={id:number;x:number;y:number;radius:number;life:number;warning:number;damage:number;tick:number;spitterOpening?:true};
@@ -121,6 +121,8 @@ export class DepthGame {
    const {attackStarted:_,...visible}=grille;
    return {...visible,
     returnPosition:this.delayRecoveryEscort?this.consoleExchange?.landing:undefined,
+    laneOccupied:this.delayRecoveryEscort&&this.consoleExchange!==undefined&&
+      Math.hypot(this.player.x-this.consoleExchange.landing.x,this.player.y-this.consoleExchange.landing.y)<=62,
     returnArcCosine:this.recoveryGrilles==='staged-arc'?Math.cos(Math.PI/6):undefined,
     returnRange:this.recoveryGrilles===true?176:undefined,returnHalfWidth:64,
     returnAisleSide:this.recoveryGrilles==='staged-side'&&!this.delayRecoveryEscort};
@@ -154,14 +156,11 @@ export class DepthGame {
   if(!grille||grille.state!=='waiting')return;
   grille.state=closed?'closed':'entered';grille.changedAt=this.elapsed;
   if(closed){
-   this.director.reportRecoveryGrilleClosed(this.delayRecoveryEscort);
-   this.pending=this.pending.filter(spawn=>!spawn.grilleEscort||this.delayRecoveryEscort&&spawn.grilleDelayedEscort);
-   for(const escort of this.pending){
-    if(escort.grilleDelayedEscort)escort.delay=Math.max(escort.delay,3000);
-   }
+   this.director.reportRecoveryGrilleClosed(false);
+   this.pending=this.pending.filter(spawn=>!spawn.grilleEscort);
   }
   this.presentation.push({type:closed?'recovery-grille-closed':'recovery-escort-entered',
-   x:grille.x,y:grille.y,angle:grille.angle,grilleEscorts:closed&&this.delayRecoveryEscort?1:grille.escorts});
+   x:grille.x,y:grille.y,angle:grille.angle,grilleEscorts:grille.escorts});
  }
  private tickRecoveryGrille(){
   const grille=this.recoveryGrilleState;
@@ -186,7 +185,7 @@ export class DepthGame {
  private cleanupElapsed=0;
  private breakAnnounced=false;
  private broodPodsDestroyed=0;
- private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;chilledArrival?:true;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;grilleDelayedEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
+ private director:EncounterDirector;private mutations:MutationRuntime;private pending:Array<{type:StandardEnemyId;x:number;y:number;elite:boolean;delay:number;guardian?:'warden'|'matron';options?:EnemySpawnOptions;shutterSpitter?:true;approachLeadMs?:number;chilledArrival?:true;crossingEnd?:{x:number;y:number};interceptionEscort?:true;delayedHatch?:string;clutchHoldUntil?:number;consoleHold?:true;grilleEscort?:true;grilleDelayedEscort?:true;attempts?:number}>=[];private clearRequested=false;private bossSlow=1;private hurtCooldown=0;private heavyHitGrace=0;private recentHits:{at:number;damage:number}[]=[];private emergencyUsed=false;private poolId=0;private suppressSave=false;
  constructor(readonly emit:(e:GameEffect)=>void=()=>{},readonly storage:StorageLike|null=null,private readonly grilleOverride?:boolean|'release-only'|'staged-arc'|'staged-side'){
   if(!storage)this.checkpointState='unavailable';
   this.expedition=createExpedition(1729,this.combat.getRunResources());this.node=this.findNode();this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.director=this.makeDirector();this.mutations=this.makeMutations();this.abilities=this.makeAbilities();this.abilities.setRig('breacher');Object.assign(this.player,this.geometry.playerSpawn);
@@ -270,6 +269,7 @@ export class DepthGame {
  }
  private featuredVolleyUsed=false;
  private earlyPressureAt: number|undefined;
+ private earlyHatchReversed?:{breach:ReturnType<typeof createExpeditionGeometry>['breaches'][number];at:number;remainingMs:number};
  private earlyPressureFollow?:{x:number;y:number;shooter:number;at:number;hatch?:string};
  private stageEarlyPressure(firstLane?:{x:number;y:number;hatch?:string}){
   this.earlyPressureAt=Infinity;
@@ -453,6 +453,18 @@ export class DepthGame {
    return [...this.relayBanks.map((point,index)=>({...point,id:String(index),kind:'bank' as const,radius:68})),
     ...(this.crossingRequired?[{...this.siegePoint,id:'failed-bank',kind:'failed-bank' as const,radius:220}]:[])];
   return [];
+ }
+ get encounterHatch(){
+  const reserve=this.guardianReserve;
+  if(reserve)return {x:reserve.breach.x,y:reserve.breach.y,angle:reserve.breach.facing==='east'?0:Math.PI,
+   state:reserve.heldAt===undefined?'waiting':'closed',changedAt:reserve.heldAt??reserve.committedAt};
+  const retreat=this.guardianIngressClosure;
+  if(retreat)return {x:retreat.effect.x,y:retreat.effect.y,angle:retreat.effect.angle??0,
+   state:'waiting',changedAt:retreat.at-1.9};
+ }
+ get rehearsalHatchReversal(){
+  const hatch=this.earlyHatchReversed;
+  if(hatch&&this.elapsed<hatch.at+1.1)return {...hatch,age:this.elapsed-hatch.at};
  }
  get delayedPincerHatch(){
   const arrivals=this.pending.filter(spawn=>spawn.delayedHatch!==undefined);
@@ -655,7 +667,7 @@ export class DepthGame {
   this.newRun(undefined,{rig:build.rig,difficulty:this.difficulty,version:run.version,startingBoon:run.version===3?build.mutations[0]:undefined});
   return true;
  }
- private enterRoom(start=true){this.guardianGroundUntil=0;this.guardianIngressClosure=undefined;this.escortInterceptUntil=0;this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollow=undefined;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
+ private enterRoom(start=true){this.guardianReserve=undefined;this.guardianGroundUntil=0;this.guardianIngressClosure=undefined;this.escortInterceptUntil=0;this.spitterCrossing=undefined;this.consoleRelease=0;this.recoveryGrilleState=undefined;this.consoleExchange=undefined;this.broodStarted.clear();this.protectedStatuses.clear();this.protectedDamage.clear();this.exchangeHistory.clear();this.finalExchange=undefined;this.featuredVolleyUsed=false;this.earlyPressureAt=undefined;this.earlyPressureFollow=undefined;this.earlyHatchReversed=undefined;this.residentialLane=undefined;this.broodSupply=undefined;this.broodChoiceUsed=false;this.broodMarksShownAt=undefined;this.coverPreview=undefined;this.rackShutter=undefined;this.shaftApproach=undefined;this.shaftIngress=undefined;this.relayHeavyRecovered=this.relayHeavyRecovering=false;this.plateRifleHits=0;this.relayCrossfire=false;this.relayVolleyId=undefined;this.hiddenEnemiesMs=0;this.roomStartCredits=this.combat.snapshot.credits;this.usedContractMedkit=false;this.dodgeDrill=null;this.rigDrill=null;this.departures.clear();this.coverLesson=undefined;this.lastAbilityReady={};this.abilitySampleAt=-Infinity;this.deathReadySlot=undefined;this.platedLessonTarget=undefined;this.promptedWeapons=0;this.weaponLesson=undefined;this.stagedCover.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.lastPriorityPoint=undefined;this.broodPodsDestroyed=0;this.broodCollapse=undefined;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.relayBank=undefined;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();
  this.gateStaged=false;this.holdTeachingUntil=0;this.holdTeachingGraceUntil=0;this.holdCornerDashUsed=false;this.heldSiegeBeat=-1;this.gateHold=undefined;this.gateGraceUntil=0;this.gatePreviousStrikes.clear();this.bruteIngress.clear();
  this.gatePads=this.node.templateId==='safety-interlock-station'?floorChoicePair(this.geometry,this.geometry.playerSpawn,p=>this.navigation.reachable(p),64,128):[];
  this.relayBanks=[];this.relayRoutes=[];this.relayShelterStep=undefined;
@@ -836,7 +848,7 @@ export class DepthGame {
   return !!this.coverLesson&&!this.coverLesson.learned&&this.enemies.snapshot.enemies.some(enemy=>enemy.type==='spitter');
  }
  get escortExitOpen(){return this.status==='playing'&&this.clearRequested&&[...this.departures.values()].some(departure=>departure.escort);}
- get encounterObjective(){if(this.status!=='playing')return '';if(this.elapsed<this.guardianGroundUntil)return this.guardianIngressClosure?'Escort retreating · cross the lane':'Ingress sealed · cross the lane';if(this.delayRecoveryEscort&&this.recoveryGrille?.state==='waiting')return 'Use the console as cover against the escort, or round the corner and shoot the recovering Brute';if(this.elapsed<this.escortInterceptUntil)return 'Spitter escort incoming · intercept it at the marked hatch';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const {pincer,reserve}=this.encounter;if(reserve)return `Reserve breach · ${Math.ceil(reserve.remainingMs/1000)}s · Kill the marked ${reserve.leader}`;if(this.floorControls.some(pad=>pad.kind==='gate'))return 'Hold either floor control to seal its flank';if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.choosing)return 'Relay bank failing · Short · exposed / Long · covered';if(this.relayCoverPreview)return 'Next bank · Short · exposed / Long · covered';if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(this.relayShutter&&threats.some(enemy=>enemy.champion==='warden'))return 'Rack shutter · Bait the Warden’s ram into the marked panel';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if(this.node.templateId==='overload-floor'&&!siege&&!(encounter.lullRemainingMs??0)&&this.hiddenEnemiesMs>=10000)return 'Sweep around the reactor to reach the remaining attackers';if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
+ get encounterObjective(){if(this.status!=='playing')return '';if(this.elapsed<this.guardianGroundUntil)return this.guardianIngressClosure?'Escort retreating · cross the lane':'Ingress sealed · cross the lane';if(this.guardianReserve)return this.guardianReserve.heldAt!==undefined?'Escort held at the hatch · finish the guardian':'Escort at the hatch · interrupt the guardian';if(this.delayRecoveryEscort&&this.recoveryGrille?.state==='waiting')return 'Use the console as cover against the escort, or round the corner and shoot the recovering Brute';if(this.elapsed<this.escortInterceptUntil)return 'Spitter escort incoming · intercept it at the marked hatch';if(this.escortExitOpen)return 'Exit open · escorts retreating';if(this.dodgeDrill)return this.dodgeDrill.confirmation>0?'Punished · 20 CR':(this.dodgeDrill.caught?'Practice strike — no damage. Step across the red edge sooner, then shoot the recovering body.':'Bonus drill · 20 CR — Step across the red edge, then shoot the recovering body.');if(this.rigDrill)return this.rigDrill.won?'Augment demonstrated · 15 CR':RIG_DRILL_PROMPTS[this.rigDrill.augment]??'';if(this.director.objectiveBroken)return this.encounter.grammar==='pincer'?'PINCER BROKEN — flank sealed':'Escort is breaking';const {pincer,reserve}=this.encounter;if(reserve)return `Reserve breach · ${Math.ceil(reserve.remainingMs/1000)}s · Kill the marked ${reserve.leader}`;if(this.floorControls.some(pad=>pad.kind==='gate'))return 'Hold either floor control to seal its flank';if(pincer?.state==='staging')return `Flank massing · ${Math.ceil(pincer.remainingMs/1000)}s to break the screen`;if(pincer?.state==='open')return 'Flank gate open';const siege=this.siege;if(siege){if(siege.choosing)return 'Relay bank failing · Short · exposed / Long · covered';if(this.relayCoverPreview)return 'Next bank · Short · exposed / Long · covered';if(siege.remainingMs<=0)return 'Relay charged — clear the remaining attackers.';return `${Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius?'Hold':'Reach'} the exit relay: ${Math.ceil(siege.remainingMs/1000)}s charge remaining.`;}const brood=this.broodInterruption;if(brood)return brood.canceled?`BROOD INTERRUPTED — ${brood.canceled} arrivals stopped`:'BROOD INTERRUPTED — punish the Matron';const threats=this.enemies.snapshot.enemies;if(threats.some(enemy=>enemy.champion==='warden'&&(enemy.stunRemainingMs??0)>0))return 'Warden stunned by the wall — punish the opening.';if(this.relayShutter&&threats.some(enemy=>enemy.champion==='warden'))return 'Rack shutter · Bait the Warden’s ram into the marked panel';if(threats.some(enemy=>enemy.champion==='matron'&&(enemy.broodRemainingMs??0)>0))return 'Matron is brooding — focus fire to interrupt.';if(threats.some(enemy=>enemy.pod))return 'Destroy the brood pods before they hatch.';const encounter=this.director.snapshot;if(this.node.templateId==='overload-floor'&&!siege&&!(encounter.lullRemainingMs??0)&&this.hiddenEnemiesMs>=10000)return 'Sweep around the reactor to reach the remaining attackers';if((encounter.canceledReinforcements??0)>0&&!(encounter.lullRemainingMs??0))return `Reinforcements stopped · ${encounter.canceledReinforcements} arrivals canceled`;return (encounter.lullRemainingMs??0)>0?`Regroup · next wave in ${Math.ceil(encounter.lullRemainingMs!/1000)}s`:(encounter.beatLabel??'');}
  private storySkipped=false;
  get storyPresentation(){return this.storySkipped?undefined:this.storyRoom?.story;}
  skipStory(){this.storySkipped=true;}
@@ -906,8 +918,8 @@ export class DepthGame {
  private readonly shotRadii = new Map<number, number>();
  private readonly previousTargetBuffer: {x:number;y:number}[] = [];
  private targetCache:MutationTarget[]|null=null;private targetSnapshot:unknown;
- targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
- private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={},shutterSpitter?:true,approachLeadMs?:number,chilledArrival?:true){
+ targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.filter(e=>!this.guardianReserve?.ids.includes(e.id)).map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:this.expedition.run.version===3?!!e.controlResistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
+ private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian?:'warden'|'matron',options:EnemySpawnOptions={},shutterSpitter?:true,approachLeadMs?:number,chilledArrival?:true,crossingEnd?:{x:number;y:number},interceptionEscort?:true){
   if(this.storyFirstHold&&this.siegeRemainingMs>8000)elite=false;
   const radius=guardianRadius(guardian,enemyBodyRadius(type,elite)),origin=options.podOrigin;
   const checkIngress=this.expedition.run.version===3&&type==='brute'&&!guardian;
@@ -948,6 +960,13 @@ export class DepthGame {
       const target=this.targets().find(enemy=>enemy.id===result.enemy.id);
       if(target)this.applyRigStatus(target,'chill',1);
      }
+     if(interceptionEscort){
+      this.presentation.push({type:'spitter-escort-arrived',id:result.enemy.id,family:'spitter',x:p.x,y:p.y});
+     }
+     if(crossingEnd){
+      this.spitterCrossing={id:result.enemy.id,end:crossingEnd,until:this.elapsed+1.8};
+      this.enemies.stagger(result.enemy.id,250);
+     }
      if(approachLeadMs)this.shaftApproach={id:result.enemy.id,readyAt:this.elapsed+approachLeadMs/1000};
      if(options.closeIngress||options.lesson==='stalker'&&this.node.templateId==='residential-gallery'){
       const aim=options.baitAim?{...this.player,...options.baitAim}:this.player;
@@ -955,7 +974,7 @@ export class DepthGame {
      }
      if(guardian){
       this.enemies.promote(result.enemy.id,guardian);
-      this.featuredGuardianAppearedAt=this.elapsed;
+      this.commitGuardianReserve(result.enemy.id,options.beat,p);
      }
      if(this.rackShutter&&guardian==='warden')this.rackShutter.wardenId=result.enemy.id;
      if(options.broodDestination&&this.enemies.snapshot.enemies.filter(enemy=>enemy.broodDestination).length>=2)
@@ -964,7 +983,7 @@ export class DepthGame {
       const pickup=this.pickups.spawn('armor',35,p.x+Math.cos(Math.atan2(this.player.y-p.y,this.player.x-p.x))*28,p.y+Math.sin(Math.atan2(this.player.y-p.y,this.player.x-p.x))*28);
       if(pickup.spawned)this.broodSupply={pod:result.enemy.id,pickup:pickup.pickup.id};
      }
-     if(type==='spitter'&&!options.openingVolley&&this.crawlerPressureRoom&&!this.featuredVolleyUsed&&
+     if(type==='spitter'&&!interceptionEscort&&!options.openingVolley&&this.crawlerPressureRoom&&!this.featuredVolleyUsed&&
       canTraverseExpedition(this.geometry,p,this.player,SPITTER_PROJECTILE_RADIUS)){
       this.featuredVolleyUsed=true;
       this.enemyEvents(this.enemies.startOpeningVolley(result.enemy.id,this.player));
@@ -1035,7 +1054,7 @@ export class DepthGame {
  if(e.beat===0&&this.earlyPressureAt===undefined&&this.difficulty==='standard'&&
   this.node.depth>=2&&this.node.depth<=7)this.earlyPressureAt=this.elapsed+1.6;
  const chosen=this.geometry.breaches.find(b=>b.id===e.breachId)??this.geometry.breaches[0];
- if(e.interceptionEscort)this.escortInterceptUntil=this.elapsed+2.8;
+
  let x=chosen.x+(chosen.facing==='east'?56:-56),y=chosen.y;
  let openingVolley:EnemySpawnOptions['openingVolley'];
  if(this.node.templateId==='relay-racks'&&e.guardian==='warden'){
@@ -1044,7 +1063,7 @@ export class DepthGame {
  }
  if(e.shutterSpitter)({x,y}=RELAY_RACKS_SHUTTER_SPITTER);
  if(e.cargoLoader)({x,y}={x:465,y:565});
- if(!e.shutterSpitter&&e.enemyId==='spitter'&&(!this.coverLesson||this.coverLesson.learned)){
+ if(!e.interceptionEscort&&!e.shutterSpitter&&e.enemyId==='spitter'&&(!this.coverLesson||this.coverLesson.learned)){
   const covers=(ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[]).filter(rect=>!this.stagedCover.has(rect));
   const lesson=stageCoverLesson(this.geometry,covers,this.player);
   if(lesson){
@@ -1231,6 +1250,19 @@ export class DepthGame {
    }
   }
  }
+ let crossingEnd:{x:number;y:number}|undefined;
+ if(e.interceptionEscort){
+  this.escortInterceptUntil=this.elapsed+3.4;
+  const radius=enemyBodyRadius(e.enemyId,e.elite);
+  for(const offset of [0,.5,-.5,1,-1,1.5,-1.5,Math.PI]){
+   const angle=this.player.angle+offset,fx=Math.cos(angle),fy=Math.sin(angle);
+   const start={x:this.player.x+fx*172+fy*65,y:this.player.y+fy*172-fx*65};
+   const end={x:start.x-fy*138,y:start.y+fx*138};
+   if(!canTraverseExpedition(this.geometry,start,end,radius)||
+    !hasClearExpeditionShot(this.geometry,this.player,start)||!hasClearExpeditionShot(this.geometry,this.player,end))continue;
+   ({x,y}=start);crossingEnd=end;break;
+  }
+ }
  const guardian=e.guardian??(this.expedition.run.version!==3&&progressionFor(this.node).guardian&&e.spawnId.endsWith('spawn-0')?(progressionFor(this.node).guardianKind??undefined):undefined);
   if(guardian==='warden'&&this.expedition.run.version===3&&!this.relayShutter){
    const stage=wardenOpeningSpawn(this.geometry,this.player,Math.atan2(y-this.player.y,x-this.player.x),this.enemies.snapshot.enemies);
@@ -1245,8 +1277,7 @@ export class DepthGame {
    changedAt:this.elapsed,expiresAt:this.elapsed+7};
  }
  const grilleClosed=this.recoveryGrilleState?.state==='closed';
- const delayedEscort=this.delayRecoveryEscort&&e.grilleDelayedEscort;
- if(e.grilleEscort&&grilleClosed&&!delayedEscort)continue;
+ if(e.grilleEscort&&grilleClosed)continue;
  if(e.thresholdEscort&&this.recoveryGrilleState){
   const grille=this.recoveryGrilleState;
   const point={x:grille.x-Math.cos(grille.angle)*26,y:grille.y-Math.sin(grille.angle)*26};
@@ -1256,7 +1287,7 @@ export class DepthGame {
   const grille=this.recoveryGrilleState;
   ({x,y}={x:grille.x+Math.cos(grille.angle)*24,y:grille.y+Math.sin(grille.angle)*24});
  }
- this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:delayedEscort&&grilleClosed?3000:650+consoleApproachMs+(e.hatchDelayMs??0),consoleHold:e.thresholdEscort?undefined:e.grilleEscort&&!this.recoveryGrilleState?e.consoleHold:e.grilleEscort?undefined:e.consoleHold,grilleEscort:e.grilleEscort,grilleDelayedEscort:delayedEscort?true:undefined,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,chilledArrival:e.augmentPosition==='approach'&&this.transmissionAugment==='shard-harvest'?true:undefined,options:{closeIngress:firstHeavy||!!e.grilleLead||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:e.lesson==='brute'&&this.node.templateId==='passenger-vault'?.3:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.grilleLead?1900:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+consoleApproachMs+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank||e.fixedIngress||e.cargoLoader?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:firstHeavy||e.cargoLoader||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:firstHeavy||e.cargoLoader||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
+ this.pending.push({type:guardian?(guardian==='matron'?'carrier':'brute'):e.enemyId,x,y,elite:e.elite,delay:650+consoleApproachMs+(e.hatchDelayMs??0),consoleHold:e.thresholdEscort?undefined:e.grilleEscort&&!this.recoveryGrilleState?e.consoleHold:e.grilleEscort?undefined:e.consoleHold,grilleEscort:e.grilleEscort,delayedHatch:e.hatchDelayMs?chosen.id:undefined,clutchHoldUntil:e.afterMarkedClutch?this.elapsed+4:undefined,guardian,crossingEnd,interceptionEscort:e.interceptionEscort,shutterSpitter:e.shutterSpitter,approachLeadMs:e.approachLeadMs,chilledArrival:e.augmentPosition==='approach'&&this.transmissionAugment==='shard-harvest'?true:undefined,options:{closeIngress:e.interceptionEscort||firstHeavy||!!e.grilleLead||e.consoleLead||e.lesson==='brute'&&this.node.templateId==='passenger-vault',lessonDamageScale:e.lesson==='brute'&&this.node.templateId==='passenger-vault'?.3:this.node.depth>=1&&this.node.depth<=3&&(e.lesson||firstHeavy)?.65:undefined,baitAim:e.consoleLead?this.consoleExchange?.bait:undefined,recoveryFloorMs:e.grilleLead?1900:undefined,openingVolley,healthScale:e.healthScale,role:e.role,priority:e.priority,controlResistant:e.controlResistant,beat:e.beat,lesson:e.lesson}});this.presentation.push({type:'enemy-warning',x,y,radius:38,durationMs:650+consoleApproachMs+(e.hatchDelayMs??0),encounterCue:e.hatchDelayMs||e.relievedFlank||e.fixedIngress||e.cargoLoader?'flank':e.grammar==='interception'&&e.role==='flanker'?'flank':e.grammar==='crossfire'&&e.role==='ranged'?'crossfire':undefined,cueX:e.interceptionEscort||firstHeavy||e.cargoLoader||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?x:chosen.x,cueY:e.interceptionEscort||firstHeavy||e.cargoLoader||e.rehearsalFlank||e.openingExchange||galleryOpening||shaftLanding?y:chosen.y});}else if(e.type==='boss-start')this.boss.start(this.geometry.bossSpawn.x,this.geometry.bossSpawn.y);else if(e.type==='room-clear'){if(this.node.kind==='boss')this.clearRequested=true;else if(!this.startAwakeningDrill())this.clearRoom();}}}
  private dodgeDrill: {id:number; entered:boolean; evaded:boolean; confirmation:number; caught?:number} | null = null;
  get awakeningDrill(){return this.dodgeDrill ? Object.freeze({...this.dodgeDrill}) : null;}
  skipAwakeningDrill(){if(this.status!=='playing')return;if(this.rigDrill&&!this.rigDrill.won)this.finishRigDrill();else if(this.dodgeDrill&&!this.dodgeDrill.confirmation)this.clearRoom();}
@@ -1348,28 +1379,64 @@ export class DepthGame {
  private relayHeavyRecovered=false;
  private relayHeavyRecovering=false;
  private escortInterceptUntil=0;
+ private spitterCrossing?:{id:number;end:{x:number;y:number};until:number};
  private guardianGroundUntil=0;
  private guardianIngressClosure?:{at:number;effect:GameEffect};
- private featuredGuardianAppearedAt=0;
- private guardianGround(guardian:'warden'|'matron',id:number,beat:number|undefined){
-  const room=this.node.templateId;
-  if(room!=='coolant-plant'&&room!=='swarm-junction')return;
-  const damage=[...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);
-  const interrupted=room==='coolant-plant'||guardian==='matron'&&this.broodCollapse?.id===id;
-  const earned=interrupted&&(this.elapsed-this.featuredGuardianAppearedAt)*1000<=FEATURED_GUARDIAN_WINDOW_MS&&damage<=32;
-  const queued=this.director.reportFeaturedGuardianDefeated(beat,earned);
-  if(!queued?.length)return;
-  const breach=this.geometry.breaches.find(point=>point.id===queued[0].breachId);
-  if(!breach)return;
-  this.guardianGroundUntil=this.elapsed+3.5;
-  queued.forEach((request,index)=>{
-   const x=breach.x+(breach.facing==='east'?1:-1)*(76+index*22);
-   const y=breach.y+(index%2?1:-1)*index*12;
-   if(!canOccupyExpedition(this.geometry,{x,y},enemyBodyRadius(request.enemyId,false)))return;
-   const result=this.enemies.spawn(request.enemyId,x,y,false);
-   if(result.spawned)this.departures.set(result.enemy.id,{ms:1900,breach,escort:true});
+ private guardianReserve?:{guardian:number;heldAt?:number;breach:{x:number;y:number;facing:string};ids:number[];committedAt:number};
+ private commitGuardianReserve(id:number,beat:number|undefined,guardian:{x:number;y:number}){
+  const queued=this.director.featuredGuardianReserve(beat);
+  if(beat===undefined||!queued.length)return;
+  const point=(breach:{x:number;y:number;facing:string},depth:number,offset:number)=>({
+   x:breach.x+(breach.facing==='east'?depth:-depth),y:breach.y+offset
   });
-  this.guardianIngressClosure={at:this.elapsed+1.9,effect:{type:'reserve-cut',x:breach.x,y:breach.y,durationMs:3000,
+  const radius=enemyBodyRadius(queued[0].enemyId,false);
+  const candidates=this.geometry.breaches.filter(breach=>
+   canOccupyExpedition(this.geometry,point(breach,66,0),radius));
+  const score=(breach:typeof candidates[number])=>Math.hypot(breach.x-guardian.x,breach.y-guardian.y)
+   +Math.hypot(breach.x-this.player.x,breach.y-this.player.y)
+   +(hasClearExpeditionShot(this.geometry,this.player,point(breach,66,0))?0:500);
+  const breach=candidates.sort((a,b)=>score(a)-score(b))[0];
+  if(!breach)return;
+  const ids:number[]=[];
+  for(const [index,request] of queued.slice(0,3).entries()){
+   const start=point(breach,66+index*30,(index%2?1:-1)*index*32);
+   if(!canOccupyExpedition(this.geometry,start,radius))continue;
+   const result=this.enemies.spawn(request.enemyId,start.x,start.y,false);
+   if(!result.spawned)continue;
+   ids.push(result.enemy.id);
+   this.enemies.stagger(result.enemy.id,250);
+   this.departures.set(result.enemy.id,{ms:1900,breach,escort:true});
+  }
+  if(!ids.length)return;
+  this.guardianReserve={guardian:id,breach,ids,committedAt:this.elapsed};
+  this.director.guardianReserveBeat=beat;
+  this.presentation.push({type:'guardian-reserve-committing',x:breach.x,y:breach.y,durationMs:1600});
+ }
+ private holdGuardianReserve(id:number){
+  const reserve=this.guardianReserve;
+  if(!reserve||reserve.guardian!==id||reserve.heldAt!==undefined)return;
+  reserve.heldAt=this.elapsed;
+  this.presentation.push({type:'guardian-reserve-held',x:reserve.breach.x,y:reserve.breach.y,durationMs:1600});
+ }
+ private releaseGuardianPreview(){
+  for(const id of this.guardianReserve?.ids??[]){
+   this.enemies.remove(id);
+   this.departures.delete(id);
+  }
+  this.guardianReserve=undefined;
+ }
+ private guardianGround(id:number,beat:number|undefined){
+  const reserve=this.guardianReserve;
+  const earned=reserve?.guardian===id&&reserve.heldAt!==undefined;
+  const queued=this.director.reportFeaturedGuardianDefeated(beat,earned);
+  if(!earned||!queued?.length){
+   if(reserve?.guardian===id)this.releaseGuardianPreview();
+   return;
+  }
+  this.guardianReserve=undefined;
+  const {breach}=reserve;
+  this.guardianGroundUntil=this.elapsed+3.5;
+  this.guardianIngressClosure={at:this.elapsed+1.9,effect:{type:'reserve-cut',x:breach.x,y:breach.y,angle:breach.facing==='east'?0:Math.PI,durationMs:3000,
    reserveCut:{count:queued.length,family:queued[0].enemyId}}};
  }
 
@@ -1385,7 +1452,7 @@ export class DepthGame {
  for(const hit of damage)this.damage(e.enemyId,hit.amount,undefined,hit.source,false);
  const target=this.targets().find(t=>t.id===e.enemyId);
  if(target)for(const status of statuses)this.applyRigStatus(target,status.kind,status.amount);
- }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.guardian)this.guardianGround(e.guardian,e.enemyId,e.beat);if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const bend=this.reserveBend(e);
+ }else if(e.type==='melee-miss'||e.type==='recovery-stagger'){this.presentation.push({type:e.type,id:e.enemyId,x:e.x,y:e.y});}else if(e.type==='ready-shove'){const point=this.moveCorpse(this.player,e.x,e.y);this.player.x=point.x;this.player.y=point.y;}else if(e.type==='death'){if(e.guardian)this.guardianGround(e.enemyId,e.beat);if(e.enemyType==='carrier'&&!this.broodStarted.has(e.enemyId))this.director.reportWorkshopBroodLeaderDefeated(e.beat,e);if(e.priority&&e.beat!==undefined){this.lastPriorityPoint={x:e.x,y:e.y};const bend=this.reserveBend(e);
  const cut=this.director.reportPriorityDefeated(e.beat,e,this.authoredViewTarget);
  if(cut){
   if(bend)this.reserveBendRecoil={...bend,at:this.elapsed,room:this.roomRevision};
@@ -1402,9 +1469,10 @@ export class DepthGame {
   if(e.enemyType==='carrier'){this.broodPodsDestroyed=0;this.broodStarted.add(e.enemyId);}
   this.presentation.push({type:'enemy-warning',id:e.enemyId,family:e.enemyType,x:e.x,y:e.y,targetX:e.targetX,targetY:e.targetY,durationMs:e.durationMs,radius:32});
   if(e.spread){
-   const away={x:2*this.player.x-e.x,y:2*this.player.y-e.y};
+   const away=this.node.depth<=3?e:{x:2*this.player.x-e.x,y:2*this.player.y-e.y};
    const hatch=this.openBreaches.filter(breach=>canOccupyExpedition(this.geometry,
-    {x:breach.x+(breach.facing==='east'?56:-56),y:breach.y},enemyBodyRadius('brute',false))).sort((a,b)=>
+    {x:breach.x+(breach.facing==='east'?56:-56),y:breach.y},enemyBodyRadius('brute',false))&&
+    (this.node.depth>3||hasClearExpeditionShot(this.geometry,this.player,{x:breach.x+(breach.facing==='east'?56:-56),y:breach.y}))).sort((a,b)=>
     Math.hypot(a.x-away.x,a.y-away.y)-Math.hypot(b.x-away.x,b.y-away.y))[0];
    this.earlyPressureFollow={x:e.x,y:e.y,shooter:e.enemyId,at:this.elapsed+.64,hatch:hatch?.id};
    const angle=Math.atan2(e.targetY-e.y,e.targetX-e.x);
@@ -1430,7 +1498,7 @@ export class DepthGame {
  }}}
  private queenEvents(events:readonly QueenBossEvent[]){for(const e of events){if(e.type==='minion-spawn-request'&&this.enemies.activeCount+this.pending.length<20)this.pending.push({type:'crawler',x:e.x,y:e.y,elite:false,delay:650});else if(e.type==='area-attack'){this.presentation.push({type:'enemy-attack',id:-1,x:this.boss.snapshot.x,y:this.boss.snapshot.y});this.presentation.push({type:'acid',x:e.x,y:e.y,radius:e.radius});if(Math.hypot(this.player.x-e.x,this.player.y-e.y)<e.radius+16)this.hurt(e.damage,{x:e.x,y:e.y,radius:e.radius},{source:'boss-attack',enemyFamily:'queen'});this.pools.push({id:++this.poolId,x:e.x,y:e.y,radius:e.radius*.75,life:2,warning:0,damage:6,tick:.5});}else if(e.type==='nest-destroyed')this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:64});else if(e.type==='queen-defeated'){this.presentation.push({type:'explosion',x:e.x,y:e.y,radius:240});this.encounterEvents(this.director.reportBossDefeated());}}}
  observeWeaponDamage?: (weapon: WeaponId, family: string, damage: number, lethal: boolean) => void;
- damage(id:number,amount:number,impulse?:{x:number;y:number},source:DamageSource='weapon',feedback=true,weapon?:WeaponId,shot?:Pick<Bullet,'sourceX'|'sourceY'>){if(this.isShutterProtected(id))return {applied:false,died:false,absorbedByArmor:0,damage:0,exposedHit:undefined};const target=this.targets().find(t=>t.id===id),frozen=target?this.mutations.statuses(id).frozen:false;this.targetCache=null;let applied=false,died=false,absorbedByArmor=0,damage=0;let exposedHit: true|undefined;
+ damage(id:number,amount:number,impulse?:{x:number;y:number},source:DamageSource='weapon',feedback=true,weapon?:WeaponId,shot?:Pick<Bullet,'sourceX'|'sourceY'>){if(this.guardianReserve?.ids.includes(id)||this.isShutterProtected(id))return {applied:false,died:false,absorbedByArmor:0,damage:0,exposedHit:undefined};const target=this.targets().find(t=>t.id===id),frozen=target?this.mutations.statuses(id).frozen:false;this.targetCache=null;let applied=false,died=false,absorbedByArmor=0,damage=0;let exposedHit: true|undefined;
   const drill=this.dodgeDrill;
   const practicing=drill?.id===id;
   if(practicing&&(!drill.evaded||this.enemies.getSnapshot(id)?.meleePhase!=='recovery'))return {applied:false,died:false,absorbedByArmor:0,damage:0};
@@ -1632,6 +1700,7 @@ export class DepthGame {
 
  private lastPriorityPoint:{x:number;y:number}|undefined;
  private interruptBrood(id:number,beat:number|undefined){
+  this.holdGuardianReserve(id);
   const reserve=this.director.reportBroodInterrupted(beat);
   const pods=this.enemies.snapshot.enemies.filter(enemy=>enemy.pod&&enemy.beat===beat&&beat!==undefined);
   this.broodCollapse={id,canceled:reserve+pods.length,pods};
@@ -1643,6 +1712,7 @@ export class DepthGame {
   this.enemies.stagger(id,1800);
  }
 
+ isCrossingEscort(id:number){return this.spitterCrossing?.id===id;}
  getEscortRetreat(id:number){
   const retreat=this.departures.get(id);
   return retreat?.escort?{x:retreat.breach.x,y:retreat.breach.y,flinching:retreat.ms>1750}:undefined;
@@ -1684,6 +1754,15 @@ export class DepthGame {
     if(escort)this.enemies.releaseChildReservation(enemy.id);
    }
    this.enemies.stagger(enemy.id,250);
+   const reserve=this.guardianReserve;
+   if(reserve?.ids.includes(enemy.id)){
+    const distance=Math.hypot(enemy.x-reserve.breach.x,enemy.y-reserve.breach.y);
+    if(reserve.heldAt===undefined&&this.elapsed-reserve.committedAt<.65&&distance>52){
+     const step=Math.min((distance-52)/distance,ms*.065/distance);
+     this.enemies.moveBy(enemy.id,(reserve.breach.x-enemy.x)*step,(reserve.breach.y-enemy.y)*step);
+    }
+    continue;
+   }
    departure.ms-=ms;
    if(departure.escort&&departure.ms>1750)continue;
    const dx=departure.breach.x-enemy.x,dy=departure.breach.y-enemy.y,distance=Math.hypot(dx,dy);
@@ -1799,13 +1878,34 @@ export class DepthGame {
   if(follow&&(this.elapsed>=follow.at||this.enemies.getSnapshot(follow.shooter)?.pendingAttack!=='spit')){
    this.earlyPressureFollow=undefined;
    if(this.enemies.getSnapshot(follow.shooter)?.pendingAttack==='spit')this.stageEarlyPressure(follow);
+   else if(this.node.depth<=3){
+    const hatch=this.geometry.breaches.find(breach=>breach.id===follow.hatch);
+    if(hatch)this.earlyHatchReversed={breach:hatch,at:this.elapsed,remainingMs:Math.max(0,(follow.at-this.elapsed)*1000)};
+   }
   }
   this.updateCleanup(ms);
   if(this.guardianIngressClosure&&this.elapsed>=this.guardianIngressClosure.at){
    this.presentation.push(this.guardianIngressClosure.effect);
    this.guardianIngressClosure=undefined;
   }
-  this.navigation.prepare(this.player,1);this.enemyEvents(this.enemies.update(hostileMs,this.player));if(this.broodSupply){
+  const crossing=this.spitterCrossing;
+  if(crossing){
+   const enemy=this.enemies.getSnapshot(crossing.id);
+   if(!enemy||this.elapsed>=crossing.until)this.spitterCrossing=undefined;
+   else {
+    this.enemies.stagger(enemy.id,75);
+    const dx=crossing.end.x-enemy.x,dy=crossing.end.y-enemy.y,distance=Math.hypot(dx,dy);
+    if(distance>1){
+     const step=Math.min(1,hostileMs*.08/distance);
+     this.enemies.moveBy(enemy.id,dx*step,dy*step);
+    }
+   }
+  }
+  this.navigation.prepare(this.player,1);this.enemyEvents(this.enemies.update(hostileMs,this.player));
+  if(this.guardianReserve&&this.guardianReserve.heldAt===undefined&&
+   this.enemies.getSnapshot(this.guardianReserve.guardian)?.wallStunAngle!==undefined)
+   this.holdGuardianReserve(this.guardianReserve.guardian);
+  if(this.broodSupply){
    const pod=this.enemies.getSnapshot(this.broodSupply.pod);
    if(!pod||!pod.pod){
     if(pod&&this.pickups.remove(this.broodSupply.pickup))this.presentation.push({type:'explosion',x:pod.x,y:pod.y,radius:30});
@@ -1832,7 +1932,7 @@ export class DepthGame {
   this.pools=this.pools.filter(p=>p.life>0);if(this.status!=='playing')return;
   this.pickups.update(ms,this.player,{magnetEnabled:true,magnetRange:familyBonuses(this.combat.build).recovery?144:120});this.collectLoot();
   this.tickRecoveryGrille();
-  for(let i=this.pending.length-1;i>=0;i--){const p=this.pending[i];p.delay-=hostileMs;if(p.delay>0||p.grilleEscort&&this.recoveryGrilleState?.state==='waiting'||p.consoleHold&&this.elapsed<this.consoleRelease||(p.clutchHoldUntil??0)>this.elapsed&&this.elapsed<(this.broodMarksShownAt??Infinity)+.4)continue;if(this.spawn(p.type,p.x,p.y,p.elite,p.guardian,p.options,p.shutterSpitter,p.approachLeadMs,p.chilledArrival))this.pending.splice(i,1);else if((p.attempts=(p.attempts??0)+1)>40){/* I13: exhausted annulus requests retire so a blocked brood cannot jam room clear. */if(p.options?.podOrigin){this.pending.splice(i,1);continue;}const open=this.openBreaches;const point=open[p.attempts%open.length];p.x=point.x+(point.facing==='east'?56:-56);p.y=point.y;}}
+  for(let i=this.pending.length-1;i>=0;i--){const p=this.pending[i];p.delay-=hostileMs;if(p.delay>0||p.grilleEscort&&this.recoveryGrilleState?.state==='waiting'||p.consoleHold&&this.elapsed<this.consoleRelease||(p.clutchHoldUntil??0)>this.elapsed&&this.elapsed<(this.broodMarksShownAt??Infinity)+.4)continue;if(this.spawn(p.type,p.x,p.y,p.elite,p.guardian,p.options,p.shutterSpitter,p.approachLeadMs,p.chilledArrival,p.crossingEnd,p.interceptionEscort))this.pending.splice(i,1);else if((p.attempts=(p.attempts??0)+1)>40){/* I13: exhausted annulus requests retire so a blocked brood cannot jam room clear. */if(p.options?.podOrigin){this.pending.splice(i,1);continue;}const open=this.openBreaches;const point=open[p.attempts%open.length];p.x=point.x+(point.facing==='east'?56:-56);p.y=point.y;}}
   this.lookForWeaponLessons();
   const shaftCrawlerSlots=this.node.templateId==='service-shaft-landing'?Math.max(0,3
    -this.enemies.snapshot.enemies.filter(enemy=>enemy.type==='crawler').length
