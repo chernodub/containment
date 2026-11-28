@@ -194,6 +194,21 @@ export function draftScreen(game: DepthGame): string {
 
 export function shopScreen(game: DepthGame): string {
   const run=game.expedition.run, resources=game.combat.snapshot;
+  const beforeInterlock=run.version===3&&game.node.templateId==='diagnostic-gallery';
+  const health=Math.ceil(resources.health);
+  const repaired=Math.ceil(Math.min(100,resources.health+serviceRepairAmounts(game.difficulty).heal));
+  const repairForecast=beforeInterlock?`<section class="repair-forecast" aria-label="Safety Interlock entry forecast">
+    <div><h3>Next hold · Safety Interlock</h3>
+      <p><b>${health} HP</b> current entry · <b>${repaired} HP</b> with suit repair</p>
+      <p>Watch the recorder and battery approaches.</p>
+    </div>
+    <svg viewBox="0 0 230 76" role="img" aria-label="Recorder approach from above and battery approach from below converge on the interlock hold.">
+      <path d="M6 20h60V6h164v64H66V56H6Z" fill="#18303b" stroke="#54737c"/>
+      <path d="M68 16h64l40 19m-12-1 12 1-7-9M68 60h64l40-19m-7 9 7-9-12 1" fill="none" stroke="#ffb06f" stroke-width="2"/>
+      <circle cx="187" cy="38" r="11" fill="#21434b" stroke="#98e0d8" stroke-width="2"/>
+      <circle cx="187" cy="38" r="3" fill="#98e0d8"/>
+    </svg>
+  </section>`:'';
   const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
   const upgrades=availableAugmentUpgrades(game.expedition.build);
   const repair=serviceRepairAmounts(game.difficulty);
@@ -278,6 +293,7 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
+    ${repairForecast}
     ${pairRow}
     <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2||!!chosen}">
       ${stockGroup('Consumables',false)}
