@@ -335,8 +335,9 @@ export function alien(kind:string,elite=false):ActorModel{
   if(champion==='warden' && bossStun>0 && !dead){
    authored.player.sample('m10-wall-stun',Math.min(1,(wallStunStartMs-bossStun)/100),dt,0);
   }
-  surface.stage(stageLight*(bossStun>0?.68:authored.flashedOut?.36:1));
-  if(authored.flashedOut)surface.camouflage(Math.min(.30,alpha));
+  const shadeReaction = authored.flashedOut && accentLife <= 0 && !status.frozen;
+  surface.stage(stageLight*(bossStun>0?.68:shadeReaction?.36:1));
+  if(shadeReaction)surface.camouflage(Math.min(.30,alpha));
   if(!dead && liveCrack!==authored.exposedIce){
    liveCrack=authored.exposedIce;
    if(liveCrack)frost?.use();else frost?.reset();

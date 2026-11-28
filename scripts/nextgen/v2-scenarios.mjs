@@ -111,7 +111,7 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
    if(!g.useAbility('tactical'))throw Error('Overclock chain denied');
    d.step(g.abilities.snapshot.slots.tactical.castRemainingMs);
   }
-  const peak={meltdown:280,whiteout:2020,'napalm-charge':265,'seismic-slam':90,railbreaker:75,overload:95,overclock:95}[id];
+  const peak={'cryo-nova':90,meltdown:280,whiteout:2020,'napalm-charge':265,'seismic-slam':90,railbreaker:75,overload:95,overclock:95}[id];
   d.step(peak);d.refresh();
   d.v2Proof.peakAfterCastMs=peak;
   d.v2Proof.combatLightPool=d.renderer.lighting.pool.capacity;
@@ -291,4 +291,14 @@ for(const [rig,ids] of Object.entries(rigs))for(const [i,id] of ids.entries()){
  for(const tier of ['high','low'])for(const density of ['sparse','crowd'])
   V2_SCENARIOS.push({id:`fx36-${id}-${room}-${tier}-${density}`,diagnosticOnly:true,room,state:'playing',burst:true,frameCount:2,stepMs:250,
    setup:stageV2,setupArgument:{rig,id,slot:slots[i],room,tier,victimStudy:density}});
+}
+
+for (const [rig, ids] of Object.entries(rigs)) for (const [i, id] of ids.entries()) {
+ if (!['meltdown','cryo-nova','napalm-charge','whiteout','seismic-slam'].includes(id)) continue;
+ for (const room of ['crew-checkpoint','safety-interlock-station','transmission-chamber'])
+ for (const tier of ['high','low']) V2_SCENARIOS.push({
+  id:`fx37-${id}-${room}-${tier}`, diagnosticOnly:true, room, state:'playing',
+  burst:true, frameCount:3, stepMs:250, setup:stageV2,
+  setupArgument:{rig,id,slot:slots[i],room,tier,victimStudy:'crowd'},
+ });
 }

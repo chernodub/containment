@@ -30,6 +30,8 @@ class SystemPresentation implements AbilityPresentation {
   private readonly selected = new Set<AbilityEvent['ability']>();
   private readonly previouslyFrozen = new Set<number>();
   private readonly previouslyBurning = new Set<number>();
+  private frostVictim = -1;
+  private frostUntil = -1;
   private receiptCursor = 0;
   private ghostClock = 0;
   private dashTime = 0;
@@ -74,17 +76,17 @@ class SystemPresentation implements AbilityPresentation {
     let count = 0;
     for (const id of event.targetIds) {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
-      k.statusActor(id)?.elementContact?.(event.element);
+      const actor = k.statusActor(id);
+      actor?.elementContact?.(event.element);
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       if (!receipt) {
         receipt = this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
         receipt.ignition = -Infinity;
       }
-      const actor = k.statusActor(id);
-      const target = this.game?.enemies.getSnapshot(id);
+
       const firstBurn = event.ability === 'napalm-charge' && !this.previouslyBurning.has(id) && this.statusFor?.(id).burning;
-      const firstFreeze = event.ability === 'whiteout' && target?.type === 'crawler' && !this.previouslyFrozen.has(id) && this.statusFor?.(id).frozen;
+      const firstFreeze = event.ability === 'whiteout' && this.game?.enemies.getSnapshot(id)?.type === 'crawler' && !this.previouslyFrozen.has(id) && this.statusFor?.(id).frozen;
       const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' || event.ability === 'cryo-nova');
       if (actor && !this.selected.has(event.ability) && (firstBurn || firstFreeze || impact)) {
         this.selected.add(event.ability);
@@ -92,10 +94,11 @@ class SystemPresentation implements AbilityPresentation {
         actor.powerAccent?.(event.element);
         actor.reactToElement?.(event.element === 'pyro' ? 'fire' : event.element === 'cryo' ? 'ice' : 'kinetic', bearing);
         if (firstBurn) receipt.ignition = k.time;
+        if (firstFreeze) { this.frostVictim = id; this.frostUntil = k.time + .59; }
       }
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
-        const position = k.statusActor(id)?.root.position;
+        const position = actor?.root.position;
         receipt.railAngle = event.angle ?? 0;
         const c = Math.cos(receipt.railAngle), s = Math.sin(receipt.railAngle);
         const along = position ? (position.x - x / UNIT) * c + (position.z - y / UNIT) * s : 0;
@@ -153,11 +156,6 @@ class SystemPresentation implements AbilityPresentation {
     }
     this.previouslyFrozen.clear();
     this.previouslyBurning.clear();
-    for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
-      const status = this.statusFor?.(enemy.id);
-      if (status?.frozen) this.previouslyFrozen.add(enemy.id);
-      if (status?.burning) this.previouslyBurning.add(enemy.id);
-    }
     let drawn = 0;
     const queen = g?.boss?.snapshot;
     if (queen?.active && !queen.defeated && queen.health > 0 && (!p || Math.hypot(queen.x - p.x, queen.y - p.y) <= 720)) {
@@ -177,6 +175,8 @@ class SystemPresentation implements AbilityPresentation {
 
   private struck(enemy: StruckTarget, height: number, dt: number): boolean {
     const k = this.kit, status = this.statusFor?.(enemy.id);
+    if (status?.frozen) this.previouslyFrozen.add(enemy.id);
+    if (status?.burning) this.previouslyBurning.add(enemy.id);
     let receipt: Receipt | undefined;
     for (const item of this.receipts) if (item.live && item.id === enemy.id) { receipt = item; break; }
     if (!receipt && !status?.frozen && !status?.burning && !status?.shocked && !status?.chilled) return false;
@@ -198,8 +198,10 @@ class SystemPresentation implements AbilityPresentation {
       for (let i = 0; i < (k.low ? 2 : 4); i++) {
         const t = k.reducedMotion ? .55 : (k.time * 1.6 + i * .31 + enemy.id * .13) % 1;
         const a = enemy.id + i * 2.4;
-        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * (.50 + t * .88),
-          z + Math.sin(a) * radius * .8, .067, .15, .065, WHITE, Math.sin(t * Math.PI) * .78, a);
+        const selected = enemy.id === this.frostVictim && k.time < this.frostUntil;
+        const width = selected ? radius * .22 : .037;
+        k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * (selected ? .58 + t * 1.14 : .42 * (1 - t * t)),
+          z + Math.sin(a) * radius * .8, width, selected ? height * .28 : .063, width, WHITE, Math.sin(t * Math.PI) * .78, a);
       }
       k.impact();
     }
@@ -388,6 +390,7 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    this.frostVictim = this.frostUntil = -1;
     this.selected.clear(); this.previouslyFrozen.clear(); this.previouslyBurning.clear();
     this.payoff.clear();
     this.restorePose();

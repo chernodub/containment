@@ -14,7 +14,7 @@ export class OverdriveReactions {
 
   event(effect: GameEffect, actors: ReadonlyMap<number,ActorModel>, corpses: readonly {id:number;model:ActorModel}[], kit?: ElementKit) {
     const ability = effect.ability;
-    if (ability?.phase === 'impact' && (ability.element === 'pyro' || ability.ability === 'whiteout')) {
+    if (ability?.phase === 'impact' && ability.element === 'pyro') {
       if (ability.ability !== 'flashfire') for (const id of ability.targetIds ?? []) this.target(id, actors, corpses)?.shadeCastPeak?.();
       const shape = ABILITY_CATALOG[ability.ability].shape;
       if (shape.kind === 'circle') {
@@ -35,6 +35,8 @@ export class OverdriveReactions {
       const element = ability.ability === 'railbreaker' && ability.phase === 'link' ? 'kinetic'
         : ability.ability === 'overload' ? 'arc' : ability.ability === 'whiteout' ? 'ice' : ability.ability === 'meltdown' ? 'fire' : undefined;
       if (element) for (const id of ability.targetIds) {
+        // Living fire and ice victims are selected by their native status receipts.
+        if ((element === 'fire' || element === 'ice') && actors.has(id)) continue;
         this.target(id, actors, corpses)?.reactToElement?.(element, ability.angle ?? 0);
       }
     } else if (this.overclock && effect.weapon && (effect.contact === 'damage' || effect.contact === 'armor') && effect.targetId !== undefined) {
