@@ -79,9 +79,9 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
     const bootResponse=coolant?`
-      float contact=(1.-smoothstep(.28,.70,distance(receiverXZ,receiverMarine.xy)))*step(.001,diffuseColor.a);
+      float contact=(1.-smoothstep(.32,.79,distance(receiverXZ,receiverMarine.xy)))*receiverMarine.w/1.3;
       outgoingLight=mix(outgoingLight,vec3(.012,.018,.022),contact);
-      diffuseColor.a=max(diffuseColor.a,.66*contact);`:
+      diffuseColor.a=max(diffuseColor.a,.76*contact);`:
       'diffuseColor.a*=smoothstep(.23,.57,distance(receiverXZ,receiverMarine.xy));';
     shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMarine;\n'+shader.fragmentShader.replace(
       '#include <opaque_fragment>',bootResponse+'\n#include <opaque_fragment>');
