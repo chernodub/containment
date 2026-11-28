@@ -165,8 +165,8 @@ bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
 bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 bool trunk=vActorRegion<=2. || vActorRegion==7.;
-float capWidth=crawlerSkin?mix(.31,.21,smoothstep(-.8,.65,actorPosition.x)):
-               spitterSkin?1.14:stalkerSkin?.87:3.2;
+float capWidth=crawlerSkin?mix(.42,.26,smoothstep(-.8,.65,actorPosition.x)):
+               spitterSkin?1.33:stalkerSkin?1.01:3.2;
 bool broodMark=(trunk || spitterSac || sacPatch) && abs(actorPosition.y)<capWidth && broodRestUp>.05;
 broodBody=broodBody || spitterSac || crawlerHook || broodBand==3 || broodBand==4;
 vec3 broodPaint=carrierSkin?vec3(.288,.173,.352):crawlerSkin?vec3(.336,.247,.149):
