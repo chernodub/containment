@@ -2,11 +2,12 @@ import {BoxGeometry,Float32BufferAttribute,Mesh,MeshBasicMaterial} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {Color} from 'three';
 
-export interface GrillePose {x:number;y:number;angle:number;escorts?:number;state:string;changedAt:number}
+export interface GrillePose {x:number;y:number;angle:number;escorts?:number;state:string;changedAt:number;returnPosition?:{x:number;y:number};laneOccupied?:boolean}
 export class RecoveryGrille {
   private readonly material=new MeshBasicMaterial({vertexColors:true});
   readonly bars:Mesh;
   readonly frame:Mesh;
+  readonly notch:Mesh;
   constructor(){
     const batch=(parts:number[][])=>{
       const geometry=parts.map(([x,y,z,w,h,d,tint])=>{
@@ -29,13 +30,27 @@ export class RecoveryGrille {
       [-1.85,.78,0,.16,1.56,3.48,0xa78350],
       [-1.74,1.47,0,.10,.13,3.34,0xffdc8c],
       [-1.19,.055,0,1.28,.10,3.36,0xaa8c61]]);
-    this.frame.add(this.bars);this.frame.visible=false;
+    this.notch=batch([
+      [0,.025,0,.95,.05,1.32,0x343d40],
+      [0,.055,-.52,.95,.11,.19,0xb89657],
+      [0,.055,.52,.95,.11,.19,0xb89657],
+      [-.43,.045,0,.08,.09,.86,0x647477]]);
+    this.frame.add(this.bars,this.notch);this.frame.visible=false;
   }
   update(pose:GrillePose|undefined,time:number){
     this.frame.visible=!!pose&&pose.state!=='entered';if(!pose)return;
     this.frame.scale.z=Math.max(1,(pose.escorts??2)/2);
     this.frame.position.set(pose.x/32,0,pose.y/32);this.frame.rotation.y=-pose.angle;
+    const point=pose.returnPosition;
+    this.notch.visible=point!==undefined&&pose.state==='waiting';
+    if(point){
+      const dx=(point.x-pose.x)/32,dz=(point.y-pose.y)/32;
+      const c=Math.cos(pose.angle),s=Math.sin(pose.angle);
+      this.notch.position.set(dx*c+dz*s,0,(dz*c-dx*s)/this.frame.scale.z);
+      this.notch.scale.z=1/this.frame.scale.z;
+      this.notch.position.y=pose.laneOccupied?.025:0;
+    }
     this.bars.position.y=pose.state==='closed'?.64*Math.max(0,1-100*(time-pose.changedAt)**2):.64;
   }
-  dispose(){this.frame.removeFromParent();this.bars.geometry.dispose();this.frame.geometry.dispose();this.material.dispose();}
+  dispose(){this.frame.removeFromParent();this.bars.geometry.dispose();this.notch.geometry.dispose();this.frame.geometry.dispose();this.material.dispose();}
 }

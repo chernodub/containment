@@ -184,6 +184,11 @@ export function runSimulation(options: SimOptions) {
         if(room?.id==='transmission-chamber'&&e.ability?.transformation){
             room.transformedHits=(room.transformedHits??0)+1;
         }
+        if(room&&e.type==='spitter-escort-arrived')room.spitterEscort={id:e.id,fired:false,intercepted:false};
+        if(room?.spitterEscort&&e.id===room.spitterEscort.id){
+            if(e.type==='enemy-attack')room.spitterEscort.fired=true;
+            if(e.type==='corpse')room.spitterEscort.intercepted=!room.spitterEscort.fired;
+        }
         if(room&&e.type==='recovery-grille-closed'){
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
@@ -221,6 +226,14 @@ export function runSimulation(options: SimOptions) {
                 const family = familyPressure(receipt?.enemyFamily ?? receipt?.source ?? 'unknown');
                 row.hitsTaken++;row.firstHitElapsed ??= game.elapsed;row.hitTimes.push(game.elapsed);family.hits++;family.damage += amount;
                 if (receipt?.source === 'enemy-contact') family.meleeHits++;
+                if (room?.id === 'manual-control-chamber') {
+                    const grille = game.recoveryGrille;
+                    const phase = game.encounter.beat !== 1 ? `beat-${game.encounter.beat}` :
+                        grille?.state === 'waiting' ? grille.laneOccupied ? 'notch' : 'approach' : 'exchange-cleanup';
+                    const breakdown = room.consoleDamage ??= {};
+                    const key = `${phase}/${receipt?.enemyFamily ?? receipt?.source ?? 'unknown'}`;
+                    breakdown[key] = (breakdown[key] ?? 0) + amount;
+                }
             }
             camera.rig.addTrauma(.34);
             camera.rig.punch(.015, 180);
@@ -272,7 +285,7 @@ export function runSimulation(options: SimOptions) {
     let committedToCover=false;
     function snapshot() {
         const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => canTraverseExpedition(game.geometry, from, { x, y }, weaponCatalog[game.combat.snapshot.weaponId].projectileRadius);
-        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,vulnerable:!game.isShutterProtected(e.id), clear: clear(e.x, e.y), plasmaClear:canTraverseExpedition(game.geometry,game.player,e,weaponCatalog.plasma.projectileRadius), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
+        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, reserveLeader:!!game.encounter.reserve&&e.priority,interceptionEscort:game.isCrossingEscort?.(e.id)??false,vulnerable:!game.isGuardianReserveEscort?.(e.id)&&!game.isShutterProtected(e.id), clear: clear(e.x, e.y), plasmaClear:canTraverseExpedition(game.geometry,game.player,e,weaponCatalog.plasma.projectileRadius), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
@@ -318,7 +331,7 @@ export function runSimulation(options: SimOptions) {
         const telegraph = game.boss.snapshot.pendingTelegraph;
         const grille = game.recoveryGrille;
         const returnPoint=grille?.returnPosition??(grille?.returnRange===undefined&&!grille?.returnAisleSide?grille:{x:grille.x+Math.cos(grille.angle)*195,y:grille.y+Math.sin(grille.angle)*195});
-        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&returnPoint&&(grille.returnPosition||grille.returnRange!==undefined||grille.returnArcCosine!==undefined||grille.returnAisleSide)?(botWaypoint(game,returnPoint)??returnPoint):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&(camera.visible(grille.x,grille.y)||!!grille.returnPosition&&camera.visible(grille.returnPosition.x,grille.returnPosition.y))?{...grille,waypoint:options.readExchange&&returnPoint&&(grille.returnPosition||grille.returnRange!==undefined||grille.returnArcCosine!==undefined||grille.returnAisleSide)?(botWaypoint(game,returnPoint)??returnPoint):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});

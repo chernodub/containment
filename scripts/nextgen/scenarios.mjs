@@ -1474,3 +1474,44 @@ SCENARIOS.push({
   d.refresh();
  },
 });
+
+for(const room of ['coolant-plant','swarm-junction']){
+ for(const phase of ['committing','held','retreat']){
+  SCENARIOS.push({
+   id:`play43-${room}-${phase}`,state:'playing',room,diagnosticOnly:true,
+   setupArgument:{room,phase},
+   setup:async({room,phase})=>{
+    const d=window.__containmentDebug,g=d.game;
+    await d.gotoRoom(room,{rig:'arc',runStructure:true,seed:1729});
+    if(room==='swarm-junction'){
+     g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'brood',junctions:{3:'salvage'}}};
+     g.enterRoom();
+     g.skipStory();
+     await d.prepare();
+    }
+    d.invulnerable(true);
+    const featured=g.director.plan.schedule.find(request=>request.guardian);
+    const beat=featured&&g.director.plan.beats?.[featured.beat];
+    if(!beat)throw Error('No featured guardian in this fixture route');
+    // Start at the authored guardian beat, keeping its queued reserve in the plan.
+    g.director.beatIndex=featured.beat;
+    g.director.dispatched=g.director.plan.schedule.indexOf(featured)+1;
+    if(room==='swarm-junction'){
+     g.player.x=405;g.player.y=470;
+     for(const [x,y] of [[610,468],[595,400],[630,415],[560,470]]){
+      if(g.spawn('carrier',x,y,false,'matron',{beat:featured.beat,closeIngress:true,priority:true}))break;
+     }
+    }else{
+     g.encounterEvents([featured]);
+     d.step(700);
+    }
+    const reserve=g.guardianReserve;
+    if(!reserve)throw Error(`Featured guardian reserve did not commit (${g.enemies.activeCount} active, ${g.director.featuredGuardianReserve(featured.beat).length} queued)`);
+    if(phase!=='committing')g.holdGuardianReserve(reserve.guardian);
+    if(phase==='retreat')g.damage(reserve.guardian,100000);
+    d.step(phase==='retreat'?480:320);
+    d.refresh();
+   },
+  });
+ }
+}
