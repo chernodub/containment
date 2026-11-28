@@ -643,3 +643,5 @@ export function drawnExchange(game: DepthGame, renderer: DepthRenderer) {
     lane: lane ? {from:{...exchange.landing, screen:landing}, to:{...exchange.target, screen:target}} : undefined,
   };
 }
+
+export function getRepairDecision(game:DepthGame){return game.repairDecision;}

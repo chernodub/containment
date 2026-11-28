@@ -2,7 +2,7 @@ import {exchangeEnemy, exchangeMarine} from './exchangeGlyphs';
 import {ENEMY_ATTACK_SHAPES} from '../../game/enemies/attackShapes';
 import {WEAPONS} from '../../game/combat/catalog';
 import {AREA_ATTACK_RADIUS} from '../../game/enemies/QueenBossSystem';
-import {getDepletedArrival, getRoomDamage} from '../gameAdapter';
+import {getDepletedArrival, getRepairDecision, getRoomDamage} from '../gameAdapter';
 import {MELEE_ATTACKS, meleeStrikeContains} from '../../game/enemies/meleeAttacks';
 import type {DepthGame} from '../../DepthGame';
 import type {AttackFootprint, LastExchange} from "../../game/enemies/LastExchange";
@@ -39,12 +39,21 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, a
   const trace=getDepletedArrival(game);
   const graph=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder);
   const earlier=trace&&graph.nodes.find(candidate=>candidate.id===trace.leadingHit.room);
-  const diagram = trace&&earlier?`<div class="depleted-arrival">${lastExchangeDiagram(game)}
-    <p>Entered with ${Math.round(trace.entrySuit)} suit · ${escapeHtml(ROOM_TEMPLATES[earlier.templateId].name)} cost ${Math.round(trace.total)} suit, led by ${escapeHtml(incomingDamageLabel(trace.leadingHit))}.</p>
-    </div>`:lastExchangeDiagram(game);
+  const repair = getRepairDecision(game);
+  const repairRoom = repair && graph.nodes.find(candidate => candidate.id === repair.room);
+  const repairOffer = repair && {locker:'Emergency supply locker', infirmary:'Field infirmary', service:'Repair health'}[repair.offer];
+  const repairChoice = repair?.choice === 'took' ? 'Took repair'
+    : repair?.offer === 'infirmary' ? 'Chose Exposed workshop'
+    : repair?.offer === 'locker' ? 'Chose Early salvage' : 'Passed repair';
+  const arrival = trace && earlier
+    ? `<p>Entered with ${Math.round(trace.entrySuit)} suit · ${escapeHtml(ROOM_TEMPLATES[earlier.templateId].name)} cost ${Math.round(trace.total)} suit, led by ${escapeHtml(incomingDamageLabel(trace.leadingHit))}.</p>` : '';
+  const decision = repair && repairRoom
+    ? `<p><strong>${escapeHtml(repairOffer!)} · ${escapeHtml(ROOM_TEMPLATES[repairRoom.templateId].name)}</strong><br>${repairChoice} · ${Math.round(repair.hp)} HP ${repair.choice === 'took' ? 'gained' : 'forgone'}</p>` : '';
+  const exchange = lastExchangeDiagram(game);
+  const diagram = arrival || decision ? `<div class="depleted-arrival">${exchange}${arrival}${decision}</div>` : exchange;
   const ready=game.deathReadyAbility;
   const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
-  const node = generateRun(game.expedition.run.seed, game.expedition.run.version, game.expedition.run.roomOrder).nodes.find(candidate => candidate.id === last.room);
+  const node = graph.nodes.find(candidate => candidate.id === last.room);
   const room = node ? ROOM_TEMPLATES[node.templateId].name : 'Unknown room';
   const sources = new Map<string, number>();
   for (const receipt of getRoomDamage(game)) {
