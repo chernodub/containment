@@ -85,13 +85,18 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
     // feather the displacement into the shoulder, including the Low mesh.
     if (/^k11-(crawler|spitter|carrier|stalker)-/.test(name) && skin && weights) {
       const foreleg = bones.map(bone => /^(leg_front|leg[05]_|leg_m|arm_(up|mid)|upper_arm)/i.test(bone.name));
+      // The ambusher's narrow thorax disappears end-on between its scythes.
+      // Carry the paired shoulders into one wide shield between the wrists.
+      const keel = bones.map(bone => name.startsWith('k11-stalker-') && /^(torso|chest|big_butt|mid_butt)$/.test(bone.name));
       const position = geometry.getAttribute('position');
       for (let v = 0; v < count; v++) {
-        let share = 0;
+        let spread = 0;
         for (let joint = 0; joint < 4; joint++) {
-          if (foreleg[skin.getComponent(v, joint)]) share += weights.getComponent(v, joint);
+          const index = skin.getComponent(v, joint);
+          const gain = foreleg[index] ? .24 : keel[index] ? .85 : 0;
+          spread += gain * weights.getComponent(v, joint);
         }
-        position.setY(v, position.getY(v) * (1 + .24 * share));
+        position.setY(v, position.getY(v) * (1 + spread));
       }
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
