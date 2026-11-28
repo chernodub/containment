@@ -157,48 +157,19 @@ bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRe
 // The fourth form component identifies the shared atlas layout.
 bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
 bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
-bool broodMark=broodBand==3 || broodBand==4 ||
-  ((stalkerSkin || spitterSkin) && broodBand==7) || (carrierSkin && broodBand==11);
-// The longitudinal ridge widens toward the tail; the hooks form a separate pair.
-float ridgeWidth=crawlerSkin?mix(.145,.095,smoothstep(-.8,.65,actorPosition.x)):.66;
-float ridgeDistance=abs(actorPosition.y)/ridgeWidth;
-bool ridgeSkin=(crawlerSkin || spitterSkin) && broodBody && broodRestUp>.12;
-bool dorsal=ridgeSkin && ridgeDistance<1.;
+// A single camera-facing cap in bind space groups the shell across atlas
+// islands. The dark sides and forelimbs keep the head silhouette separate.
 bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
                  actorPosition.x>.52 && abs(actorPosition.y)>.09;
-broodMark=broodMark || crawlerHook || (crawlerSkin && dorsal) || (broodBody && (
-  (spitterSkin && dorsal && vActorRegion<=2.) ||
-  (stalkerSkin && ((vActorRegion==2. && broodRestUp>.18) ||
-                   (vActorRegion==1. && abs(actorPosition.y)<.72 && broodRestUp>.05) ||
-                   (vActorRegion>=3. && vActorRegion<=4. && broodRestUp>.18))) ||
-  (carrierSkin && !broodSac && (vActorRegion==4. || vActorRegion==5.) && broodRestUp>.35) ||
-  (broodSac && actorBroodForm.z>.42 && broodRestUp>.12 &&
-   abs(sin(actorPosition.x*.85+abs(actorPosition.y)*.42))<.30)));
-// The Stalker's fork and shingled abdomen read together at quarter size.
-if(stalkerSkin){
- bool blade=vActorRegion>=3. && vActorRegion<=4. && abs(actorPosition.y)>.58;
- bool abdomen=vActorRegion==7. && abs(actorPosition.y)<.38;
- broodMark=broodMark || ((blade || abdomen) && broodRestUp>-.12);
-}
-// The pressure vessel carries the spine light along its centre; its swollen
-// sides share the brood shell value so the firing lip remains directional.
 bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
-if(spitterSac){
- broodBody=true;
- broodMark=abs(actorPosition.y)<.70;
-}
-if(crawlerSkin){
- bool eyes=actorPosition.x>.41 && actorPosition.x<.53 && abs(actorPosition.y)>.12 && abs(actorPosition.y)<.22 && broodRestUp>.1;
- broodMark=dorsal || broodBand==3 || eyes || broodBand==4 || (crawlerHook && actorPosition.x>.86 && (abs(actorPosition.y)>.46 || actorPosition.x>1.));
- broodBody=broodBody || broodBand==3 || crawlerHook;
-}
+bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
+bool trunk=vActorRegion<=2. || vActorRegion==7.;
+float capWidth=crawlerSkin?mix(.31,.21,smoothstep(-.8,.65,actorPosition.x)):
+               spitterSkin?1.14:stalkerSkin?.87:3.2;
+bool broodMark=(trunk || spitterSac || sacPatch) && abs(actorPosition.y)<capWidth && broodRestUp>.05;
+broodBody=broodBody || spitterSac || crawlerHook || broodBand==3 || broodBand==4;
 vec3 broodPaint=carrierSkin?vec3(.288,.173,.352):crawlerSkin?vec3(.336,.247,.149):
                 spitterSkin?vec3(.254,.334,.147):vec3(.186,.316,.424);
-// Trace a narrow line across organ patches, widening only during native brood priming.
-bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
-float seam=abs(sin(actorPosition.x*1.8+abs(actorPosition.y)*.65+actorPosition.z*.45));
-if(sacPatch)broodMark=seam<mix(.46,.86,actorBroodPrime);
-float ridgeGlow=ridgeSkin && !crawlerSkin?.16*(1.-smoothstep(1.,1.6,ridgeDistance)):0.;
 if(broodFinish && broodBody){
   float value=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
   diffuseColor.rgb=broodSac ? .76*mix(vec3(value),diffuseColor.rgb,.72)
@@ -370,7 +341,7 @@ if(crawlerSkin && broodBody && !broodMark)
  outgoingLight=mix(vec3(.036,.033,.030),vec3(.068,.060,.054),float(broodTop))*actorStageLight;
 float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
 outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
-if(broodMark || ridgeGlow>0.){
+if(broodMark){
  float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
 }
