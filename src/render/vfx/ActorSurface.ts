@@ -333,7 +333,8 @@ if(broodFinish && (broodBody || sacPatch) && !broodMark){
  if(broodBand==6 || broodLimb)flatInk=vec3(.025,.022,.037);
  if(sacPatch)flatInk=broodBand==9?vec3(.108,.052,.141):vec3(.064,.029,.090);
  float slope=fwidth(vBroodInterior);
- float line=step(.0001,slope)*step(vBroodInterior,min(.48,.85*slope));
+ // At coarse sampling omit subpixel seams on limbs and antialias shell boundaries.
+ float line=broodLimb?0.:step(.0001,slope)*(1.-smoothstep(.16,.16+max(.001,slope),vBroodInterior));
  outgoingLight=mix(flatInk,vec3(.012,.010,.020),line)*actorStageLight*actorCamouflage;
  outgoingLight+=vec3(.085,.11,.15)*keyRim;
 }
