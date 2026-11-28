@@ -217,7 +217,9 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const approach=arrivals.findIndex(request=>request.enemyId==='crawler');
    const support=arrivals.findIndex(request=>request.enemyId==='spitter');
    if(approach>=0&&support>=0){
-    arrivals[approach]=Object.freeze({...arrivals[approach],atMs:650,augmentPosition:'approach'});
+    const cryoTarget=options.transmissionAugment==='shard-harvest';
+    arrivals[approach]=Object.freeze({...arrivals[approach],atMs:650,augmentPosition:'approach',
+     ...(cryoTarget?{elite:false,healthScale:.25}:{})});
     arrivals[support]=Object.freeze({...arrivals[support],atMs:650,augmentPosition:'shooter'});
     for(let index=0;index<arrivals.length;index++){
      if(index===approach||index===support)continue;
