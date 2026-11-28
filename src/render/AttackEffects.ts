@@ -1029,8 +1029,8 @@ export class AttackEffects {
    const offset=.64;
    this.dummy.position.set(cue.x+Math.cos(cue.angle)*offset,cue.y,cue.z+Math.sin(cue.angle)*offset);
    const projected=this.shooterRayEnd.copy(this.dummy.position).project(camera);
-   const x=T.MathUtils.clamp(projected.x,viewport.left+.05,viewport.right-.05);
-   const y=T.MathUtils.clamp(projected.y,viewport.bottom+.09,viewport.top-.09);
+   const x=T.MathUtils.clamp(projected.x,viewport.left+.10,viewport.right-.10);
+   const y=T.MathUtils.clamp(projected.y,viewport.bottom+.20,viewport.top-.09);
    if(x!==projected.x || y!==projected.y){
     // Keep the displaced stroke at muzzle height on either side of the deck.
     const start=this.dummy.position.set(x,y,-1).unproject(camera);
