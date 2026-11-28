@@ -124,3 +124,28 @@ The simulation commands use the twelve prescribed seeds independently in each St
 | Arc | 12/12 | 11/12 | 10/12 | 11/12 |
 
 [Forced Freight / Workshop receipts](../../artifacts/nextgen/playtest/run20-std-direct/summary.json) · [Forced Loading / Swarm receipts](../../artifacts/nextgen/playtest/run20-std-salvage-parallel/summary.json) · [Policy receipts](../../artifacts/nextgen/playtest/run20-std-policy-parallel/summary.json)
+
+## RUN21 · Consequences after the reunion
+
+- Freight Hold first sends a reduced-health Brute loader through the Relay Racks approach aisle in the opening Warden exchange. Loading Bay first fields the Spitter on the shutter perch. The loader crosses open floor, while the perched gunner can be exposed by baiting the ram. The cargo cards show both positions.
+- Workshop first sends Shielding Gate's opening flank through the inspection side. Swarm first sends it through the sterilization side. The encounter redirects an existing arrival and uses the room's native approach warning. The infestation cards show the two directions.
+- The Field infirmary compares current HP with entry HP after its existing 35 HP repair, capped at 100. The interlock sketch shows the recorder and battery approaches. The workshop still spends 180 credits on an eligible augment and commits the player to its alternate approach.
+- A depleted arrival is **65 or less combined HP and armor** when the fatal room begins. The line below the exchange diagram names the previously cleared room with the largest gross suit loss and its largest recorded source. This is a damage total across that room, so it can exceed the suit carried at entry.
+
+### Checkpoint and visual verification
+
+Version 1 checkpoints may omit the new loss receipt. The default is no prior-room attribution until a completed room supplies one. A save that predates order junctions retains the canonical itinerary and the original Relay and Shielding Gate encounters. An order-enabled pre-junction save retains its unchosen order and acquires the consequence when the player chooses. The desktop Continue action on a reconstructed pre-junction Armory checkpoint entered canonical Freight Hold. [Continue arrival](../../artifacts/nextgen/run21-final-1080/run21-old-checkpoint-freight-hold.png)
+
+The staged Interlock death enters at 52 suit, after 48 suit lost to Spitter projectiles in Diagnostic Gallery. A fatal Crawler swipe triggers the results card. [Death card](../../artifacts/nextgen/run21-final-1080/run21-depleted-death.png)
+
+The production build passed and conflict-marker search was clean after merging local `nextgen` at `0c9feb39`.
+
+| Evidence | Desktop capture |
+| --- | --- |
+| Cargo cards | [Freight and Loading Bay](../../artifacts/nextgen/run21-final-1080/run20-cargo.png) |
+| Infestation cards | [Workshop and Swarm](../../artifacts/nextgen/run21-final-1080/run20-infestation.png) |
+| Relay Racks | [Freight loader](../../artifacts/nextgen/run21-evidence-1080/run21-relay-racks-direct-relay-racks.png) · [Loading Bay gunner](../../artifacts/nextgen/run21-evidence-1080/run21-relay-racks-salvage-relay-racks.png) |
+| Shielding Gate | [Inspection flank](../../artifacts/nextgen/run21-hatches/run21-shielding-gate-direct-shielding-gate.png) · [Sterilization flank](../../artifacts/nextgen/run21-hatches/run21-shielding-gate-salvage-shielding-gate.png) |
+| Infirmary with focus and an eligible upgrade | [1920×1080](../../artifacts/nextgen/run21-evidence-1080/run21-forecast.png) · [1366×768](../../artifacts/nextgen/run21-evidence-768/run21-forecast.png) |
+
+The first native launch required loopback permission. The first authorized retry collided with a production rebuild and the runner exited with `ERR_HTTP_HEADERS_SENT`. The subsequent runs use a frozen distribution. I retired an early simulator comparison that used the generic simulator seed list and restarted with the historical 12-seed cohort.

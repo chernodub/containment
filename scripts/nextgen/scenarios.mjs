@@ -300,6 +300,7 @@ export const SCENARIOS=[
  {id:'run21-forecast',state:'route',required:['.repair-forecast','[data-detour=direct]'],diagnosticOnly:true,setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('diagnostic-gallery',{rig:'arc',roomOrder:{5:'direct'},phase:'route'});
+  d.grantBoons(['pilgrim-pylon']);
   d.game.combat.restoreRunResources({...d.game.combat.getRunResources(),health:42,armor:8,credits:240});
   d.refresh();
   for(let frame=0;frame<120&&!document.querySelector('[data-detour=direct]');frame++){
@@ -332,8 +333,8 @@ export const SCENARIOS=[
    if(room==='shielding-gate'){
     // Frame the scheduled hatch from the scanner floor, then let the live
     // dispatch create its ordinary warning and spawn.
-    Object.assign(d.game.player,order==='direct'?{x:760,y:430}:{x:580,y:575});
-    d.step(1700);
+    Object.assign(d.game.player,order==='direct'?{x:760,y:430}:{x:700,y:751});
+    d.step(1850);
    }else d.step(2500);
    d.refresh();
   },
