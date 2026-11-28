@@ -26,7 +26,7 @@ export type EncounterEvent = EncounterSpawn | ReserveCut
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;recoveryGrilles?:boolean;salvage?:boolean;runStructure?:1;roomOrder?:RoomOrder;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId;recoveryGrilles?:boolean;transmissionAugment?:AugmentId;salvage?:boolean;runStructure?:1;roomOrder?:RoomOrder;guardianRoute?:GuardianRoute;holdUntilMs?:number;brood?:boolean;junctions?:Readonly<Partial<Record<number,DetourChoice>>>;breaches?:readonly {id:string;x:number;y:number}[]; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[]; openingName?:string;
@@ -46,6 +46,7 @@ export type EncounterSnapshot = Readonly<{
   reserve?: {breachId:string;remainingMs:number;leader:'Spitter'|'Brute'}; pincer?: PincerSnapshot; beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
+import type {AugmentId} from '../abilities/augmentCatalog';
 import {GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,type GuardianRoute} from "../roguelike/economy";
 
 function authoredPlan(options:EncounterOptions):EncounterPlan {
@@ -210,11 +211,18 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     }
    }
   }
-  if(node.templateId==='transmission-chamber'&&beatIndex===0){
-   const shooter=arrivals.findIndex(request=>request.enemyId==='spitter');
-   const approach=arrivals.findIndex(request=>request.enemyId==='brute'||request.enemyId==='crawler');
-   if(shooter>=0)arrivals[shooter]=Object.freeze({...arrivals[shooter],augmentPosition:'shooter'});
-   if(approach>=0)arrivals[approach]=Object.freeze({...arrivals[approach],augmentPosition:'approach'});
+  if(coverOpening&&beatIndex===0&&options.transmissionAugment){
+   const approach=arrivals.findIndex(request=>request.enemyId==='crawler');
+   const support=arrivals.findIndex(request=>request.enemyId==='spitter');
+   if(approach>=0&&support>=0){
+    arrivals[approach]=Object.freeze({...arrivals[approach],atMs:650,augmentPosition:'approach'});
+    arrivals[support]=Object.freeze({...arrivals[support],atMs:650,augmentPosition:'shooter'});
+    for(let index=0;index<arrivals.length;index++){
+     if(index===approach||index===support)continue;
+     const request=arrivals[index];
+     arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,5100)});
+    }
+   }
   }
   const consoleExchange=node.templateId==='manual-control-chamber'&&beatIndex===1;
   const earlyExchange=beatIndex===grilleLessonBeat;

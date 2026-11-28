@@ -483,12 +483,13 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       const keys = chooseActions(perceived);
+      let exclusiveButton;
       if(profile==='competent'&&!exclusiveTried&&s.node?.templateId==='transmission-chamber'&&visible.length){
         const equipped=s.build?.mutations.find(id=>['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id));
         const button={'siege-plow':'f','fault-line':'q','shard-harvest':'q','ice-road':'f','ember-relay':'f','meltdown-core':'v','pilgrim-pylon':'f','live-wire':'q'}[equipped];
         const slot={q:'tactical',f:'power',v:'overdrive'}[button];
         if(slot&&s.abilities.slots?.[slot]?.ready&&s.abilityAims?.[slot]&&now>=nextInput){
-          keys.unshift(button);exclusiveTried=true;
+          keys.unshift(button);exclusiveButton=button;
         }
       }
 
@@ -527,7 +528,8 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
         plasmaOpeningUntil=now+400;
       }
       const plasmaFirst=platedTarget&&(lessonTarget||now<plasmaOpeningUntil);
-      const actions = now >= nextInput ? timelyKeys.filter(key=>!plasmaFirst||!['q','f','v','g'].includes(key)).slice(0,1) : [];
+      const actions = now >= nextInput ? timelyKeys.filter(key=>key===exclusiveButton||!plasmaFirst||!['q','f','v','g'].includes(key)).slice(0,1) : [];
+      if(exclusiveButton&&actions.includes(exclusiveButton))exclusiveTried=true;
       if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
       // WEAPONS15 weapon selection.
       const contacts = novice ? visible : perceived.enemies;

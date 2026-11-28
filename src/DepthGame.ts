@@ -194,7 +194,7 @@ export class DepthGame {
   const breaches=this.openBreaches;
   const hold=this.condition?.id==='sealed'&&/relay/i.test(this.openingName(this.node.depth,this.expedition.run.detour?.choice==='salvage')??'');
   if(this.roomCondition)this.roomCondition.sealedHold=hold;
-  return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,recoveryGrilles:!!this.recoveryGrilles,runStructure:this.expedition.run.runStructure,roomOrder:this.expedition.run.roomOrder,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
+  return new EncounterDirector({seed:this.expedition.run.seed,node:this.node,difficulty:this.difficulty,recoveryGrilles:!!this.recoveryGrilles,transmissionAugment:this.transmissionAugment,runStructure:this.expedition.run.runStructure,roomOrder:this.expedition.run.roomOrder,holdUntilMs:hold?45000:0,brood:this.condition?.id==='brood',guardianRoute:this.expedition.run.guardianRoute,junctions:this.expedition.run.junctions,salvage:this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage',breaches,breachIds:breaches.map(b=>b.id)});
  }
  private broodSupply?:{pod:number;pickup:number};
  private savedArmour?:{id:number;at:number;room:number};
@@ -997,6 +997,12 @@ export class DepthGame {
   const bearing=this.reserveBearing;
   return bearing&&bearing.room===this.roomRevision&&this.elapsed<bearing.until?bearing:undefined;
  }
+ private get transmissionAugment(){
+  if(this.node.templateId!=='transmission-chamber')return;
+  const rig=this.expedition.build.rig;
+  return rig&&TRANSFORMATIVE_AUGMENT_PAIRS[rig].find(id=>this.expedition.build.mutations.includes(id));
+ }
+
  private encounterEvents(events:readonly EncounterEvent[]){for(const e of events){if(e.type==='reserve-cut'){
  const breach=this.geometry.breaches.find(point=>point.id===e.breachId);
  const closed=this.geometry.breaches.find(point=>point.id===e.closedEntry);
@@ -1077,18 +1083,22 @@ export class DepthGame {
    break;
   }
  }
- if(e.augmentPosition){
-  const rig=this.abilities.snapshot.rig;
-  const pair=rig?TRANSFORMATIVE_AUGMENT_PAIRS[rig]:undefined;
-  if(pair?.some(augment=>this.expedition.build.mutations.includes(augment))){
-   const cover=stageCoverLesson(this.geometry,ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[],this.player);
-   if(cover){
-    const second=this.geometry.blockers.filter(rect=>!cover.solids.includes(rect)&&
-     !this.geometry.boundaryWalls.includes(rect)&&Math.hypot(rect.x+rect.width/2-cover.shooter.x,rect.y+rect.height/2-cover.shooter.y)<230);
-    const corner=stageCoverLesson(this.geometry,second,cover.pickup);
-    const point=e.augmentPosition==='shooter'?(corner?.shooter??cover.shooter):cover.pickup;
-    if(canOccupyExpedition(this.geometry,point,enemyBodyRadius(e.enemyId,e.elite)))({x,y}=point);
-   }
+ if(e.augmentPosition&&this.transmissionAugment){
+  const augment=this.transmissionAugment;
+  const spacing=augment==='ember-relay'?108:augment==='pilgrim-pylon'?140:82;
+  const sideways=augment==='siege-plow'?0:36;
+  const radius=enemyBodyRadius(e.enemyId,e.elite);
+  const anchor={x:this.player.x,y:this.player.y};
+  const receiver=ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles?.[0];
+  const bearing=receiver?Math.atan2(receiver.y+receiver.height/2-anchor.y,receiver.x+receiver.width/2-anchor.x):this.player.angle;
+  for(const offset of [0,.5,-.5,1,-1,1.5,-1.5,2,-2,Math.PI]){
+   const angle=bearing+offset,fx=Math.cos(angle),fy=Math.sin(angle);
+   const near={x:anchor.x+fx*125,y:anchor.y+fy*125};
+   const far={x:near.x+fx*spacing-fy*sideways,y:near.y+fy*spacing+fx*sideways};
+   if(!canOccupyExpedition(this.geometry,near,46)||!canOccupyExpedition(this.geometry,far,46)||
+    !hasClearExpeditionShot(this.geometry,anchor,far)||!hasClearExpeditionShot(this.geometry,near,far))continue;
+   const point=e.augmentPosition==='approach'?near:far;
+   if(canOccupyExpedition(this.geometry,point,radius)){({x,y}=point);break;}
   }
  }
  let consoleApproachMs=0;
