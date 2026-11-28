@@ -293,6 +293,15 @@ export function shopScreen(game: DepthGame): string {
   </section>`;
 }
 
+function orderConsequenceSketch(scene:'loader'|'perch') {
+  return `<svg viewBox="0 0 240 92" aria-hidden="true" style="width:100%;height:100%;background:#10222c">
+    <g fill="#2d4e5b"><path d="M28 10h62v24H28zm112 0h70v24h-70zM28 62h62v20H28zm112 0h70v20h-70z"/></g>
+    <path d="M12 48h216" stroke="#648692" stroke-dasharray="5 4"/>
+    <path d="M120 13v66" stroke="#91a8ad" stroke-width="5"/>
+    ${scene==='loader'?'<path d="M82 75V31m-7 8 7-8 7 8" stroke="#ffb06f" stroke-width="3" fill="none"/><rect x="73" y="48" width="18" height="16" rx="4" fill="#ffb06f"/>':'<path d="M163 47H43m9-5-9 5 9 5" fill="none" stroke="#ffb06f" stroke-width="2"/><circle cx="163" cy="47" r="7" fill="#ffb06f"/>'}
+  </svg>`;
+}
+
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */
 export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
   const run = game.expedition.run, graph = generateRun(run.seed,run.version,run.roomOrder), count=total(game);
@@ -330,11 +339,12 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const destination=graph.nodes[junction.depth+1+room];
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option"
           data-route="${next.id}" data-detour="${offer.id}" data-inspected="${index===0}">
-          <span class="route-option-visual">${routeVignette(destination.templateId,undefined,undefined)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-visual">${junction.depth===5?orderConsequenceSketch(room===0?'loader':'perch'):routeVignette(destination.templateId,undefined,undefined)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(offer.name)}</strong>
             <span class="route-option-terms" data-route-term="risk">${escapeHtml(offer.risk)}</span>
             <span class="route-option-subtitle">${escapeHtml(offer.reward)}</span>
+            <span class="route-option-subtitle">${junction.consequence[room]}</span>
           </span>
         </button></div>`;
       }).join('')}</div>

@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;cargoLoader?:true;fixedIngress?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -306,8 +306,10 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const escort=arrivals.findIndex(request=>request.enemyId==='crawler');
    if(escort>=0){
     const warden=arrivals.find(request=>request.guardian==='warden')!;
-    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:'spitter',role:'ranged',
-      atMs:warden.atMs+450,reinforcement:false,shutterSpitter:true});
+    const loader=options.roomOrder?.[5]==='direct';
+    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:loader?'brute':'spitter',
+      role:loader?'flanker':'ranged',atMs:warden.atMs+450,reinforcement:false,
+      ...(loader?{cargoLoader:true,healthScale:.65,approachLeadMs:750}:{shutterSpitter:true})});
    }
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
