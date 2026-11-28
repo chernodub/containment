@@ -27,6 +27,14 @@ export function addFightLaneDamage(root:Group,id:string){
       break;
     }
     case 'crew-checkpoint':
+      // Twisted truss, one dropped chord and two intact triangular bays.
+      for(const z of [331,346]){
+        p.rod([450,7,z],[492,37,z],3,0x807b67);
+        p.rod([492,37,z],[551,8,z+6],3,0x989083);
+        p.rod([450,7,z],[551,8,z+6],3,0x494d50);
+        p.rod([472,8,z],[492,37,z],2,0x716b61);
+        p.rod([492,37,z],[524,8,z+4],2,0x716b61);
+      }
       for(const [x,z,h] of [[272,342,8],[469,344,17],[658,341,12],[867,343,23]]){
         p.box(x,3,z,26,6,22,0x45494a);
         p.rod([x,4,z],[x+7,h+7,z],4,0x61686a);
@@ -218,6 +226,11 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
         c.save();c.translate(0,offset);c.rotate(angle);
         const shoe='M-17 -60Q23 0 2 58';
         line(shoe,31,'#333839');line(shoe,22,'#8a8473');line(shoe,9,'#383e40');
+        for(let tooth=1;tooth<10;tooth++){
+          if(tooth===6||tooth===7)continue;
+          const t=tooth/10,u=1-t,x=-17*u*u+46*u*t+2*t*t,y=-60*u*u+58*t*t;
+          c.fillStyle='#aa9c7e';c.fillRect(x+9,y-4,13,7);
+        }
         for(const y of [-51,48]){c.fillStyle='#363938';c.fillRect(-14,y,21,5);}
         c.restore();
       }
@@ -232,7 +245,9 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       line('M0 -270V266',29,'#353b39');line('M-3 -270V266',16,'#8a6a50');
       for(let y=-247;y<260;y+=77){
         c.fillStyle='#343b3e';c.fillRect(-24,y-12,48,24);
-        c.fillStyle='#a49b88';c.fillRect(-23,y-8,46,9);
+        c.fillStyle='#a49b88';c.fill(new Path2D('M-24 '+(y-9)+'h26l-7 5 4 4h-23Z'));
+        c.save();c.translate(10,y+4);c.rotate(.32);
+        c.fillRect(0,-4,21,9);c.restore();
         c.fillStyle='#353a38';for(const x of [-20,15])c.fillRect(x,y-6,5,5);
       }
     }
