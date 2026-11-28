@@ -94,6 +94,13 @@ export function addFightLaneDamage(root:Group,id:string){
         const center=(bounds.min.x+bounds.max.x)/2;
         if(center>-74&&center<-24)part.scale(1,.32,1);
       }
+      // Shoulder-height jambs flank the protected foot position. Their cold
+      // caps remain distinguishable above the low orange fire on the tread.
+      for(const z of [-54,-19]){
+        lip.box(-77,10,z,8,20,9,0x465859);
+        lip.box(-77,21,z,11,3,12,0xa3c8c5);
+        lip.rod([-77,18,z],[-60,12,z],2,0x8da6a1);
+      }
       const steel=new MeshBasicMaterial({vertexColors:true});
       const sill=lip.finish(root,'reactor-feeder-refuge',833.71249,349.81813,steel,true);
       sill.scale.y=1.48;
