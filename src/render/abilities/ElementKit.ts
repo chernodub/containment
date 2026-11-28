@@ -64,6 +64,8 @@ export interface StatusActor {
     readonly root: T.Object3D;
     readonly height: number;
     hit?(strength: number, direction: number): void;
+    powerAccent?(element: AbilityElement): void;
+    reactToElement?(element: 'kinetic' | 'ice' | 'fire', angle: number): void;
     elementContact?(element: AbilityElement): void;
 }
 export interface AbilityServices {
@@ -105,6 +107,7 @@ export class ElementKit {
     arcContactUntil = -1;
     heatVictim = -1;
     heatUntil = -1;
+    frostUntil = -1;
     low = false;
     reducedMotion = false;
     flashIntensity = 1;
@@ -271,6 +274,17 @@ export class ElementKit {
         for (let i = 0; i < count; i++) {
             const angle = i * 2.3999632297 + this.serial * .13, f = .4 + (i % 7) / 10;
             this.mote(element === 'cryo' ? 'shard' : element === 'pyro' ? 'flame' : 'spark', x, y, z, Math.cos(angle) * speed * f, (.2 + i % 5 * .16) * speed, Math.sin(angle) * speed * f, element === 'cryo' ? .06 : .09, life * (.6 + i % 4 * .15), ELEMENT_COLORS[element]);
+        }
+    }
+    ringEjecta(x: number, z: number, radius: number, element: 'kinetic' | 'cryo' | 'pyro'): void {
+        const kind = element === 'cryo' ? 'shard' : element === 'pyro' ? 'flame' : 'spark';
+        this.mote(kind, x, .85, z, 0, 0, 0, .94 * this.flashIntensity, .05, 0xfffcf0);
+        for (let i = 0; i < (this.low ? 5 : 13); i++) {
+            const angle = i * 2.39996;
+            const reach = radius * (.16 + (i % 3) * .13);
+            const dx = Math.cos(angle), dz = Math.sin(angle);
+            this.mote(kind, x + reach * dx, .18, z + reach * dz, dx * 2.1, 4.5 + i % 4, dz * 2.1,
+                .18 + i % 3 * .09, .31 + i % 3 * .065, i % 4 ? ELEMENT_COLORS[element] : 0xfff5dc);
         }
     }
     ring(x: number, z: number, radius: number, color: number, life = .65, reverse = false): void {
@@ -665,7 +679,7 @@ export class ElementKit {
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
     clear(): void {
-        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); this.arcContactUntil = this.heatUntil = this.heatVictim = -1; for (const p of this.particles)
+        this.services?.presentation?.setFlameGrade?.(0, 0, 0); for (const mark of this.contacts) mark.age = 4; this.statusOwners.clear(); this.arcContactUntil = this.frostUntil = this.heatUntil = this.heatVictim = -1; for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)

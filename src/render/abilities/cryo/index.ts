@@ -50,10 +50,10 @@ class CryoPresentation implements AbilityPresentation {
     if (event.ability === 'cryo-nova' && event.phase === 'impact') {
       const radius = (event.radius ?? 210) / UNIT;
       this.wave(px, pz, radius, .78, false, true);
-      k.burst(px, .18, pz, 'cryo', 32, 5.2, .95);
+      k.ringEjecta(px, pz, radius, 'cryo');
       // VFX13: hard ice shock front racing to the exact radius, then crystalline frost creeping over the deck.
       const shock = k.fx.spawn(FxMode.Shock, px, pz, .42);
-      shock.param = 1; shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = 1.3;
+      shock.param = 1; shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = .64;
       const frost = k.fx.spawn(FxMode.Frost, px, pz, 6.5);
       frost.range = radius; frost.h0 = .036; frost.color = ICE;
       k.draw('spark', px, .6, pz, 1.4, 1.4, 1, CORE, 1);
