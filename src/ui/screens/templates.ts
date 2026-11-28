@@ -293,7 +293,15 @@ export function shopScreen(game: DepthGame): string {
   </section>`;
 }
 
-function orderConsequenceSketch(scene:'loader'|'perch') {
+function orderConsequenceSketch(scene:'loader'|'perch'|'inspection'|'sterilization') {
+  if(scene==='inspection'||scene==='sterilization'){
+    const lane=scene==='inspection'?'M174 15H137L117 41m-2-10 2 10 11-2':'M59 77H102L121 53m2 11-2-11-11 2';
+    return `<svg viewBox="0 0 240 92" aria-hidden="true" style="width:100%;height:100%;background:#10222c">
+      <path d="M16 35h208v23H16zM61 9h137v21H61zM38 63h128v21H38z" fill="#2d4e5b"/>
+      <path d="M16 46h208" stroke="#648692" stroke-dasharray="5 4"/>
+      <path d="${lane}" fill="none" stroke="#ffb06f" stroke-width="3"/>
+    </svg>`;
+  }
   return `<svg viewBox="0 0 240 92" aria-hidden="true" style="width:100%;height:100%;background:#10222c">
     <g fill="#2d4e5b"><path d="M28 10h62v24H28zm112 0h70v24h-70zM28 62h62v20H28zm112 0h70v20h-70z"/></g>
     <path d="M12 48h216" stroke="#648692" stroke-dasharray="5 4"/>
@@ -336,10 +344,9 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
       <h2 id="route-title">Choose which sector to face first</h2>
       <div class="route-briefing-grid">${offers.map((offer,index)=>{
         const room=offer.id==='direct'?0:1;
-        const destination=graph.nodes[junction.depth+1+room];
         return `<div class="route-choice"><button id="route-option-${index}" class="route-option"
           data-route="${next.id}" data-detour="${offer.id}" data-inspected="${index===0}">
-          <span class="route-option-visual">${junction.depth===5?orderConsequenceSketch(room===0?'loader':'perch'):routeVignette(destination.templateId,undefined,undefined)}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-visual">${junction.depth===5?orderConsequenceSketch(room===0?'loader':'perch'):orderConsequenceSketch(room===0?'inspection':'sterilization')}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(offer.name)}</strong>
             <span class="route-option-terms" data-route-term="risk">${escapeHtml(offer.risk)}</span>

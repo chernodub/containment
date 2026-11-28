@@ -312,6 +312,16 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
       ...(loader?{cargoLoader:true,healthScale:.65,approachLeadMs:750}:{shutterSpitter:true})});
    }
   }
+  const infestationOrder=options.roomOrder?.[13];
+  if(node.templateId==='shielding-gate'&&beatIndex===0&&infestationOrder){
+   const flank=arrivals.findIndex(request=>request.enemyId==='crawler');
+   const side=infestationOrder==='direct'?1:-1;
+   const entry=positions?.reduce<(typeof positions)[number]|undefined>((best,point)=>
+    !best||point.y*side<best.y*side?point:best,undefined);
+   if(flank>=0&&entry){
+    arrivals[flank]=Object.freeze({...arrivals[flank],breachId:entry.id,role:'flanker',fixedIngress:true});
+   }
+  }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
@@ -666,7 +676,7 @@ export class EncounterDirector {
   }
   /** Commit flanker arrivals relative to the observed marine pose; the existing arrival warning still owns their delay. */
   private placeInterception(request:EncounterSpawn,player?:EncounterPlayerPose):EncounterSpawn {
-    if(request.grammar!=='interception'||request.role!=='flanker'||!player||!Number.isFinite(player.x)||!Number.isFinite(player.y)||!Number.isFinite(player.angle)||this.breaches.length<2)return request;
+    if(request.fixedIngress||request.cargoLoader||request.grammar!=='interception'||request.role!=='flanker'||!player||!Number.isFinite(player.x)||!Number.isFinite(player.y)||!Number.isFinite(player.angle)||this.breaches.length<2)return request;
     const fx=Math.cos(player.angle),fy=Math.sin(player.angle);
     const ranked=this.breaches.filter(b=>Math.hypot(b.x-player.x,b.y-player.y)>130).map(b=>{
       const dx=b.x-player.x,dy=b.y-player.y,distance=Math.hypot(dx,dy);
