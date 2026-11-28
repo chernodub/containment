@@ -205,6 +205,7 @@ export function roomValueProfile(templateId?: string): RoomValueProfile | undefi
  * pool 0 is the fight circle, the rest the room's named-space fixtures) plus exit XZ/radius/gain. */
 // Scalar uniforms use Three's vec4 value cache. Uniform arrays upload again
 // whenever a draw changes material, even when their shared values are identical.
+export const ARENA_APERTURE = {value:new T.Vector4(1,1,0,1)};
 export const ROOM_VALUE_FIELD = Array.from({length:4},()=>({value:new T.Vector4(0,0,1e4,2e4)}));
 export const ROOM_LANDMARK = {value:new T.Vector4()};
 export const ROOM_LANDMARK_COLOR = {value:new T.Color(0)};

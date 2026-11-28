@@ -329,7 +329,21 @@ export function buildOriginalShipKit(
             bucket = {material, geometries: [], castShadow: false,vertices:0,lowVertices:0,cutaway:false}; buckets.set(bucketKey, bucket);
           }
           const vertices=geometry.getAttribute('position').count;
-          if(instance.cutaway&&!bucket.material.transparent){parts.push({finish:bucketKey,start:bucket.vertices,end:bucket.vertices+vertices});bucket.cutaway=true;}
+          if(instance.cutaway&&!bucket.material.transparent){
+            if(instance.asset==='armory-weapon-carousel'){
+              // The rotary bearing and bolted base stay seated when the rifle rack cuts away.
+              const pos=geometry.getAttribute('position');
+              let start=-1;
+              for(let i=0;i<=vertices;i+=3){
+                const raised=i<vertices&&Math.max(pos.getY(i),pos.getY(i+1),pos.getY(i+2))>.63;
+                if(raised&&start<0)start=i;
+                if(!raised&&start>=0){
+                  parts.push({finish:bucketKey,start:bucket.vertices+start,end:bucket.vertices+i});start=-1;
+                }
+              }
+            }else parts.push({finish:bucketKey,start:bucket.vertices,end:bucket.vertices+vertices});
+            bucket.cutaway=true;
+          }
           bucket.vertices+=vertices;
           if(!instance.highDetail)bucket.lowVertices+=vertices;
           bucket.geometries.push(geometry);
