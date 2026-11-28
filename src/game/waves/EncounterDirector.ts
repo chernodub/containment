@@ -373,11 +373,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     grammar:beat.grammar,role:'ranged',hatchDelayMs:600}));
   }
   if(mode==='standard'&&options.recoveryGrilles&&node.templateId==='manual-control-chamber'&&beatIndex>1){
-   // The open grille also feeds the room's later ranged reinforcements.
+   // The open grille also feeds the late crossfire and its first screen.
+   let screenSlots=beatIndex===2?2:0;
    for(let index=0;index<arrivals.length;index++){
     const request=arrivals[index];
-    if(request.enemyId==='spitter'&&!request.priority)
+    if(request.priority)continue;
+    if(request.enemyId==='spitter'||request.enemyId==='crawler'&&screenSlots>0){
      arrivals[index]=Object.freeze({...request,consoleReserve:true});
+     if(request.enemyId==='crawler')screenSlots--;
+    }
    }
   }
   if(mode==='standard'&&node.templateId==='communal-atrium'&&beatIndex===0){
