@@ -1674,3 +1674,62 @@ All four used earned sector-18 saves from the Wave 36 native campaigns. The firs
 The Story sectors 1–4 baseline was rerun from `nextgen` for all 24 review cases. Every matched room had exactly the same clear time and gross suit loss on the locked build. An older-build observer initially failed because it required the new escort accessors. The harness now treats those accessors as optional for retrospective runs.
 
 The later Manual Control balance trial added two elite Spitters to the final wave for the Cryo and Arc transformation builds. It produced 23/24 clears across those rigs, the same combined result as the locked build. A subsequent Cryo policy trial avoided visible imminent hazards during the notch approach and retained those extra Spitters. Cryo remained at 12/12. Both experiments were removed from the branch.
+
+### Complete three-arm simulation
+
+All three arms used the same simulation, policy and observer hashes. The rule-absent arm cleared 38/48 with zero stalls, with 10/12 Breacher, 11/12 Cryo, 8/12 Pyro and 9/12 Arc. Suit includes only seeds that visited Manual Control in all three arms. Closure ratios include all visits to that arm.
+
+| Rig | Three-way matched visits | Aware suit | Unaware suit | Rule-absent suit | Aware closures | Unaware closures | Rule-absent closures |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Breacher | 8 | 44.23 | 41.76 | 30.72 | 9/10 | 0/8 | 0/10 |
+| Cryo | 10 | 107.79 | 80.20 | 104.17 | 9/12 | 1/11 | 0/11 |
+| Pyro | 8 | 30.52 | 29.15 | 36.73 | 7/10 | 0/10 | 0/10 |
+| Arc | 8 | 21.38 | 32.95 | 25.91 | 11/11 | 0/9 | 0/10 |
+
+[Locked aware cohort](../../artifacts/nextgen/playtest/play43-locked-aware/summary.json) · [Unaware cohort](../../artifacts/nextgen/playtest/play43-review-unaware/summary.json) · [Rule-absent cohort](../../artifacts/nextgen/playtest/play43-review-absent/summary.json) · [Story cohort](../../artifacts/nextgen/playtest/play43-locked-story/summary.json)
+
+### Native campaigns and checkpoints
+
+| Seed 1729 campaign | First stop | Earned sector used to resume | Final clear count | Runner errors | Loads longer than 5 s |
+|---|---|---:|---:|---:|---:|
+| Standard Breacher | Wall-time limit | 14 | 20/20 | 0 | 7 |
+| Standard Arc | Wall-time limit | 15 | 20/20 | 0 | 7 |
+| Story novice Cryo | Wall-time limit | 14 | 20/20 | 0 | 10 |
+
+All three reached the ending with native desktop input. The continuations used the locked distribution and earlier organic cleared-room receipts from the initial attempts. Arc closed the Manual grille in its full campaign continuation. Breacher cleared with it open. Each continuation earned a Swarm guardian retreat. The late Spitter fired in both Standard continuations, for 0/2 native interceptions, compared with 17/47 in the locked aware simulation.
+
+| Locked Manual replay | Aware suit / closures | Unaware suit / closures | Rule-absent suit / closures |
+|---|---:|---:|---:|
+| Breacher 1729 | 91.45 / 1 | 137.70 / 0 | 75.75 / 0 |
+| Pyro 1729 | 37.95 / 1 | 52.92 / 0 | 33.86 / 0 |
+| Arc 1729 | 48.17 / 1 | 37.95 / 0 | 27.72 / 0 |
+| Arc 2718 | 73.97 / 1 | 63.00 / 0 | 22.83 / 0 |
+
+The same four earned checkpoints were replayed in each arm. The unaware setups all cleared and averaged 72.89 suit. The aware setups averaged 62.88 suit, a difference of 10.01 over these four matched saves. The aware Arc 1729 attempt logged a kit timeout. The other eleven replays reported zero errors. The replay result supports a native closure cue and a viable alternate stance. The larger simulation sample missed the requested suit savings.
+
+### Bench and visual comparison
+
+| Room | Previous High peak draws | Locked High peak draws | Previous Low peak draws | Locked Low peak draws |
+|---|---:|---:|---:|---:|
+| Safety Interlock Station | 202 | 195 | 184 | 188 |
+| Transmission Chamber | 162 | 169 | 144 | 148 |
+
+The Pyro runs sustained the kit and enemy population for 15 simulated seconds and recorded zero errors. Safety Interlock High had 97.17% of frames above 20 ms before and 95.33% on the locked build under concurrent workload. Three lower-load locked repeats recorded 93.77%, 88.71% and 93.07%. The requested 5% frame target was not reproduced. These timings are from the benchmark, and the visual checks used the separate fixed-step capture tool.
+
+| Visual capture | PNG count | Errors | Failures |
+|---|---:|---:|---:|
+| Baseline room pairs | 20 | 0 | 0 |
+| Locked guardian, Crew Checkpoint and Transmission | 16 | 0 | 0 |
+| Locked Coolant and Swarm room pairs | 10 | 0 | 0 |
+
+The room pairs were compared at 480×270 and sampled at 1920×1080. The Crew Checkpoint, Transmission and Coolant sparse PNGs are byte-identical. The crowded samples retain readable local warnings with PLAY43 cues absent from the unrelated fixtures. The worst remaining shot is Coolant's held hatch, which crowds the lower HUD. The late Spitter is visible in Arc's native frame, but the guardian's escort group is visually stronger.
+
+[Arc campaign](../../artifacts/nextgen/playtest/play43-native-arc-resume/report.json) · [Breacher campaign](../../artifacts/nextgen/playtest/play43-native-breacher-resume/report.json) · [Story Cryo campaign](../../artifacts/nextgen/playtest/play43-native-story-resume/report.json) · [Baseline benchmark](../../artifacts/nextgen/play43-bench-before/benchmark.json) · [Locked benchmark](../../artifacts/nextgen/play43-bench-locked/benchmark.json) · [Before room captures](../../artifacts/nextgen/play43-before-rooms/manifest.json) · [Locked capture](../../artifacts/nextgen/play43-locked-capture/manifest.json) · [Locked room pairs](../../artifacts/nextgen/play43-locked-room-pair/manifest.json)
+
+After the other foreground runs finished, a matched Safety Interlock High pair at one-minute loads of 3.16 and 3.52 measured 74.95% above 20 ms with 206 peak draws on the baseline, and 85.11% with 208 peak draws on the locked build. Both manifests have zero errors. The 5% target was missed in the local pair. The difference in this pair cannot be treated as a measured cost attributable to PLAY43 alone.
+
+The implementation and reports remain on `t3/play43`. The branch was cut from `392366cd`; local `nextgen` advanced while verification ran. The final builds and measurements are for PLAY43's branch and the recorded starting baseline. Controller and renderer changes from the other delegates have not been integrated or measured here.
+
+The aware Arc 1729 replay was retried from the same earned save after its kit timeout. The retry cleared Manual Control in 41.13 simulated seconds, closed the grille, and repeated its 48.17 gross suit result with zero errors. Each entry in the three-arm native table now has a clean replay.
+
+The early native sample shows the hatch in frame in Communal Atrium, but I did not isolate a native frame of the shutter reversing. The final early-cohort mean remains below target. At handoff, `df -h /Users/chernodub` reported 926 GiB capacity, 820 GiB used, 79 GiB available and 92% used. Worktree evidence occupied 3.3 GiB.
