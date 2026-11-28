@@ -89,15 +89,15 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(game.status!=='reward'||run.version!==3||run.phase!=='starting-boon'||run.seed!==value||run.completedNodeIds.length||build.mutations.length||build.rig!==rig||game.abilities.snapshot.rig!==rig)throw Error('Legacy start requires an untouched native rig choice for the same seed');
    seed=value;setUiFixture(game,null);nativeRealtimeUiDt=null;presentation?.reset();game.newRun(seed,{version:2,rig});events.length=0;await ready();
   },
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number;runStructure?:true;orderJunction?:true}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number;runStructure?:true;orderJunction?:true;roomOrder?:import('../../src/game/roguelike/orderJunctions').RoomOrder}={}){
    if(options.seed!==undefined)seed=options.seed;
-   const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
+   const version=options.version??3,nodes=generateRun(seed,version,options.roomOrder).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
    setUiFixture(game,null);presentationEnabled=false;presentation?.setEnabled(false);presentation?.reset();game.newRun(seed,{rigSelect:!!options.rig});if(options.rig&&!game.chooseRig(options.rig))throw Error('Debug rig selection failed');events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};
    if(index===0)game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
    else{
     const target=nodes[index],path:typeof nodes[number][]=[];let cursor=target;while(cursor.depth>0){cursor=nodes.find(n=>n.depth===cursor.depth-1&&n.next.includes(cursor.id))!;if(!cursor)throw Error('No route to target');path.unshift(cursor);}
-    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,...(version===3&&options.runStructure?{runStructure:1 as const}:{}),currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[],...(options.rig?{rig:options.rig}:{})},resources:game.combat.getRunResources()});
+    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,...(version===3&&(options.runStructure||options.roomOrder)?{runStructure:1 as const}:{}),...(options.roomOrder?{roomOrder:options.roomOrder}:{}),currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[],...(options.rig?{rig:options.rig}:{})},resources:game.combat.getRunResources()});
     if(!serialized)throw Error(`Invalid checkpoint before ${templateId}`);
     game.expedition=restoreExpedition(parseCheckpoint(serialized)!);game.node=previous;game.status='route';
     if(previous.templateId==='manual-control-chamber')game.authorizeDestruction();else game.route(nodes[index].id);
@@ -117,12 +117,23 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    }
   },
   grantBoons(ids:MutationId[]){let build=game.expedition.build;for(const id of ids)if(!build.mutations.includes(id))build=addMutation(build,id);game.expedition=Object.freeze({...game.expedition,build});game.combat.setBuild(build);refresh();},
-  async stageDeathExchange({kind,room='awakening-bay',bruteLoss=false}:{
-   kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;
+  async stageDeathExchange({kind,room='awakening-bay',bruteLoss=false,depleted=false}:{
+   kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;depleted?:boolean;
   }){
-   await api.gotoRoom(room,{rig:'cryo'});
+   const runtime=game as unknown as {clearRoom():void;enemyEvents(events:readonly EnemyEvent[]):void;updateBullets(dt:number):void;hurtCooldown:number};
+   if(depleted){
+    await api.gotoRoom('diagnostic-gallery',{rig:'cryo',roomOrder:{5:'direct'}});
+    game.combat.restoreRunResources({...game.combat.getRunResources(),health:100,armor:0});
+    for(let hit=0;hit<2;hit++){
+     runtime.hurtCooldown=0;
+     game.hurt(29,undefined,{source:'enemy-projectile',enemyFamily:'spitter'});
+    }
+    runtime.clearRoom();
+    game.claimResources();
+    if(game.status==='route')game.route(game.node.next[0]);
+    await ready();
+   }else await api.gotoRoom(room,{rig:'cryo'});
    game.skipStory();
-   const runtime=game as unknown as {enemyEvents(events:readonly EnemyEvent[]):void;updateBullets(dt:number):void;hurtCooldown:number};
    const impact={x:game.player.x,y:game.player.y};
    const positions=[[-54,0],[54,0],[0,-54],[0,54],[-38,-38],[38,38]];
    const earlier=positions.map(([x,y])=>({x:impact.x+x,y:impact.y+y}))

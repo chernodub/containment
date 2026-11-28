@@ -71,6 +71,17 @@ export class DepthGame {
  private exchangeHistory=new ExchangeHistory();
  private finalExchange?:LastExchange;
  get deathExchange(){return this.finalExchange;}
+ private entrySuit=0;
+ get depletedArrival(){
+  const loss=this.stats.costliestRoom;
+  return this.entrySuit<=65&&loss&&loss.leadingHit.room!==this.node.id
+   ? {entrySuit:this.entrySuit,...loss}:undefined;
+ }
+ private recordRoomLoss(){
+  const leading=this.roomDamage[0];
+  if(leading)this.runStats.recordRoomLoss(
+   [...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0),leading);
+ }
  private roomDamageLedger=new Map<string,{source:IncomingDamageOrigin['source'];enemyFamily?:IncomingDamageOrigin['enemyFamily'];guardian?:'warden'|'matron';amount:number}>();
  get roomDamage(){return [...this.roomDamageLedger.values()].sort((a,b)=>b.amount-a.amount).slice(0,3).map(value=>({...value}));}
 
@@ -684,7 +695,8 @@ export class DepthGame {
    this.pickups.spawn('health',recovery,entrance.x,entrance.y);
   }
  }
- if(start){this.stageRigDrill();this.placeConditionEggs();if(this.node.depth===15&&this.expedition.run.junctions?.[11]==='salvage')this.abilities.addCharge(3000);this.combat.replenishReserves();if(familyBonuses(this.expedition.build).recovery)this.combat.restoreArmor(6);this.encounterEvents(this.director.start());}}
+ if(start){this.stageRigDrill();this.placeConditionEggs();if(this.node.depth===15&&this.expedition.run.junctions?.[11]==='salvage')this.abilities.addCharge(3000);this.combat.replenishReserves();if(familyBonuses(this.expedition.build).recovery)this.combat.restoreArmor(6);this.encounterEvents(this.director.start());}
+ this.entrySuit=this.combat.snapshot.health+this.combat.snapshot.armor;}
  pause(){if(this.status==='playing'){this.status='paused';this.player.moving=false;}}
  resume(){if(this.status==='paused')this.status='playing';}
  menu(){this.status='menu';this.player.moving=false;}
@@ -1305,7 +1317,7 @@ export class DepthGame {
   else if(enemy.meleePhase==='recovery'){drill.entered=false;}
   else if(enemy.meleePhase==='approach'){drill.entered=false;drill.evaded=false;}
  }
- private clearRoom(){if(this.combat.snapshot.dead||this.expedition.run.phase!=='combat')return;this.dodgeDrill=null;this.collectLoot(true);const ordered=orderRoom(this.expedition.run.roomOrder,this.node.depth);if(ordered.opening!==undefined&&!ordered.second)this.combat.restoreHealth(orderRecovery(this.difficulty).hp);if(this.condition?.id==='brood')this.awardCredits(Math.round(Math.max(0,this.combat.snapshot.credits-this.roomStartCredits)*.3));if(this.node.depth===7&&(this.expedition.run.guardianRoute||this.expedition.run.junctions?.[3]==='salvage'))this.awardCredits(35);if(this.node.depth===GUARDIAN_ROUTE_DEPTH&&this.expedition.run.guardianRoute){this.combat.restoreHealth(35);this.combat.restoreArmor(25);}if(this.difficulty==='story'&&this.node.depth===2)this.combat.restoreHealth(35);if(this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage'){if(this.node.depth===15)this.awardCredits(160);if(this.node.depth===18)this.abilities.addCharge(24000);}this.settleContract();this.expedition=completeExpeditionRoom(this.expedition,this.combat.getRunResources());this.bullets=[];this.pools=[];this.pending=[];this.enemies.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.player.moving=false;this.status=this.expedition.run.phase==='complete'?'complete':'reward';if(this.status==='complete'){this.rememberExpedition();if(this.storyRoom){this.combat.applyDamage(1000000);this.expedition=Object.freeze({...this.expedition,resources:this.combat.getRunResources()});this.presentation.push({type:'explosion',x:this.player.x,y:this.player.y,radius:900});}this.discardCheckpoint();}else this.save();}
+ private clearRoom(){if(this.combat.snapshot.dead||this.expedition.run.phase!=='combat')return;this.dodgeDrill=null;this.recordRoomLoss();this.collectLoot(true);const ordered=orderRoom(this.expedition.run.roomOrder,this.node.depth);if(ordered.opening!==undefined&&!ordered.second)this.combat.restoreHealth(orderRecovery(this.difficulty).hp);if(this.condition?.id==='brood')this.awardCredits(Math.round(Math.max(0,this.combat.snapshot.credits-this.roomStartCredits)*.3));if(this.node.depth===7&&(this.expedition.run.guardianRoute||this.expedition.run.junctions?.[3]==='salvage'))this.awardCredits(35);if(this.node.depth===GUARDIAN_ROUTE_DEPTH&&this.expedition.run.guardianRoute){this.combat.restoreHealth(35);this.combat.restoreArmor(25);}if(this.difficulty==='story'&&this.node.depth===2)this.combat.restoreHealth(35);if(this.expedition.run.detour?.depth===this.node.depth&&this.expedition.run.detour.choice==='salvage'){if(this.node.depth===15)this.awardCredits(160);if(this.node.depth===18)this.abilities.addCharge(24000);}this.settleContract();this.expedition=completeExpeditionRoom(this.expedition,this.combat.getRunResources());this.bullets=[];this.pools=[];this.pending=[];this.enemies.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.player.moving=false;this.status=this.expedition.run.phase==='complete'?'complete':'reward';if(this.status==='complete'){this.rememberExpedition();if(this.storyRoom){this.combat.applyDamage(1000000);this.expedition=Object.freeze({...this.expedition,resources:this.combat.getRunResources()});this.presentation.push({type:'explosion',x:this.player.x,y:this.player.y,radius:900});}this.discardCheckpoint();}else this.save();}
  private relayHeavyRecovered=false;
  private relayHeavyRecovering=false;
  private readonly broodStarted=new Set<number>();

@@ -297,6 +297,25 @@ export const SCENARIOS=[
    abilityUses:{dash:46,tactical:37,power:21,overdrive:9},overdrivesUsed:9,highestMultiKill:6,creditsEarned:2260}});
   d.refresh();
  }},
+ {id:'run21-forecast',state:'reward',required:['.repair-forecast','#purchase-heal'],diagnosticOnly:true,setup:async()=>{
+  const d=window.__containmentDebug;
+  await d.gotoRoom('diagnostic-gallery',{rig:'arc',roomOrder:{5:'direct'},phase:'reward'});
+  d.game.combat.restoreRunResources({...d.game.combat.getRunResources(),health:42,armor:8,credits:240});
+  d.refresh();
+  document.querySelector('#purchase-heal').focus();
+ }},
+ {id:'run21-depleted-death',state:'dead',required:['.depleted-arrival'],diagnosticOnly:true,setup:async()=>{
+  await window.__containmentDebug.stageDeathExchange({room:'safety-interlock-station',kind:'crawler',depleted:true});
+ }},
+ ...['relay-racks','shielding-gate'].flatMap(room=>['direct','salvage'].map(order=>({
+  id:`run21-${room}-${order}`,state:'playing',room,diagnosticOnly:true,setupArgument:{room,order},setup:async({room,order})=>{
+   const d=window.__containmentDebug;
+   await d.gotoRoom(room,{rig:'arc',roomOrder:room==='relay-racks'?{5:order}:{5:'direct',13:order}});
+   d.presentation(true);
+   d.step(room==='relay-racks'?2400:2300);
+   d.refresh();
+  },
+ }))),
  {id:'run20-cargo',state:'route',required:['[data-route]'],setup:async()=>{
   await window.__containmentDebug.gotoRoom('armory',{phase:'route',orderJunction:true});
  }},
