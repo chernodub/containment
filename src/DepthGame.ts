@@ -1337,10 +1337,11 @@ export class DepthGame {
  private featuredGuardianAppearedAt=0;
  private guardianGround(guardian:'warden'|'matron',id:number,beat:number|undefined){
   const room=this.node.templateId;
-  if(room!=='coolant-plant'&&(room!=='swarm-junction'||guardian!=='matron'||this.broodCollapse?.id!==id))return;
+  if(room!=='coolant-plant'&&room!=='swarm-junction')return;
   const damage=[...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);
-  if((this.elapsed-this.featuredGuardianAppearedAt)*1000>FEATURED_GUARDIAN_WINDOW_MS||damage>32)return;
-  const queued=this.director.concedeGuardianGround(beat);
+  const interrupted=room==='coolant-plant'||guardian==='matron'&&this.broodCollapse?.id===id;
+  const earned=interrupted&&(this.elapsed-this.featuredGuardianAppearedAt)*1000<=FEATURED_GUARDIAN_WINDOW_MS&&damage<=32;
+  const queued=this.director.reportFeaturedGuardianDefeated(beat,earned);
   if(!queued?.length)return;
   const breach=this.geometry.breaches.find(point=>point.id===queued[0].breachId);
   if(!breach)return;
