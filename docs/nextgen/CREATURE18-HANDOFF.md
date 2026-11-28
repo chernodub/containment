@@ -2239,3 +2239,26 @@ The final26 side is the local preserved build at `0c9feb39`, captured with the s
 - The hand at mid-stance is still a rigid club. A real elbow needs the forearm reweighted and every brute clip re-keyed.
 - The shoulder key band is subtle and the chamfer is painted, not modelled.
 - The new dark dorsal makes the regular Brute's three crowns read as stripes between dark gaps.
+
+### CONTACT37
+
+The Crawler's right hook opens laterally in the weighted bind mesh and holds its outward rotation through more of recovery. The Stalker's weighted claws open on either side of a narrower thorax. The Spitter's acid sac widens and shortens toward its rear pole. Full and Low meshes share these changes. The outward keratin faces use the existing shell value range. The three crown colours occupy a slightly wider area.
+
+During a Crawler strike and early recovery, the nearest waiting Crawler within the two body radii plus one world metre moves sideways by up to 55% of its radius. The side follows the waiting animal's position relative to the locked strike axis. This is a renderer offset. Collision, damage, targeting, spawn spacing and the save format retain their native behaviour.
+
+The clipped shooter's world stroke sits farther inside the playable viewport. Its rotating HUD marker reserves clearance above the tray across the full bottom band, including the overdrive area beside the tray.
+
+The matched-facing study has three angles, two distances and both graphics tiers for each of the three revised families. At native size I can follow the Crawler's outer wrist and the paired Stalker limbs in the three-quarter views. At 480 × 270 the same parts still lose separation directly behind the raised gun. The sac is easiest to identify in profile. The slate marine and visor survive the native Swarm overlap.
+
+In the 20-body dark rest views my conservative High counts at 480 × 270 were nine Crawlers, two Spitters, two Carriers and three Brutes in both revisions of both rooms. I could trace three Stalkers in Transmission and two in Swarm without relying on the fixture list. The tenth Crawler and third Swarm Stalker still take a positional cross-check. In the imminent frames the warning helps identify its owner, but the adjacent bodies make a rapid count harder. This pass improves the facing study more than the crowd headcount.
+
+Peak resting values below are display luminance and HSV saturation at 480 × 270. The references are the visible marine leg and visor pixels. Creature samples use the eroded actor-ID mask.
+
+| High rest frame | Leg / visor | Crawler | Stalker | Spitter | Carrier |
+| --- | --- | --- | --- | --- | --- |
+| Swarm Junction | .791 / .333 | .628 / .239 | .607 / .224 | .614 / .231 | .570 / .203 |
+| Transmission Chamber | .801 / .368 | .620 / .234 | .622 / .239 | .656 / .221 | .581 / .201 |
+| Crew Checkpoint | .796 / .304 | .636 / .226 | .632 / .220 | .622 / .221 | .577 / .193 |
+| Coolant Plant | .823 / .307 | .636 / .230 | .630 / .241 | .626 / .222 | .581 / .198 |
+
+The native Arc 1729 continuation from final27's earned room-15 boundary cleared Swarm with zero errors. Its sampled strike was at marine position (746, 352), versus (67, 411) in final27. The separate High and Low reconstructions use the original positions and attack phases in Swarm, Relay Racks, Diagnostic Gallery and Breached Loading Bay. Transient effects, camera history and the exact frame of the native bot run differ. Evidence in this worktree is under `artifacts/nextgen/contact37-review`, `contact37-final-replay`, `contact37-final-facing`, `contact37-final-floors` and `artifacts/nextgen/playtest/contact37-swarm`.
