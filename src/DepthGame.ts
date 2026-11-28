@@ -31,7 +31,7 @@ import {QueenBossSystem,type QueenBossEvent} from './game/enemies/QueenBossSyste
 import {ENEMIES,enemyBodyRadius} from './game/enemies/catalog';
 import type {StandardEnemyId} from './game/enemies/types';
 import {PickupSystem} from './game/pickups/PickupSystem';
-import {EncounterDirector,type EncounterEvent} from './game/waves/EncounterDirector';
+import {EncounterDirector,FEATURED_GUARDIAN_WINDOW_MS,type EncounterEvent} from './game/waves/EncounterDirector';
 import {FacilityNavigation} from './game/world/FacilityNavigation';
 import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot,clipExpeditionLane} from './game/world/expeditionGeometry';
 import {rerollExpedition,createExpedition,completeExpeditionRoom,claimExpeditionMutation,claimExpeditionResources,chooseExpeditionRoute,defeatExpedition,restoreExpedition,type Expedition,type ExpeditionStartOptions} from './game/roguelike/expedition';
@@ -1339,7 +1339,7 @@ export class DepthGame {
   const room=this.node.templateId;
   if(room!=='coolant-plant'&&(room!=='swarm-junction'||guardian!=='matron'||this.broodCollapse?.id!==id))return;
   const damage=[...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);
-  if(this.elapsed-this.featuredGuardianAppearedAt>22||damage>24)return;
+  if((this.elapsed-this.featuredGuardianAppearedAt)*1000>FEATURED_GUARDIAN_WINDOW_MS||damage>32)return;
   const queued=this.director.concedeGuardianGround(beat);
   if(!queued?.length)return;
   const breach=this.geometry.breaches.find(point=>point.id===queued[0].breachId);

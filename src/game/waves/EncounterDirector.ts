@@ -49,6 +49,8 @@ export type EncounterSnapshot = Readonly<{
 import type {AugmentId} from '../abilities/augmentCatalog';
 import {GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,type GuardianRoute} from "../roguelike/economy";
 
+export const FEATURED_GUARDIAN_WINDOW_MS=22000;
+
 function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
  const node={...options.node,depth:ordered.depth},mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
@@ -277,7 +279,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    if(featured&&queued)for(let index=0;index<arrivals.length;index++){
     const request=arrivals[index];
     if(request.authoredGroup===queued.authoredGroup)
-     arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,featured.atMs+9500)});
+     arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,featured.atMs+FEATURED_GUARDIAN_WINDOW_MS+650)});
    }
   }
   if(node.templateId==='swarm-junction'){
