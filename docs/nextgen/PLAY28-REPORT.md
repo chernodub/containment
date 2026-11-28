@@ -1429,17 +1429,17 @@ Suit means use matched seeds across all three arms. Closures cover all room visi
 
 Across the 38 matched aware and unaware Manual Control visits, the unaware bot lost 1.50 more gross suit, compared with 1.10 across 41 matched visits in PLAY41c. The paired gaps were +3.80 Breacher, +9.73 Cryo, −0.86 Pyro and −8.49 Arc. Aware and unaware bots closed 25/40 and 5/41 grilles. The larger closure gap is more pronounced than the suit difference.
 
-### Post-merge balance
+### Balance before RUN21
 
 The production build passed after merging local `nextgen` at `ec21b3da`. The full Standard rerun cleared 39/48, with Cryo at 12/12. Advancing the Standard Shard Harvest follow-up screen by up to 1.8 seconds brought Cryo to 11/12 on its repeated twelve seeds. The final Standard total combines that repeated Cryo sample with the three rigs outside the Shard Harvest branch. Story does not use the faster screen.
 
 | Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
 |---|---:|---:|---:|---:|---:|---:|
 | First post-merge Standard competent | 8/12 | 12/12 | 10/12 | 9/12 | 39/48 | 0 |
-| Final Standard competent | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
-| Final Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
+| CONTACT36 Standard competent | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
+| CONTACT36 Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
 
-| Standard sectors | R31 mean suit | Final mean suit | Final completed blocks |
+| Standard sectors | R31 mean suit | CONTACT36 mean suit | Completed blocks |
 |---|---:|---:|---:|
 | 1–4 | 16.24 | 16.24 | 48 |
 | 5–8 | 140.96 | 105.26 | 48 |
@@ -1481,4 +1481,56 @@ The first 2718 attempt with the widened window cut seven Crawlers, but held late
 
 The two completions used native keyboard and mouse input. The driver decimated intermediate renders and rendered evidence frames in full. The completion reports include their inherited slow-load diagnostics, which made the runner return a nonzero status despite reaching the ending with zero runner errors. None of the four Manual Control checkpoint replays recorded a defect. The first Arc launch was rejected by the sandbox while binding localhost. The authorized retry started successfully. Initial one-room continuation limits counted rooms already cleared, so those attempts ended at the checkpoint. The completed Manual Control and Transmission replays use cumulative limits of 19 and 10 respectively. [Arc first attempt](../../artifacts/nextgen/playtest/play42-final-native-arc/report.json) · [Arc completion](../../artifacts/nextgen/playtest/play42-arc-2718-resume/report.json) · [Story first attempt](../../artifacts/nextgen/playtest/play42-current-native-story-cryo/report.json) · [Story completion](../../artifacts/nextgen/playtest/play42-story-cryo-resume/report.json)
 
-`df -h /Users/chernodub` showed 40 GiB available at the start and 32 GiB at handoff, with reported capacity of 96% and 97% respectively. Worktree `artifacts/nextgen/` used 2.2 GiB at handoff.
+`df -h /Users/chernodub` showed 40 GiB available at the start and 30 GiB at handoff, with reported capacity of 96% and 97% respectively. Worktree `artifacts/nextgen/` used 2.4 GiB at handoff.
+
+### RUN21 integration and forced Arc orders
+
+Local `nextgen` at `12f48b02` brought in the cargo and infestation order consequences. The two merge conflicts were in shared spawn fields and warning cues. The merge retained the Relay loader, the fixed Shielding ingress, the threshold escort and all Transmission and guardian fields.
+
+| Standard Arc order | Clears | Stalls | Swarm deaths | Workshop deaths |
+|---|---:|---:|---:|---:|
+| Freight + Workshop first | 9/12 | 0 | 2 | 0 |
+| Loading Bay + Swarm first, before Swarm tuning | 8/12 | 0 | 0 | 2 |
+| Loading Bay + Swarm first, smaller screen | 10/12 | 0 | 0 | 0 |
+| Loading Bay + Swarm first, smaller screen and shorter hold | 9/12 | 0 | 1 | 0 |
+
+| Arc room | Matched seeds | Freight + Workshop first suit / seconds | Loading Bay + Swarm before suit / seconds | Loading Bay + Swarm final suit / seconds |
+|---|---:|---:|---:|---:|
+| Relay Racks | 12 | 32.19 / 42.13 | 37.13 / 42.30 | 37.13 / 42.30 |
+| Swarm Junction | 11 | 66.93 / 62.87 | 65.50 / 50.98 | 49.80 / 43.75 |
+| Infested Workshop | 10 | 21.97 / 54.25 | 44.77 / 71.74 | 42.39 / 77.33 |
+| Shielding Gate | 8 | 55.86 / 51.89 | 28.70 / 52.91 | 27.11 / 51.47 |
+
+The forced comparison varies both order decisions. Swarm-first enters the relay before collecting the second-room armor pickup. In the merged baseline, Arc reached Workshop twice after costly Swarm clears and died there. When Swarm Junction comes first on Standard, the opening has two fewer authored Crawlers before scaling, 575 ms spacing instead of 450 ms, and an 8-second relay hold instead of 12. The screen-only tuning left Breacher at 7/12 on its policy order. Adding the shorter hold brought Breacher to 9/12 and gave the two forced Arc orders the same clear count. The final first-order Arc sample still had one Swarm death and spent more suit in the second Workshop room than Workshop-first. [Freight + Workshop](../../artifacts/nextgen/playtest/play42-run21-arc-direct/summary.json) · [Loading Bay + Swarm before tuning](../../artifacts/nextgen/playtest/play42-run21-arc-salvage/summary.json) · [Screen and hold tuning](../../artifacts/nextgen/playtest/play42-run21-swarm-hold/summary.json)
+
+### Final merged balance
+
+The final policy cohorts both ran on the merged RUN21 implementation and the scoped Swarm and Transmission changes. The production build passed, the conflict-marker scan was clean, and both cohorts finished with zero stalls.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 9/12 | 11/12 | 10/12 | 10/12 | 40/48 | 0 |
+| Story novice | 12/12 | 12/12 | — | — | 24/24 | 0 |
+
+| Standard sectors | R31 mean suit | Merged mean suit | Completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 184.24 | 47 |
+| 13–16 | 197.40 | 204.71 | 45 |
+| 17–20 | 188.59 | 187.01 | 40 |
+
+The first RUN21 policy cohort went 39/48 with Breacher at 7/12 and Cryo at 12/12. The Swarm tuning brought Breacher to 9/12. A single additional Spitter, split-angle Spitters and closer spacing aimed only at Shard Harvest all left Cryo at 12/12. Alternating ranged approaches and earlier overlap for both Standard Cryo exclusives brought Cryo to 11/12. The paired-order health and early-ramp changes are included above. [Final Standard](../../artifacts/nextgen/playtest/play42-merged-final-standard/summary.json) · [Final Story](../../artifacts/nextgen/playtest/play42-merged-final-story/summary.json)
+
+| Room | Rig | Paired rooms | R31 seconds | Merged seconds | R31 suit | Merged suit |
+|---|---|---:|---:|---:|---:|---:|
+| coolant-plant | breacher | 12 | 32.37 | 40.64 | 23.57 | 40.15 |
+| coolant-plant | cryo | 10 | 36.43 | 43.05 | 43.71 | 71.96 |
+| coolant-plant | pyro | 12 | 32.92 | 36.31 | 36.49 | 38.13 |
+| coolant-plant | arc | 12 | 37.67 | 39.88 | 35.85 | 34.28 |
+| swarm-junction | breacher | 3 | 14.61 | 15.96 | 8.60 | 25.80 |
+| swarm-junction | cryo | 3 | 32.35 | 44.30 | 36.54 | 71.27 |
+| swarm-junction | pyro | 3 | 28.11 | 22.26 | 26.64 | 56.51 |
+| swarm-junction | arc | 3 | 27.05 | 39.57 | 27.09 | 8.40 |
+
+This final merged table uses the same paired cleared-room criteria as the earlier guardian cohort. Native receipts and the Manual Control three-arm experiment were collected before the final integration.
