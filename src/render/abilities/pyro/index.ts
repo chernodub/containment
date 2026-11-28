@@ -183,10 +183,12 @@ class PyroPresentation implements AbilityPresentation {
         const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
         if (actor && lastId !== undefined && (kit.heatVictim !== lastId || kit.time >= kit.heatUntil + .25)) {
           kit.heatVictim = lastId;
-          kit.heatUntil = kit.time + .32;
+          kit.heatUntil = kit.time + .59;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
-          actor.hit?.(.68, angle);
+          actor.hit?.(.82, angle);
+          actor.reactToElement?.('fire', angle);
+          actor.powerAccent?.('pyro');
           kit.impact();
           for (let i = -1; i <= 1; i++) {
             const a = angle + i * .38;
@@ -200,7 +202,8 @@ class PyroPresentation implements AbilityPresentation {
       if (event.phase === 'impact' || event.phase === 'burst') {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
-        kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
+        if (event.phase === 'impact') kit.ringEjecta(x, z, radius, 'pyro');
+        else kit.burst(x, .35, z, 'pyro', 12, 3, .65);
         if (event.phase === 'burst' && (event.radius ?? 0) > 130) {
           // The core detonation owns the traveling front. Kill bursts already
           // have a local ignition and particles on their struck bodies.
@@ -503,7 +506,8 @@ class PyroPresentation implements AbilityPresentation {
     }
     // Keep the fuel running between victims while reserving its hottest value
     // for the skin-bound ember after ignition.
-    const desiredGain = 1 - (hasContact ? .84 : .66) * Math.min(1, Math.max(0, (elapsed - .08) / .22));
+    const crowdYield = zone.ability === 'napalm-charge' ? .68 : .84;
+    const desiredGain = 1 - (hasContact ? crowdYield : .66) * Math.min(1, Math.max(0, (elapsed - .08) / .22));
     const pockets = meltdown ? 0 : kit.low ? 6 : 12;
     const clock = kit.reducedMotion ? 0 : kit.time;
     let pool = this.burnYield.find(entry => entry.zone === zone.id);

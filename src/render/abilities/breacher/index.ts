@@ -93,14 +93,14 @@ export class BreacherPresentation implements AbilityPresentation {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, .48);
       const shock = this.kit.fx.spawn(FxMode.Shock, x, z, .48);
-      shock.param = 2; shock.range = radius; shock.color = AMBER; shock.h0 = .065;
+      shock.intensity = .58; shock.param = 2; shock.range = radius; shock.color = AMBER; shock.h0 = .065;
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
       this.kit.camera(.54);
       this.kit.anticipate(34, .045);
 
-      this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
+      this.kit.ringEjecta(x, z, radius, 'kinetic');
       this.dust(x, z, radius, this.kit.low ? 5 : 14, .48);
       // drawSlam owns the clipped deck fragments and their radial momentum.
     } else if (event.ability === 'railbreaker') {
