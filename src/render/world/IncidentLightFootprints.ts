@@ -1,14 +1,27 @@
 import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,type Group} from 'three';
-import type {RoomTemplate} from '../../game/roguelike/types';
+import type {Point,RoomTemplate} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {MARINE_FLOOR_GLOW,roomValueProfile} from '../lighting/RoomValueStandard';
 import {clipFightingDeck} from './FightingDeck';
 import {laneTerminal} from '../lighting/LaneWorklight';
 import {reactorReturn} from './FightLaneDamage';
 
+export function paintArenaReceiver(c:CanvasRenderingContext2D,arena:Point,inner:number,tint:number){
+  c.save();c.translate(arena.x,arena.y);
+  const radius=inner*32;c.scale(radius,radius);
+  // The eight barn-door edges match the bevel in the floor lighting shader.
+  const aperture=new Path2D('M-.50 -.87H.50L1.19 -.31V.31L.50 .87H-.50L-1.19 .31V-.31Z');
+  c.clip(aperture);
+  const cast=c.createLinearGradient(-1,-.8,1,.8);
+  const color='#'+tint.toString(16).padStart(6,'0');
+  cast.addColorStop(0,color+'28');cast.addColorStop(1,color+'0e');
+  c.fillStyle=cast;c.fillRect(-1.2,-1,2.4,2);c.restore();
+}
+
 export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const profile=roomValueProfile(room.id);
-  if(!profile?.landmark)return;
+  // Interlock bakes this receiver into its relief sheet's emissive channel.
+  if(!profile?.landmark||room.id==='safety-interlock-station')return;
   const plan=SHIP_ARCHITECTURE_PLANS[room.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
   const arena=plan?.arena??{x:room.width/2,y:room.height/2};
   const canvas=document.createElement('canvas');
@@ -16,15 +29,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const c=canvas.getContext('2d')!;
   c.scale(canvas.width/room.width,canvas.height/room.height);
   clipFightingDeck(c,room);
-  c.save();c.translate(arena.x,arena.y);
-  const radius=profile.perimeter.inner*32;c.scale(radius,radius);
-  // The eight barn-door edges match the bevel in the floor lighting shader.
-  const aperture=new Path2D('M-.50 -.87H.50L1.19 -.31V.31L.50 .87H-.50L-1.19 .31V-.31Z');
-  c.clip(aperture);
-  const cast=c.createLinearGradient(-1,-.8,1,.8);
-  const color='#'+profile.landmark.color.toString(16).padStart(6,'0');
-  cast.addColorStop(0,color+'28');cast.addColorStop(1,color+'0e');
-  c.fillStyle=cast;c.fillRect(-1.2,-1,2.4,2);c.restore();
+  paintArenaReceiver(c,arena,profile.perimeter.inner,profile.landmark.color);
   const coolant=room.id==='coolant-plant';
   if(coolant){
     const terminal=laneTerminal(room.id)!;

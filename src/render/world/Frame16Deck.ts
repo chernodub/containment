@@ -1,3 +1,5 @@
+import {paintArenaReceiver} from './IncidentLightFootprints';
+import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {paintIncidentClusters} from './IncidentDeckClusters';
 import {paintFightLaneDamage} from './FightLaneDamage';
 import {paintWorkingLane} from './WorkingLane';
@@ -130,6 +132,12 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
   const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
   function paintDeckResponse(c:CanvasRenderingContext2D){
     c.save();c.globalAlpha=.47;paintFightingDeck(c,room,arena);c.restore();
+    if(room.id==='safety-interlock-station'){
+      const profile=roomValueProfile(room.id)!;
+      c.save();clipFightingDeck(c,room);
+      paintArenaReceiver(c,arena,profile.perimeter.inner,profile.landmark!.color);
+      c.restore();
+    }
   }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
