@@ -1483,13 +1483,14 @@ for(const room of ['coolant-plant','swarm-junction']){
      await d.prepare();
     }
     d.invulnerable(true);
-    const beat=g.director.plan.schedule.find(request=>request.guardian)?.beat;
-    if(beat===undefined)throw Error('No featured guardian in this fixture route');
-    for(let step=0;step<200&&!g.guardianReserve;step++){
-     d.step(150);
-     for(const enemy of g.enemies.snapshot.enemies)
-      if(enemy.beat!==beat&&enemy.beat!==undefined)g.damage(enemy.id,100000);
-    }
+    const featured=g.director.plan.schedule.find(request=>request.guardian);
+    const beat=featured&&g.director.plan.beats?.[featured.beat];
+    if(!beat)throw Error('No featured guardian in this fixture route');
+    // Start at the authored guardian beat, keeping its queued reserve in the plan.
+    g.director.beatIndex=featured.beat;
+    g.director.dispatched=g.director.plan.schedule.indexOf(featured)+1;
+    g.encounterEvents([featured]);
+    d.step(700);
     const reserve=g.guardianReserve;
     if(!reserve)throw Error('Featured guardian reserve did not commit');
     if(phase!=='committing')g.holdGuardianReserve(reserve.guardian);
