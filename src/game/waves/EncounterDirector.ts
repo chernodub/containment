@@ -269,6 +269,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     if(next>=0)arrivals[next]=Object.freeze({...arrivals[next],atMs:Math.max(arrivals[next].atMs,first.atMs+1050)});
    }
   }
+  if(node.templateId==='coolant-plant'||node.templateId==='swarm-junction'){
+   const featured=arrivals.find(request=>request.guardian);
+   const queued=arrivals.findLast(request=>!request.guardian&&!request.reinforcement);
+   if(featured&&queued)for(let index=0;index<arrivals.length;index++){
+    const request=arrivals[index];
+    if(request.authoredGroup===queued.authoredGroup)
+     arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,featured.atMs+9500)});
+   }
+  }
   if(node.templateId==='swarm-junction'){
    const matron=arrivals.find(request=>request.guardian==='matron');
    if(matron)for(let index=0;index<arrivals.length;index++){
@@ -619,7 +628,7 @@ export class EncounterDirector {
       Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]:
       entries.find(entry=>entry.id===this.plan.schedule[pincer.start].breachId);
   }
-  private guardianRetreat?:{beat:number;group:number;breachId:string};
+  private guardianRetreat?:{beat:number;group:number};
   concedeGuardianGround(beat:number|undefined){
     if(beat===undefined||beat!==this.beatIndex||this.guardianRetreat)return;
     const current=this.plan.beats?.[beat];
@@ -627,7 +636,7 @@ export class EncounterDirector {
     const queued=this.plan.schedule.slice(this.dispatched,current.end);
     const first=queued.find(request=>!request.guardian&&request.authoredGroup!==undefined);
     if(!first||first.authoredGroup===undefined)return;
-    this.guardianRetreat={beat,group:first.authoredGroup,breachId:first.breachId};
+    this.guardianRetreat={beat,group:first.authoredGroup};
     return queued.filter(request=>request.authoredGroup===first.authoredGroup)
       .map(request=>({...request,breachId:first.breachId}));
   }

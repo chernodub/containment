@@ -938,7 +938,10 @@ export class DepthGame {
       const aim=options.baitAim?{...this.player,...options.baitAim}:this.player;
       this.enemyEvents(this.enemies.beginArrivalSwing(result.enemy.id,aim,options.interceptOpening));
      }
-     if(guardian)this.enemies.promote(result.enemy.id,guardian);
+     if(guardian){
+      this.enemies.promote(result.enemy.id,guardian);
+      this.featuredGuardianAppearedAt=this.elapsed;
+     }
      if(this.rackShutter&&guardian==='warden')this.rackShutter.wardenId=result.enemy.id;
      if(options.broodDestination&&this.enemies.snapshot.enemies.filter(enemy=>enemy.broodDestination).length>=2)
       this.broodMarksShownAt=this.elapsed;
@@ -1330,11 +1333,12 @@ export class DepthGame {
  private relayHeavyRecovering=false;
  private escortInterceptUntil=0;
  private guardianGroundUntil=0;
+ private featuredGuardianAppearedAt=0;
  private guardianGround(guardian:'warden'|'matron',id:number,beat:number|undefined){
   const room=this.node.templateId;
   if(room!=='coolant-plant'&&(room!=='swarm-junction'||guardian!=='matron'||this.broodCollapse?.id!==id))return;
   const damage=[...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);
-  if(this.elapsed>22||damage>24)return;
+  if(this.elapsed-this.featuredGuardianAppearedAt>22||damage>24)return;
   const queued=this.director.concedeGuardianGround(beat);
   if(!queued?.length)return;
   const breach=this.geometry.breaches.find(point=>point.id===queued[0].breachId);
