@@ -530,12 +530,16 @@ class PyroPresentation implements AbilityPresentation {
       let reach = nearSuit ? 1.18 + .36 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
       let angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
       if (napalm) {
-        // Triplets follow each of two diverging fuel runs. Outer pockets ignite last.
+        // Two fuel runs feed low licking flames inside the perimeter.
         const cluster = Math.floor(i / 3);
         const run = (Math.floor(cluster / 2) + .42 + .34 * scatter) / Math.ceil(pockets / 6);
         reach = radius * run * Math.min(1, .15 + elapsed * 3.2);
         angle = zone.id * .71 + (cluster % 2 ? .95 : -1.85) + .50 * run
           + .16 * Math.sin(8 * run) + (i % 3 - 1) * .16;
+        if (i % 2 === 0) {
+          angle = zone.id * .71 + i * Math.PI * 2 / pockets;
+          reach = radius * .90 * Math.min(1, .15 + elapsed * 3.2);
+        }
       }
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
@@ -566,7 +570,7 @@ class PyroPresentation implements AbilityPresentation {
       const height = ((napalm ? .18 + 1.45 * scatter * scatter : .40 + .66 * scatter) + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
-      const lean = .26 + scatter * .69;
+      const lean = napalm ? Math.min(.26 + scatter * .69, Math.max(0, radius - reach - .14)) : .26 + scatter * .69;
       kit.flowFlame(px, .07, pz, px + Math.cos(angle) * lean, .10 + height * (i % 5 ? .30 : .72),
         pz + Math.sin(angle) * lean, width, seed, fade * visibility * flameGain);
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))

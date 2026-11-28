@@ -88,7 +88,8 @@ class SystemPresentation implements AbilityPresentation {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
       const actor = k.statusActor(id);
       const secondaryHeat = event.ability === 'meltdown' && event.phase === 'tick' && id !== k.heatVictim;
-      if (!secondaryHeat) actor?.elementContact?.(event.element);
+      const fuelTick = event.ability === 'napalm-charge' && event.phase === 'tick';
+      if (!secondaryHeat && !fuelTick) actor?.elementContact?.(event.element);
       let receipt: Receipt | undefined;
       for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       if (!receipt) {
@@ -127,7 +128,7 @@ class SystemPresentation implements AbilityPresentation {
         receipt.landed = false;
       }
       receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
-      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .48 : .54; receipt.emitted = secondaryHeat;
+      receipt.life = receipt.rail ? .85 : event.element === 'pyro' ? .65 : event.element === 'kinetic' ? .48 : .54; receipt.emitted = secondaryHeat || fuelTick;
     }
   }
 

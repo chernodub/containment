@@ -314,7 +314,7 @@ export function alien(kind:string,elite=false):ActorModel{
   statusAge+=dt;
   const statusTint=(status.frozen?1:status.chilled?.32:statusKind?.82:0)*(.12+.88*Math.max(0,1-statusAge/.5));
   accentLife=Math.max(0,accentLife-dt);
-  surface.contact(accentLife>0?accentKind:contactLife>0?contactKind:statusKind,dead?0:contactLife>0?Math.min(1,contactLife/.22):statusTint,dead?0:Math.min(1,accentLife/.14));
+  surface.contact(accentLife>0?accentKind:contactLife>0?contactKind:statusKind,dead?0:contactLife>0?Math.min(1,contactLife/.22):statusTint,dead?0:Math.min(1,accentLife/.14),accentBearing);
   spitFollowThrough=Math.max(0,spitFollowThrough-dt);castShadeTime=Math.max(0,castShadeTime-dt);surface.castShade(Math.min(1,castShadeTime/.035));if(halo)halo.material.opacity=.30+.07*Math.sin(time*1.8);authored.advanceContact(dt);flash=authored.flashedOut?0:Math.max(0,flash-dt*20);surface.hit(authored.elementalHold?Math.min(.22,flash):Math.max(flash,r.root.userData.arrivalWoundGlow??0));if(!status.frozen&&!dead&&bossStun===0){
    const yaw=Math.PI/2-aim;
    // On release the native aim can reverse in a tick. Follow that turn over the
