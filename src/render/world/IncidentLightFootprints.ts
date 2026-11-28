@@ -4,6 +4,7 @@ import {incidentApertures,paintIncidentAperture} from '../lighting/IncidentApert
 import {incidentLanes} from '../lighting/IncidentLaneLayouts';
 import {MARINE_FLOOR_GLOW} from '../lighting/RoomValueStandard';
 import {laneTerminal} from '../lighting/LaneWorklight';
+import {reactorReturn} from './FightLaneDamage';
 import {clipFightingDeck} from './FightingDeck';
 import {incidentPracticalColors} from './MachineEmitters';
 import {storyIncidentSource} from './Inc13StoryIncidents';
@@ -118,6 +119,13 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     // broken lifting eye. Its inspection head grazes the lower balcony.
     c.save();c.translate(source[0]-40,source[1]+138);c.rotate(-.38);
     c.scale(1.28,.88);c.globalAlpha=.32;paintIncidentAperture(c,room.id,tint);c.restore();
+  }
+  if(room.id==='overload-floor'){
+    c.save();c.translate(833.71249,349.81813);c.lineJoin='round';
+    c.strokeStyle='#a99a75';c.lineWidth=30;c.stroke(new Path2D(reactorReturn));
+    c.strokeStyle='#ffe0a1';c.lineWidth=5;
+    c.stroke(new Path2D('M-32 -18H-75L-80 -23V-54H-32'));
+    c.restore();
   }
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
   const material=new MeshBasicMaterial({map:texture,transparent:true,blending:absorb?NormalBlending:AdditiveBlending,

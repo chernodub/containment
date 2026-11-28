@@ -1,6 +1,9 @@
 import {MeshBasicMaterial,type Group} from 'three';
 import {IncidentPieces} from './Inc13StoryIncidents';
 
+// Surveyed centreline of the covered approach, relative to the stopping corner.
+export const reactorReturn='M306.3 170.2L110.3 146.2 46.3 -13.8 -55.4 -30.8';
+
 /** Ship-plan coordinates along the service edges. These are fragments of the
  * displaced equipment, with the centre aisle reserved for the encounter. */
 export function addFightLaneDamage(root:Group,id:string){
@@ -184,9 +187,8 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
       line('M1 3V-65H-61',5,'#b6976e');
       // Return around the east end of the sill and into the protected step.
-      const walkway='M306 170L109 58 46 12 31 -34 13 -45H-56';
       c.lineJoin='round';
-      line(walkway,37,'#26353a');line(walkway,32,'#99977d');line(walkway,25,'#6e827d');
+      line(reactorReturn,37,'#26353a');line(reactorReturn,32,'#99977d');line(reactorReturn,25,'#6e827d');
       c.fillStyle='#313d40';c.fill(new Path2D('M-78 -54H-33V-19H-74L-78 -23Z'));
       line('M-34 -20H-74L-78 -24V-54H-34',5,'#e2c185');
       const shade=c.createLinearGradient(0,-14,0,-56);
