@@ -309,17 +309,19 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     const loader=options.roomOrder?.[5]==='direct';
     arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:loader?'brute':'spitter',
       role:loader?'flanker':'ranged',atMs:warden.atMs+450,reinforcement:false,
-      ...(loader?{cargoLoader:true,healthScale:.65,approachLeadMs:750}:{shutterSpitter:true})});
+      ...(loader?{cargoLoader:true,healthScale:.65}:{shutterSpitter:true})});
    }
   }
   const infestationOrder=options.roomOrder?.[13];
   if(node.templateId==='shielding-gate'&&beatIndex===0&&infestationOrder){
-   const flank=arrivals.findIndex(request=>request.enemyId==='crawler');
+   const flank=arrivals.find(request=>!request.reinforcement&&request.role==='flanker')
+    ??arrivals.find(request=>!request.guardian&&request.enemyId==='crawler');
    const side=infestationOrder==='direct'?1:-1;
    const entry=positions?.reduce<(typeof positions)[number]|undefined>((best,point)=>
     !best||point.y*side<best.y*side?point:best,undefined);
-   if(flank>=0&&entry){
-    arrivals[flank]=Object.freeze({...arrivals[flank],breachId:entry.id,role:'flanker',fixedIngress:true});
+   if(flank&&entry){
+    arrivals[arrivals.indexOf(flank)]=Object.freeze({...flank,atMs:1100,breachId:entry.id,
+     role:'flanker',reinforcement:false,fixedIngress:true});
    }
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));

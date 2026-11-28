@@ -1025,7 +1025,7 @@ export class DepthGame {
   ({x,y}={x:620,y:250});
  }
  if(e.shutterSpitter)({x,y}=RELAY_RACKS_SHUTTER_SPITTER);
- if(e.cargoLoader)({x,y}={x:395,y:670});
+ if(e.cargoLoader)({x,y}={x:465,y:565});
  if(!e.shutterSpitter&&e.enemyId==='spitter'&&(!this.coverLesson||this.coverLesson.learned)){
   const covers=(ROOM_TEMPLATES[this.node.templateId]?.incidentObstacles??[]).filter(rect=>!this.stagedCover.has(rect));
   const lesson=stageCoverLesson(this.geometry,covers,this.player);

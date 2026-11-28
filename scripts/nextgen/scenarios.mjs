@@ -329,7 +329,12 @@ export const SCENARIOS=[
    const d=window.__containmentDebug;
    await d.gotoRoom(room,{rig:'arc',roomOrder:room==='relay-racks'?{5:order}:{5:'direct',13:order}});
    d.presentation(true);
-   d.step(room==='relay-racks'?2400:2300);
+   if(room==='shielding-gate'){
+    // Frame the scheduled hatch from the scanner floor, then let the live
+    // dispatch create its ordinary warning and spawn.
+    Object.assign(d.game.player,order==='direct'?{x:760,y:430}:{x:580,y:575});
+    d.step(1700);
+   }else d.step(2500);
    d.refresh();
   },
  }))),
