@@ -275,6 +275,17 @@ export class ElementKit {
             this.mote(element === 'cryo' ? 'shard' : element === 'pyro' ? 'flame' : 'spark', x, y, z, Math.cos(angle) * speed * f, (.2 + i % 5 * .16) * speed, Math.sin(angle) * speed * f, element === 'cryo' ? .06 : .09, life * (.6 + i % 4 * .15), ELEMENT_COLORS[element]);
         }
     }
+    ringEjecta(x: number, z: number, radius: number, element: 'kinetic' | 'cryo' | 'pyro'): void {
+        const kind = element === 'cryo' ? 'shard' : element === 'pyro' ? 'flame' : 'spark';
+        this.mote(kind, x, .85, z, 0, 0, 0, .94 * this.flashIntensity, .05, 0xfffcf0);
+        for (let i = 0; i < (this.low ? 5 : 13); i++) {
+            const angle = i * 2.39996;
+            const reach = radius * (.16 + (i % 3) * .13);
+            const dx = Math.cos(angle), dz = Math.sin(angle);
+            this.mote(kind, x + reach * dx, .18, z + reach * dz, dx * 2.1, 4.5 + i % 4, dz * 2.1,
+                .18 + i % 3 * .09, .31 + i % 3 * .065, i % 4 ? ELEMENT_COLORS[element] : 0xfff5dc);
+        }
+    }
     ring(x: number, z: number, radius: number, color: number, life = .65, reverse = false): void {
         if (radius <= 0)
             return;

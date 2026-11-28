@@ -201,7 +201,8 @@ class PyroPresentation implements AbilityPresentation {
       if (event.phase === 'impact' || event.phase === 'burst') {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
-        kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
+        if (event.phase === 'impact') kit.ringEjecta(x, z, radius, 'pyro');
+        else kit.burst(x, .35, z, 'pyro', 12, 3, .65);
         if (event.phase === 'burst' && (event.radius ?? 0) > 130) {
           // The core detonation owns the traveling front. Kill bursts already
           // have a local ignition and particles on their struck bodies.
