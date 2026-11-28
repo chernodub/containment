@@ -107,6 +107,7 @@ export class ElementKit {
     arcContactUntil = -1;
     heatVictim = -1;
     heatUntil = -1;
+    frostVictim = -1;
     frostUntil = -1;
     low = false;
     reducedMotion = false;

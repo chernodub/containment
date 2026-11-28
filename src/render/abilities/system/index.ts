@@ -30,7 +30,6 @@ class SystemPresentation implements AbilityPresentation {
   private readonly selected = new Set<AbilityEvent['ability']>();
   private readonly previouslyFrozen = new Set<number>();
   private readonly previouslyBurning = new Set<number>();
-  private frostVictim = -1;
   private receiptCursor = 0;
   private ghostClock = 0;
   private dashTime = 0;
@@ -115,7 +114,7 @@ class SystemPresentation implements AbilityPresentation {
         }
         actor.reactToElement?.(event.element === 'pyro' ? 'fire' : event.element === 'cryo' ? 'ice' : 'kinetic', bearing);
         if (firstBurn) receipt.ignition = k.time;
-        if (firstFreeze) { this.frostVictim = id; k.frostUntil = k.time + .59; }
+        if (firstFreeze) { this.kit.frostVictim = id; k.frostUntil = k.time + .59; }
       }
       receipt.rail = event.ability === 'railbreaker';
       if (receipt.rail) {
@@ -207,7 +206,8 @@ class SystemPresentation implements AbilityPresentation {
       if (status?.burning || status?.chilled || status?.frozen || status?.shocked) k.statusOwners.add(actor.root);
     }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
-    if (status?.frozen && actor) {
+    const secondaryFreeze = k.time < k.frostUntil && enemy.id !== k.frostVictim && k.frostUntil - k.time <= .34;
+    if (status?.frozen && actor && !secondaryFreeze) {
       const joints = this.joints(actor.root);
       k.sustain();
       k.sprite('crack', x, .049, z, radius * 1.5, radius * 1.4, ELEMENT_COLORS.cryo, .62, enemy.id, 'ground');
@@ -219,14 +219,14 @@ class SystemPresentation implements AbilityPresentation {
       for (let i = 0; i < (k.low ? 2 : 4); i++) {
         const t = k.reducedMotion ? .55 : (k.time * 1.6 + i * .31 + enemy.id * .13) % 1;
         const a = enemy.id + i * 2.4;
-        const selected = enemy.id === this.frostVictim && k.time < k.frostUntil;
+        const selected = enemy.id === this.kit.frostVictim && k.time < k.frostUntil;
         const width = selected ? radius * .22 : .037;
         k.draw('shard', x + Math.cos(a) * radius * (.7 + t * .2), height * (selected ? .58 + t * 1.14 : .42 * (1 - t * t)),
           z + Math.sin(a) * radius * .8, width, selected ? height * .28 : .063, width, WHITE, Math.sin(t * Math.PI) * .78, a);
       }
       k.impact();
     }
-    if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
+    if (status?.frozen && !secondaryFreeze) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
     else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
     if (status?.burning || receipt?.element === 'pyro') this.burning(actor?.root, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
@@ -411,7 +411,7 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   clear(): void {
-    this.frostVictim = this.kit.frostUntil = -1;
+    this.kit.frostVictim = this.kit.frostUntil = -1;
     this.selected.clear(); this.previouslyFrozen.clear(); this.previouslyBurning.clear();
     this.payoff.clear();
     this.restorePose();

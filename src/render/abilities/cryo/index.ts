@@ -273,6 +273,7 @@ class CryoPresentation implements AbilityPresentation {
     for (const enemy of frame.game?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
       const distance = Math.hypot(enemy.x - zone.x, enemy.y - zone.y) / UNIT;
       if (enemy.health <= 0 || distance > front) continue;
+      if (age % 2000 >= 250 && !(enemy.id === k.frostVictim && k.time < k.frostUntil)) continue;
       const actor = k.statusActor(enemy.id);
       if (!actor) continue;
       const body = actor.root.position, width = enemy.radius / UNIT;

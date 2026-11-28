@@ -476,6 +476,12 @@ void main(){
   float grain=fxNoise(fxWorld.xz*3.);
   if(napalm)emit+=vec3(.58,.15,.008)*river*(.12+.65*grain)*smoothstep(.05,.21,radius)*(1.-smoothstep(.72,.92,radius));
   emit*=mix(vec3(1.),vec3(.23,.095,.06),smoothstep(.08,.30,age));
+  if(napalm){
+   float boundary=burnDistance(fxWorld.xz);
+   float lip=(1.-smoothstep(.035,.17,abs(boundary+.10)))*step(boundary,0.);
+   alpha=max(alpha,lip*.87);
+   emit+=vec3(1.2,.34,.025)*lip*(.52+.48*grain);
+  }
   alpha*=fxParam;emit*=fxParam*fxIntensity;
  }else if(m>10.5&&m<11.5){
   // A continuous coal bed and one broad hot lip leave the deck readable.
