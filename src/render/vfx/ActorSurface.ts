@@ -38,7 +38,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const form={value:new T.Vector4()};
   const grip={value:new T.Vector4()};
   const bossPalm={value:[new T.Vector3(),new T.Vector3()]};
-  const warden={value:0},wallRecoil={value:0};
+  const warden={value:0},wallRecoil={value:0},matron={value:0};
   const broodPrime={value:0},castShade={value:0},shedShoulder={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
@@ -62,7 +62,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,actorMatron:matron,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -109,7 +109,7 @@ if(actorWarden<.5){
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec4 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec4 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorMatron;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -158,6 +158,9 @@ bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRe
 // The fourth form component identifies the shared atlas layout.
 bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
 bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
+// HEAVY47: the Matron's whole egg sac (atlas band 6 on her mesh, the organ region and the
+// distal tip) is one painted mass; the geometry buffer files it with the brood marks.
+bool matronSac=carrierSkin && actorMatron>.5 && (broodBand==6 || broodSac || floor(vActorRegion+.5)==7.);
 // A single camera-facing cap in bind space groups the shell across atlas
 // islands. The dark sides and forelimbs keep the head silhouette separate.
 bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
@@ -367,6 +370,24 @@ if(broodMark){
  float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
 }
+// HEAVY47: the Matron in three bands instead of a lilac cloud. Dark legs carry her, a mid
+// carapace torso is the frame, and the egg sac is one continuous lilac mass (top to belly,
+// no facet threshold) divided by rib seams across its length. A bone head marks the front.
+if(carrierSkin && actorMatron>.5 && broodFinish){
+ float region=floor(vActorRegion+.5);
+ // Each leg's upper face rolls one step lighter so neighbouring legs separate.
+ vec3 matronPaint=vec3(.020,.017,.026)*mix(1.,1.55,smoothstep(.15,.85,broodRestUp));
+ if(region==1. || region==6.)matronPaint=vec3(.056,.049,.064);
+ if(region==2.)matronPaint=vec3(.150,.132,.110);
+ if(matronSac){
+  float roll=smoothstep(-.55,.65,broodRestUp);
+  float along=dot(actorPosition.xz,normalize(vec2(-.6,.8)))/1.55;
+  float seam=abs(fract(along)-.5);
+  float rib=1.-smoothstep(.035,.035+max(.012,fwidth(along)),seam);
+  matronPaint=mix(broodPaint*.26,broodPaint*.94,roll)*(1.-.55*rib);
+ }
+ outgoingLight=matronPaint*actorStageLight*actorCamouflage+vec3(.085,.11,.15)*keyRim*(matronSac?.4:1.);
+}
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
 // the loaded head/striking limbs free of elemental emission.
@@ -492,6 +513,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     grip(left:number,right:number,leftPeel:number,rightPeel:number,offsets:T.Vector3[]) { grip.value.set(left,right,leftPeel,rightPeel);bossPalm.value=offsets; },
     wallRecoil(active:boolean) { wallRecoil.value=active?1:0; },
     warden(active:boolean) { warden.value=active?1:0; },
+    matron(active:boolean) { matron.value=active?1:0; },
     prime(value:number){broodPrime.value=value;},
     castShade(value:number) { castShade.value=value; },
     load(value:number) { attackLoad.value = T.MathUtils.clamp(value, 0, 1); },
