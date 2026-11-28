@@ -128,7 +128,9 @@ float geometryRegion=floor(vActorRegion+.5)*step(2.5,containmentIdentity.y);
 #endif
 #ifdef BRUTE_PLANES
  if(bruteFace)geometryRegion=29.;
- if(wardenMaw)geometryRegion=30.;
+ // HEAVY47: the mouth and the wind-up fold leave the resting heavy grade only while lit.
+ if(wardenMaw && max(actorAttackLoad,actorWallRecoil)>.02)geometryRegion=30.;
+ if(heavyPaint==10. && actorAttackLoad>.02)geometryRegion=30.;
 #endif
 containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, vec2(containmentIdentity.x,containmentIdentity.y+8.0*geometryRegion) / 255.0);
 `);
