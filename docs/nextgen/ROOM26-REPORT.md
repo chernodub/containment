@@ -757,3 +757,42 @@ The prescribed Breacher run reached its one-hour wall limit after 15 clears with
 The final uninterrupted Breacher campaign on seed 1729 cleared all 20 rooms and returned exit 0 with zero errors and zero defects. It used the same fast native runner and 180-second startup allowance, with a fresh evidence label. [Uninterrupted campaign report](../../artifacts/nextgen/playtest/room37-uninterrupted/report.json)
 
 The production build passed. All 40 arena-centre captures recorded zero new shader programs during their presentation settles. Disk space at the start was 28 GiB free of 926 GiB (870 GiB used, 97%). At handoff it was 79 GiB free (820 GiB used, 92%). The worktree evidence occupied 1.8 GiB. The ROOM37 measurements apply to the branch based on local nextgen at 392366cd.
+
+## ROOM37b
+
+The arena sources now attach to bulkheads. Awakening has a jointed theatre boom with three recessed lamp wells. Residential hangs a caged sodium hood from a cable. Crew's inspection channel sits over the left scanner jamb, Freight carries its strip on a braced gantry and Loading uses a shorter jib with a hood. Swarm shows slanted vent blades and Overload a copper-flanged reactor port. Each of the twenty rooms has its own head. A baked cable or housing shadow crosses the existing pool edge even when the camera crops the head. The supports and fixtures use vertex colours and baked face shading.
+
+Transmission's two outer aisles carry a copper feed between two grey returns. The jackets bend around their glands, with shoulder highlights interrupted at each clamp. In the matched outer-aisle frame the three conductors stay legible across the dark floor behind the marine and enemy. [480×270 comparison](../../artifacts/nextgen/room37b/transmission-aisle-480.jpg) · [Native comparison](../../artifacts/nextgen/room37b/transmission-aisle-1920.jpg)
+
+At 480×270 the three wells and their elbow distinguish Awakening from the prior bench-like lamp. Freight's side truss and Swarm's louvers also read at that size. The small cage bars on the Residential pendant largely disappear into the hood, and the top of the Passenger and Relay fixtures is cropped in the centre views.
+
+The production build passed. The uninterrupted native Breacher campaign on seed 1729 cleared all ten rooms and exited 0 with zero errors and zero defects. [Native campaign](../../artifacts/nextgen/playtest/room37b-final/report.json) · [Post-sync Awakening recapture](../../artifacts/nextgen/room37b-integrated/manifest.json)
+
+All 80 final frames finished on their first capture attempt. Each tier has a 1920×1080 centre and kiting frame for every room. All 16 batch manifests have empty error and failure lists. The table reports the larger draw count of those two frames for each room. The largest High increase over final27 is one draw against an allowance of ten. Frame timing is reserved for the lead's wave-end benchmark.
+
+[High centres at 480](../../artifacts/nextgen/room37b/twenty-arena-high-480.png) · [High centres at native size](../../artifacts/nextgen/room37b/twenty-arena-high-native.jpg) · [Low centres at 480](../../artifacts/nextgen/room37b/twenty-arena-low-480.png) · [Low centres at native size](../../artifacts/nextgen/room37b/twenty-arena-low-native.jpg) · [High kiting](../../artifacts/nextgen/room37b/twenty-kiting-high-480.png) · [Low kiting](../../artifacts/nextgen/room37b/twenty-kiting-low-480.png) · [Source manifests](../../artifacts/nextgen/room37b/selected-manifests.json)
+
+| Room | final27 High | ROOM37 High | ROOM37b High | ROOM37 Low | ROOM37b Low |
+|---|---:|---:|---:|---:|---:|
+| awakening-bay | 137 | 137 | 137 | 125 | 125 |
+| passenger-vault | 120 | 119 | 120 | 108 | 108 |
+| residential-gallery | 113 | 112 | 113 | 103 | 103 |
+| communal-atrium | 131 | 132 | 132 | 121 | 122 |
+| crew-checkpoint | 109 | 109 | 110 | 99 | 100 |
+| armory | 177 | 177 | 177 | 168 | 168 |
+| freight-hold | 120 | 120 | 121 | 109 | 110 |
+| breached-loading-bay | 124 | 125 | 121 | 114 | 110 |
+| relay-racks | 137 | 137 | 137 | 126 | 126 |
+| transmission-chamber | 122 | 122 | 122 | 112 | 112 |
+| diagnostic-gallery | 117 | 118 | 117 | 105 | 104 |
+| safety-interlock-station | 162 | 161 | 162 | 148 | 149 |
+| coolant-plant | 119 | 118 | 119 | 106 | 107 |
+| service-shaft-landing | 112 | 112 | 112 | 101 | 101 |
+| infested-workshop | 155 | 155 | 155 | 145 | 145 |
+| swarm-junction | 101 | 102 | 102 | 91 | 91 |
+| shielding-gate | 257 | 258 | 258 | 247 | 247 |
+| containment-annulus | 128 | 127 | 128 | 116 | 117 |
+| manual-control-chamber | 147 | 147 | 147 | 134 | 134 |
+| overload-floor | 136 | 137 | 137 | 124 | 124 |
+
+The local nextgen sync at 7250ab0e was already up to date. The source conflict-marker scan was clean, the production build passed and the post-sync Awakening capture had empty error and failure lists. At start the 926 GiB volume showed 821 GiB used, 78 GiB available and 92% capacity. At handoff it showed 820 GiB used, 77 GiB available and 92% capacity. Worktree evidence occupied 2.2 GiB.
