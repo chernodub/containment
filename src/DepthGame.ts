@@ -1393,7 +1393,7 @@ export class DepthGame {
   const radius=enemyBodyRadius(queued[0].enemyId,false);
   const bearing=Math.atan2(guardian.y-this.player.y,guardian.x-this.player.x);
   // Use an inset maintenance hatch on the shoulder of the live fight.
-  const candidates=[.9,-.9,1.45,-1.45,.45,-.45,Math.PI].flatMap(offset=>
+  const candidates=[-.9,.9,-1.45,1.45,-.45,.45,Math.PI].flatMap(offset=>
    [156,116,192].map(distance=>{
     const angle=bearing+offset;
     return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance,angle};
@@ -1719,6 +1719,13 @@ export class DepthGame {
  }
 
  isCrossingEscort(id:number){return this.spitterCrossing?.id===id;}
+ escortMovement(id:number){
+  const crossing=this.spitterCrossing;
+  if(crossing?.id===id)return {to:crossing.end,speed:this.mutations.statuses(id).frozen?0:80};
+  const reserve=this.guardianReserve;
+  if(reserve?.ids.includes(id))return {to:reserve.breach,
+   speed:reserve.heldAt===undefined&&this.elapsed-reserve.committedAt<.65?65:0};
+ }
  getEscortRetreat(id:number){
   const retreat=this.departures.get(id);
   return retreat?.escort?{x:retreat.breach.x,y:retreat.breach.y,flinching:retreat.ms>1750}:undefined;
@@ -1899,7 +1906,7 @@ export class DepthGame {
   if(crossing){
    const enemy=this.enemies.getSnapshot(crossing.id);
    if(!enemy||this.elapsed>=crossing.until)this.spitterCrossing=undefined;
-   else {
+   else if(!this.mutations.statuses(enemy.id).frozen&&!this.mutations.isLaunched(enemy.id)){
     this.enemies.stagger(enemy.id,75);
     const dx=crossing.end.x-enemy.x,dy=crossing.end.y-enemy.y,distance=Math.hypot(dx,dy);
     if(distance>1){

@@ -88,6 +88,17 @@ export class PincerPresentation {
   private readonly retreatFlinches = new WeakMap<ActorModel, string>();
 
   retreatPose(model: ActorModel, game: DepthGame, enemy: EnemySnapshot, unit: number, angle: number, stride: number, velocity: {x:number;y:number}) {
+    const movement=game.escortMovement(enemy.id);
+    if(movement){
+      const dx=movement.to.x-enemy.x,dy=movement.to.y-enemy.y;
+      if(movement.speed>0&&Math.hypot(dx,dy)>1){
+        const direction=Math.atan2(dy,dx);
+        velocity.x=Math.cos(direction)*movement.speed;
+        velocity.y=Math.sin(direction)*movement.speed;
+        return {angle:direction,stride:1};
+      }
+      return {angle,stride:.12};
+    }
     const retreat = game.getEscortRetreat(enemy.id);
     if (!retreat) return {angle, stride};
     const direction = Math.atan2(retreat.y - enemy.y, retreat.x - enemy.x);
