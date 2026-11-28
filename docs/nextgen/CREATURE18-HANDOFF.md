@@ -2220,7 +2220,7 @@ Cost: the heavies trio scene draws 90 calls and 177,785 triangles in both builds
 
 ### Item 5 — verification
 
-`npm run build` passes after merging the current local `nextgen` (`ec21b3da`, CONTACT36). The merge was clean and the conflict-marker scan was empty. The post-merge crowd capture (`heavy46-postmerge`) and the trio have empty error lists. The native campaign result is recorded below.
+`npm run build` passes after merging the current local `nextgen` (`ec21b3da`, CONTACT36). The merge was clean and the conflict-marker scan was empty. The post-merge crowd capture (`heavy46-postmerge`) and the trio have empty error lists. The native campaign (`npm run playtest -- --rig=breacher --seed=1729 --rooms=10 --fast --startup-timeout-ms=180000 --label=heavy46`) cleared ten rooms through Transmission Chamber and exited 0 with zero errors on the first run, without a startup or loading timeout. Its report is `artifacts/nextgen/playtest/heavy46/index.html`.
 
 ### Evidence
 
