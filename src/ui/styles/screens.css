@@ -673,3 +673,17 @@
 
 .route-booked-guardian {display:flex;align-items:center;gap:8px;font-size:13px;}
 .route-booked-guardian img {width:48px;height:27px;object-fit:cover;}
+
+#overlay .repair-forecast {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, 230px);
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 8px 14px;
+  background: #101f29;
+  border: 1px solid #395761;
+}
+#overlay .repair-forecast h3, #overlay .repair-forecast p { margin: 0; }
+#overlay .repair-forecast b { color: #a7e5dc; }
+#overlay .repair-forecast svg { width: 100%; max-height: 66px; }

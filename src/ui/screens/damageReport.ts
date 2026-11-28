@@ -2,7 +2,7 @@ import {exchangeEnemy, exchangeMarine} from './exchangeGlyphs';
 import {ENEMY_ATTACK_SHAPES} from '../../game/enemies/attackShapes';
 import {WEAPONS} from '../../game/combat/catalog';
 import {AREA_ATTACK_RADIUS} from '../../game/enemies/QueenBossSystem';
-import {getRoomDamage} from '../gameAdapter';
+import {getDepletedArrival, getRoomDamage} from '../gameAdapter';
 import {MELEE_ATTACKS, meleeStrikeContains} from '../../game/enemies/meleeAttacks';
 import type {DepthGame} from '../../DepthGame';
 import type {AttackFootprint, LastExchange} from "../../game/enemies/LastExchange";
@@ -36,7 +36,12 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, a
   if (!last) {
     return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><span class="eyebrow">FAILURE ANALYSIS</span><h3>Damage source unavailable</h3><p>This run has no recorded incoming-damage history.</p>${actions}</div>${lastExchangeDiagram(game)}</section>`;
   }
-  const diagram = lastExchangeDiagram(game);
+  const trace=getDepletedArrival(game);
+  const graph=generateRun(game.expedition.run.seed,game.expedition.run.version,game.expedition.run.roomOrder);
+  const earlier=trace&&graph.nodes.find(candidate=>candidate.id===trace.leadingHit.room);
+  const diagram = trace&&earlier?`<div class="depleted-arrival">${lastExchangeDiagram(game)}
+    <p>Entered with ${Math.round(trace.entrySuit)} suit · ${escapeHtml(ROOM_TEMPLATES[earlier.templateId].name)} cost ${Math.round(trace.total)} suit, led by ${escapeHtml(incomingDamageLabel(trace.leadingHit))}.</p>
+    </div>`:lastExchangeDiagram(game);
   const ready=game.deathReadyAbility;
   const escape=ready?`<p class="fatal-escape">${ready[0].toUpperCase()+ready.slice(1)} was ready</p>`:'';
   const node = generateRun(game.expedition.run.seed, game.expedition.run.version, game.expedition.run.roomOrder).nodes.find(candidate => candidate.id === last.room);

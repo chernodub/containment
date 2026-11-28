@@ -3,8 +3,8 @@ import type { RunState } from './types';
 import type { DetourChoice } from './economy';
 
 const junctions = [
- { depth: 5, rooms: ['Freight Hold', 'Breached Loading Bay'], threats: ['Crawler rush', 'Spitter crossfire'], openings: [0, 1] },
- { depth: 13, rooms: ['Infested Workshop', 'Swarm Junction'], threats: ['Crawler rush', 'Spitter and heavy hold'], openings: [0, 2] },
+ { depth: 5, rooms: ['Freight Hold', 'Breached Loading Bay'], threats: ['Crawler rush', 'Spitter crossfire'], openings: [0, 1], consequence: ['Relay Racks · a loader crosses the shutter lane', 'Relay Racks · the shutter gunner holds its perch'] },
+ { depth: 13, rooms: ['Infested Workshop', 'Swarm Junction'], threats: ['Crawler rush', 'Spitter and heavy hold'], openings: [0, 2], consequence: ['Shielding Gate · the first flank comes from inspection', 'Shielding Gate · the first flank comes from sterilization'] },
 ] as const;
 
 export type RoomOrder = Readonly<Partial<Record<number, DetourChoice>>>;
