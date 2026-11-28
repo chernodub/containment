@@ -1377,3 +1377,18 @@ The native baseline below subtracts the last sample with a living guardian from 
 Breacher resumed an earned Containment Annulus checkpoint, cleared Manual Control in 58.45 simulated seconds and lost 49.05 gross suit. The native runner recorded one grille closure and zero errors. [Manual Control report](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Grille closure](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/r19-manual-control-chamber-grille-closed.png)
 
 A separate Breacher continuation recorded Siege Plow shoving both staged Transmission targets in the first pulse. The first replay used Seismic Slam immediately after placing the wall and missed the opening shove. The bot now gives the deployed transformation one pulse before resuming gunfire, while keeping its escape response active. [Siege Plow frame](../../artifacts/nextgen/playtest/play42-plow-pulse/r10-transmission-chamber-transmission-transformed-hit.png)
+
+Arc 1729 cleared the resumed Swarm Junction with 17.80 seconds and 12.60 gross suit after the last live Matron sample. The native trace recorded no guardian ingress cancellation in either of its featured rooms. [Arc 1729 continuation](../../artifacts/nextgen/playtest/play42-final-native-arc-1729/report.json)
+
+Arc 2718's moving Pilgrim Pylon link hit two enemies for 24 damage in Transmission. Cryo's first attempt froze both opening targets, but the Shattershot follow-up consumed the freeze before the Crawler died. With an injured, chilled Crawler in the opening, Nova both freezes and kills it and sends the Shard Harvest hit into the Spitter. [Pilgrim Pylon frame](../../artifacts/nextgen/playtest/play42-final-native-arc/r10-transmission-chamber-transmission-transformed-hit.png) · [Shard Harvest frame](../../artifacts/nextgen/playtest/play42-current-transmission-cryo/r10-transmission-chamber-transmission-transformed-hit.png)
+
+Pyro's opening Ember Relay hit applied 12 damage and ignited a second target before the first Napalm cast. The relay came from an active fire zone. [Ember Relay frame](../../artifacts/nextgen/playtest/play42-current-transmission-pyro/r10-transmission-chamber-transmission-transformed-hit.png)
+
+| Manual Control checkpoint replay | Result | Simulated seconds | Gross suit | Closures | Runner errors |
+|---|---|---:|---:|---:|---:|
+| Breacher | Clear | 58.45 | 49.05 | 1 | 0 |
+| Cryo | Clear | 59.35 | 68.48 | 0 | 0 |
+| Pyro | Clear | 32.97 | 34.65 | 1 | 0 |
+| Arc | Clear | 66.08 | 38.83 | 0 | 0 |
+
+[Breacher replay](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Cryo replay](../../artifacts/nextgen/playtest/play42-manual-replay-cryo/report.json) · [Pyro replay](../../artifacts/nextgen/playtest/play42-current-manual-pyro/report.json) · [Arc replay](../../artifacts/nextgen/playtest/play42-current-manual-arc/report.json)
