@@ -9,7 +9,7 @@ import {segmentIntersectsRect} from './game/input/aimAssist';
 import {ROCKET_ARM_DISTANCE} from './game/combat/catalog';
 import {AWAKENING_DRILL} from './game/waves/authoredEncounters';
 import {BOSS_BODIES,guardianRadius} from './game/enemies/bossDefinitions';
-import {SERVICE_IDS,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
+import {SERVICE_IDS,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,GUARDIAN_ROUTE_DEPTH,GUARDIAN_ROUTES,GUARDIAN_SUPPLIES,fieldWorkshopDepth,fieldInfirmaryHealth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
 import {addMutation,upgradeBuildAugment} from './game/roguelike/builds';
 import {markExpeditionAllocation,recordExpeditionPurchase} from './game/roguelike/expedition';
 import {DIFFICULTIES,difficultyId,incomingDamageLimit,latePressureProgress,type DifficultyId} from './game/difficulty';
@@ -861,7 +861,7 @@ export class DepthGame {
   if(!guardianRoute&&detour==='direct'&&depth===2){
    this.combat.restoreHealth(EARLY_LOCKER.health);this.combat.addGrenades(EARLY_LOCKER.grenades);
   }
-  if(detour==='direct'&&depth===fieldWorkshopDepth)this.combat.restoreHealth(35);
+  if(detour==='direct'&&depth===fieldWorkshopDepth)this.combat.restoreHealth(fieldInfirmaryHealth);
   if(detour==='salvage'){
    if(depth===2&&!guardianRoute)this.awardCredits(EARLY_LOCKER.salvageCredits);
    if(depth===6){this.awardCredits(-70);this.combat.restoreArmor(25);this.combat.addGrenades(2);}

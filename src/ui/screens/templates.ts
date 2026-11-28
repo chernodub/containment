@@ -5,7 +5,7 @@ import type {WeaponId} from '../../game/combat/types';
 import type {MutationId} from "../../game/roguelike/types";
 import {GUARDIAN_ROUTES,GUARDIAN_ROUTE_DEPTH,GUARDIAN_SUPPLY_DEPTH,GUARDIAN_SUPPLIES} from "../../game/roguelike/economy";
 import {AUGMENT_UPGRADE_RULES,TRANSFORMATIVE_AUGMENT_PAIRS,type AugmentId} from '../../game/abilities/augmentCatalog';
-import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
+import {EARLY_LOCKER,SERVICE_IDS,SERVICE_CATALOG,serviceRepairAmounts,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,fieldInfirmaryHealth,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
 export type {ContinueSummary} from './initialTemplates';
@@ -194,21 +194,6 @@ export function draftScreen(game: DepthGame): string {
 
 export function shopScreen(game: DepthGame): string {
   const run=game.expedition.run, resources=game.combat.snapshot;
-  const beforeInterlock=run.version===3&&game.node.templateId==='diagnostic-gallery';
-  const health=Math.ceil(resources.health);
-  const repaired=Math.ceil(Math.min(100,resources.health+serviceRepairAmounts(game.difficulty).heal));
-  const repairForecast=beforeInterlock?`<section class="repair-forecast" aria-label="Safety Interlock entry forecast">
-    <div><h3>Next hold · Safety Interlock</h3>
-      <p><b>${health} HP</b> current entry · <b>${repaired} HP</b> with suit repair</p>
-      <p>Watch the recorder and battery approaches.</p>
-    </div>
-    <svg viewBox="0 0 230 76" role="img" aria-label="Recorder approach from above and battery approach from below converge on the interlock hold.">
-      <path d="M6 20h60V6h164v64H66V56H6Z" fill="#18303b" stroke="#54737c"/>
-      <path d="M68 16h64l40 19m-12-1 12 1-7-9M68 60h64l40-19m-7 9 7-9-12 1" fill="none" stroke="#ffb06f" stroke-width="2"/>
-      <circle cx="187" cy="38" r="11" fill="#21434b" stroke="#98e0d8" stroke-width="2"/>
-      <circle cx="187" cy="38" r="3" fill="#98e0d8"/>
-    </svg>
-  </section>`:'';
   const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
   const upgrades=availableAugmentUpgrades(game.expedition.build);
   const repair=serviceRepairAmounts(game.difficulty);
@@ -293,7 +278,6 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
-    ${repairForecast}
     ${pairRow}
     <div class="service-shop requisition-groups" data-pair-pending="${pair.length===2||!!chosen}">
       ${stockGroup('Consumables',false)}
@@ -376,7 +360,22 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   if (!offers.length && destinations.length===1 && !getShipCondition(game,next.depth)) {
     return `<section class="panel screen-enter"><h2>${nextName}</h2><p>${escapeHtml(getRoomOpening(game,next.depth,false)??'')}</p>${guardian}<button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
   }
-  const workshop=game.node.depth===fieldWorkshopDepth;
+  const workshop=run.version===3&&game.node.depth===fieldWorkshopDepth;
+  const health=Math.ceil(game.combat.snapshot.health);
+  const repaired=Math.ceil(Math.min(100,game.combat.snapshot.health+fieldInfirmaryHealth));
+  const repairForecast=workshop?`<section class="repair-forecast" aria-label="Safety Interlock entry forecast">
+    <div><h3>Next hold · Safety Interlock</h3>
+      <p><b>${health} HP</b> current entry · <b>${repaired} HP</b> after infirmary repair</p>
+      <p>Watch the recorder and battery approaches.</p>
+    </div>
+    <svg viewBox="0 0 230 76" role="img" aria-label="Recorder approach from above and battery approach from below converge on the interlock hold.">
+      <path d="M6 20h60V6h164v64H66V56H6Z" fill="#18303b" stroke="#54737c"/>
+      <path d="M68 16h64l40 19m-12-1 12 1-7-9M68 60h64l40-19m-7 9 7-9-12 1" fill="none" stroke="#ffb06f" stroke-width="2"/>
+      <circle cx="187" cy="38" r="11" fill="#21434b" stroke="#98e0d8" stroke-width="2"/>
+      <circle cx="187" cy="38" r="3" fill="#98e0d8"/>
+    </svg>
+  </section>`:'';
+
   const options=offers.length
     ? offers.flatMap<{destination:typeof next;detour?:(typeof offers)[number]['id'];title:string;risk?:string;reward?:string;vignette?:string;augment?:ReturnType<typeof availableAugmentUpgrades>[number];disabled:boolean;cost?:number}>(offer=>{
       const augments=offer.id==='salvage'&&workshop?availableAugmentUpgrades(game.expedition.build):[];
@@ -393,7 +392,8 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
     ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
     ${runHeader(run)?`<p>${escapeHtml(runHeader(run)!)}</p>`:''}
-    <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
+    <h2 id="route-title">${workshop?'Field infirmary':offers.length?nextName:'Choose your next sector'}</h2>
+    ${repairForecast}
     ${offers.length&&!run.runStructure?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
     ${run.runStructure&&next.depth===3?`<p>45 CR now · 35 CR after Breached Loading Bay · 35 HP and 25 armor after Coolant Plant</p>`:''}
     ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
@@ -414,7 +414,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const threat = showOpening && (run.runStructure || game.difficulty==='story' || run.version!==3)
           ? getRouteThreat(game,destination,salvage) : undefined;
         const depth = game.node.depth;
-        const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? 35 : 0));
+        const health = Math.min(100, inventory.health + (direct && depth === 2 ? EARLY_LOCKER.health : direct && workshop ? fieldInfirmaryHealth : 0));
         const armor = Math.min(game.combat.snapshot.maxArmor, inventory.armor + (salvage && depth === 6 ? 25 : 0));
         const grenades = Math.min(6, inventory.grenades + (direct && depth === 2 ? EARLY_LOCKER.grenades : salvage && depth === 6 ? 2 : 0));
         const credits = inventory.credits + (salvage && depth === 2 ? EARLY_LOCKER.salvageCredits : 0) - (cost ?? 0);

@@ -114,7 +114,7 @@ function generateStoryRun(seed:number,order?:RoomOrder):RunGraph {
   id:id(depth),depth,templateId:ROOM_STORY_ROUTE[orderRoom(order,depth).depth].templateId,
   kind:depth===5||orderRoom(order,depth).depth===15?'elite' as const:'combat' as const,
   reward:depth===19?'victory' as const:depth===5||depth===15?'rare-upgrade' as const:
-   [3,11].includes(depth)?'healing' as const:([7,14,18].includes(depth)||order!==undefined&&depth===10)?'supplies' as const:'upgrade' as const,
+   [3,11].includes(depth)?'healing' as const:[7,14,18].includes(depth)?'supplies' as const:'upgrade' as const,
   next:Object.freeze(depth===19?[]:[id(depth+1)]),
  }));
  return Object.freeze({seed,nodes:Object.freeze(nodes),startId:id(0),bossId:id(19)});
@@ -179,7 +179,7 @@ export function isValidRunState(value: unknown): value is RunState {
     if(Object.entries(record.junctions).some(([key,value])=>key!==String(Number(key))||!isJunction(Number(key))||Number(key)>current.depth||(value!=='direct'&&value!=='salvage')))return false;
   }
   if(record.finaleRevive!==undefined&&(record.finaleRevive!==true||record.version!==3||current.depth<18))return false;
-  if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)&&!(record.roomOrder!==undefined&&current.depth===10)))return false;
+  if(record.service!==undefined&&(!['reward','route'].includes(String(record.phase))||!['healing','supplies'].includes(current.reward)))return false;
   if(record.service!==undefined&&(record.service as NonNullable<RunState['service']>).purchases.includes('route-ammo')&&(!record.guardianRoute||current.depth!==GUARDIAN_SUPPLY_DEPTH))return false;
   if(record.weaponLessons!==undefined&&(record.version!==3||![1,2,3].some(value=>value===record.weaponLessons)))return false;
   if(record.guardianRoute!==undefined){

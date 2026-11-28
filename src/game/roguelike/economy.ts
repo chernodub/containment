@@ -26,6 +26,7 @@ const DETOURS = {
  17: {name:'Secure the capacitor',risk:'Charge an extra relay under fire',reward:'Leave with a full Overdrive charge'},
 } as const;
 export const fieldWorkshopDepth = 10;
+export const fieldInfirmaryHealth = 35;
 export function detourOffers(run:RunState,difficulty:DifficultyId='standard'){
  const junction=orderJunction(run);
  if(junction){
@@ -48,7 +49,7 @@ export function detourOffers(run:RunState,difficulty:DifficultyId='standard'){
  const protectedRoute = depth===2
   ? {...DIRECT,name:'Emergency supply locker',reward:'Restore up to 25 health and take one grenade immediately'}
   : depth===fieldWorkshopDepth
-  ? {...DIRECT,name:'Field infirmary',reward:'Keep supplies and restore 35 health immediately'}
+  ? {...DIRECT,name:'Field infirmary',reward:`Keep supplies and restore ${fieldInfirmaryHealth} health immediately`}
   : depth===17
   ? {...DIRECT,name:'Protected passage',reward:'Keep your current supplies and earn the standard sector reward'}
   : DIRECT;

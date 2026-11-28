@@ -124,12 +124,12 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(depleted){
     await api.gotoRoom('diagnostic-gallery',{rig:'cryo',roomOrder:{5:'direct'}});
     game.combat.restoreRunResources({...game.combat.getRunResources(),health:100,armor:0});
-    for(let hit=0;hit<2;hit++){
+    for(let hit=0;hit<4;hit++){
      runtime.hurtCooldown=0;
      game.hurt(29,undefined,{source:'enemy-projectile',enemyFamily:'spitter'});
     }
     runtime.clearRoom();
-    game.claimResources();
+    game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
     if(game.status==='route')game.route(game.node.next[0]);
     await ready();
    }else await api.gotoRoom(room,{rig:'cryo'});
