@@ -6,6 +6,7 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 const creatureHide = `
 #ifdef BRUTE_PLANES
 varying vec3 vPlateEdge;
+varying vec3 vRestNormal;
 varying float vHeavyZone;
 varying float vHeavyPart;
 float heavyInk(){
@@ -71,7 +72,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
         shader.fragmentShader='varying float vBroodInterior; varying float broodRestUp;\n'+shader.fragmentShader;
       }
       if(material.defines?.BRUTE_PLANES){
-        shader.vertexShader='uniform vec3 bossPalm[2];uniform vec4 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
+        shader.vertexShader='uniform vec3 bossPalm[2];uniform vec4 heavyGrip;uniform float actorAttackLoad;uniform float actorWarden;attribute float _heavyzone; varying float vHeavyZone; varying float vHeavyPart; attribute vec3 plateEdge; varying vec3 vPlateEdge; varying vec3 vRestNormal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPlateEdge=plateEdge;vRestNormal=normal;vHeavyZone=mod(_heavyzone,16.);vHeavyPart=floor(_heavyzone/16.);'+`
 // The peak of the displacement sits at the olecranon. It fades to
 // zero at the planted heel and at the shoulder socket.
 float support=position.y<0.?heavyGrip.x:heavyGrip.y;
@@ -266,21 +267,44 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==4.)paint=mix(middle,crown,.54);
   if(heavyPaint==7.)paint=vec3(.132,.124,.111)*(1.-.34*actorWallRecoil);
   if(heavyPaint==8.)paint=vec3(.079,.073,.065);
-  if(actorWarden<.5){
-    // Keep the olecranon continuous with the upper arm. Only its underside
-    // falls into the deep joint colour; the exposed ridge is a broad plane.
-    vec3 e=actorPosition-vec3(-.21,sign(actorPosition.y)*3.28,3.34);
-    float elbowHull=abs(e.x)*.91+abs(e.y)*.70+abs(e.z)*1.32;
-    if(heavyPaint==0. && elbowHull<1.12){
-      float facet=step(-.12,e.z+.30*e.x-.15*abs(e.y));
-      paint=mix(middle*.57,mix(middle,crown,.72),facet);
+  // HEAVY46: three designed value bands per mass replace the deep/middle
+  // facet patches. Bind-space facing keeps a facet in its band through the
+  // stride: dark dorsal planes, mid flanks, light palm heels and claw tips.
+  if(heavyPaint==0. || (heavyPaint>=2. && heavyPaint<=6.)){
+    vec3 restUp=normalize(vRestNormal);
+    float lateral=abs(actorPosition.y);
+    bool limb=actorWarden<.5 ? lateral>1.95 : lateral>2.15;
+    // Hands: the Brute club below the wrist; the Warden's chest-skinned pads.
+    bool hand=actorWarden<.5 ? limb && actorPosition.x>1.55 && actorPosition.z<2.78
+                             : limb && actorPosition.x>1.75 && actorPosition.z<1.75;
+    bool tip=actorPosition.z<.34 || (hand && actorPosition.x>(actorWarden<.5?3.05:3.35));
+    vec3 dark=middle*.42, flank=middle, light=mix(middle*2.7,crown*1.1,.35);
+    // Only the trunk carries the dorsal plane; limbs read as one flank value.
+    bool leg=actorPosition.z<(actorWarden<.5?2.25:1.95) && actorPosition.x<.60;
+    // One contiguous dorsal plane per trunk, bounded by a single line that
+    // falls towards the hips; faceted normals would stripe the curve.
+    float backLine=actorWarden<.5 ? 3.95-.16*actorPosition.x : 3.25-.12*actorPosition.x;
+    vec3 band=!limb && !leg && actorPosition.z>backLine ? dark : flank;
+    // From the game camera the hand shows its back and knuckles: the whole
+    // hand carries the light band, its claw tips one step lighter.
+    if(hand)band=light;
+    if(tip)band=light*1.18;
+    paint=band;
+    // One key-light band and a chamfer inside the inked seams on the shoulder facets.
+    vec3 shoulderSpan=actorWarden<.5 ? vec3(1.25,3.65,3.45) : vec3(1.30,3.90,2.70);
+    bool shoulder=lateral>shoulderSpan.x && lateral<shoulderSpan.y && actorPosition.z>shoulderSpan.z
+                  && actorPosition.x>-1.35 && actorPosition.x<1.60;
+    if(shoulder){
+      vec3 keyView=normalize(vec3(-.35,.85,.40));
+      float lit=dot(normalize(vNormal),keyView);
+      vec3 highlight=mix(middle*3.4,crown*1.4,.30);
+      vec3 dx=dFdx(vPlateEdge),dy=dFdy(vPlateEdge);
+      vec3 edgePx=vPlateEdge/max(sqrt(dx*dx+dy*dy),vec3(.00001));
+      float chamfer=step(.78,min(edgePx.x,min(edgePx.y,edgePx.z)))*(1.-step(2.6,min(edgePx.x,min(edgePx.y,edgePx.z))));
+      if(lit>.45)paint=highlight;
+      else if(chamfer>.5 && lit>.05)paint=mix(paint,highlight,.70);
     }
-    float handPart=floor(vHeavyPart+.5);
-    if(handPart==29. || handPart==45.){
-      float knuckles=step(2.40,actorPosition.x+.17*(abs(actorPosition.y)-3.));
-      float dorsal=step(2.43,actorPosition.z);
-      paint=mix(middle*.62,mix(middle,crown,knuckles),dorsal);
-    }
+    paint*=mix(1.,.84,rankBone);
   }
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);

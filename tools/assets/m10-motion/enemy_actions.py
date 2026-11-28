@@ -539,6 +539,88 @@ class Creature:
             desired = Matrix.Translation(anchor+travel) @ roll @ spread @ Matrix.Translation(-anchor) @ self.base_matrices[name]
             self.transform(name, desired @ self.m[name].inverted_safe())
 
+    # HEAVY46: a loaded knuckle walk. Each club support runs s in [0,.58):
+    # contact ahead of its shoulder, the chest passes over the wrist at
+    # mid-stance and the hand leaves from behind the socket, knuckles last.
+    # The armature is fitted ~1.9x taller than wide in play, so vertical
+    # mass travel reads strongly and fore-aft reach weakly.
+    STRIDE_SUPPORT=.58
+    STRIDE_KEYS={'contact':0.,'load':.16,'pass':.30,'release':.52}
+    # Pad travel relative to the stand-pose socket: 2.1 units in .58 of a
+    # .64 s cycle is the native Brute's ~1.9 m/s at the in-play .333 fit.
+    # The wrist (.95 behind the pad) lands ahead of the breast (fwd 1.7)
+    # and leaves about .8 m behind it.
+    STRIDE_AHEAD,STRIDE_BEHIND=2.85,.75
+
+    def stride_load(self, s):
+        """Weight carried by one club: falls on fast after contact, peaks
+        through mid-stance and bleeds off as the heel peels."""
+        if s>=self.STRIDE_SUPPORT:return 0.
+        return smooth(min(1.,s/.14))*(1.-smooth(max(0.,(s-.36)/(self.STRIDE_SUPPORT-.36))))
+
+    def stride_body(self, t):
+        H,W=self.height,self.width
+        sr=t%1; sl=(t+.5)%1
+        lr,ll=self.stride_load(sr),self.stride_load(sl)
+        # Impact sag lags contact slightly: deepest at the load key, then the
+        # chest vaults up over the wrist and drops again on the other hand.
+        # Weight falls fast and is lifted slowly; both hands swap at the top.
+        sag=lambda s:smooth(s/.12) if s<.12 else (1.-smooth((s-.12)/.36) if s<.48 else 0.)
+        dr,dl=sag(sr),sag(sl)
+        drop=max(dr,dl)
+        # Carriage: lower and pitched onto the clubs for the whole gait.
+        self.move(self.center,-UP*(.22+.62*drop)+SIDE*.34*(dl-dr)+FWD*(.25+.20*drop))
+        self.rotate(self.center,SIDE,.24)
+        # Loaded shoulder low, free shoulder high; pitch the breast down onto the hand.
+        self.rotate(self.center,FWD,.30*(dr-dl))
+        self.rotate(self.center,SIDE,.16*drop)
+        # The free shoulder rides forward with its swinging club.
+        self.rotate('chest',UP,.16*(lr-ll))
+        self.rotate('tail',UP,-.12*(lr-ll))
+        self.move('tail',UP*.16*drop)
+        # Head stays level against the roll and dips late, after the chest.
+        late=max(sag((sr-.10)%1),sag((sl-.10)%1))
+        self.rotate('neck',FWD,-.14*(dr-dl))
+        self.rotate('neck',SIDE,-.16)
+        self.rotate('head',SIDE,.12*late)
+
+    def stride_clubs(self, t):
+        """Plant each club on a deck point that moves back at ground speed. The
+        club tilts back about its shoulder socket as the chest passes over the
+        wrist; the rest of the reach is a slide, since the club is shorter than
+        the socket height and has always been lowered to the deck."""
+        for side, sign in [('r', -1), ('l', 1)]:
+            s=(t + (.5 if sign > 0 else 0)) % 1
+            name='shoulder.'+side
+            if name not in self.m:continue
+            skin=self.m[name] @ self.rest[name].inverted_safe()
+            socket=skin @ (FWD*.30+UP*3.83+SIDE*1.70*sign)
+            pad=skin @ (FWD*2.40+UP*2.40+SIDE*3.00*sign)
+            base=self.base_matrices[name] @ self.rest[name].inverted_safe() @ (FWD*.30+UP*3.83+SIDE*1.70*sign)
+            ahead,behind=self.STRIDE_AHEAD,self.STRIDE_BEHIND
+            support=self.STRIDE_SUPPORT
+            if s<support:
+                u=s/support
+                along=ahead+(behind-ahead)*u
+                lift=0.
+                peel=smooth(max(0.,(s-.42)/(support-.42)))
+            else:
+                w=(s-support)/(1-support)
+                along=behind+(ahead-behind)*smooth(w)
+                lift=.55*math.sin(math.pi*w)**1.3
+                peel=1.-smooth(min(1.,w/.30))
+            target=Vector((base.x+along,-(.06+lift),pad.z))
+            # The runtime contact solve's construction: aim the club from its
+            # socket at the deck point, then slide it along that line.
+            a=pad-socket;b=target-socket
+            q=a.normalized().rotation_difference(b.normalized())
+            desired=Matrix.Translation(b.normalized()*(b.length-a.length)) @ Matrix.Translation(socket) @ q.to_matrix().to_4x4() @ Matrix.Translation(-socket)
+            # Release: the heel rises about the knuckles, which stay down last.
+            knuckle=desired @ (skin @ (FWD*3.35+UP*2.05+SIDE*3.05*sign))
+            if peel>1e-5:
+                desired=Matrix.Translation(knuckle) @ Quaternion(SIDE,.50*peel).to_matrix().to_4x4() @ Matrix.Translation(-knuckle) @ desired
+            self.transform(name, desired)
+
     def ram_lean(self, l):
         """WARDEN25: lead with the right ram shoulder: low, nose down, yawed left so the ram comes forward, rolled
         onto the ram side. Body rotations only; planted feet are solved afterwards."""
@@ -721,10 +803,13 @@ class Creature:
                     self.solve(arm,desired)
         elif action == 'm10-run':
             phase=t*math.tau
-            self.move(self.center,UP*H*(.025+.025*math.cos(phase*2)))
-            self.rotate(self.center,FWD,.075*math.sin(phase))
-            self.rotate(self.center,SIDE,.11 if crawler else .07)
-            if self.family=='brute':
+            if not (self.family=='brute' and self.current_action=='m10-run'):
+                self.move(self.center,UP*H*(.025+.025*math.cos(phase*2)))
+                self.rotate(self.center,FWD,.075*math.sin(phase))
+                self.rotate(self.center,SIDE,.11 if crawler else .07)
+            if self.family=='brute' and self.current_action=='m10-run':
+                self.stride_body(t)
+            elif self.family=='brute':
                 plant=math.sin(phase+.22*math.pi)
                 self.move(self.center,SIDE*W*.15*plant-UP*H*.065*abs(plant))
                 self.rotate(self.center,FWD,.16*plant)
@@ -965,7 +1050,7 @@ class Creature:
             self.move('tail',-FWD*W*.13)
         self.plant(targets)
         if self.family=='brute' and self.current_action=='m10-run':
-            self.club_stride(t)
+            self.stride_clubs(t)
         if self.family!='brute' and action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
             settle=smooth((t*seconds-(seconds-.08))/.08)
