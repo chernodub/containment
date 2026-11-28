@@ -1,3 +1,4 @@
+import {FULL_COMBAT_VIEWPORT,type CombatViewport} from './camera/HudCombatFraming';
 import { bindPriorityMask } from './abilities/PriorityMask';
 import {BOSS_BODIES} from '../game/enemies/bossDefinitions';
 import {meleeStrikeContains} from '../game/enemies/meleeAttacks';
@@ -55,10 +56,10 @@ else if(style>5.5 && vFrame>.5){
  float pulse=.72+.28*sin(vShape.x*7.85);
  color=vec3(1.65,.018,.044);
  if(vFrame>1.5){
-  float crossLine=abs(p.y)/mix(1.,.46,vUv.x);
+  float crossLine=abs(p.y)/mix(1.,.72,vUv.x);
   float core=1.-smoothstep(.32,.55,crossLine);
   color=mix(vec3(.012,.009,.011),mix(vec3(1.85,.20,.09),vec3(1.65,.018,.044),vUv.x),core);
-  alpha*=(1.-smoothstep(.73,1.,crossLine))*(1.-smoothstep(.84,1.,vUv.x));
+  alpha*=(1.-smoothstep(.73,1.,crossLine));
  }else alpha*=max(shaft*.78,organ*pulse);
 }
 else if(style>5.5){
@@ -836,7 +837,7 @@ export class AttackEffects {
   }
  }
  private readonly bulletSkipPoint=new T.Vector3();
- update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined,strikePosition?:(id:number)=>T.Vector3|undefined){
+ update(dt:number,camera:T.Camera,bullets:readonly Bullet[],marineX=Infinity,marineZ=Infinity,marineRadius=0,targets?:readonly EnemySnapshot[],actorPosition?:(id:number)=>T.Vector3|undefined,strikePosition?:(id:number)=>T.Vector3|undefined,viewport:CombatViewport=FULL_COMBAT_VIEWPORT){
   if(dt<=0||this.disposed)return;
   for(let i=0;i<2&&this.wallQueue.length;i++)this.wallQueue.shift()!();
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
@@ -945,7 +946,7 @@ export class AttackEffects {
   (this.hostileWarningMesh.material as T.ShaderMaterial).uniforms.warningMarine.value.set(marineX,marineZ);
   this.unionFillScale.value=Math.min(1,.07/Math.max(.07,this.warningCoverage));
   if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt),targets,strikePosition),targets,actorPosition));
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.drawRecovery(this.drawFirstLimb(this.drawShooterCues(this.unionCount.value?1:0,dt,camera,viewport),targets,strikePosition),targets,actorPosition));
 
  }
  private drawRecovery(count:number, targets:readonly EnemySnapshot[]|undefined,actorPosition?:(id:number)=>T.Vector3|undefined):number {
@@ -1003,8 +1004,8 @@ export class AttackEffects {
   right.crossVectors(normal,along);
   this.dummy.quaternion.setFromRotationMatrix(this.strikeBasis.makeBasis(along,right,normal));
   this.dummy.position.copy(point).addScaledVector(along,length*.5);
-  this.dummy.position.y+=.04;
-  this.dummy.scale.set(length*.5,.12,1);
+  
+  this.dummy.scale.set(length*.5,.17,1);
   this.dummy.updateMatrix();
   mesh.setMatrixAt(count,this.dummy.matrix);
   (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(count,2);
@@ -1012,7 +1013,7 @@ export class AttackEffects {
   (mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(count,1);
   return count+1;
  }
- private drawShooterCues(count:number,dt:number):number {
+ private drawShooterCues(count:number,dt:number,camera:T.Camera,viewport:CombatViewport):number {
   const mesh=this.hostileWarningMesh;
   const frame=mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute;
   const shape=mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute;
@@ -1024,9 +1025,13 @@ export class AttackEffects {
     cue.fade=Math.max(0,cue.fade-dt);
     if (cue.fade===0) {this.shooters.delete(id);continue;}
    }
-   if (count>=mesh.instanceMatrix.count-1 || !this.warningVisible(cue.x,cue.z,.25,1.6,cue.angle,cue.y)) continue;
+   if (count>=mesh.instanceMatrix.count-1) continue;
    const offset=.64;
    this.dummy.position.set(cue.x+Math.cos(cue.angle)*offset,cue.y,cue.z+Math.sin(cue.angle)*offset);
+   const projected=this.dummy.position.project(camera);
+   projected.x=T.MathUtils.clamp(projected.x,viewport.left+.05,viewport.right-.05);
+   projected.y=T.MathUtils.clamp(projected.y,viewport.bottom+.09,viewport.top-.09);
+   projected.unproject(camera);
    this.dummy.rotation.set(-Math.PI/2,0,-cue.angle);
    this.dummy.scale.set(.8,.16,1);
    this.dummy.updateMatrix();

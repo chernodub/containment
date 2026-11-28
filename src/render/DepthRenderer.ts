@@ -889,7 +889,7 @@ export class DepthRenderer {
    if(sampling)sampling.value=false;
   });
   this.effects.setGroundPriorityTexture(this.interimAbilities.priorityMask?.texture,this.graphicsAblation!=='prioritySampling');
-  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition,this.strikePosition);
+  this.effects.update(dt,this.camera,game.bullets,p.x/UNIT,p.y/UNIT,p.radius/UNIT,enemies,this.actorPosition,this.strikePosition,hud.viewport);
   for(const [id,actor] of this.actors){
    const point=id===this.effects.strikeOwner?this.strikePosition(id):undefined;
    actor.strikeLight?.(point,this.effects.strikeStrength);
