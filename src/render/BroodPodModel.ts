@@ -47,9 +47,10 @@ export function broodPodModel(): ActorModel {
   const previous=material.onBeforeCompile, key=material.customProgramCacheKey();
   material.onBeforeCompile=(shader,renderer)=>{
    previous.call(material,shader,renderer);
-   shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
+   shader.vertexShader='varying float podCrown;\n'+shader.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\npodCrown=normal.y;');
+   shader.fragmentShader='varying float podCrown;\n'+shader.fragmentShader.replace('#include <opaque_fragment>',`
     float podLight=dot(outgoingLight,vec3(.2126,.7152,.0722));
-    bool podMark=dot(normalize(vNormal),normalize(vec3(-.78,.40,.48)))>-.05;
+    bool podMark=podCrown>.24;
     outgoingLight=(podMark?vec3(.288,.173,.352):vec3(.069,.063,.074))*(.56+.84*smoothstep(.0,.14,podLight));
     #include <opaque_fragment>`);
   };

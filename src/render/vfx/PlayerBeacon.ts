@@ -6,9 +6,12 @@ import {projectBody} from '../world/OriginalInteriorCutaways';
 const skinVertex = `
 #include <common>
 #include <skinning_pars_vertex>
+attribute float marinePaint;
+varying float shoulder;
 varying vec2 suitUv;
 void main(){
   suitUv=uv;
+  shoulder=float(marinePaint>.5 && marinePaint<1.5);
   #include <skinbase_vertex>
   #include <begin_vertex>
   #include <skinning_vertex>
@@ -33,8 +36,11 @@ void main(){
   vec2 px=1.5/patchRect.zw;
   float outside=max(max(texture2D(suitDepth,uv+vec2(px.x,0)).r,texture2D(suitDepth,uv-vec2(px.x,0)).r),
                     max(texture2D(suitDepth,uv+vec2(0,px.y)).r,texture2D(suitDepth,uv-vec2(0,px.y)).r));
-  float edge=step(1.,outside),visor=texture2D(optics,uv).r;
-  gl_FragColor=vec4(mix(mix(vec3(.012,.022,.028),rigColor,edge),vec3(.08,.95,1.),visor),mix(.55,1.,max(edge,visor)));
+  float edge=step(1.,outside);
+  vec2 paint=texture2D(optics,uv).rg;
+  vec3 suit=mix(vec3(.16,.23,.27),rigColor,paint.g);
+  suit=mix(suit,vec3(.08,.72,.80),paint.r);
+  gl_FragColor=vec4(mix(suit,vec3(.008,.014,.018),edge),1.);
   #include <colorspace_fragment>
 }`;
 
@@ -65,8 +71,8 @@ export class PlayerBeacon {
   readonly root = new T.Group();
   readonly maskScene=new T.Scene();
   readonly target=new T.WebGLRenderTarget(1,1,{minFilter:T.NearestFilter,magFilter:T.NearestFilter,depthTexture:new T.DepthTexture(1,1,T.UnsignedIntType)});
-  private readonly skinMaterial=new T.ShaderMaterial({vertexShader:skinVertex,fragmentShader:`uniform sampler2D glow;varying vec2 suitUv;
-    void main(){vec3 c=texture2D(glow,suitUv).rgb;gl_FragColor=vec4(smoothstep(.015,.12,c.b-c.r),0.,0.,1.);}`,uniforms:{glow:{value:null}},toneMapped:false});
+  private readonly skinMaterial=new T.ShaderMaterial({vertexShader:skinVertex,fragmentShader:`uniform sampler2D glow;varying vec2 suitUv;varying float shoulder;
+    void main(){vec3 c=texture2D(glow,suitUv).rgb;gl_FragColor=vec4(smoothstep(.015,.12,c.b-c.r),shoulder,0.,1.);}`,uniforms:{glow:{value:null}},toneMapped:false});
   private readonly material=new T.ShaderMaterial({transparent:true,depthWrite:false,depthFunc:T.GreaterDepth,toneMapped:false,
     uniforms:{patchRect:{value:new T.Vector4()},screenSize:{value:new T.Vector2()},suitDepth:{value:this.target.depthTexture},optics:{value:this.target.texture},sceneDepth:{value:null},sceneGeometry:{value:null},classified:{value:false},rigColor:{value:new T.Color()}},
     vertexShader:`uniform vec4 patchRect;uniform vec2 screenSize;void main(){gl_Position=vec4((patchRect.xy+uv*patchRect.zw)/screenSize*2.-1.,0.,1.);}`,fragmentShader:revealFragment});
