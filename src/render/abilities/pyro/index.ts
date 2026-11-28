@@ -179,10 +179,20 @@ class PyroPresentation implements AbilityPresentation {
       if (event.phase === 'tick') {
         kit.sustain();
         const ids = event.targetIds;
-        const lastId = ids?.[ids.length - 1];
-        const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
-        if (actor && lastId !== undefined && kit.time >= kit.heatUntil) {
-          kit.heatVictim = lastId;
+        if (!ids || kit.time < kit.heatUntil) return;
+        let chosen: number | undefined, best = -Infinity;
+        for (const id of ids) {
+          const candidate = kit.statusActor(id);
+          if (!candidate || !candidate.root.visible) continue;
+          const p = candidate.root.position;
+          const margin = kit.landingMargin(p.x, candidate.height, p.z);
+          const separation = Math.hypot(p.x-x, p.z-z);
+          const score = Math.min(0, margin)*20 + Math.min(3, separation) + candidate.height*.8;
+          if (score > best) { best = score; chosen = id; }
+        }
+        const actor = chosen === undefined ? undefined : kit.statusActor(chosen);
+        if (actor && chosen !== undefined) {
+          kit.heatVictim = chosen;
           kit.heatUntil = kit.time + .59;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
@@ -589,6 +599,15 @@ class PyroPresentation implements AbilityPresentation {
     if (contact) { lx = contact.root.position.x; lz = contact.root.position.z; }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(contact ? 9 : meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
+      if (contact) {
+        const target = contact.root.position;
+        const lead = Math.min(1, (.59 - kit.heatUntil + kit.time) / .075);
+        const tail = Math.min(1, (kit.heatUntil - kit.time) / .24);
+        const dx = target.x - x, dz = target.z - z;
+        kit.flowFlame(x + dx*.32, .10, z + dz*.32,
+          x + dx*(.32 + .61*lead), .15 + contact.height*.27*lead,
+          z + dz*(.32 + .61*lead), .22, zone.id, fade*tail*.82);
+      }
       this.meltdown(zone, x, z, fade * flameGain * (contact ? .16 : 1), frame, emit && !contact);
       if (shimmer) {
         const player = frame.game?.player;
