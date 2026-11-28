@@ -584,6 +584,37 @@ class Creature:
         self.rotate('neck',SIDE,-.16)
         self.rotate('head',SIDE,.12*late)
 
+    def stride_settle(self, t, targets=None):
+        """HEAVY47: the back and head settle on their own after the clubs are solved.
+        The trunk sinks between the shoulder sockets while the loaded club stays where
+        the stride put it, so the shoulder cap slides over the upper arm instead of the
+        whole torso riding the club; the hind legs re-plant and fold under it. The neck and head trail the chest: they hold up as
+        the weight falls, stay low as it lifts, and turn after the chest turns."""
+        sr=t%1; sl=(t+.5)%1
+        lr,ll=self.stride_load(sr),self.stride_load(sl)
+        sag=lambda s:smooth(s/.12) if s<.12 else (1.-smooth((s-.12)/.36) if s<.48 else 0.)
+        clubs={name:self.m[name].copy() for name in ('shoulder.r','shoulder.l') if name in self.m}
+        sink=.17*max(lr,ll)
+        # Lower the chest and roll it a little further onto the bearing side.
+        self.move('chest',-UP*sink)
+        self.rotate('chest',FWD,.07*(lr-ll))
+        # The hind feet stay on their deck targets; the knees take the sink.
+        self.plant(targets)
+        # The bearing club keeps its solved pose; the free club rides with the chest.
+        for side,load in (('r',lr),('l',ll)):
+            name='shoulder.'+side
+            if name not in clubs or load<=0.:continue
+            # The restoring delta (world space), blended by the club's share of the weight.
+            loc,rot,_=(clubs[name] @ self.m[name].inverted_safe()).decompose()
+            self.transform(name,Matrix.Translation(loc*load) @ Quaternion().slerp(rot,load).to_matrix().to_4x4())
+        # Head lag: the drop and the yaw reach the head about .1 of a cycle late.
+        drop=max(sag(sr),sag(sl))
+        trail=max(sag((sr-.16)%1),sag((sl-.16)%1))
+        late_r,late_l=self.stride_load((sr-.12)%1),self.stride_load((sl-.12)%1)
+        self.rotate('neck',SIDE,.26*(trail-drop))
+        self.move('head',-UP*.10*trail)
+        self.rotate('head',UP,-.12*(lr-ll)+.12*(late_r-late_l))
+
     def stride_clubs(self, t):
         """Plant each club on a deck point that moves back at ground speed. The
         club tilts back about its shoulder socket as the chest passes over the
@@ -1051,6 +1082,7 @@ class Creature:
         self.plant(targets)
         if self.family=='brute' and self.current_action=='m10-run':
             self.stride_clubs(t)
+            self.stride_settle(t, targets)
         if self.family!='brute' and action in ('m10-windup','m10-strike','m10-recovery'):self.show_edge(action,t)
         if action=='m10-spawn' and hasattr(self,'idle_start'):
             settle=smooth((t*seconds-(seconds-.08))/.08)
