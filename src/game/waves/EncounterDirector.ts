@@ -238,7 +238,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;
      const thresholdEscort=consoleExchange&&request===escorts[0];
-     const atMs=thresholdEscort?750:escorts.includes(request)?1200:Math.max(previous+380,request.atMs+4500);
+     const atMs=escorts.includes(request)?(consoleExchange&&!thresholdEscort?1200:750):Math.max(previous+380,request.atMs+4500);
      arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
       thresholdEscort:thresholdEscort?true:undefined,grilleEscort:escorts.includes(request)&&!thresholdEscort?true:undefined,grilleDelayedEscort:consoleExchange&&escorts.indexOf(request)>1?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
      if(!escorts.includes(request))previous=atMs;
