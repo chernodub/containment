@@ -663,3 +663,46 @@ Atrium has paired drag marks and a seamed MESS 4 plate. Manual has worn control 
 All three phases recorded the same count within each room and tier, below the 330-draw budget. The default production build passed. The four selected manifests cover 24 captures with empty errors and failures. The comparisons restage recorded Pyro positions with the production game camera. Atrium uses the PLAY41b waiting receipt. Manual uses a prior Pyro waiting receipt and the PLAY41b aisle-placement function. The hit frame exercises the native grille closure at 50 ms and the down frame shows it at 360 ms. These are matched presentation captures. The Atrium pair separates at 480×270. The near-edge-on shutter still looks thin there, especially in a still frame. In Manual the right edge crops the backlight at the sampled player position.
 
 [Native and 480×270 pairs](../../artifacts/nextgen/room35b/index.html) · [Per-frame draw calls](../../artifacts/nextgen/room35b/draws.json) · [Final High manifest](../../artifacts/nextgen/room35b-final-high/manifest.json) · [Final Low manifest](../../artifacts/nextgen/room35b-final-low/manifest.json) · [Production build](../../artifacts/nextgen/room35b/build.log)
+
+## ROOM36 — the covered return and arena lighting
+
+The Overload Floor tread follows the surveyed covered route from (1140, 520), through (944, 496) and (880, 336), to the first protected step at (778.35, 319.06). Two lowered sill panels reveal the bay behind the intact end cap. The preview round meets the outside corner at (833.71, 349.82). Both the deck paint and the light use the same path and the existing hull, void and obstacle clip. The world assets add no colliders or dynamic lights. At 480×270 the continuous tread survives between the red pools. The final turn is easier to see than the individual boot space. The native replay from the final26 room-19 reward recorded the bank choice and three impacts, then cleared with empty errors and defects. [Preview, choice and impact pairs](../../artifacts/nextgen/room36/shelter.png)
+
+The twenty arena centres use a bevelled pool around the authored fighting position. The existing receiver replaces the earlier overlapping incident throws. The deck retains plate seams under the pool and a trimmed grate crosses the fighting lane. The suit lamp falls off at the boots. Coolant Plant has an absorptive receiver with a contact strip under the broken pipe. The wet metal and pale leg still compete in the closest view. Safety Interlock bakes its receiver into the deck’s existing emissive map. Its kiting frame had exceeded the baseline by one draw on both tiers before this change.
+
+Crew Checkpoint has a two-bay buckled truss and repeated rack teeth with two missing teeth per shoe. Overload has displaced clamp jaws across its copper return. The original Passenger runners and Transmission conductor provide the other two lane comparisons. The shaded reactor clamps remain subtler than the Checkpoint teeth. These are native campaign crops at four fighting positions per lane, with camera and combat differences between runs. Room recognition by a new player has not been measured. [Checkpoint](../../artifacts/nextgen/room36/crew-checkpoint.png) · [Overload](../../artifacts/nextgen/room36/overload-floor.png) · [Passenger](../../artifacts/nextgen/room36/passenger-vault.png) · [Transmission](../../artifacts/nextgen/room36/transmission-chamber.png)
+
+### Draw calls and floor luminance
+
+Each draw count is the peak of three named views on that tier (arena calm, incident-facing and kiting). The before column uses ROOM35’s saved measurements. The luminance columns use linear Rec.709 luminance of visible floor samples from the new PNGs, pooled by sample count across the three views. Samples are projected onto the deck and classified by the arena receiver’s bevel. The transition band is excluded. Armory kiting rose by 11 draws on each tier. Shielding Gate’s High incident view rose from 95 to 170, while its kiting peak held at 257. All room peaks remain below 330. Safety Interlock’s calm, incident and kiting counts are now 125, 114 and 162 High and 112, 101 and 149 Low. Its ROOM35 counts were 126, 115 and 162 High and 113, 102 and 149 Low. [All 120 pairs at 480 and native size](../../artifacts/nextgen/room36/index.html) · [Per-view draws](../../artifacts/nextgen/room36/draws.json) · [Floor sample counts](../../artifacts/nextgen/room36/samples.json)
+
+| Room | High draws before → after | High luma inside / outside | Low draws before → after | Low luma inside / outside |
+|---|---:|---:|---:|---:|
+| armory | 166 → 177 | 0.141 / 0.028 | 157 → 168 | 0.130 / 0.025 |
+| awakening-bay | 137 → 137 | 0.092 / 0.027 | 125 → 125 | 0.091 / 0.023 |
+| breached-loading-bay | 124 → 124 | 0.123 / 0.026 | 113 → 113 | 0.112 / 0.018 |
+| communal-atrium | 132 → 132 | 0.073 / 0.026 | 122 → 122 | 0.072 / 0.022 |
+| containment-annulus | 129 → 128 | 0.119 / 0.030 | 119 → 117 | 0.121 / 0.025 |
+| coolant-plant | 118 → 119 | 0.130 / 0.009 | 106 → 107 | 0.132 / 0.004 |
+| crew-checkpoint | 108 → 108 | 0.128 / 0.028 | 98 → 99 | 0.135 / 0.024 |
+| diagnostic-gallery | 116 → 117 | 0.117 / 0.030 | 104 → 104 | 0.117 / 0.027 |
+| freight-hold | 118 → 120 | 0.128 / 0.025 | 107 → 109 | 0.131 / 0.020 |
+| infested-workshop | 155 → 155 | 0.062 / 0.010 | 145 → 145 | 0.067 / 0.009 |
+| manual-control-chamber | 147 → 147 | 0.099 / 0.015 | 134 → 134 | 0.100 / 0.014 |
+| overload-floor | 135 → 136 | 0.101 / 0.033 | 123 → 123 | 0.110 / 0.035 |
+| passenger-vault | 119 → 120 | 0.102 / 0.034 | 108 → 108 | 0.099 / 0.030 |
+| relay-racks | 136 → 137 | 0.079 / 0.018 | 125 → 126 | 0.077 / 0.018 |
+| residential-gallery | 113 → 113 | 0.105 / 0.024 | 103 → 103 | 0.091 / 0.019 |
+| safety-interlock-station | 162 → 162 | 0.087 / 0.019 | 149 → 149 | 0.086 / 0.016 |
+| service-shaft-landing | 112 → 112 | 0.155 / 0.018 | 101 → 101 | 0.113 / 0.014 |
+| shielding-gate | 257 → 257 | 0.088 / 0.019 | 246 → 246 | 0.091 / 0.014 |
+| swarm-junction | 101 → 101 | 0.059 / 0.012 | 89 → 90 | 0.061 / 0.012 |
+| transmission-chamber | 121 → 122 | 0.082 / 0.015 | 111 → 112 | 0.082 / 0.015 |
+
+### Verification and remaining issues
+
+The selected 120 views cover twenty rooms, three views and two tiers with empty capture errors and failures. The two main surveys use the same immutable production build. The selected Coolant and Interlock frames come from the two subsequent room-specific passes. The first High attempt hit a 120-second loading timeout when a rebuild replaced a lazy-loaded chunk. The retry used a frozen distribution. The final Interlock Pyro benchmark recorded 211 maximum draws High and 184 Low, zero new programs during combat and empty errors and budget failures. The live fight varied between trials. The table above compares the matched staged views. [High](../../artifacts/nextgen/room36-final-high/manifest.json) · [Low](../../artifacts/nextgen/room36-final-low/manifest.json) · [Selected views](../../artifacts/nextgen/room36/draws.json) · [Benchmark](../../artifacts/nextgen/room36-interlock-bench/benchmark.json)
+
+The requested Arc 2718 command on the first implementation cleared sixteen rooms and died in Shielding Gate with zero runtime errors. Continuing from its earned Swarm Junction reward also ended in Shielding Gate. A fresh integrated Arc 2718 campaign cleared all twenty rooms in 1,237 wall seconds with zero runtime errors. The runner returned exit 1 for a 5.071-second Manual Control Chamber loading hold. This full campaign used the Coolant build immediately before the Interlock receiver moved into the deck pass. The Interlock change has six final staged frames and a live benchmark. [Initial campaign](../../artifacts/nextgen/playtest/room36/report.json) · [Earned continuation](../../artifacts/nextgen/playtest/room36-continued/report.json) · [Full clear](../../artifacts/nextgen/playtest/room36-final/report.json) · [Final-room replay](../../artifacts/nextgen/final26/.work/playtest/room36-merged-bank/report.json)
+
+The final branch contains local nextgen at 12f48b02. The conflict-marker scan was clear, the production build passed, and the post-merge fork capture has empty errors and failures. Free space reported by df went from 32 GiB to 29 GiB. Worktree artifacts occupied 1.2 GiB at handoff. [Final build](../../artifacts/nextgen/room36/build-delivery.log) · [Handoff fork](../../artifacts/nextgen/room36-handoff/manifest.json)

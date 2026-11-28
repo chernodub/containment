@@ -1,10 +1,10 @@
+import {paintArenaReceiver} from './IncidentLightFootprints';
+import {roomValueProfile} from '../lighting/RoomValueStandard';
 import {paintIncidentClusters} from './IncidentDeckClusters';
-import {paintIncidentAperture} from '../lighting/IncidentAperture';
 import {paintFightLaneDamage} from './FightLaneDamage';
 import {paintWorkingLane} from './WorkingLane';
 import {paintLaneAftermath} from './LaneAftermath';
 import {paintLaneContacts} from './LaneContactPaint';
-import {paintMachineSpill} from './MachineEmitters';
 import {clipFightingDeck,paintFightingDeck} from './FightingDeck';
 import {landmarkHousing,laneTerminal,laneWorklight} from '../lighting/LaneWorklight';
 import type {Group} from 'three';
@@ -130,16 +130,14 @@ function paintCentreMarks(c:CanvasRenderingContext2D,room:RoomTemplate,arena:Poi
 /** Bake contact shadows, service joints and traffic wear into one lit relief sheet. */
 export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): void {
   const fixtures=[laneWorklight(room.id),landmarkHousing(room.id)];
-  function paintLights(c:CanvasRenderingContext2D, materialResponse=false){
-    if(materialResponse){c.save();c.globalAlpha=.47;paintFightingDeck(c,room,arena);c.restore();}
-    c.save();clipFightingDeck(c,room);paintMachineSpill(c,room.id);c.restore();
-    c.save();clipFightingDeck(c,room);
-    for(const lamp of fixtures){
-      if(!lamp)continue;
-      c.save();c.translate(lamp.x,lamp.z);c.rotate(-lamp.angle);
-      paintIncidentAperture(c,room.id,lamp.color);c.restore();
+  function paintDeckResponse(c:CanvasRenderingContext2D){
+    c.save();c.globalAlpha=.47;paintFightingDeck(c,room,arena);c.restore();
+    if(room.id==='safety-interlock-station'){
+      const profile=roomValueProfile(room.id)!;
+      c.save();clipFightingDeck(c,room);
+      paintArenaReceiver(c,arena,profile.perimeter.inner,profile.landmark!.color);
+      c.restore();
     }
-    c.restore();
   }
   paintIncidentDeck(root, 'frame16-deck-wear', [0, 0, room.width, room.height], c => {
     c.save();
@@ -172,7 +170,6 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
       c.fillStyle='rgba(7,12,14,.10)';c.fillRect(0,0,room.width,room.height);c.restore();
     }
-    paintLights(c);
     c.save();
     const scars:Record<string,number[][]>={
       'breached-loading-bay':[[560,491],[568,538],[581,589],[594,620]],
@@ -251,5 +248,5 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
       }
     }
     c.restore();
-  }, .0214, c=>paintLights(c,true));
+  }, .0214, paintDeckResponse);
 }

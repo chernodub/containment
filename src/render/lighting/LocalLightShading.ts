@@ -139,6 +139,11 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
       if(roomValue.w!=1.0){
         float roomPool=max(max(roomPoolWeight(roomWorld.xz,roomValuePool0),roomPoolWeight(roomWorld.xz,roomValuePool1)),
           max(roomPoolWeight(roomWorld.xz,roomValuePool2),roomPoolWeight(roomWorld.xz,roomValuePool3)));
+        if(surfacePaint.y>.5||roomWorld.y<.06){
+          vec2 deckOffset=abs(roomWorld.xz-roomValuePool0.xy);
+          float bevel=max(max(deckOffset.x*.84,deckOffset.y*1.15),dot(deckOffset,vec2(.64,.78)));
+          roomPool=1.0-smoothstep(roomValuePool0.z,roomValuePool0.z+.32,bevel);
+        }
         roomField=mix(roomValue.w,1.0,roomPool);
         roomField=max(roomField,mix(roomValue.w,1.0,roomValueExit.w*(1.0-smoothstep(0.0,roomValueExit.z,distance(roomWorld.xz,roomValueExit.xy)))));
       }
@@ -212,6 +217,8 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         // LIGHT13 rig lamp: analytic soft pool around the marine, no light or pass.
         float roomLamp=1.0-smoothstep(0.0,1.0,distance(roomWorld.xz,roomMarineGlow.xy)/roomMarineGlow.z);
         roomLamp=roomLamp*roomLamp*(3.0-2.0*roomLamp)*(1.0-smoothstep(.6,2.2,roomWorld.y));
+        float bootContact=smoothstep(.19,.55,distance(roomWorld.xz,roomMarineGlow.xy));
+        roomLamp*=mix(bootContact,1.0,smoothstep(.04,.18,roomWorld.y));
         reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
       }
       if(roomBlackout>0.0&&roomValue.z>0.0){

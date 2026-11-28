@@ -44,6 +44,13 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
     c.fillStyle='rgba(13,23,27,.50)';c.fillRect(x,y,width,2);c.fillRect(x,y,2,depth);
     c.fillStyle=tint(.72,.53);c.fillRect(x+3,y+2,width-6,2.5);
   }
+  // A trimmed drainage grate interrupts the plate seams along the fighting lane.
+  c.save();c.translate(arena.x,arena.y);c.rotate((seed%7-3)*.14);
+  c.fillStyle='#556263';c.fillRect(-159,32,318,43);
+  c.fillStyle='#202c31';c.fillRect(-156,35,312,37);
+  c.fillStyle='#515c5c';
+  for(let x=-150;x<154;x+=10)c.fillRect(x,36,3,35);
+  c.fillRect(-156,52,312,3);c.restore();
   paintRoomFunction(c,room,arena);
   c.restore();
 }
