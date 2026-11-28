@@ -333,7 +333,7 @@ export class EnemyMotion {
       if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
       this.body.rotation.set(
         Math.cos(direction)*bend+(brace*(this.family==='carrier'?0:p.rear*.90)+strike*p.strike*.44+recovery*.22)*motion,
-        (recovery*.12+(this.biteHook?.parent ? .46*extension : 0))*motion,-Math.sin(direction)*bend-recovery*.13*motion);
+        (recovery*.12+(this.biteHook ? .46*extension : 0))*motion,-Math.sin(direction)*bend-recovery*.13*motion);
       // Compression and release stay deliberately smaller than the authored
       // poses; this layer must survive replacement meshes on the same rig.
       this.body.scale.set(1+(brace*(this.family==='brute'?.18:p.squashX*.90)+strike*.10)*motion,

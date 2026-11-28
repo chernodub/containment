@@ -1004,7 +1004,6 @@ export class AttackEffects {
   right.crossVectors(normal,along);
   this.dummy.quaternion.setFromRotationMatrix(this.strikeBasis.makeBasis(along,right,normal));
   this.dummy.position.copy(point).addScaledVector(along,length*.5);
-  
   this.dummy.scale.set(length*.5,.17,1);
   this.dummy.updateMatrix();
   mesh.setMatrixAt(count,this.dummy.matrix);
@@ -1013,6 +1012,7 @@ export class AttackEffects {
   (mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(count,1);
   return count+1;
  }
+ private readonly shooterRayEnd=new T.Vector3();
  private drawShooterCues(count:number,dt:number,camera:T.Camera,viewport:CombatViewport):number {
   const mesh=this.hostileWarningMesh;
   const frame=mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute;
@@ -1028,10 +1028,15 @@ export class AttackEffects {
    if (count>=mesh.instanceMatrix.count-1) continue;
    const offset=.64;
    this.dummy.position.set(cue.x+Math.cos(cue.angle)*offset,cue.y,cue.z+Math.sin(cue.angle)*offset);
-   const projected=this.dummy.position.project(camera);
-   projected.x=T.MathUtils.clamp(projected.x,viewport.left+.05,viewport.right-.05);
-   projected.y=T.MathUtils.clamp(projected.y,viewport.bottom+.09,viewport.top-.09);
-   projected.unproject(camera);
+   const projected=this.shooterRayEnd.copy(this.dummy.position).project(camera);
+   const x=T.MathUtils.clamp(projected.x,viewport.left+.05,viewport.right-.05);
+   const y=T.MathUtils.clamp(projected.y,viewport.bottom+.09,viewport.top-.09);
+   if(x!==projected.x || y!==projected.y){
+    // Keep the displaced stroke at muzzle height on either side of the deck.
+    const start=this.dummy.position.set(x,y,-1).unproject(camera);
+    const ray=projected.set(x,y,1).unproject(camera).sub(start);
+    if(Math.abs(ray.y)>.0001)start.addScaledVector(ray,(cue.y-start.y)/ray.y);
+   }
    this.dummy.rotation.set(-Math.PI/2,0,-cue.angle);
    this.dummy.scale.set(.8,.16,1);
    this.dummy.updateMatrix();
