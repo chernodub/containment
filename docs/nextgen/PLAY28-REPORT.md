@@ -1367,3 +1367,13 @@ The native baseline below subtracts the last sample with a living guardian from 
 | Cryo | 10 | 96.01 | 111.03 | +15.02 |
 | Pyro | 11 | 35.82 | 32.50 | −3.32 |
 | Arc | 9 | 33.85 | 11.94 | −21.91 |
+
+### Native receipts collected
+
+| PLAY42 native Arc seed | Room | Guardian | Seconds following last live sample | Gross suit lost afterward | Scheduled group canceled |
+|---|---|---|---:|---:|---|
+| 1729 | Coolant Plant | Matron | 43.97 | 71.93 | No |
+
+Breacher resumed an earned Containment Annulus checkpoint, cleared Manual Control in 58.45 simulated seconds and lost 49.05 gross suit. The native runner recorded one grille closure and zero errors. [Manual Control report](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Grille closure](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/r19-manual-control-chamber-grille-closed.png)
+
+A separate Breacher continuation recorded Siege Plow shoving both staged Transmission targets in the first pulse. The first replay used Seismic Slam immediately after placing the wall and missed the opening shove. The bot now gives the deployed transformation one pulse before resuming gunfire, while keeping its escape response active. [Siege Plow frame](../../artifacts/nextgen/playtest/play42-plow-pulse/r10-transmission-chamber-transmission-transformed-hit.png)
