@@ -31,16 +31,17 @@ try{
     if(!pts.every(([px,py,rr])=>d.canStand(px,py,rr)))continue;const s=-Math.hypot(x+320-b.x-b.width/2,y-cy);if(!best||s>best.s)best={x,y,s};}
    if(!best)throw Error('no lane');
    Object.assign(g.player,{x:best.x,y:best.y,vx:0,vy:0,angle:0});g.setAimPoint({x:best.x+300,y:best.y});d.step(600);g.enemies.reset();
-   const ids=subject==='pack'?[[330,-80],[380,0],[320,85]].map(([dx,dy])=>d.spawn('brute',best.x+dx,best.y+dy,false))
-    :[d.spawn('brute',best.x+(subject==='warden'?400:360),best.y,subject!=='brute')];
+   const ids=subject==='pack'?[[345,-80],[405,0],[335,80]].map(([dx,dy])=>d.spawn('brute',best.x+dx,best.y+dy,false))
+    :[d.spawn('brute',best.x+(subject==='warden'?440:385),best.y,subject!=='brute')];
    if(subject==='warden')g.enemies.promote(ids[0],'warden');
-   d.step(subject==='warden'?700:600);
-   const scales=ids.map(id=>{const m=d.renderer.actors.get(id);let bone;m.root.traverse(o=>{if(!bone&&o.isBone&&o.name==='chest')bone=o;});const arm=bone?.parent;if(!arm)return null;arm.updateWorldMatrix(true,false);const e=arm.matrixWorld.elements;const len=(i)=>Math.hypot(e[i],e[i+1],e[i+2]);return{armX:+len(0).toFixed(4),armY:+len(4).toFixed(4),armZ:+len(8).toFixed(4)};});
+   window.__h46ids=ids;window.__h46step=ms=>{for(let k=0;k<ms;k+=50){d.step(Math.min(50,ms-k));for(const e of g.enemies.snapshot.enemies)if(!window.__h46ids.includes(e.id))g.enemies.remove(e.id);}d.refresh();};
+   window.__h46step(1250);
+   const scales=ids.map(id=>{const m=d.renderer.actors.get(id);if(!m)return null;let bone;m.root.traverse(o=>{if(!bone&&o.isBone&&o.name==='chest')bone=o;});const arm=bone?.parent;if(!arm)return null;arm.updateWorldMatrix(true,false);const e=arm.matrixWorld.elements;const len=(i)=>Math.hypot(e[i],e[i+1],e[i+2]);return{armX:+len(0).toFixed(4),armY:+len(4).toFixed(4),armZ:+len(8).toFixed(4)};});
    return{ids,lane:best,scales};
   },{room,subject});
   const shots=[],positions=[];
   for(let f=0;f<frames;f++){
-   const r=await page.evaluate(({ids,stepMs,first})=>{const d=window.__containmentDebug,r=d.renderer;if(!first)d.step(stepMs);else d.refresh();
+   const r=await page.evaluate(({ids,stepMs,first})=>{const d=window.__containmentDebug,r=d.renderer;if(!first)window.__h46step(stepMs);else d.refresh();
     const cam=r.camera,canvas=r.canvas;const pts=ids.map(id=>{const m=r.actors.get(id);if(!m)return null;const v=m.root.position.clone();v.project(cam);return{x:(v.x+1)/2*canvas.clientWidth,y:(1-v.y)/2*canvas.clientHeight,h:m.height??0};});
     return{url:canvas.toDataURL('image/png'),pts,enemies:d.game.enemies.snapshot.enemies.filter(e=>ids.includes(e.id)).map(e=>({x:+e.x.toFixed(1),y:+e.y.toFixed(1),phase:e.meleePhase??null}))};},{ids:setup.ids,stepMs,first:f===0});
    shots.push(png(r.url));positions.push(r);
@@ -59,7 +60,7 @@ try{
   }else{
    const xs=positions.flatMap(p=>p.pts.filter(Boolean).map(q=>q.x)),ys=positions.flatMap(p=>p.pts.filter(Boolean).map(q=>q.y));
    const w=subject==='warden'?620:440,h=subject==='warden'?460:360;
-   const cx=Math.round((Math.min(...xs)+Math.max(...xs))/2),cy=Math.round(Math.max(...ys)-h*.55);
+   const cx=Math.round((Math.min(...xs)+Math.max(...xs))/2),cy=Math.round(Math.max(...ys)-h*.78);
    const left=Math.max(0,Math.min(1920-w,cx-w/2)),top=Math.max(0,Math.min(1080-h,cy));
    const crops=[];for(const [i,buf] of shots.entries()){const c=await sharp(buf).extract({left,top,width:w,height:h}).png().toBuffer();crops.push(c);await writeFile(resolve(dir,`frame-${i}.png`),c);}
    // A fixed vertical tick (top and bottom edges) marks the same deck column in every frame.

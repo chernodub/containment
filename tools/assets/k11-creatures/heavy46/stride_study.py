@@ -59,7 +59,7 @@ deck = bpy.context.object
 deck.matrix_world = Matrix.Translation(to_world(Vector((0, 0, 0)))) @ (M.to_3x3().normalized().to_4x4() @ Matrix.Rotation(math.pi / 2, 4, 'X'))
 dm = bpy.data.materials.new('deck'); dm.diffuse_color = (.16, .19, .22, 1); deck.data.materials.append(dm)
 speed = (1.25 + .95) / E.Creature.STRIDE_SUPPORT  # armature units per cycle
-cam = bpy.data.cameras.new('c'); cam.type = 'ORTHO'; cam.ortho_scale = 13
+cam = bpy.data.cameras.new('c'); cam.type = 'ORTHO'; cam.ortho_scale = 15
 co = bpy.data.objects.new('c', cam); sc.collection.objects.link(co); sc.camera = co
 side_axis = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
 up_axis = (M.to_3x3() @ Vector((0, -1, 0))).normalized()
@@ -85,7 +85,7 @@ for label, s in keys.items():
         sm = bpy.data.materials.new('seam'); sm.diffuse_color = (.9, .75, .2, 1); seam.data.materials.append(sm)
         p = to_world(Vector((base.x + 1.25 + advance, -.01, 0)))
         seam.matrix_world = Matrix.Translation(p) @ (M.to_3x3().normalized().to_4x4()) @ Matrix.Diagonal(Vector((.06, .02, 12, 1)))
-    center = to_world(Vector((1.0 + speed * .25, -2.3, 0)))
+    center = to_world(Vector((0.4 + speed * .25, -2.6, 0)))
     co.location = center + view * 40
     co.rotation_euler = (center - co.location).to_track_quat('-Z', 'Y').to_euler()
     sc.render.filepath = f'{OUT}-{MODE}-{RANK}-{list(keys).index(label)}-{label}.png'
