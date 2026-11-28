@@ -1094,7 +1094,7 @@ export class DepthGame {
  }
  if(e.augmentPosition&&this.transmissionAugment){
   const augment=this.transmissionAugment;
-  const spacing=augment==='ember-relay'?108:augment==='pilgrim-pylon'?140:82;
+  const spacing=augment==='ember-relay'?74:augment==='pilgrim-pylon'?140:82;
   const sideways=augment==='siege-plow'?0:36;
   const radius=enemyBodyRadius(e.enemyId,e.elite);
   const anchor={x:this.player.x,y:this.player.y};
