@@ -209,6 +209,25 @@ ${inkComposite}
     if(broodZone && max(sharpColor.r,max(sharpColor.g,sharpColor.b))<.55){
       color=mix(vec3(max(.010,value)),max(vec3(.006),color),.20);
     }
+    // HEAVY47: Brute, elite and Warden bodies keep their skeletal regions (0–8). On their
+    // near-black planes the room lift and shadow tint become saturated blue or red, and the
+    // rust and slate paints gain chroma through the filmic curve. Resting heavy paint keeps
+    // its hue under the marine visor's chroma; statuses and lit telegraphs paint brighter
+    // than any resting band and keep their colour.
+    if(region<8.5){
+      float resting=1.-smoothstep(.24,.34,max(sharpColor.r,max(sharpColor.g,sharpColor.b)));
+      // Measured on the encoded sRGB value: near black its curve is linear, not a power.
+      vec3 linearPart=max(color,vec3(0.));
+      vec3 shown=mix(1.055*pow(linearPart,vec3(1./2.4))-.055,linearPart*12.92,step(linearPart,vec3(.0031308)));
+      float top=max(shown.r,max(shown.g,shown.b)),chroma=(top-min(shown.r,min(shown.g,shown.b)))/max(top,.0001);
+      // Near black one 8-bit step is a large share of the value, so the allowed chroma falls
+      // with value; a floor of 14/255 keeps quantisation and dither off the ink.
+      // The Warden (boss class) keeps a little more rust than the slate Brutes. The visor's
+      // lowest measured peak is .32; 8-bit steps and review reduction add up to ~.05.
+      float allowed=mix(.06,actorClass>5.5?.25:.22,smoothstep(.06,.24,top));
+      shown=max(mix(vec3(top),shown,min(1.,allowed/max(chroma,.0001))),vec3(.055));
+      color=mix(color,mix(pow((shown+.055)/1.055,vec3(2.4)),shown/12.92,step(shown,vec3(.04045))),resting);
+    }
     bool ornament=region==28.0 || region==9.0 || region==10.0 || region==12.0 || region==15.0 || region==30.0;
     bool danger=color.r>color.g*2.6 && color.r>color.b*2.0;
     if(!ornament && !danger && value>.145){

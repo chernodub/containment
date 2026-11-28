@@ -93,7 +93,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
    float neighborRegion=floor(neighbor.w/8.);
    if(centerRegion!=28.&&neighborRegion!=28.&&centerRegion!=30.&&neighborRegion!=30.&&abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
-    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*.10); // HERO19/SHADER25: faint plate seams on every actor; bone-weight regions are not creases
+    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*((centerRegion==29.||neighborRegion==29.)?.55:.10)); // HERO19/SHADER25: faint plate seams on every actor; bone-weight regions are not creases. HEAVY47: heavy bone (29) seats into the hide with a full seam
   }
  } else if(inkMode>1.5&&inkStrength>.01) {
   for(int i=0;i<4;i++) {
