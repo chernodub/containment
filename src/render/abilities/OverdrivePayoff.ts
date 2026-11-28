@@ -170,7 +170,7 @@ export class OverdrivePayoff {
     let contactGain = 1;
     if (this.rig === 'arc') contactGain = this.kit.time < this.kit.arcContactUntil ? .085 : .38;
     if (this.rig === 'cryo') contactGain = .18;
-    if (this.rig === 'pyro' && this.kit.time < this.kit.heatUntil) contactGain = .14;
+    if (this.rig === 'pyro' && this.kit.time < this.kit.heatUntil) contactGain = .055;
     slot.param = this.level * contactGain; slot.intensity = this.kit.low ? .75 : 1;
     if (active && game && this.rig === 'arc') {
       this.kit.sustain(this.age);

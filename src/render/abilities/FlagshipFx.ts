@@ -378,7 +378,8 @@ void main(){
   float core=(1.-smoothstep(.12,.75,r))*(1.-smoothstep(.033,.051,age));
   float settle=fxParam<1.5?1.-smoothstep(.30,.62,age)
     :(1.-.59*smoothstep(.16,.49,age))*(1.-smoothstep(.23,.48,age));
-  alpha*=settle;emit=(emit*settle+vec3(core))*fxIntensity;
+  float floorGain=mix(1.,.075,smoothstep(.035,.085,age));
+  alpha*=settle*floorGain;emit=(emit*settle*floorGain+vec3(core))*fxIntensity;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
@@ -563,7 +564,7 @@ void main(){
    float cooling=1.-smoothstep(.16,.72,age);
    base=mix(vec3(.035,.015,.010),vec3(.11,.028,.008),cell.z);
    alpha=field*(.26+.10*peak)+rim*.50*cooling;
-   emit=vec3(2.3,.87,.18)*rim*cooling+vec3(.20,.04,.002)*field*cooling*(.25+.35*fissure);
+   emit=vec3(.54,.19,.04)*rim*cooling+vec3(.20,.04,.002)*field*cooling*(.25+.35*fissure);
    line=0.;
   }else{
    // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.

@@ -87,7 +87,8 @@ class SystemPresentation implements AbilityPresentation {
 
       const firstBurn = event.ability === 'napalm-charge' && !this.previouslyBurning.has(id) && this.statusFor?.(id).burning;
       const firstFreeze = event.ability === 'whiteout' && this.game?.enemies.getSnapshot(id)?.type === 'crawler' && !this.previouslyFrozen.has(id) && this.statusFor?.(id).frozen;
-      const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' || event.ability === 'cryo-nova');
+      const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' || event.ability === 'cryo-nova')
+        && (this.game?.enemies.getSnapshot(id)?.health ?? 0) > 0;
       if (actor && !this.selected.has(event.ability) && (firstBurn || firstFreeze || impact)) {
         this.selected.add(event.ability);
         const bearing = Math.atan2(actor.root.position.z - y / UNIT, actor.root.position.x - x / UNIT);

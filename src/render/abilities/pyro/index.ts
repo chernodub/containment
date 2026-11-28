@@ -506,7 +506,8 @@ class PyroPresentation implements AbilityPresentation {
     }
     // Keep the fuel running between victims while reserving its hottest value
     // for the skin-bound ember after ignition.
-    const desiredGain = 1 - (hasContact ? .84 : .66) * Math.min(1, Math.max(0, (elapsed - .08) / .22));
+    const crowdYield = zone.ability === 'napalm-charge' ? .68 : .84;
+    const desiredGain = 1 - (hasContact ? crowdYield : .66) * Math.min(1, Math.max(0, (elapsed - .08) / .22));
     const pockets = meltdown ? 0 : kit.low ? 6 : 12;
     const clock = kit.reducedMotion ? 0 : kit.time;
     let pool = this.burnYield.find(entry => entry.zone === zone.id);

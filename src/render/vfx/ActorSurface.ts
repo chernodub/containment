@@ -358,7 +358,9 @@ if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
 #endif
 if(actorContact.z>0. && contactSkin){
  vec3 edge=actorContact.x<1.5?vec3(.75,1.15,1.38):actorContact.x<2.5?vec3(1.65,.53,.09):vec3(1.26,.92,.47);
- outgoingLight+=edge*actorContact.z*(.09+.86*smoothstep(.22,.77,actorRim));
+ // A broad cap catches the camera-side shoulder even on flat shell facets.
+ float cap=smoothstep(.20,.65,dot(normalize(normal),normalize(mat3(viewMatrix)*vec3(-.45,.83,.32))));
+ outgoingLight+=edge*actorContact.z*(.14+1.45*cap+1.65*smoothstep(.045,.53,actorRim));
 }else if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
  float vein=sin(dot(actorPosition,vec3(1.67,.86,1.22))+.65*sin(actorPosition.z*2.1));
