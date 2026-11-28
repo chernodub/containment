@@ -1586,3 +1586,91 @@ The native campaign attempts in this table precede the final inset placement. Na
 | Provisional simulation | `artifacts/nextgen/playtest/play43-final-aware/summary.json` |
 | Review-seed simulation | `artifacts/nextgen/playtest/play43-review-aware/summary.json` |
 | Partial High timing trial | `artifacts/nextgen/play43-bench/benchmark.json` |
+
+### Review-seed run and follow-up
+
+The review-seed build `640dc575` reached the Standard aggregate ceiling with zero stalls. Cryo exceeded the per-rig ceiling. Two Swarm-only Cryo experiments introduced either one or three additional Spitters from alternating angles. Each still cleared 12/12, so the extra Spitters were removed. The Story cohort cleared 21/24.
+
+| Review cohort | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 9/12 | 12/12 | 8/12 | 11/12 | 40/48 | 0 |
+| Story novice | 12/12 | 9/12 | — | — | 21/24 | 0 |
+| Standard Cryo, one extra Swarm Spitter | — | 12/12 | — | — | 12/12 | 0 |
+| Standard Cryo, three extra Swarm Spitters | — | 12/12 | — | — | 12/12 | 0 |
+
+| Standard four-sector block | Wave 36 mean gross suit | PLAY43 mean gross suit | PLAY43 completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 10.80 | 48 |
+| 5–8 | 105.26 | 109.95 | 48 |
+| 9–12 | 184.24 | 204.30 | 48 |
+| 13–16 | 204.71 | 204.46 | 46 |
+| 17–20 | 187.01 | 210.46 | 40 |
+
+| Rig | Manual Control closures / visits, aware | Late Spitter intercepted / arrivals |
+|---|---:|---:|
+| Breacher | 8/11 | 4/11 |
+| Cryo | 10/12 | 4/12 |
+| Pyro | 8/10 | 3/12 |
+| Arc | 7/11 | 2/12 |
+| Total | 33/44 | 13/47 |
+
+A native aware Breacher replay from the previously earned sector-18 save spent 27.72 suit and cleared with the grille open. It logged an original ship kit preparation timeout. The trace shows the Brute in recovery while Breacher was on the opposite side of the console from the notch. Commit `d0f21052` exposes the notch as soon as it is staged and gives the Manual Brute another half-second of recovery. It also limits the bot's target exclusion to the bodies waiting at the guardian's hatch, retaining the existing pursuit behavior for ordinary escort departures. The earlier cohort therefore describes the evidence build, and final-head verification is separate.
+
+The Swarm guardian stage captures show both Brutes behind the staged hatch in the same view as the marine and Matron. Their [manifest](../../artifacts/nextgen/play43-swarm-ledger/manifest.json) has zero errors and failures. The Coolant fixtures show the hatch and Warden together, but the grille's lower edge competes with the HUD and the solid panel is more visually prominent than I wanted. I inspected those frames at 1920×1080 and in [480×270 downsamples](../../artifacts/nextgen/play43-reviewed-480). The captures are staged state evidence, including a direct hold transition, so their counts are separate from native interception.
+
+| Additional experiment | Result |
+|---|---:|
+| Forced Arc, Freight and Workshop first | 11/12 clears |
+| Forced Arc, Loading Bay and Swarm first | 10/12 clears |
+| Early fan timing trial, 48 four-sector runs | 10.13 mean suit |
+
+The forced Arc cohorts used adjacent source snapshots with different Manual Control recovery timing. The observed gap was one clear, with zero stalls on either order. The early fan trial shortened the warning by 100 ms and left the existing hazard active for a second damage tick. It produced less mean suit loss, so the trial was removed.
+
+| Native Manual Control Breacher 1729 from sector 18 | Closures | Gross suit | Errors |
+|---|---:|---:|---:|
+| Earlier aware build | 0 | 27.72 | 1 kit preparation timeout |
+| Earlier unaware build | 0 | 88.35 | 0 |
+| Locked aware build | 1 | 91.45 | 0 |
+
+The locked aware replay uses the same earned save. This is one observed closure on the revised build. Its suit loss was higher than the earlier unaware replay, whose timing and bot targeting differ. The new [lane frame](../../artifacts/nextgen/playtest/play43-locked-manual-breacher-on/r19-manual-control-chamber-grille-lane.png) shows both shade silhouettes, the floor notch and the exposed Brute in a single native view.
+
+### Locked build measurements
+
+The locked simulation used the gameplay at `d0f21052` with the same twelve review seeds. It passed the Story clear target and had zero stalls in both difficulties. Standard exceeded the total cap by two clears. Cryo completed all twelve. The first four Standard sectors averaged 11.07 gross suit, below the 15–40 target.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Total | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent, aware | 9/12 | 12/12 | 10/12 | 11/12 | 42/48 | 0 |
+| Standard competent, unaware | 7/12 | 11/12 | 10/12 | 9/12 | 37/48 | 0 |
+| Story novice | 12/12 | 11/12 | — | — | 23/24 | 0 |
+
+| Sector block | Standard mean suit / completed blocks | Story mean suit / completed blocks |
+|---|---:|---:|
+| 1–4 | 11.07 / 48 | 12.15 / 24 |
+| 5–8 | 109.87 / 48 | 104.63 / 24 |
+| 9–12 | 186.60 / 48 | 197.97 / 24 |
+| 13–16 | 209.87 / 46 | 189.92 / 24 |
+| 17–20 | 179.73 / 42 | 247.07 / 23 |
+
+| Rig | Matched aware/unaware visits | Aware suit | Unaware suit | Aware closures / visits | Unaware closures / visits | Late Spitter intercepted / arrivals, aware |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 8 | 44.23 | 41.76 | 9/10 | 0/8 | 6/11 |
+| Cryo | 11 | 101.82 | 78.92 | 9/12 | 1/11 | 5/12 |
+| Pyro | 9 | 29.42 | 33.73 | 7/10 | 0/10 | 3/12 |
+| Arc | 9 | 21.80 | 33.49 | 11/11 | 0/9 | 3/12 |
+| Total | 37 | — | — | 36/43 | 1/38 | 17/47 |
+
+Across those 37 paired visits the aware bot spent 3.45 more gross suit. Arc saved 11.69 and Pyro 4.32, while Cryo spent 22.90 more and Breacher 2.47 more. These arms compare behavior with ordinary room resources, so the unaware suit is the cost of that policy and does not isolate time spent stationary behind the console.
+
+| Locked aware native Manual Control replay | Closures | Gross suit | Errors |
+|---|---:|---:|---:|
+| Breacher 1729 | 1 | 91.45 | 0 |
+| Pyro 1729 | 1 | 37.95 | 0 |
+| Arc 1729 | 1 | 48.17 | 1 kit preparation timeout |
+| Arc 2718 | 1 | 73.97 | 0 |
+
+All four used earned sector-18 saves from the Wave 36 native campaigns. The first locked unaware replay for Breacher spent 137.70 suit with the grille open and zero errors, a difference of 46.25 suit versus the aware replay from the same save.
+
+The Story sectors 1–4 baseline was rerun from `nextgen` for all 24 review cases. Every matched room had exactly the same clear time and gross suit loss on the locked build. An older-build observer initially failed because it required the new escort accessors. The harness now treats those accessors as optional for retrospective runs.
+
+The later Manual Control balance trial added two elite Spitters to the final wave for the Cryo and Arc transformation builds. It produced 23/24 clears across those rigs, the same combined result as the locked build. A subsequent Cryo policy trial avoided visible imminent hazards during the notch approach and retained those extra Spitters. Cryo remained at 12/12. Both experiments were removed from the branch.

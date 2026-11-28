@@ -134,7 +134,7 @@ async function snapshot(stagnantSince=Infinity) {
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
       return {x:(v.x+1)*innerWidth/2,y:(1-v.y)*innerHeight/2,depth:v.z};
     };
-    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,reserveLeader:!!g.encounter.reserve&&e.priority,interceptionEscort:g.isCrossingEscort(e.id),vulnerable:!g.isGuardianReserveEscort(e.id)&&!g.isShutterProtected(e.id),burning:g.boonStatuses(e.id).burning,chilled:g.boonStatuses(e.id).chilled,clear:d.botShotClear(e.x,e.y),plasmaClear:d.botShotClear(e.x,e.y,g.player,'plasma'),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
+    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,reserveLeader:!!g.encounter.reserve&&e.priority,interceptionEscort:g.isCrossingEscort?.(e.id)??false,vulnerable:!g.isGuardianReserveEscort?.(e.id)&&!g.isShutterProtected(e.id),burning:g.boonStatuses(e.id).burning,chilled:g.boonStatuses(e.id).chilled,clear:d.botShotClear(e.x,e.y),plasmaClear:d.botShotClear(e.x,e.y,g.player,'plasma'),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
     for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.botShotClear(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const objective=g.siege;
