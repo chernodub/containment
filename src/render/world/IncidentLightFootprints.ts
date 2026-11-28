@@ -1,8 +1,9 @@
-import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,PlaneGeometry,SRGBColorSpace,type Group} from 'three';
+import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,type Group} from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {MARINE_FLOOR_GLOW,roomValueProfile} from '../lighting/RoomValueStandard';
 import {clipFightingDeck} from './FightingDeck';
+import {laneTerminal} from '../lighting/LaneWorklight';
 import {reactorReturn} from './FightLaneDamage';
 
 export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
@@ -24,6 +25,13 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const color='#'+profile.landmark.color.toString(16).padStart(6,'0');
   cast.addColorStop(0,color+'28');cast.addColorStop(1,color+'0e');
   c.fillStyle=cast;c.fillRect(-1.2,-1,2.4,2);c.restore();
+  const coolant=room.id==='coolant-plant';
+  if(coolant){
+    const terminal=laneTerminal(room.id)!;
+    c.save();c.translate(...terminal);
+    c.strokeStyle='#101b20';c.lineWidth=14;c.lineCap='round';
+    c.stroke(new Path2D('M-42 42L-7 48M1 51L26 63'));c.restore();
+  }
   if(room.id==='overload-floor'){
     c.save();c.translate(833.71249,349.81813);c.lineJoin='round';
     const path=new Path2D(reactorReturn);
@@ -36,16 +44,21 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     c.restore();
   }
   const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
-  const material=new MeshBasicMaterial({map:texture,transparent:true,blending:AdditiveBlending,
+  const material=new MeshBasicMaterial({map:texture,transparent:true,blending:coolant?NormalBlending:AdditiveBlending,
     opacity:.40,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
   material.onBeforeCompile=shader=>{
     shader.uniforms.receiverMarine=MARINE_FLOOR_GLOW;
     shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
+    const bootResponse=coolant?`
+      float contact=(1.-smoothstep(.28,.70,distance(receiverXZ,receiverMarine.xy)))*step(.001,diffuseColor.a);
+      outgoingLight=mix(outgoingLight,vec3(.012,.018,.022),contact);
+      diffuseColor.a=max(diffuseColor.a,.66*contact);`:
+      'diffuseColor.a*=smoothstep(.23,.57,distance(receiverXZ,receiverMarine.xy));';
     shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMarine;\n'+shader.fragmentShader.replace(
-      '#include <opaque_fragment>','diffuseColor.a*=smoothstep(.23,.57,distance(receiverXZ,receiverMarine.xy));\n#include <opaque_fragment>');
+      '#include <opaque_fragment>',bootResponse+'\n#include <opaque_fragment>');
   };
-  material.customProgramCacheKey=()=>'arena-receiver-contact-v1';
+  material.customProgramCacheKey=()=>coolant?'coolant-receiver-contact-v1':'arena-receiver-contact-v1';
   material.userData.actorMaterial=true;
   material.addEventListener('dispose',()=>texture.dispose());
   const mesh=new Mesh(new PlaneGeometry(room.width/32,room.height/32).rotateX(-Math.PI/2),material);
