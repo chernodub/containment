@@ -1471,3 +1471,14 @@ The cohort table pairs each rig and seed with the baseline at `0c9feb39`. It use
 | 1729 | Swarm Junction | 47.15 | 45.07 | 25.20 | 51.00 | 3 Brutes |
 
 The first 2718 attempt with the widened window cut seven Crawlers, but held later spawns long enough to take 64.08 seconds and 24.37 suit after the kill. The final cadence releases the uncanceled reserves after the guardian dies, and the 2718 replay preserved the seven-Crawler cut with the shorter result above. The 1729 rows use the widened-window build before that last cadence correction. The 2718 capture shows the cancellation notice with the ingress outside the frame. In Swarm Junction, the shutter is in view. [Final 2718 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-2718/report.json) · [1729 replay](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/report.json) · [Swarm Junction shutter frame](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/r16-swarm-junction-reserve-cut.png)
+
+### Native campaign verification
+
+| Campaign | First attempt | Earned checkpoint used | Final sectors cleared | Runner errors | Loading holds over 5 seconds |
+|---|---|---|---:|---:|---:|
+| Standard competent Arc 2718 | Died in Shielding Gate | After sector 16 | 20/20 | 0 | 6 |
+| Story novice Cryo 1729 | Died in Safety Interlock Station | After sector 11 | 20/20 | 0 | 4 |
+
+The two completions used native keyboard and mouse input. The driver decimated intermediate renders and rendered evidence frames in full. The completion reports include their inherited slow-load diagnostics, which made the runner return a nonzero status despite reaching the ending with zero runner errors. None of the four Manual Control checkpoint replays recorded a defect. The first Arc launch was rejected by the sandbox while binding localhost. The authorized retry started successfully. Initial one-room continuation limits counted rooms already cleared, so those attempts ended at the checkpoint. The completed Manual Control and Transmission replays use cumulative limits of 19 and 10 respectively. [Arc first attempt](../../artifacts/nextgen/playtest/play42-final-native-arc/report.json) · [Arc completion](../../artifacts/nextgen/playtest/play42-arc-2718-resume/report.json) · [Story first attempt](../../artifacts/nextgen/playtest/play42-current-native-story-cryo/report.json) · [Story completion](../../artifacts/nextgen/playtest/play42-story-cryo-resume/report.json)
+
+`df -h /Users/chernodub` showed 40 GiB available at the start and 32 GiB at handoff, with reported capacity of 96% and 97% respectively. Worktree `artifacts/nextgen/` used 2.2 GiB at handoff.
