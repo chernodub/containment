@@ -73,7 +73,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  }
  const shutterOpening=node.templateId==='relay-racks';
  const coverOpening=node.templateId==='transmission-chamber';
- const shardCrossfire=coverOpening&&mode==='standard'&&options.transmissionAugment==='shard-harvest';
+ const cryoCrossfire=coverOpening&&mode==='standard'&&
+  (options.transmissionAugment==='shard-harvest'||options.transmissionAugment==='ice-road');
  if(coverOpening){
   const index=source.findIndex(beat=>beat.grammar==='siege');
   if(index>0)source.unshift(...source.splice(index,1));
@@ -140,7 +141,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   ?source.at(-1)?.groups.find(group=>!group.guardian&&!group.lesson&&!group.priority):undefined;
  const veteranLate=mode==='veteran'&&position>=10;
  const standardFinalAct=mode==='standard'&&position>=14;
- const arrivalSpacing=shardCrossfire?.62:node.depth===9&&options.junctions?.[7]==='salvage'?1.1:veteranLate?.58:standardFinalAct?DIFFICULTIES.standard.finalActArrivalSpacing:1;
+ const arrivalSpacing=cryoCrossfire?.62:node.depth===9&&options.junctions?.[7]==='salvage'?1.1:veteranLate?.58:standardFinalAct?DIFFICULTIES.standard.finalActArrivalSpacing:1;
  let state=(options.seed^Math.imul(node.depth+1,0x9e3779b9))>>>0;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/0x100000000;};
  const positions=options.breaches;const center=positions?.length?{x:positions.reduce((n,p)=>n+p.x,0)/positions.length,y:positions.reduce((n,p)=>n+p.y,0)/positions.length}:null;
@@ -361,8 +362,8 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      role:'flanker',reinforcement:false,fixedIngress:true});
    }
   }
-  if(shardCrossfire&&beatIndex>0){
-   // A distant firing angle gives the room a second demand after the close-range shatter.
+  if(cryoCrossfire&&beatIndex>0){
+   // Distant firing angles give the room a second demand after the Cryo opening.
    const farSide=beatIndex%2?Math.floor(ids.length/2):1;
    const breachId=ids[(rotation+beatIndex+farSide)%ids.length];
    arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:relay-crossfire-${beatIndex}`,
@@ -379,7 +380,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
  });
- const concurrentBonus=shardCrossfire?2:veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
+ const concurrentBonus=cryoCrossfire?2:veteranLate?3:standardFinalAct?DIFFICULTIES.standard.finalActConcurrentBonus:0;
  const concurrentCap=mode==='story'&&node.templateId==='safety-interlock-station'?6:Math.min(12+concurrentBonus,6+Math.floor(position/3)+concurrentBonus);
  return Object.freeze({nodeId:node.id,kind:node.kind,wave:position+1,totalSpawns:schedule.length,concurrentCap,schedule:Object.freeze(schedule),beats:Object.freeze(beats),...(opening?{openingName:shutterOpening?'Bait the ram into the rack shutter':coverOpening?'Use the relay receiver as cover':galleryOpening?'Cut back around the recorder':route?`${GUARDIAN_ROUTES[route].name} · ${GUARDIAN_ROUTES[route].banner}`:opening.name}:{})});
 }
