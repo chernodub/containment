@@ -38,7 +38,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const form={value:new T.Vector4()};
   const grip={value:new T.Vector4()};
   const bossPalm={value:[new T.Vector3(),new T.Vector3()]};
-  const warden={value:0},wallRecoil={value:0};
+  const warden={value:0},wallRecoil={value:0},matron={value:0};
   const broodPrime={value:0},castShade={value:0},shedShoulder={value:0};
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
@@ -62,7 +62,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       Object.assign(shader.uniforms, { actorShedShoulder:shedShoulder,actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorReveal: reveal, actorRigColor: rigColor });
-      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
+      if (!friendly) Object.assign(shader.uniforms, {actorStrikeLight:strikeLight,actorBroodPrime:broodPrime,actorColdState:coldState,actorContact:contact,actorHideFrequency:{value:hideFrequency},actorBroodForm:form,actorWarden:warden,actorWallRecoil:wallRecoil,actorMatron:matron,heavyGrip:grip,bossPalm,actorCastShade:castShade, actorLanternColor: lanternColor, actorAttackLoad: attackLoad, actorBodyHue: bodyHue, actorEliteBody: eliteBody, actorZoneLevel: zoneLevel, actorWet: wetPick});
       shader.vertexShader = (friendly ? 'attribute float marinePaint; varying float vRigPaint;\n' : '') + 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;' + (friendly ? 'vRigPaint=marinePaint;' : '')).replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
@@ -109,7 +109,7 @@ if(actorWarden<.5){
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec4 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec4 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorMatron;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -158,6 +158,9 @@ bool broodSac=actorBroodForm.w==1. && (broodBand==9 || broodBand==10 || vActorRe
 // The fourth form component identifies the shared atlas layout.
 bool carrierSkin=actorBroodForm.w==1., crawlerSkin=actorBroodForm.w==2.;
 bool spitterSkin=actorBroodForm.w==3., stalkerSkin=actorBroodForm.w==4.;
+// HEAVY47: the Matron's whole egg sac (atlas band 6 on her mesh, the organ region and the
+// distal tip) is one painted mass; the geometry buffer files it with the brood marks.
+bool matronSac=carrierSkin && actorMatron>.5 && (broodBand==6 || broodSac || floor(vActorRegion+.5)==7.);
 // A single camera-facing cap in bind space groups the shell across atlas
 // islands. The dark sides and forelimbs keep the head silhouette separate.
 bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
@@ -257,65 +260,55 @@ float contactShade=actorCastShade*(1.-smoothstep(.0,.25,actorContact.y));
 outgoingLight=creatureBody*(bounded/max(bodyValue,.0001))*(1.-.84*contactShade)+lanternEmission;
 #ifdef BRUTE_PLANES
 if(actorBroodForm.x>=-1.){
-  vec3 middle=mix(vec3(.034,.034,.047),vec3(.044,.025,.016),actorWarden);
-  vec3 crown=mix(vec3(.063,.066,.087),vec3(.116,.060,.034),actorWarden);
+  // HEAVY47: the Warden keeps rust as a hue, not as saturation (value rule).
+  vec3 middle=mix(vec3(.034,.034,.047),vec3(.048,.025,.019),actorWarden);
+  vec3 crown=mix(vec3(.063,.066,.087),vec3(.114,.058,.041),actorWarden);
+  // Mouth colour belongs to the attack and the punish window; at rest it stays in shadow.
+  float mouthLit=max(actorAttackLoad,actorWallRecoil);
   vec3 paint=vec3(.012,.012,.017);
   float rankBone=actorEliteBody*(1.-actorWarden);
-  if(heavyPaint==1.)paint=mix(crown,vec3(.046,.046,.063),rankBone);
   if(heavyPaint==5. || heavyPaint==3.)paint=middle;
   if(heavyPaint==2. || heavyPaint==6.)paint=middle;
-  if(heavyPaint==4.)paint=mix(middle,crown,.54);
-  if(heavyPaint==7.)paint=vec3(.132,.124,.111)*(1.-.34*actorWallRecoil);
+  if(heavyPaint==7.)paint=mix(vec3(.132,.124,.111),vec3(.150,.128,.098),actorWarden)*(1.-.34*actorWallRecoil);
   if(heavyPaint==8.)paint=vec3(.079,.073,.065);
-  // HEAVY46: three designed value bands per mass replace the deep/middle
-  // facet patches. Bind-space facing keeps a facet in its band through the
-  // stride: dark dorsal planes, mid flanks, light palm heels and claw tips.
-  if(heavyPaint==0. || (heavyPaint>=2. && heavyPaint<=6.)){
-    vec3 restUp=normalize(vRestNormal);
+  // HEAVY47: one anatomy for the Brute, the elite and the Warden, three value bands per mass.
+  // A dark back with the crowns as plates inside it (one step lighter, never lighter than the
+  // flank, so they cannot read as stripes); one flank value for trunk and limbs; light working
+  // ends. Crown paint that wraps onto a limb (the Warden's forearm bands) joins the flank. No
+  // per-facet highlight: a narrow key turns the flank planes without breaking them into patches.
+  if(heavyPaint<=6.){
     float lateral=abs(actorPosition.y);
     bool limb=actorWarden<.5 ? lateral>1.95 : lateral>2.15;
     // Hands: the Brute club below the wrist; the Warden's chest-skinned pads.
     bool hand=actorWarden<.5 ? limb && actorPosition.x>1.55 && actorPosition.z<2.78
                              : limb && actorPosition.x>1.75 && actorPosition.z<1.75;
     bool tip=actorPosition.z<.34 || (hand && actorPosition.x>(actorWarden<.5?3.05:3.35));
-    vec3 dark=middle*.42, flank=middle, light=mix(middle*2.7,crown*1.1,.35);
-    // Only the trunk carries the dorsal plane; limbs read as one flank value.
     bool leg=actorPosition.z<(actorWarden<.5?2.25:1.95) && actorPosition.x<.60;
     // One contiguous dorsal plane per trunk, bounded by a single line that
     // falls towards the hips; faceted normals would stripe the curve.
     float backLine=actorWarden<.5 ? 3.95-.16*actorPosition.x : 3.25-.12*actorPosition.x;
-    vec3 band=!limb && !leg && actorPosition.z>backLine ? dark : flank;
+    bool trunk=!limb && !leg;
+    bool crownPlate=trunk && heavyPaint==1.;
+    bool dorsal=trunk && actorPosition.z>backLine;
+    vec3 band=crownPlate ? middle*.64 : dorsal ? middle*.42 : middle;
+    float key=dot(normalize(vNormal),normalize(vec3(-.35,.85,.40)));
+    if(!dorsal && !crownPlate)band*=mix(.86,1.14,smoothstep(-.15,.75,key));
     // From the game camera the hand shows its back and knuckles: the whole
     // hand carries the light band, its claw tips one step lighter.
+    vec3 light=mix(middle*2.7,crown*1.1,.35);
     if(hand)band=light;
     if(tip)band=light*1.18;
-    paint=band;
-    // One key-light band and a chamfer inside the inked seams on the shoulder facets.
-    vec3 shoulderSpan=actorWarden<.5 ? vec3(1.25,3.65,3.45) : vec3(1.30,3.90,2.70);
-    bool shoulder=lateral>shoulderSpan.x && lateral<shoulderSpan.y && actorPosition.z>shoulderSpan.z
-                  && actorPosition.x>-1.35 && actorPosition.x<1.60;
-    if(shoulder){
-      vec3 keyView=normalize(vec3(-.35,.85,.40));
-      float lit=dot(normalize(vNormal),keyView);
-      vec3 highlight=mix(middle*3.4,crown*1.4,.30);
-      vec3 dx=dFdx(vPlateEdge),dy=dFdy(vPlateEdge);
-      vec3 edgePx=vPlateEdge/max(sqrt(dx*dx+dy*dy),vec3(.00001));
-      float chamfer=step(.78,min(edgePx.x,min(edgePx.y,edgePx.z)))*(1.-step(2.6,min(edgePx.x,min(edgePx.y,edgePx.z))));
-      if(lit>.45)paint=highlight;
-      else if(chamfer>.5 && lit>.05)paint=mix(paint,highlight,.70);
-    }
-    paint*=mix(1.,.84,rankBone);
+    paint=band*mix(1.,.84,rankBone);
   }
   if(rankBone>.5){
     float part=floor(vHeavyPart+.5);
     vec3 antler=vec3(.115,.096,.066);
     bool dorsal=part>=6. && part<=12.;
-    bool edge=dorsal && heavyPaint==2. && actorPosition.z>3.9 && abs(actorPosition.y)<.74;
+    // HEAVY47: rank reads from the crest, the prong and the horn tips; the painted
+    // plate edges and the shoulder diagonal were patches on the banded body.
     bool crest=dorsal && heavyPaint==1. && abs(actorPosition.y)<.15;
-    if(edge || crest)paint=antler;
-    float ridge=abs(actorPosition.x-(1.83-.68*actorPosition.y));
-    if(part==1. || (actorPosition.y>.25 && actorPosition.y<2.65 &&
-       actorPosition.z>4.02 && ridge<.18))paint=vec3(.14,.128,.109);
+    if(crest)paint=antler;
+    if(part==1.)paint=vec3(.14,.128,.109);
     // At broadside the swept horns cross the shoulder. Reserve bone for
     // their outer tips so the dark shaft stays distinct from the crown rims.
     if(part==3. || part==5.)paint=abs(actorPosition.y)>2.85 ? antler : vec3(.038,.042,.033);
@@ -323,14 +316,14 @@ if(actorBroodForm.x>=-1.){
   if(heavyPaint==11.){
     // The tongue sits inside a dark lower lip. Both boundaries move with the jaw.
     bool tongue=abs(actorPosition.y)<.52 && actorPosition.x>4.55;
-    paint=tongue?vec3(.53,.27,.12):vec3(.013,.008,.009);
+    paint=tongue?vec3(.53,.27,.12)*mix(.30,1.,mouthLit):vec3(.013,.008,.009);
   }
   if(heavyPaint==10.)paint=mix(vec3(.014,.011,.017),vec3(.068,.033,.062),actorAttackLoad);
   if(heavyPaint==9.){
     float facet=smoothstep(.07,.12,actorPosition.y+.32*(actorPosition.x-5.));
-    paint=mix(vec3(.12,.042,.067),vec3(.27,.12,.155),facet);
+    paint=mix(vec3(.12,.042,.067),vec3(.27,.12,.155),facet)*mix(.30,1.,mouthLit);
   }
-  if(heavyPaint==12.)paint=vec3(.072,.027,.043);
+  if(heavyPaint==12.)paint=vec3(.072,.027,.043)*mix(.45,1.,mouthLit);
   if(heavyPaint==13.){
     // The lining stays exposed between the jaws even at a frontal wall hit.
     // A tapered root and a diagonal side facet carry the tongue into this view.
@@ -376,6 +369,24 @@ if(hookRidge || bladeRidge)
 if(broodMark){
  float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
+}
+// HEAVY47: the Matron in three bands instead of a lilac cloud. Dark legs carry her, a mid
+// carapace torso is the frame, and the egg sac is one continuous lilac mass (top to belly,
+// no facet threshold) divided by rib seams across its length. A bone head marks the front.
+if(carrierSkin && actorMatron>.5 && broodFinish){
+ float region=floor(vActorRegion+.5);
+ // Each leg's upper face rolls one step lighter so neighbouring legs separate.
+ vec3 matronPaint=vec3(.020,.017,.026)*mix(1.,1.55,smoothstep(.15,.85,broodRestUp));
+ if(region==1. || region==6.)matronPaint=vec3(.056,.049,.064);
+ if(region==2.)matronPaint=vec3(.150,.132,.110);
+ if(matronSac){
+  float roll=smoothstep(-.55,.65,broodRestUp);
+  float along=dot(actorPosition.xz,normalize(vec2(-.6,.8)))/1.55;
+  float seam=abs(fract(along)-.5);
+  float rib=1.-smoothstep(.035,.035+max(.012,fwidth(along)),seam);
+  matronPaint=mix(broodPaint*.26,broodPaint*.94,roll)*(1.-.55*rib);
+ }
+ outgoingLight=matronPaint*actorStageLight*actorCamouflage+vec3(.085,.11,.15)*keyRim*(matronSac?.4:1.);
 }
 #endif
 // Break the light along the actual posed silhouette. Keep identity paint and
@@ -488,7 +499,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-fx38:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-heavy47:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
@@ -502,6 +513,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     grip(left:number,right:number,leftPeel:number,rightPeel:number,offsets:T.Vector3[]) { grip.value.set(left,right,leftPeel,rightPeel);bossPalm.value=offsets; },
     wallRecoil(active:boolean) { wallRecoil.value=active?1:0; },
     warden(active:boolean) { warden.value=active?1:0; },
+    matron(active:boolean) { matron.value=active?1:0; },
     prime(value:number){broodPrime.value=value;},
     castShade(value:number) { castShade.value=value; },
     load(value:number) { attackLoad.value = T.MathUtils.clamp(value, 0, 1); },

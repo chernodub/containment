@@ -2273,3 +2273,57 @@ The production build passed. The Arc 1729 ten-room campaign and its requested re
 Both builds completed the native full-kit workload on both tiers with zero combat program compilations. Safety Interlock High recorded 99.34% of baseline frames and 100.00% of CONTACT37 frames over 20 ms. The 5% target failed on this shared host. One-minute host load ranged from 21.98 to 42.77 across these trials on ten cores. The quiet final27 reference was 2.4–2.8%. These runs do not establish a quiet-host frame-time delta. The fixed calm captures read 120 / 108 draws in Safety Interlock and 98 / 87 in Transmission, versus CONTACT36's 121 / 109 and 98 / 87. Realtime receipts are in `artifacts/nextgen/contact37-before-measured/benchmark.json` and `artifacts/nextgen/contact37-final-measured/benchmark.json`.
 
 Three additional live queued contacts are paired in the gallery from Freight Hold, Breached Loading Bay and Diagnostic Gallery. The Diagnostic continuation used the earned final27 room-10 boundary and cleared room 11 with zero errors and exit 0. The matched baseline and current floor galleries each contain 20 shots. The final desktop edge recapture also has empty error and failure lists.
+
+## HEAVY47 — resting heavies under the visor, banded Warden and elite, a Matron with a body, a settling Brute
+
+### Item 1 — resting saturation
+
+Cause: on the heavies' near-black planes the room lift and shadow tint (`lift`, `shadowTint` in the composite grade) push one channel towards zero, so ink and dorsal pixels such as (2, 7, 20) read S 0.9–1.0; the Warden's rust and the Brute's slate also gain chroma through the filmic curve. Brute, elite and Warden bodies write their skeletal geometry regions (0–8), so the composite (`post/shaders.ts`) now finds them: resting heavy pixels keep their hue with encoded-sRGB chroma capped at .22 (.25 for the boss-class Warden), falling to .06 towards black, with a 14/255 floor that keeps 8-bit steps and dither off the ink. "Resting" means the pre-grade colour stays under .24–.34; statuses and lit telegraphs paint brighter and keep their colour. The Warden's mouth (zones 9, 11, 12) and the Brute's wind-up fold leave the resting grade (region 30) only while lit by attack load or wall recoil; at rest the mouth paint stays in shadow.
+
+Measured with `scripts/nextgen/brood43-values.py` on the gallery fixtures (`final26-crowd-<room>-rest`) and a heavy twin (`heavy47-heavies-<room>-rest`: the same crowd with brute 10 elite, brute 14 Warden, carrier 17 Matron), the gallery's hand-labelled visor and leg rectangles, eroded actor-ID masks, 480×270, High. `tools/assets/k11-creatures/heavy47/measure.sh` runs it. Peak S, previous (nextgen `efe908cd`) → now (merged `8943a9f2`); the visor peak is the limit.
+
+| Room | Visor S | Brute (crowd) | Brute + elite (heavy crowd) | Warden body | Matron |
+|---|---:|---:|---:|---:|---:|
+| Crew Checkpoint | .321 | .600 → .246 | .900 → .271 | .667 → .279 | .218 → .282 |
+| Swarm Junction | .333 | .900 → .245 | 1.000 → .269 | .909 → .274 | .241 → .311 |
+| Transmission Chamber | .360 | .950 → .242 | 1.000 → .259 | 1.000 → .308 | .308 → .329 |
+
+Peak Y′ against the marine's legs (.796 / .791 / .804): Brute .566 / .566 / .473, Warden body .477 / .463 / .467, Matron .552 / .546 / .550, all under. The Warden's mask contains its overhead health bar (a 10-pixel HUD row, Y′ .93, present before too); the tool reports .933–.935 and S .341 / .306 / .308 with it, and "Warden body" above excludes the bar rows ±2 (`barless.py`; the reduction rings next to the bluish-white bar). Low tier, same method: Brute .250 / .246 / .246 (was .500 / .667 / .714), heavy crowd Brute .288 / .296 / .275, Warden body .279 / .279 / .309, Matron .270 / .291 / .303, against visor .331 / .361 / .346. Raw output: `artifacts/nextgen/heavy47/values-{base,now,low,merged}.txt`.
+
+### Item 2 — Warden and elite bands
+
+One anatomy for all three in `ActorSurface.ts`: a dark back with the crowns as plates inside it (.64 of the flank, never lighter, so no stripes); one flank value for trunk and limbs, turned by a narrow key (.86–1.14) instead of per-facet shoulder highlights and painted chamfers, which were the light blocks of the patch camouflage; light working ends (hands, claw tips). Crown paint that wraps onto the Warden's forearms joins the flank. The Warden keeps rust as a hue, redder and less saturated; its spines and plates are warm bone, seated with a full ink seam (region-29 crease .55 in `Ink.ts`, which also edges the Brute's mask). The elite keeps crest, prong and horn tips; its painted plate edges and the shoulder diagonal are gone. The wall-stun mouth, tongue and teeth are unchanged and lit in the punish window.
+
+### Item 3 — Matron
+
+She shared the Carrier's dorsal mark: lilac on every upward-facing trunk facet over a dark grey belly, a ragged facet-threshold edge (the "pink cloud"). With an `actorMatron` flag set with the champion rank she is three bands: dark legs whose upper faces roll one step lighter so neighbours separate, a mid carapace torso, and one continuous lilac sac (atlas band 6, organ region and distal tip on her mesh) rolling from lit top to shadowed belly, divided by rib seams across its length. Her small head knob is bone, so the front reads. The whole sac is filed with the brood marks (region 28) so the brood shadow grade no longer greys its belly. Pods are untouched (they already rise on their countdown).
+
+### Item 4 — the walk settles
+
+`enemy_actions.py` `stride_settle` runs after the club solve in `m10-run` (shared by elite and Warden). The trunk sinks .17 units (about 11 cm at the .632 m vertical fit) between the shoulder sockets and rolls .07 rad further onto the bearing side; the bearing club keeps its solved pose in proportion to its load, so its socket rides .23 higher against the trunk at load (the shoulder cap slides over the upper arm). The hind legs re-plant under the sink (planted tip miss grows by at most .08 units, about 5 cm, and mostly shrinks; the runtime contact pass still holds planted pads). The neck trails the chest's drop by .16 of a cycle and the head turns after the chest. `settle-study.mjs` on the baked clip: head-over-chest height .218–.316 → .103–.355, the head's lowest point 0 → 7 frames (117 ms) after the chest's, head pitch range against the chest .23 → .64 rad. Only `m10-run` was re-baked; re-baking the previous script reproduces the shipped GLB byte for byte. Duration, skeleton and simulation are unchanged.
+
+The elbow is not done. It needs: the forearm half of each club reweighted from `shoulder.*` to `forearm.*` in the k11 Brute build (`brute.py`/`build.py`, rebuilt GLB and `_heavyzone`/region attributes), `shapeBrute`'s elbow and wrist refinements re-fitted to the new seam, every Brute clip that keys the club re-keyed for two bones (run, idle, waiting, windup/strike/recovery, hits, stagger, deaths, ram load/charge, wall stun, spawn), and `HeavyContacts`' club solve (aim from the socket, slide along the line) replaced by a two-bone IK on the planted palm. The Warden's chest-skinned front pads would need the same decision.
+
+### Verification
+
+`npm run build` passes on the merged head (nextgen `7250ab0e`, ROOM37 and UI37: clean merge, conflict-marker scan empty). Every capture manifest listed here has empty `errors` and `failures`: crowds High and Low on both builds, the merged recapture `heavy47-merged-crowds`, clutches in four rooms, the native Warden and Matron cycles (`scripts/nextgen/i13-native.mjs`, Crew Checkpoint and Relay Racks), turnarounds and walk studies. The gallery's `contact36-warden-stun` fixture no longer finds a legal marine position on either build; the native i13 wall stun replaces it.
+
+| Pyro peak draws | High previous | High now | Low previous | Low now |
+|---|---:|---:|---:|---:|
+| Safety Interlock | 207 | 204 | 194 | 197 |
+| Transmission Chamber | 169 | 169 | 153 | 151 |
+
+The native campaign (`npm run playtest -- --rig=breacher --seed=1729 --rooms=10 --fast --startup-timeout-ms=180000 --label=heavy47`) on the merged head cleared ten rooms through Transmission Chamber and exited 0 with zero errors and zero defects, without a startup or loading timeout (room holds 1.1–1.7 s at one-minute load 6–15). An earlier run on the pre-merge build was stopped at room 3 when nextgen moved. Report: `artifacts/nextgen/playtest/heavy47/index.html`.
+
+Programs per run are unchanged (167 / 368 / 162 / 358–359) with zero combat compilations; the difference is run-to-run content. Frame time is not established: one-minute load was about 10 on ten cores, and Safety Interlock High recorded 48–82% of previous-build and 14% of current frames over 20 ms. The added composite math runs only on heavy pixels.
+
+### Evidence
+
+Under `artifacts/nextgen/heavy47/` in this worktree: `evidence/` (pairs, previous left or above: `crowd-heavies-<room>-480.png`, `crowd-rest-<room>-final27-now-480.png`, `warden-crowd-*-native-crop.png`, `matron-clutch-*`, `warden-wall-stun-*`, `trio-final27-now-*`, `brute-walk-*`, `warden-walk-*`, `settle-study.txt`, `bench-summary.txt`), `base/` and `now/` (`lineup/` turnarounds per family at native and 480 with greyscale, `walk/`, `bosses/`), and the capture labels `artifacts/nextgen/heavy47-{base,now,merged}-*`.
+
+### Still not right
+
+- The regular Brute is darker overall; on Swarm Junction and Transmission at 480 it leans on its ink and rim to separate from the deck.
+- The Matron's legs are still one lumpy mass; paint separates them a little, geometry would do it properly. Her head knob is small for "a front" at 480.
+- The Warden's rust is muted to fit the visor rule; in the purple Swarm light it is closer to brown than rust.
+- Head lag reads frame to frame at native size and faintly at 480. The club is still rigid from shoulder to knuckle.
