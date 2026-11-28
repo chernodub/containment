@@ -226,6 +226,14 @@ export function runSimulation(options: SimOptions) {
                 const family = familyPressure(receipt?.enemyFamily ?? receipt?.source ?? 'unknown');
                 row.hitsTaken++;row.firstHitElapsed ??= game.elapsed;row.hitTimes.push(game.elapsed);family.hits++;family.damage += amount;
                 if (receipt?.source === 'enemy-contact') family.meleeHits++;
+                if (room?.id === 'manual-control-chamber') {
+                    const grille = game.recoveryGrille;
+                    const phase = game.encounter.beat !== 1 ? `beat-${game.encounter.beat}` :
+                        grille?.state === 'waiting' ? grille.laneOccupied ? 'notch' : 'approach' : 'exchange-cleanup';
+                    const breakdown = room.consoleDamage ??= {};
+                    const key = `${phase}/${receipt?.enemyFamily ?? receipt?.source ?? 'unknown'}`;
+                    breakdown[key] = (breakdown[key] ?? 0) + amount;
+                }
             }
             camera.rig.addTrauma(.34);
             camera.rig.punch(.015, 180);

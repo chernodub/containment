@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;authoredGroup?:number;guardianReserveAtMs?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;cargoLoader?:true;fixedIngress?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;thresholdEscort?:true;interceptionEscort?:true;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;authoredGroup?:number;guardianReserveAtMs?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;cargoLoader?:true;fixedIngress?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;thresholdEscort?:true;interceptionEscort?:true;grilleEscort?:true;grilleDelayedEscort?:true;consoleReserve?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -248,8 +248,11 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const lead=arrivals.find(request=>request.enemyId==='brute'&&!request.guardian&&!request.reinforcement);
    if(lead){
     const others=arrivals.filter(request=>request!==lead).sort((a,b)=>a.atMs-b.atMs);
-    const escorts=options.recoveryGrilles
-     ?others.filter(request=>!request.guardian&&(consoleExchange||!request.priority)).slice(0,consoleExchange?3:2):[];
+    const candidates=others.filter(request=>!request.guardian&&(consoleExchange||!request.priority));
+    const escorts=options.recoveryGrilles?consoleExchange&&mode==='standard'
+     ?[...candidates.slice(0,1),...candidates.slice(1).sort((a,b)=>
+       Number(b.enemyId==='spitter'||b.enemyId==='brute')-Number(a.enemyId==='spitter'||a.enemyId==='brute')).slice(0,4)]
+     :candidates.slice(0,consoleExchange?3:2):[];
     let previous=4900;
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;
@@ -368,6 +371,20 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:relay-crossfire-${beatIndex}`,
     atMs:2100,wave:position+1,enemyId:'spitter',elite:false,breachId,beat:beatIndex,
     grammar:beat.grammar,role:'ranged',hatchDelayMs:600}));
+  }
+  if(mode==='standard'&&options.recoveryGrilles&&node.templateId==='manual-control-chamber'&&beatIndex>1){
+   // The open grille also feeds the room's later ranged reinforcements.
+   for(let index=0;index<arrivals.length;index++){
+    const request=arrivals[index];
+    if(request.enemyId==='spitter'&&!request.priority)
+     arrivals[index]=Object.freeze({...request,consoleReserve:true});
+   }
+  }
+  if(mode==='standard'&&node.templateId==='communal-atrium'&&beatIndex===0){
+   const ingress=ids[(rotation+Math.floor(ids.length/2))%ids.length];
+   arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:atrium-cover-spitter`,
+    atMs:2400,wave:position+1,enemyId:'spitter',elite:false,breachId:ingress,beat:beatIndex,
+    grammar:beat.grammar,role:'ranged',fixedIngress:true}));
   }
   if(interceptionEscort&&beatIndex===1){
    const ranged=arrivals.find(request=>request.enemyId==='spitter');
@@ -636,6 +653,7 @@ export class EncounterDirector {
   reportRecoveryGrilleClosed(delayEscort = false) {
     this.delayRecoveryEscort = delayEscort;
     this.closedRecoveryGrilleBeat = this.beatIndex;
+    return this.plan.schedule.slice(this.dispatched).filter(request=>request.consoleReserve).length;
   }
   private breakBeat(end:number){
     this.broken=true;
@@ -726,6 +744,9 @@ export class EncounterDirector {
         if(cut)batch.push(cut);
       }
       if(request.reinforcement&&(this.defusedBeats.has(this.beatIndex)||this.skippedReinforcementBeat===this.beatIndex)){this.dispatched++;this.canceledReinforcements++;continue;}
+      if(request.consoleReserve&&this.closedRecoveryGrilleBeat>=0){
+        this.dispatched++;this.canceledReinforcements++;continue;
+      }
       if(request.grilleEscort&&this.closedRecoveryGrilleBeat===this.beatIndex&&
         !(this.delayRecoveryEscort&&request.grilleDelayedEscort)){
         this.dispatched++;this.canceledReinforcements++;continue;
@@ -786,6 +807,6 @@ export class EncounterDirector {
     this.currentPhase = 'dead';
     return events({ type: 'defeat' });
   }
-  reset(): void { this.guardianRetreat=undefined;this.guardianReserveBeat=undefined;this.defeatedGuardianBeat=undefined;this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.workshopRelief=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
+  reset(): void { this.closedRecoveryGrilleBeat=-1;this.delayRecoveryEscort=false;this.guardianRetreat=undefined;this.guardianReserveBeat=undefined;this.defeatedGuardianBeat=undefined;this.meleeLockDelays=0;this.delayedLocks.clear();this.coolantEntry=undefined;this.workshopRelief=undefined;this.interruptedBrood=false;this.rehearsalReleaseMs=undefined;this.currentPhase = 'idle'; this.closedFlankId=undefined; this.elapsedMs = 0; this.dispatched = 0;this.beatIndex=0;this.beatElapsedMs=this.lullRemainingMs=0;this.clearingBeat=false;this.broken=false;this.defusedBeats.clear();this.usedFlankerBreaches.clear();this.canceledReinforcements=0; }
   private clearEvent(): EncounterEvent { return { type: 'room-clear', nodeId: this.plan.nodeId, wave: this.plan.wave }; }
 }
