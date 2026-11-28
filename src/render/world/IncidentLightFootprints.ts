@@ -7,7 +7,7 @@ import {laneTerminal} from '../lighting/LaneWorklight';
 import {reactorReturn} from './FightLaneDamage';
 
 import {arenaAperture} from '../lighting/ArenaAperture';
-import {IncidentPieces} from './Inc13StoryIncidents';
+import {addArenaFixture} from './ArenaFixtures';
 
 export function paintArenaReceiver(c:CanvasRenderingContext2D,arena:Point,id:string,inner:number,tint:number){
   c.save();c.translate(arena.x,arena.y);
@@ -33,19 +33,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   if(!profile?.landmark)return;
   const plan=SHIP_ARCHITECTURE_PLANS[room.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
   const arena=plan?.arena??{x:room.width/2,y:room.height/2};
-  const [width,depth,taper,openings]=arenaAperture(room.id);
-  const radius=profile.perimeter.inner*32;
-  const span=Math.max(25,radius*width*(1-taper)*.87);
-  const fixture=new IncidentPieces();
-  fixture.box(0,29,0,span+12,8,17,0x485456);
-  for(const side of [-1,1]){
-    const x=side*(span/2+3);
-    fixture.box(x,13,-5,6,26,8,0x374548);
-    fixture.box(x,2,-4,14,4,19,0x667370);
-  }
-  fixture.box(0,34,2,span,3,8,profile.landmark.color);
-  for(let i=1;i<openings;i++)fixture.box(span*(i/openings-.5),35,2,4,5,13,0x40494a);
-  fixture.finish(root,'arena-projector',arena.x,arena.y-radius*depth,new MeshBasicMaterial({vertexColors:true}));
+  addArenaFixture(root,room,arena,profile.perimeter.inner*32);
   if(room.id==='safety-interlock-station')return;
   const canvas=document.createElement('canvas');
   canvas.width=768;canvas.height=Math.round(canvas.width*room.height/room.width);
