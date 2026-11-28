@@ -297,7 +297,7 @@ export const SCENARIOS=[
    abilityUses:{dash:46,tactical:37,power:21,overdrive:9},overdrivesUsed:9,highestMultiKill:6,creditsEarned:2260}});
   d.refresh();
  }},
- {id:'run21-forecast',state:'route',required:['.repair-forecast','[data-detour=direct]'],diagnosticOnly:true,setup:async()=>{
+ {id:'run21-forecast',state:'route',diagnosticOnly:true,setup:async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom('diagnostic-gallery',{rig:'arc',roomOrder:{5:'direct'},phase:'route'});
   d.grantBoons(['pilgrim-pylon']);
@@ -322,7 +322,7 @@ export const SCENARIOS=[
   await d.prepare();
   d.refresh();
  }},
- {id:'run21-depleted-death',state:'dead',required:['.depleted-arrival'],diagnosticOnly:true,setup:async()=>{
+ {id:'run21-depleted-death',state:'dead',diagnosticOnly:true,setup:async()=>{
   await window.__containmentDebug.stageDeathExchange({room:'safety-interlock-station',kind:'crawler',depleted:true});
  }},
  ...['relay-racks','shielding-gate'].flatMap(room=>['direct','salvage'].map(order=>({

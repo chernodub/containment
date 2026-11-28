@@ -149,3 +149,9 @@ The production build passed and conflict-marker search was clean after merging l
 | Infirmary with focus and an eligible upgrade | [1920×1080](../../artifacts/nextgen/run21-evidence-1080/run21-forecast.png) · [1366×768](../../artifacts/nextgen/run21-evidence-768/run21-forecast.png) |
 
 The first native launch required loopback permission. The first authorized retry collided with a production rebuild and the runner exited with `ERR_HTTP_HEADERS_SENT`. The subsequent runs use a frozen distribution. I retired an early simulator comparison that used the generic simulator seed list and restarted with the historical 12-seed cohort.
+
+### Campaign measurements
+
+The cohort uses seeds 7, 11, 23, 99, 256, 512, 1024, 2025, 4096, 6561, 9001 and 65537. Standard competent samples all four rigs. Story novice samples Breacher and Cryo. Room comparisons pair visits by rig and seed and include deaths in the measured room. Gross suit loss counts health and armor spent through any repairs taken during the fight.
+
+Story novice cleared **24/24** with zero stalls. Breacher cleared 12/12 on Loading Bay and Swarm first. Cryo cleared 12/12 on Freight Hold and Workshop first. [Story cohort](../../artifacts/nextgen/playtest/run21-cohort-story/summary.json)
