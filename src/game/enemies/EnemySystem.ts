@@ -93,7 +93,7 @@ export type HazardAttackEvent = Readonly<{
   spread?:number;
 }>;
 
-export type EnemyDeathEvent = Readonly<{priority?:boolean;beat?:number;
+export type EnemyDeathEvent = Readonly<{guardian?:'warden'|'matron';priority?:boolean;beat?:number;
   type: 'death';
   impulse?: Readonly<{x:number;y:number}>;
   enemyId: number;
@@ -661,7 +661,7 @@ export class EnemySystem {
     if (died) {
       events.push(
         freezeEvent({
-          type: 'death',priority:enemy.priority,beat:enemy.beat,
+          type: 'death',guardian:enemy.champion,priority:enemy.priority,beat:enemy.beat,
           enemyId: enemy.id,
           enemyType: enemy.type,
           elite: enemy.elite,

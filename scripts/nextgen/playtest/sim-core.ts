@@ -175,8 +175,15 @@ export function runSimulation(options: SimOptions) {
         shots: 0, equippedMs: 0, damage: 0, kills: 0, families: {} as Record<string, {damage: number; kills: number}>,
     }]));
     const weaponHits = {total:0, exposed:0};
+    const featuredGuardians = new Set<number>();
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if(room&&e.type==='corpse'&&e.id!==undefined&&featuredGuardians.has(e.id)){
+            room.featuredKill={elapsed:game.elapsed,suit:game.stats.damageTaken};
+        }
+        if(room?.id==='transmission-chamber'&&e.ability?.transformation){
+            room.transformedHits=(room.transformedHits??0)+1;
+        }
         if(room&&e.type==='recovery-grille-closed'){
             room.grilleClosures++;
             room.grilleEscortsCancelled+=e.grilleEscorts??0;
@@ -283,7 +290,10 @@ export function runSimulation(options: SimOptions) {
     const shutterBait=game.shutterBait;
     const goal=gate??shutterBait??(siege&&siege.remainingMs>0?siege:nearest);
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
-        for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
+        for (const enemy of enemies) {
+            const {burning,chilled}=game.boonStatuses(enemy.id);
+            Object.assign(enemy,{burning,chilled});
+        }
         const seeking = waypoint && !enemies.some(e => e.visible && e.clear);
         const pursuitRecovery=!!seeking&&game.node.templateId==='overload-floor'&&game.elapsed-lastProgressElapsed>30;
         const lookAhead = seeking
@@ -307,8 +317,8 @@ export function runSimulation(options: SimOptions) {
         const drawnExchange = exchange && {bait:mark(exchange.bait),landing,lane:landing&&endpoint?{from:landing,to:endpoint}:undefined};
         const telegraph = game.boss.snapshot.pendingTelegraph;
         const grille = game.recoveryGrille;
-        const returnPoint=grille?.returnRange===undefined&&!grille?.returnAisleSide?grille:{x:grille.x+Math.cos(grille.angle)*195,y:grille.y+Math.sin(grille.angle)*195};
-        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&returnPoint&&(grille.returnRange!==undefined||grille.returnArcCosine!==undefined||grille.returnAisleSide)?(botWaypoint(game,returnPoint)??returnPoint):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        const returnPoint=grille?.returnPosition??(grille?.returnRange===undefined&&!grille?.returnAisleSide?grille:{x:grille.x+Math.cos(grille.angle)*195,y:grille.y+Math.sin(grille.angle)*195});
+        return { storyHoldGrace:game.storyHoldGrace, pursuitRecovery, recoveryGrille:grille&&camera.visible(grille.x,grille.y)?{...grille,waypoint:options.readExchange&&returnPoint&&(grille.returnPosition||grille.returnRange!==undefined||grille.returnArcCosine!==undefined||grille.returnAisleSide)?(botWaypoint(game,returnPoint)??returnPoint):undefined}:undefined, drawnExchange, build:game.expedition.build, elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, plateLessonTarget:game.weaponLessonPrompt?.target?.id, gate,shutterBait,siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, weaponRange:weaponCatalog[game.combat.snapshot.weaponId].projectileSpeed*2, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
@@ -342,6 +352,10 @@ export function runSimulation(options: SimOptions) {
                         }
                     }
                 }
+                if(room?.id==='coolant-plant'||room?.id==='swarm-junction'){
+                    for(const enemy of game.enemies.snapshot.enemies)
+                        if(enemy.champion)featuredGuardians.add(enemy.id);
+                }
                 game.update(step, input);
             });
             kit.time += camera.update(game, dt / 1000);
@@ -358,6 +372,11 @@ export function runSimulation(options: SimOptions) {
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
             overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endCredits: game.combat.snapshot.credits, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
+        if(room.featuredKill){
+            room.postGuardianSeconds=game.elapsed-room.featuredKill.elapsed;
+            room.postGuardianSuit=stats.damageTaken-room.featuredKill.suit;
+        }
+        featuredGuardians.clear();
         delete room.startStats;
         room = null;
     }

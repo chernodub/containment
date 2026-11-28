@@ -1331,3 +1331,206 @@ Manual Control closures were 39/44 aware and 30/41 unaware.
 Cryo was the only rig to spend less suit with awareness in both rooms. Arc saved suit in Atrium and spent more in Manual Control even on paired seeds.
 
 Disk had 56 GiB available at the start and 55 GiB at handoff, with 94% capacity reported at both checks. The worktree's `artifacts/nextgen` used 2.9 GiB.
+
+## PLAY42
+
+### Encounter changes
+
+- **Coolant Plant and Swarm Junction.** A guardian kill within 22 seconds of its arrival and with at most 32 gross suit lost in the room can cancel the next queued authored group in its beat. Swarm Junction also requires a brood interrupt on that Matron. The canceled group retreats through a shared ingress, and a 3.5-second break in the schedule lets the player cross the lane.
+- **Transmission Chamber.** With an exclusive equipped, a Crawler and Spitter arrive together at the start. Their spacing gives Siege Plow an aligned lane, Pilgrim Pylon a longer lane, and Ember Relay a nearby second target beyond a deliberately offset Napalm pool. Shard Harvest opens with a chilled Crawler that Nova can freeze before a kill. The bots prioritize the exclusive's ability, and the native runner captures a frame on a transformed-hit receipt.
+- **Manual Control.** The first escort enters during the Brute exchange. A Standard grille closure requires a recovery shot from within 62 world units of the exposed position beside the console. Closing cancels one waiting escort and delays the other. The player can use the console as cover to engage the first escort. Atrium keeps its forgiving return-shot rule.
+- **Standard difficulty.** Sectors 5–8 use 86% of the ordinary scalable group count before rounding. The second late paired sector returns to +25% escort health and adds an announced Spitter with a 1.3-second approach before it can attack.
+
+### Reference measurements
+
+Standard competent at R31 cleared 40/48, with Breacher 9/12, Cryo 10/12, Pyro 11/12 and Arc 10/12. Story novice cleared 22/24. Both cohorts recorded zero stalls.
+
+| Standard sectors | R31 mean gross suit |
+|---|---:|
+| 1–4 | 16.24 |
+| 5–8 | 140.96 |
+| 9–12 | 184.91 |
+| 13–16 | 197.40 |
+| 17–20 | 188.59 |
+
+The native baseline below subtracts the last sample with a living guardian from the room-end counters. Times are upper bounds on the actual post-kill interval at the trace sampling cadence.
+
+| R31 native Arc seed | Room | Guardian | Seconds remaining | Gross suit lost afterward |
+|---|---|---|---:|---:|
+| 2718 | Coolant Plant | Warden | 33.60 | 12.60 |
+| 1729 | Coolant Plant | Matron | 52.55 | 52.60 |
+| 1729 | Swarm Junction | Matron | 47.15 | 25.20 |
+
+| PLAY41c Manual Control arm comparison | Paired seeds | Aware suit | Unaware suit | Unaware minus aware |
+|---|---:|---:|---:|---:|
+| Breacher | 11 | 38.02 | 49.72 | +11.70 |
+| Cryo | 10 | 96.01 | 111.03 | +15.02 |
+| Pyro | 11 | 35.82 | 32.50 | −3.32 |
+| Arc | 9 | 33.85 | 11.94 | −21.91 |
+
+### Native receipts collected
+
+| PLAY42 native Arc seed | Room | Guardian | Seconds following last live sample | Gross suit lost afterward | Scheduled group canceled |
+|---|---|---|---:|---:|---|
+| 1729 | Coolant Plant | Matron | 43.97 | 71.93 | No |
+
+Breacher resumed an earned Containment Annulus checkpoint, cleared Manual Control in 58.45 simulated seconds and lost 49.05 gross suit. The native runner recorded one grille closure and zero errors. [Manual Control report](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Grille closure](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/r19-manual-control-chamber-grille-closed.png)
+
+A separate Breacher continuation recorded Siege Plow shoving both staged Transmission targets in the first pulse. The first replay used Seismic Slam immediately after placing the wall and missed the opening shove. The bot now gives the deployed transformation one pulse before resuming gunfire, while keeping its escape response active. [Siege Plow frame](../../artifacts/nextgen/playtest/play42-plow-pulse/r10-transmission-chamber-transmission-transformed-hit.png)
+
+Arc 1729 cleared the resumed Swarm Junction with 17.80 seconds and 12.60 gross suit after the last live Matron sample. The native trace recorded no guardian ingress cancellation in either of its featured rooms. [Arc 1729 continuation](../../artifacts/nextgen/playtest/play42-final-native-arc-1729/report.json)
+
+Arc 2718's moving Pilgrim Pylon link hit two enemies for 24 damage in Transmission. Cryo's first attempt froze both opening targets, but the Shattershot follow-up consumed the freeze before the Crawler died. With an injured, chilled Crawler in the opening, Nova both freezes and kills it and sends the Shard Harvest hit into the Spitter. [Pilgrim Pylon frame](../../artifacts/nextgen/playtest/play42-final-native-arc/r10-transmission-chamber-transmission-transformed-hit.png) · [Shard Harvest frame](../../artifacts/nextgen/playtest/play42-current-transmission-cryo/r10-transmission-chamber-transmission-transformed-hit.png)
+
+Pyro's opening Ember Relay hit applied 12 damage and ignited a second target before the first Napalm cast. The relay came from an active fire zone. [Ember Relay frame](../../artifacts/nextgen/playtest/play42-current-transmission-pyro/r10-transmission-chamber-transmission-transformed-hit.png)
+
+| Manual Control checkpoint replay | Result | Simulated seconds | Gross suit | Closures | Runner errors |
+|---|---|---:|---:|---:|---:|
+| Breacher | Clear | 58.45 | 49.05 | 1 | 0 |
+| Cryo | Clear | 59.35 | 68.48 | 0 | 0 |
+| Pyro | Clear | 32.97 | 34.65 | 1 | 0 |
+| Arc | Clear | 66.08 | 38.83 | 0 | 0 |
+
+[Breacher replay](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Cryo replay](../../artifacts/nextgen/playtest/play42-manual-replay-cryo/report.json) · [Pyro replay](../../artifacts/nextgen/playtest/play42-current-manual-pyro/report.json) · [Arc replay](../../artifacts/nextgen/playtest/play42-current-manual-arc/report.json)
+
+### Tuning and awareness cohort
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 10/12 | 11/12 | 9/12 | 9/12 | 39/48 | 0 |
+| Story novice | 12/12 | 11/12 | — | — | 23/24 | 0 |
+| Standard unaware | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
+| Standard rule absent | 10/12 | 12/12 | 7/12 | 6/12 | 35/48 | 0 |
+
+| Standard sectors | R31 mean suit | Tuning mean suit | Tuning completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 197.04 | 43 |
+| 13–16 | 197.40 | 185.59 | 42 |
+| 17–20 | 188.59 | 197.66 | 39 |
+
+The Standard comparison uses the matched simulation and bot snapshot at `473f9bb2`. The Story tuning cohort uses `cc538069`. Each Standard arm uses the twelve review seeds for all four rigs. The Story arm uses the same seeds for Breacher and Cryo. The final cadence and showcase refinements have separate post-merge cohorts.
+
+### Grille comparison
+
+Suit means use matched seeds across all three arms. Closures cover all room visits in each arm.
+
+| Room | Rig | Seeds | Aware suit | Unaware suit | Absent suit | Unaware minus aware | Aware closures | Unaware closures |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| communal-atrium | breacher | 12 | 11.91 | 9.14 | 16.94 | -2.77 | 11/12 | 10/12 |
+| communal-atrium | cryo | 12 | 23.05 | 30.75 | 37.49 | 7.70 | 11/12 | 11/12 |
+| communal-atrium | pyro | 12 | 9.95 | 7.49 | 6.14 | -2.46 | 11/12 | 11/12 |
+| communal-atrium | arc | 12 | 7.92 | 16.92 | 15.63 | 9.00 | 12/12 | 11/12 |
+| manual-control-chamber | breacher | 9 | 45.39 | 49.19 | 42.39 | 3.80 | 6/10 | 3/9 |
+| manual-control-chamber | cryo | 11 | 64.09 | 73.82 | 88.81 | 9.73 | 9/11 | 1/11 |
+| manual-control-chamber | pyro | 9 | 30.06 | 29.20 | 49.92 | -0.86 | 4/9 | 1/11 |
+| manual-control-chamber | arc | 7 | 30.31 | 15.96 | 24.45 | -14.34 | 6/10 | 0/10 |
+
+Across the 38 matched aware and unaware Manual Control visits, the unaware bot lost 1.50 more gross suit, compared with 1.10 across 41 matched visits in PLAY41c. The paired gaps were +3.80 Breacher, +9.73 Cryo, −0.86 Pyro and −8.49 Arc. Aware and unaware bots closed 25/40 and 5/41 grilles. The larger closure gap is more pronounced than the suit difference.
+
+### Balance before RUN21
+
+The production build passed after merging local `nextgen` at `ec21b3da`. The full Standard rerun cleared 39/48, with Cryo at 12/12. Advancing the Standard Shard Harvest follow-up screen by up to 1.8 seconds brought Cryo to 11/12 on its repeated twelve seeds. The final Standard total combines that repeated Cryo sample with the three rigs outside the Shard Harvest branch. Story does not use the faster screen.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| First post-merge Standard competent | 8/12 | 12/12 | 10/12 | 9/12 | 39/48 | 0 |
+| CONTACT36 Standard competent | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
+| CONTACT36 Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+| Standard sectors | R31 mean suit | CONTACT36 mean suit | Completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 200.29 | 44 |
+| 13–16 | 197.40 | 199.45 | 40 |
+| 17–20 | 188.59 | 206.49 | 38 |
+
+Block means are gross suit lost over runs that completed all four sectors. [Standard rerun](../../artifacts/nextgen/playtest/play42-postmerge-standard/summary.json) · [Cryo follow-up](../../artifacts/nextgen/playtest/play42-standard-cryo-followup/summary.json) · [Story rerun](../../artifacts/nextgen/playtest/play42-postmerge-story/summary.json)
+
+### Guardian after-kill comparison
+
+The cohort table pairs each rig and seed with the baseline at `0c9feb39`. It uses cleared rooms with an observed guardian death in both runs. This measures all sampled guardian kills, including kills that did not earn an ingress cancellation.
+
+| Room | Rig | Paired rooms | Before seconds | After seconds | Before suit | After suit |
+|---|---|---:|---:|---:|---:|---:|
+| coolant-plant | breacher | 12 | 32.37 | 40.64 | 23.57 | 40.15 |
+| coolant-plant | cryo | 9 | 36.96 | 42.93 | 44.59 | 63.59 |
+| coolant-plant | pyro | 10 | 32.11 | 33.23 | 36.71 | 18.69 |
+| coolant-plant | arc | 11 | 37.82 | 38.26 | 36.82 | 22.02 |
+| swarm-junction | breacher | 3 | 14.61 | 14.28 | 8.60 | 13.00 |
+| swarm-junction | cryo | 2 | 30.81 | 32.13 | 48.51 | 59.22 |
+| swarm-junction | pyro | 3 | 28.11 | 29.28 | 26.64 | 26.64 |
+| swarm-junction | arc | 3 | 27.05 | 35.11 | 27.09 | 21.00 |
+
+| Native Arc seed | Room | R31 seconds | PLAY42 seconds | R31 suit | PLAY42 suit | Canceled group |
+|---|---|---:|---:|---:|---:|---|
+| 2718 | Coolant Plant | 33.60 | 34.02 | 12.60 | 12.60 | 7 Crawlers |
+| 1729 | Coolant Plant | 52.55 | 31.82 | 52.60 | 21.53 | 3 Brutes |
+| 1729 | Swarm Junction | 47.15 | 16.67 | 25.20 | 37.80 | None |
+
+The first 2718 attempt with the widened window cut seven Crawlers, but held later spawns long enough to take 64.08 seconds and 24.37 suit after the kill. The final cadence releases the uncanceled reserves after the guardian dies, and the 2718 replay preserved the seven-Crawler cut with the shorter result above. The final 1729 replay cut three Brutes in Coolant. Its Swarm Junction kill earned no cancellation. An earlier timing pass cut three Brutes in Swarm Junction and took 45.07 seconds with 51.00 suit after the kill. The 2718 capture shows the cancellation notice with the ingress outside the frame. The earlier Swarm Junction capture shows the shutter in view. [Final 2718 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-2718/report.json) · [Final 1729 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-1729/report.json) · [Swarm Junction shutter frame](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/r16-swarm-junction-reserve-cut.png)
+
+### Native campaign verification
+
+| Campaign | First attempt | Earned checkpoint used | Final sectors cleared | Runner errors | Loading holds over 5 seconds |
+|---|---|---|---:|---:|---:|
+| Standard competent Arc 2718 | Died in Shielding Gate | After sector 16 | 20/20 | 0 | 6 |
+| Story novice Cryo 1729 | Died in Safety Interlock Station | After sector 11 | 20/20 | 0 | 4 |
+
+The two completions used native keyboard and mouse input. The driver decimated intermediate renders and rendered evidence frames in full. The completion reports include their inherited slow-load diagnostics, which made the runner return a nonzero status despite reaching the ending with zero runner errors. None of the four Manual Control checkpoint replays recorded a defect. The first Arc launch was rejected by the sandbox while binding localhost. The authorized retry started successfully. Initial one-room continuation limits counted rooms already cleared, so those attempts ended at the checkpoint. The completed Manual Control and Transmission replays use cumulative limits of 19 and 10 respectively. [Arc first attempt](../../artifacts/nextgen/playtest/play42-final-native-arc/report.json) · [Arc completion](../../artifacts/nextgen/playtest/play42-arc-2718-resume/report.json) · [Story first attempt](../../artifacts/nextgen/playtest/play42-current-native-story-cryo/report.json) · [Story completion](../../artifacts/nextgen/playtest/play42-story-cryo-resume/report.json)
+
+`df -h /Users/chernodub` showed 40 GiB available at the start and 30 GiB at handoff, with reported capacity of 96% and 97% respectively. Worktree `artifacts/nextgen/` used 2.4 GiB at handoff.
+
+### RUN21 integration and forced Arc orders
+
+Local `nextgen` at `12f48b02` brought in the cargo and infestation order consequences. The two merge conflicts were in shared spawn fields and warning cues. The merge retained the Relay loader, the fixed Shielding ingress, the threshold escort and all Transmission and guardian fields.
+
+| Standard Arc order | Clears | Stalls | Swarm deaths | Workshop deaths |
+|---|---:|---:|---:|---:|
+| Freight + Workshop first | 9/12 | 0 | 2 | 0 |
+| Loading Bay + Swarm first, before Swarm tuning | 8/12 | 0 | 0 | 2 |
+| Loading Bay + Swarm first, smaller screen | 10/12 | 0 | 0 | 0 |
+| Loading Bay + Swarm first, smaller screen and shorter hold | 9/12 | 0 | 1 | 0 |
+
+| Arc room | Matched seeds | Freight + Workshop first suit / seconds | Loading Bay + Swarm before suit / seconds | Loading Bay + Swarm final suit / seconds |
+|---|---:|---:|---:|---:|
+| Relay Racks | 12 | 32.19 / 42.13 | 37.13 / 42.30 | 37.13 / 42.30 |
+| Swarm Junction | 11 | 66.93 / 62.87 | 65.50 / 50.98 | 49.80 / 43.75 |
+| Infested Workshop | 10 | 21.97 / 54.25 | 44.77 / 71.74 | 42.39 / 77.33 |
+| Shielding Gate | 8 | 55.86 / 51.89 | 28.70 / 52.91 | 27.11 / 51.47 |
+
+The forced comparison varies both order decisions. Swarm-first enters the relay before collecting the second-room armor pickup. In the merged baseline, Arc reached Workshop twice after costly Swarm clears and died there. When Swarm Junction comes first on Standard, the opening has two fewer authored Crawlers before scaling, 575 ms spacing instead of 450 ms, and an 8-second relay hold instead of 12. The screen-only tuning left Breacher at 7/12 on its policy order. Adding the shorter hold brought Breacher to 9/12 and gave the two forced Arc orders the same clear count. The final first-order Arc sample still had one Swarm death and spent more suit in the second Workshop room than Workshop-first. [Freight + Workshop](../../artifacts/nextgen/playtest/play42-run21-arc-direct/summary.json) · [Loading Bay + Swarm before tuning](../../artifacts/nextgen/playtest/play42-run21-arc-salvage/summary.json) · [Screen and hold tuning](../../artifacts/nextgen/playtest/play42-run21-swarm-hold/summary.json)
+
+### Final merged balance
+
+The final policy cohorts both ran on the merged RUN21 implementation and the scoped Swarm and Transmission changes. The production build passed, the conflict-marker scan was clean, and both cohorts finished with zero stalls.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 9/12 | 11/12 | 10/12 | 10/12 | 40/48 | 0 |
+| Story novice | 12/12 | 12/12 | — | — | 24/24 | 0 |
+
+| Standard sectors | R31 mean suit | Merged mean suit | Completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 184.24 | 47 |
+| 13–16 | 197.40 | 204.71 | 45 |
+| 17–20 | 188.59 | 187.01 | 40 |
+
+The first RUN21 policy cohort went 39/48 with Breacher at 7/12 and Cryo at 12/12. The Swarm tuning brought Breacher to 9/12. A single additional Spitter, split-angle Spitters and closer spacing aimed only at Shard Harvest all left Cryo at 12/12. Alternating ranged approaches and earlier overlap for both Standard Cryo exclusives brought Cryo to 11/12. The paired-order health and early-ramp changes are included above. [Final Standard](../../artifacts/nextgen/playtest/play42-merged-final-standard/summary.json) · [Final Story](../../artifacts/nextgen/playtest/play42-merged-final-story/summary.json)
+
+| Room | Rig | Paired rooms | R31 seconds | Merged seconds | R31 suit | Merged suit |
+|---|---|---:|---:|---:|---:|---:|
+| coolant-plant | breacher | 12 | 32.37 | 40.64 | 23.57 | 40.15 |
+| coolant-plant | cryo | 10 | 36.43 | 43.05 | 43.71 | 71.96 |
+| coolant-plant | pyro | 12 | 32.92 | 36.31 | 36.49 | 38.13 |
+| coolant-plant | arc | 12 | 37.67 | 39.88 | 35.85 | 34.28 |
+| swarm-junction | breacher | 3 | 14.61 | 15.96 | 8.60 | 25.80 |
+| swarm-junction | cryo | 3 | 32.35 | 44.30 | 36.54 | 71.27 |
+| swarm-junction | pyro | 3 | 28.11 | 22.26 | 26.64 | 56.51 |
+| swarm-junction | arc | 3 | 27.05 | 39.57 | 27.09 | 8.40 |
+
+This final merged table uses the same paired cleared-room criteria as the earlier guardian cohort. Native receipts and the Manual Control three-arm experiment were collected before the final integration.
