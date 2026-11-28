@@ -290,3 +290,23 @@ The Arc seed 1729 desktop campaign cleared ten rooms through Transmission Chambe
 The gallery contains 238 matched frames per build on the original base and the FX36/BROOD43 study build, 84 integrated comparison frames and four post-PLAY41 frames. All 38 capture manifests have empty errors and failures. The 480-pixel previews link to the native 1920×1080 PNGs. The sampled Cryo Crawler is frozen and rimed at native size. Its pose and rime are still harder to separate beside a Brute at 480. In a packed Arc chain the near limbs can also cover a section of the fork.
 
 In the 20-second realtime High Pyro Safety Interlock benchmark, nextgen at `5ef05e91` measured 32.10 / 50.20 ms frame p50 / p95, 207 draws and zero combat compiles. FX36 at `bf3bc21a` measured 31.90 / 50.10 ms, 204 draws and zero compiles. One-minute load was 17.30 and 19.22 at the start of the respective runs on ten cores. Both exceeded 20 ms. This single shared-host pair leaves hardware headroom unverified. [Baseline benchmark](../../artifacts/nextgen/fx36-bench-before/benchmark.json) · [FX36 benchmark](../../artifacts/nextgen/fx36-bench/benchmark.json).
+
+## FX37
+
+The selected shell holds an elemental accent for 590 ms. A normal-facing cap and a Fresnel edge use the existing creature material. Meltdown takes the last target on a damage tick and turns its hit reaction away from the source. Napalm selects the first newly burning target and keeps its wick through the following aim adjustment. Whiteout selects a newly frozen Crawler, preserves its stage light and lifts shards past its shell. Nova and Slam select a surviving struck body. The pose uses the presentation clock. Damage, status duration and simulation time continue normally.
+
+The three ring powers reuse the particle batches for a 50 ms white core and outward, rising debris. Nova and Slam dim their floor surfaces after 35 ms. Meltdown reduces its floor light during the body accent. Whiteout yields its floor draw during the freeze accent and fades it back over 150 ms. Napalm keeps low flames along the fuel runs as the ignition moves onto the body.
+
+The Crew Checkpoint study stages the Final26 crowd with seed 1729. The five peak times in milliseconds after cast resolution are Meltdown 280, Napalm 265, Whiteout 2020, Nova 90 and Slam 90. Each pair then advances 250 and 500 ms from that peak. All five first samples match the archived simulation timestamp and visible enemy count. Final26 was rebuilt at its manifest revision `7e5f9042` to supply the missing +500 ms views. Select a 480 × 270 frame to open its native 1920 × 1080 PNG. [Matched Final26 and FX37 frames](../../artifacts/nextgen/fx37-review/index.html).
+
+High draw calls at peak, +250 ms and +500 ms. The starting build is `ec21b3da`. FX37 uses `0b2f82bb` for the four non-Whiteout powers and `d8979d70` for Whiteout. Each shot uses the same seeded room, power and camera setup as its baseline.
+
+| Power | Safety Interlock before | Safety Interlock FX37 | Transmission before | Transmission FX37 |
+|---|---:|---:|---:|---:|
+| meltdown | 156 / 158 / 160 | 156 / 158 / 160 | 113 / 116 / 116 | 113 / 116 / 116 |
+| napalm-charge | 154 / 158 / 158 | 154 / 158 / 158 | 111 / 114 / 114 | 111 / 114 / 114 |
+| whiteout | 154 / 155 / 155 | 154 / 154 / 154 | 110 / 110 / 110 | 110 / 109 / 109 |
+| cryo-nova | 159 / 156 / 150 | 159 / 156 / 150 | 115 / 112 / 108 | 115 / 112 / 108 |
+| seismic-slam | 163 / 159 / 151 | 163 / 159 / 151 | 117 / 116 / 104 | 117 / 116 / 104 |
+
+The four-light combat pool stayed at four in every measured High frame. Whiteout initially cost one extra draw at peak in Safety Interlock. Omitting its ground disc during the held reaction brought the peak back to baseline and saved one draw at +250 and +500 ms. All other Safety samples matched the starting build. These are fixed-step draw counts. [Starting build](../../artifacts/nextgen/fx37-before/manifest.json) · [FX37 High and Low](../../artifacts/nextgen/fx37-review-frames/manifest.json) · [Whiteout and Napalm retakes](../../artifacts/nextgen/fx37-retake/manifest.json).
