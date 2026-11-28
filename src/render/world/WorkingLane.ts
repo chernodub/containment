@@ -38,6 +38,28 @@ export function paintWorkingLane(c:CanvasRenderingContext2D,room:RoomTemplate,ar
   c.fillStyle='rgba(14,23,29,.58)';c.fillRect(-reach,y+width/2+8,reach*2,68);
   const shape=new Path2D(tread);
   for(let x=-Math.ceil(reach/80)*80;x<reach;x+=80){
+   if(y!==0 && x%160===0){
+    const z=y+width/2+32;
+    if(room.id==='passenger-vault'){
+     c.fillStyle='#768384';c.fillRect(x,z-10,44,32);
+     c.fillStyle='#27343b';c.fillRect(x+7,z-5,30,17);
+     c.fillStyle='#a19479';c.fillRect(x+8,z+13,9,4);
+    }else if(room.id==='transmission-chamber'){
+     for(const offset of [-9,0,9]){
+      c.strokeStyle=offset===0?'#9e765c':'#748284';c.lineWidth=5;
+      c.beginPath();c.moveTo(x,z+offset);c.bezierCurveTo(x+45,z+offset,x+50,z+offset+19,x+155,z+offset+10);c.stroke();
+     }
+     c.fillStyle='#494f50';c.fillRect(x+20,z-15,9,34);
+    }else if(room.id==='overload-floor'){
+     c.fillStyle='#917052';c.fillRect(x,z,160,13);
+     c.fillStyle='#86908c';c.fillRect(x+24,z-14,11,29);c.fillRect(x+41,z+12,11,16);
+    }else if(room.id==='freight-hold'){
+     for(const rail of [-13,13]){
+      c.fillStyle='#849496';c.fillRect(x,z+rail,145,6);
+      c.fillStyle='#343c42';c.fillRect(x+23,z+rail-4,13,14);
+     }
+    }
+   }
    if(Math.abs(y)<160 && Math.abs(x)<280){
     c.fillStyle='rgba(136,145,141,.56)';
     for(let rib=0;rib<80;rib+=10)c.fillRect(x+rib,y+width/2+11,3,60);
