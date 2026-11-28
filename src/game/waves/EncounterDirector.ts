@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;authoredGroup?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;authoredGroup?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;thresholdEscort?:true;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -235,12 +235,13 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     let previous=4900;
     for(const request of others){
      if(!consoleExchange&&!escorts.includes(request))continue;
-     const atMs=escorts.includes(request)?750:Math.max(previous+380,request.atMs+4500);
+     const thresholdEscort=consoleExchange&&request===escorts[0];
+     const atMs=thresholdEscort?750:escorts.includes(request)?1200:Math.max(previous+380,request.atMs+4500);
      arrivals[arrivals.indexOf(request)]=Object.freeze({...request,atMs,consoleHold:consoleExchange?true:undefined,
-      grilleEscort:escorts.includes(request)?true:undefined,grilleDelayedEscort:consoleExchange&&escorts.indexOf(request)>0?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
+      thresholdEscort:thresholdEscort?true:undefined,grilleEscort:escorts.includes(request)&&!thresholdEscort?true:undefined,grilleDelayedEscort:consoleExchange&&escorts.indexOf(request)>1?true:undefined,reinforcement:escorts.includes(request)?false:request.reinforcement});
      if(!escorts.includes(request))previous=atMs;
     }
-    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length});
+    arrivals[arrivals.indexOf(lead)]=Object.freeze({...lead,atMs:650,consoleLead:consoleExchange?true:undefined,grilleLead:escorts.length-(consoleExchange&&escorts.length?1:0)});
    }
   }
   const relief=(node.depth===4&&beat.grammar==='crossfire')||

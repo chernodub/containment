@@ -81,6 +81,7 @@ function candidateVelocity(s,candidate) {
 }
 
 function inReturnLane(grille, target, player) {
+  if(grille.returnPosition)return distance(player,grille.returnPosition)<=62;
   const dx=player.x-target.x,dy=player.y-target.y;
   if(grille.returnArcCosine!==undefined){
     const gx=grille.x-target.x,gy=grille.y-target.y;
@@ -459,7 +460,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // Both research arms draw the grille. Only the ON arm prioritizes the return shot.
       const grille = readExchange && profile === 'competent' ? s.recoveryGrille : undefined;
       const attacker = grille?.state === 'waiting' && visible.find(enemy => enemy.id === grille.attackerId);
-      const hasReturnRule=grille?.returnRange!==undefined||grille?.returnArcCosine!==undefined||grille?.returnAisleSide===true;
+      const hasReturnRule=grille?.returnPosition!==undefined||grille?.returnRange!==undefined||grille?.returnArcCosine!==undefined||grille?.returnAisleSide===true;
       const onReturnSide = attacker && (!hasReturnRule||inReturnLane(grille,attacker,s.player));
       const returnTarget = onReturnSide && attacker.clear && attacker.meleePhase === 'recovery' && attacker;
       if (returnTarget && !escape) {
