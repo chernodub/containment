@@ -706,3 +706,54 @@ The selected 120 views cover twenty rooms, three views and two tiers with empty 
 The requested Arc 2718 command on the first implementation cleared sixteen rooms and died in Shielding Gate with zero runtime errors. Continuing from its earned Swarm Junction reward also ended in Shielding Gate. A fresh integrated Arc 2718 campaign cleared all twenty rooms in 1,237 wall seconds with zero runtime errors. The runner returned exit 1 for a 5.071-second Manual Control Chamber loading hold. This full campaign used the Coolant build immediately before the Interlock receiver moved into the deck pass. The Interlock change has six final staged frames and a live benchmark. [Initial campaign](../../artifacts/nextgen/playtest/room36/report.json) · [Earned continuation](../../artifacts/nextgen/playtest/room36-continued/report.json) · [Full clear](../../artifacts/nextgen/playtest/room36-final/report.json) · [Final-room replay](../../artifacts/nextgen/final26/.work/playtest/room36-merged-bank/report.json)
 
 The final branch contains local nextgen at 12f48b02. The conflict-marker scan was clear, the production build passed, and the post-merge fork capture has empty errors and failures. Free space reported by df went from 32 GiB to 29 GiB. Worktree artifacts occupied 1.2 GiB at handoff. [Final build](../../artifacts/nextgen/room36/build-delivery.log) · [Handoff fork](../../artifacts/nextgen/room36-handoff/manifest.json)
+
+## ROOM37 — arena sources and retreat lanes
+
+The floor shader and the painted receiver share half-width, throw length, taper and louvre spacing per room. Freight has a long crosswise tube, Loading Bay a narrow lengthwise throw, Checkpoint a broad inspection panel, Swarm four louvre openings, and Overload a widening throw. A housing, two mounting feet and a diffuser sit at the source edge. Wall status lenses use the existing hull-cap vertex batch and each room's practical colour. The existing character rim shader supplies the cool silhouette light.
+
+The outer service aisles carry Passenger berth sockets, Transmission cable bundles, Overload split clamp jaws and Freight rail runners. Their paint uses the existing clipping for the playable deck. Armory retains the original low carousel base and rotary bearing when the upper weapon rack cuts away. The matching kiting frame shows metal behind the Brute where final27 exposed a dark disc. Coolant's receiver absorbs spill directly below the boots. Two cool-capped raised jambs mark the protected foot position behind the reactor sill.
+
+At 480×270 the Swarm grille shadows and Freight tube distinguish those floors. The marine's pale boot and wet metal still come close in Coolant. The squat fixture in Awakening can read as a bench, and Checkpoint's housing overlaps the machinery behind the marine.
+
+### Staged draw calls
+
+All twenty rooms have a selected 1920×1080 arena centre and kiting frame on each tier. The 80 selected frames have empty browser error lists. The largest High increase is one draw. Annulus High and Interlock Low needed fresh capture processes during room preparation. The successful standalone High Annulus capture took 378 seconds on the shared machine. The interrupted batches retain their failures separately.
+
+| Room | Final27 High | ROOM37 High | ROOM36 Low¹ | ROOM37 Low |
+|---|---:|---:|---:|---:|
+| armory | 177 | 177 | 168 | 168 |
+| awakening-bay | 137 | 137 | 125 | 125 |
+| breached-loading-bay | 124 | 125 | 113 | 114 |
+| communal-atrium | 131 | 132 | 122 | 121 |
+| containment-annulus | 128 | 127 | 117 | 116 |
+| coolant-plant | 119 | 118 | 107 | 106 |
+| crew-checkpoint | 109 | 109 | 99 | 99 |
+| diagnostic-gallery | 117 | 118 | 104 | 105 |
+| freight-hold | 120 | 120 | 109 | 109 |
+| infested-workshop | 155 | 155 | 145 | 145 |
+| manual-control-chamber | 147 | 147 | 134 | 134 |
+| overload-floor | 136 | 137 | 123 | 124 |
+| passenger-vault | 120 | 119 | 108 | 108 |
+| relay-racks | 137 | 137 | 126 | 126 |
+| residential-gallery | 113 | 112 | 103 | 103 |
+| safety-interlock-station | 162 | 161 | 149 | 148 |
+| service-shaft-landing | 112 | 112 | 101 | 101 |
+| shielding-gate | 257 | 258 | 246 | 247 |
+| swarm-junction | 101 | 102 | 90 | 91 |
+| transmission-chamber | 122 | 122 | 112 | 112 |
+
+¹ The archived ROOM36 Low peaks include incident-facing. The matched High columns and current Low column take the peak of arena calm and kiting frame 1.
+
+[High centre pairs](../../artifacts/nextgen/room37/twenty-arena-calm-high.jpg) · [High kiting pairs](../../artifacts/nextgen/room37/twenty-kiting-high.jpg) · [Low centres beside final27 High](../../artifacts/nextgen/room37/twenty-arena-calm-low.jpg) · [Low kiting beside final27 High](../../artifacts/nextgen/room37/twenty-kiting-low.jpg) · [Armory bearing](../../artifacts/nextgen/room37/armory-mount.jpg) · [Outer service aisles](../../artifacts/nextgen/room37/working-aisles.jpg) · [Refuge under Napalm](../../artifacts/nextgen/room37-details/room37-fire-overload-floor.png)
+
+The lane captures use native movement geometry and staged enemies. The bundles remain subtle in Transmission, and some retreat positions still include part of the landmark. In the staged Napalm view the cool caps remain visible, while the fire obscures much of the rear edge of the standing spot.
+
+### Realtime and campaign verification
+
+Three 1920×1080 Safety Interlock High trials used the Pyro rig and ran for 15 seconds each. Frames over 20 ms were 2.30%, 3.16% and 4.11%, compared with final27’s 2.8%, 2.4% and 2.6%. Frame p95 was 18.0, 18.2 and 18.2 ms. Peak draws were 201, 210 and 204 with zero combat shader compilations. All three trials met the 5% budget. Earlier trials coincided with other campaigns and benchmarks. One stopped on insufficient sustained population, and another recorded 91.37% over 20 ms. A separate pre-change build measured 19.66% under contention. The three final trials began after the other game runners cleared. [Three-trial benchmark](../../artifacts/nextgen/room37-isolated/benchmark.json) · [Contended two-room High and Low data](../../artifacts/nextgen/room37-bench-retry/benchmark.json)
+
+The prescribed Breacher run reached its one-hour wall limit after 15 clears with no runtime errors. Its first continuation cleared room 20 with one original-kit loading timeout. Replaying the earned room-15 reward completed all 20 with zero runtime errors and eight recorded loading defects, including inherited holds from the first 15 rooms. The runner returned 1 for those holds. [First segment](../../artifacts/nextgen/playtest/room37/report.json) · [First continuation](../../artifacts/nextgen/playtest/room37-continue/report.json) · [Zero-error continuation](../../artifacts/nextgen/playtest/room37-continue-retry/report.json)
+
+The final uninterrupted Breacher campaign on seed 1729 cleared all 20 rooms and returned exit 0 with zero errors and zero defects. It used the same fast native runner and 180-second startup allowance, with a fresh evidence label. [Uninterrupted campaign report](../../artifacts/nextgen/playtest/room37-uninterrupted/report.json)
+
+The production build passed. All 40 arena-centre captures recorded zero new shader programs during their presentation settles. Disk space at the start was 28 GiB free of 926 GiB (870 GiB used, 97%). At handoff it was 79 GiB free (820 GiB used, 92%). The worktree evidence occupied 1.8 GiB. The ROOM37 measurements apply to the branch based on local nextgen at 392366cd.

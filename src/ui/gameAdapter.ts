@@ -538,7 +538,7 @@ export function getCombatDamageElement(game: DepthGame, event: import('./hud/eff
 }
 
 export function getDepletedArrival(game:DepthGame){return game.depletedArrival;}
-export function getRoomDamage(game: DepthGame) {return game.roomDamage;}
+export function getRoomDamage(game: DepthGame) {return {sources:game.roomDamage,total:game.roomDamageTotal};}
 export function getAwakeningDrill(game: DepthGame) {return game.awakeningDrill;}
 
 /** Read-only opportunities sampled from the current combat state. */
@@ -643,3 +643,5 @@ export function drawnExchange(game: DepthGame, renderer: DepthRenderer) {
     lane: lane ? {from:{...exchange.landing, screen:landing}, to:{...exchange.target, screen:target}} : undefined,
   };
 }
+
+export function getRepairDecision(game:DepthGame){return game.repairDecision;}

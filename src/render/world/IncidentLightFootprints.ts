@@ -6,30 +6,53 @@ import {clipFightingDeck} from './FightingDeck';
 import {laneTerminal} from '../lighting/LaneWorklight';
 import {reactorReturn} from './FightLaneDamage';
 
-export function paintArenaReceiver(c:CanvasRenderingContext2D,arena:Point,inner:number,tint:number){
+import {arenaAperture} from '../lighting/ArenaAperture';
+import {IncidentPieces} from './Inc13StoryIncidents';
+
+export function paintArenaReceiver(c:CanvasRenderingContext2D,arena:Point,id:string,inner:number,tint:number){
   c.save();c.translate(arena.x,arena.y);
   const radius=inner*32;c.scale(radius,radius);
-  // The eight barn-door edges match the bevel in the floor lighting shader.
-  const aperture=new Path2D('M-.50 -.87H.50L1.19 -.31V.31L.50 .87H-.50L-1.19 .31V-.31Z');
+  const [w,d,taper,openings]=arenaAperture(id);
+  c.scale(w,d);
+  const aperture=new Path2D();
+  for(let i=0;i<openings;i++){
+    const near=-1+2*i/openings+(i?.04:0), far=-1+2*(i+1)/openings-(i+1<openings?.04:0);
+    aperture.moveTo(-1-near*taper,near);aperture.lineTo(1+near*taper,near);
+    aperture.lineTo(1+far*taper,far);aperture.lineTo(-1-far*taper,far);aperture.closePath();
+  }
   c.clip(aperture);
   const cast=c.createLinearGradient(-1,-.8,1,.8);
   const color='#'+tint.toString(16).padStart(6,'0');
   cast.addColorStop(0,color+'28');cast.addColorStop(1,color+'0e');
-  c.fillStyle=cast;c.fillRect(-1.2,-1,2.4,2);c.restore();
+  c.fillStyle=cast;c.fillRect(-2,-1,4,2);c.restore();
 }
 
 export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   const profile=roomValueProfile(room.id);
   // Interlock bakes this receiver into its relief sheet's emissive channel.
-  if(!profile?.landmark||room.id==='safety-interlock-station')return;
+  if(!profile?.landmark)return;
   const plan=SHIP_ARCHITECTURE_PLANS[room.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
   const arena=plan?.arena??{x:room.width/2,y:room.height/2};
+  const [width,depth,taper,openings]=arenaAperture(room.id);
+  const radius=profile.perimeter.inner*32;
+  const span=Math.max(25,radius*width*(1-taper)*.87);
+  const fixture=new IncidentPieces();
+  fixture.box(0,29,0,span+12,8,17,0x485456);
+  for(const side of [-1,1]){
+    const x=side*(span/2+3);
+    fixture.box(x,13,-5,6,26,8,0x374548);
+    fixture.box(x,2,-4,14,4,19,0x667370);
+  }
+  fixture.box(0,34,2,span,3,8,profile.landmark.color);
+  for(let i=1;i<openings;i++)fixture.box(span*(i/openings-.5),35,2,4,5,13,0x40494a);
+  fixture.finish(root,'arena-projector',arena.x,arena.y-radius*depth,new MeshBasicMaterial({vertexColors:true}));
+  if(room.id==='safety-interlock-station')return;
   const canvas=document.createElement('canvas');
   canvas.width=768;canvas.height=Math.round(canvas.width*room.height/room.width);
   const c=canvas.getContext('2d')!;
   c.scale(canvas.width/room.width,canvas.height/room.height);
   clipFightingDeck(c,room);
-  paintArenaReceiver(c,arena,profile.perimeter.inner,profile.landmark.color);
+  paintArenaReceiver(c,arena,room.id,profile.perimeter.inner,profile.landmark.color);
   const coolant=room.id==='coolant-plant';
   if(coolant){
     const terminal=laneTerminal(room.id)!;
@@ -56,9 +79,9 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
     shader.vertexShader='varying vec2 receiverXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\nreceiverXZ=(modelMatrix*vec4(transformed,1.)).xz;');
     const bootResponse=coolant?`
-      float contact=(1.-smoothstep(.28,.70,distance(receiverXZ,receiverMarine.xy)))*step(.001,diffuseColor.a);
+      float contact=(1.-smoothstep(.32,.79,distance(receiverXZ,receiverMarine.xy)))*receiverMarine.w/1.3;
       outgoingLight=mix(outgoingLight,vec3(.012,.018,.022),contact);
-      diffuseColor.a=max(diffuseColor.a,.66*contact);`:
+      diffuseColor.a=max(diffuseColor.a,.76*contact);`:
       'diffuseColor.a*=smoothstep(.23,.57,distance(receiverXZ,receiverMarine.xy));';
     shader.fragmentShader='varying vec2 receiverXZ; uniform vec4 receiverMarine;\n'+shader.fragmentShader.replace(
       '#include <opaque_fragment>',bootResponse+'\n#include <opaque_fragment>');

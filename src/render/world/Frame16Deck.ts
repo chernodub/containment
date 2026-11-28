@@ -135,7 +135,7 @@ export function addFrame16Deck(root: Group, room: RoomTemplate, arena: Point): v
     if(room.id==='safety-interlock-station'){
       const profile=roomValueProfile(room.id)!;
       c.save();clipFightingDeck(c,room);
-      paintArenaReceiver(c,arena,profile.perimeter.inner,profile.landmark!.color);
+      paintArenaReceiver(c,arena,room.id,profile.perimeter.inner,profile.landmark!.color);
       c.restore();
     }
   }

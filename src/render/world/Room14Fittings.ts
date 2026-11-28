@@ -1,3 +1,4 @@
+import {incidentPracticalColors} from './MachineEmitters';
 import {addIncidentLightFootprints} from './IncidentLightFootprints';
 import {addMachineEmitters} from './MachineEmitters';
 import {addLaneMachine} from './LaneMachines';
@@ -59,6 +60,13 @@ export function addRoom14Fittings(root:T.Group,id:string):void {
     if (length < .25) continue;
     const tx = dx/length, tz = dz/length, y = (dx < 0 ? .65 : 1.20) + .006;
     const point = (t:number, out:number) => [a.x/32+t*tx+out*tz, y, a.y/32+t*tz-out*tx];
+    const half=Math.min(.65,length*.28),middle=length*.5;
+    const lamp=[point(middle-half,.14),point(middle+half,.14),point(middle+half,.42),point(middle-half,.42)];
+    const faceColor=new T.Color(incidentPracticalColors[id]).lerp(cap,.42);
+    for(const k of [0,1,2,0,2,3]){
+      const [x,h,z]=lamp[k];rim.push(x,h+.042,z);
+      colors.push(faceColor.r,faceColor.g,faceColor.b);
+    }
     const count = Math.ceil(length/4.1);
     for (let j = 0; j < count; j++) {
       const start = length*j/count+.08, end = length*(j+1)/count-.08;
