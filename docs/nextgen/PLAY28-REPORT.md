@@ -1428,3 +1428,46 @@ Suit means use matched seeds across all three arms. Closures cover all room visi
 | manual-control-chamber | arc | 7 | 30.31 | 15.96 | 24.45 | -14.34 | 6/10 | 0/10 |
 
 Across the 38 matched aware and unaware Manual Control visits, the unaware bot lost 1.50 more gross suit, compared with 1.10 across 41 matched visits in PLAY41c. The paired gaps were +3.80 Breacher, +9.73 Cryo, −0.86 Pyro and −8.49 Arc. Aware and unaware bots closed 25/40 and 5/41 grilles. The larger closure gap is more pronounced than the suit difference.
+
+### Post-merge balance
+
+The production build passed after merging local `nextgen` at `ec21b3da`. The full Standard rerun cleared 39/48, with Cryo at 12/12. Advancing the Standard Shard Harvest follow-up screen by up to 1.8 seconds brought Cryo to 11/12 on its repeated twelve seeds. The final Standard total combines that repeated Cryo sample with the three rigs outside the Shard Harvest branch. Story does not use the faster screen.
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| First post-merge Standard competent | 8/12 | 12/12 | 10/12 | 9/12 | 39/48 | 0 |
+| Final Standard competent | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
+| Final Story novice | 12/12 | 10/12 | — | — | 22/24 | 0 |
+
+| Standard sectors | R31 mean suit | Final mean suit | Final completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 200.29 | 44 |
+| 13–16 | 197.40 | 199.45 | 40 |
+| 17–20 | 188.59 | 206.49 | 38 |
+
+Block means are gross suit lost over runs that completed all four sectors. [Standard rerun](../../artifacts/nextgen/playtest/play42-postmerge-standard/summary.json) · [Cryo follow-up](../../artifacts/nextgen/playtest/play42-standard-cryo-followup/summary.json) · [Story rerun](../../artifacts/nextgen/playtest/play42-postmerge-story/summary.json)
+
+### Guardian after-kill comparison
+
+The cohort table pairs each rig and seed with the baseline at `0c9feb39`. It uses cleared rooms with an observed guardian death in both runs. This measures all sampled guardian kills, including kills that did not earn an ingress cancellation.
+
+| Room | Rig | Paired rooms | Before seconds | After seconds | Before suit | After suit |
+|---|---|---:|---:|---:|---:|---:|
+| coolant-plant | breacher | 12 | 32.37 | 40.64 | 23.57 | 40.15 |
+| coolant-plant | cryo | 9 | 36.96 | 42.93 | 44.59 | 63.59 |
+| coolant-plant | pyro | 10 | 32.11 | 33.23 | 36.71 | 18.69 |
+| coolant-plant | arc | 11 | 37.82 | 38.26 | 36.82 | 22.02 |
+| swarm-junction | breacher | 3 | 14.61 | 14.28 | 8.60 | 13.00 |
+| swarm-junction | cryo | 2 | 30.81 | 32.13 | 48.51 | 59.22 |
+| swarm-junction | pyro | 3 | 28.11 | 29.28 | 26.64 | 26.64 |
+| swarm-junction | arc | 3 | 27.05 | 35.11 | 27.09 | 21.00 |
+
+| Native Arc seed | Room | R31 seconds | PLAY42 seconds | R31 suit | PLAY42 suit | Canceled group |
+|---|---|---:|---:|---:|---:|---|
+| 2718 | Coolant Plant | 33.60 | 34.02 | 12.60 | 12.60 | 7 Crawlers |
+| 1729 | Coolant Plant | 52.55 | 31.82 | 52.60 | 21.53 | 3 Brutes |
+| 1729 | Swarm Junction | 47.15 | 45.07 | 25.20 | 51.00 | 3 Brutes |
+
+The first 2718 attempt with the widened window cut seven Crawlers, but held later spawns long enough to take 64.08 seconds and 24.37 suit after the kill. The final cadence releases the uncanceled reserves after the guardian dies, and the 2718 replay preserved the seven-Crawler cut with the shorter result above. The 1729 rows use the widened-window build before that last cadence correction. The 2718 capture shows the cancellation notice with the ingress outside the frame. In Swarm Junction, the shutter is in view. [Final 2718 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-2718/report.json) · [1729 replay](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/report.json) · [Swarm Junction shutter frame](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/r16-swarm-junction-reserve-cut.png)
