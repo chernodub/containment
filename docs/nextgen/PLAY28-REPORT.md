@@ -1534,3 +1534,55 @@ The first RUN21 policy cohort went 39/48 with Breacher at 7/12 and Cryo at 12/12
 | swarm-junction | arc | 3 | 27.05 | 39.57 | 27.09 | 8.40 |
 
 This final merged table uses the same paired cleared-room criteria as the earlier guardian cohort. Native receipts and the Manual Control three-arm experiment were collected before the final integration.
+
+## PLAY43 — encounter consequences
+
+The guardian reserve commits at an ingress selected near the fight, with a preference for a clear sightline from the marine. A Warden wall stun or Matron brood interrupt holds the group. Killing the guardian after the interrupt sends the staged bodies back and cancels their scheduled group. The system no longer checks suit loss or kill time. The visible crossing window still lasts 3.5 seconds.
+
+Manual Control marks the accepted return-shot position with a floor notch. Waiting escorts lean into the bars as the marine enters the lane. An exposed recovery hit closes both waiting escort slots. The first escort still enters, and the marine can still fight from console cover. Rule-absent simulations preserve mandatory entry.
+
+Standard's early fan chooses a legal hatch on the shooter's side of the marine with a clear line to the ingress. Interrupting the shooter before the follow-up reverses the same shutter. The late Spitter gets an open lateral crossing when a legal visible path is available. The bot can prioritize the crossing and the runners record whether the escort fires before it dies.
+
+### Verification record
+
+The production build passed. Local `nextgen` at `392366cd` was already an ancestor throughout the work. No merge or push was performed. The post-commit production capture recorded six shots and zero errors. The Coolant Plant commitment, hold and retreat use fixed-step game-camera fixtures. The fixture advances the encounter and invokes the hold transition directly so those frames show presentation, with no claim of native counterplay uptake. The first hatch selected at the room edge was outside the picture. The inset staging brought it into view, but the first inset capture showed its bottom edge competing with the HUD. The last code revision tries the upper shoulder first and separates the approach animation from the retreat markers.
+
+| Standard provisional sample | Completed | Started and reported | Stalls | Manual closures / visits | Spitter intercepted / arrived |
+|---|---:|---:|---:|---:|---:|
+| Breacher | 9 | 12 | 0 | 9/11 | 5/11 |
+| Cryo | 7 | 12 | 0 | 5/7 | 5/8 |
+| Pyro | 3 | 3 | 0 | 3/3 | 0/3 |
+| Arc | — | 0 | — | — | — |
+| Total | 19 | 27 | 0 | 17/21 | 10/22 |
+
+These results use `85a32859` and the initial exploratory seed list, which differs from the lead's review cohort. The mean early loss in this sample was 9.69 suit over 27 completed four-room blocks. The correct review seed list is 7, 11, 23, 99, 256, 512, 1024, 2025, 4096, 6561, 9001 and 65537. The provisional sample cannot establish the Standard balance band, either Story target, or forced-order parity.
+
+| Preliminary Manual Control sample | Aware suit / closures | Unaware suit / closures | Rule absent suit / closures |
+|---|---:|---:|---:|
+| Breacher 1729 | 48.17 / 1 | 108.02 / 0 | Died before room |
+| Breacher 2718 | 0.00 / 1 | 0.00 / 0 | 53.80 / 0 |
+
+These two exploratory paired visits saved a mean of 29.93 suit with awareness. Only 2718 reached all three arms. The sample leaves the full benefit target and the cost of a deliberate console-cover stance unverified.
+
+| Room | Previous High peak draws | Previous Low peak draws | PLAY43 High peak draws | PLAY43 Low peak draws |
+|---|---:|---:|---:|---:|
+| Safety Interlock Station | 200–215 | — | 158, partial run | — |
+| Transmission Chamber | 164–171 | — | — | — |
+
+The benchmark stopped after its first trial with “Full kit lacks accepted native slot receipts.” Host load exceeded 26 on ten logical cores, and all sampled frames in the incomplete trial exceeded 20 ms. It does not establish the frame budget. Before work `df -h /Users/chernodub` reported 28 GiB free at 97% capacity. After the verification attempts recorded here it reported 23 GiB free at 98% capacity, with 986 MiB of worktree evidence.
+
+| Native seed 1729 campaign | Latest verified clears at report snapshot | Errors in active attempt | Earlier attempt |
+|---|---:|---:|---|
+| Standard Arc | 5/20 | 0 | Debug startup timed out at 20 seconds. The retry used 120 seconds. |
+| Standard Breacher | 3/20 | 0 | Localhost was initially denied. A concurrent rebuild then interrupted asset service. The retry uses a retained build. |
+| Story novice Cryo | 4/20 | 0 | First attempt still running. |
+
+The native campaign attempts in this table precede the final inset placement. Native closure, interception and checkpoint completion counts are pending. The authorized runner retries and the successful production capture are retained under the worktree's `artifacts/nextgen/`.
+
+| Evidence | Worktree path |
+|---|---|
+| Production capture | `artifacts/nextgen/play43-postcommit/manifest.json` |
+| Inset guardian frames | `artifacts/nextgen/play43-guardian-inset/manifest.json` |
+| Provisional simulation | `artifacts/nextgen/playtest/play43-final-aware/summary.json` |
+| Review-seed simulation | `artifacts/nextgen/playtest/play43-review-aware/summary.json` |
+| Partial High timing trial | `artifacts/nextgen/play43-bench/benchmark.json` |
