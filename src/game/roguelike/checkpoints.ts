@@ -69,7 +69,7 @@ export function isValidCheckpointExtensions(value: unknown): boolean {
 
 function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-  const optional = ['abilities','stats','difficulty','pendingRigDrill'].filter(key=>Object.hasOwn(value,key));
+  const optional = ['abilities','stats','difficulty','pendingRigDrill','repairDecision'].filter(key=>Object.hasOwn(value,key));
   if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources', ...optional]) || !isValidCheckpointExtensions(value) ||
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
@@ -83,6 +83,14 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (Object.hasOwn(value,'pendingRigDrill') && (value.run.phase!=='route'
     || !TRANSFORMATIVE_AUGMENT_IDS.includes(value.pendingRigDrill as AugmentId)
     || !value.build.mutations.includes(value.pendingRigDrill as AugmentId))) return false;
+  if (Object.hasOwn(value, 'repairDecision')) {
+    const decision = value.repairDecision;
+    if (!exactRecord(decision, ['room', 'offer', 'choice', 'hp']) ||
+      !value.run.completedNodeIds.includes(decision.room as string) ||
+      !['locker', 'infirmary', 'service'].includes(decision.offer as string) ||
+      !['took', 'passed'].includes(decision.choice as string) ||
+      !boundedNumber(decision.hp, 0, decision.offer === 'service' ? 70 : decision.offer === 'locker' ? 25 : 35)) return false;
+  }
   if (value.stats !== undefined && !isValidRunStatsSnapshot(value.stats,value.run)) return false;
   return true;
 }
