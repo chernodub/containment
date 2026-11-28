@@ -117,20 +117,21 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    }
   },
   grantBoons(ids:MutationId[]){let build=game.expedition.build;for(const id of ids)if(!build.mutations.includes(id))build=addMutation(build,id);game.expedition=Object.freeze({...game.expedition,build});game.combat.setBuild(build);refresh();},
-  async stageDeathExchange({kind,room='awakening-bay',bruteLoss=false,depleted=false}:{
-   kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;depleted?:boolean;
+  async stageDeathExchange({kind,room='awakening-bay',bruteLoss=false,depleted=false,repair,acidLoss=false}:{
+   kind:'crawler'|'stalker'|'spitter'|'charge'|'pool';room?:string;bruteLoss?:boolean;depleted?:boolean;repair?:'direct'|'salvage';acidLoss?:boolean;
   }){
    const runtime=game as unknown as {clearRoom():void;enemyEvents(events:readonly EnemyEvent[]):void;updateBullets(dt:number):void;hurtCooldown:number};
    if(depleted){
     await api.gotoRoom('diagnostic-gallery',{rig:'cryo',roomOrder:{5:'direct'}});
-    game.combat.restoreRunResources({...game.combat.getRunResources(),health:100,armor:0});
+    game.combat.restoreRunResources({...game.combat.getRunResources(),health:repair==='direct'?75:100,armor:0,credits:240});
     for(let hit=0;hit<4;hit++){
      runtime.hurtCooldown=0;
      game.hurt(29,undefined,{source:'enemy-projectile',enemyFamily:'spitter'});
     }
     runtime.clearRoom();
     game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
-    if(game.status==='route')game.route(game.node.next[0]);
+    if(repair==='salvage')api.grantBoons(['pilgrim-pylon']);
+    if(game.status==='route')game.route(game.node.next[0],repair,repair==='salvage'?'pilgrim-pylon':undefined);
     await ready();
    }else await api.gotoRoom(room,{rig:'cryo'});
    game.skipStory();
@@ -161,6 +162,12 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
     for(let hit=0;hit<(room==='relay-racks'&&kind==='spitter'?3:1);hit++){
      runtime.hurtCooldown=0;
      game.hurt(60,brute,{source:'enemy-contact',enemyFamily:'brute'});
+    }
+   }
+   if(acidLoss){
+    for(let hit=0;hit<5;hit++){
+     runtime.hurtCooldown=0;
+     game.hurt(29,undefined,{source:'acid-pool',enemyFamily:'spitter'});
     }
    }
    game.combat.restoreRunResources({...game.combat.getRunResources(),health:1,armor:0});

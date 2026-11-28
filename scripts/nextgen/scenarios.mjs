@@ -325,6 +325,13 @@ export const SCENARIOS=[
  {id:'run21-depleted-death',state:'dead',diagnosticOnly:true,setup:async()=>{
   await window.__containmentDebug.stageDeathExchange({room:'safety-interlock-station',kind:'crawler',depleted:true});
  }},
+ ...['passed','taken','room-loss'].map(decision=>({
+  id:`ui37-${decision}`,state:'dead',diagnosticOnly:true,nativeKeys:[['Tab',0],['Shift+Tab',0]],setupArgument:decision,setup:async decision=>{
+   await window.__containmentDebug.stageDeathExchange(decision==='room-loss'
+    ? {room:'transmission-chamber',kind:'crawler',acidLoss:true}
+    : {room:'safety-interlock-station',kind:'crawler',depleted:true,repair:decision==='taken'?'direct':'salvage'});
+  },
+ })),
  ...['relay-racks','shielding-gate'].flatMap(room=>['direct','salvage'].map(order=>({
   id:`run21-${room}-${order}`,state:'playing',room,diagnosticOnly:true,setupArgument:{room,order},setup:async({room,order})=>{
    const d=window.__containmentDebug;
