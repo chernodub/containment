@@ -88,15 +88,23 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
       // The ambusher's narrow thorax disappears end-on between its scythes.
       // Carry the paired shoulders into one wide shield between the wrists.
       const keel = bones.map(bone => name.startsWith('k11-stalker-') && /^(torso|chest|big_butt|mid_butt)$/.test(bone.name));
+      const hook = bones.map(bone => name.startsWith('k11-crawler-') && /^antenna_right/.test(bone.name));
+      const blade = bones.map(bone => name.startsWith('k11-stalker-') && /^(claw|wrist|lower_arm)/i.test(bone.name));
+      const sac = bones.map(bone => name.startsWith('k11-spitter-') && /^(bum|spine1)$/.test(bone.name));
       const position = geometry.getAttribute('position');
       for (let v = 0; v < count; v++) {
-        let spread = 0;
+        let spread = 0, sacWeight = 0;
         for (let joint = 0; joint < 4; joint++) {
           const index = skin.getComponent(v, joint);
-          const gain = foreleg[index] ? .24 : keel[index] ? .85 : 0;
+          const gain = hook[index] ? .63 : blade[index] ? .47 : foreleg[index] ? .24 : keel[index] ? .58 : 0;
+          if (sac[index]) sacWeight += weights.getComponent(v, joint);
           spread += gain * weights.getComponent(v, joint);
         }
-        position.setY(v, position.getY(v) * (1 + spread));
+        const x = position.getX(v);
+        // Compress the rear pole and carry the widest sac section farther aft.
+        const aft = sacWeight * T.MathUtils.smoothstep(-x, .45, 1.65);
+        position.setX(v, x + Math.max(0, -x - .85) * .65 * aft);
+        position.setY(v, position.getY(v) * (1 + spread + .34 * aft));
       }
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
