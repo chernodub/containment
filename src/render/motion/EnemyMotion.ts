@@ -304,7 +304,7 @@ export class EnemyMotion {
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
       if(this.biteHook && (brace || strike || recovery)){
         this.hookRest.copy(this.biteHook.quaternion);
-        const held = recovery ? 1 - T.MathUtils.smoothstep(this.recoveryAge, .17, .32) : 0;
+        const held = recovery ? 1 - T.MathUtils.smoothstep(this.nativeProgress, .46, .90) : 0;
         this.biteHook.rotateZ(-.30*brace - .74*Math.max(strike,recovery,held));
         this.biteHook.rotateX(.26*brace + .20*Math.max(strike,held));
         this.biteHook.updateMatrix();
@@ -325,7 +325,7 @@ export class EnemyMotion {
       // The outer hook reaches around the boot at contact. Leave the shell
       // beside the ankle so its cutting edge stays clear of the suit.
       if(this.biteHook && extension>0){
-        const lateral=-limit*.46*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
+        const lateral=-limit*.58*(recovery>0?Math.max(extension,.72*(1-this.nativeProgress)):extension);
         this.body.position.x+=Math.cos(strikeDirection)*lateral-Math.sin(strikeDirection)*limit*.18*extension;
         this.body.position.z-=Math.sin(strikeDirection)*lateral+Math.cos(strikeDirection)*limit*.18*extension;
       }
