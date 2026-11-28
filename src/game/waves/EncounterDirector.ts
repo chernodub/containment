@@ -271,7 +271,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   }
   if(node.templateId==='coolant-plant'||node.templateId==='swarm-junction'){
    const featured=arrivals.find(request=>request.guardian);
-   const queued=arrivals.findLast(request=>!request.guardian&&!request.reinforcement);
+   const queued=arrivals.filter(request=>!request.guardian&&!request.reinforcement).at(-1);
    if(featured&&queued)for(let index=0;index<arrivals.length;index++){
     const request=arrivals[index];
     if(request.authoredGroup===queued.authoredGroup)
