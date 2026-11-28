@@ -366,6 +366,13 @@ if(crawlerSkin && broodBody && !broodMark)
  outgoingLight=mix(vec3(.036,.033,.030),vec3(.068,.060,.054),float(broodTop))*actorStageLight;
 float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
 outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
+// Carry the cap value onto the outside keratin ridge. The inner face
+// stays in shadow, preserving the gap against either floor or armour.
+bool hookRidge=crawlerHook && actorPosition.y<-.45 && broodRestUp>-.15;
+bool bladeRidge=stalkerSkin && abs(actorPosition.y)>1.05 && broodRestUp>.12
+                && (broodBand==2 || broodBand==3 || broodBand==5);
+if(hookRidge || bladeRidge)
+ outgoingLight=mix(vec3(.20),broodPaint,.36)*actorStageLight*actorCamouflage;
 if(broodMark){
  float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
