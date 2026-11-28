@@ -91,7 +91,15 @@ class SystemPresentation implements AbilityPresentation {
       if (actor && !this.selected.has(event.ability) && (firstBurn || firstFreeze || impact)) {
         this.selected.add(event.ability);
         const bearing = Math.atan2(actor.root.position.z - y / UNIT, actor.root.position.x - x / UNIT);
-        actor.powerAccent?.(event.element);
+        actor.powerAccent?.(event.element, bearing);
+        if (impact) {
+          const foot = actor.root.position;
+          for (let i = -1; i <= 1; i++) {
+            const a = bearing + i * .42;
+            k.mote('shard', foot.x, .08, foot.z, Math.cos(a)*2, 1.2, Math.sin(a)*2,
+              .18, .36, color);
+          }
+        }
         actor.reactToElement?.(event.element === 'pyro' ? 'fire' : event.element === 'cryo' ? 'ice' : 'kinetic', bearing);
         if (firstBurn) receipt.ignition = k.time;
         if (firstFreeze) { this.frostVictim = id; k.frostUntil = k.time + .59; }

@@ -188,7 +188,7 @@ class PyroPresentation implements AbilityPresentation {
           const angle = Math.atan2(body.z - z, body.x - x);
           actor.hit?.(.82, angle);
           actor.reactToElement?.('fire', angle);
-          actor.powerAccent?.('pyro');
+          actor.powerAccent?.('pyro', angle);
           kit.impact();
           for (let i = -1; i <= 1; i++) {
             const a = angle + i * .38;
