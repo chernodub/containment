@@ -56,14 +56,21 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot, a
   const node = graph.nodes.find(candidate => candidate.id === last.room);
   const room = node ? ROOM_TEMPLATES[node.templateId].name : 'Unknown room';
   const sources = new Map<string, number>();
-  for (const receipt of getRoomDamage(game)) {
+  const {sources: receipts, total} = getRoomDamage(game);
+  for (const receipt of receipts) {
     const label = receipt.guardian ? `${receipt.guardian==='warden'?'Warden':'Matron'} ${receipt.source==='enemy-charge'?'charge':'strike'}` : incomingDamageLabel(receipt);
     sources.set(label, (sources.get(label) ?? 0) + receipt.amount);
   }
   const grouped = [...sources].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
-  const total = grouped.reduce((sum, [, amount]) => sum + amount, 0);
   const format = (amount: number) => Math.round(amount).toLocaleString('en-US');
-  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><div class="fatal-source"><span class="eyebrow">FATAL HIT</span><h3>${escapeHtml(incomingDamageLabel(last))}</h3><p>${escapeHtml(room)} <span>· ${format(last.amount)} HP + armor lost on final hit</span></p>${escape}</div>${actions}</div>${diagram}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
+  const fatalLabel = incomingDamageLabel(last);
+  const leading = grouped[0];
+  const roomDominates = leading && leading[1] > last.amount && leading[1] > total / 2;
+  const headline = roomDominates ? leading[0] : fatalLabel;
+  const summary = roomDominates
+    ? `${format(leading[1])} HP + armor lost in the room · Final hit ${escapeHtml(fatalLabel)} (${format(last.amount)})`
+    : `${format(last.amount)} HP + armor lost on final hit`;
+  return `<section class="incoming-report" aria-label="Failure analysis"><div class="fatal-details"><div class="fatal-source"><span class="eyebrow">${roomDominates ? 'LARGEST ROOM LOSS' : 'FATAL HIT'}</span><h3>${escapeHtml(headline)}</h3><p>${escapeHtml(room)} · ${summary}</p>${escape}</div>${actions}</div>${diagram}</section><section class="incoming-breakdown" aria-label="Cumulative room loss"><div class="telemetry-heading"><span class="eyebrow">CUMULATIVE ROOM LOSS BY SOURCE</span></div>${grouped.length ? `<ol>${grouped.map(([label, amount]) => `<li><span>${escapeHtml(label)}</span><i aria-hidden="true" style="--incoming-share:${total ? amount / total * 100 : 0}%"></i><strong>${format(amount)}</strong></li>`).join('')}</ol>` : '<p>No room damage totals recorded.</p>'}</section>`;
 }
 
 /** Preserve the authored ending verbatim and give it a full-screen moment. */

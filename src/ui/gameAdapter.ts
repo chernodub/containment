@@ -538,7 +538,7 @@ export function getCombatDamageElement(game: DepthGame, event: import('./hud/eff
 }
 
 export function getDepletedArrival(game:DepthGame){return game.depletedArrival;}
-export function getRoomDamage(game: DepthGame) {return game.roomDamage;}
+export function getRoomDamage(game: DepthGame) {return {sources:game.roomDamage,total:game.roomDamageTotal};}
 export function getAwakeningDrill(game: DepthGame) {return game.awakeningDrill;}
 
 /** Read-only opportunities sampled from the current combat state. */

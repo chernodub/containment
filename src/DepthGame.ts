@@ -84,9 +84,10 @@ export class DepthGame {
  private recordRoomLoss(){
   const leading=this.roomDamage[0];
   if(leading)this.runStats.recordRoomLoss(
-   [...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0),leading);
+   this.roomDamageTotal,leading);
  }
  private roomDamageLedger=new Map<string,{source:IncomingDamageOrigin['source'];enemyFamily?:IncomingDamageOrigin['enemyFamily'];guardian?:'warden'|'matron';amount:number}>();
+ get roomDamageTotal(){return [...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);}
  get roomDamage(){return [...this.roomDamageLedger.values()].sort((a,b)=>b.amount-a.amount).slice(0,3).map(value=>({...value}));}
 
  private checkpointState:'none'|'saved'|'save-failed'|'clear-failed'|'unavailable'='none';
