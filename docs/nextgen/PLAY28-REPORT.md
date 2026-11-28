@@ -1331,3 +1331,39 @@ Manual Control closures were 39/44 aware and 30/41 unaware.
 Cryo was the only rig to spend less suit with awareness in both rooms. Arc saved suit in Atrium and spent more in Manual Control even on paired seeds.
 
 Disk had 56 GiB available at the start and 55 GiB at handoff, with 94% capacity reported at both checks. The worktree's `artifacts/nextgen` used 2.9 GiB.
+
+## PLAY42
+
+### Encounter changes
+
+- **Coolant Plant and Swarm Junction.** A guardian kill within 22 seconds of its arrival and with at most 24 gross suit lost in the room can cancel the next queued authored group in its beat. Swarm Junction also requires a brood interrupt on that Matron. The canceled group retreats through a shared ingress, and a 3.5-second break in the schedule lets the player cross the lane.
+- **Transmission Chamber.** With an exclusive equipped, a Crawler and Spitter arrive together at the start. Their spacing gives Siege Plow an aligned lane, Pilgrim Pylon a longer lane, and Ember Relay a nearby second target beyond a deliberately offset Napalm pool. Shard Harvest opens with a chilled Crawler that Nova can freeze before a kill. The bots prioritize the exclusive's ability, and the native runner captures a frame on a transformed-hit receipt.
+- **Manual Control.** The first escort enters during the Brute exchange. A Standard grille closure requires a recovery shot from within 62 world units of the exposed position beside the console. Closing cancels one waiting escort and delays the other. The player can use the console as cover to engage the first escort. Atrium keeps its forgiving return-shot rule.
+- **Standard difficulty.** Sectors 5–8 use 86% of the ordinary scalable group count before rounding. The second late paired sector returns to +25% escort health and adds an announced Spitter with a 1.3-second approach before it can attack.
+
+### Reference measurements
+
+Standard competent at R31 cleared 40/48, with Breacher 9/12, Cryo 10/12, Pyro 11/12 and Arc 10/12. Story novice cleared 22/24. Both cohorts recorded zero stalls.
+
+| Standard sectors | R31 mean gross suit |
+|---|---:|
+| 1–4 | 16.24 |
+| 5–8 | 140.96 |
+| 9–12 | 184.91 |
+| 13–16 | 197.40 |
+| 17–20 | 188.59 |
+
+The native baseline below subtracts the last sample with a living guardian from the room-end counters. Times are upper bounds on the actual post-kill interval at the trace sampling cadence.
+
+| R31 native Arc seed | Room | Guardian | Seconds remaining | Gross suit lost afterward |
+|---|---|---|---:|---:|
+| 2718 | Coolant Plant | Warden | 33.60 | 12.60 |
+| 1729 | Coolant Plant | Matron | 52.55 | 52.60 |
+| 1729 | Swarm Junction | Matron | 47.15 | 25.20 |
+
+| PLAY41c Manual Control arm comparison | Paired seeds | Aware suit | Unaware suit | Unaware minus aware |
+|---|---:|---:|---:|---:|
+| Breacher | 11 | 38.02 | 49.72 | +11.70 |
+| Cryo | 10 | 96.01 | 111.03 | +15.02 |
+| Pyro | 11 | 35.82 | 32.50 | −3.32 |
+| Arc | 9 | 33.85 | 11.94 | −21.91 |
