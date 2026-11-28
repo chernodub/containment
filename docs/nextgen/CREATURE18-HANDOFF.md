@@ -2262,3 +2262,12 @@ Peak resting values below are display luminance and HSV saturation at 480 × 270
 | Coolant Plant | .823 / .307 | .636 / .230 | .630 / .241 | .626 / .222 | .581 / .198 |
 
 The native Arc 1729 continuation from final27's earned room-15 boundary cleared Swarm with zero errors. Its sampled strike was at marine position (746, 352), versus (67, 411) in final27. The separate High and Low reconstructions use the original positions and attack phases in Swarm, Relay Racks, Diagnostic Gallery and Breached Loading Bay. Transient effects, camera history and the exact frame of the native bot run differ. Evidence in this worktree is under `artifacts/nextgen/contact37-review`, `contact37-final-replay`, `contact37-final-facing`, `contact37-final-floors` and `artifacts/nextgen/playtest/contact37-swarm`.
+
+The production build passed. The Arc 1729 ten-room campaign and its requested repeat both cleared Transmission with zero runtime errors. Both runners exited 1 on loading observations over five seconds. The first recorded Breached Loading Bay at 10.01 s. The repeat recorded Awakening Bay at 6.14 s, Passenger Vault at 7.62 s, Residential Gallery at 5.04 s and Breached Loading Bay at 8.47 s. One preliminary High capture overlapped a development rebuild and received an asset 404. The completed galleries used an immutable distribution and have empty error lists.
+
+| Pyro realtime peak draws | High before | High CONTACT37 | Low before | Low CONTACT37 |
+| --- | ---: | ---: | ---: | ---: |
+| Safety Interlock | 198 | 204 | 179 | 184 |
+| Transmission Chamber | 161 | 162 | 149 | 151 |
+
+Both builds completed the native full-kit workload on both tiers with zero combat program compilations. Safety Interlock High recorded 99.34% of baseline frames and 100.00% of CONTACT37 frames over 20 ms. The 5% target failed on this shared host. One-minute host load ranged from 21.98 to 42.77 across these trials on ten cores. The quiet final27 reference was 2.4–2.8%. These runs do not establish a quiet-host frame-time delta. The fixed calm captures read 120 / 108 draws in Safety Interlock and 98 / 87 in Transmission, versus CONTACT36's 121 / 109 and 98 / 87. Realtime receipts are in `artifacts/nextgen/contact37-before-measured/benchmark.json` and `artifacts/nextgen/contact37-final-measured/benchmark.json`.
