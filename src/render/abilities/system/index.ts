@@ -72,6 +72,18 @@ class SystemPresentation implements AbilityPresentation {
     }
     if (event.phase !== 'impact' && event.phase !== 'tick' && event.phase !== 'link' && event.phase !== 'burst' && event.phase !== 'dash-end') return;
     if (!event.targetIds) return;
+    let slamVictim: number | undefined;
+    if (event.ability === 'seismic-slam' && event.phase === 'impact') {
+      let bestMargin = -Infinity;
+      for (const id of event.targetIds.slice(0, RECEIPT_LIMIT)) {
+        const body = k.statusActor(id);
+        const enemy = this.game?.enemies.getSnapshot(id);
+        if (!body || !enemy || enemy.health <= 0) continue;
+        const margin = k.landingMargin((enemy.x + enemy.velocityX * .2) / UNIT,
+          body.height + .18, (enemy.y + enemy.velocityY * .2) / UNIT);
+        if (margin > bestMargin) { bestMargin = margin; slamVictim = id; }
+      }
+    }
     let count = 0;
     for (const id of event.targetIds) {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
@@ -86,7 +98,7 @@ class SystemPresentation implements AbilityPresentation {
 
       const firstBurn = event.ability === 'napalm-charge' && !this.previouslyBurning.has(id) && this.statusFor?.(id).burning;
       const firstFreeze = event.ability === 'whiteout' && this.game?.enemies.getSnapshot(id)?.type === 'crawler' && !this.previouslyFrozen.has(id) && this.statusFor?.(id).frozen;
-      const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' || event.ability === 'cryo-nova')
+      const impact = event.phase === 'impact' && (event.ability === 'seismic-slam' && id === slamVictim || event.ability === 'cryo-nova')
         && (this.game?.enemies.getSnapshot(id)?.health ?? 0) > 0;
       if (actor && !this.selected.has(event.ability) && (firstBurn || firstFreeze || impact)) {
         this.selected.add(event.ability);

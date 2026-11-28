@@ -367,6 +367,7 @@ export function alien(kind:string,elite=false):ActorModel{
    }}}
   const beat=(.59-accentLife)/.59;
   const impulse=accentLife>0 && !windup && !dead ? impulseGain*Math.min(1,beat/.12)*(1-beat)**1.2 : 0;
+  impulsePivot.position.y=accentKind===4?.18*impulse:0;
   const localBearing=accentBearing+r.root.rotation.y;
   impulsePivot.rotation.set(Math.sin(localBearing)*impulse*.45,0,-Math.cos(localBearing)*impulse*.45);
   if(champion==='warden'&&!dead)recoilJaw?.apply(bossStun>0?1:wardenTurnRemaining/.24,recoilBearing);
