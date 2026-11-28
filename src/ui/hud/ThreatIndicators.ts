@@ -351,7 +351,11 @@ export class ThreatIndicators {
                 const offset = attempt === 0 ? 0 : Math.ceil(attempt / 2) * .055 * (attempt % 2 ? 1 : -1), theta = candidate.edgeAngle + offset;
                 threatEdgePoint(this.width / 2, this.height / 2, theta, this.width, this.height, this.edge);
                 const px = this.edge.x;
-                const py = candidate.attacking && tray && px + radius >= tray.left && px - radius <= tray.right
+                // The charged-shot glyph rotates and extends beyond the marker disc.
+                // Reserve the whole bottom band, including status beside the tray.
+                const shotCeiling = (tray?.top ?? this.height) - radius * 2 - 16;
+                const py = candidate.shotCharge >= 0 ? Math.min(this.edge.y, shotCeiling)
+                    : candidate.attacking && tray && px + radius >= tray.left && px - radius <= tray.right
                     && this.edge.y + radius >= tray.top ? Math.min(this.edge.y, tray.top - radius - 8) : this.edge.y;
                 if (px - radius < 8 || py - radius < 8 || px + radius > this.width - 8 || py + radius > this.height - 8)
                     continue;
@@ -378,7 +382,7 @@ export class ThreatIndicators {
                 // A committed warning gets the visible lip of the dock even
                 // when other HUD regions consumed the perimeter slots.
                 x=Math.max(radius+8,Math.min(this.width-radius-8,candidate.point.x));
-                y=Math.max(radius+8,Math.min((tray?.top??this.height)-radius-12,candidate.point.y));
+                y=Math.max(radius+8,Math.min((tray?.top??this.height)-2*radius-16,candidate.point.y));
                 found=true;
             }
             if (!found) continue;
