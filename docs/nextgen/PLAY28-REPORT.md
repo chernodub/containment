@@ -1392,3 +1392,39 @@ Pyro's opening Ember Relay hit applied 12 damage and ignited a second target bef
 | Arc | Clear | 66.08 | 38.83 | 0 | 0 |
 
 [Breacher replay](../../artifacts/nextgen/playtest/play42-manual-replay-breacher/report.json) · [Cryo replay](../../artifacts/nextgen/playtest/play42-manual-replay-cryo/report.json) · [Pyro replay](../../artifacts/nextgen/playtest/play42-current-manual-pyro/report.json) · [Arc replay](../../artifacts/nextgen/playtest/play42-current-manual-arc/report.json)
+
+### Tuning and awareness cohort
+
+| Cohort | Breacher | Cryo | Pyro | Arc | Clears | Stalls |
+|---|---:|---:|---:|---:|---:|---:|
+| Standard competent | 10/12 | 11/12 | 9/12 | 9/12 | 39/48 | 0 |
+| Story novice | 12/12 | 11/12 | — | — | 23/24 | 0 |
+| Standard unaware | 8/12 | 11/12 | 10/12 | 9/12 | 38/48 | 0 |
+| Standard rule absent | 10/12 | 12/12 | 7/12 | 6/12 | 35/48 | 0 |
+
+| Standard sectors | R31 mean suit | Tuning mean suit | Tuning completed blocks |
+|---|---:|---:|---:|
+| 1–4 | 16.24 | 16.24 | 48 |
+| 5–8 | 140.96 | 105.26 | 48 |
+| 9–12 | 184.91 | 197.04 | 43 |
+| 13–16 | 197.40 | 185.59 | 42 |
+| 17–20 | 188.59 | 197.66 | 39 |
+
+The Standard comparison uses the matched simulation and bot snapshot at `473f9bb2`. The Story tuning cohort uses `cc538069`. Each Standard arm uses the twelve review seeds for all four rigs. The Story arm uses the same seeds for Breacher and Cryo. The final cadence and showcase refinements have separate post-merge cohorts.
+
+### Grille comparison
+
+Suit means use matched seeds across all three arms. Closures cover all room visits in each arm.
+
+| Room | Rig | Seeds | Aware suit | Unaware suit | Absent suit | Unaware minus aware | Aware closures | Unaware closures |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| communal-atrium | breacher | 12 | 11.91 | 9.14 | 16.94 | -2.77 | 11/12 | 10/12 |
+| communal-atrium | cryo | 12 | 23.05 | 30.75 | 37.49 | 7.70 | 11/12 | 11/12 |
+| communal-atrium | pyro | 12 | 9.95 | 7.49 | 6.14 | -2.46 | 11/12 | 11/12 |
+| communal-atrium | arc | 12 | 7.92 | 16.92 | 15.63 | 9.00 | 12/12 | 11/12 |
+| manual-control-chamber | breacher | 9 | 45.39 | 49.19 | 42.39 | 3.80 | 6/10 | 3/9 |
+| manual-control-chamber | cryo | 11 | 64.09 | 73.82 | 88.81 | 9.73 | 9/11 | 1/11 |
+| manual-control-chamber | pyro | 9 | 30.06 | 29.20 | 49.92 | -0.86 | 4/9 | 1/11 |
+| manual-control-chamber | arc | 7 | 30.31 | 15.96 | 24.45 | -14.34 | 6/10 | 0/10 |
+
+Across the 38 matched aware and unaware Manual Control visits, the unaware bot lost 1.50 more gross suit, compared with 1.10 across 41 matched visits in PLAY41c. The paired gaps were +3.80 Breacher, +9.73 Cryo, −0.86 Pyro and −8.49 Arc. Aware and unaware bots closed 25/40 and 5/41 grilles. The larger closure gap is more pronounced than the suit difference.
