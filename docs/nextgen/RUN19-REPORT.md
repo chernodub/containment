@@ -192,3 +192,7 @@ Both seeds cleared 20/20 sectors across earned checkpoint continuations, with ze
 | --- | --- | ---: | ---: | --- |
 | 1729 | Freight Hold | 12.6 / 55.9 | 47.5 / 53.5 | [20/20 competent](../../artifacts/nextgen/playtest/run21-arc-1729-swarm-retry/report.json) |
 | 2718 | Breached Loading Bay | 64.4 / 38.2 | 62.8 / 54.4 | [20/20, expert finale replay](../../artifacts/nextgen/playtest/run21-arc-2718-finale-retry/report.json) |
+
+The final local integration base is `dc2fc615` (HEAVY46). Its production build passed and the conflict-marker scan was clean. The 48-run Standard rerun after FX37 produced the same 39 clears and the same room receipts in all 48 cases. The HEAVY46 merge preserved that simulator bundle, game and policy hashes. [Breacher](../../artifacts/nextgen/playtest/run21-latest-standard-breacher/summary.json) · [Cryo](../../artifacts/nextgen/playtest/run21-latest-standard-cryo/summary.json) · [Pyro](../../artifacts/nextgen/playtest/run21-latest-standard-pyro/summary.json) · [Arc](../../artifacts/nextgen/playtest/run21-latest-standard-arc/summary.json) · [HEAVY46 bundle receipt](../../artifacts/nextgen/playtest/run21-heavy46-bundle-receipt/summary.json)
+
+`df -h /Users/chernodub` reported 40 GiB available at the start and 31 GiB at handoff on the shared 926 GiB data volume. The worktree's `artifacts/nextgen/` occupied 1.1 GiB at handoff.
