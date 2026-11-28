@@ -226,7 +226,12 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     for(let index=0;index<arrivals.length;index++){
      if(index===approach||index===support)continue;
      const request=arrivals[index];
-     arrivals[index]=Object.freeze({...request,atMs:Math.max(request.atMs,5100)});
+     // Shard Harvest can clear the opening screen in one Nova. The next screen
+     // enters sooner on Standard, giving the marine a reason to take the lane promptly.
+     const atMs=cryoTarget&&mode==='standard'&&!request.reinforcement
+      ?Math.max(request.atMs-1800,3100)
+      :Math.max(request.atMs,5100);
+     arrivals[index]=Object.freeze({...request,atMs});
     }
    }
   }
