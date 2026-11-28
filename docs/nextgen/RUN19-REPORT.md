@@ -138,6 +138,8 @@ Version 1 checkpoints may omit the new loss receipt. The default is no prior-roo
 
 The staged Interlock death enters at 52 suit, after 48 suit lost to Spitter projectiles in Diagnostic Gallery. A fatal Crawler swipe triggers the results card. [Death card](../../artifacts/nextgen/run21-final-1080/run21-depleted-death.png)
 
+Both native Arc runs cleared Interlock. Seed 2718 later entered Manual Control with 30 suit and died there. Its native debrief traces the largest earlier loss to Swarm Junction, which cost 173 suit led by Stalker lunges. [Native debrief](../../artifacts/nextgen/playtest/run21-arc-2718-continued/terminal-dead.png)
+
 The production build passed and conflict-marker search was clean after merging local `nextgen` at `ec21b3da` (CONTACT36). The frozen native runs and captures precede that presentation merge. The pre-merge and merged simulator receipts have matching game, policy and bundle hashes.
 
 | Evidence | Desktop capture |
