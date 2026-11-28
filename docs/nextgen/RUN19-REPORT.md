@@ -140,7 +140,7 @@ The staged Interlock death enters at 52 suit, after 48 suit lost to Spitter proj
 
 Both native Arc runs cleared Interlock. Seed 2718 later entered Manual Control with 30 suit and died there. Its native debrief traces the largest earlier loss to Swarm Junction, which cost 173 suit led by Stalker lunges. [Native debrief](../../artifacts/nextgen/playtest/run21-arc-2718-continued/terminal-dead.png)
 
-The production build passed and conflict-marker search was clean after merging local `nextgen` at `ec21b3da` (CONTACT36). The frozen native runs and captures precede that presentation merge. The pre-merge and merged simulator receipts have matching game, policy and bundle hashes.
+The production build passed and conflict-marker search was clean after merging local `nextgen` at `ec21b3da` (CONTACT36) and again at `7cddc4d1` (FX37). The frozen native runs and captures precede those presentation merges. CONTACT36 preserved the simulator bundle hash. FX37 changed the bundle's presentation code, so the Standard cohort ran again on that merge.
 
 | Evidence | Desktop capture |
 | --- | --- |
@@ -183,3 +183,12 @@ The bot policy always chooses Loading Bay and Swarm first on Breacher, and Freig
 The Relay loader cost Breacher and Pyro more suit, reduced Cryo's suit loss at the expense of time, and had a small effect on Arc's means. At Shielding Gate the inspection approach favored Cryo on both measures, while sterilization was slightly cheaper and faster for Pyro. The comparison includes each order's prior itinerary and carry-in state.
 
 The merged Standard competent policy cohort cleared **39/48**, split Breacher 10/12, Cryo 10/12, Pyro 11/12 and Arc 8/12, with zero stalls. Each rig fell in the requested band. Loading Bay first cleared 12/16 and Freight Hold first cleared 27/32. Among runs that reached the second junction, Swarm first cleared 10/12 and Workshop first cleared 29/35. One run died before choosing the second order. [Merged policy cohorts](../../artifacts/nextgen/playtest/run21-cohort-standard-merged/summary.json) · [Pyro and Arc](../../artifacts/nextgen/playtest/run21-cohort-standard-merged-tail/summary.json)
+
+### Native Arc campaigns
+
+Both seeds cleared 20/20 sectors across earned checkpoint continuations, with zero runtime errors. The first frozen attempts hit the 30-minute wall-clock limit after the Transmission clear. The 1729 continuation then died in Swarm Junction and cleared it on a replay from its earned Workshop checkpoint. The 2718 continuation died in Manual Control. It cleared Manual Control on a replay from its earned Annulus checkpoint, then died on Overload Floor. The final 2718 replay used the existing expert policy from the earned Manual Control boundary. All other segments used competent policy. Both seeds chose Workshop first, so the alternate Shielding Gate arrival is shown in the staged native encounter.
+
+| Seed | Cargo first | Relay suit lost / seconds | Shielding suit lost / seconds | Completed receipt |
+| --- | --- | ---: | ---: | --- |
+| 1729 | Freight Hold | 12.6 / 55.9 | 47.5 / 53.5 | [20/20 competent](../../artifacts/nextgen/playtest/run21-arc-1729-swarm-retry/report.json) |
+| 2718 | Breached Loading Bay | 64.4 / 38.2 | 62.8 / 54.4 | [20/20, expert finale replay](../../artifacts/nextgen/playtest/run21-arc-2718-finale-retry/report.json) |
