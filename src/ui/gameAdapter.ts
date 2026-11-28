@@ -537,6 +537,7 @@ export function getCombatDamageElement(game: DepthGame, event: import('./hud/eff
   return burning ? 'burn' : poisoned ? 'poison' : 'frost';
 }
 
+export function getDepletedArrival(game:DepthGame){return game.depletedArrival;}
 export function getRoomDamage(game: DepthGame) {return game.roomDamage;}
 export function getAwakeningDrill(game: DepthGame) {return game.awakeningDrill;}
 

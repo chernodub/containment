@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;cargoLoader?:true;fixedIngress?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -306,8 +306,22 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
    const escort=arrivals.findIndex(request=>request.enemyId==='crawler');
    if(escort>=0){
     const warden=arrivals.find(request=>request.guardian==='warden')!;
-    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:'spitter',role:'ranged',
-      atMs:warden.atMs+450,reinforcement:false,shutterSpitter:true});
+    const loader=options.roomOrder?.[5]==='direct';
+    arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:loader?'brute':'spitter',
+      role:loader?'flanker':'ranged',atMs:warden.atMs+450,reinforcement:false,
+      ...(loader?{cargoLoader:true,healthScale:.65}:{shutterSpitter:true})});
+   }
+  }
+  const infestationOrder=options.roomOrder?.[13];
+  if(node.templateId==='shielding-gate'&&beatIndex===0&&infestationOrder){
+   const flank=arrivals.find(request=>!request.reinforcement&&request.role==='flanker')
+    ??arrivals.find(request=>!request.guardian&&request.enemyId==='crawler');
+   const side=infestationOrder==='direct'?1:-1;
+   const entry=positions?.reduce<(typeof positions)[number]|undefined>((best,point)=>
+    !best||point.y*side<best.y*side?point:best,undefined);
+   if(flank&&entry){
+    arrivals[arrivals.indexOf(flank)]=Object.freeze({...flank,atMs:1100,breachId:entry.id,
+     role:'flanker',reinforcement:false,fixedIngress:true});
    }
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
@@ -664,7 +678,7 @@ export class EncounterDirector {
   }
   /** Commit flanker arrivals relative to the observed marine pose; the existing arrival warning still owns their delay. */
   private placeInterception(request:EncounterSpawn,player?:EncounterPlayerPose):EncounterSpawn {
-    if(request.grammar!=='interception'||request.role!=='flanker'||!player||!Number.isFinite(player.x)||!Number.isFinite(player.y)||!Number.isFinite(player.angle)||this.breaches.length<2)return request;
+    if(request.fixedIngress||request.cargoLoader||request.grammar!=='interception'||request.role!=='flanker'||!player||!Number.isFinite(player.x)||!Number.isFinite(player.y)||!Number.isFinite(player.angle)||this.breaches.length<2)return request;
     const fx=Math.cos(player.angle),fy=Math.sin(player.angle);
     const ranked=this.breaches.filter(b=>Math.hypot(b.x-player.x,b.y-player.y)>130).map(b=>{
       const dx=b.x-player.x,dy=b.y-player.y,distance=Math.hypot(dx,dy);

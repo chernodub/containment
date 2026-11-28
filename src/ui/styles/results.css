@@ -189,3 +189,6 @@
 .exchange-marine.exchange-ghost { fill: none; stroke: #9eb4ba; stroke-width: 1.6; }
 .exchange-ghost .exchange-visor { opacity: .55; stroke-width: 2; }
 .exchange-trail { opacity: .58; stroke-width: 1.7; }
+
+#overlay .depleted-arrival { min-width: 0; }
+#overlay .depleted-arrival > p { margin: 8px 0 0; color: #ffca9f; }
