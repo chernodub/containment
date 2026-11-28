@@ -360,10 +360,11 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
      role:'flanker',reinforcement:false,fixedIngress:true});
    }
   }
-  if(coverOpening&&mode==='standard'&&options.transmissionAugment==='shard-harvest'&&beatIndex===1){
+  if(coverOpening&&mode==='standard'&&options.transmissionAugment==='shard-harvest'&&beatIndex>0){
    // A distant firing angle gives the room a second demand after the close-range shatter.
-   const breachId=ids[(rotation+beatIndex+Math.floor(ids.length/2))%ids.length];
-   arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:relay-crossfire`,
+   const farSide=beatIndex%2?Math.floor(ids.length/2):1;
+   const breachId=ids[(rotation+beatIndex+farSide)%ids.length];
+   arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:relay-crossfire-${beatIndex}`,
     atMs:2100,wave:position+1,enemyId:'spitter',elite:false,breachId,beat:beatIndex,
     grammar:beat.grammar,role:'ranged',hatchDelayMs:600}));
   }
