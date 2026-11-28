@@ -192,3 +192,7 @@
 
 #overlay .depleted-arrival { min-width: 0; }
 #overlay .depleted-arrival > p { margin: 8px 0 0; color: #ffca9f; }
+
+@media (max-height: 800px) {
+  #overlay .depleted-arrival .last-exchange svg { height: clamp(138px, 23.5vh, 188px); }
+}

@@ -1,3 +1,4 @@
+import type {RepairDecision} from './game/roguelike/types';
 import {floorChoicePair} from './game/waves/FloorChoices';
 import {wardenOpeningAim,wardenOpeningSpawn} from './game/waves/WardenOpening';
 import {demonstratedAugment,RIG_DRILL_PROMPTS} from './game/waves/RigDrill';
@@ -72,6 +73,9 @@ export class DepthGame {
  private finalExchange?:LastExchange;
  get deathExchange(){return this.finalExchange;}
  private entrySuit=0;
+ private lastRepair?: RepairDecision;
+ get repairDecision(){return this.lastRepair;}
+
  get depletedArrival(){
   const loss=this.stats.costliestRoom;
   return this.entrySuit<=65&&loss&&loss.leadingHit.room!==this.node.id
@@ -80,9 +84,10 @@ export class DepthGame {
  private recordRoomLoss(){
   const leading=this.roomDamage[0];
   if(leading)this.runStats.recordRoomLoss(
-   [...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0),leading);
+   this.roomDamageTotal,leading);
  }
  private roomDamageLedger=new Map<string,{source:IncomingDamageOrigin['source'];enemyFamily?:IncomingDamageOrigin['enemyFamily'];guardian?:'warden'|'matron';amount:number}>();
+ get roomDamageTotal(){return [...this.roomDamageLedger.values()].reduce((sum,entry)=>sum+entry.amount,0);}
  get roomDamage(){return [...this.roomDamageLedger.values()].sort((a,b)=>b.amount-a.amount).slice(0,3).map(value=>({...value}));}
 
  private checkpointState:'none'|'saved'|'save-failed'|'clear-failed'|'unavailable'='none';
@@ -660,8 +665,8 @@ export class DepthGame {
  get encounter(){return this.director.snapshot;}
  get encounterRemaining(){return this.director.snapshot.remaining+this.enemies.activeCount+this.enemies.reservedCount+this.pending.reduce((n,p)=>n+(p.type==='carrier'?4:1),0);}
  get canContinue(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);return c.restoreRunResources(cp.resources);}
- newRun(seed=(this.runSequence=Math.imul(this.runSequence,1664525)+1013904223>>>0),options:ExpeditionStartOptions={}){this.nextRigDrill=null;this.conditionsEnabled=options.shipConditions!==false;this.difficultyMode=difficultyId(options.difficulty??this.difficultyMode);const nextCombat=new CombatSystem();nextCombat.switchWeapon('shotgun');const nextExpedition=createExpedition(seed,nextCombat.getRunResources(),options);this.presentation.reset();this.discardCheckpoint();this.combat=nextCombat;this.expedition=nextExpedition;this.runStats.reset();this.abilities.setRig(this.expedition.build.rig??'breacher');this.kills=0;this.elapsed=0;const combat=this.expedition.run.phase==='combat';this.enterRoom(combat);if(!combat)this.status='reward';if(this.checkpointState!=='clear-failed')this.save();}
- continueRun(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);if(!c.restoreRunResources(cp.resources))return false;this.combat=c;this.difficultyMode=difficultyId(cp.difficulty);this.expedition=restoreExpedition(cp);this.runStats.reset(cp.stats);this.abilities.setRig(this.expedition.build.rig??'breacher',cp.abilities?.overdriveCharge??0);this.kills=this.runStats.snapshot.kills.total;this.elapsed=Object.values(this.runStats.snapshot.roomTimeMs).reduce((a,b)=>a+b,0)/1000;this.enterRoom(false);this.nextRigDrill=cp.pendingRigDrill?{augment:cp.pendingRigDrill,depth:this.node.depth+1}:null;this.status=cp.run.phase==='route'?'route':'reward';this.checkpointState='saved';if(this.status==='route')this.finishChoice();return true;}
+ newRun(seed=(this.runSequence=Math.imul(this.runSequence,1664525)+1013904223>>>0),options:ExpeditionStartOptions={}){this.nextRigDrill=null;this.conditionsEnabled=options.shipConditions!==false;this.difficultyMode=difficultyId(options.difficulty??this.difficultyMode);const nextCombat=new CombatSystem();nextCombat.switchWeapon('shotgun');const nextExpedition=createExpedition(seed,nextCombat.getRunResources(),options);this.presentation.reset();this.discardCheckpoint();this.combat=nextCombat;this.expedition=nextExpedition;this.runStats.reset();this.lastRepair=undefined;this.abilities.setRig(this.expedition.build.rig??'breacher');this.kills=0;this.elapsed=0;const combat=this.expedition.run.phase==='combat';this.enterRoom(combat);if(!combat)this.status='reward';if(this.checkpointState!=='clear-failed')this.save();}
+ continueRun(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);if(!c.restoreRunResources(cp.resources))return false;this.combat=c;this.difficultyMode=difficultyId(cp.difficulty);this.expedition=restoreExpedition(cp);this.runStats.reset(cp.stats);this.lastRepair=cp.repairDecision;this.abilities.setRig(this.expedition.build.rig??'breacher',cp.abilities?.overdriveCharge??0);this.kills=this.runStats.snapshot.kills.total;this.elapsed=Object.values(this.runStats.snapshot.roomTimeMs).reduce((a,b)=>a+b,0)/1000;this.enterRoom(false);this.nextRigDrill=cp.pendingRigDrill?{augment:cp.pendingRigDrill,depth:this.node.depth+1}:null;this.status=cp.run.phase==='route'?'route':'reward';this.checkpointState='saved';if(this.status==='route')this.finishChoice();return true;}
  retryLoadout(){
   if(this.status!=='dead'||!this.expedition.build.rig)return false;
   const {build,run}=this.expedition;
@@ -717,7 +722,7 @@ export class DepthGame {
  pause(){if(this.status==='playing'){this.status='paused';this.player.moving=false;}}
  resume(){if(this.status==='paused')this.status='playing';}
  menu(){this.status='menu';this.player.moving=false;}
- private save(){const result=saveCheckpoint(this.storage,{version:1,difficulty:this.difficulty,savedAt:Math.round(this.elapsed*1000),...this.expedition,...(this.nextRigDrill&&this.expedition.run.phase==='route'?{pendingRigDrill:this.nextRigDrill.augment}:{}),abilities:{overdriveCharge:this.abilities.snapshot.overdrive.charge},stats:this.stats});if(result.status==='saved'){this.suppressSave=false;this.checkpointState='saved';}else if(result.status==='unavailable'||result.status==='invalid'){if(this.checkpointState!=='clear-failed')this.checkpointState=this.storage?'save-failed':'unavailable';}}
+ private save(){const result=saveCheckpoint(this.storage,{version:1,difficulty:this.difficulty,savedAt:Math.round(this.elapsed*1000),...this.expedition,...(this.lastRepair?{repairDecision:this.lastRepair}:{}),...(this.nextRigDrill&&this.expedition.run.phase==='route'?{pendingRigDrill:this.nextRigDrill.augment}:{}),abilities:{overdriveCharge:this.abilities.snapshot.overdrive.charge},stats:this.stats});if(result.status==='saved'){this.suppressSave=false;this.checkpointState='saved';}else if(result.status==='unavailable'||result.status==='invalid'){if(this.checkpointState!=='clear-failed')this.checkpointState=this.storage?'save-failed':'unavailable';}}
  chooseMutation(id:MutationId){if(this.status!=='reward'||this.expedition.run.phase==='rig-select')return;const first=TRANSFORMATIVE_AUGMENT_IDS.find(augment=>this.expedition.build.mutations.includes(augment));
  this.expedition=claimExpeditionMutation(this.expedition,id);
  if(!first&&TRANSFORMATIVE_AUGMENT_IDS.includes(id as AugmentId))this.nextRigDrill={augment:id as AugmentId,depth:this.node.depth+1};this.combat.setBuild(this.expedition.build);if(this.expedition.run.phase==='combat'){this.enterRoom();return;}this.finishChoice();}
@@ -760,7 +765,11 @@ export class DepthGame {
   const returning=this.returningRigAugments.find(id=>id===augment);
   if((purchase==='rig-return'&&!returning)||(purchase==='upgrade'&&!upgrade)||!this.canPurchaseService(purchase,augment))return false;
   this.allocateService();const before=this.combat.getRunResources();let build=this.expedition.build;
-  if(purchase==='heal')this.combat.restoreHealth(serviceRepairAmounts(this.difficulty).heal);
+  if(purchase==='heal'){
+   this.combat.restoreHealth(serviceRepairAmounts(this.difficulty).heal);
+   const previous=this.lastRepair?.room===this.node.id&&this.lastRepair.offer==='service' ? this.lastRepair.hp : 0;
+   this.lastRepair={room:this.node.id,offer:'service',choice:'took',hp:previous+this.combat.snapshot.health-before.health};
+  }
   else if(purchase==='armor')this.combat.restoreArmor(serviceRepairAmounts(this.difficulty).armor);
   else if(purchase==='ammo')this.combat.refillShopAmmo();
   else if(purchase==='route-ammo'&&this.expedition.run.guardianRoute){
@@ -777,7 +786,13 @@ export class DepthGame {
  claimResources(purchase:ServiceId|null=null){
   if(purchase){this.purchaseService(purchase);return;}
   if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward))return;
-  this.allocateService();this.expedition=claimExpeditionResources(this.expedition,this.combat.getRunResources());this.finishChoice();
+  this.allocateService();
+  const boughtRepair=this.expedition.run.service?.purchases.includes('heal');
+  if(!boughtRepair&&this.canPurchaseService('heal')){
+   this.lastRepair={room:this.node.id,offer:'service',choice:'passed',
+    hp:Math.min(100-this.combat.snapshot.health,serviceRepairAmounts(this.difficulty).heal)};
+  }
+  this.expedition=claimExpeditionResources(this.expedition,this.combat.getRunResources());this.finishChoice();
  }
  private finishChoice(){this.status='route';this.save();if(this.expedition.run.version===3&&this.node.templateId!=='manual-control-chamber'&&!detourOffers(this.expedition.run).length&&!this.conditionFor(this.node.depth+1)&&this.node.next.length===1){this.expedition=chooseExpeditionRoute(this.expedition,this.node.next[0]);this.enterRoom();}}
  readonly boonStatuses=(id:number)=>this.mutations.statuses(id);
@@ -873,12 +888,20 @@ export class DepthGame {
   const depth=this.node.depth;
   const upgrade=availableAugmentUpgrades(this.expedition.build).find(id=>id===augment);
   if(detour==='salvage'&&(depth===fieldWorkshopDepth&&(!upgrade||this.combat.snapshot.credits<180)||depth===6&&this.combat.snapshot.credits<70))return;
+  const healthBefore=this.combat.snapshot.health;
   this.expedition=chooseExpeditionRoute(this.expedition,id,detour);
   const guardianRoute=depth===2?this.expedition.run.guardianRoute:undefined;
   if(!guardianRoute&&detour==='direct'&&depth===2){
    this.combat.restoreHealth(EARLY_LOCKER.health);this.combat.addGrenades(EARLY_LOCKER.grenades);
   }
   if(detour==='direct'&&depth===fieldWorkshopDepth)this.combat.restoreHealth(fieldInfirmaryHealth);
+  if(detour&&(depth===fieldWorkshopDepth||depth===2&&!guardianRoute)){
+   const infirmary=depth===fieldWorkshopDepth;
+   this.lastRepair={room:this.node.id,offer:infirmary?'infirmary':'locker',
+    choice:detour==='direct'?'took':'passed',hp:detour==='direct'
+     ?this.combat.snapshot.health-healthBefore
+     :Math.min(100-healthBefore,infirmary?fieldInfirmaryHealth:EARLY_LOCKER.health)};
+  }
   if(detour==='salvage'){
    if(depth===2&&!guardianRoute)this.awardCredits(EARLY_LOCKER.salvageCredits);
    if(depth===6){this.awardCredits(-70);this.combat.restoreArmor(25);this.combat.addGrenades(2);}

@@ -12,4 +12,11 @@ export type RunState = Readonly<{version:1|2|3;seed:number;runStructure?:1;roomO
 export type MutationId = 'breacher'|'heavy-pellets'|'chain-reaction'|'volatile-remains'|'cryogenic'|'shattershot'|'scavenger'|'blood-price'|'hot-reload'|'last-shell'|'magnetic-feed'|'field-medic'|'piercing-rounds'|'pressure-point'|'seismic-impact'|'permafrost'|'cold-snap'|'frost-armor'|'arc-filament'|'conductive-shell'|'incendiary'|'rapid-cycle'|'leech-rounds'|'emergency-plating'|'ricochet-rounds'|'concussion-rounds'|'executioner'|'first-impact'|'crossfire'|'fragmentation'|'absolute-zero'|'ice-lance'|'frostbite'|'thermal-shock'|'glacial-wake'|'cryo-conductor'|'caustic-rounds'|'toxic-bloom'|'combustion'|'ball-lightning'|'aftershock'|'reactor-cascade'|'siphon-shells'|'combat-medic'|'reactive-barrier'|'salvage-engine'|'blood-capacitor'|'shock-absorber'|import('../abilities/augmentCatalog').AugmentId;
 export type BuildState = Readonly<{mutations:readonly MutationId[];augmentUpgrades?:readonly import('../abilities/augmentCatalog').AugmentId[];rig?:import('../abilities/contract').RigId}>;
 export type RunResources = Readonly<{health:number;armor:number;credits:number;grenades:number;medkits:number;weapon:'pistol'|'rifle'|'shotgun'|'plasma'|'rocket';ammo:Readonly<Record<'pistol'|'rifle'|'shotgun'|'plasma'|'rocket',Readonly<{magazine:number;reserve:number}>>>}>;
-export type RunCheckpoint = Readonly<{difficulty?:import('../difficulty').DifficultyId;version:1;savedAt:number;pendingRigDrill?:import('../abilities/augmentCatalog').AugmentId;run:RunState;build:BuildState;resources:RunResources;abilities?:Readonly<{overdriveCharge:number}>;stats?:import('../abilities/RunStats').RunStatsSnapshot}>;
+export type RepairDecision = Readonly<{
+  room: string;
+  offer: 'locker' | 'infirmary' | 'service';
+  choice: 'took' | 'passed';
+  hp: number;
+}>;
+
+export type RunCheckpoint = Readonly<{difficulty?:import('../difficulty').DifficultyId;version:1;savedAt:number;repairDecision?:RepairDecision;pendingRigDrill?:import('../abilities/augmentCatalog').AugmentId;run:RunState;build:BuildState;resources:RunResources;abilities?:Readonly<{overdriveCharge:number}>;stats?:import('../abilities/RunStats').RunStatsSnapshot}>;
