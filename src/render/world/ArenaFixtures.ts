@@ -12,17 +12,18 @@ const mounts:Record<string,Mount>={
  'shielding-gate':'shield','containment-annulus':'iris','manual-control-chamber':'desk','overload-floor':'port',
 };
 
-// End the overhead service run on the first rear-facing hull edge along its axis.
-function rearBulkhead(room:RoomTemplate,x:number,z:number){
- let rear=0;
- const hull=room.boundary??[];
+// Trace a support from the lamp to the first bulkhead it reaches.
+function wallSocket(room:RoomTemplate,x:number,z:number,dx:number,dz:number):[number,number]{
+ const hull=room.boundary??[{x:0,y:0},{x:room.width,y:0},{x:room.width,y:room.height},{x:0,y:room.height}];
+ let reach=Infinity;
  for(let i=0;i<hull.length;i++){
-  const a=hull[i],b=hull[(i+1)%hull.length];
-  if((a.x>x)===(b.x>x))continue;
-  const y=a.y+(x-a.x)*(b.y-a.y)/(b.x-a.x);
-  if(y<=z)rear=Math.max(rear,y);
+  const a=hull[i],b=hull[(i+1)%hull.length],ex=b.x-a.x,ez=b.y-a.y;
+  const det=dx*ez-dz*ex;
+  if(Math.abs(det)<1e-6)continue;
+  const t=((a.x-x)*ez-(a.y-z)*ex)/det,u=((a.x-x)*dz-(a.y-z)*dx)/det;
+  if(t>=0&&u>=0&&u<=1)reach=Math.min(reach,t);
  }
- return rear-z;
+ return Number.isFinite(reach)?[dx*reach,dz*reach]:[0,0];
 }
 
 export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:number){
@@ -33,12 +34,27 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
  const steel=0x475354,edge=0x697575,iron=0x30393b,copper=0x886952,cold=0xa3c4c5,amber=0xd4a567;
  const side=['surgery','pendant','gantry','rack','scope','pipe','welder','shield','desk'].includes(mount)?-1:1;
  const x=side*Math.min(radius*.32,42);
- const wall=rearBulkhead(room,arena.x+x,z);
- // A service pipe can span the ceiling; the last hanger, elbow and socket
- // carry the head down into the cutaway view.
- p.rod([x,40,wall],[x,73,-40],3.2,steel);
- p.box(x,39,wall,17,18,10,iron);
- p.rod([x,72,-40],[0,65,-13],3.8,edge);
+ const trussed=mount==='gantry'||mount==='jib'||mount==='shield';
+ const hung=mount==='pendant'||mount==='hoist'||mount==='welder'||mount==='berth';
+ const [wx,wz]=wallSocket(room,arena.x,z,trussed?side:side*.25,trussed?-.30:-1);
+ p.box(wx,38,wz,20,17,14,iron);
+ if(trussed){
+  p.rod([wx,46,wz],[0,67,-12],4,steel);
+  p.rod([wx,32,wz],[0,55,-12],3.5,copper);
+  const bays=Math.max(1,Math.ceil(Math.hypot(wx,wz+12)/58));
+  for(let i=0;i<bays;i++){
+   const a=i/bays,b=(i+1)/bays;
+   p.rod([wx*(1-a),32+23*a,wz*(1-a)-12*a],[wx*(1-b),46+21*b,wz*(1-b)-12*b],2.3,edge);
+  }
+ }else if(hung){
+  p.rod([wx,51,wz],[wx*.55,45,wz*.55],2.5,iron);
+  p.rod([wx*.55,45,wz*.55],[0,77,-13],2.5,steel);
+  p.rod([0,77,-13],[0,65,-13],3,copper);
+ }else{
+  p.rod([wx,39,wz],[x,71,-44],3.4,steel);
+  p.box(x,71,-44,12,11,12,iron);
+  p.rod([x,72,-44],[0,65,-13],4,edge);
+ }
  const cone=(cx:number,h:number,cz:number,top:number,bottom:number,height:number,color:number,sides=8)=>{
   p.add(new CylinderGeometry(top,bottom,height,sides).translate(cx,h,cz),color);
  };
@@ -54,7 +70,7 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
    p.rod([-24,58,-9],[0,51,7],4.5,steel);lens(-24,60,-9,7,iron);
    if(mount==='surgery'){
     for(const [cx,cz] of [[-14,3],[13,3],[0,22]]){
-     cone(cx,50,cz,10,14,9,0x576866);lens(cx,54,cz+2,8,cold);
+     cone(cx,50,cz,10,14,9,0x576866);lens(cx,55,cz,10,iron);lens(cx,58,cz,7,cold);
     }
    }else{
     cone(0,49,8,14,20,14,0x515d68);lens(0,57,8,13,0x99abb9);lens(0,60,8,7,0x526c79);
@@ -151,6 +167,14 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
     p.rod([-18,53,-7],[-34,42,-16],3,copper);
    }
    break;
+  }
+ }
+ // Bake a cool upper facet and a darker lower return into the shared unlit batch.
+ for(const part of p.parts){
+  const n=part.attributes.normal,c=part.attributes.color;
+  for(let i=0;i<c.count;i++){
+   const gain=.62+.49*Math.max(0,n.getY(i))+.20*Math.max(0,-n.getX(i))+.08*Math.max(0,n.getZ(i));
+   c.setXYZ(i,c.getX(i)*gain,c.getY(i)*gain,c.getZ(i)*gain);
   }
  }
  p.finish(root,'arena-'+mount,arena.x,z,new MeshBasicMaterial({vertexColors:true,side:DoubleSide}));
