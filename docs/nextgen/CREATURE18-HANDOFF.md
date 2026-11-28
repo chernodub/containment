@@ -2163,3 +2163,79 @@ The Manual Control native strike and recovery studies start the Pyro and Brute 3
 The requested seed-1729 Pyro campaign cleared all ten rooms with zero runtime errors. The runner exited 1 for a 5.014-second Breached Loading Bay loading observation. The first capture exposed a stale geometry-buffer shader name; its correction compiled and rendered on both tiers. A Transmission reload then timed out while the distribution was being rebuilt. The repeat used a stable distribution and completed. The final production build, conflict-marker inspection and post-merge Safety Interlock capture passed. Safety Interlock High again measured 121 draws.
 
 A second ten-room Pyro campaign with the widened Stalker captured two live Relay Racks contacts at 46.8 and 16.4 simulation units between actor centres. Both comparisons are in the same gallery at native size and 480 × 270. This campaign also cleared ten rooms with zero runtime errors. The runner recorded loading observations over five seconds in Passenger Vault, Residential Gallery and Breached Loading Bay.
+
+## HEAVY46 — a Brute that loads its weight, and heavy surfaces painted as anatomy
+
+### What was wrong
+
+The common Brute's club, which is the whole arm and hand, is skinned rigidly to the `shoulder` bone. Through the whole support phase, the authored `m10-run` slid it as a piston: in the clip the right palm stayed exactly 2.09 armature units ahead of its own socket (3.01 → 1.53 palm, 0.92 → −0.56 socket). The chest stayed at fwd 0.55. Its ±0.72 side shift never reached the shoulders, which kept a constant height. The clip held the palm 2.3 units above the deck. `HeavyContacts` lowered the club to the deck at runtime (roughly 1 m in play) and released it between u .76 and .85. During that window the hand snapped back to chest height: that swing is the reach gesture the reviewers keep naming. In play the armature is fitted 0.333 m per unit horizontally and 0.632 m vertically (1.9×; the Warden is 0.404 / 0.879, 2.2×). Vertical mass travel therefore reads on screen much more strongly than fore-aft reach.
+
+### Item 1 — target
+
+`tools/assets/k11-creatures/heavy46/stride_sketch.py` draws four keys from the game camera in play proportions: contact, load, pass and release. The knuckles land ahead of the socket. The chest falls 21 cm and the near shoulder sits 20 cm low. At the pass the plumb line from the loaded shoulder falls behind the knuckles. At release the heel peels while the knuckles stay on the seam. `stride_study.py` poses the authoring code in Blender at the same keys and prints socket, pad and chest numbers.
+
+### Item 2 — walk
+
+`enemy_actions.py` `stride_body` / `stride_clubs` replace the Brute's `m10-run` body block and `club_stride`. The elite shares the clip. The Warden shares the body motion, and its chest-skinned pads keep the runtime hold.
+
+- **Carriage:** low (−0.22) and pitched onto the clubs (0.24 rad) for the whole gait.
+- **Load:** on each contact the weight falls fast (over 0.12 of the support) and is lifted slowly (0.36). Both hands swap at the top.
+- **Drop and roll:** the chest drops up to 0.60 units, about 38 cm in play, at the load key. It shifts 0.34 units towards the loaded side and rolls 0.30 rad, so the loaded shoulder sits low. The breast pitches a further 0.16 rad onto the hand. The free shoulder rides forward with its club, and the head stays level against the roll and dips late.
+- **Clubs:** each club uses the runtime solve's own construction (aim from the socket at the deck point, then slide along that line) on a deck point that moves back at ground speed. The pad sweeps from 2.85 to 0.75 units ahead of the stand socket (2.1 units in 0.58 of a 0.64 s cycle, about 1.9 m/s at the 0.333 fit). The wrist lands ahead of the breast and leaves about 0.8 m behind it.
+- **Release and swing:** the heel peels about the knuckles (0.5 rad) and the knuckles leave last. The swing lifts 0.55 units, not to chest height.
+
+Clip drift of the near pad from contact to pass: 3.15 → 3.20 units (1.7 cm in play). The runtime anchor still holds the planted point.
+
+Rejected along the way, recorded so nobody repeats them:
+- A full aim of the rigid club at a point under or behind the socket reads as a stilt.
+- A partial tilt (0.35–0.8 rad) turns the rigid hand claws-down into a spike.
+- The broad palm reads only at about the tilt the runtime solve itself produces.
+- The club is too short to reach the deck from the socket: 1.68 m of reach against 2.42 m of height. A real elbow therefore needs the forearm reweighted to `forearm.*`, and every brute clip keys that bone differently. It is not done here.
+
+`heavy46/study.mjs` captures a walk past a fixed screen window: the room's combat phase, with encounter arrivals removed every 50 ms. It waits 1.25 s, because `m10-spawn` lasts 1.1 s and any earlier frame shows the spawn take, not the walk.
+
+### Item 3 — surfaces
+
+Body zones 0 and 2–6 lose their scattered deep and middle facet values (`ActorSurface.ts`, Brute planes only):
+
+- **Dark dorsal:** each trunk carries one contiguous dark plane (0.42 × the body colour), bounded by a single back line in bind space (`z > 3.95 − .16x` for the Brute, `3.25 − .12x` for the Warden). Facet normals were tried first and striped every faceted curve.
+- **Mid flank:** limbs and flanks share the body colour.
+- **Light hand:** the whole hand takes the light band, with claw tips 1.18× lighter. From this camera the back of the hand shows, not the palm.
+- **Shoulders:** facets turned to the key take one highlight band. A painted chamfer runs just inside the inked seams.
+- **Unchanged:** crowns, wedge mask, elite crest, the Warden's throat, teeth and tongue, ink, and status finishes keep their paint. The bind-space normal is a new varying, used for Brute planes only.
+
+### Item 4 — values and cost
+
+Value tool, frame 01 at 480, marine visor and leg interiors hand-labelled the same in both builds, creature regions from `--actor-zones`. Each column is the brightest Brute pixel Y′, followed by its Δlegs in brackets.
+
+| Crowd | Legs Y′ | final26 Brute | HEAVY46 Brute |
+|---|---:|---:|---:|
+| Crew Checkpoint | .769 | .704 (−.064) | .693 (−.076) |
+| Swarm Junction | .761 | .709 (−.052) | .697 (−.065) |
+| Transmission Chamber | .767 | .469 (−.299) | .469 (−.299) |
+
+The tool's maximum-saturation column reads 0.88–1.00 for the Brute in both builds, against 0.35–0.37 for the visor. That comes from near-black ink and dorsal pixels (S = (max−min)/max), so the saturation half of the rule was already failing on this metric at final26 and is a measurement artefact, not a hue change.
+
+Cost: the heavies trio scene draws 90 calls and 177,785 triangles in both builds. Geometry, skin, materials and passes are untouched, so the skinned position counts stay at 12,452 / 13,909 / 20,070 for Brute, elite and Warden.
+
+### Item 5 — verification
+
+`npm run build` passes after merging the current local `nextgen` (`ec21b3da`, CONTACT36). The merge was clean and the conflict-marker scan was empty. The post-merge crowd capture (`heavy46-postmerge`) and the trio have empty error lists. The native campaign (`npm run playtest -- --rig=breacher --seed=1729 --rooms=10 --fast --startup-timeout-ms=180000 --label=heavy46`) cleared ten rooms through Transmission Chamber and exited 0 with zero errors on the first run, without a startup or loading timeout. Its report is `artifacts/nextgen/playtest/heavy46/index.html`.
+
+### Evidence
+
+All under `artifacts/nextgen/heavy46/evidence/` in this worktree:
+- `stride-sketch.png`: the item 1 target.
+- `brute-`, `elite-` and `warden-strip-final26-over-now-native.png`: eight frames each past a fixed deck window. A yellow tick marks the same deck column.
+- `pack-final26-over-now-480.png`: three Brutes; each strip is colour over greyscale, final26 above.
+- `heavies-colour-` and `heavies-grey-final26-left-now-right-480.png`, `heavies-colour-final26-over-now-native-crop.png`, `heavies-now.png`.
+- `values.txt`.
+
+The final26 side is the local preserved build at `0c9feb39`, captured with the same fixture.
+
+### Still not right
+
+- At 480 the pack reads as low knuckle-walkers leaning on their clubs. The 38 cm drop and the roll are visible frame to frame at native size and only faintly at 480.
+- The hand at mid-stance is still a rigid club. A real elbow needs the forearm reweighted and every brute clip re-keyed.
+- The shoulder key band is subtle and the chamfer is painted, not modelled.
+- The new dark dorsal makes the regular Brute's three crowns read as stripes between dark gaps.
