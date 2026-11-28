@@ -263,7 +263,9 @@ try {
   server=createServer(async(req,res)=>{
     const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(distRoot,pathname.slice('/containment/'.length)||'index.html');
     if(!pathname.startsWith('/containment/')||!file.startsWith(distRoot+'/'))return res.writeHead(404).end();
-    try{res.writeHead(200,{'Content-Type':mime[extname(file)]??'application/octet-stream'}).end(await readFile(file));}catch{res.writeHead(404).end();}
+    const asset=await readFile(file).catch(()=>null);
+    if(!asset)return res.writeHead(404).end();
+    res.writeHead(200,{'Content-Type':mime[extname(file)]??'application/octet-stream'}).end(asset);
   });
   await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
   browser=await chromium.launch({channel:'chromium',headless:!options.headed,args:['--no-sandbox','--enable-gpu','--ignore-gpu-blocklist',...(process.platform==='darwin'?['--use-angle=metal']:[])]});

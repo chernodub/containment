@@ -181,7 +181,7 @@ export class DepthGame {
  private weaponLesson:{weapon:'plasma'|'rocket';target:number;until:number}|undefined;
  private coverLesson:CoverLesson|undefined;
  private readonly stagedCover=new Set<CoverLesson['cover']>();
- private departures=new Map<number,{ms:number;escort:boolean;breach:{x:number;y:number}}>();
+ private departures=new Map<number,{ms:number;escort:boolean;guardian?:true;breach:{x:number;y:number}}>();
  private cleanupElapsed=0;
  private breakAnnounced=false;
  private broodPodsDestroyed=0;
@@ -456,7 +456,7 @@ export class DepthGame {
  }
  get encounterHatch(){
   const reserve=this.guardianReserve;
-  if(reserve)return {x:reserve.breach.x,y:reserve.breach.y,angle:reserve.breach.facing==='east'?0:Math.PI,
+  if(reserve)return {x:reserve.breach.x,y:reserve.breach.y,angle:reserve.breach.angle,
    state:reserve.heldAt===undefined?'waiting':'closed',changedAt:reserve.heldAt??reserve.committedAt};
   const retreat=this.guardianIngressClosure;
   if(retreat)return {x:retreat.effect.x,y:retreat.effect.y,angle:retreat.effect.angle??0,
@@ -1382,30 +1382,36 @@ export class DepthGame {
  private spitterCrossing?:{id:number;end:{x:number;y:number};until:number};
  private guardianGroundUntil=0;
  private guardianIngressClosure?:{at:number;effect:GameEffect};
- private guardianReserve?:{guardian:number;heldAt?:number;breach:{x:number;y:number;facing:string};ids:number[];committedAt:number};
+ private guardianReserve?:{guardian:number;heldAt?:number;breach:{x:number;y:number;angle:number};ids:number[];committedAt:number};
  private commitGuardianReserve(id:number,beat:number|undefined,guardian:{x:number;y:number}){
   const queued=this.director.featuredGuardianReserve(beat);
   if(beat===undefined||!queued.length)return;
-  const point=(breach:{x:number;y:number;facing:string},depth:number,offset:number)=>({
-   x:breach.x+(breach.facing==='east'?depth:-depth),y:breach.y+offset
-  });
+  const point=(breach:{x:number;y:number;angle:number},depth:number,offset:number)=>{
+   const c=Math.cos(breach.angle),s=Math.sin(breach.angle);
+   return {x:breach.x+c*depth-s*offset,y:breach.y+s*depth+c*offset};
+  };
   const radius=enemyBodyRadius(queued[0].enemyId,false);
-  const candidates=this.geometry.breaches.filter(breach=>
-   canOccupyExpedition(this.geometry,point(breach,66,0),radius));
-  const score=(breach:typeof candidates[number])=>Math.hypot(breach.x-guardian.x,breach.y-guardian.y)
-   +Math.hypot(breach.x-this.player.x,breach.y-this.player.y)
-   +(hasClearExpeditionShot(this.geometry,this.player,point(breach,66,0))?0:500);
-  const breach=candidates.sort((a,b)=>score(a)-score(b))[0];
+  const bearing=Math.atan2(guardian.y-this.player.y,guardian.x-this.player.x);
+  // Use an inset maintenance hatch on the shoulder of the live fight.
+  const candidates=[.9,-.9,1.45,-1.45,.45,-.45,Math.PI].flatMap(offset=>
+   [156,116,192].map(distance=>{
+    const angle=bearing+offset;
+    return {x:this.player.x+Math.cos(angle)*distance,y:this.player.y+Math.sin(angle)*distance,angle};
+   }));
+  const breach=candidates.find(entry=>
+   canOccupyExpedition(this.geometry,entry,37)&&
+   canTraverseExpedition(this.geometry,entry,point(entry,radius+20,0),radius)&&
+   hasClearExpeditionShot(this.geometry,this.player,entry)&&Math.hypot(entry.x-guardian.x,entry.y-guardian.y)>70);
   if(!breach)return;
   const ids:number[]=[];
   for(const [index,request] of queued.slice(0,3).entries()){
-   const start=point(breach,66+index*30,(index%2?1:-1)*index*32);
+   const start=point(breach,radius+20+Math.floor(index/2)*20,(index===0?0:index===1?1:-1)*(2*radius+8));
    if(!canOccupyExpedition(this.geometry,start,radius))continue;
    const result=this.enemies.spawn(request.enemyId,start.x,start.y,false);
    if(!result.spawned)continue;
    ids.push(result.enemy.id);
    this.enemies.stagger(result.enemy.id,250);
-   this.departures.set(result.enemy.id,{ms:1900,breach,escort:true});
+   this.departures.set(result.enemy.id,{ms:1900,breach,escort:true,guardian:true});
   }
   if(!ids.length)return;
   this.guardianReserve={guardian:id,breach,ids,committedAt:this.elapsed};
@@ -1436,7 +1442,7 @@ export class DepthGame {
   this.guardianReserve=undefined;
   const {breach}=reserve;
   this.guardianGroundUntil=this.elapsed+3.5;
-  this.guardianIngressClosure={at:this.elapsed+1.9,effect:{type:'reserve-cut',x:breach.x,y:breach.y,angle:breach.facing==='east'?0:Math.PI,durationMs:3000,
+  this.guardianIngressClosure={at:this.elapsed+1.9,effect:{type:'reserve-cut',x:breach.x,y:breach.y,angle:breach.angle,durationMs:3000,
    reserveCut:{count:queued.length,family:queued[0].enemyId}}};
  }
 
@@ -1757,8 +1763,9 @@ export class DepthGame {
    const reserve=this.guardianReserve;
    if(reserve?.ids.includes(enemy.id)){
     const distance=Math.hypot(enemy.x-reserve.breach.x,enemy.y-reserve.breach.y);
-    if(reserve.heldAt===undefined&&this.elapsed-reserve.committedAt<.65&&distance>52){
-     const step=Math.min((distance-52)/distance,ms*.065/distance);
+    const stop=enemy.radius+4;
+    if(reserve.heldAt===undefined&&this.elapsed-reserve.committedAt<.65&&distance>stop){
+     const step=Math.min((distance-stop)/distance,ms*.065/distance);
      this.enemies.moveBy(enemy.id,(reserve.breach.x-enemy.x)*step,(reserve.breach.y-enemy.y)*step);
     }
     continue;
@@ -1766,7 +1773,7 @@ export class DepthGame {
    departure.ms-=ms;
    if(departure.escort&&departure.ms>1750)continue;
    const dx=departure.breach.x-enemy.x,dy=departure.breach.y-enemy.y,distance=Math.hypot(dx,dy);
-   if(departure.ms>0&&distance>36){
+   if(departure.ms>0&&distance>(departure.guardian?8:36)){
     const step=Math.min(1,enemy.baseSpeed*2.4*ms/1000/distance);
     this.enemies.moveBy(enemy.id,dx*step,dy*step);
    }else if(this.enemies.remove(enemy.id)){

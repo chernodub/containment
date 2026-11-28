@@ -1467,3 +1467,35 @@ SCENARIOS.push({
   d.refresh();
  },
 });
+
+for(const room of ['coolant-plant','swarm-junction']){
+ for(const phase of ['committing','held','retreat']){
+  SCENARIOS.push({
+   id:`play43-${room}-${phase}`,state:'playing',room,diagnosticOnly:true,
+   setupArgument:{room,phase},
+   setup:async({room,phase})=>{
+    const d=window.__containmentDebug,g=d.game;
+    await d.gotoRoom(room,{rig:'arc',runStructure:true,seed:1729});
+    if(room==='swarm-junction'){
+     g.expedition={...g.expedition,run:{...g.expedition.run,guardianRoute:'brood',junctions:{3:'salvage'}}};
+     g.enterRoom();
+     await d.prepare();
+    }
+    d.invulnerable(true);
+    const beat=g.director.plan.schedule.find(request=>request.guardian)?.beat;
+    if(beat===undefined)throw Error('No featured guardian in this fixture route');
+    for(let step=0;step<200&&!g.guardianReserve;step++){
+     d.step(150);
+     for(const enemy of g.enemies.snapshot.enemies)
+      if(enemy.beat!==beat&&enemy.beat!==undefined)g.damage(enemy.id,100000);
+    }
+    const reserve=g.guardianReserve;
+    if(!reserve)throw Error('Featured guardian reserve did not commit');
+    if(phase!=='committing')g.holdGuardianReserve(reserve.guardian);
+    if(phase==='retreat')g.damage(reserve.guardian,100000);
+    d.step(phase==='retreat'?480:320);
+    d.refresh();
+   },
+  });
+ }
+}
