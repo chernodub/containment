@@ -302,3 +302,12 @@ for (const [rig, ids] of Object.entries(rigs)) for (const [i, id] of ids.entries
   setupArgument:{rig,id,slot:slots[i],room,tier,victimStudy:'crowd'},
  });
 }
+
+// Napalm's first fuel receipt is sampled at 265 ms. Also inspect the fire
+// 300 ms after impact and 300 ms after that first-receipt study frame.
+V2_SCENARIOS.push({
+ id:'fx37-napalm-ground-fire',diagnosticOnly:true,room:'crew-checkpoint',state:'playing',
+ burst:true,frameCount:3,setup:stageV2,
+ setupArgument:{rig:'pyro',id:'napalm-charge',slot:'power',room:'crew-checkpoint',tier:'high',victimStudy:'crowd'},
+ advanceFrame:frame=>window.__containmentDebug.step(frame===1?35:265),
+});

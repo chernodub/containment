@@ -788,7 +788,7 @@ export class FlagshipFx {
       }
       if (fields.length >= COLD_FIELD_LIMIT) continue;
       const strip = slot.mode === FxMode.FrostStrip;
-      if (!strip && slot.mode !== FxMode.Frost && !(slot.mode === FxMode.Climax && slot.arc === 1)) continue;
+      if (!strip && slot.mode !== FxMode.Frost && !(slot.mode === FxMode.Climax && slot.arc === 1 && slot.param > 0)) continue;
       const i = fields.length;
       fields.push(slot);
       this.coldAxes[i].set(slot.x, slot.z, strip ? slot.range * Math.cos(slot.angle) : 0, strip ? slot.range * Math.sin(slot.angle) : 0);
@@ -851,7 +851,7 @@ export class FlagshipFx {
       slot.mesh.geometry = fuel ? this.fuelGeometry : this.geometry;
       slot.mesh.material = fuel ? fuelMaterial :
         slot.mode === FxMode.Climax && slot.arc === 2 ? meltdownMaterial : slot.material;
-      slot.mesh.visible = true;
+      slot.mesh.visible = slot.mode !== FxMode.Climax || slot.param > 0;
     }
   }
 
