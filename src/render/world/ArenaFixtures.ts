@@ -29,6 +29,9 @@ function wallSocket(room:RoomTemplate,x:number,z:number,dx:number,dz:number):[nu
 export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:number){
  const mount=mounts[room.id];if(!mount)return;
  const [,depth]=arenaAperture(room.id);
+ // The checkpoint scanner occupies the middle of its short throw.
+ // Hang the inspection channel over its exposed left jamb.
+ const sourceX=arena.x-(mount==='channel'?radius*.82:0);
  const z=arena.y-radius*depth;
  const p=new IncidentPieces();
  const steel=0x475354,edge=0x697575,iron=0x30393b,copper=0x886952,cold=0xa3c4c5,amber=0xd4a567;
@@ -36,7 +39,7 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
  const x=side*Math.min(radius*.32,42);
  const trussed=mount==='gantry'||mount==='jib'||mount==='shield';
  const hung=mount==='pendant'||mount==='hoist'||mount==='welder'||mount==='berth';
- const [wx,wz]=wallSocket(room,arena.x,z,trussed?side:side*.25,trussed?-.30:-1);
+ const [wx,wz]=wallSocket(room,sourceX,z,trussed?side:side*.25,trussed?-.30:-1);
  p.box(wx,38,wz,20,17,14,iron);
  if(trussed){
   p.rod([wx,46,wz],[0,67,-12],4,steel);
@@ -95,7 +98,6 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
   }
   case 'gantry':case 'jib':{
    const span=mount==='gantry'?106:61;
-   p.rod([x,73,-40],[-span*.5,66,-11],4,copper);
    p.rod([-span*.5,67,-12],[span*.5,67,-12],3.5,edge);
    p.rod([-span*.5,52,-5],[span*.5,52,-5],3.5,steel);
    for(let i=0;i<4;i++){
@@ -177,7 +179,7 @@ export function addArenaFixture(root:Group,room:RoomTemplate,arena:Point,radius:
    c.setXYZ(i,c.getX(i)*gain,c.getY(i)*gain,c.getZ(i)*gain);
   }
  }
- p.finish(root,'arena-'+mount,arena.x,z,new MeshBasicMaterial({vertexColors:true,side:DoubleSide}));
+ p.finish(root,'arena-'+mount,sourceX,z,new MeshBasicMaterial({vertexColors:true,side:DoubleSide}),mount==='channel');
 }
 
 // Cast edge on the deck survives the cutaway camera cropping an overhead head.
