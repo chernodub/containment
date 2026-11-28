@@ -31,7 +31,7 @@ try{
     if(!pts.every(([px,py,rr])=>d.canStand(px,py,rr)))continue;const s=-Math.hypot(x+320-b.x-b.width/2,y-cy);if(!best||s>best.s)best={x,y,s};}
    if(!best)throw Error('no lane');
    Object.assign(g.player,{x:best.x,y:best.y,vx:0,vy:0,angle:0});g.setAimPoint({x:best.x+300,y:best.y});d.step(600);g.enemies.reset();
-   const ids=subject==='pack'?[[345,-80],[405,0],[335,80]].map(([dx,dy])=>d.spawn('brute',best.x+dx,best.y+dy,false))
+   const ids=subject==='pack'?[[350,-95],[300,0],[345,95]].map(([dx,dy])=>d.spawn('brute',best.x+dx,best.y+dy,false))
     :[d.spawn('brute',best.x+(subject==='warden'?440:385),best.y,subject!=='brute')];
    if(subject==='warden')g.enemies.promote(ids[0],'warden');
    window.__h46ids=ids;window.__h46step=ms=>{for(let k=0;k<ms;k+=50){d.step(Math.min(50,ms-k));for(const e of g.enemies.snapshot.enemies)if(!window.__h46ids.includes(e.id))g.enemies.remove(e.id);}d.refresh();};
