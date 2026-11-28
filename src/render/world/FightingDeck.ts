@@ -1,3 +1,4 @@
+import {paintFixtureShadow} from './ArenaFixtures';
 import {paintRoomFunction} from './RoomFunctionMarks';
 import type {Point,RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
@@ -52,5 +53,6 @@ export function paintFightingDeck(c:CanvasRenderingContext2D,room:RoomTemplate,a
   for(let x=-150;x<154;x+=10)c.fillRect(x,36,3,35);
   c.fillRect(-156,52,312,3);c.restore();
   paintRoomFunction(c,room,arena);
+  paintFixtureShadow(c,room,arena,profile.perimeter.inner*32);
   c.restore();
 }

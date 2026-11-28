@@ -1,3 +1,4 @@
+import {paintTransmissionBus} from './TransmissionBus';
 import type {Point,RoomTemplate} from '../../game/roguelike/types';
 import {shipInteriorFurnishings} from '../../game/roguelike/shipInteriorFurnishings';
 
@@ -44,12 +45,6 @@ export function paintWorkingLane(c:CanvasRenderingContext2D,room:RoomTemplate,ar
      c.fillStyle='#768384';c.fillRect(x,z-10,44,32);
      c.fillStyle='#27343b';c.fillRect(x+7,z-5,30,17);
      c.fillStyle='#a19479';c.fillRect(x+8,z+13,9,4);
-    }else if(room.id==='transmission-chamber'){
-     for(const offset of [-9,0,9]){
-      c.strokeStyle=offset===0?'#9e765c':'#748284';c.lineWidth=5;
-      c.beginPath();c.moveTo(x,z+offset);c.bezierCurveTo(x+45,z+offset,x+50,z+offset+19,x+155,z+offset+10);c.stroke();
-     }
-     c.fillStyle='#494f50';c.fillRect(x+20,z-15,9,34);
     }else if(room.id==='overload-floor'){
      c.fillStyle='#917052';c.fillRect(x,z,160,13);
      c.fillStyle='#86908c';c.fillRect(x+24,z-14,11,29);c.fillRect(x+41,z+12,11,16);
@@ -68,7 +63,9 @@ export function paintWorkingLane(c:CanvasRenderingContext2D,room:RoomTemplate,ar
    c.save();c.translate(x,y+width/2+42);c.strokeStyle='rgba(137,147,139,.45)';c.lineWidth=2.4;c.stroke(shape);c.restore();
   }
  }
- c.restore();c.save();c.translate(arena.x,arena.y);
+ c.restore();
+ if(room.id==='transmission-chamber')paintTransmissionBus(c,arena,room.width,false);
+ c.save();c.translate(arena.x,arena.y);
  if(trail){
   const line=new Path2D(trail);
   c.strokeStyle='rgba(32,32,28,.45)';c.lineWidth=12;c.stroke(line);
