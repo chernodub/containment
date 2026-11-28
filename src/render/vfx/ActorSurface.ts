@@ -32,7 +32,7 @@ float hideFinish(vec3 position, bool limb, bool sac) {
 
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false, hideFrequency = 18) {
-  const contact={value:new T.Vector3()};
+  const contact={value:new T.Vector4()};
   const strikeLight={value:new T.Vector4()};
   const coldState={value:0};
   const form={value:new T.Vector4()};
@@ -109,7 +109,7 @@ if(actorWarden<.5){
       }
       // HEAVY42 supplies the zone and boundary-distance varyings on its authored meshes.
       const heavyStatus=shader.vertexShader.includes('varying float vHeavyZone;')?'#define AUTHORED_HEAVY_STATUS 1\n':'';
-      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec3 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
+      shader.fragmentShader = heavyStatus+`${friendly ? 'varying float vRigPaint;' : 'uniform vec4 actorStrikeLight;uniform float actorBroodPrime;uniform float actorColdState;uniform vec4 actorContact;uniform vec4 actorBroodForm;uniform float actorWarden;uniform float actorWallRecoil;uniform float actorCastShade;uniform vec3 actorLanternColor;uniform float actorAttackLoad;uniform vec3 actorBodyHue;uniform float actorEliteBody;uniform vec4 actorZoneLevel;uniform float actorWet;'}uniform vec3 actorHierarchy;uniform float actorReveal;uniform vec3 actorRigColor;uniform float actorStageLight;uniform float actorShedShoulder;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + creatureHide + shader.fragmentShader
         .replace('#include <map_fragment>', `#include <map_fragment>
 ${friendly?'':'float creatureBone=0.0;'}
 ${!friendly && material.userData.k11Original ? `
@@ -165,8 +165,8 @@ bool crawlerHook=crawlerSkin && (broodBand==2 || broodBand==5) &&
 bool spitterSac=spitterSkin && broodBand==3 && actorPosition.x<1.6 && actorPosition.z>3.4;
 bool sacPatch=carrierSkin && (broodBand==11 || broodSac || (broodBand==3 && vActorRegion==7.));
 bool trunk=vActorRegion<=2. || vActorRegion==7.;
-float capWidth=crawlerSkin?mix(.31,.21,smoothstep(-.8,.65,actorPosition.x)):
-               spitterSkin?1.14:stalkerSkin?.87:3.2;
+float capWidth=crawlerSkin?mix(.42,.26,smoothstep(-.8,.65,actorPosition.x)):
+               spitterSkin?1.33:stalkerSkin?1.01:3.2;
 bool broodMark=(trunk || spitterSac || sacPatch) && abs(actorPosition.y)<capWidth && broodRestUp>.05;
 broodBody=broodBody || spitterSac || crawlerHook || broodBand==3 || broodBand==4;
 vec3 broodPaint=carrierSkin?vec3(.288,.173,.352):crawlerSkin?vec3(.336,.247,.149):
@@ -366,6 +366,13 @@ if(crawlerSkin && broodBody && !broodMark)
  outgoingLight=mix(vec3(.036,.033,.030),vec3(.068,.060,.054),float(broodTop))*actorStageLight;
 float broodLuma=dot(outgoingLight,vec3(.2126,.7152,.0722));
 outgoingLight=mix(vec3(broodLuma),outgoingLight,.48)*min(1.,.135/max(.0001,broodLuma));
+// Carry the cap value onto the outside keratin ridge. The inner face
+// stays in shadow, preserving the gap against either floor or armour.
+bool hookRidge=crawlerHook && actorPosition.y<-.45 && broodRestUp>-.15;
+bool bladeRidge=stalkerSkin && abs(actorPosition.y)>1.05 && broodRestUp>.12
+                && (broodBand==2 || broodBand==3 || broodBand==5);
+if(hookRidge || bladeRidge)
+ outgoingLight=mix(vec3(.20),broodPaint,.36)*actorStageLight*actorCamouflage;
 if(broodMark){
  float exposure=stalkerSkin?mix(.90,1.,actorCamouflage):actorCamouflage;
  outgoingLight=broodPaint*actorStageLight*exposure;
@@ -382,9 +389,10 @@ if(bruteBody && !wardenMaw && !eliteTrim)contactSkin=true;
 #endif
 if(actorContact.z>0. && contactSkin){
  vec3 edge=actorContact.x<1.5?vec3(.75,1.15,1.38):actorContact.x<2.5?vec3(1.65,.53,.09):vec3(1.26,.92,.47);
- // A broad cap catches the camera-side shoulder even on flat shell facets.
- float cap=smoothstep(.20,.65,dot(normalize(normal),normalize(mat3(viewMatrix)*vec3(-.45,.83,.32))));
- outgoingLight+=edge*actorContact.z*(.14+1.45*cap+1.65*smoothstep(.045,.53,actorRim));
+ // Light the shell facets facing the impact source through the recovery.
+ vec3 incoming=normalize(mat3(viewMatrix)*vec3(-cos(actorContact.w),.56,-sin(actorContact.w)));
+ float flank=smoothstep(.18,.88,dot(normalize(normal),incoming));
+ outgoingLight+=edge*actorContact.z*(.025+flank*(.68+.86*smoothstep(.18,.65,actorRim)));
 }else if(actorContact.x>=3.5 && actorContact.y>0. && contactSkin){
  float safe=1.-step(.02,actorAttackLoad)*step(1.5,vActorRegion)*step(vActorRegion,5.5);
  float vein=sin(dot(actorPosition,vec3(1.67,.86,1.22))+.65*sin(actorPosition.z*2.1));
@@ -480,7 +488,7 @@ vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.16*actorRim*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.78,1.0),.85)'}*${friendly?'actorRim':'keyRim'}*(actorRimStrength+actorReveal*.28${friendly?'':'+.12+.06*limb'})${friendly?'':'*(1.0-.6*creatureBone)'}*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity${friendly?'':'*.35'}+deathColor*deathContact;${friendly?'':'\ntotalEmissiveRadiance+=vec3(.16,.19,.23)*smoothstep(.67,.93,actorRim)*actorHit;'}`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-heavy42:alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:${friendly ? 'actor-surface-marine28:marine' : 'actor-surface-fx38:alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
@@ -488,7 +496,7 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
   return {
     strike(point:T.Vector3|undefined,strength:number){strikeLight.value.set(point?.x??0,point?.y??0,point?.z??0,point?strength:0);},
     cold(frozen:boolean,chilled:boolean){coldState.value=frozen?2:chilled?1:0;},
-    contact(kind:number,strength:number,accent:number){contact.value.set(kind,strength,accent);},
+    contact(kind:number,strength:number,accent:number,bearing:number){contact.value.set(kind,strength,accent,bearing);},
     form(shadow:number,edge:number,shadowGain:number,carrier:number){form.value.set(shadow,edge,shadowGain,carrier);},
     formShadow(threshold:number){form.value.x=threshold;},
     grip(left:number,right:number,leftPeel:number,rightPeel:number,offsets:T.Vector3[]) { grip.value.set(left,right,leftPeel,rightPeel);bossPalm.value=offsets; },
@@ -512,6 +520,6 @@ totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.55,.7
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
     death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
-    reset() { strikeLight.value.w=0;coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
+    reset() { strikeLight.value.w=0;coldState.value=0;broodPrime.value=0;contact.value.set(0,0,0,0);shedShoulder.value=0;castShade.value=0;attackLoad.value=0;reveal.value=0;stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };
 }

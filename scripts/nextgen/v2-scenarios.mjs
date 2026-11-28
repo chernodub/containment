@@ -303,6 +303,16 @@ for (const [rig, ids] of Object.entries(rigs)) for (const [i, id] of ids.entries
  });
 }
 
+for (const [rig, ids] of Object.entries(rigs)) for (const [i, id] of ids.entries()) {
+ if (!['meltdown','cryo-nova','napalm-charge','whiteout','seismic-slam','overload'].includes(id)) continue;
+ for (const room of ['crew-checkpoint','swarm-junction','coolant-plant','safety-interlock-station','transmission-chamber'])
+ for (const tier of ['high','low']) for (const density of ['sparse','crowd']) V2_SCENARIOS.push({
+  id:`fx38-${id}-${room}-${tier}-${density}`, diagnosticOnly:true, room, state:'playing',
+  burst:true, frameCount:3, setup:stageV2, setupArgument:{rig,id,slot:slots[i],room,tier,victimStudy:density},
+  advanceFrame:frame=>window.__containmentDebug.step(frame===1?300:200),
+ });
+}
+
 // Napalm's first fuel receipt is sampled at 265 ms. Also inspect the fire
 // 300 ms after impact and 300 ms after that first-receipt study frame.
 V2_SCENARIOS.push({

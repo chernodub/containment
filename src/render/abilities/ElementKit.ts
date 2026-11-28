@@ -64,7 +64,7 @@ export interface StatusActor {
     readonly root: T.Object3D;
     readonly height: number;
     hit?(strength: number, direction: number): void;
-    powerAccent?(element: AbilityElement): void;
+    powerAccent?(element: AbilityElement, bearing: number): void;
     reactToElement?(element: 'kinetic' | 'ice' | 'fire', angle: number): void;
     elementContact?(element: AbilityElement): void;
 }
@@ -107,6 +107,7 @@ export class ElementKit {
     arcContactUntil = -1;
     heatVictim = -1;
     heatUntil = -1;
+    frostVictim = -1;
     frostUntil = -1;
     low = false;
     reducedMotion = false;
@@ -126,6 +127,13 @@ export class ElementKit {
     private shape: Telegraph = { shape: 'shockwave', x: 0, z: 0 };
     private line: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3() };
     private light = { x: 0, y: 1, z: 0, color: 0, intensity: 0, distance: 1, duration: .15, priority: 2 };
+    private viewCamera?: T.Camera;
+    private readonly landingPoint = new T.Vector3();
+    landingMargin(x: number, height: number, z: number): number {
+        if (!this.viewCamera) return 0;
+        const p = this.landingPoint.set(x, height, z).project(this.viewCamera);
+        return Math.min(.91 - Math.abs(p.x), .78 - Math.abs(p.y));
+    }
     private readonly viewPosition = new T.Vector3(0, 8, 8);
     private readonly flowAxis = new T.Vector3();
     private readonly flowView = new T.Vector3();
@@ -152,7 +160,7 @@ export class ElementKit {
         this.batches.contact.mesh.renderOrder = 6;
         (this.batches.contact.mesh.material as T.ShaderMaterial).depthTest = false;
     }
-    setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
+    setView(camera: T.Camera): void { this.viewCamera = camera; this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
     bind(services: AbilityServices): void { this.services = services; }
     setOptions(options: GraphicsOptions, tier: GraphicsTier, reducedMotion: boolean): void {

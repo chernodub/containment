@@ -733,12 +733,13 @@ export class DepthRenderer {
   this.lodDistances.fill(Infinity);for(const e of enemies){const d=(e.x-p.x)**2+(e.y-p.y)**2;for(let i=0;i<4;i++)if(d<this.lodDistances[i]){for(let j=3;j>i;j--)this.lodDistances[j]=this.lodDistances[j-1];this.lodDistances[i]=d;break;}}
   // E10: contact-only actor pool changes do not invalidate the static architecture atlas.
   let queuedBite=-1;
-  if(enemies.some(e=>e.type==='crawler' && (e.meleePhase==='strike'||e.meleePhase==='recovery' && e.meleeProgress<.35))){
+  const striker=enemies.find(e=>e.type==='crawler' && (e.meleePhase==='strike'||e.meleePhase==='recovery' && e.meleeProgress<.75));
+  if(striker){
    let nearest=Infinity;
    for(const e of enemies){
     if(e.type!=='crawler'||e.meleePhase!=='approach'||e.engagement!=='waiting')continue;
-    const distance=(p.x-e.x)**2+(p.y-e.y)**2;
-    if(distance<nearest){nearest=distance;queuedBite=e.id;}
+    const distance=(striker.x-e.x)**2+(striker.y-e.y)**2;
+    if(distance<(striker.radius+e.radius+UNIT)**2 && distance<nearest){nearest=distance;queuedBite=e.id;}
    }
   }
   for(const e of enemies){active.add(e.id);let model=this.actors.get(e.id);/* I13: native pod hatch swaps static art to the living caste. */if(model&&!!model.root.userData.broodPod!==!!e.pod){this.actorPool.release(model);this.actors.delete(e.id);model=undefined;}if(!model){model=this.actorPool.take(e.pod?'brood-pod':e.type,e.elite);useActorContactShadows(model.root,true);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.actors.set(e.id,model);registerGeometry(model.root,e.champion?GEOMETRY_CLASSES.boss:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);model.setStageLight?.(blackout&&Math.hypot(e.x-p.x,e.y-p.y)>CONDITION_LIGHT_RADIUS?.12:1);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setExposed?.(e.maxArmor>0&&e.armor===0);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);/* I13: presentation follows authoritative guardian clocks. */model.setBossState?.(e.champion||(e.type==='brute'&&e.maxArmor>0&&e.armor<=0)?e.stunRemainingMs??0:0,e.broodRemainingMs??0,e.chargeMs,e.specialCooldownMs,e.champion==='warden'?Math.atan2(p.y-e.y,p.x-e.x):0);if(e.pod)model.setPodCountdown?.(e.podRemainingMs??0,e.podStage);const ordinary=!e.champion&&!e.pod;
@@ -750,6 +751,14 @@ export class DepthRenderer {
    const dx=e.targetX-e.x,dy=e.targetY-e.y;
    const paceSide=laneCut?((p.x-e.x)*dy-(p.y-e.y)*dx>=0?1:-1):0;
    model.setWaitingState?.(waiting,ordinary?feintProgress:undefined,ordinary,paceSide,laneCut&&Math.hypot(dx,dy)<e.radius);
+   if(e.id===queuedBite && striker){
+    const nx=-Math.sin(striker.meleeAngle), nz=Math.cos(striker.meleeAngle);
+    const side=(e.x-striker.x)*nx+(e.y-striker.y)*nz>=0?1:-1;
+    const release=striker.meleePhase==='recovery'?1-T.MathUtils.smoothstep(striker.meleeProgress,.2,.75):1;
+    const step=side*release*.55*e.radius/UNIT;
+    model.root.position.x+=nx*step;
+    model.root.position.z+=nz*step;
+   }
    if(e.type==='crawler')model.setQueuedBite?.(e.id===queuedBite);
    model.setAttackState?.(e.meleePhase,e.meleeProgress,e.meleeAngle,e.meleeShape);this.actorPoseBounds.center.set(e.x/UNIT,model.height*.5,e.y/UNIT);this.actorPoseBounds.radius=Math.hypot(model.height*.6,e.radius/UNIT*1.35)+.4+/* C10: footprint-scaled presentation travel culling. */ ((e.type==='stalker'||e.type==='crawler')&&e.meleePhase!=='approach'?e.meleeShape.range/UNIT:0);model.root.userData.perf13CullRadius=this.actorPoseBounds.radius;model.setMotionVisible?.(this.actorPoseFrustum.intersectsSphere(this.actorPoseBounds),e.engagement==='waiting'&&e.meleePhase==='approach'&&!status.chilled&&!status.burning&&!status.poisoned&&!status.frozen&&!status.shocked);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;const pose=this.pincerPresentation.retreatPose(model,game,e,UNIT,enemyMotionAim(e,p),Math.hypot(e.velocityX,e.velocityY)>2?1:.12,this.playerVelocity);model.animate(this.time+e.id,pose.stride,pose.angle,0,0,this.playerVelocity);this.pincerPresentation.bossPose(model,e,game,UNIT);setActorLOD(model.root,!e.pod&&!e.elite&&!e.champion&&(this.actorLODStudy==='low'||this.actorLODStudy!=='full'&&(e.x-p.x)**2+(e.y-p.y)**2>Math.max((3*UNIT)**2,this.lodDistances[3])));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.pincerPresentation.releaseActor(model);this.actorPool.release(model);this.actors.delete(id);}

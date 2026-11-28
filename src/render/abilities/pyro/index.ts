@@ -179,16 +179,26 @@ class PyroPresentation implements AbilityPresentation {
       if (event.phase === 'tick') {
         kit.sustain();
         const ids = event.targetIds;
-        const lastId = ids?.[ids.length - 1];
-        const actor = lastId === undefined ? undefined : kit.statusActor(lastId);
-        if (actor && lastId !== undefined && (kit.heatVictim !== lastId || kit.time >= kit.heatUntil + .25)) {
-          kit.heatVictim = lastId;
+        if (!ids || kit.time < kit.heatUntil) return;
+        let chosen: number | undefined, best = -Infinity;
+        for (const id of ids) {
+          const candidate = kit.statusActor(id);
+          if (!candidate || !candidate.root.visible) continue;
+          const p = candidate.root.position;
+          const margin = kit.landingMargin(p.x, candidate.height, p.z);
+          const separation = Math.hypot(p.x-x, p.z-z);
+          const score = Math.min(0, margin)*20 + Math.min(3, separation) + candidate.height*.8;
+          if (score > best) { best = score; chosen = id; }
+        }
+        const actor = chosen === undefined ? undefined : kit.statusActor(chosen);
+        if (actor && chosen !== undefined) {
+          kit.heatVictim = chosen;
           kit.heatUntil = kit.time + .59;
           const body = actor.root.position;
           const angle = Math.atan2(body.z - z, body.x - x);
           actor.hit?.(.82, angle);
           actor.reactToElement?.('fire', angle);
-          actor.powerAccent?.('pyro');
+          actor.powerAccent?.('pyro', angle);
           kit.impact();
           for (let i = -1; i <= 1; i++) {
             const a = angle + i * .38;
@@ -530,12 +540,16 @@ class PyroPresentation implements AbilityPresentation {
       let reach = nearSuit ? 1.18 + .36 * scatter : radius * (interior ? .12 + .56 * scatter : .70 + .25 * scatter);
       let angle = meltdown ? i * Math.PI / 3 : seed + .68 * Math.sin(seed * 3.2);
       if (napalm) {
-        // Triplets follow each of two diverging fuel runs. Outer pockets ignite last.
+        // Two fuel runs feed low licking flames inside the perimeter.
         const cluster = Math.floor(i / 3);
         const run = (Math.floor(cluster / 2) + .42 + .34 * scatter) / Math.ceil(pockets / 6);
         reach = radius * run * Math.min(1, .15 + elapsed * 3.2);
         angle = zone.id * .71 + (cluster % 2 ? .95 : -1.85) + .50 * run
           + .16 * Math.sin(8 * run) + (i % 3 - 1) * .16;
+        if (i % 2 === 0) {
+          angle = zone.id * .71 + i * Math.PI * 2 / pockets;
+          reach = radius * .90 * Math.min(1, .15 + elapsed * 3.2);
+        }
       }
       const px = x + Math.cos(angle) * reach + .08 * Math.sin(clock * 2.1 + seed);
       const pz = z + Math.sin(angle) * reach + .06 * Math.cos(clock * 2.4 + seed);
@@ -566,7 +580,7 @@ class PyroPresentation implements AbilityPresentation {
       const height = ((napalm ? .18 + 1.45 * scatter * scatter : .40 + .66 * scatter) + .17 * Math.sin(clock * 5 + seed)) * (nearSuit ? .78 : 1) * (1 - .67 * weight);
       const width = (.22 + .13 * scatter) * (1 - .62 * weight);
       const visibility = 1 - (i % 3 === 0 ? .5 : 1) * weight;
-      const lean = .26 + scatter * .69;
+      const lean = napalm ? Math.min(.26 + scatter * .69, Math.max(0, radius - reach - .14)) : .26 + scatter * .69;
       kit.flowFlame(px, .07, pz, px + Math.cos(angle) * lean, .10 + height * (i % 5 ? .30 : .72),
         pz + Math.sin(angle) * lean, width, seed, fade * visibility * flameGain);
       if (target < .15 && weight < .15 && emit && i % (kit.low ? 8 : 6) === Math.floor(kit.time * 11) % (kit.low ? 8 : 6))
@@ -585,7 +599,16 @@ class PyroPresentation implements AbilityPresentation {
     if (contact) { lx = contact.root.position.x; lz = contact.root.position.z; }
     kit.lightAt(zone.id,lx,lz,meltdown ? CORE : HOT,(contact ? 9 : meltdown ? 4 : 15)*fade,Math.min(8,radius*2),3,.48);
     if (zone.ability === 'meltdown') {
-      this.meltdown(zone, x, z, fade * flameGain, frame, emit);
+      if (contact) {
+        const target = contact.root.position;
+        const lead = Math.min(1, (.59 - kit.heatUntil + kit.time) / .075);
+        const tail = Math.min(1, (kit.heatUntil - kit.time) / .24);
+        const dx = target.x - x, dz = target.z - z;
+        kit.flowFlame(x + dx*.32, .10, z + dz*.32,
+          x + dx*(.32 + .61*lead), .15 + contact.height*.27*lead,
+          z + dz*(.32 + .61*lead), .22, zone.id, fade*tail*.82);
+      }
+      this.meltdown(zone, x, z, fade * flameGain * (contact ? .16 : 1), frame, emit && !contact);
       if (shimmer) {
         const player = frame.game?.player;
         const angle = player && Math.hypot(player.vx, player.vy) > 18

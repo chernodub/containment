@@ -53,7 +53,7 @@ class CryoPresentation implements AbilityPresentation {
       k.ringEjecta(px, pz, radius, 'cryo');
       // VFX13: hard ice shock front racing to the exact radius, then crystalline frost creeping over the deck.
       const shock = k.fx.spawn(FxMode.Shock, px, pz, .42);
-      shock.param = 1; shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = .64;
+      shock.param = 1; shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = .28;
       const frost = k.fx.spawn(FxMode.Frost, px, pz, 6.5);
       frost.range = radius; frost.h0 = .036; frost.color = ICE;
       k.draw('spark', px, .6, pz, 1.4, 1.4, 1, CORE, 1);
@@ -116,7 +116,7 @@ class CryoPresentation implements AbilityPresentation {
       const travel = .12 + .88 * (1 - (1 - Math.min(1, wave.age / .24)) ** 3);
       const radius = wave.radius * travel;
       const insideStorm = whiteout && Math.hypot(wave.x - whiteout.x / UNIT, wave.z - whiteout.y / UNIT) + wave.radius < whiteout.radius / UNIT;
-      const localYield = insideStorm && wave.age > .10 ? .16 : 1;
+      const localYield = insideStorm && wave.age > .10 ? .16 : wave.aftermath ? .38 : 1;
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity) * localYield;
       const count = k.low ? 8 : 24;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
@@ -130,7 +130,7 @@ class CryoPresentation implements AbilityPresentation {
       if (wave.aftermath) this.obstacleCrystals(wave.x, wave.z, radius, localYield);
       if (wave.aftermath) {
         // Crystal spikes erupt from the deck where the front passes, in leaning clusters, then sink.
-        const clusters = k.low ? 6 : 16, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
+        const clusters = k.low ? 4 : 8, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
         for (let i = 0; i < clusters; i++) {
           const a = i * 2.39996323 + .4, r = wave.radius * (.84 + ((i * .618034) % 1) * .12);
           const g0 = Math.min(1, Math.max(0, (radius - r) / .35)), growth = 1 - (1 - g0) ** 3;
@@ -273,6 +273,7 @@ class CryoPresentation implements AbilityPresentation {
     for (const enemy of frame.game?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
       const distance = Math.hypot(enemy.x - zone.x, enemy.y - zone.y) / UNIT;
       if (enemy.health <= 0 || distance > front) continue;
+      if (age % 2000 >= 250 && !(enemy.id === k.frostVictim && k.time < k.frostUntil)) continue;
       const actor = k.statusActor(enemy.id);
       if (!actor) continue;
       const body = actor.root.position, width = enemy.radius / UNIT;
