@@ -16,7 +16,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  healthScale?:number;authoredGroup?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;thresholdEscort?:true;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
+  healthScale?:number;authoredGroup?:number;beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';afterHeavyRecovery?:true;rehearsalFlank?:true;reinforcement?:boolean;reserve?:true;shutterSpitter?:true;openingExchange?:true;lateExchange?:true;grilleLead?:number;thresholdEscort?:true;interceptionEscort?:true;grilleEscort?:true;grilleDelayedEscort?:true;consoleLead?:true;consoleHold?:true;augmentPosition?:'shooter'|'approach';afterMarkedClutch?:true;relievedFlank?:true;approachLeadMs?:number;hatchDelayMs?:number;
 }>;
 export type ReserveCut = Readonly<{
   type:'reserve-cut';breachId:string;count:number;family:StandardEnemyId;closedEntry?:string;
@@ -53,7 +53,9 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const position=options.node.depth, ordered=orderRoom(options.roomOrder,position);
  const node={...options.node,depth:ordered.depth},mode=options.difficulty??'standard',d=DIFFICULTIES[mode];
  const lateWaves=1+(d.lateWaves-1)*latePressureProgress(position,mode,true);
- const secondRoomHealth=mode==='standard'?(position===15?1.375:1.25):1.10;
+ const secondRoomHealth=mode==='standard'?1.25:1.10;
+ const interceptionEscort=mode==='standard'&&position===15&&ordered.second;
+ const openingRamp=mode==='standard'&&position>=4&&position<=7?0.86:1;
  const source=[...storyBeats(node.depth,mode==='story')];
  const fixedOpening=ordered.opening;
  const opening=fixedOpening!==undefined?{index:fixedOpening,name:source[fixedOpening].label}:options.runStructure?storyOpening(options.seed,node.depth,mode==='story',options.junctions?.[node.depth]==='salvage',options.junctions):undefined;
@@ -167,7 +169,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const [authoredGroup,group] of beat.groups.entries()){
-   const baseCount=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*lateWaves));
+   const baseCount=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*lateWaves*openingRamp));
    // Later Story and Standard firing lanes retain one more ranged threat.
    // Earlier teaching beats are unchanged.
    const extraRanged=group.family==='spitter'&&node.depth>=10&&(options.difficulty==='story'||options.difficulty==='standard');
@@ -318,6 +320,13 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
     arrivals[escort]=Object.freeze({...arrivals[escort],enemyId:'spitter',role:'ranged',
       atMs:warden.atMs+450,reinforcement:false,shutterSpitter:true});
    }
+  }
+  if(interceptionEscort&&beatIndex===1){
+   const ranged=arrivals.find(request=>request.enemyId==='spitter');
+   const ingress=ranged?.breachId??ids[(rotation+beatIndex)%ids.length];
+   arrivals.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:intercept-escort`,
+    atMs:1800,wave:position+1,enemyId:'spitter',elite:false,breachId:ingress,beat:beatIndex,
+    grammar:beat.grammar,role:'ranged',approachLeadMs:1300,hatchDelayMs:850,interceptionEscort:true}));
   }
   schedule.push(...arrivals.sort((a,b)=>a.atMs-b.atMs));
   return Object.freeze({grammar:beat.grammar,label:beat.label,lullMs:beat.lullMs,start,end:schedule.length,consequence:beat.consequence,recallAfterLunge:beat.recallAfterLunge,rehearseHeavy:beat.rehearseHeavy,cleanup:beat.cleanup??(beat.recallAfterLunge?undefined:node.depth>0?(beat.grammar==='siege'?'withdraw':'rush'):undefined)});
