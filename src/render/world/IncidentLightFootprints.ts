@@ -1,3 +1,4 @@
+import {paintTransmissionBus} from './TransmissionBus';
 import {AdditiveBlending,CanvasTexture,Mesh,MeshBasicMaterial,NormalBlending,PlaneGeometry,SRGBColorSpace,type Group} from 'three';
 import type {Point,RoomTemplate} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
@@ -41,6 +42,7 @@ export function addIncidentLightFootprints(root:Group,room:RoomTemplate){
   c.scale(canvas.width/room.width,canvas.height/room.height);
   clipFightingDeck(c,room);
   paintArenaReceiver(c,arena,room.id,profile.perimeter.inner,profile.landmark.color);
+  if(room.id==='transmission-chamber')paintTransmissionBus(c,arena,room.width,true);
   const coolant=room.id==='coolant-plant';
   if(coolant){
     const terminal=laneTerminal(room.id)!;
