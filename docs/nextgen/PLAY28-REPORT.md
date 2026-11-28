@@ -1468,9 +1468,9 @@ The cohort table pairs each rig and seed with the baseline at `0c9feb39`. It use
 |---|---|---:|---:|---:|---:|---|
 | 2718 | Coolant Plant | 33.60 | 34.02 | 12.60 | 12.60 | 7 Crawlers |
 | 1729 | Coolant Plant | 52.55 | 31.82 | 52.60 | 21.53 | 3 Brutes |
-| 1729 | Swarm Junction | 47.15 | 45.07 | 25.20 | 51.00 | 3 Brutes |
+| 1729 | Swarm Junction | 47.15 | 16.67 | 25.20 | 37.80 | None |
 
-The first 2718 attempt with the widened window cut seven Crawlers, but held later spawns long enough to take 64.08 seconds and 24.37 suit after the kill. The final cadence releases the uncanceled reserves after the guardian dies, and the 2718 replay preserved the seven-Crawler cut with the shorter result above. The 1729 rows use the widened-window build before that last cadence correction. The 2718 capture shows the cancellation notice with the ingress outside the frame. In Swarm Junction, the shutter is in view. [Final 2718 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-2718/report.json) · [1729 replay](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/report.json) · [Swarm Junction shutter frame](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/r16-swarm-junction-reserve-cut.png)
+The first 2718 attempt with the widened window cut seven Crawlers, but held later spawns long enough to take 64.08 seconds and 24.37 suit after the kill. The final cadence releases the uncanceled reserves after the guardian dies, and the 2718 replay preserved the seven-Crawler cut with the shorter result above. The final 1729 replay cut three Brutes in Coolant. Its Swarm Junction kill earned no cancellation. An earlier timing pass cut three Brutes in Swarm Junction and took 45.07 seconds with 51.00 suit after the kill. The 2718 capture shows the cancellation notice with the ingress outside the frame. The earlier Swarm Junction capture shows the shutter in view. [Final 2718 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-2718/report.json) · [Final 1729 replay](../../artifacts/nextgen/playtest/play42-guardian-final-arc-1729/report.json) · [Swarm Junction shutter frame](../../artifacts/nextgen/playtest/play42-guardian-arc-1729/r16-swarm-junction-reserve-cut.png)
 
 ### Native campaign verification
 
