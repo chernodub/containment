@@ -176,24 +176,26 @@ class SystemPresentation implements AbilityPresentation {
     }
     this.previouslyFrozen.clear();
     this.previouslyBurning.clear();
+    const whiteout = snapshot?.zones.find(zone => zone.ability === 'whiteout');
+    const releaseFrost = !!whiteout && (whiteout.durationMs - whiteout.remainingMs) % 2000 >= 250;
     let drawn = 0;
     const queen = g?.boss?.snapshot;
     if (queen?.active && !queen.defeated && queen.health > 0 && (!p || Math.hypot(queen.x - p.x, queen.y - p.y) <= 720)) {
       // Queen shares the normal target budget and fixed receipt pool. Consider
       // her first so a full minion crowd cannot hide a valid boss strike.
       this.queen.x = queen.x; this.queen.y = queen.y;
-      if (this.struck(this.queen, 4.5, dt)) drawn++;
+      if (this.struck(this.queen, 4.5, dt, releaseFrost)) drawn++;
     }
     for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
       if (drawn >= (k.low ? 24 : 40)) break;
       if (enemy.health <= 0) continue;
       if (p && Math.hypot(enemy.x - p.x, enemy.y - p.y) > 720) continue;
       const height = enemy.type === 'crawler' ? .55 : enemy.type === 'brute' || enemy.type === 'carrier' ? 1.5 : .95;
-      if (this.struck(enemy, height, dt)) drawn++;
+      if (this.struck(enemy, height, dt, releaseFrost)) drawn++;
     }
   }
 
-  private struck(enemy: StruckTarget, height: number, dt: number): boolean {
+  private struck(enemy: StruckTarget, height: number, dt: number, releaseFrost: boolean): boolean {
     const k = this.kit, status = this.statusFor?.(enemy.id);
     if (status?.frozen) this.previouslyFrozen.add(enemy.id);
     if (status?.burning) this.previouslyBurning.add(enemy.id);
@@ -206,7 +208,7 @@ class SystemPresentation implements AbilityPresentation {
       if (status?.burning || status?.chilled || status?.frozen || status?.shocked) k.statusOwners.add(actor.root);
     }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
-    const secondaryFreeze = k.time < k.frostUntil && enemy.id !== k.frostVictim && k.frostUntil - k.time <= .34;
+    const secondaryFreeze = releaseFrost && !(enemy.id === k.frostVictim && k.time < k.frostUntil);
     if (status?.frozen && actor && !secondaryFreeze) {
       const joints = this.joints(actor.root);
       k.sustain();
@@ -227,7 +229,7 @@ class SystemPresentation implements AbilityPresentation {
       k.impact();
     }
     if (status?.frozen && !secondaryFreeze) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
-    else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
+    else if (!status?.frozen && status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
     if (status?.burning || receipt?.element === 'pyro') this.burning(actor?.root, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {
