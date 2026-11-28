@@ -397,7 +397,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
   let consumableState=(seed^0xba113)>>>0;
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
-  let lastMove = -Infinity, exclusiveTried = false;
+  let lastMove = -Infinity, exclusiveTried = false, exclusivePowerUntil = 0;
   let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
@@ -406,7 +406,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
       if (key !== roomKey) {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
-        plasmaAttempts.clear(); plasmaOpeningUntil = 0;exclusiveTried=false;
+        plasmaAttempts.clear(); plasmaOpeningUntil = 0;exclusiveTried=false;exclusivePowerUntil=0;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -469,6 +469,9 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
           plasma && plasma.magazine + plasma.reserve > 0 ? 'plasma' : s.combat.weapon;
         return {target:returnTarget,movement:{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS};
       }
+      // Give the deployed transformation one pulse before switching back to gunfire.
+      if(now<exclusivePowerUntil&&!escape)
+        return {target:null,movement,actions:[],weapon:s.combat.weapon,stepMs:HUMAN_OBSERVATION_MS};
       if(grille?.state==='waiting'&&hasReturnRule&&!escape&&(!onReturnSide||!attacker?.clear)){
         const approach=grilleApproach(perceived,grille);
         if(approach)return {target:chooseTarget(perceived.enemies,s.player,s.weaponRange),
@@ -484,7 +487,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       // a wall. Reconsider at the next movement deadline instead of auto-steering.
       if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
       const keys = chooseActions(perceived);
-      let exclusiveButton;
+      let exclusiveButton, letPowerLand=false;
       if(profile==='competent'&&!exclusiveTried&&s.node?.templateId==='transmission-chamber'&&visible.length){
         const equipped=s.build?.mutations.find(id=>['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id));
         const button={'siege-plow':'f','fault-line':'q','shard-harvest':'q','ice-road':'f','ember-relay':'f','meltdown-core':'v','pilgrim-pylon':'f','live-wire':'q'}[equipped];
@@ -494,6 +497,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
           :equipped==='meltdown-core'||s.abilityAims?.[slot];
         if(slot&&s.abilities.slots?.[slot]?.ready&&hasAim&&now>=nextInput){
           keys.unshift(button);exclusiveButton=button;
+          letPowerLand=['siege-plow','ember-relay','pilgrim-pylon'].includes(equipped);
         }
       }
 
@@ -533,7 +537,10 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
       }
       const plasmaFirst=platedTarget&&(lessonTarget||now<plasmaOpeningUntil);
       const actions = now >= nextInput ? timelyKeys.filter(key=>key===exclusiveButton||!plasmaFirst||!['q','f','v','g'].includes(key)).slice(0,1) : [];
-      if(exclusiveButton&&actions.includes(exclusiveButton))exclusiveTried=true;
+      if(exclusiveButton&&actions.includes(exclusiveButton)){
+        exclusiveTried=true;
+        if(letPowerLand)exclusivePowerUntil=now+1150;
+      }
       if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
       // WEAPONS15 weapon selection.
       const contacts = novice ? visible : perceived.enemies;
@@ -596,7 +603,7 @@ export function createHumanPolicy(seed, profile = 'competent', readExchange = fa
           movement:move??{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS,
         };
       }
-      return {target,movement,actions,weapon,stepMs:HUMAN_OBSERVATION_MS};
+      return {target:now<exclusivePowerUntil&&!escape?null:target,movement,actions,weapon,stepMs:HUMAN_OBSERVATION_MS};
     },
   };
 }
