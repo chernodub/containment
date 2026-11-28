@@ -608,7 +608,10 @@ export class DepthGame {
   const siege=this.siege;
   if(!siege)return;
   if(this.siegeBeat!==siege.beat){
-   this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;
+   const firstSwarmHold=this.difficulty==='standard'&&this.node.templateId==='swarm-junction'&&
+    siege.beat===0&&orderRoom(this.expedition.run.roomOrder,this.node.depth).second===false;
+   this.siegeBeat=siege.beat;
+   this.siegeRemainingMs=firstSwarmHold?8000:12000;
    this.relayBank=undefined;this.coverPreview=undefined;
   }
   if(this.node.templateId==='overload-floor'&&!this.coverPreview&&!siege.crossing&&
