@@ -175,8 +175,14 @@ export function paintFightLaneDamage(c:CanvasRenderingContext2D,id:string){
       c.save();c.translate(833.71249,349.81813);
       c.fillStyle='#172126';c.fill(new Path2D('M-98 -15H-2V-67H-98Z'));
       line('M1 3V-65H-61',5,'#b6976e');
+      // Return around the east end of the sill and into the protected step.
+      const walkway='M306 170L109 58 46 12 31 -34 13 -45H-56';
+      c.lineJoin='round';
+      line(walkway,37,'#26353a');line(walkway,32,'#99977d');line(walkway,25,'#6e827d');
+      c.fillStyle='#313d40';c.fill(new Path2D('M-78 -54H-33V-19H-74L-78 -23Z'));
+      line('M-34 -20H-74L-78 -24V-54H-34',5,'#e2c185');
       const shade=c.createLinearGradient(0,-14,0,-56);
-      shade.addColorStop(0,'rgba(6,11,13,.90)');shade.addColorStop(1,'rgba(6,11,13,0)');
+      shade.addColorStop(0,'rgba(6,11,13,.40)');shade.addColorStop(1,'rgba(6,11,13,0)');
       c.fillStyle=shade;c.fill(new Path2D('M-101 2H0L-25 -54 -123 -49Z'));c.restore();
       for(const [x,z] of [[172,512],[315,538],[449,562],[615,680],[832,684],[950,568]]){
         c.save();c.translate(x,z);
